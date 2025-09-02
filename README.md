@@ -4253,7 +4253,6 @@ OPTIONS:
         --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder when using access key (override AK root id)
         --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-        --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
 COMMAND: faspio
@@ -4413,7 +4412,6 @@ OPTIONS:
         --ssh-keys=VALUE             SSH key path list (Array or single)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
-        --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
 COMMAND: console
@@ -5898,10 +5896,8 @@ files short_link /testdst public create
 files show %id:aoc_file_id
 files show /
 files show testdst/test_file.bin
-files sync admin status --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","local":{"path":"/data/local_sync"}}'
 files sync admin status /data/local_sync
-files sync start --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
-files sync start pull /data/local_sync /testdst --sync-info=@json:'{"reset":true,"quiet":false,"transport":{"target_rate":my_bps}}'
+files sync pull /testdst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
 files transfer push /testsrc --to-folder=/testdst test_file.bin
@@ -6125,12 +6121,8 @@ md5sum my_inside_folder/test_file.bin
 mkdir my_inside_folder --logger=stdout
 mkdir my_upload_folder/target_hot
 mv my_upload_folder/200KB.2 my_upload_folder/to.delete
-sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"/data/local_sync"}}'
-sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
-sync db counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
-sync db meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
-sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","target_rate":"my_bps","reset":true}]}'
-sync start --sync-info=@json:'{"name":"serv_sync_pull_conf","direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"quiet":false}'
+sync admin status /data/local_sync
+sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
 upload 'test_file.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
@@ -6714,10 +6706,9 @@ ssync state %name:my_node_sync
 ssync stop %name:my_node_sync
 ssync summary %name:my_node_sync
 stream list
-sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+sync admin status /data/local_sync
+sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_node_sync2","reset":true}'
+sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"reset":true}'
 transfer list --once-only=yes
 transfer list --query=@json:'{"active_only":true}'
 transfer list --query=@json:'{"reset":true}' --once-only=yes
@@ -7617,8 +7608,8 @@ files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files mkdir my_share1/new_folder
-files sync start push /data/local_sync /london-sh1/synctst
-files sync start push /data/local_sync /london-sh1/synctst --sync-info=@json:'{"reset":true,"quiet":false,"transport":{"target_rate":my_bps}}'
+files sync push /data/local_sync --to-folder=/london-sh1/synctst
+files sync push /data/local_sync --to-folder=/london-sh1/synctst @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
@@ -8180,36 +8171,24 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 ### Starting a sync session
 
-`sync start` supports 0, 3 or 4 positional arguments.
-If 3 or 4 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
+To start a sync session, use one of the three sync directions followed by a folder path:
 
-- direction
-- local folder
-- remote folder
+| Direction | Path   | `to_folder` |
+|-----------|--------|-------------|
+| `push`    | Local  | Remote      |
+| `bidi`    | Local  | Remote      |
+| `pull`    | Remote | Local       |
 
-Additional options can be provided with option `sync_info`, for which two syntax are possible, as described below.
-
-`sync admin` supports 0, 1 or 2 positional arguments.
-If 1 or 2 arguments are provided they are mapped to:
-
-- local folder
-- name
+An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` or `args` format.
 
 #### `sync_info`: `conf` format
 
 It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
 This is the **preferred** syntax and only allows a single session definition.
 
-> **Note:** By default, no progress, nor error messages is provided on terminal.
-To activate messages, set option `sync_info` parameter `quiet` to `false`.
-
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-For sync, if 3 or 4 arguments are provided they are mapped to:
-
-- `direction`
-- `local`->`path`
-- `remote`->`path`
+Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
 #### `sync_info`: `args` format
 
@@ -8219,38 +8198,18 @@ Technically, it allows definition of multiple sync sessions in a single command,
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
-> **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
-
-For sync, if 3 or 4 arguments are provided they are mapped to:
-
-- `direction`
-- `local_dir`
-- `remote_dir`
+Parameters `local_dir_` and `remote_dir` are not allowed since they are provided on command line.
 
 ### Sync management and monitoring
 
-Two commands are available for managing and monitoring sync sessions:
+The `admin` command provides several sub commands:
 
-- `sync admin`: Uses the utility `asyncadmin`, available only on server products.
-- `sync db`: Accesses directly the Async snap database (`snap.db`).
+- `status`: Uses the utility `asyncadmin`, available only on server products.
+- Other commands access directly the Async snap database (`snap.db`).
 
 For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
 If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-Else, the user must specify a session name.
-
-Like for synchronization, the user can provide some arguments directly on command line, or through a `Hash` in `conf` or `args` format.
-
-If 1 or 2 arguments are provided they are mapped to `conf` format:
-
-- `local`->`path`
-- `name`
-
-Or to `args` format:
-
-- `local_dir`
-- `name`
-
-If a common DB folder is used, the parameter `local_db_dir` can be used.
+Else, the user must specify a session name in the optional `Hash`, in `name`.
 
 ## Hot folder
 
@@ -8279,10 +8238,17 @@ The general idea is to rely on :
 
 Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
-- `ascp` already takes care of sending only **new** files: option `-k 1,2,3` (`resume_policy`)
-- `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
-- `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
-- `--src-base` (`src_base`) if top level folder name shall not be created on destination
+- Sending only **new** files
+  - option `-k 1,2,3` (`resume_policy`)
+- Remove or move files after transfer:
+  - `--remove-after-transfer` (`remove_after_transfer`)
+  - `--move-after-transfer` (`move_after_transfer`)
+  - `--remove-empty-directories` (`remove_empty_directories`)
+- Send only files not modified since the last X seconds:
+  - `--exclude-newer-than` (`exclude_newer_than`)
+  - `--exclude-older-than` (`exclude_older_than`)
+- Top level folder shall not be created on destination
+  - `--src-base` (`src_base`)
 
 > **Note:** `ascli` takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
 >

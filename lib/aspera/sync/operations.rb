@@ -22,63 +22,6 @@ module Aspera
       DIRECTIONS = %i[push pull bidi].freeze
       # default direction for sync
       DEFAULT_DIRECTION = :push
-      # Read JSON schema and mapping to command line options
-      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
-      SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
-      INSTANCE_SCHEMA['properties'].delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
-      CommandLineBuilder.adjust_properties_defaults(INSTANCE_SCHEMA['properties'])
-      CommandLineBuilder.adjust_properties_defaults(SESSION_SCHEMA['properties'])
-      CommandLineBuilder.adjust_properties_defaults(CONF_SCHEMA['properties'])
-
-      CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
-
-      # Optional simple command line arguments for sync
-      # in Array to keep order as on command line
-      # name: just generic name
-      # conf: key in option --conf
-      # args: key for command line args
-      # values: possible values for argument
-      # type: type for validation
-      SYNC_PARAMETERS = [
-        {
-          name:   'direction',
-          conf:   'direction',
-          args:   'direction',
-          values: DIRECTIONS
-        }, {
-          name: 'local folder',
-          conf: 'local.path',
-          args: 'local_dir',
-          type: String
-        }, {
-          name: 'remote folder',
-          conf: 'remote.path',
-          args: 'remote_dir',
-          type: String
-        }
-      ].freeze
-      ADMIN_PARAMETERS = [
-        {
-          name: 'local folder',
-          conf: 'local.path',
-          args: 'local_dir',
-          type: String
-        }, {
-          name:     'name',
-          conf:     'name',
-          args:     'name',
-          type:     String,
-          optional: true
-        }
-      ].freeze
-
-      ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
-
-      PRIVATE_FOLDER = '.private-asp'
-      ASYNC_DB = 'snap.db'
-
-      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
         # Set `remote_dir` in sync parameters based on transfer spec
@@ -222,82 +165,6 @@ module Aspera
           return result
         end
 
-        # Takes potentially empty params or arguments and ensures viable configuration
-        def validated_sync_info(async_params, arguments)
-          info_type = if async_params.key?('sessions') || async_params.key?('instance')
-            async_params['sessions'] ||= [{}]
-            Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported'}
-            session = async_params['sessions'].first
-            :args
-          else
-            session = async_params
-            :conf
-          end
-          if !arguments.empty?
-            # there must be exactly 3 or 4 args
-            # copy arguments to async_params
-            arguments.each_with_index do |arg, index|
-              key_path = SYNC_PARAMETERS[index][info_type].split('.')
-              hash_for_key = session
-              if key_path.length > 1
-                first = key_path.shift
-                hash_for_key[first] ||= {}
-                hash_for_key = hash_for_key[first]
-              end
-              raise "Parameter #{SYNC_PARAMETERS[index][info_type]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
-              hash_for_key[key_path.last] = arg
-            end
-          end
-
-          # Check if name is already provided
-          # else generate one from local/remote paths
-          if !session.key?('name')
-            session['name'] = Environment.instance.sanitized_filename(
-              SYNC_PARAMETERS.filter_map do |arg_info|
-                value = session.dig(*arg_info[info_type].split('.'))
-                Aspera.assert(!value.nil?){"Missing value for #{arg_info[info_type]} to generate name"}
-                value.split(File::SEPARATOR).last(2).join(Environment.instance.safe_filename_character)
-              end.compact.join(Environment.instance.safe_filename_character))
-          end
-          return async_params
-        end
-
-        # Takes potentially empty params or arguments and ensures viable configuration for admin
-        def validated_admin_info(async_params, arguments)
-          info_type = if async_params.key?('sessions') || async_params.key?('instance')
-            async_params['sessions'] ||= [{}]
-            Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported'}
-            session = async_params['sessions'].first
-            :args
-          else
-            session = async_params
-            :conf
-          end
-          if !arguments.empty?
-            # there must be exactly 1 or 2 args
-            # copy arguments to async_params
-            arguments.each_with_index do |arg, index|
-              key_path = ADMIN_PARAMETERS[index][info_type].split('.')
-              hash_for_key = session
-              if key_path.length > 1
-                first = key_path.shift
-                hash_for_key[first] ||= {}
-                hash_for_key = hash_for_key[first]
-              end
-              raise "Parameter #{SYNC_PARAMETERS[index][info_type]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
-              hash_for_key[key_path.last] = arg
-            end
-          end
-          # if name not provided, check in db folder if there is only one name
-          if !session.key?('name')
-            local_db_dir = local_db_folder(async_params)
-            dbs = list_db_files(local_db_dir)
-            raise "#{dbs.length} session found in #{local_db_dir}, please provide a name" unless dbs.length == 1
-            session['name'] = dbs.keys.first
-          end
-          return async_params
-        end
-
         # Run `asyncadmin` to get status of sync session
         # @param sync_params [Hash] sync parameters in conf or args format
         # @return [Hash] parsed output of asyncadmin
@@ -407,6 +274,21 @@ module Aspera
           end
         end
       end
+      # Private stuff:
+      # Read JSON schema and mapping to command line options
+      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
+      SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
+      INSTANCE_SCHEMA['properties'].delete('sessions')
+      CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
+      CommandLineBuilder.adjust_properties_defaults(INSTANCE_SCHEMA['properties'])
+      CommandLineBuilder.adjust_properties_defaults(SESSION_SCHEMA['properties'])
+      CommandLineBuilder.adjust_properties_defaults(CONF_SCHEMA['properties'])
+      CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
+      ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
+      PRIVATE_FOLDER = '.private-asp'
+      ASYNC_DB = 'snap.db'
+
+      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CONF_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB
     end
   end
 end

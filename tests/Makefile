@@ -298,8 +298,8 @@ $(F)shares_sync: $(TMP_EXISTS)
 	mkdir -p $(TMP_SYNCS)shares_sync
 	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
 	echo "Some sample file" > $(TMP_SYNCS)shares_sync/sample_file.txt
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst
+	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=/london-sh1/synctst @json:@extend:'{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=/london-sh1/synctst
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(F)shares_nagios $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
 #######################################################################################################################
@@ -346,20 +346,20 @@ $(F)serv_sync_pull_args: $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)serv_sync_pull_args
 	mkdir -p $(TMP_SYNCS)serv_sync_pull_args
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_args @json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
+	$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
+	$(CLI_TEST) server sync admin meta $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
+	$(CLI_TEST) server sync admin counters $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
 	@$(STOP_TEST) $@
 $(F)serv_sync_pull_conf: $(F)serv_sync_pull_args
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)serv_sync_pull_conf
 	mkdir -p $(TMP_SYNCS)serv_sync_pull_conf
-	$(CLI_TEST) server sync start pull $(TMP_SYNCS)serv_sync_pull_conf @preset:server.inside_folder --sync-info=@json:@extend:'{"name":"serv_sync_pull_conf","reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(BEG_FAI)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf"}'$(END_FAI)
-	$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"}}'
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"serv_sync_pull_conf","direction":"pull","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"},"remote":{"path":"@preset:server.inside_folder@"},"quiet":false}'
-	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"}}'
+	$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_conf  @json:@extend:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(BEG_FAI)$(CLI_TEST) server sync admin status @json:'{"name":"serv_sync_pull_conf"}'$(END_FAI)
+	$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf @json:'{"name":"serv_sync_pull_conf"}'
+	$(INCMAN)$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_conf @json:@extend:'{"name":"serv_sync_pull_conf"}'
+	$(INCMAN)$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf
 	@$(STOP_TEST) $@
 $(F)serv_upload_ex: $(F)serv_mkdir
 	@$(START_TEST) $@
@@ -893,15 +893,15 @@ $(F)aoc_sync_pull_conf_parms: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)aoc_sync_pull_conf_parms
 	mkdir -p $(TMP_SYNCS)aoc_sync_pull_conf_parms
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aoc_sync_pull_conf_parms /testdst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync pull /testdst --to-folder=$(TMP_SYNCS)aoc_sync_pull_conf_parms  @json:@extend:'{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 	$(INCMAN)$(CLI_TEST) aoc files sync admin status $(TMP_SYNCS)aoc_sync_pull_conf_parms
 	@$(STOP_TEST) $@
 $(F)aoc_sync_conf_pull_params: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull_params
 	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull_params
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aoc_sync_conf_pull_params"},"remote":{"path":"/testdst"}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","local":{"path":"$(TMP_SYNCS)aoc_sync_conf_pull_params"}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync pull /testdst --to-folder=$(TMP_SYNCS)aoc_sync_conf_pull_params  @json:@extend:'{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status $(TMP_SYNCS)aoc_sync_conf_pull_params
 	@$(STOP_TEST) $@
 $(F)aoc_file_id_1: $(F)aocftr
 	@$(START_TEST) $@
@@ -1380,21 +1380,21 @@ $(F)sy5: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node async files 1
 	@$(STOP_TEST) $@
-$(F)ndsyncv1: $(TMP_EXISTS)
+$(F)nd_sync_pull_conf: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)ndsyncv1
-	mkdir -p $(TMP_SYNCS)ndsyncv1
-	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv1"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)ndsyncv1","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	rm -fr $(TMP_SYNCS)nd_sync_pull_conf
+	mkdir -p $(TMP_SYNCS)nd_sync_pull_conf
+	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)nd_sync_pull_conf @json:'{"reset":true}'
+	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)nd_sync_pull_conf
 	@$(STOP_TEST) $@
 $(F)ndsyncv2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)ndsyncv2
 	mkdir -p $(TMP_SYNCS)ndsyncv2
-	$(INCMAN)$(CLI_TEST) node sync start        --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)ndsyncv2 @json:'{"name":"my_node_sync2","reset":true}'
+	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)ndsyncv2
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnsync,$(F)sy1 $(F)sy2 $(F)sy3 $(F)sy4 $(F)sy5 $(F)ndsyncv1 $(F)ndsyncv2))
+$(eval $(call test_suite_all,tnsync,$(F)sy1 $(F)sy2 $(F)sy3 $(F)sy4 $(F)sy5 $(F)nd_sync_pull_conf $(F)ndsyncv2))
 #######################################################################################################################
 $(F)sync_create: $(TMP_EXISTS)
 	@$(START_TEST) $@

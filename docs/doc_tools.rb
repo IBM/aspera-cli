@@ -61,16 +61,6 @@ def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 # container image in docker hub
 def container_image; Aspera::Cli::Info::CONTAINER; end
 
-def sync_arguments_list(format: nil, admin: false)
-  params = admin ? Aspera::Sync::Operations::ADMIN_PARAMETERS : Aspera::Sync::Operations::SYNC_PARAMETERS
-  markdown_list(case format
-  when nil
-    params.map{ |i| i[:name]}
-  else
-    params.map{ |i| i[format].split('.').map{ |j| "`#{j}`"}.join('->')}
-  end)
-end
-
 def gemspec; Gem::Specification.load(@param[:gemspec]) || raise("error loading #{@param[:gemspec]}"); end
 
 # if version contains other characters than digit and dot, it is pre-release
