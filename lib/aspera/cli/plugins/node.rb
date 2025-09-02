@@ -700,7 +700,7 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
-        # This is older API
+        # Node API: /async (stats only)
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
@@ -847,8 +847,8 @@ module Aspera
           when *COMMON_ACTIONS then return execute_simple_common(command)
           when :async then return execute_async # former API
           when :ssync
-            # newer API
-            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary].concat(Plugin::ALL_OPS) - %i[modify])
+            # Node API: /asyncs (newer)
+            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + Plugin::ALL_OPS - %i[modify])
             case sync_command
             when *Plugin::ALL_OPS
               return entity_execute(
