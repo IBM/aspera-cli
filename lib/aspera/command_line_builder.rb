@@ -22,6 +22,7 @@ module Aspera
     # x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
     # x-agents       [Array]        Supported agents (for doc only), if not specified: all
     # x-ts-name      [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
+    # x-ts-convert   [String]       (async) Method name for Convert object
     # x-deprecation  [String]       Deprecation message for doc
     PROPERTY_KEYS = %w[
       description

@@ -699,6 +699,8 @@ properties:
         description: Transfer no faster than the specified rate (in bps)
         type: integer
         default: 10000000
+        x-ts-name: target_rate_kbps
+        x-ts-convert: kbps_to_bps
       write_block_size:
         description:
           Use the specified block size (in bytes) for writing. Default
