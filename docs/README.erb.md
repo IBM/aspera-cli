@@ -7181,31 +7181,24 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 ### Starting a sync session
 
-`sync start` supports 0, 3 or 4 positional arguments.
-If 3 or 4 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
+To start a sync session, use one of the three sync directions followed by a folder path:
 
-<%=sync_arguments_list%>
+| Direction | Path   | `to_folder` |
+|-----------|--------|-------------|
+| `push`    | Local  | Remote      |
+| `bidi`    | Local  | Remote      |
+| `pull`    | Remote | Local       |
 
-Additional options can be provided with option `sync_info`, for which two syntax are possible, as described below.
-
-`sync admin` supports 0, 1 or 2 positional arguments.
-If 1 or 2 arguments are provided they are mapped to:
-
-<%=sync_arguments_list(admin: true)%>
+An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` or `args` format.
 
 #### `sync_info`: `conf` format
 
 It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
 This is the **preferred** syntax and only allows a single session definition.
 
-> **Note:** By default, no progress, nor error messages is provided on terminal.
-To activate messages, set option `sync_info` parameter `quiet` to `false`.
-
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-For sync, if 3 or 4 arguments are provided they are mapped to:
-
-<%=sync_arguments_list(format: :conf)%>
+Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
 #### `sync_info`: `args` format
 
@@ -7215,34 +7208,18 @@ Technically, it allows definition of multiple sync sessions in a single command,
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
-> **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
-
-For sync, if 3 or 4 arguments are provided they are mapped to:
-
-<%=sync_arguments_list(format: :args)%>
+Parameters `local_dir_` and `remote_dir` are not allowed since they are provided on command line.
 
 ### Sync management and monitoring
 
-Two commands are available for managing and monitoring sync sessions:
+The `admin` command provides several sub commands:
 
-- `sync admin`: Uses the utility `asyncadmin`, available only on server products.
-- `sync db`: Accesses directly the Async snap database (`snap.db`).
+- `status`: Uses the utility `asyncadmin`, available only on server products.
+- Other commands access directly the Async snap database (`snap.db`).
 
 For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
 If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-Else, the user must specify a session name.
-
-Like for synchronization, the user can provide some arguments directly on command line, or through a `Hash` in `conf` or `args` format.
-
-If 1 or 2 arguments are provided they are mapped to `conf` format:
-
-<%=sync_arguments_list(format: :conf, admin: true)%>
-
-Or to `args` format:
-
-<%=sync_arguments_list(format: :args, admin: true)%>
-
-If a common DB folder is used, the parameter `local_db_dir` can be used.
+Else, the user must specify a session name in the optional `Hash`, in `name`.
 
 ## Hot folder
 
