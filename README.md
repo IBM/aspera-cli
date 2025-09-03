@@ -7593,27 +7593,27 @@ To figure out an entity's payload, for example for creation, refer to the API do
 admin group all list
 admin node list
 admin share list --fields=DEF,-status,status_message
-admin share user_permissions 3 list
+admin share user_permissions 1 list
 admin user all app_authorizations 1 modify @json:'{"app_login":true}'
 admin user all app_authorizations 1 show
 admin user all list
 admin user all share_permissions 1 list
-admin user all share_permissions 1 show 3
+admin user all share_permissions 1 show 1
 admin user ldap add the_name
 admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 files browse /
-files delete my_share1/new_folder
-files delete my_share1/test_file.bin
-files download --to-folder=. my_share1/test_file.bin
-files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
-files mkdir my_share1/new_folder
-files sync push /data/local_sync --to-folder=/london-sh1/synctst
-files sync push /data/local_sync --to-folder=/london-sh1/synctst @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
-files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
-files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
-files upload --to-folder=my_share1 test_file.bin
-files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files delete my_share_folder/new_folder
+files delete my_share_folder/test_file.bin
+files download --to-folder=. my_share_folder/test_file.bin
+files download --to-folder=. my_share_folder/test_file.bin my_share_folder/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files mkdir my_share_folder/new_folder
+files sync push /data/local_sync --to-folder=my_share_folder/synctst
+files sync push /data/local_sync --to-folder=my_share_folder/synctst @json:'{"reset":true}'
+files upload --to-folder=my_share_folder 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload --to-folder=my_share_folder sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload --to-folder=my_share_folder test_file.bin
+files upload --to-folder=my_share_folder test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 health
 ```
 
@@ -8337,7 +8337,7 @@ OK - [transfer:ok]
 The `smtp` option is a `Hash` (extended value) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
-| field        | Default             | example                    | Description                      |
+| Field        | Default             | Example                    | Description                      |
 |--------------|---------------------|----------------------------|----------------------------------|
 | `server`     | -                   | `smtp.gmail.com`           | SMTP server address              |
 | `tls`        | `true`              | `true`                     | Enable `STARTTLS` (port 587)     |

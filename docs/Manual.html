@@ -10113,27 +10113,27 @@ commands:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb528-1"><a href="#cb528-1" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> group all list</span>
 <span id="cb528-2"><a href="#cb528-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
 <span id="cb528-3"><a href="#cb528-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
-<span id="cb528-4"><a href="#cb528-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions 3 list</span>
+<span id="cb528-4"><a href="#cb528-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions 1 list</span>
 <span id="cb528-5"><a href="#cb528-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
 <span id="cb528-6"><a href="#cb528-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 show</span>
 <span id="cb528-7"><a href="#cb528-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all list</span>
 <span id="cb528-8"><a href="#cb528-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 list</span>
-<span id="cb528-9"><a href="#cb528-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 show 3</span>
+<span id="cb528-9"><a href="#cb528-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 show 1</span>
 <span id="cb528-10"><a href="#cb528-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user ldap add the_name</span>
 <span id="cb528-11"><a href="#cb528-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user local list</span>
 <span id="cb528-12"><a href="#cb528-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user saml import @json:<span class="st">&#39;{&quot;id&quot;:&quot;the_id&quot;,&quot;name_id&quot;:&quot;the_name&quot;}&#39;</span></span>
 <span id="cb528-13"><a href="#cb528-13" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> browse /</span>
-<span id="cb528-14"><a href="#cb528-14" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete my_share1/new_folder</span>
-<span id="cb528-15"><a href="#cb528-15" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete my_share1/test_file.bin</span>
-<span id="cb528-16"><a href="#cb528-16" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin</span>
-<span id="cb528-17"><a href="#cb528-17" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
-<span id="cb528-18"><a href="#cb528-18" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir my_share1/new_folder</span>
-<span id="cb528-19"><a href="#cb528-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync push /data/local_sync <span class="at">--to-folder</span><span class="op">=</span>/london-sh1/synctst</span>
-<span id="cb528-20"><a href="#cb528-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync push /data/local_sync <span class="at">--to-folder</span><span class="op">=</span>/london-sh1/synctst @json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;transport&quot;:{&quot;target_rate&quot;:my_bps}}&#39;</span></span>
-<span id="cb528-21"><a href="#cb528-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb528-22"><a href="#cb528-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb528-23"><a href="#cb528-23" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
-<span id="cb528-24"><a href="#cb528-24" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
+<span id="cb528-14"><a href="#cb528-14" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete my_share_folder/new_folder</span>
+<span id="cb528-15"><a href="#cb528-15" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete my_share_folder/test_file.bin</span>
+<span id="cb528-16"><a href="#cb528-16" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share_folder/test_file.bin</span>
+<span id="cb528-17"><a href="#cb528-17" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share_folder/test_file.bin my_share_folder/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
+<span id="cb528-18"><a href="#cb528-18" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir my_share_folder/new_folder</span>
+<span id="cb528-19"><a href="#cb528-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync push /data/local_sync <span class="at">--to-folder</span><span class="op">=</span>my_share_folder/synctst</span>
+<span id="cb528-20"><a href="#cb528-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync push /data/local_sync <span class="at">--to-folder</span><span class="op">=</span>my_share_folder/synctst @json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb528-21"><a href="#cb528-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share_folder <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb528-22"><a href="#cb528-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share_folder sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb528-23"><a href="#cb528-23" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share_folder test_file.bin</span>
+<span id="cb528-24"><a href="#cb528-24" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
 <span id="cb528-25"><a href="#cb528-25" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span></code></pre></div>
 <h1 data-number="12" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">12</span> Plugin: <code>console</code>:
@@ -10963,9 +10963,9 @@ with the following fields:</p>
 </colgroup>
 <thead>
 <tr>
-<th>field</th>
+<th>Field</th>
 <th>Default</th>
-<th>example</th>
+<th>Example</th>
 <th>Description</th>
 </tr>
 </thead>

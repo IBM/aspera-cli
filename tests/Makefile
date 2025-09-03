@@ -228,7 +228,7 @@ $(F)shares_admin_7: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_admin_8: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions 1 show 3
+	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions 1 show 1
 	@$(STOP_TEST) $@
 $(F)shares_admin_9: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -244,7 +244,7 @@ $(F)shares_admin_11: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_admin_12: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin share user_permissions 3 list
+	$(INCMAN)$(CLI_TEST) shares admin share user_permissions 1 list
 	@$(STOP_TEST) $@
 $(F)shares_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -252,54 +252,54 @@ $(F)shares_1: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_2: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share1 $(TST_ASC_LCL_PATH)
+	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share_folder $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(F)shares_3: $(F)shares_2
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME)
+	$(INCMAN)$(CLI_TEST) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)shares_4: $(F)shares_3
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share1@/$(TST_ASC_FILENAME)
+	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)shares_5: $(F)shares_4
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share1 $(TST_ASC_LCL_PATH) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
+	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share_folder $(TST_ASC_LCL_PATH) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
 	@$(STOP_TEST) $@
 $(F)shares_6: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share1 'faux:///testfile?1m' --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share_folder 'faux:///testfile?1m' --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 	@$(STOP_TEST) $@
 $(F)shares_6bis: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	mkdir -p $(DIR_TMP)sendfolder/sub
 	touch $(DIR_TMP)sendfolder/{1,2,3,sub/1,sub/2}
-	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share1 $(DIR_TMP)sendfolder --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+	$(INCMAN)$(CLI_TEST) shares files upload --to-folder=@preset:shares.share_folder $(DIR_TMP)sendfolder --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 	@$(STOP_TEST) $@
 $(F)shares_7: $(F)shares_5
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
+	$(INCMAN)$(CLI_TEST) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share_folder@/$(TST_ASC_FILENAME) @extend:@preset:shares.share_folder@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
 	@$(STOP_TEST) $@
 $(F)shares_8: $(F)shares_7
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share1@/$(TST_ASC_FILENAME)
+	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)shares_9: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(BEG_IGN)$(CLI_TEST) shares files delete @extend:@preset:shares.share1@/new_folder$(END_IGN)
-	$(INCMAN)$(CLI_TEST) shares files mkdir @extend:@preset:shares.share1@/new_folder
+	$(BEG_IGN)$(CLI_TEST) shares files delete @extend:@preset:shares.share_folder@/new_folder$(END_IGN)
+	$(INCMAN)$(CLI_TEST) shares files mkdir @extend:@preset:shares.share_folder@/new_folder
 	@$(STOP_TEST) $@
 $(F)shares_10: $(F)shares_9
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share1@/new_folder
+	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share_folder@/new_folder
 	@$(STOP_TEST) $@
 $(F)shares_sync: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	mkdir -p $(TMP_SYNCS)shares_sync
-	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
+	$(BEG_IGN)$(CLI_TEST) shares files mkdir @extend:@preset:shares.share_folder@/synctst$(END_IGN)
 	echo "Some sample file" > $(TMP_SYNCS)shares_sync/sample_file.txt
-	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=/london-sh1/synctst @json:@extend:'{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=/london-sh1/synctst
+	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst @json:'{"reset":true}'
+	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(F)shares_nagios $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
 #######################################################################################################################
