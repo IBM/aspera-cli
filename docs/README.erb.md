@@ -7,8 +7,6 @@ author: "Laurent MARTIN"
 PANDOC_META_END
 -->
 
-<!-- xmarkdownlint-disable MD033 MD003 MD053 -->
-
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
@@ -1158,10 +1156,10 @@ Special character handling (quotes, spaces, env vars, ...) is handled by the she
 
 #### Shell parsing for Windows
 
-Command line parsing first depends on the shell used.
+On Windows, command line parsing first depends on the shell used (see next sections).
 MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
 
-So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
+So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
 Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
 As far as <%=tool%> is concerned: the executable is Ruby.
@@ -1189,7 +1187,7 @@ It's up to the program to split arguments:
 - [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
 - [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
 
-<%tool%> is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
+<%tool%> is a Ruby program, so Ruby parses the command line (receibed with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 (See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
 
@@ -1228,15 +1226,16 @@ Eventually, all those special characters are removed from the command line unles
 
 #### Shell parsing for Windows: Powershell
 
-For Powershell, it actually depends on the version of it.
+For Powershell, it actually depends on the version of it (7.3+).
 
 A difficulty is that Powershell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
+Since we usually do not use powershell features, it is advised to use the "stop-parsing" token `--%`.
 
 Details can be found here:
 
-- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing?view=powershell-7.4#passing-arguments-that-contain-quote-characters)
+- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters)
 
-- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules?view=powershell-7.4)
+- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
 The following examples give the same result on Windows using Powershell:
 
@@ -1252,7 +1251,7 @@ PS C:\> <%=cmd%> config echo  --% @json:'{"k":"v","x":"y"}'
 PS C:\> <%=cmd%> config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 ```
 
-> **Note:** The special Powershell argument `--%` places Powershell in legacy parsing mode.
+> **Note:** The special Powershell argument `--%` places Powershell in "stop-parsing" mode.
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -1678,7 +1677,7 @@ The display of result is as follows:
 | Result          | `no`       | `yes`      | `single` |
 |-----------------|------------|------------|----------|
 | `single_object` | Simple     | Simple     | Simple   |
-| `object_list`   | Transposed | Simple<br/>(Multiple objects) | Simple if 1 object<br/>Transposed if 2+ objects |
+| `object_list`   | Transposed | Simple<%=br%>(Multiple objects) | Simple if 1 object,<%=br%>transposed if 2+ objects |
 
 This parameter can be set as a global default with:
 
@@ -3694,7 +3693,7 @@ EOF
 
 Some commands result in <%=tool%> running as a server, listening on a port.
 In this case, it is usually desirable to run <%=tool%> as a service.
-On Linux, typically, [systemd](https://systemd.io/) is used.
+On Linux, typically, [`systemd`](https://systemd.io/) is used.
 
 A convenient way is to write a startup script, and run this script as a service.
 
@@ -5100,18 +5099,16 @@ The basic payload to create a permission, i.e. a Shared Folder (last argument at
 <%=tool%> expects the same payload for creation.
 <%=tool%> automatically populates some payload fields and provides convenient additional fields that generate native fields:
 
-<!-- markdownlint-disable MD033 -->
 | Field           | Type     | Description |
 |-----------------|----------|-------------|
-| `file_id`       | Native<br/>Auto     | ID of the folder to share, as specified in the command line by path. |
-| `access_levels` | Native<br/>Optional | List of access levels to set for the shared folder. Defaults to full access. |
-| `tags`          | Native<br/>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
-| `access_type`   | Native<br/>Required | Type of access, such as `user`, `group`, or `workspace`. Can be set with parameter `with`. |
-| `access_id`     | Native<br/>Required | ID of the user, group, or workspace (see `with`) |
+| `file_id`       | Native<%=br%>Auto     | ID of the folder to share, as specified in the command line by path. |
+| `access_levels` | Native<%=br%>Optional | List of access levels to set for the shared folder. Defaults to full access. |
+| `tags`          | Native<%=br%>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
+| `access_type`   | Native<%=br%>Required | Type of access, such as `user`, `group`, or `workspace`. Can be set with parameter `with`. |
+| `access_id`     | Native<%=br%>Required | ID of the user, group, or workspace (see `with`) |
 | `with`          | <%=tool%>           | Recipient of shared folder. Can be a username, a group name, or a workspace name. <%=tool%> will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
 | `link_name`     |  <%=tool%>          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  <%=tool%>          | Name of the link file created in the user's home folder for admin shared folders. |
-<!-- markdownlint-enable MD033 -->
 
 In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`.
 This is conveniently set by <%=tool%> using an empty string for field `with`.
@@ -5689,11 +5686,11 @@ By providing the `validator` option, offline transfer validation can be done.
 
 ### Sync
 
-There are three sync types of operations:
+There are three commands related to file synchronisation:
 
 - `sync`: Perform a local sync, by executing `async` locally.
-- `async`: Calls the legacy `async` API on node : `/async` : get status on sync operation on server side, like Aspera Console.
 - `ssync` : Calls the newer `async` API on node : `/asyncs` : it can start a sync operation on the server side, and monitor only those.
+- `async`: Calls the legacy `async` API on node : `/async` : get status on sync operation on server side, like Aspera Console.
 
 For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
@@ -5991,8 +5988,8 @@ IBM Aspera's newer self-managed application.
 | ------------ | ------------------------------------------------------------------- |
 | `jwt`        | General purpose, private-key based authentication                   |
 | `web`        | Requires authentication with web browser                            |
-| `boot`       | Use authentication token copied from browser (experimental)         |
 | `public_link`| Public link authentication (set when option `url` is a public link) |
+| `boot`       | Use authentication token copied from browser (experimental)         |
 
 > **Note:** If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
@@ -6097,7 +6094,7 @@ Example:
 
 ### Faspex 5 web authentication
 
-The administrator must create an API client in Faspex for an external web app support:
+The administrator must create an **API client** in Faspex for an external web app support:
 
 - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 - Do not Activate JWT
@@ -7181,9 +7178,10 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 ### Starting a sync session
 
-To start a sync session, use one of the three sync directions followed by a folder path:
+To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path elsewise).
+The path on the other side is specified using option: `to_folder`.
 
-| Direction | Path   | `to_folder` |
+| Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
 |-----------|--------|-------------|
 | `push`    | Local  | Remote      |
 | `bidi`    | Local  | Remote      |
@@ -7218,6 +7216,7 @@ The `admin` command provides several sub commands:
 - Other commands access directly the Async snap database (`snap.db`).
 
 For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
+By default it is the local synchronized folder.
 If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
 Else, the user must specify a session name in the optional `Hash`, in `name`.
 
