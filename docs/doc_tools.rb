@@ -289,9 +289,15 @@ def generate_generic_conf
       end
       if param_name.eql?('client_id')
         preset_hash[param_name] = 'my_client_id'
+        next
       end
       if param_name.eql?('bucket_name') || param_name.eql?('bucket')
         preset_hash[param_name] = 'my_bucket'
+        next
+      end
+      if param_value.is_a?(String) && param_value.start_with?('/')
+        preset_hash[param_name] = "/my_#{param_name}"
+        next
       end
       begin
         uri = URI.parse(param_value)
