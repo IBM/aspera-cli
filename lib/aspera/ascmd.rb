@@ -30,10 +30,15 @@ module Aspera
     # Description of result structures (see ascmdtypes.h).
     # Base types are big endian
     # key = name of type
-    # index in array `fields` is the type (minus ENUM_START)
+    # index in array `fields` is: the numerical type of TLV - `ENUM_START`. i.e. add `ENUM_START` to index, to get `T`
     # decoding always start at `result`
     # some fields have special handling indicated by `special`
     # field_list, list_tlv_list, list_tlv_restart are composed with a list of TLV
+    # decode:
+    # - :base : value
+    # - :buffer_list : an array of {btype,buffer}
+    # - :field_list : a hash, or array
+    # :check: ???
     TYPES_DESCR = {
       result: {decode: :field_list,
                fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :list_tlv_list}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
@@ -153,26 +158,25 @@ module Aspera
       return result
     end
 
-    # This exception is raised when +ascmd+ returns an error.
+    # This exception is raised when `ascmd` returns an error.
     class Error < StandardError
-      def initialize(errno, errstr, cmd, arguments)
-        super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end # rubocop:disable Style/Semicolon
-
+      # rubocop:disable Style/Semicolon
+      def initialize(errno, errstr, cmd, arguments); super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end
       def message; "ascmd: #{@errstr} (#{@errno})"; end
       def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
+      # rubocop:enable Style/Semicolon
     end
 
     class << self
-      # get description of structure's field, @param struct_name, @param typed_buffer provides field name
+      # Get description of structure's field, @param struct_name, @param typed_buffer provides field name
       def field_description(struct_name, typed_buffer)
         result = TYPES_DESCR[struct_name][:fields][typed_buffer[:btype] - ENUM_START]
         raise "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" if result.nil?
         return result
       end
 
-      # decodes the provided buffer as provided type name
-      # @return a decoded type.
-      # :base : value, :buffer_list : an array of {btype,buffer}, :field_list : a hash, or array
+      # Decodes the provided buffer as provided type name
+      # @return a decoded type: single, Array, or Hash
       def parse(buffer, type_name, indent_level=nil)
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]
