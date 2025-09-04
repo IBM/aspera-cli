@@ -1600,16 +1600,17 @@ Depending on action, the output will contain:
 
 The style of output can be set using the `format` option:
 
-| `format` | Output formatting |
-|----------|-------------------|
+| `format` | Output formatting    |
+|----------|----------------------|
 | `table`  | Text table (default) |
-| `text`   | Value as `String` |
-| `ruby`   | Ruby code |
-| `json`   | JSON code |
-| `jsonpp` | JSON pretty printed |
-| `yaml`   | YAML |
+| `text`   | Value as `String`    |
+| `ruby`   | Ruby code            |
+| `json`   | JSON code            |
+| `jsonpp` | JSON pretty printed  |
+| `yaml`   | YAML                 |
 | `csv`    | Comma Separated Values |
-| `image`  | Image URL or Image data |
+| `image`  | Image URL or data    |
+| `nagios` | Suitable for Nagios  |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
@@ -1625,7 +1626,7 @@ For example, to display a table with thick Unicode borders:
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-#### Option: `flat_hash`: `.`-join keys
+#### Option: `flat_hash`: Single level `Hash`
 
 This option controls how object fields are displayed for complex objects.
 
@@ -1638,20 +1639,66 @@ In this case, it is possible to filter fields using the option `fields` using th
 
 Example: Result of command is a list of objects with a single object:
 
-```console
-$ <%=cmd%> config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
-╭─────────┬───────────┬─────────╮
-│ user.id │ user.name │ project │
-╞═════════╪═══════════╪═════════╡
-│ 1       │ toto      │ blah    │
-╰─────────┴───────────┴─────────╯
+```bash
+<%=cmd%> config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}'
+```
 
-$ <%=cmd%> config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
-╭───────────────────────────┬─────────╮
-│ user                      │ project │
-╞═══════════════════════════╪═════════╡
-│ {"id"=>1, "name"=>"toto"} │ blah    │
-╰───────────────────────────┴─────────╯
+```console
+╭────────┬───────╮
+│ field  │ value │
+╞════════╪═══════╡
+│ A      │ a     │
+│ B.B1   │ b1    │
+│ B.B2   │ b2    │
+│ C.0.C1 │ c1    │
+│ C.1.C2 │ c2    │
+│ D.D1   │ d1    │
+│ D.D2   │ d2    │
+╰────────┴───────╯
+```
+
+```bash
+<%=cmd%> config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}' -
+-flat=no
+```
+
+```console
+╭───────┬────────────────────────────────────────────────────────────────────────╮
+│ field │ value                                                                  │
+╞═══════╪════════════════════════════════════════════════════════════════════════╡
+│ A     │ a                                                                      │
+│ B     │ [{"name" => "B1", "value" => "b1"}, {"name" => "B2", "value" => "b2"}] │
+│ C     │ [{"C1" => "c1"}, {"C2" => "c2"}]                                       │
+│ D     │ {"D1" => "d1", "D2" => "d2"}                                           │
+╰───────┴────────────────────────────────────────────────────────────────────────╯
+```
+
+#### Enhanced display of special values
+
+Special values are highlighted as follows::
+
+| Value          | Display          |
+|----------------|------------------|
+| `nil`          | `<null>`         |
+| empty `String` | `<empty string>` |
+| empty `Array`  | `<empty list>`   |
+| empty `Hash`   | `<empty dict>`   |
+
+Example:
+
+```bash
+<%=cmd%> config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
+```
+
+```console
+╭───────┬────────────────╮
+│ field │ value          │
+╞═══════╪════════════════╡
+│ ni    │ <null>         │
+│ es    │ <empty string> │
+│ ea    │ <empty list>   │
+│ eh    │ <empty dict>   │
+╰───────┴────────────────╯
 ```
 
 #### Option: `multi_single`
@@ -1825,6 +1872,8 @@ In above example, the same result is obtained with option:
 ```bash
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
+
+Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
 
 #### Percent selector
 
