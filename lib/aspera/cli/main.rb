@@ -54,8 +54,10 @@ module Aspera
         # nothing expected
         def result_nothing; return {type: :nothing, data: :nil}; end
 
+        # status is a fixed text, not a result, such as "complete", "deleted"...
         def result_status(status); return {type: :status, data: status}; end
 
+        # text result coming from command result
         def result_text(data); return {type: :text, data: data}; end
 
         def result_success; return result_status('complete'); end
