@@ -514,7 +514,7 @@ module Aspera
             return Main.result_single_object(result) if command_repo.eql?(:node_info)
             # check format of bearer token
             OAuth::Factory.bearer_extract(result[:password])
-            return Main.result_status(result[:password])
+            return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
             file_info = apifid[:api].read_with_cache("files/#{apifid[:file_id]}")
@@ -1056,12 +1056,12 @@ module Aspera
             Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
             return Main.result_status('done')
           when :basic_token
-            return Main.result_status(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+            return Main.result_text(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
             token_info = options.get_next_argument('user and group identification', validation: Hash)
             access_key = options.get_option(:username, mandatory: true)
-            return Main.result_status(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
+            return Main.result_text(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           when :simulator
             require 'aspera/node_simulator'
             parameters = value_create_modify(command: command, default: {}).symbolize_keys

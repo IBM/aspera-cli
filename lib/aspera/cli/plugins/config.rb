@@ -717,7 +717,7 @@ module Aspera
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
           when :show
-            return Main.result_status(Ascp::Installation.instance.path(:ascp))
+            return Main.result_text(Ascp::Installation.instance.path(:ascp))
           when :info
             # collect info from ascp executable
             data = Ascp::Installation.instance.ascp_info
@@ -946,7 +946,7 @@ module Aspera
             return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
           when :pubkey # get pub key
             private_key_pem = options.get_next_argument('private key PEM value')
-            return Main.result_status(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
+            return Main.result_text(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
           when :remote_certificate
             cert_action = options.get_next_command(%i[chain only name])
             remote_url = options.get_next_argument('remote URL')
@@ -954,11 +954,11 @@ module Aspera
             raise "No certificate found for #{remote_url}" unless remote_chain&.first
             case cert_action
             when :chain
-              return Main.result_status(remote_chain.map(&:to_pem).join("\n"))
+              return Main.result_text(remote_chain.map(&:to_pem).join("\n"))
             when :only
-              return Main.result_status(remote_chain.first.to_pem)
+              return Main.result_text(remote_chain.first.to_pem)
             when :name
-              return Main.result_status(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
+              return Main.result_text(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
             end
           when :echo # display the content of a value given on command line
             return Main.result_auto(options.get_next_argument('value', validation: nil))
@@ -1034,14 +1034,14 @@ module Aspera
             execute_action_transferd
           when :gem
             case options.get_next_command(%i[path version name])
-            when :path then return Main.result_status(self.class.gem_src_root)
-            when :version then return Main.result_status(Cli::VERSION)
-            when :name then return Main.result_status(Info::GEM_NAME)
+            when :path then return Main.result_text(self.class.gem_src_root)
+            when :version then return Main.result_text(Cli::VERSION)
+            when :name then return Main.result_text(Info::GEM_NAME)
             end
           when :folder
-            return Main.result_status(@main_folder)
+            return Main.result_text(@main_folder)
           when :file
-            return Main.result_status(@option_config_file)
+            return Main.result_text(@option_config_file)
           when :email_test
             send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
             return Main.result_nothing
@@ -1051,7 +1051,7 @@ module Aspera
             # ensure fpac was provided
             options.get_option(:fpac, mandatory: true)
             server_url = options.get_next_argument('server url')
-            return Main.result_status(@pac_exec.find_proxy_for_url(server_url))
+            return Main.result_text(@pac_exec.find_proxy_for_url(server_url))
           when :check_update
             return Main.result_single_object(check_gem_version)
           when :initdemo
@@ -1078,7 +1078,7 @@ module Aspera
           when :vault then execute_vault
           when :test then return execute_test
           when :platform
-            return Main.result_status(Environment.instance.architecture)
+            return Main.result_text(Environment.instance.architecture)
           else Aspera.error_unreachable_line
           end
         end
