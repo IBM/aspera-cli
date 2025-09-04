@@ -15,72 +15,7 @@ require 'word_wrap'
 
 module Aspera
   module Cli
-    # This class is used to transform a complex structure into a simple hash
-    class Flattener
-      def initialize(formatter)
-        @result = nil
-        @formatter = formatter
-      end
-
-      # General method
-      def flatten(something)
-        Aspera.assert_type(something, Hash)
-        @result = {}
-        flatten_any(something, '')
-        return @result
-      end
-
-      private
-
-      # Recursive function to flatten any type
-      # @param something [Object] to be flattened
-      # @param name [String] name of englobing key
-      def flatten_any(something, name)
-        if something.is_a?(Hash)
-          flattened_hash(something, name)
-        elsif something.is_a?(Array)
-          flatten_array(something, name)
-        elsif something.is_a?(String) && something.empty?
-          @result[name] = @formatter.special_format('empty string')
-        elsif something.nil?
-          @result[name] = @formatter.special_format('null')
-        # elsif something.eql?(true) || something.eql?(false)
-        #  @result[name] = something
-        else
-          @result[name] = something
-        end
-      end
-
-      # Recursive function to flatten an array
-      # @param array [Array] to be flattened
-      # @param name [String] name of englobing key
-      def flatten_array(array, name)
-        if array.empty?
-          @result[name] = @formatter.special_format('empty list')
-        elsif array.all?(String)
-          @result[name] = array.join("\n")
-        elsif array.all?{ |i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
-          @result[name] = array.map(&:values).join(', ')
-        elsif array.all?{ |i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
-          flattened_hash(array.each_with_object({}){ |i, h| h[i['name']] = i['value']}, name)
-        else
-          array.each_with_index{ |item, index| flatten_any(item, "#{name}.#{index}")}
-        end
-        nil
-      end
-
-      # Recursive function to flatten a Hash
-      # @param hash [Hash] to be flattened
-      # @param name [String] name of englobing key
-      def flattened_hash(hash, name)
-        prefix = name.empty? ? '' : "#{name}."
-        hash.each do |k, v|
-          flatten_any(v, "#{prefix}#{k}")
-        end
-      end
-    end
-
-    # Take care of output
+    # Take care of CLI output
     class Formatter
       # remove a fields from the list
       FIELDS_LESS = '-'
@@ -105,6 +40,7 @@ module Aspera
           return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
 
+        # nicer display for boolean
         def tick(yes, color: true)
           result =
             if Environment.terminal_supports_unicode?
@@ -122,25 +58,86 @@ module Aspera
           return result.green if yes
           return result.red
         end
+
+        # Highlight special values on terminal
+        # empty values are dim
+        def special_format(what)
+          result = "<#{what}>"
+          return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
+        end
+
+        # replace empty values with a readable version
+        def enhance_display_values_hash(input_hash)
+          stack = [input_hash]
+          until stack.empty?
+            current = stack.pop
+            current.each do |key, value|
+              case value
+              when NilClass
+                current[key] = special_format('null')
+              when String
+                current[key] = special_format('empty string') if value.empty?
+              when Array
+                if value.empty?
+                  current[key] = special_format('empty list')
+                else
+                  value.each do |item|
+                    stack.push(item) if item.is_a?(Hash)
+                  end
+                end
+              when Hash
+                if value.empty?
+                  current[key] = special_format('empty dict')
+                else
+                  stack.push(value)
+                end
+              end
+            end
+          end
+        end
+
+        # Flatten a Hash into single level hash
+        def flatten_hash(input)
+          flat = {}
+          stack = [[nil, input]]
+          until stack.empty?
+            prefix, current = stack.pop
+            if current.respond_to?(:empty?) && current.empty?
+              flat[prefix] = current
+              next
+            end
+            case current
+            when Hash
+              current.reverse_each{ |k, v| stack.push([[prefix, k].compact.join('.'), v])}
+            when Array
+              if current.all?(String)
+                flat[prefix] = current.join("\n")
+              elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
+                flat[prefix] = current.map{ |i| i['name']}.join(', ')
+              elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
+                stack.push([prefix, current.each_with_object({}){ |i, h| h[i['name']] = i['value']}])
+              else
+                current.each_with_index.reverse_each{ |v, k| stack.push([[prefix, k].compact.join('.'), v])}
+              end
+            else
+              flat[prefix] = current
+            end
+          end
+          flat
+        end
+
+        # for transfer spec table, build line for display
+        def check_row(row)
+          row.each_key do |k|
+            row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
+          end
+        end
       end
 
       # initialize the formatter
       def initialize
         @options = {}
         @spinner = nil
-      end
-
-      # Highlight special values on terminal
-      def special_format(what)
-        result = "<#{what}>"
-        return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
-      end
-
-      # for transfer spec table, build line for display
-      def check_row(row)
-        row.each_key do |k|
-          row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
-        end
       end
 
       # call this after REST calls if several api calls are expected
@@ -173,7 +170,7 @@ module Aspera
           types: [String, Array, Regexp, Proc],
           default: SpecialValues::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
+        options.declare(:table_style, '(Table) Display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
         options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(
           :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', values: %i[no yes single],
@@ -298,15 +295,15 @@ module Aspera
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{ |obj| Flattener.new(self).flatten(obj)} if @options[:flat_hash]
+            obj_list = obj_list.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, fields), single: type.eql?(:single_object))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
             display_table(data.map{ |i| {name => i}}, [name])
           when :empty # no table
-            display_message(:info, special_format('empty'))
+            display_message(:info, self.class.special_format('empty'))
             return
-          when :nothing # no result expected
+          when :nothing
             Log.log.debug('no result expected')
           when :status # no table
             # :status displays a simple message
@@ -419,7 +416,7 @@ module Aspera
             raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
           end
         when Hash
-          @options[:select].each{ |k, v| data.select!{ |i| i[k]&.eql?(v)}}
+          @options[:select].each{ |k, v| data.select!{ |i| i[k].eql?(v)}}
         end
       end
 
@@ -428,12 +425,13 @@ module Aspera
       # @param fields        [Array] list of column names
       def display_table(object_array, fields, single: false)
         Aspera.assert(!fields.nil?){'missing fields parameter'}
-        filter_columns_on_select(object_array)
         if object_array.empty?
           # no  display for csv
-          display_message(:info, special_format('empty')) if @options[:format].eql?(:table)
+          display_message(:info, self.class.special_format('empty')) if @options[:format].eql?(:table)
           return
         end
+        filter_columns_on_select(object_array)
+        object_array.each{ |i| self.class.enhance_display_values_hash(i)}
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
           Log.log.debug("display_table: single element, field: #{fields.first}")

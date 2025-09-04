@@ -1644,7 +1644,7 @@ ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-#### Option: `flat_hash`: `.`-join keys
+#### Option: `flat_hash`: Single level `Hash`
 
 This option controls how object fields are displayed for complex objects.
 
@@ -1658,19 +1658,57 @@ In this case, it is possible to filter fields using the option `fields` using th
 Example: Result of command is a list of objects with a single object:
 
 ```console
-$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
-╭─────────┬───────────┬─────────╮
-│ user.id │ user.name │ project │
-╞═════════╪═══════════╪═════════╡
-│ 1       │ toto      │ blah    │
-╰─────────┴───────────┴─────────╯
+$ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"bb"},{"name":"B2","value":"cc"}],"C":[{"C1":"dd"},{"p2":"ee"}],"D":{"D1":"ff","D2":"gg"}}'
+╭────────┬───────╮
+│ field  │ value │
+╞════════╪═══════╡
+│ A      │ a     │
+│ B.B1   │ bb    │
+│ B.B2   │ cc    │
+│ C.0.C1 │ dd    │
+│ C.1.p2 │ ee    │
+│ D.D1   │ ff    │
+│ D.D2   │ gg    │
+╰────────┴───────╯
 
-$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
-╭───────────────────────────┬─────────╮
-│ user                      │ project │
-╞═══════════════════════════╪═════════╡
-│ {"id"=>1, "name"=>"toto"} │ blah    │
-╰───────────────────────────┴─────────╯
+$ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"bb"},{"name":"B2","value":"cc"}],"C":[{"C1":"dd"},{"p2":"ee"}],"D":{"D1":"ff","D2":"gg"}}' -
+-flat=no
+╭───────┬────────────────────────────────────────────────────────────────────────╮
+│ field │ value                                                                  │
+╞═══════╪════════════════════════════════════════════════════════════════════════╡
+│ A     │ a                                                                      │
+│ B     │ [{"name" => "B1", "value" => "bb"}, {"name" => "B2", "value" => "cc"}] │
+│ C     │ [{"C1" => "dd"}, {"p2" => "ee"}]                                       │
+│ D     │ {"D1" => "ff", "D2" => "gg"}                                           │
+╰───────┴────────────────────────────────────────────────────────────────────────╯
+```
+
+#### Enhanced display of special values
+
+Special values are highlighted as follows::
+
+| Value          | Display          |
+|----------------|------------------|
+| `nil`          | `<null>`         |
+| empty `String` | `<empty string>` |
+| empty `Array`  | `<empty list>`   |
+| empty `Hash`   | `<empty dict>`   |
+
+Example:
+
+```bash
+ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
+```
+
+```console
+╭───────┬────────────────╮
+│ field │ value          │
+╞═══════╪════════════════╡
+│ ni    │ <null>         │
+│ es    │ <empty string> │
+│ ea    │ <empty list>   │
+│ eh    │ <empty dict>   │
+╰───────┴────────────────╯
 ```
 
 #### Option: `multi_single`
@@ -1844,6 +1882,8 @@ In above example, the same result is obtained with option:
 ```bash
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
+
+Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
 
 #### Percent selector
 
