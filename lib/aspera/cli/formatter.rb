@@ -288,17 +288,15 @@ module Aspera
         when :table, :csv
           case type
           when :object_list, :single_object
-            obj_list = data
-            if type.eql?(:single_object)
-              obj_list = [obj_list]
-            end
+            # :object_list is an Array of Hash, where key=colum name
+            # :single_object is a Hash, where key=colum name
+            obj_list = type.eql?(:single_object) ? [data] : data
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
-            # :object_list is an array of hash tables, where key=colum name
             obj_list = obj_list.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, fields), single: type.eql?(:single_object))
           when :value_list
-            # :value_list is a simple array of values, name of column provided in the :name
+            # :value_list is a simple array of values, name of column provided in `name`
             display_table(data.map{ |i| {name => i}}, [name])
           when :empty # no table
             display_message(:info, self.class.special_format('empty'))
@@ -346,6 +344,7 @@ module Aspera
 
       private
 
+      # @return all fields of all objects in list of objects
       def all_fields(data)
         data.each_with_object({}){ |v, m| v.each_key{ |c| m[c] = true}}.keys
       end
