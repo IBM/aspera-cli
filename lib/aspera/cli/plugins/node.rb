@@ -123,7 +123,7 @@ module Aspera
         # actions used commonly when a node is involved
         COMMON_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
-        private_constant(*%i[CENTRAL_SOAP_API_TEST SEARCH_REMOVE_FIELDS BASE_ACTIONS SPECIAL_ACTIONS V3_IN_V4_ACTIONS COMMON_ACTIONS])
+        private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :V3_IN_V4_ACTIONS, :COMMON_ACTIONS
 
         # used in aoc
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
@@ -736,7 +736,7 @@ module Aspera
             resp = @api_node.create('async/delete', post_data)
             return Main.result_single_object(resp)
           when :bandwidth
-            post_data['seconds'] = 100 # TODO: as parameter with --value
+            post_data['seconds'] = 100 # TODO: as parameter with --query
             resp = @api_node.create('async/bandwidth', post_data)
             data = resp['bandwidth_data']
             return Main.result_empty if data.empty?
@@ -778,10 +778,10 @@ module Aspera
           end
         end
 
+        # @param field [String] name of the field to search
+        # @param value [String] value of the field to search
         # @return [Integer] id of the sync
         # @raise [Cli::BadArgument] if no such sync, or not by name
-        # @param [String] field name of the field to search
-        # @param [String] value value of the field to search
         def ssync_lookup(field, value)
           raise Cli::BadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
           @api_node.read('asyncs')['ids'].each do |id|
@@ -789,7 +789,7 @@ module Aspera
             # name is unique, so we can return
             return id if sync_info[field].eql?(value)
           end
-          raise Cli::BadIdentifier, "no such sync: #{field}=#{value}"
+          raise Cli::BadIdentifier, "No such sync: #{field}=#{value}"
         end
 
         WATCH_FOLDER_MUL = %i[create list].freeze
