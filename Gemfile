@@ -11,7 +11,7 @@ group :optional do
   gem('mimemagic', '~> 0.4') # for preview
   gem('rmagick', '~> 6.1') # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
-  gem('bigdecimal', '~> 3.1.9') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
+  gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
   gem('sqlite3', '~> 2.7')
 end
 

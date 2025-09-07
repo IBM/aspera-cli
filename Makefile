@@ -49,11 +49,13 @@ signed_gem: gem_check_signing_key clean_gem ensure_gems_installed $(PATH_GEMFILE
 unsigned_gem: $(PATH_GEMFILE)
 beta_gem:
 	make GEM_VERSION=$(GEM_VERS_BETA) unsigned_gem
+# Delete generated gem
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
+# Delete all gems installed in Ruby
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 # gems that require native build are made optional
@@ -112,3 +114,5 @@ reek:
 	reek -c $(DIR_TOP).reek.yml
 semgrep:
 	semgrep scan --config auto
+checkversions: clean_gems install_optional_gems
+	bundle outdated
