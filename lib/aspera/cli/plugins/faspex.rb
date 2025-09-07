@@ -38,7 +38,7 @@ module Aspera
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
         STANDARD_PATH = '/aspera/faspex'
         HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
-        private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH HEADER_FASPEX_VERSION])
+        private_constant :KEY_NODE, :KEY_PATH, :PACKAGE_MATCH_FIELD, :ATOM_MAILBOXES, :ATOM_PARAMS, :ATOM_EXT_PARAMS, :PUB_LINK_EXTERNAL_MATCH, :HEADER_FASPEX_VERSION
 
         class << self
           def detect(address_or_url)
