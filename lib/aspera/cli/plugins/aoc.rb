@@ -1018,7 +1018,7 @@ module Aspera
                     extension: per_package_field2.eql?('seq') ? :seq : package_info[per_package_field2],
                     always: per_package_sub_always)
                 end
-                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.option_transfer_spec['destination_root']}]})
+                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{destination_folder}]})
                 statuses = transfer.start(
                   transfer_spec,
                   rest_token: package_node_api)
