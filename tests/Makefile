@@ -1673,6 +1673,7 @@ $(F)conf_echo: $(TMP_EXISTS)
 	for f in text ruby json jsonpp yaml table csv;do \
 	  $(CLI_TEST) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
 	done
+	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 	@$(STOP_TEST) $@
 $(F)conf_extended: $(TMP_EXISTS)
 	@$(START_TEST) $@

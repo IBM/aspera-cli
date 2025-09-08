@@ -543,7 +543,7 @@ Some additional gems are required for some specific features, see [Gemfile](Gemf
 | mimemagic | ~> 0.4 | for preview |
 | rmagick | ~> 6.1 | for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
-| bigdecimal | ~> 3.1.9 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
+| bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 | sqlite3 | ~> 2.7 |  |
 
 Install like this:
@@ -553,7 +553,7 @@ gem install grpc -v '~> 1.71'
 gem install mimemagic -v '~> 0.4'
 gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
-gem install bigdecimal -v '~> 3.1.9'
+gem install bigdecimal -v '~> 3.1'
 gem install sqlite3 -v '~> 2.7'
 ```
 
@@ -1619,27 +1619,38 @@ Depending on action, the output will contain:
 
 The style of output can be set using the `format` option:
 
-| `format` | Output formatting |
-|----------|-------------------|
+| `format` | Output formatting    |
+|----------|----------------------|
 | `table`  | Text table (default) |
-| `text`   | Value as `String` |
-| `ruby`   | Ruby code |
-| `json`   | JSON code |
-| `jsonpp` | JSON pretty printed |
-| `yaml`   | YAML |
+| `text`   | Value as `String`    |
+| `ruby`   | Ruby code            |
+| `json`   | JSON code            |
+| `jsonpp` | JSON pretty printed  |
+| `yaml`   | YAML                 |
 | `csv`    | Comma Separated Values |
-| `image`  | Image URL or Image data |
+| `image`  | Image URL or data    |
+| `nagios` | Suitable for Nagios  |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
 #### Option: `table_style`
 
-The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
+The table style can be customized with option: `table_style` which expects a `Hash`.
+
+For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
+
+For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a table with thick Unicode borders:
 
 ```bash
 ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
+```
+
+For example, to display a CSV with headers and quotes:
+
+```bash
+ascli config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 ```
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
@@ -1657,29 +1668,37 @@ In this case, it is possible to filter fields using the option `fields` using th
 
 Example: Result of command is a list of objects with a single object:
 
+```bash
+ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}'
+```
+
 ```console
-$ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"bb"},{"name":"B2","value":"cc"}],"C":[{"C1":"dd"},{"p2":"ee"}],"D":{"D1":"ff","D2":"gg"}}'
 ╭────────┬───────╮
 │ field  │ value │
 ╞════════╪═══════╡
 │ A      │ a     │
-│ B.B1   │ bb    │
-│ B.B2   │ cc    │
-│ C.0.C1 │ dd    │
-│ C.1.p2 │ ee    │
-│ D.D1   │ ff    │
-│ D.D2   │ gg    │
+│ B.B1   │ b1    │
+│ B.B2   │ b2    │
+│ C.0.C1 │ c1    │
+│ C.1.C2 │ c2    │
+│ D.D1   │ d1    │
+│ D.D2   │ d2    │
 ╰────────┴───────╯
+```
 
-$ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"bb"},{"name":"B2","value":"cc"}],"C":[{"C1":"dd"},{"p2":"ee"}],"D":{"D1":"ff","D2":"gg"}}' -
+```bash
+ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}' -
 -flat=no
+```
+
+```console
 ╭───────┬────────────────────────────────────────────────────────────────────────╮
 │ field │ value                                                                  │
 ╞═══════╪════════════════════════════════════════════════════════════════════════╡
 │ A     │ a                                                                      │
-│ B     │ [{"name" => "B1", "value" => "bb"}, {"name" => "B2", "value" => "cc"}] │
-│ C     │ [{"C1" => "dd"}, {"p2" => "ee"}]                                       │
-│ D     │ {"D1" => "ff", "D2" => "gg"}                                           │
+│ B     │ [{"name" => "B1", "value" => "b1"}, {"name" => "B2", "value" => "b2"}] │
+│ C     │ [{"C1" => "c1"}, {"C2" => "c2"}]                                       │
+│ D     │ {"D1" => "d1", "D2" => "d2"}                                           │
 ╰───────┴────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -4208,7 +4227,7 @@ OPTIONS: global
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
-        --table-style=VALUE          Table display style (Hash)
+        --table-style=VALUE          (Table) Display style (Hash)
         --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
         --multi-single=ENUM          (Table) Control how object list is displayed as single table, or multiple objects: [no], yes, single
         --show-secrets=ENUM          Show secrets on command output: [no], yes
