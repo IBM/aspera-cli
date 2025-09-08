@@ -17,9 +17,8 @@ Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
 
-This Ruby gem provides the <%=tool%> command-line interface (CLI) for IBM Aspera software, enabling easy interaction with Aspera APIs and efficient file transfers.
-
-<%=tool%> is also great tool to learn Aspera APIs.
+The <%=gem%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
+It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
 
 Ruby Gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
 
@@ -45,45 +44,33 @@ For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
-<%=tool%> is designed to be used as a command line tool to:
+The <%=tool%> tool is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform file transfers efficiently.
+It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or cron).
 
-- Execute commands remotely on Aspera products
-- Transfer to/from Aspera products
+Internally, <%=tool%> integrates several components:
 
-It is designed for:
+- A configuration file (`config.yaml`) for persistent settings
+- Advanced command-line options (see [Extended Value Syntax](#extended-value-syntax))
+- REST API calls, including OAuth (like `curl`)
+- Aspera’s `ascp` for high-speed file transfers
 
-- Interactive operations on a text terminal (typically, VT100 compatible), e.g. for maintenance
-- Scripting, e.g. batch operations in (shell) scripts (e.g. cron job)
+For programmatic integration in languages such as C/C++, Go, Python, NodeJS, and others, it is recommended to use the [Aspera APIs](https://ibm.biz/aspera_api) directly.
+These include:
 
-<%=tool%> can be seen as a command line tool integrating:
+- REST APIs for products like Aspera on Cloud (AoC), Faspex, and Node
+- The Transfer Daemon with gRPC interfaces and language-specific stubs (C/C++, Python, .NET/C#, Java, Go, Ruby, Rust, etc.)
 
-- A configuration file (`config.yaml`)
-- Advanced command line options ([Extended Value](#extended-value-syntax))
-- `curl` (for REST calls)
-- Aspera transfer (`ascp`)
+Using these APIs is generally more suitable for long-term development and maintenance.
+Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
-If the need is to perform operations programmatically in languages such as: C/C++, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
+For scripting and ad hoc command-line tasks, <%=tool%> is ideal.
+It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (See [Logging, Debugging](#logging-debugging)).
 
-- Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer Daemon : with gRPC interface and language stubs (C/C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
-
-Using APIs (application REST API and Transfer Daemon) will prove to be easier to develop and maintain.
-Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
-
-For scripting and ad'hoc command line operations, <%=tool%> is perfect.
-
-<%=tool%> is developer-friendly, designed for quickly testing APIs and learning how to work with Aspera APIs.
-Refer to section: [Logging, Debugging](#logging-debugging).
-
-So, which is Aspera's CLI ? <%=tool%> or `ascp`
-
-`ascp` is the low level Aspera command line for **transfers**.
-It is in fact the implementation of the FASP protocol.
-So, ANY Aspera transfer leads to one `ascp` process running on client side and another on server side.
-`ascp` can be used as a command line, but it is very low level, and practically it can be used on command line only if there is no Aspera web app (AoC, Faspex, etc...) and ONLY to do a transfer (send/receive), not for any operation on Aspera apps (e.g. listing remote files).
-`ascp` does not provide a configuration file to store credentials or options, it does not resume automatically on transfer error.
-
-In fact, <%=tool%> can do everything that `ascp` does, and much more, in an easier way.
+Clarifying the CLI landscape:
+`ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
+Every Aspera transfer involves an `ascp` process on both the client and server sides.
+While `ascp` can be used directly, it is limited to basic send/receive operations and lacks features like configuration management, automatic resume, and remote file listing.
+<%=tool%> provides a higher-level interface that encompasses all `ascp` capabilities and adds significant usability improvements.
 
 ### Notations, Shell, Examples
 
@@ -109,8 +96,11 @@ First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start 
 
 Once the gem is installed, <%=tool%> shall be accessible:
 
+```bash
+<%=cmd%> --version
+```
+
 ```console
-$ <%=cmd%> --version
 <%=gemspec.version.to_s%>
 ```
 
@@ -189,7 +179,7 @@ Saving config file.
 ```
 
 ```output
-Time: 00:00:02 ============================================= 100% 100 Mbps Time: 00:00:00
+Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
 
@@ -2485,7 +2475,7 @@ It is possible to manage secrets in macOS keychain (only read supported currentl
 | Parameter | Example  | Description |
 |-----------|----------|-------------|
 | `type`    | `system` | The type of the vault |
-| `name`    | `ascli`  | The name of the keychain to use |
+| `name`    | `<%=tool%>`  | The name of the keychain to use |
 
 ```bash
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
@@ -3230,7 +3220,7 @@ For example, let's assume we want to replace illegal character: `|` with an unde
 1. First, locate the configuration file with:
 
 ```bash
-ascli conf ascp info --fields=aspera_conf
+<%=cmd%> conf ascp info --fields=aspera_conf
 ```
 
 Typically, it is located at `$HOME/sdk/aspera.conf`
@@ -5251,13 +5241,13 @@ First, identify the node ID where the shared folder will be created.
 To get the node ID of the default node for workspace `my ws`, use the command:
 
 ```bash
-ascli aoc admin workspace show %name:'my ws' --fields=node_id
+<%=cmd%> aoc admin workspace show %name:'my ws' --fields=node_id
 ```
 
 Alternatively (longer):
 
 ```bash
-ascli aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
+<%=cmd%> aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
 ```
 
 Or select a node identifier manually from the list of nodes:

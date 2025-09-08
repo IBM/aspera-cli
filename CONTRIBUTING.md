@@ -68,11 +68,13 @@ Build system uses GNU Make.
 
 A few macros/env vars control some aspects:
 
-| macro                       | description                          |
+| Macro, Env var              | Description                          |
 |-----------------------------|--------------------------------------|
 | `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests |
 | `ASPERA_CLI_TEST_MACOS`     | Set to `true` if local HSTS running on macOS      |
 | `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder               |
+| `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.    |
+| `ASPERA_CLI_DOC_DEBUG`      | Enable debug in doc generation.      |
 | `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
 | `SIGNING_KEY`               | Path to signing key to build Gem.    |
 | `GEM_VERSION`               | Gem version to build container       |
@@ -108,7 +110,7 @@ tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
-To skip URL checking, set env var: `ASPERA_CLI_DOC_SKIP_LINK_CHECK`.
+To check URL during doc generation, set env var: `ASPERA_CLI_DOC_CHECK_LINKS`.
 
 To debug doc generation, set env var: `ASPERA_CLI_DOC_DEBUG=debug`.
 
