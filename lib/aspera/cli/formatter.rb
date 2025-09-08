@@ -11,6 +11,7 @@ require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
 require 'pp'
+require 'csv'
 require 'word_wrap'
 
 module Aspera
@@ -19,8 +20,6 @@ module Aspera
     class Formatter
       # remove a fields from the list
       FIELDS_LESS = '-'
-      CSV_RECORD_SEPARATOR = "\n"
-      CSV_FIELD_SEPARATOR = ','
       # supported output formats
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
       # user output levels
@@ -28,7 +27,7 @@ module Aspera
       # column names for single object display in table
       SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
 
-      private_constant :FIELDS_LESS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES
+      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
@@ -98,6 +97,8 @@ module Aspera
 
         # Flatten a Hash into single level hash
         def flatten_hash(input)
+          Aspera.assert_type(input, Hash)
+          return input if input.empty?
           flat = {}
           stack = [[nil, input]]
           until stack.empty?
@@ -287,14 +288,21 @@ module Aspera
           display_message(:data, status_image(url))
         when :table, :csv
           case type
-          when :object_list, :single_object
-            # :object_list is an Array of Hash, where key=colum name
+          when :single_object
             # :single_object is a Hash, where key=colum name
-            obj_list = type.eql?(:single_object) ? [data] : data
-            Aspera.assert_type(obj_list, Array)
-            Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
-            obj_list = obj_list.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
-            display_table(obj_list, compute_fields(obj_list, fields), single: type.eql?(:single_object))
+            Aspera.assert_type(data, Hash)
+            if data.empty?
+              display_message(:data, self.class.special_format('empty dict'))
+            else
+              data = self.class.flatten_hash(data) if @options[:flat_hash]
+              display_table([data], compute_fields([data], fields), single: true)
+            end
+          when :object_list
+            # :object_list is an Array of Hash, where key=colum name
+            Aspera.assert_type(data, Array)
+            Aspera.assert(data.all?(Hash)){"expecting Array of Hash: #{data.inspect}"}
+            data = data.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
+            display_table(data, compute_fields(data, fields), single: type.eql?(:single_object))
           when :value_list
             # :value_list is a simple array of values, name of column provided in `name`
             display_table(data.map{ |i| {name => i}}, [name])
@@ -350,7 +358,7 @@ module Aspera
       end
 
       # @return the list of fields to display
-      # @param data [Array<Hash>] data to display
+      # @param data    [Array<Hash>]         data to display
       # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
@@ -458,17 +466,28 @@ module Aspera
               display_message(:data, Terminal::Table.new(
                 headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
-                style:     @options[:table_style]&.symbolize_keys))
+                style:     @options[:table_style].symbolize_keys))
             end
           else
             # display the table ! as single table
             display_message(:data, Terminal::Table.new(
               headings:  fields,
               rows:      final_table_rows,
-              style:     @options[:table_style]&.symbolize_keys))
+              style:     @options[:table_style].symbolize_keys))
           end
         when :csv
-          display_message(:data, final_table_rows.map{ |t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
+          params = @options[:table_style].symbolize_keys
+          # delete default
+          params.delete(:border)
+          Log.log.error(">>#{params}")
+          add_headers = params.delete(:headers)
+          output = CSV.generate(**params) do |csv|
+            csv << fields if add_headers
+            final_table_rows.each do |row|
+              csv << row
+            end
+          end
+          display_message(:data, output)
         else
           raise "not expected: #{@options[:format]}"
         end

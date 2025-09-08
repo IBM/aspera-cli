@@ -1616,12 +1616,22 @@ By default, result of type `single_object` and `object_list` are displayed using
 
 #### Option: `table_style`
 
-The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
+The table style can be customized with option: `table_style` which expects a `Hash`.
+
+For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
+
+For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a table with thick Unicode borders:
 
 ```bash
 <%=cmd%> config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
+```
+
+For example, to display a CSV with headers and quotes:
+
+```bash
+<%=cmd%> config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 ```
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.

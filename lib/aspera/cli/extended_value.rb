@@ -41,7 +41,7 @@ module Aspera
               hash_array.push(col_titles.zip(values).to_h)
             end
           end
-          Log.log.warn('Titled CSV file without any line') if hash_array.empty?
+          Log.log.warn('Titled CSV file without any row') if hash_array.empty?
           return hash_array
         end
 

@@ -9,6 +9,7 @@
     * **global**: New option `invalid_characters` ensures generated file names are valid.
     * `aoc`: Option `package_folder` allows specification of secondary field.
     * `sync`: Sync operations now use options `ts` and `to_folder`.
+    * `format`: `csv` format now tables option `table_style`.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.
