@@ -183,35 +183,34 @@ module Aspera
             }
           end
 
+          # @param base [String] Base folder path
+          # @return [String] Folder path that does jot exist, with possible .<number> extension
           def next_available_folder(base, always: false)
-            result = base
-            counter = 1
-
-            if always
-              result = "#{base}.#{counter}"
+            counter = always ? 1 : 0
+            loop do
+              result = counter.zero? ? base : "#{base}.#{counter}"
+              return result unless Dir.exist?(result)
               counter += 1
             end
-
-            while Dir.exist?(result)
-              result = "#{base}.#{counter}"
-              counter += 1
-            end
-
-            result
           end
 
-          # Get the folder extension for a specific subfield if folder exists
+          # Get folder path that does not exist
+          # If it exists, an extension is added
+          # or a sequential number if extension == :seq
           # @param folder [String] base folder
-          def folder_extension(folder, subfield, always:, package_info:)
-            case subfield
+          def unique_folder(folder, extension: nil, always: false)
+            case extension
             when nil
-              nil
-            when 'seq'
+              folder
+            when :seq
               # reuse helper
-              next_available_folder(folder, always: always).sub(folder, '')
+              next_available_folder(folder, always: always)
             else
               if Dir.exist?(folder) || always
-                '.' + Environment.instance.sanitized_filename(package_info[subfield])
+                # NOTE: it might already exist
+                "#{folder}.#{Environment.instance.sanitized_filename(extension)}"
+              else
+                folder
               end
             end
           end
@@ -988,12 +987,11 @@ module Aspera
               end
               # download all files, or specified list only
               ts_paths = transfer.ts_source_paths(default: ['.'])
-              per_package_field = options.get_option(:package_folder)
-              per_package_subfield = nil
-              unless per_package_field.nil?
-                raise Cli::BadArgument, "Invalid package folder option : #{per_package_field}" unless per_package_field =~ /\A([^+]+)(?:\+([^?]+)(\?)?)?\z/
-                per_package_field = Regexp.last_match(1)
-                per_package_subfield = Regexp.last_match(2)
+              per_package_def = options.get_option(:package_folder)
+              unless per_package_def.nil?
+                raise Cli::BadArgument, "Invalid package folder option : #{per_package_def}" unless per_package_def =~ /\A([^+]+)(?:\+([^?]+)(\?)?)?\z/
+                per_package_field1 = Regexp.last_match(1)
+                per_package_field2 = Regexp.last_match(2)
                 per_package_sub_always = Regexp.last_match(3).nil?
               end
               # get value outside of loop
@@ -1009,17 +1007,16 @@ module Aspera
                   package_info['contents_file_id'],
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths})
-                unless per_package_field.nil?
+                unless per_package_def.nil?
+                  # folder based on first field
                   folder = File.join(
                     destination_folder,
-                    Environment.instance.sanitized_filename(package_info[per_package_field])
+                    Environment.instance.sanitized_filename(package_info[per_package_field1])
                   )
-                  ext = self.class.folder_extension(
+                  transfer.option_transfer_spec['destination_root'] = self.class.unique_folder(
                     folder,
-                    per_package_subfield,
-                    always: per_package_sub_always,
-                    package_info: package_info)
-                  transfer.option_transfer_spec['destination_root'] = "#{folder}#{ext}"
+                    extension: per_package_field2.eql?('seq') ? :seq : package_info[per_package_field2],
+                    always: per_package_sub_always)
                 end
                 formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.option_transfer_spec['destination_root']}]})
                 statuses = transfer.start(

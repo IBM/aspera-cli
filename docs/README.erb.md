@@ -3901,14 +3901,14 @@ where:
 - `dirname` is the folder name and can contain `/` to specify a subfolder.
 - Supported arguments are:
 
-| Name   | Type | Description |
-|--------|------|-------------|
-|count   |int   |Number of files<%=br%>Mandatory|
-|file    |string|Basename for files<%=br%>Default: `file`|
-|size    |int   |Size of first file.<%=br%>Default: 0|
-|inc     |int   |Increment applied to determine next file size<%=br%>Default: 0|
-|seq     |enum  |Sequence in determining next file size<%=br%>Values: random, sequential<%=br%>Default: sequential|
-|buf_init|enum  |How source data is initialized<%=br%>Option 'none' is not allowed for downloads.<%=br%>Values:none, zero, random<%=br%>Default:zero|
+| Name     | Type  | Description |
+|----------|-------|-------------|
+| count    | int   | Number of files<%=br%>Mandatory|
+| file     | string| Basename for files<%=br%>Default: `file`|
+| size     | int   | Size of first file.<%=br%>Default: 0|
+| inc      | int   | Increment applied to determine next file size<%=br%>Default: 0|
+| seq      | enum  | Sequence in determining next file size<%=br%>Values: random, sequential<%=br%>Default: sequential|
+| buf_init | enum  | How source data is initialized<%=br%>Option 'none' is not allowed for downloads.<%=br%>Values:none, zero, random<%=br%>Default:zero|
 
 The sequence parameter is applied as follows:
 
@@ -5006,8 +5006,8 @@ Examples:
 - `name+id?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of both fields with `.`.
 - `name+seq?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of name and sequence number.
 
-> **Note:** When `<field1>+<field2>?` is used, if the same package is downloaded multiple times, it will be downloaded twice.
-If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in folders with a sequence number.
+> **Note:** When `<field1>+<field2>?` is used, if two packages are downloaded and have the same fields, they will be downloaded in the same folder.
+If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
 
 ##### Example: Receive all packages from a given shared inbox
 
