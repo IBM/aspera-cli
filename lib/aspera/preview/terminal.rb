@@ -7,7 +7,8 @@ require 'io/console'
 require 'aspera/log'
 module Aspera
   module Preview
-    # Display a picture in the terminal, either using coloured characters or iTerm2
+    # Display a picture in the terminal.
+    # Either use coloured characters or iTerm2 protocol.
     class Terminal
       # Rainbow only supports 8-bit colors
       # env vars to detect terminal type
@@ -19,12 +20,12 @@ module Aspera
       DEFAULT_FONT_RATIO = 32.0 / 14.0
       private_constant :TERM_ENV_VARS, :ITERM_NAMES, :DEFAULT_FONT_RATIO
       class << self
-        # @return [String] the image as text, or the iTerm2 escape sequence
-        # @param blob [String] the image as a binary string
-        # @param reserve [Integer] number of lines to reserve for other text than the image
-        # @param text [Boolean] true to display the image as text, false to use iTerm2
-        # @param double [Boolean] true to use colors on half lines, false to use colors on full lines
-        # @param font_ratio [Float] ratio = font height / font width
+        # @param blob       [String]  The image as a binary string
+        # @param reserve    [Integer] Number of lines to reserve for other text than the image
+        # @param text       [Boolean] `true` to display the image as text, `false` to use iTerm2 if supported
+        # @param double     [Boolean] `true` to use colors on half lines, `false` to use colors on full lines
+        # @param font_ratio [Float]   ratio = font height / font width
+        # @return [String] The image as text, or the iTerm2 escape sequence
         def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
           return iterm_display_image(blob) if iterm_supported? && !text
           begin
