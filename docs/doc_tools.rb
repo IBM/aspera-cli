@@ -48,9 +48,14 @@ def br; '<br/>'; end
 # to the power of
 def pow(value); "<sup>#{value}</sup>"; end
 
-# set values used in ERB
+# values used in ERB
+# ------------------
+
 # just command name
 def cmd; Aspera::Cli::Info::CMD_NAME; end
+
+# just command name
+def gem; Aspera::Cli::Info::GEM_NAME; end
 
 # (Markdown) used in text with formatting of command
 def tool; "`#{cmd}`"; end
@@ -374,7 +379,7 @@ def generate_doc
   end
   # no unicode
   Aspera::Environment.force_terminal_c
-  check_links(@param[:template]) unless ENV['ASPERA_CLI_DOC_SKIP_LINK_CHECK']
+  check_links(@param[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
   # get current plugins
   plugin_manager = Aspera::Cli::PluginFactory.instance
   plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
