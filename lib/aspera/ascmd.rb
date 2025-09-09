@@ -127,7 +127,7 @@ module Aspera
       stdin_input = command_lines.join("\n")
       Log.log.trace1{"execute_single:#{stdin_input}"}
       # execute, get binary output
-      byte_buffer = @command_executor.execute(remote_cmd, stdin_input).unpack('C*')
+      byte_buffer = @command_executor.execute(remote_cmd, input: stdin_input).unpack('C*')
       Aspera.assert(!byte_buffer.empty?){'empty answer from server'}
       # get hash or table result
       result = self.class.parse(byte_buffer, :result)

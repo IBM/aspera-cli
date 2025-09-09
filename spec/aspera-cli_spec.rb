@@ -89,26 +89,23 @@ end
 
 RSpec.describe(Aspera::InternalError) do
   it 'asserts unreachable line' do
-    begin # rubocop:disable Style/RedundantBegin
+    expect do
       Aspera.error_unreachable_line
-      raise 'Shall not reach here'
-    rescue Aspera::InternalError => e
-      expect(e.message).to(start_with('unreachable line reached'))
-    end
+    end.to(raise_error(Aspera::InternalError, /^unreachable line reached/))
   end
+
   it 'asserts unexpected value' do
-    begin # rubocop:disable Style/RedundantBegin
+    expect do
       Aspera.error_unexpected_value(nil)
-      raise 'Shall not reach here'
-    rescue Aspera::InternalError => e
-      expect(e.message).to(start_with('unexpected value'))
-    end
+    end.to(raise_error(Aspera::InternalError, /^unexpected value/))
   end
 end
 
 RSpec.describe(Aspera::Cli::Main) do
-  it 'has a version number' do
-    expect(Aspera::Cli::VERSION).not_to(be(nil))
+  it 'has a valid version string' do
+    version = Aspera::Cli::VERSION
+    expect(version).to(be_a(String))
+    expect(Gem::Version.correct?(version)).to(be(true))
   end
 end
 
@@ -155,13 +152,10 @@ RSpec.describe(Aspera::AsCmd) do
       res = ascmd.execute_single(:cp, [PATH_FILE_EXIST, PATH_FILE_COPY])
       expect(res).to(be(true))
     end
-    it 'fails if no such file' do
-      begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
-      end
+    it 'fails if no such folder' do
+      expect do
+        ascmd.execute_single(:cp, ['/does_not_exist', PATH_FOLDER_NEW])
+      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'rename' do
@@ -174,12 +168,9 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      begin # rubocop:disable Style/RedundantBegin
+      expect do
         ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
-      end
+      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'md5sum' do
@@ -189,12 +180,9 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
-      begin # rubocop:disable Style/RedundantBegin
+      expect do
         ascmd.execute_single(:md5sum, ['/does_not_exist'])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
-      end
+      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'delete' do
@@ -207,12 +195,9 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      begin # rubocop:disable Style/RedundantBegin
+      expect do
         ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
-      end
+      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'df' do
@@ -224,20 +209,17 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res.first[:total]).to(be_a(Integer))
     end
     it 'fails if no such file' do
-      begin # rubocop:disable Style/RedundantBegin
+      expect do
         ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
-      end
+      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
 end
 RSpec.describe(Aspera::Ssh) do
-  it 'catches error' do
+  it 'catches aspshell error in exception' do
     Aspera::Ssh.disable_ecd_sha2_algorithms
-    demo_executor.execute('foo')
-  rescue RuntimeError => e
-    expect(e.message).to(eq('foo: [Command not accepted: foo]'))
+    expect do
+      demo_executor.execute('foo', exception: true)
+    end.to(raise_error(Aspera::Ssh::Error, /Command not accepted: foo/))
   end
 end
