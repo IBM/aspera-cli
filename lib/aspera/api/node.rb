@@ -239,7 +239,7 @@ module Aspera
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # start at top folder
         folders_to_explore = [{id: top_file_id, path: top_file_path}]
-        Log.log.debug{Log.dump(:folders_to_explore, folders_to_explore)}
+        Log.dump(:folders_to_explore, folders_to_explore)
         until folders_to_explore.empty?
           # consume first in job list
           current_item = folders_to_explore.shift
@@ -253,7 +253,7 @@ module Aspera
               Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
               []
             end
-          Log.log.debug{Log.dump(:folder_contents, folder_contents)}
+          Log.dump(:folder_contents, folder_contents)
           folder_contents.each do |entry|
             if entry.key?('error')
               if entry['error'].is_a?(Hash) && entry['error'].key?('user_message')

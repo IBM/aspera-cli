@@ -594,7 +594,7 @@ module Aspera
             @config_checksum_on_disk = config_checksum
           end
           files_to_copy = []
-          Log.log.trace1{Log.dump('Available_presets', @config_presets)}
+          Log.dump(:available_presets, @config_presets, level: :trace1)
           Aspera.assert_type(@config_presets, Hash){'config file YAML'}
           # check there is at least the config section
           Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
@@ -1094,7 +1094,7 @@ module Aspera
             apps.find{ |a| a[:product].eql?(answer)}
           end
           wiz_preset_name = options.get_next_argument('preset name', default: '')
-          Log.log.debug{Log.dump(:identification, identification)}
+          Log.dump(:identification, identification)
           wiz_url = identification[:url]
           formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
           # set url for instantiation of plugin
@@ -1136,7 +1136,7 @@ module Aspera
             wiz_params[:private_key_path] = private_key_path
             wiz_params[:pub_key_pem] = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
           end
-          Log.log.debug{Log.dump(:wiz_params, wiz_params)}
+          Log.dump(:wiz_params, wiz_params)
           # finally, call the wizard
           wizard_result = wiz_plugin_class.wizard(**wiz_params)
           Log.log.debug{"wizard result: #{wizard_result}"}
@@ -1224,7 +1224,7 @@ module Aspera
           end
           # execute template
           msg_with_headers = ERB.new(notify_template).result(template_binding)
-          Log.log.debug{Log.dump(:msg_with_headers, msg_with_headers)}
+          Log.dump(:msg_with_headers, msg_with_headers)
           require 'net/smtp'
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
           smtp.enable_starttls if mail_conf[:tls]

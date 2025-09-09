@@ -35,7 +35,7 @@ module Aspera
         Aspera.assert(!@gw_api.nil?){'GW URL must be set'}
         Aspera.assert_type(transfer_spec['paths'], Array){'paths'}
         Aspera.assert_type(transfer_spec['token'], String){'only token based transfer is supported in GW'}
-        Log.log.debug{Log.dump(:user_spec, transfer_spec)}
+        Log.dump(:user_spec, transfer_spec)
         transfer_spec['authentication'] ||= 'token'
         case transfer_spec['direction']
         when Transfer::Spec::DIRECTION_SEND

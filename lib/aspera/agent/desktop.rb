@@ -29,7 +29,7 @@ module Aspera
           # https://playground.open-rpc.org/?schemaUrl=http://127.0.0.1:33024
           @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
-          Log.log.debug{Log.dump(:client_version, client_info)}
+          Log.dump(:client_version, client_info)
           Log.log.info('Client was reached') if method_index > 0
         rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]

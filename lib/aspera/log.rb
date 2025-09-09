@@ -51,7 +51,6 @@ module Aspera
 
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
-    @@format = :json # rubocop:disable Style/ClassVars
     # Class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
@@ -63,16 +62,21 @@ module Aspera
       # dump object suitable for Log.log.debug
       # @param name string or symbol
       # @param format either pp or json format
-      def dump(name, object)
-        result =
-          case @@format
-          when :json
-            JSON.pretty_generate(object) rescue PP.pp(object, +'')
-          when :ruby
-            PP.pp(object, +'')
-          else error_unexpected_value(@@format){'dump format'}
-          end
-        "#{name.to_s.green} (#{@@format})=\n#{result}"
+      def dump(name, object = nil, level: :debug)
+        return unless instance.logger.send(:"#{level}?")
+        yield if block_given?
+        instance.logger.send(level, obj_dump(name, object))
+      end
+
+      def obj_dump(name, object)
+        dump_text = case instance.dump_format
+        when :json
+          JSON.pretty_generate(object) rescue PP.pp(object, +'')
+        when :ruby
+          PP.pp(object, +'')
+        else error_unexpected_value(instance.dump_format){'dump format'}
+        end
+        "#{name.to_s.green} (#{instance.dump_format})=\n#{dump_text}"
       end
 
       # Capture the output of $stderr and log it at debug level
@@ -131,11 +135,14 @@ module Aspera
       @logger.formatter = SecretHider.log_formatter(@logger.formatter)
     end
 
+    attr_accessor :dump_format
+
     private
 
     def initialize
       @logger = nil
       @program_name = 'aspera'
+      @dump_format = :json
       # This sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type = :stderr
     end

@@ -103,7 +103,7 @@ module Aspera
               lines = ts_paths_array.map{ |i| i['source']}
             end
             file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
-            Log.log.debug{Log.dump(:file_list, lines)}
+            Log.dump(:file_list, lines)
             File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
             Log.log.debug{"#{file_list_option}=\n#{File.read(file_list_file)}".red}
           end

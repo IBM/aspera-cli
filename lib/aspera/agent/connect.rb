@@ -31,7 +31,7 @@ module Aspera
             headers: {'Origin' => RestParameters.instance.user_agent})
           connect_info = @connect_api.read('info/version')
           Log.log.info('Connect was reached') if method_index > 0
-          Log.log.debug{Log.dump(:connect_version, connect_info)}
+          Log.dump(:connect_version, connect_info)
         rescue StandardError => e # Errno::ECONNREFUSED
           Log.log.debug{"Exception: #{e}"}
           start_url = CONNECT_START_URIS[method_index]
@@ -80,7 +80,7 @@ module Aspera
         begin
           loop do
             tr_info = @connect_api.create("transfers/info/#{@transfer_id}", connect_activity_args)
-            Log.log.trace1{Log.dump(:tr_info, tr_info)}
+            Log.dump(:tr_info, tr_info, level: :trace1)
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']
               if transfer.nil?
