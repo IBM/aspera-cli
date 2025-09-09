@@ -14,13 +14,13 @@ module Aspera
         def parameters_from_svc_credentials(service_credentials, bucket_region)
           # check necessary contents
           Aspera.assert_type(service_credentials, Hash){'service_credentials'}
-          Aspera::Log.dump('service_credentials', service_credentials)
+          Log.log.debug{Log.dump('service_credentials', service_credentials)}
           %w[apikey resource_instance_id endpoints].each do |field|
             Aspera.assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
           end
           # read endpoints from service provided in service credentials
           endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')
-          Aspera::Log.dump('endpoints', endpoints)
+          Log.log.debug{Log.dump('endpoints', endpoints)}
           endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
           raise "no such region: #{bucket_region}" if endpoint.nil?
           return {
@@ -57,7 +57,7 @@ module Aspera
           query:     {'faspConnectionInfo' => nil}
         )[:http].body
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
-        Aspera::Log.dump('ats_info', ats_info)
+        Log.log.debug{Log.dump('ats_info', ats_info)}
         @storage_credentials = {
           'type'  => 'token',
           'token' => {TOKEN_FIELD => nil}
