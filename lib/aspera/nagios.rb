@@ -80,7 +80,7 @@ module Aspera
     # translate for display
     def result
       Aspera.assert(!@data.empty?){'missing result'}
-      raise
+      {type: :object_list, data: @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}}
     end
   end
 end
