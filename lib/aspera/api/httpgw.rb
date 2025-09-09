@@ -143,8 +143,8 @@ module Aspera
         files_to_send = process_upload_list(transfer_spec)
         # total size of all files is last element
         total_bytes_to_transfer = files_to_send.pop
-        Log.log.trace1{Log.dump(:modified_tspec, transfer_spec)}
-        Log.log.trace1{Log.dump(:files_to_send, files_to_send)}
+        Log.dump(:modified_tspec, transfer_spec, level: :trace1)
+        Log.dump(:files_to_send, files_to_send, level: :trace1)
         # TODO: check that this is available in endpoints: @api_info['endpoints']
         upload_url = File.join(@gw_root_url, @upload_version, 'upload')
         @notify_cb&.call(:pre_start, session_id: nil, info: 'connecting wss')
@@ -292,7 +292,7 @@ module Aspera
         notify_cb:         nil,
         **opts
       )
-        Log.log.debug{Log.dump(:gw_url, url)}
+        Log.dump(:gw_url, url)
         # add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
         raise Error, 'GW URL shall be with scheme https' unless url.start_with?('https://')
@@ -309,7 +309,7 @@ module Aspera
         @notify_cb = notify_cb
         # get API info
         @api_info = read('info').freeze
-        Log.log.debug{Log.dump(:api_info, @api_info)}
+        Log.dump(:api_info, @api_info)
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         # is the latest supported? else revert to old api
         if !@upload_version.eql?(API_V1)

@@ -89,7 +89,7 @@ module Aspera
         # @return [Hash] information about public link, or nil if not a public link
         def link_info(url)
           final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET')[:http].uri
-          Log.log.trace1{Log.dump(:final_uri, final_uri)}
+          Log.dump(:final_uri, final_uri, level: :trace1)
           org_domain = split_org_domain(final_uri)
           if (m = final_uri.path.match(%r{/oauth2/([^/]+)/login$}))
             org_domain[:organization] = m[1] if org_domain[:organization].nil?
@@ -98,7 +98,7 @@ module Aspera
           end
           raise Error, 'AoC shall redirect to login page with a query' if final_uri.query.nil?
           query = Rest.query_to_h(final_uri.query)
-          Log.log.trace1{Log.dump(:query, query)}
+          Log.dump(:query, query, level: :trace1)
           # is that a public link ?
           if query.key?('token')
             Log.log.warn{"Unknown pub link path: #{final_uri.path}"} unless PUBLIC_LINK_PATHS.include?(final_uri.path)
@@ -132,7 +132,7 @@ module Aspera
               end
             end
           end
-          Log.log.debug{Log.dump(:org_domain, org_domain)}
+          Log.dump(:org_domain, org_domain)
           return {
             instance_domain: org_domain[:domain],
             organization:    org_domain[:organization]
@@ -166,7 +166,7 @@ module Aspera
         }
         # analyze type of url
         url_info = AoC.link_info(url)
-        Log.log.debug{Log.dump(:url_info, url_info)}
+        Log.dump(:url_info, url_info)
         @private_link = url_info[:private_link]
         auth_params[:grant_method] = if url_info.key?(:token)
           :url_json
@@ -294,7 +294,7 @@ module Aspera
               name: ws_info['name']
             }
           end
-        Log.log.debug{Log.dump(:context, @workspace_info)}
+        Log.dump(:context, @workspace_info)
         return nil unless application.eql?(:files)
         @home_info =
           if !public_link.nil?
@@ -322,7 +322,7 @@ module Aspera
             }
           end
         raise "Cannot get user's home node id, check your default workspace or specify one" if @home_info[:node_id].to_s.empty?
-        Log.log.debug{Log.dump(:context, @home_info)}
+        Log.dump(:context, @home_info)
       end
 
       # @param node_id [String] identifier of node in AoC
@@ -383,7 +383,7 @@ module Aspera
         Aspera.assert(pkg_data.key?('metadata')){"package requires metadata: #{meta_schema}"}
         pkg_meta = pkg_data['metadata']
         Aspera.assert_type(pkg_meta, Array){'metadata'}
-        Log.log.debug{Log.dump(:metadata, pkg_meta)}
+        Log.dump(:metadata, pkg_meta)
         pkg_meta.each do |field|
           Aspera.assert_type(field, Hash){'metadata field'}
           Aspera.assert(field.key?('name')){'metadata field must have name'}

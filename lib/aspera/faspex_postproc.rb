@@ -14,7 +14,7 @@ module Aspera
     def initialize(server, parameters)
       Aspera.assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
-      Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
+      Log.dump(:post_proc_parameters, @parameters)
       not_allowed = @parameters.keys - ALLOWED_PARAMETERS
       raise "unsupported parameters: #{not_allowed.join(', ')}" unless not_allowed.empty?
       @parameters[:script_folder] ||= '.'
@@ -46,7 +46,7 @@ module Aspera
         script_path = File.join(@parameters[:script_folder], script_file)
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
-        Log.log.debug{Log.dump(:webhook_parameters, webhook_parameters)}
+        Log.dump(:webhook_parameters, webhook_parameters)
         # env expects only strings
         environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
         post_proc_pid = Environment.secure_spawn(env: environment, exec: script_path)

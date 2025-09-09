@@ -127,7 +127,7 @@ module Aspera
       def initialize(argv)
         @argv = argv
         early_debug_setup
-        Log.log.trace2{Log.dump(:argv, @argv)}
+        Log.dump(:argv, @argv, level: :trace2)
         @option_help = false
         @option_show_config = false
         @bash_completion = false

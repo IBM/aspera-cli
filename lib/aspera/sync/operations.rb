@@ -82,7 +82,7 @@ module Aspera
         # @param sync_params [Hash] sync parameters, old or new format
         # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params, opt_ts = nil)
-          Log.log.debug{Log.dump(:sync_params_initial, sync_params)}
+          Log.dump(:sync_params_initial, sync_params)
           Aspera.assert_type(sync_params, Hash)
           env_args = {
             args: [],
@@ -109,7 +109,7 @@ module Aspera
             end
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
-            Log.log.debug{Log.dump(:sync_conf, sync_params)}
+            Log.dump(:sync_conf, sync_params)
             agent = Agent::Direct.new
             agent.start_and_monitor_process(session: {}, name: :async, **env_args)
           elsif sync_params.key?('sessions')
@@ -264,7 +264,7 @@ module Aspera
         # @param sync_info [Hash] synchronization information
         # @param schema [Hash] schema definition
         def tspec_to_sync_info(transfer_spec, sync_info, schema)
-          Log.log.debug{Log.dump(:tspec_to_sync_info, transfer_spec)}
+          Log.dump(:tspec_to_sync_info, transfer_spec)
           schema['properties'].each do |name, property|
             if property.key?('x-ts-name')
               tspec_param = property['x-ts-name']

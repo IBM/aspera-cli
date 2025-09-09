@@ -121,7 +121,7 @@ module Aspera
           bytes_written:   26,
           session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
       }
-      Log.log.trace2{Log.dump(:job, result)}
+      Log.dump(:job, result, level: :trace2)
       return result
     end
 
@@ -325,7 +325,7 @@ module Aspera
       response.status = code
       response['Content-Type'] = Rest::MIME_JSON
       response.body = json.to_json
-      Log.log.trace1{Log.dump("response for #{request.request_method} #{request.path}", json)}
+      Log.log.trace1{Log.obj_dump("response for #{request.request_method} #{request.path}", json)}
     end
   end
 end

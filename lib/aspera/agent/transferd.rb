@@ -39,7 +39,7 @@ module Aspera
         # keep PID for optional shutdown
         @daemon_pid = nil
         daemon_endpoint = url
-        Log.log.debug{Log.dump(:daemon_endpoint, daemon_endpoint)}
+        Log.dump(:daemon_endpoint, daemon_endpoint)
         # retry loop
         begin
           # no address: local bind
@@ -126,7 +126,7 @@ module Aspera
         bytes_expected = nil
         # monitor transfer status
         @transfer_client.monitor_transfers(::Transferd::Api::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
-          Log.log.debug{Log.dump(:response, response.to_h)}
+          Log.dump(:response, response.to_h)
           # Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status
           when :RUNNING

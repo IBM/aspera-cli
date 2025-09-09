@@ -92,7 +92,7 @@ module Aspera
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
         return uri if query.nil? || query.respond_to?(:empty?) && query.empty?
-        Log.log.debug{Log.dump('query', query)}
+        Log.dump(:query, query)
         query_array = []
         case query
         when Hash
@@ -266,7 +266,7 @@ module Aspera
       if @oauth.nil?
         Aspera.assert(@auth_params[:type].eql?(:oauth2)){'no OAuth defined'}
         oauth_parameters = @auth_params.reject{ |k, _v| k.eql?(:type)}
-        Log.log.debug{Log.dump('oauth parameters', oauth_parameters)}
+        Log.dump(:oauth_parameters, oauth_parameters)
         @oauth = OAuth::Factory.instance.create(**oauth_parameters)
       end
       return @oauth
@@ -294,7 +294,7 @@ module Aspera
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
       Log.log.debug{"call #{operation} [#{subpath}]".red.bold.bg_green}
-      Log.log.debug{Log.dump(:body, body)}
+      Log.dump(:body, body)
       Aspera.assert_type(subpath, String)
       if headers.nil?
         headers = @headers.clone
@@ -352,7 +352,7 @@ module Aspera
         end
         # :type = :basic
         req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
-        Log.log.trace1{Log.dump(:req_body, req.body)}
+        Log.dump(:req_body, req.body, level: :trace1)
         # we try the call, and will retry on some error types
         error_tries ||= 1 + RestParameters.instance.retry_max
         # initialize with number of initial retries allowed, nil gives zero
@@ -408,7 +408,7 @@ module Aspera
         case result_mime
         when *JSON_DECODE
           result[:data] = JSON.parse(result[:http].body) rescue result[:http].body
-          Log.log.debug{Log.dump('result_data', result[:data])}
+          Log.dump(:result_data, result[:data])
         else # when MIME_TEXT
           result[:data] = result[:http].body
         end

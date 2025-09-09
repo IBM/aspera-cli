@@ -96,7 +96,7 @@ module Aspera
           # TODO: useful ? node only ? seems to be a timeout for retry in node
           transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
-        Log.log.debug{Log.dump('ts', transfer_spec)}
+        Log.dump(:ts, transfer_spec)
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
         multi_session_info = nil
@@ -288,7 +288,7 @@ module Aspera
             event = processor.process_line(line.chomp)
             next unless event
             # event is ready
-            Log.log.trace1{Log.dump(:management_port, event)}
+            Log.dump(:management_port, event, level: :trace1)
             # store session identifier
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)

@@ -142,7 +142,7 @@ module Aspera
             raise BadArgument, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
-            Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
+            Log.dump(:@pub_link_context, @pub_link_context, level: :trace1)
             # ok, we have the additional parameters, get the base url
             @faspex5_api_base_url = @faspex5_api_base_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             @api_v5 = Rest.new(
@@ -355,10 +355,10 @@ module Aspera
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
             packages = list_packages_with_filter(query: {'status' => 'completed'})
-            Log.log.trace1{Log.dump(:package_ids, packages.map{ |p| p['id']})}
-            Log.log.trace1{Log.dump(:skip_ids, skip_ids_persistency.data)}
+            Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
+            Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
             packages.reject!{ |p| skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
-            Log.log.trace1{Log.dump(:package_ids, packages.map{ |p| p['id']})}
+            Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
           else
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)

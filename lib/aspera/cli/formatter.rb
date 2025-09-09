@@ -451,7 +451,7 @@ module Aspera
           fields = all_fields(object_array)
           single = false
         end
-        Log.log.debug{Log.dump(:object_array, object_array)}
+        Log.dump(:object_array, object_array)
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map{ |r| fields.map{ |c| r[c].to_s}}
         # remove empty rows

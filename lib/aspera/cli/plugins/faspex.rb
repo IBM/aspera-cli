@@ -100,7 +100,7 @@ module Aspera
               subpath:  subpath,
               query:    Rest.query_to_h(public_uri.query)
             }
-            Log.log.debug{Log.dump('link data', result)}
+            Log.dump(:link_data, result)
             return result
           end
 
@@ -189,7 +189,7 @@ module Aspera
               headers:   {'Accept' => 'application/xml'},
               query:     mailbox_query)[:http].body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
-            Log.log.debug{Log.dump(:box_data, box_data)}
+            Log.dump(:box_data, box_data)
             items = box_data.key?('entry') ? box_data['entry'] : []
             Log.log.debug{"new items: #{items.count}"}
             # it is the end if page is empty
@@ -327,7 +327,7 @@ module Aspera
               else # public link
                 transfer_spec = send_public_link_to_ts(public_link_url, package_create_params)
               end
-              # Log.log.debug{Log.dump('transfer_spec',transfer_spec)}
+              # Log.dump(:transfer_spec,transfer_spec)
               return Main.result_transfer(transfer.start(transfer_spec))
             when :receive
               link_url = options.get_option(:link)
@@ -393,7 +393,7 @@ module Aspera
                   raise Cli::Error, 'Unexpected response: package not found ?'
                 end
                 package_entry = XmlSimple.xml_in(package_creation_data[:http].body, {'ForceArray' => false})
-                Log.log.debug{Log.dump(:package_entry, package_entry)}
+                Log.dump(:package_entry, package_entry)
                 transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
                 pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]
               end
@@ -401,7 +401,7 @@ module Aspera
               # TODO : remove ids from skip not present in inbox to avoid growing too big
               # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
               pkg_id_uri.reject!{ |i| skip_ids_data.include?(i[:id])}
-              Log.log.debug{Log.dump(:pkg_id_uri, pkg_id_uri)}
+              Log.dump(:pkg_id_uri, pkg_id_uri)
               return Main.result_status('no new package') if pkg_id_uri.empty?
               result_transfer = []
               pkg_id_uri.each do |id_uri|
@@ -461,7 +461,7 @@ module Aspera
                 raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info = source_hash[source_name]
-              Log.log.debug{Log.dump(:source_info, source_info)}
+              Log.dump(:source_info, source_info)
               case command_source
               when :info
                 return Main.result_single_object(source_info)

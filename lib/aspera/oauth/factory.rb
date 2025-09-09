@@ -112,7 +112,7 @@ module Aspera
         Aspera.assert_type(token_data, Hash)
         decoded_token = decode_token(token_data[TOKEN_FIELD])
         info = {data: token_data}
-        Log.log.debug{Log.dump('decoded_token', decoded_token)}
+        Log.dump(:decoded_token, decoded_token)
         if decoded_token.is_a?(Hash)
           info[:decoded] = decoded_token
           # TODO: move date decoding to token decoder ?
