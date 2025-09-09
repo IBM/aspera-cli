@@ -252,11 +252,11 @@ module Aspera
           # begin event
           @event_build = {}
         when /^([^:]+): (.*)$/
-          raise 'mgt port: unexpected line: data without header' if @event_build.nil?
+          Aspera.assert_type(@event_build, Hash){'mgt port: unexpected line: data without header'}
           # event field
           @event_build[Regexp.last_match(1)] = Regexp.last_match(2)
         when MGT_FRAME_SEPARATOR
-          raise 'mgt port: unexpected line: end frame without header' if @event_build.nil?
+          Aspera.assert_type(@event_build, Hash){'mgt port: unexpected line: end frame without header'}
           @last_event = @event_build
           @event_build = nil
           return @last_event

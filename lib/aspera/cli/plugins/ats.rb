@@ -150,7 +150,7 @@ module Aspera
             else
               server_id = instance_identifier
               server_data = @ats_api_pub.all_servers.find{ |i| i['id'].eql?(server_id)}
-              raise 'no such server id' if server_data.nil?
+              raise BadIdentifier, 'no such server id' if server_data.nil?
             end
             return Main.result_single_object(server_data)
           end

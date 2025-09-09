@@ -431,7 +431,7 @@ module Aspera
               if entry_has_link_information(entry)
                 other_node = node_id_to_node(entry['target_node_id'])
               end
-              raise 'Cannot resolve link' if other_node.nil?
+              raise Error, 'Cannot resolve link' if other_node.nil?
               state[:result] = {api: other_node, file_id: entry['target_id']}
             else
               # we found it but we do not process the link

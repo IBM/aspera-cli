@@ -277,11 +277,11 @@ module Aspera
           case type
           when :single_object, :object_list
             url = [url] if type.eql?(:single_object)
-            raise 'image display requires a single result' unless url.length == 1
+            raise BadArgument, 'image display requires a single result' unless url.length == 1
             fields = compute_fields(url, fields)
-            raise 'select a field to display' unless fields.length == 1
+            raise BadArgument, 'select a single field to display' unless fields.length == 1
             url = url.first
-            raise 'no such field' unless url.key?(fields.first)
+            raise BadArgument, 'no such field' unless url.key?(fields.first)
             url = url[fields.first]
           end
           raise "not url: #{url.class} #{url}" unless url.is_a?(String)

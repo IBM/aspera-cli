@@ -110,7 +110,7 @@ module Aspera
                 password: options.get_option(:password, mandatory: true)
               }
             when :apikey
-              raise 'Not implemented'
+              Aspera.error_not_implemented
             end
 
           @api_orch = Rest.new(

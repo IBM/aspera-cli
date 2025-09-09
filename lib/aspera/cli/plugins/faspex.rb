@@ -267,7 +267,7 @@ module Aspera
           begin
             package_creation_data = JSON.parse("[#{package_creation_data}]")
           rescue JSON::ParserError # => e
-            raise 'Unexpected response: missing metadata ?'
+            raise Aspera::Error, 'Unexpected response: missing metadata ?'
           end
           return package_creation_data.first
         end
@@ -350,7 +350,7 @@ module Aspera
                 end
                 # get command line parameters
                 delivery_id = instance_identifier
-                raise 'empty id' if delivery_id.empty?
+                Aspera.assert(!delivery_id.empty?){'empty id'}
                 recipient = options.get_option(:recipient)
                 if delivery_id.eql?(SpecialValues::ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
@@ -446,7 +446,7 @@ module Aspera
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
               selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
-              raise 'No such source' if selected_source.nil?
+              raise BadArgument, 'No such source' if selected_source.nil?
               source_name = selected_source['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option

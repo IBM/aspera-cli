@@ -35,7 +35,7 @@ module Aspera
         @transfer_id = nil
         @stop = stop
         is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
-        raise 'Cannot set options `stop` or `start` to false with port zero' if is_local_auto_port && (!@stop || !start)
+        raise Error, 'Cannot set options `stop` or `start` to false with port zero' if is_local_auto_port && (!@stop || !start)
         # keep PID for optional shutdown
         @daemon_pid = nil
         daemon_endpoint = url

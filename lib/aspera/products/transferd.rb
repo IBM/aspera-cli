@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/log'
+require 'aspera/assert'
 module Aspera
   module Products
     class Transferd
@@ -51,7 +53,7 @@ module Aspera
               end
             end
           end
-          raise 'Port not found in daemon logs' if result.nil?
+          Aspera.assert(!result.nil?){'Port not found in daemon logs'}
           Log.log.debug{"Got port #{result} from log"}
           return result
         end

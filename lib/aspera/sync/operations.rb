@@ -144,7 +144,7 @@ module Aspera
             end
             Environment.secure_execute(exec: Ascp::Installation.instance.path(:async), **env_args)
           else
-            raise 'At least one of `local` or `sessions` must be present in async parameters'
+            raise Error, 'At least one of `local` or `sessions` must be present in async parameters'
           end
           return nil
         end
@@ -180,7 +180,7 @@ module Aspera
             elsif sync_params.dig('local', 'path')
               arguments.push("--local-dir=#{sync_params.dig('local', 'path')}")
             else
-              raise 'Missing either local_db_dir or local.path'
+              raise Error, 'Missing either local_db_dir or local.path'
             end
           elsif sync_params.key?('sessions')
             # "args" format
@@ -191,10 +191,10 @@ module Aspera
             elsif session.key?('local_dir')
               arguments.push("--local-dir=#{session['local_dir']}")
             else
-              raise 'Missing either local_db_dir or local_dir'
+              raise Error, 'Missing either local_db_dir or local_dir'
             end
           else
-            raise 'At least one of `local` or `sessions` must be present in async parameters'
+            raise Error, 'At least one of `local` or `sessions` must be present in async parameters'
           end
           stdout = Environment.secure_capture(exec: ASYNC_ADMIN_EXECUTABLE, args: arguments)
           return parse_status(stdout)
@@ -212,7 +212,7 @@ module Aspera
             elsif (local_path = sync_params.dig('local', 'path'))
               return local_path
             elsif exception
-              raise 'Missing either local_db_dir or local.path'
+              raise Error, 'Missing either local_db_dir or local.path'
             end
           elsif sync_params.key?('sessions')
             # "args" format
@@ -222,10 +222,10 @@ module Aspera
             elsif session.key?('local_dir')
               return session['local_dir']
             elsif exception
-              raise 'Missing either local_db_dir or local_dir'
+              raise Error, 'Missing either local_db_dir or local_dir'
             end
           elsif exception
-            raise 'At least one of `local` or `sessions` must be present in async parameters'
+            raise Error, 'At least one of `local` or `sessions` must be present in async parameters'
           end
           nil
         end
@@ -238,7 +238,7 @@ module Aspera
             # "args" format
             return sync_params['sessions'].first['name']
           else
-            raise 'At least one of `local` or `sessions` must be present in async parameters'
+            raise Error, 'At least one of `local` or `sessions` must be present in async parameters'
           end
         end
 

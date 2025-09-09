@@ -14,8 +14,8 @@ module Aspera
         def create(name)
           return nil unless name.start_with?(PREFIX)
           name_params = name[PREFIX.length..-1].split('?', 2)
-          raise 'Format: #{PREFIX}<file path>?<size>' unless name_params.length.eql?(2)
-          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = name_params[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
+          raise Error, 'Format: #{PREFIX}<file path>?<size>' unless name_params.length.eql?(2)
+          raise Error, "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = name_params[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
           size = m[1].to_i
           suffix = m[2]
           SUFFIX.each do |s|

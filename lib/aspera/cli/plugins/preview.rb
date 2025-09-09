@@ -319,7 +319,7 @@ module Aspera
           # create folder if needed
           FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
-            raise 'missing parent_file_id in entry' if entry['parent_file_id'].nil?
+            Aspera.assert(!entry['parent_file_id'].nil?){'missing parent_file_id in entry'}
             #  download original file to temp folder
             do_transfer(Transfer::Spec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end
@@ -498,8 +498,7 @@ module Aspera
               formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
             end
             return Main.result_status("generated: #{generated_file_path}")
-          else
-            raise 'error'
+          else Aspera.error_unexpected_value(command)
           end
         ensure
           Log.log.debug{"cleaning up temp folder #{@tmp_folder}"}

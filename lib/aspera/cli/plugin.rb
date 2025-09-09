@@ -161,12 +161,12 @@ module Aspera
 
         case command
         when :create
-          raise 'cannot create singleton' if is_singleton
+          raise BadArgument, 'cannot create singleton' if is_singleton
           return do_bulk_operation(command: command, descr: 'data', fields: display_fields) do |params|
             rest_api.create(res_class_path, params)
           end
         when :delete
-          raise 'cannot delete singleton' if is_singleton
+          raise BadArgument, 'cannot delete singleton' if is_singleton
           if !delete_style.nil?
             one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
             Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)
