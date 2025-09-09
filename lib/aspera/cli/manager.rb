@@ -466,7 +466,7 @@ module Aspera
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         line = $stdin.gets
-        Aspera.assert_type(String){'Unexpected end of standard input'}
+        Aspera.assert_type(line, String){'Unexpected end of standard input'}
         return line.chomp
       end
 
