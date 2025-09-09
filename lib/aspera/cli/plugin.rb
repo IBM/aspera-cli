@@ -169,7 +169,7 @@ module Aspera
           raise 'cannot delete singleton' if is_singleton
           if !delete_style.nil?
             one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
-            Aspera.assert_type(one_res_id, Array, exception_class: Cli::BadArgument)
+            Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)
             rest_api.call(
               operation:    'DELETE',
               subpath:      res_class_path,
@@ -249,12 +249,12 @@ module Aspera
           type = [type] unless type.is_a?(Array)
           Aspera.assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
           if bulk
-            Aspera.assert_type(value, Array, exception_class: Cli::BadArgument)
+            Aspera.assert_type(value, Array, type: Cli::BadArgument)
             value.each do |v|
-              Aspera.assert_values(v.class, type, exception_class: Cli::BadArgument)
+              Aspera.assert_values(v.class, type, type: Cli::BadArgument)
             end
           else
-            Aspera.assert_values(value.class, type, exception_class: Cli::BadArgument)
+            Aspera.assert_values(value.class, type, type: Cli::BadArgument)
           end
         end
         return value

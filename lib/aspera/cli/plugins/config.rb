@@ -132,7 +132,7 @@ module Aspera
           # return product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
-            Aspera.assert(Dir.exist?(user_home_folder), exception_class: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
+            Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
             return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
           end
 
@@ -256,7 +256,7 @@ module Aspera
             @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
             proxy_user_pass = options.get_option(:proxy_credentials)
             if !proxy_user_pass.nil?
-              Aspera.assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
+              Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
               @pac_exec.proxy_user = proxy_user_pass[0]
               @pac_exec.proxy_pass = proxy_user_pass[1]
             end
@@ -531,7 +531,7 @@ module Aspera
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets
           config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            Aspera.assert_type(current, Hash, exception_class: Cli::Error){"sub key: #{include_path}"}
+            Aspera.assert_type(current, Hash, type: Cli::Error){"sub key: #{include_path}"}
             include_path.push(name)
             current = current[name]
             raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
@@ -1101,7 +1101,7 @@ module Aspera
           options.add_option_preset({url: wiz_url}, 'wizard')
           # instantiate plugin: command line options will be known and wizard can be called
           wiz_plugin_class = PluginFactory.instance.plugin_class(identification[:product])
-          Aspera.assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument) do
+          Aspera.assert(wiz_plugin_class.respond_to?(:wizard), type: Cli::BadArgument) do
             "Detected: #{identification[:product]}, but this application has no wizard"
           end
           # instantiate plugin: command line options will be known, e.g. private_key
@@ -1333,9 +1333,9 @@ module Aspera
             # options
             exception_class_name = options.get_next_argument('exception class name', mandatory: true)
             exception_text = options.get_next_argument('exception text', mandatory: true)
-            exception_class = Object.const_get(exception_class_name)
-            Aspera.assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
-            raise exception_class, exception_text
+            type = Object.const_get(exception_class_name)
+            Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
+            raise type, exception_text
           when :web
           end
         end

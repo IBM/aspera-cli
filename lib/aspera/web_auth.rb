@@ -16,7 +16,7 @@ module Aspera
 
     def service(request, response)
       Log.log.debug{"received request from browser #{request.request_method} #{request.path}"}
-      Aspera.assert_values(request.request_method, ['GET'], exception_class: WEBrick::HTTPStatus::MethodNotAllowed){'HTTP verb'}
+      Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed){'HTTP verb'}
       additionnal_info = @web_auth.signal_request(request)
       response.status = 200
       response.content_type = 'text/html'

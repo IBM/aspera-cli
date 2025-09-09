@@ -245,8 +245,7 @@ module Aspera
           result = attributes[:accessor].value
         when :value
           result = attributes[:value]
-        else
-          raise 'unknown type'
+        else Aspera.error_unexpected_value(attributes[:read_write]){'attribute read/write'}
         end
         Log.log.debug{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
         result = default if result.nil?
@@ -290,8 +289,7 @@ module Aspera
           attributes[:accessor].value = value
         when :value
           attributes[:value] = value
-        else # nil or other
-          raise 'error'
+        else Aspera.error_unexpected_value(attributes[:read_write]){'attribute read/write'}
         end
       end
 
@@ -468,7 +466,7 @@ module Aspera
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         line = $stdin.gets
-        raise 'Unexpected end of standard input' if line.nil?
+        Aspera.assert_type(String){'Unexpected end of standard input'}
         return line.chomp
       end
 

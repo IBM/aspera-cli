@@ -138,7 +138,7 @@ module Aspera
       # @param mode [Integer] the file mode (permissions)
       # @block [Proc] return the content to write to the file
       def write_file_restricted(path, force: false, mode: nil)
-        Aspera.assert(block_given?, exception_class: Aspera::InternalError)
+        Aspera.assert(block_given?, type: Aspera::InternalError)
         if force || !File.exist?(path)
           # Windows may give error
           File.unlink(path) rescue nil

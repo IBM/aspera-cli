@@ -210,7 +210,7 @@ module Aspera
           # when providing a list, just specify source
           @transfer_paths = file_list.map{ |i| {'source' => i}}
         when :pair
-          Aspera.assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
+          Aspera.assert(file_list.length.even?, type: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
           @transfer_paths = file_list.each_slice(2).to_a.map{ |s, d| {'source' => s, 'destination' => d}}
         else Aspera.error_unexpected_value(source_type)
         end

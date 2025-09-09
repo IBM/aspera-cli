@@ -93,7 +93,7 @@ module Aspera
           when String
             return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
           when NilClass then return ->(_){true}
-          else Aspera.error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
+          else Aspera.error_unexpected_value(match_expression.class.name, type: Cli::BadArgument)
           end
         end
 
