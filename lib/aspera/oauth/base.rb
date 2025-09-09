@@ -31,7 +31,7 @@ module Aspera
         cache_ids: nil,
         **rest_params
       )
-        Aspera.assert(respond_to?(:create_token), 'create_token method must be defined', exception_class: InternalError)
+        Aspera.assert(respond_to?(:create_token), 'create_token method must be defined', type: InternalError)
         # this is the OAuth API
         @api = Rest.new(**rest_params)
         @path_token = path_token

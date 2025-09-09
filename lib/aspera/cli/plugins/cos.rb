@@ -36,11 +36,11 @@ module Aspera
               endpoint: options.get_option(:endpoint)
             }
             if service_credentials.nil?
-              Aspera.assert(!cos_node_params[:endpoint].nil?, exception_class: Cli::BadArgument){'endpoint required when service credentials not provided'}
+              Aspera.assert(!cos_node_params[:endpoint].nil?, type: Cli::BadArgument){'endpoint required when service credentials not provided'}
               cos_node_params[:api_key] = options.get_option(:apikey, mandatory: true)
               cos_node_params[:instance_id] = options.get_option(:crn, mandatory: true)
             else
-              Aspera.assert(cos_node_params[:endpoint].nil?, exception_class: Cli::BadArgument){'endpoint not allowed when service credentials provided'}
+              Aspera.assert(cos_node_params[:endpoint].nil?, type: Cli::BadArgument){'endpoint not allowed when service credentials provided'}
               cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
             end
             api_node = Api::CosNode.new(**cos_node_params)

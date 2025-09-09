@@ -431,7 +431,7 @@ module Aspera
               @local_storage_root = @local_storage_root[PVCL_LOCAL_STORAGE.length..-1] if @local_storage_root.start_with?(PVCL_LOCAL_STORAGE)
               # TODO: windows could have "C:" ?
               Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
-              Aspera.assert(File.directory?(@local_storage_root), exception_class: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
+              Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
               @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
               raise Cli::Error, "Folder #{@local_preview_folder} does not exist locally. " \
                 'Please create it, or specify an alternate name.' unless File.directory?(@local_preview_folder)

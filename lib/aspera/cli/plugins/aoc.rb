@@ -158,7 +158,7 @@ module Aspera
             end
             myself = object.aoc_api.read('self')
             if auto_set_pub_key
-              Aspera.assert(myself['public_key'].empty?, exception_class: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
+              Aspera.assert(myself['public_key'].empty?, type: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
               formatter.display_status('Updating profile with the public key.')
               aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
             end
@@ -288,7 +288,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
-            Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only selection by name is supported'}
+            Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only selection by name is supported'}
             aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
         end

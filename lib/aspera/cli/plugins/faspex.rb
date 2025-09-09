@@ -91,7 +91,7 @@ module Aspera
           # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
-            Aspera.assert(m = public_uri.path.match(%r{^(.*)/(external.*)$}), exception_class: Cli::BadArgument){'Public link does not match Faspex format'}
+            Aspera.assert(m = public_uri.path.match(%r{^(.*)/(external.*)$}), type: Cli::BadArgument){'Public link does not match Faspex format'}
             base = m[1]
             subpath = m[2]
             port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
@@ -300,7 +300,7 @@ module Aspera
               }
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)
-              Aspera.assert_type(delivery_info, Hash, exception_class: Cli::BadArgument){'delivery_info'}
+              Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
               # actual parameter to faspex API
               package_create_params = {'delivery' => delivery_info}
               public_link_url = options.get_option(:link)
@@ -310,7 +310,7 @@ module Aspera
                 first_source = delivery_info['sources'].first
                 first_source['paths'].concat(transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
-                  Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
+                  Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
                   source_list = api_v3.read('source_shares')['items']
                   self.class.get_source_id_by_name(value, source_list)
                 end
@@ -442,7 +442,7 @@ module Aspera
               return Main.result_object_list(source_list)
             else # :info :node
               source_id = instance_identifier do |field, value|
-                Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
+                Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
               selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
@@ -450,11 +450,11 @@ module Aspera
               source_name = selected_source['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
-              Aspera.assert_type(source_hash, Hash, exception_class: Cli::Error){'storage option'}
+              Aspera.assert_type(source_hash, Hash, type: Cli::Error){'storage option'}
               source_hash.each do |name, storage|
-                Aspera.assert_type(storage, Hash, exception_class: Cli::Error){"storage '#{name}'"}
+                Aspera.assert_type(storage, Hash, type: Cli::Error){"storage '#{name}'"}
                 [KEY_NODE, KEY_PATH].each do |key|
-                  Aspera.assert(storage.key?(key), exception_class: Cli::Error){"storage '#{name}' must have a '#{key}'"}
+                  Aspera.assert(storage.key?(key), type: Cli::Error){"storage '#{name}' must have a '#{key}'"}
                 end
               end
               if !source_hash.key?(source_name)
@@ -468,7 +468,7 @@ module Aspera
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
                 Log.log.debug{"node=#{node_config}"}
-                Aspera.assert_type(node_config, Hash, exception_class: Cli::Error){source_info[KEY_NODE]}
+                Aspera.assert_type(node_config, Hash, type: Cli::Error){source_info[KEY_NODE]}
                 api_node = Rest.new(
                   base_url: node_config['url'],
                   auth:     {

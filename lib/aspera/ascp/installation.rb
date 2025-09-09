@@ -155,7 +155,7 @@ module Aspera
         else Aspera.error_unexpected_value(k)
         end
         return nil unless file_is_required || File.exist?(file)
-        Aspera.assert(File.exist?(file), exception_class: Errno::ENOENT){"#{k} not found (#{file})"}
+        Aspera.assert(File.exist?(file), type: Errno::ENOENT){"#{k} not found (#{file})"}
         return file
       end
 
