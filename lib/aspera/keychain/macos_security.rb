@@ -44,7 +44,7 @@ module Aspera
               uri = URI.parse(url)
               Aspera.assert(uri.scheme.eql?('https')){'only https'}
               options[:protocol] = 'htps' # cspell: disable-line
-              raise 'host required in URL' if uri.host.nil?
+              raise Error, 'host required in URL' if uri.host.nil?
               options[:server] = uri.host
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
@@ -139,7 +139,7 @@ module Aspera
 
       def list
         # the only way to list is `dump-keychain` which triggers security alert
-        raise 'list not implemented, use macos keychain app'
+        raise Error, 'list not implemented, use macos keychain app'
       end
 
       def set(options)
@@ -154,7 +154,7 @@ module Aspera
         unsupported = options.keys - %i[label]
         Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         info = @keychain.password(:find, :generic, label: options[:label])
-        raise 'not found' if info.nil?
+        raise Error, 'not found' if info.nil?
         result = options.clone
         result[:secret] = info['password']
         result[:description] = info['icmt'] # cspell: disable-line
@@ -165,7 +165,7 @@ module Aspera
         Aspera.assert_type(options, Hash){'options'}
         unsupported = options.keys - %i[label]
         Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
-        raise 'delete not implemented, use macos keychain app'
+        raise Error, 'delete not implemented, use macos keychain app'
       end
     end
   end

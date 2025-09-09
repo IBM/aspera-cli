@@ -172,7 +172,7 @@ module Aspera
                when :dsa_rsa, :rsa
                  types.to_s.split('_').map{ |i| Installation.instance.path("ssh_private_#{i}".to_sym)}
                when :per_client
-                 raise 'Not yet implemented'
+                 Aspera.error_not_implemented
                end
       end
 
@@ -183,7 +183,8 @@ module Aspera
 
       # Check that specified path is ascp and get version
       def get_exe_version(exe_path, vers_arg)
-        raise 'ERROR: nil arg' if exe_path.nil?
+        Aspera.assert_type(exe_path, String)
+        Aspera.assert_type(vers_arg, String)
         return nil unless File.exist?(exe_path)
         exe_version = nil
         cmd_out = %x("#{exe_path}" #{vers_arg})
@@ -263,7 +264,7 @@ module Aspera
 
       # @param &block called with entry information
       def extract_archive_files(sdk_archive_path)
-        raise 'missing block' unless block_given?
+        Aspera.assert(block_given?){'missing block'}
         case sdk_archive_path
         # Windows and Mac use zip
         when /\.zip$/

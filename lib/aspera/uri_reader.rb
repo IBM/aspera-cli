@@ -19,7 +19,7 @@ module Aspera
           return Rest.new(base_url: uri_to_read, redirect_max: 5).call(operation: 'GET', headers: {'Accept' => '*/*'})[:data]
         when 'file', NilClass
           local_file_path = uri.path
-          raise 'URL shall have a path, check syntax' if local_file_path.nil?
+          raise Error, 'URL shall have a path, check syntax' if local_file_path.nil?
           local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
         else Aspera.error_unexpected_value(uri.scheme){"scheme for [#{uri_to_read}]"}

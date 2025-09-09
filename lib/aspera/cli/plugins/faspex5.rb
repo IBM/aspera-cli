@@ -139,7 +139,7 @@ module Aspera
             # resolve any redirect
             @faspex5_api_base_url = Rest.new(base_url: @faspex5_api_base_url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
             encoded_context = Rest.query_to_h(URI.parse(@faspex5_api_base_url).query)['context']
-            raise 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
+            raise BadArgument, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
@@ -483,7 +483,7 @@ module Aspera
             location = case options.get_option(:box)
             when 'inbox' then 'received'
             when 'outbox' then 'sent'
-            else raise 'Browse only available for inbox and outbox'
+            else raise BadArgument, 'Browse only available for inbox and outbox'
             end
             return browse_folder("packages/#{package_id}/files/#{location}")
           when :status

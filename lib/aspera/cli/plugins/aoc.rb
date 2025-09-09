@@ -151,7 +151,7 @@ module Aspera
               formatter.display_status('We will use web authentication to bootstrap.')
               auto_set_pub_key = true
               auto_set_jwt = true
-              raise 'TODO'
+              Aspera.error_not_implemented
               # aoc_api.oauth.grant_method = :web
               # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
               # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
@@ -363,7 +363,7 @@ module Aspera
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
-            raise 'Use field dropbox_name or dropbox_id, not both' if query.key?('dropbox_id')
+            raise BadArgument, 'Use field dropbox_name or dropbox_id, not both' if query.key?('dropbox_id')
             # TODO : craft a query that looks for dropbox only in current workspace
             query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query.delete('dropbox_name'))['id']
           end
@@ -542,7 +542,7 @@ module Aspera
             when :list
               return result_list('admin/auth_providers')
             when :update
-              raise 'not implemented'
+              Aspera.error_not_implemented
             end
           when :subscription
             org = aoc_api.read('organization')

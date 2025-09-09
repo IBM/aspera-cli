@@ -32,7 +32,7 @@ module Aspera
               info[:name] ||= name
               @vault = Keychain::MacosSystem.new(**info)
             else
-              raise 'not implemented for this OS'
+              raise Error, 'not implemented for this OS'
             end
           when 'vault'
             require 'aspera/keychain/hashicorp_vault'

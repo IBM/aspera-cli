@@ -56,6 +56,11 @@ module Aspera
       raise type, "#{"#{yield}: " if block_given?}unexpected value: #{value.inspect}"
     end
 
+    # Not implemented error
+    def error_not_implemented
+      raise Error, 'Feature not yet implemented'
+    end
+
     # Use in superclass to require the given method in subclass.
     def require_method!(name)
       define_method(name) do |*_args|

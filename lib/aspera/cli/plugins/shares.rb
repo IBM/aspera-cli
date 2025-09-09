@@ -73,7 +73,7 @@ module Aspera
                   operation: 'GET',
                   subpath: 'ping',
                   headers: {'content-type': Rest::MIME_JSON})
-              raise 'Shares not detected' unless res[:http].body.eql?(' ')
+              raise Error, 'Shares not detected' unless res[:http].body.eql?(' ')
               nagios.add_ok('shares api', 'accessible')
             rescue StandardError => e
               nagios.add_critical('API', e.to_s)

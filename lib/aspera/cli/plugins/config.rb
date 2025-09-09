@@ -568,7 +568,7 @@ module Aspera
           when String
             options.add_option_preset(preset_by_name(value), 'set_by_name')
           else
-            raise 'Preset definition must be a String for preset name, or Hash for set of values'
+            raise BadArgument, 'Preset definition must be a String for preset name, or Hash for set of values'
           end
         end
 
@@ -599,7 +599,7 @@ module Aspera
           # check there is at least the config section
           Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
           version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-          raise 'No version found in config section.' if version.nil?
+          raise Error, 'No version found in config section.' if version.nil?
           Log.log.debug{"conf version: #{version}"}
           # VVV if there are any conversion needed, those happen here.
           # fix bug in 4.4 (creating key "true" in "default" preset)
@@ -865,7 +865,7 @@ module Aspera
             url = options.get_option(:url, mandatory: true)
             user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)
-            raise 'no such config found' if result.nil?
+            raise Error, 'no such config found' if result.nil?
             return Main.result_single_object(result)
           when :secure
             identifier = options.get_next_argument('config name', mandatory: false)
@@ -1238,7 +1238,7 @@ module Aspera
         # Save current configuration to config file
         # return true if file was saved
         def save_config_file_if_needed
-          raise 'no configuration loaded' if @config_presets.nil?
+          raise Error, 'no configuration loaded' if @config_presets.nil?
           current_checksum = config_checksum
           return false if @config_checksum_on_disk.eql?(current_checksum)
           FileUtils.mkdir_p(@main_folder)
@@ -1303,7 +1303,7 @@ module Aspera
         # @return [String] value from vault matching <name>.<param>
         def vault_value(name)
           m = name.split('.')
-          raise 'vault name shall match <name>.<param>' unless m.length.eql?(2)
+          raise BadArgument, 'vault name shall match <name>.<param>' unless m.length.eql?(2)
           # this raise exception if label not found:
           info = vault.get(label: m[0])
           value = info[m[1].to_sym]

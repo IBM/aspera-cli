@@ -96,7 +96,7 @@ module Aspera
           else
             Log.log.debug{"path=#{final_uri.path} does not end with /login"}
           end
-          raise 'AoC shall redirect to login page with a query' if final_uri.query.nil?
+          raise Error, 'AoC shall redirect to login page with a query' if final_uri.query.nil?
           query = Rest.query_to_h(final_uri.query)
           Log.log.trace1{Log.dump(:query, query)}
           # is that a public link ?
@@ -245,12 +245,12 @@ module Aspera
       end
 
       def workspace
-        raise 'internal error: AoC workspace context is not set' if @workspace_info.nil?
+        Aspera.assert(!@workspace_info.nil?){'AoC workspace context is not set'}
         @workspace_info
       end
 
       def home
-        raise 'internal error: AoC home context is not set' if @home_info.nil?
+        Aspera.assert(!@home_info.nil?){'AoC home context is not set'}
         @home_info
       end
 
@@ -345,7 +345,7 @@ module Aspera
           workspace_name: workspace_name
         }
         if PACKAGES_APP.eql?(app_info[:app])
-          raise 'package info required' if package_info.nil?
+          Aspera.assert(!package_info.nil?){'package info required'}
           app_info[:package_id] = package_info['id']
           app_info[:package_name] = package_info['name']
         end
