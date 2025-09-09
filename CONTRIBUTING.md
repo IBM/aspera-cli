@@ -68,7 +68,7 @@ Build system uses GNU Make.
 
 A few macros/env vars control some aspects:
 
-| Macro, Env var              | Description                          |
+| `make` macro, Env var       | Description                          |
 |-----------------------------|--------------------------------------|
 | `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests |
 | `ASPERA_CLI_TEST_MACOS`     | Set to `true` if local HSTS running on macOS      |
