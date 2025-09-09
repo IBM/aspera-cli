@@ -8,6 +8,8 @@ module Aspera
   # A simple wrapper around Net::SSH
   # executes one command and get its result from stdout
   class Ssh
+    class Error < Aspera::Error
+    end
     class << self
       def disable_ed25519_keys
         Log.log.debug('Disabling SSH ed25519 user keys')
@@ -42,17 +44,26 @@ module Aspera
       @ssh_options[:logger] = Log.log
     end
 
-    def execute(cmd, input=nil)
+    # Anything on stderr raises an exception
+    def execute(cmd, input: nil, exception: false)
       Aspera.assert_type(cmd, String)
       Log.log.debug{"cmd=#{cmd}"}
       response = []
+      error = []
       Net::SSH.start(@host, @username, @ssh_options) do |session|
         ssh_channel = session.open_channel do |channel|
           # prepare stdout processing
           channel.on_data{ |_chan, data| response.push(data)}
           # prepare stderr processing, stderr if type = 1
           channel.on_extended_data do |_chan, _type, data|
-            error_message = "#{cmd}: [#{data.chomp}]"
+            error.push(data)
+          end
+          channel.on_request('exit-status') do |_ch, data|
+            exit_code = data.read_long
+            next if exit_code.zero?
+            Log.log.error(">>code:#{exit_code}")
+            error_message = "#{cmd}: exit #{exit_code}, #{error.join.chomp}"
+            raise Error, error_message if  exception
             # Happens when windows user hasn't logged in and created home account.
             error_message += "\nHint: home not created in Windows?" if data.include?('Could not chdir to home directory')
             Log.log.debug(error_message)

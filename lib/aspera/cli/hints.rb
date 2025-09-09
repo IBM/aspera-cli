@@ -3,6 +3,7 @@
 require 'aspera/transfer/error'
 require 'aspera/rest'
 require 'aspera/log'
+require 'aspera/ssh'
 require 'aspera/assert'
 require 'aspera/cli/info'
 require 'net/ssh'
@@ -91,11 +92,19 @@ module Aspera
             'Refer to the manual for more information.',
             %q{Try: --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'}
           ]
+        },
+        {
+          exception:   Aspera::Ssh::Error,
+          match:       /Could not chdir to home directory/,
+          remediation: [
+            'home not created in Windows?'
+          ]
         }
       ]
       private_constant :ERROR_HINTS
 
       class << self
+        # @param error [Exception] exception object
         def hint_for(error, formatter)
           ERROR_HINTS.each do |hint|
             next unless error.is_a?(hint[:exception])
