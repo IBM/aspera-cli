@@ -4,11 +4,12 @@ module Aspera
   module Transfer
     # generates a pseudo file stream
     class FauxFile
+      SCHEME = 'faux'
       # marker for faux file
-      PREFIX = 'faux:///'
+      PREFIX = "#{SCHEME}:///"
       # size suffix
       SUFFIX = %w[k m g t p e]
-      private_constant :PREFIX, :SUFFIX
+      private_constant :SCHEME, :PREFIX, :SUFFIX
       class << self
         # @return nil if not a faux: scheme, else a FauxFile instance
         def create(name)
