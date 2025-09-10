@@ -206,7 +206,7 @@
     * `faspex5`: When receiving ALL packages, only get those with status `completed`.
     * `direct` agent: Better support for WSS
   * Breaking Changes:
-    * `shares`: Option `type` for users and groups is replaced with mandatory positional argument with same value.
+    * `shares`: Option `type` for users and groups is replaced with mandatory positional argument with same value. E.g. `user list --type=local` becomes: `user local list`.
     * `aoc`, `faspex`: Package `recv` command changed to `receive`, for consistency with faspex5 (`recv` is now an alias command)
 
 * 4.15.0 2023-11-18

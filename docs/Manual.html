@@ -10150,17 +10150,74 @@ transfer part.</p>
 <p><a
 href="https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction"
 class="uri">https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction</a></p>
-<p>Example:</p>
+<p>The payload for creation is the same as for the API, parameters are
+provided as positional <code>Hash</code>.</p>
+<p>Example: Create a Node: Attributes are like API:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>api_username</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>api_password</code></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td></td>
+<td><code>9092</code></td>
+</tr>
+<tr>
+<td><code>ssl</code></td>
+<td></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>verify_ssl</code></td>
+<td></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td></td>
+<td><code>30s</code></td>
+</tr>
+<tr>
+<td><code>open_timeout</code></td>
+<td></td>
+<td><code>10s</code></td>
+</tr>
+</tbody>
+</table>
+<p>Example: Create a share and add a user to it.</p>
 <div class="sourceCode" id="cb534"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb534-1"><a href="#cb534-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share create @json:<span class="st">&#39;{&quot;node_id&quot;:1,&quot;name&quot;:&quot;test1&quot;,&quot;directory&quot;:&quot;test1&quot;,&quot;create_directory&quot;:true}&#39;</span></span>
 <span id="cb534-2"><a href="#cb534-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb534-3"><a href="#cb534-3" aria-hidden="true" tabindex="-1"></a><span class="va">share_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin share list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;test1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
 <span id="cb534-4"><a href="#cb534-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb534-5"><a href="#cb534-5" aria-hidden="true" tabindex="-1"></a><span class="va">user_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin user list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;username&quot;:&quot;entity1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
+<span id="cb534-5"><a href="#cb534-5" aria-hidden="true" tabindex="-1"></a><span class="va">user_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin user all list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;username&quot;:&quot;username1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
 <span id="cb534-6"><a href="#cb534-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb534-7"><a href="#cb534-7" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share user_permissions <span class="va">$share_id</span> create @json:<span class="st">&#39;{&quot;user_id&quot;:&#39;</span><span class="va">$user_id</span><span class="st">&#39;,&quot;browse_permission&quot;:true, &quot;download_permission&quot;:true, &quot;mkdir_permission&quot;:true,&quot;delete_permission&quot;:true,&quot;rename_permission&quot;:true,&quot;content_availability_permission&quot;:true,&quot;manage_permission&quot;:true}&#39;</span></span></code></pre></div>
-<p>To figure out an entity’s payload, for example for creation, refer to
-the API documentation above.</p>
 <h2 data-number="11.1" id="shares-sample-commands"><span
 class="header-section-number">11.1</span> Shares sample commands</h2>
 <blockquote>
