@@ -100,9 +100,11 @@ Once the gem is installed, <%=tool%> shall be accessible:
 <%=cmd%> --version
 ```
 
-```console
+```text
 <%=gemspec.version.to_s%>
 ```
+
+> **Note:** All command line examples provided in sections named **<%=sample_commands_title(:_plugin_name_)%>** are tested during version validation.
 
 ### First use
 
@@ -120,7 +122,7 @@ To test with Aspera demo transfer server, set up the environment and then test:
 <%=cmd%> server browse /
 ```
 
-```output
+```text
 ╭────────────┬──────┬───────────┬───────┬───────────────────────────┬───────────────────────╮
 │ zmode      │ zuid │ zgid      │ size  │ mtime                     │ name                  │
 ╞════════════╪══════╪═══════════╪═══════╪═══════════════════════════╪═══════════════════════╡
@@ -143,7 +145,7 @@ The following example will:
 <%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
 ```
 
-```output
+```text
 Updated: myserver
 Saving config file.
 ```
@@ -152,7 +154,7 @@ Saving config file.
 <%=cmd%> config preset set default server myserver
 ```
 
-```output
+```text
 Updated: default: server <- myserver
 Saving config file.
 ```
@@ -161,7 +163,7 @@ Saving config file.
 <%=cmd%> server browse /aspera-test-dir-large
 ```
 
-```output
+```text
 ╭────────────┬──────┬───────────┬─────────────┬───────────────────────────┬───────╮
 │ zmode      │ zuid │ zgid      │ size        │ mtime                     │ name  │
 ╞════════════╪══════╪═══════════╪═════════════╪═══════════════════════════╪═══════╡
@@ -178,7 +180,7 @@ Saving config file.
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-```output
+```text
 Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
@@ -224,7 +226,7 @@ On Linux, check the minimum required GLIBC on this site: [repology.org](https://
 ldd --version | head -n1
 ```
 
-```console
+```text
 ldd (GNU libc) 2.34
 ```
 
@@ -234,7 +236,7 @@ Check an executable's (e.g. `/bin/bash`, <%=tool%>, `ascp`) minimum required GLI
 objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 ```
 
-```console
+```text
 2.34
 ```
 
@@ -606,7 +608,7 @@ The installation of the transfer binaries follows those steps:
 
 | Option          | Default | Description |
 |-----------------|---------|-------------|
-| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive. `DEF` means: select from available archives. |
+| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive.<%=br%>`DEF` means: select from available archives. |
 | `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
 | `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
 
@@ -1229,7 +1231,7 @@ Details can be found here:
 
 The following examples give the same result on Windows using Powershell:
 
-```console
+```powershell
 PS C:\> echo $psversiontable.psversion
 
 Major  Minor  Build  Revision
@@ -1287,7 +1289,7 @@ For **POSIX shells**, single quotes can also be used in this case, or protect th
 <%=cmd%> config echo Hello\ World --format=text
 ```
 
-```output
+```text
 Hello World
 ```
 
@@ -1318,7 +1320,7 @@ Like any shell special character, it can be protected either by preceding with a
 <%=cmd%> config echo '"'
 ```
 
-```output
+```text
 "
 ```
 
@@ -1331,7 +1333,7 @@ Both shell and JSON syntax allow protecting `"`, but only the shell allows prote
 <%=cmd%> config echo @ruby:\'\"\' --format=text
 ```
 
-```output
+```text
 "
 ```
 
@@ -1415,7 +1417,7 @@ If the value is to be assigned directly to an option of <%=cmd%>, then you can d
 <%=cmd%> config echo @env:MYTITLE --format=text
 ```
 
-```output
+```text
 Test " ' & \
 ```
 
@@ -1643,7 +1645,7 @@ Example: Result of command is a list of objects with a single object:
 <%=cmd%> config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}'
 ```
 
-```console
+```text
 ╭────────┬───────╮
 │ field  │ value │
 ╞════════╪═══════╡
@@ -1662,7 +1664,7 @@ Example: Result of command is a list of objects with a single object:
 -flat=no
 ```
 
-```console
+```text
 ╭───────┬────────────────────────────────────────────────────────────────────────╮
 │ field │ value                                                                  │
 ╞═══════╪════════════════════════════════════════════════════════════════════════╡
@@ -1690,7 +1692,7 @@ Example:
 <%=cmd%> config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
 ```
 
-```console
+```text
 ╭───────┬────────────────╮
 │ field │ value          │
 ╞═══════╪════════════════╡
@@ -1748,7 +1750,7 @@ Example 1: A list of one object
 
 Display with `no` (Transposed):
 
-```console
+```text
 ╭─────────┬───────────┬─────────╮
 │ user.id │ user.name │ project │
 ╞═════════╪═══════════╪═════════╡
@@ -1758,7 +1760,7 @@ Display with `no` (Transposed):
 
 Display with `yes` and `single` (Simple):
 
-```console
+```text
 ╭───────────┬───────╮
 │ field     │ value │
 ╞═══════════╪═══════╡
@@ -1776,7 +1778,7 @@ Example 2: A list of two objects:
 
 Display with `no` and `single` (Transposed):
 
-```console
+```text
 ╭────┬───────╮
 │ id │ speed │
 ╞════╪═══════╡
@@ -1787,7 +1789,7 @@ Display with `no` and `single` (Transposed):
 
 Display with `yes` (multiple Simple):
 
-```console
+```text
 ╭───────┬───────╮
 │ field │ value │
 ╞═══════╪═══════╡
@@ -1856,7 +1858,7 @@ Example:
 <%=cmd%> aoc admin user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
-```output
+```text
 ╭────────────────┬─────────────────────┬───────────╮
 │ name           │ email               │ ats_admin │
 ╞════════════════╪═════════════════════╪═══════════╡
@@ -1979,7 +1981,7 @@ toto,titi@tutu.tata
 <%=cmd%> config echo @csvt:@file:test.csv
 ```
 
-```output
+```text
 +------+---------------------+
 | name |        email        |
 +------+---------------------+
@@ -1994,7 +1996,7 @@ Example: create a `Hash` with values coming from a preset named `config`
 <%=cmd%> config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
 ```
 
-```output
+```text
 ╭─────────┬────────╮
 │ field   │ value  │
 ╞═════════╪════════╡
@@ -2044,7 +2046,7 @@ It can be overridden using option `home`.
 
 Example (Windows):
 
-```output
+```text
 set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
 
 <%=cmd%> config folder
@@ -2219,6 +2221,9 @@ If the default global Option Preset is not set, and you want to use a different 
 
 ```bash
 <%=cmd%> config preset set GLOBAL version_check_days 0
+```
+
+```bash
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
@@ -2226,7 +2231,8 @@ If the default global Option Preset is not set, and you want to use a different 
 
 #### Format of file
 
-The configuration file is a `Hash` in a YAML file. Example:
+The configuration file is a `Hash` in a YAML file.
+Example:
 
 ```yaml
 config:
@@ -2911,7 +2917,7 @@ It provides the following commands for `ascp` sub-command:
 <%=cmd%> config ascp show
 ```
 
-```output
+```text
 /Users/laurent/.aspera/<%=cmd%>/sdk/ascp
 ```
 
@@ -2919,7 +2925,7 @@ It provides the following commands for `ascp` sub-command:
 <%=cmd%> config ascp info
 ```
 
-```output
+```text
 ╭─────────┬──────────────────────────────────────────────────╮
 │ field   │ value                                            │
 ╞═════════╪══════════════════════════════════════════════════╡
@@ -2942,7 +2948,7 @@ Using a POSIX shell:
 <%=cmd%> config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
 ```
 
-```output
+```text
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
 Saved to default global preset global_common_defaults
@@ -2954,7 +2960,7 @@ Windows:
 <%=cmd%> config ascp use C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
 ```
 
-```output
+```text
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
 Saved to default global preset global_common_defaults
@@ -2973,7 +2979,7 @@ Locally installed Aspera products can be listed with:
 <%=cmd%> config ascp products list
 ```
 
-```output
+```text
 +---------------------------------------+----------------------------------------+
 | name                                  | app_root                               |
 +---------------------------------------+----------------------------------------+
@@ -2999,7 +3005,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 <%=cmd%> config ascp connect list
 ```
 
-```output
+```text
 +-----------------------------------------------+--------------------------------------+-----------+
 | id                                            | title                                | version   |
 +-----------------------------------------------+--------------------------------------+-----------+
@@ -3016,7 +3022,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 <%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' list
 ```
 
-```output
+```text
 +-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
 | title                                     | type                     | href                                                                                    | hreflang | rel                 |
 +-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
@@ -3031,7 +3037,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 <%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' download enclosure --to-folder=.
 ```
 
-```output
+```text
 Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
@@ -3843,7 +3849,7 @@ The list of supported **PVCL** adapters can be retrieved with command:
 <%=cmd%> config ascp info --fields=@re:'^pvcl'
 ```
 
-```output
+```text
 process v1
 shares v1
 noded v1
@@ -4000,7 +4006,7 @@ Available plugins can be found using command:
 <%=cmd%> config plugin list
 ```
 
-```output
+```text
 +--------------+--------+--------+-------------------------------------------------------+
 | plugin       | detect | wizard | path                                                  |
 +--------------+--------+--------+-------------------------------------------------------+
@@ -4028,7 +4034,7 @@ You can create the skeleton of a new plugin like this:
 <%=cmd%> config plugin create foo .
 ```
 
-```output
+```text
 Created ./foo.rb
 ```
 
@@ -4205,7 +4211,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 <%=cmd%> aoc admin client list
 ```
 
-```output
+```text
 Items: 4/4
 ╭────────────┬─────────────────────╮
 │ id         │ name                │
@@ -4221,7 +4227,7 @@ Items: 4/4
 <%=cmd%> aoc admin client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
-```output
+```text
 modified
 ```
 
@@ -4246,7 +4252,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 <%=cmd%> aoc admin user list
 ```
 
-```output
+```text
 +--------+----------------+
 |   id   |      name      |
 +--------+----------------+
@@ -4259,7 +4265,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 <%=cmd%> aoc user profile modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/my_private_key.pub"))}'
 ```
 
-```output
+```text
 modified
 ```
 
@@ -4307,7 +4313,7 @@ Once client has been registered and [Option Preset](#option-preset) created: <%=
 <%=cmd%> aoc files br /
 ```
 
-```output
+```text
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -4434,7 +4440,7 @@ And then craft your command:
 
 If the command returns an error, example:
 
-```output
+```text
 +----+-----------------------------------------------------------------------------------+
 | id | status                                                                            |
 +----+-----------------------------------------------------------------------------------+
@@ -4549,7 +4555,7 @@ Current Workspace: Default (default)
 <%=cmd%> aoc admin user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 ```
 
-```output
+```text
 +-------+---------+
 |  id   | status  |
 +-------+---------+
@@ -4564,7 +4570,7 @@ Current Workspace: Default (default)
 <%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
-```output
+```text
 +-------+------------------------+
 |  id   |         email          |
 +-------+------------------------+
@@ -4577,7 +4583,7 @@ Current Workspace: Default (default)
 <%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
-```output
+```text
 +-------+---------+
 |  id   | status  |
 +-------+---------+
@@ -4600,7 +4606,7 @@ To delete them use the same method as before
 <%=cmd%> aoc user workspaces list
 ```
 
-```output
+```text
 +------+----------------------------+
 |  id  |            name            |
 +------+----------------------------+
@@ -4646,7 +4652,7 @@ Examples of query:
 <%=cmd%> aoc admin workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ```
 
-```output
+```text
 +-------------+---------+----------------------------------+
 | member_type | manager |           member.email           |
 +-------------+---------+----------------------------------+
@@ -4711,7 +4717,7 @@ e- Add members to second workspace
 <%=cmd%> aoc admin user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
-```output
+```text
 +-------------------------------+
 |             email             |
 +-------------------------------+
@@ -4774,7 +4780,7 @@ First, set up the environment (skip if already done)
 <%=cmd%> config wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
 ```
 
-```output
+```text
 Detected: Aspera on Cloud
 Preparing preset: aoc_sedemo
 Using existing key:
@@ -4820,7 +4826,7 @@ The following command will create and display a secret token to register a self-
 <%=cmd%> aoc admin client_registration_token list --fields=id --format=csv|<%=cmd%> aoc admin client_registration_token delete @lines:@stdin: --bulk=yes
 ```
 
-```output
+```text
 +-----+---------+
 | id  | status  |
 +-----+---------+
@@ -5363,7 +5369,7 @@ First get your IBM Cloud API key. For instance, it can be created using the IBM 
 ibmcloud iam api-key-create mykeyname -d 'my sample key'
 ```
 
-```console
+```text
 OK
 API key mykeyname was created
 
@@ -5399,7 +5405,7 @@ Then, to register the key by default for the `ats` plugin, create a preset. Exec
 <%=cmd%> ats api_key instances
 ```
 
-```output
+```text
 +--------------------------------------+
 | instance                             |
 +--------------------------------------+
@@ -5415,7 +5421,7 @@ Then, to register the key by default for the `ats` plugin, create a preset. Exec
 <%=cmd%> ats api_key create
 ```
 
-```output
+```text
 +--------+----------------------------------------------+
 | field  | value                                        |
 +--------+----------------------------------------------+
@@ -5479,8 +5485,11 @@ The URL to be provided with option `url` shall be like `ssh://_server_address_:3
 
 Typically:
 
-```console
+```bash
 <%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+```
+
+```bash
 <%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
@@ -5778,7 +5787,7 @@ The following command lists one file that requires validation, and assign it to 
 <%=cmd%> node central file list --validator=<%=cmd%> @json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
-```output
+```text
 +--------------+--------------+------------+--------------------------------------+
 | session_uuid |    file_id   |   status   |              path                    |
 +--------------+--------------+------------+--------------------------------------+
@@ -5792,7 +5801,7 @@ To update the status of the file, use the following command:
 <%=cmd%> node central file update --validator=<%=cmd%> @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
-```output
+```text
 updated
 ```
 
@@ -6189,26 +6198,28 @@ By default, package operations (send, receive, list) are done on the user's inbo
 
 To select another inbox, use option `box` with one of the following values:
 
-- `inbox`
-- `inbox_history`
-- `inbox_all`
-- `inbox_all_history`
-- `outbox`
-- `outbox_history`
-- `pending`
-- `pending_history`
-- `all`
-- `ALL` (**admin only**, all inboxes of all users)
-- **name of a shared inbox or workgroup**
+| `box`               | Comment |
+|---------------------|---------|
+| `inbox`             | Default |
+| `inbox_history`     | |
+| `inbox_all`         | |
+| `inbox_all_history` | |
+| `outbox`            | |
+| `outbox_history`    | |
+| `pending`           | |
+| `pending_history`   | |
+| `all`               | |
+| `ALL`               | **admin only**, all inboxes of all users |
+| Any other value     | Name of a shared inbox if `group_type` is `shared_inboxes` (default)<%=br%>or workgroup if `group_type` is `workgroups` |
 
-> **Note:** In case the name of the `box` is specific, use option `group_type` with either `shared_inboxes` or `workgroups` to be more specific.
+> **Note:** In case the name of the `box` is an open value, use option `group_type` with either `shared_inboxes` or `workgroups`.
 
 ### Faspex 5: Send a package
 
 A package can be sent with the command:
 
 ```bash
-<%=cmd%> faspex5 packages send [extended value: Hash with package info ] [files...]
+<%=cmd%> faspex5 packages send [extended value: Hash with package info] [files...]
 ```
 
 The `Hash` creation **Command Parameter** provided to command corresponds to the Faspex 5 API: `POST /packages` (refer to the API reference for a full list of parameters, or look at request in browser).
@@ -6554,7 +6565,9 @@ There are many limitations:
 - Only a single authentication is possible (per gateway) on Faspex5.
 - No authentication of F4 side (ignored).
 
-Behavior: The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client. The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
+Behavior:
+The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client.
+The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
 
 For other parameters, see [Web service](#web-service).
 
@@ -6776,7 +6789,7 @@ Listing transfers supports the API syntax.
 
 In addition, it is possible to place a single `query` parameter in the request to filter the results : `filter`, following the syntax:
 
-```console
+```text
 (field operator value)and(field operator value)...
 ```
 
@@ -6800,10 +6813,12 @@ If you don't have credentials but have access to the IBM Cloud console, then use
 
 If you have those parameters already, then following options shall be provided:
 
-- `bucket` bucket name
-- `endpoint` storage endpoint URL, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
-- `apikey` API Key
-- `crn` resource instance ID
+| Option     | Description |
+|------------|-------------|
+| `bucket`   | Bucket name |
+| `endpoint` | Storage endpoint URL<%=br%>e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud` |
+| `apikey`   | API Key     |
+| `crn`      | Resource instance ID |
 
 For example, let us create a default configuration:
 
@@ -6865,9 +6880,11 @@ The field `apikey` is for option `apikey`
 
 The required options for this method are:
 
-- `bucket` bucket name
-- `region` bucket region, e.g. `eu-de`
-- `service_credentials` see below
+| Option                | Description |
+|-----------------------|-------------|
+| `bucket`              | Bucket name |
+| `region`              | Bucket region<%=br%>e.g. `eu-de` |
+| `service_credentials` | JSON information saved from IBM Cloud console. |
 
 For example, let us create a default configuration:
 
@@ -6946,7 +6963,7 @@ To display the value, use `asuserdata`:
 asuserdata -a | grep max_request_file_create_size_kb
 ```
 
-```console
+```text
   max_request_file_create_size_kb: "1024"
 ```
 
@@ -7210,8 +7227,8 @@ Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
 <%=tool%> provides 2 ways to read and write files with the option: `file_access`
 
-If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used. In this case, no transfer happen, source files are directly read from the storage, and preview files
-are directly written to the storage.
+If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
+In this case, no transfer happen, source files are directly read from the storage, and preview files are directly written to the storage.
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
@@ -7221,10 +7238,10 @@ If the preview generator does not have access to files on the file system (it is
 
 An interface for the `async` utility is provided in the following plugins:
 
-- `server sync`
-- `node sync` (use token)
-- `aoc files sync` (uses node)
-- `shares files sync` (uses node)
+- `server sync` (SSH Auth)
+- `node sync` (use gen3 token)
+- `aoc files sync` (uses `node` plugin with bearer token)
+- `shares files sync` (uses `node` plugin with gen3 token)
 
 The `sync` command, available in above plugins, performs the following actions:
 
@@ -7250,12 +7267,14 @@ The path on the other side is specified using option: `to_folder`.
 | `bidi`    | Local  | Remote      |
 | `pull`    | Remote | Local       |
 
-An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` or `args` format.
+An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` (preferred) or `args` (legacy) format.
+
+A single session can be specified using either formats.
 
 #### `sync_info`: `conf` format
 
+This is the **preferred** syntax.
 It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
-This is the **preferred** syntax and only allows a single session definition.
 
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
@@ -7263,13 +7282,14 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 
 #### `sync_info`: `args` format
 
-<%=tool%> defines a JSON equivalent to regular `async`options.
+This is the **legacy** syntax.
+<%=tool%> defines a JSON equivalent to regular `async` options.
 It is based on a JSON representation of `async` command line options.
 Technically, it allows definition of multiple sync sessions in a single command, but <%=tool%> only accepts a single session for consistency with the previous syntax.
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
-Parameters `local_dir_` and `remote_dir` are not allowed since they are provided on command line.
+Parameters `local_dir` and `remote_dir` are not allowed since they are provided on command line.
 
 ### Sync management and monitoring
 
@@ -7378,12 +7398,12 @@ Most plugin provide a `health` command that will check the health status of the 
 <%=cmd%> console health
 ```
 
-```output
-+--------+-------------+------------+
-| status | component   | message    |
-+--------+-------------+------------+
-| ok     | console api | accessible |
-+--------+-------------+------------+
+```text
+╭────────┬─────────────┬────────────╮
+│ status │ component   │ message    │
+╞════════╪═════════════╪════════════╡
+│ ok     │ console api │ accessible │
+╰────────┴─────────────┴────────────╯
 ```
 
 Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
@@ -7398,7 +7418,7 @@ Typically, the health check uses the REST API of the application with the follow
 <%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
 ```
 
-```output
+```text
 OK - [transfer:ok]
 ```
 
@@ -7415,7 +7435,7 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 | `tls`        | `true`              | `true`                     | Enable `STARTTLS` (port 587)     |
 | `ssl`        | `false`             | `false`                    | Enable `TLS` (port 465)          |
 | `port`       | `587` or `465` or `25` | `587`                   | Port for service                 |
-| `domain`     | *domain of server*  | gmail.com                  | Email domain of user             |
+| `domain`     | _domain of server_  | gmail.com                  | Email domain of user             |
 | `username`   | -                   | john@example.com           | User to authenticate on SMTP server, leave empty for open auth. |
 | `password`   | -                   | my_password_here           | Password for above username      |
 | `from_email` | username if defined | johnny@example.com         | Address used if receiver replies |
@@ -7523,12 +7543,12 @@ During execution, it generates all low level events, one per line, in JSON forma
 
 Top level parameters supported by `asession`:
 
-| Parameter | Description |
-|-----------|-------------|
-| `spec` | the [**transfer-spec**](#transfer-specification) |
-| `agent` | same parameters as transfer-info for agent `direct` |
-| `loglevel` | log level of `asession` |
-| `file_list_folder` | the folder used to store (for garbage collection) generated file lists. By default, it is `[system tmp folder]/[username]_asession_filelists` |
+| Parameter  | Description |
+|------------|-------------|
+| `spec`     | The [**transfer-spec**](#transfer-specification)    |
+| `agent`    | Same parameters as transfer-info for agent `direct` |
+| `loglevel` | Log level of `asession`                             |
+| `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<%=br%>By default, it is `[system tmp folder]/[username]_asession_filelists` |
 
 ### Comparison of interfaces
 
@@ -7654,7 +7674,7 @@ To re-activate, set env var `<%=opt_env(%Q`enable_ed`)%>25519` to `true`.
 
 Without this deactivation, if such key was present in user's `.ssh` folder then the following error was generated:
 
-```output
+```text
 OpenSSH keys only supported if ED25519 is available
 ```
 

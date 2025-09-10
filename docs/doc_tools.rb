@@ -21,7 +21,7 @@ Aspera::Log.instance.level = :info
 Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
-# format special value depending on context
+# Format special value depending on context
 class HtmlFormatter
   class << self
     def special_format(special)
@@ -37,38 +37,38 @@ class HtmlFormatter
   end
 end
 
-# place warning in generated file
+# Place warning in generated file
 def doc_warn(_)
   'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md'
 end
 
-# line break in tables
+# Line break in tables
 def br; '<br/>'; end
 
-# to the power of
+# To the power of
 def pow(value); "<sup>#{value}</sup>"; end
 
 # values used in ERB
 # ------------------
 
-# just command name
+# Just command name
 def cmd; Aspera::Cli::Info::CMD_NAME; end
 
-# just command name
+# Just command name
 def gem; Aspera::Cli::Info::GEM_NAME; end
 
 # (Markdown) used in text with formatting of command
 def tool; "`#{cmd}`"; end
 
-# env var for option
+# Env var for option
 def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 
-# container image in docker hub
+# Container image in docker hub
 def container_image; Aspera::Cli::Info::CONTAINER; end
 
 def gemspec; Gem::Specification.load(@param[:gemspec]) || raise("error loading #{@param[:gemspec]}"); end
 
-# if version contains other characters than digit and dot, it is pre-release
+# If version contains other characters than digit and dot, it is pre-release
 def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
 def gem_opt_md_list
@@ -250,11 +250,15 @@ def all_test_commands_by_plugin
   return @commands
 end
 
+def sample_commands_title(plugin_name)
+  "Tested commands for `#{plugin_name}`"
+end
+
 def include_commands_for_plugin(plugin_name)
   commands = all_test_commands_by_plugin.delete(plugin_name.to_s)
   raise "plugin #{plugin_name} not found in test makefile" if commands.nil?
   @undocumented_plugins.delete(plugin_name.to_sym)
-  return "### #{plugin_name.capitalize} sample commands\n\n> **Note:** Add `#{cmd} #{plugin_name}` in front of the commands:\n\n```bash\n#{commands.join("\n")}\n```"
+  return "### #{sample_commands_title(plugin_name)}\n\n> **Note:** Add `#{cmd} #{plugin_name}` in front of the commands:\n\n```bash\n#{commands.join("\n")}\n```"
 end
 
 def include_commands
