@@ -479,7 +479,6 @@ module Aspera
           params = @options[:table_style].symbolize_keys
           # delete default
           params.delete(:border)
-          Log.log.error(">>#{params}")
           add_headers = params.delete(:headers)
           output = CSV.generate(**params) do |csv|
             csv << fields if add_headers
