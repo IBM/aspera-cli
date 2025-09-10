@@ -379,9 +379,6 @@ module Aspera
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           http_session.cert_store = @certificate_store if @certificate_store
           Log.log.debug{"Using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
-          # http_session.ssl_context.options |= OpenSSL::SSL::OP_IGNORE_UNEXPECTED_EOF
-          # Log.log.error{">>>#{http_session.instance_variable_get(:@ssl_context).class}"}
-          # http_session.ssl_options = OpenSSL::SSL::OP_IGNORE_UNEXPECTED_EOF
           @option_http_options.each do |k, v|
             method = "#{k}=".to_sym
             # check if accessor is a method of Net::HTTP
