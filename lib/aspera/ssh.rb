@@ -61,7 +61,6 @@ module Aspera
           channel.on_request('exit-status') do |_ch, data|
             exit_code = data.read_long
             next if exit_code.zero?
-            Log.log.error(">>code:#{exit_code}")
             error_message = "#{cmd}: exit #{exit_code}, #{error.join.chomp}"
             raise Error, error_message if  exception
             # Happens when windows user hasn't logged in and created home account.
@@ -73,7 +72,7 @@ module Aspera
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait
-        # main ssh session loop
+        # main SSH session loop
         session.loop
       end
       # response as single string
