@@ -13,7 +13,7 @@ require 'aspera/environment'
 module Aspera
   module Cli
     module Plugins
-      # implement basic remote access with FASP/SSH
+      # Operations on HSTS with SSH/FASP (ascmd/ascp)
       class Server < Cli::BasicAuthPlugin
         include SyncActions
 
@@ -31,8 +31,8 @@ module Aspera
         private_constant :SSH_SCHEME, :URI_SCHEMES, :ASCMD_ALIASES, :TRANSFER_COMMANDS
 
         class LocalExecutor
-          def execute(ascmd_path, line)
-            return Environment.secure_capture(exec: ascmd_path, stdin_data: line, binmode: true)
+          def execute(ascmd_path, input:)
+            return Environment.secure_capture(exec: ascmd_path, stdin_data: input, binmode: true, exception: false)
           end
         end
 
@@ -117,7 +117,7 @@ module Aspera
           if server_uri.scheme.eql?(LOCAL_SCHEME)
             # Using local execution (mostly for testing)
             server_transfer_spec['remote_host'] = 'localhost'
-            # simulate SSH environment, else ascp will fail
+            # simulate SSH environment, else ascmd will fail
             ENV['SSH_CLIENT'] = 'local 0 0'
             @connection_type = :local
             return server_transfer_spec
