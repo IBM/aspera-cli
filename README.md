@@ -7618,19 +7618,33 @@ Supported commands are listed in Share's API documentation:
 
 <https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction>
 
-Example:
+The payload for creation is the same as for the API, parameters are provided as positional `Hash`.
+
+Example: Create a Node: Attributes are like API:
+
+| Attribute | Required | Default |
+|-----------|----------|---------|
+| `name`    | Yes      |         |
+| `host`    | Yes      |         |
+| `api_username` | Yes |         |
+| `api_password` | Yes |         |
+| `port`    |          | `9092`  |
+| `ssl`     |          | `true`  |
+| `verify_ssl` |       | `false` |
+| `timeout`    |       | `30s`   |
+| `open_timeout` |     | `10s`   |
+
+Example: Create a share and add a user to it.
 
 ```bash
 ascli shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
 share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
 
-user_id=$(ascli shares admin user list --select=@json:'{"username":"entity1"}' --fields=id)
+user_id=$(ascli shares admin user all list --select=@json:'{"username":"username1"}' --fields=id)
 
 ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
 ```
-
-To figure out an entity's payload, for example for creation, refer to the API documentation above.
 
 ### Shares sample commands
 
