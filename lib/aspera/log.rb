@@ -59,12 +59,14 @@ module Aspera
       # get the logger object of singleton
       def log; instance.logger; end
 
-      # dump object suitable for Log.log.debug
+      # Dump object (`Hash`) using specified level
       # @param name string or symbol
-      # @param format either pp or json format
+      # @param object Hash or nil
+      # @param level debug level
+      # @param block give computed object
       def dump(name, object = nil, level: :debug)
         return unless instance.logger.send(:"#{level}?")
-        yield if block_given?
+        object = yield if block_given?
         instance.logger.send(level, obj_dump(name, object))
       end
 
