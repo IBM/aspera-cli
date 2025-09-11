@@ -88,7 +88,7 @@ module Aspera
             end
             return nagios.result
           when :bridges
-            return entity_execute(api, 'bridges')
+            return entity_execute(api: api, entity: 'bridges')
           end
         end
       end

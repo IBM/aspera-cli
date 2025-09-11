@@ -293,11 +293,7 @@ module Aspera
               delivery_id = instance_identifier
               return Main.result_single_object(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
             when :list
-              return {
-                type:   :object_list,
-                data:   mailbox_filtered_entries,
-                fields: [PACKAGE_MATCH_FIELD, 'title', 'items']
-              }
+              return Main.result_object_list(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)
               Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
@@ -493,21 +489,21 @@ module Aspera
             command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
             case command
             when :dropbox
-              return entity_execute(api_v4, 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at])
+              return entity_execute(api: api_v4, entity: 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at])
             when :dmembership
-              return entity_execute(api_v4, 'dropbox_memberships')
+              return entity_execute(api: api_v4, entity: 'dropbox_memberships')
             when :workgroup
-              return entity_execute(api_v4, 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at])
+              return entity_execute(api: api_v4, entity: 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at])
             when :wmembership
-              return entity_execute(api_v4, 'workgroup_memberships')
+              return entity_execute(api: api_v4, entity: 'workgroup_memberships')
             when :user
-              return entity_execute(api_v4, 'users', display_fields: %w[id name first_name last_name])
+              return entity_execute(api: api_v4, entity: 'users', display_fields: %w[id name first_name last_name])
             when :metadata_profile
-              return entity_execute(api_v4, 'metadata_profiles')
+              return entity_execute(api: api_v4, entity: 'metadata_profiles')
             when :package
               pkg_box_type = options.get_next_command([:users])
               pkg_box_id = instance_identifier
-              return entity_execute(api_v4, "#{pkg_box_type}/#{pkg_box_id}/packages")
+              return entity_execute(api: api_v4, entity: "#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book
             result = api_v3.read('address-book', {'format' => 'json', 'count' => 100_000})

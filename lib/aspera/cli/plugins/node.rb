@@ -398,8 +398,8 @@ module Aspera
             case ak_command
             when *Plugin::ALL_OPS
               return entity_execute(
-                @api_node,
-                'access_keys',
+                api: @api_node,
+                entity: 'access_keys',
                 command: ak_command) do |field, value|
                        raise Cli::BadIdentifier, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
                        @api_node.read('access_keys/self')['id']
@@ -852,10 +852,10 @@ module Aspera
             case sync_command
             when *Plugin::ALL_OPS
               return entity_execute(
-                @api_node,
-                'asyncs',
+                api: @api_node,
+                entity: :asyncs,
                 command: sync_command,
-                item_list_key: 'ids'){ |field, value| ssync_lookup(field, value)}
+                items_key: 'ids'){ |field, value| ssync_lookup(field, value)}
             else
               asyncs_id = instance_identifier{ |field, value| ssync_lookup(field, value)}
               if %i[start stop].include?(sync_command)
@@ -916,11 +916,7 @@ module Aspera
               max_items = transfer_filter.delete(MAX_ITEMS)
               transfers_data = call_with_iteration(api: @api_node, operation: 'GET', subpath: 'ops/transfers', max: max_items, query: transfer_filter, iteration: iteration_persistency&.data)
               iteration_persistency&.save
-              return {
-                type:   :object_list,
-                data:   transfers_data,
-                fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
-              }
+              return Main.result_object_list(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
             when :sessions
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
               sessions = transfers_data.map{ |t| t['sessions']}.flatten
@@ -928,11 +924,7 @@ module Aspera
                 session['start_time'] = Time.at(session['start_time_usec'] / 1_000_000.0).utc.iso8601(0)
                 session['end_time'] = Time.at(session['end_time_usec'] / 1_000_000.0).utc.iso8601(0)
               end
-              return {
-                type:   :object_list,
-                data:   sessions,
-                fields: %w[id status start_time end_time target_rate_kbps]
-              }
+              return Main.result_object_list(sessions, fields: %w[id status start_time end_time target_rate_kbps])
             when :cancel
               resp = @api_node.cancel("ops/transfers/#{instance_identifier}")
               return Main.result_single_object(resp)
@@ -1022,11 +1014,7 @@ module Aspera
                 request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
-                return {
-                  type:   :object_list,
-                  data:   resp['session_info_result']['session_info'],
-                  fields: %w[session_uuid status transport direction bytes_transferred]
-                }
+                return Main.result_object_list(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
               end
             when :file
               command = options.get_next_command(%i[list modify])
