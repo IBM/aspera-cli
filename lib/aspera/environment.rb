@@ -291,11 +291,11 @@ module Aspera
       when :text
         case the_url.to_s
         when /^http/
-          puts "USER ACTION: please enter this url in a browser:\n#{the_url.to_s.red}\n"
+          puts "USER ACTION: please enter this URL in a browser:\n#{the_url.to_s.red}\n"
         else
           puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
         end
-      else Aspera.error_unexpected_value(@url_method){'unknown url open method'}
+      else Aspera.error_unexpected_value(@url_method){'URL open method'}
       end
     end
 
