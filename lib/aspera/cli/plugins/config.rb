@@ -70,7 +70,7 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
         DEFAULT_PRIV_KEY_LENGTH = 4096
-        COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
+        COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'
         # for testing only
@@ -93,7 +93,7 @@ module Aspera
           :DEFAULT_PRIV_KEY_FILENAME,
           :SERVER_COMMAND,
           :PRESET_DIG_SEPARATOR,
-          :COFFEE_IMAGE,
+          :COFFEE_IMAGE_URL,
           :WIZARD_RESULT_KEYS,
           :SELF_SIGNED_CERT,
           :PERSISTENCY_FOLDER,
@@ -1022,9 +1022,9 @@ module Aspera
             return Main.result_object_list(apps) if action.eql?(:detect)
             return wizard_find(apps)
           when :coffee
-            return Main.result_image(COFFEE_IMAGE, formatter: formatter)
+            return Main.result_image(COFFEE_IMAGE_URL)
           when :image
-            return Main.result_image(options.get_next_argument('image uri or blob'), formatter: formatter)
+            return Main.result_image(options.get_next_argument('image URI or blob'))
           when :ascp
             execute_action_ascp
           when :transferd

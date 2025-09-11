@@ -258,6 +258,7 @@ module Aspera
         display_item_count(data.length, total) unless total.nil?
         hide_secrets(data)
         data = SecretHider.hide_secrets_in_string(data) if data.is_a?(String) && hide_secrets?
+        @options[:format] = :image if type.eql?(:image)
         case @options[:format]
         when :text
           display_message(:data, data.to_s)
@@ -272,20 +273,42 @@ module Aspera
         when :yaml
           display_message(:data, YAML.dump(filter_list_on_fields(data)))
         when :image
-          # assume it is an url
-          url = data
+          # if object or list, then must be a single
           case type
           when :single_object, :object_list
-            url = [url] if type.eql?(:single_object)
-            raise BadArgument, 'image display requires a single result' unless url.length == 1
-            fields = compute_fields(url, fields)
+            data = [data] if type.eql?(:single_object)
+            raise BadArgument, 'image display requires a single result' unless data.length == 1
+            fields = compute_fields(data, fields)
             raise BadArgument, 'select a single field to display' unless fields.length == 1
-            url = url.first
-            raise BadArgument, 'no such field' unless url.key?(fields.first)
-            url = url[fields.first]
+            data = data.first
+            raise BadArgument, 'no such field' unless data.key?(fields.first)
+            data = data[fields.first]
           end
-          raise "not url: #{url.class} #{url}" unless url.is_a?(String)
-          display_message(:data, status_image(url))
+          Aspera.assert_type(data, String){'URL or blob for image'}
+          # Check if URL
+          message =
+            begin
+              # just validate
+              URI.parse(data)
+              if Environment.instance.url_method.eql?(:text)
+                UriReader.read(data)
+              else
+                Environment.instance.open_uri(data)
+                'Opened Url'
+              end
+            rescue URI::InvalidURIError
+              nil
+            end
+          if message.nil?
+            # try base64
+            begin
+              data = Base64.strict_decode64(data)
+            rescue
+              nil
+            end
+            message = Preview::Terminal.build(data, **@options[:image].symbolize_keys)
+          end
+          display_message(:data, message)
         when :table, :csv
           case type
           when :single_object
@@ -317,36 +340,10 @@ module Aspera
           when :text # no table
             # :status displays a simple message
             display_message(:data, data)
-          else
-            raise "unknown data type: #{type}"
+          else Aspera.error_unexpected_value(type){'data type'}
           end
-        else
-          raise "not expected: #{@options[:format]}"
+        else Aspera.error_unexpected_value(@options[:format]){'format'}
         end
-      end
-
-      # @return text suitable to display an image from url
-      # @param blob [String] either a URL or image data
-      def status_image(blob)
-        # check if URL
-        begin
-          URI.parse(blob)
-          url = blob
-          unless Environment.instance.url_method.eql?(:text)
-            Environment.instance.open_uri(url)
-            return ''
-          end
-          blob = UriReader.read(url)
-        rescue URI::InvalidURIError
-          nil
-        end
-        # try base64
-        begin
-          blob = Base64.strict_decode64(blob)
-        rescue
-          nil
-        end
-        return Preview::Terminal.build(blob, **@options[:image].symbolize_keys)
       end
       #==========================================================================================
 

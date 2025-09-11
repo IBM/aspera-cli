@@ -360,6 +360,8 @@ $(F)serv_sync_pull_conf: $(F)serv_sync_pull_args
 	$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf @json:'{"name":"serv_sync_pull_conf"}'
 	$(INCMAN)$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_conf @json:@extend:'{"name":"serv_sync_pull_conf"}'
 	$(INCMAN)$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf
+	$(CLI_TEST) server sync admin overview $(TMP_SYNCS)serv_sync_pull_conf
+	$(CLI_TEST) server sync admin file_info $(TMP_SYNCS)serv_sync_pull_conf
 	@$(STOP_TEST) $@
 $(F)serv_upload_ex: $(F)serv_mkdir
 	@$(START_TEST) $@
@@ -767,6 +769,7 @@ $(F)aocg2: $(TMP_EXISTS)
 $(F)aocg3: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc organization
+	$(INCMAN)$(CLI_TEST) aoc organization --format=image --fields=background_image_url --ui=text
 	$(INCMAN)$(CLI_TEST) aoc tier_restrictions
 	@$(STOP_TEST) $@
 $(F)aocg4: $(TMP_EXISTS)
@@ -1007,7 +1010,7 @@ $(F)aocp4: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)aocp5: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) aoc org -N --url=@preset:aoc.public_link_recv_from_aoc_user
+	$(INCMAN)$(CLI_TEST) aoc organization -N --url=@preset:aoc.public_link_recv_from_aoc_user
 	@$(STOP_TEST) $@
 $(F)aocp_send_pub_sh: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1674,6 +1677,10 @@ $(F)conf_echo: $(TMP_EXISTS)
 	  $(CLI_TEST) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
 	done
 	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
+	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --fields=@json:'["id"]'
+	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --fields=@re:'i+'
+	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --fields=@ruby:'->(f){f.eql?("id")}'
+	$(CLI_TEST) config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --select=@ruby:'->(r){r["id"].eql?(8)}'
 	@$(STOP_TEST) $@
 $(F)conf_extended: $(TMP_EXISTS)
 	@$(START_TEST) $@
