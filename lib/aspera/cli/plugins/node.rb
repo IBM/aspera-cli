@@ -656,7 +656,7 @@ module Aspera
               subpath: "files/#{apifid[:file_id]}/preview",
               headers: {'Accept' => 'image/png'}
             )
-            return Main.result_image(result[:http].body, formatter: formatter)
+            return Main.result_image(result[:http].body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
             command_perm = options.get_next_command(%i[list show create delete])

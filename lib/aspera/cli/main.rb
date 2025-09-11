@@ -87,8 +87,9 @@ module Aspera
           return result_object_list(status_table)
         end
 
-        def result_image(blob, formatter:)
-          return Main.result_status(formatter.status_image(blob))
+        # Display image for that URL or directly blob
+        def result_image(url_or_blob)
+          return {type: :image, data: url_or_blob}
         end
 
         def result_single_object(data, fields: nil)
