@@ -90,25 +90,25 @@ module Aspera
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
             case admin_command
             when :node
-              return entity_execute(api_shares_admin, 'data/nodes')
+              return entity_execute(api: api_shares_admin, entity: 'data/nodes')
             when :share
               share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
               case share_command
               when *Plugin::ALL_OPS
                 return entity_execute(
-                  api_shares_admin,
-                  'data/shares',
+                  api: api_shares_admin,
+                  entity: 'data/shares',
                   command: share_command,
                   display_fields: %w[id name node_id directory percent_free])
               when :user_permissions, :group_permissions
                 share_id = instance_identifier
-                return entity_execute(api_shares_admin, "data/shares/#{share_id}/#{share_command}")
+                return entity_execute(api: api_shares_admin, entity: "data/shares/#{share_id}/#{share_command}")
               end
             when :transfer_settings
               xfer_settings_command = options.get_next_command(%i[show modify])
               return entity_execute(
-                api_shares_admin,
-                'data/transfer_settings',
+                api: api_shares_admin,
+                entity: 'data/transfer_settings',
                 command: xfer_settings_command,
                 is_singleton: true)
             when :user, :group
@@ -116,36 +116,36 @@ module Aspera
               entities_location = options.get_next_command(%i[all local ldap saml])
               entities_prefix = entities_location.eql?(:all) ? '' : "#{entities_location}_"
               entities_path = "data/#{entities_prefix}#{entity_type}s"
-              entity_execute = nil
+              entity_commands = nil
               case entities_location
               when :all
-                entity_execute = %i[list show delete]
-                entity_execute.concat(USR_GRP_SETTINGS)
-                entity_execute.push(:users) if entity_type.eql?(:group)
-                entity_execute.freeze
+                entity_commands = %i[list show delete]
+                entity_commands.concat(USR_GRP_SETTINGS)
+                entity_commands.push(:users) if entity_type.eql?(:group)
+                entity_commands.freeze
               when :local
-                entity_execute = %i[list show delete create modify]
-                entity_execute.push(:users) if entity_type.eql?(:group)
-                entity_execute.freeze
+                entity_commands = %i[list show delete create modify]
+                entity_commands.push(:users) if entity_type.eql?(:group)
+                entity_commands.freeze
               when :ldap
-                entity_execute = %i[add].freeze
+                entity_commands = %i[add].freeze
               when :saml
-                entity_execute = %i[import].freeze
+                entity_commands = %i[import].freeze
               end
-              entity_verb = options.get_next_command(entity_execute)
+              entity_verb = options.get_next_command(entity_commands)
               case entity_verb
               when *Plugin::ALL_OPS # list, show, delete, create, modify
                 display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:all)
                 return entity_execute(
-                  api_shares_admin,
-                  entities_path,
+                  api: api_shares_admin,
+                  entity: entities_path,
                   command: entity_verb,
                   display_fields: display_fields)
               when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
                 group_id = instance_identifier
                 entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-                return entity_execute(api_shares_admin, entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
+                return entity_execute(api: api_shares_admin, entity: entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
               when :import # saml
                 return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
                   entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
@@ -161,7 +161,7 @@ module Aspera
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})
                 end
               when :users # group
-                return entity_execute(api_shares_admin, "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")
+                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")
               else Aspera.error_unexpected_value(entity_verb)
               end
             end

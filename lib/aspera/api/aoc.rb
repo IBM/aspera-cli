@@ -109,7 +109,7 @@ module Aspera
               token:           query['token']
             }
           end
-          if query['state']
+          if query.key?('state')
             # can be a private link
             state_uri = URI.parse(query['state'])
             if state_uri.query && query['redirect_uri']

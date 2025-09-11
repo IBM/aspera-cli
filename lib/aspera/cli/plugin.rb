@@ -81,12 +81,12 @@ module Aspera
       end
 
       # For create and delete operations: execute one actin or multiple if bulk is yes
-      # @param command [Symbol] operation: :create, :delete, ...
-      # @param descr [String] description of the value
-      # @param values [Object] the value(s), or the type of value to get from user
+      # @param command   [Symbol] operation: :create, :delete, ...
+      # @param descr     [String] description of the value
+      # @param values    [Object] the value(s), or the type of value to get from user
       # @param id_result [String] key in result hash to use as identifier
-      # @param fields [Array] fields to display
-      # @param &block [Proc] block to execute for each value
+      # @param fields    [Array]  fields to display
+      # @param &block    [Proc]   block to execute for each value
       def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default)
         Aspera.assert(block_given?){'missing block'}
         is_bulk = options.get_option(:bulk)
@@ -129,50 +129,52 @@ module Aspera
       end
 
       # Operations: Create, Delete, Show, List, Modify
-      # @param rest_api       [Rest]    api to use
-      # @param res_class_path [String]  sub path in URL to resource relative to base url
+      # @param api            [Rest]    api to use
+      # @param entity         [String]  sub path in URL to resource relative to base url
       # @param command        [Symbol]  command to execute: create show list modify delete
       # @param display_fields [Array]   fields to display by default
-      # @param item_list_key  [String]  result is in a sub key of the json
-      # @param id_as_arg      [String]  if set, the id is provided as url argument ?<id_as_arg>=<id>
-      # @param is_singleton   [Boolean] if true, res_class_path is the full path to the resource
+      # @param items_key      [String]  result is in a sub key of the json
       # @param delete_style   [String]  if set, the delete operation by array in payload
+      # @param id_as_arg      [String]  if set, the id is provided as url argument ?<id_as_arg>=<id>
+      # @param is_singleton   [Boolean] if true, entity is the full path to the resource
+      # @param tclo           [Bool]    if set, :list use paging with total_count, limit, offset
       # @param block          [Proc]    block to search for identifier based on attribute value
       # @return result suitable for CLI result
       def entity_execute(
-        rest_api,
-        res_class_path,
+        api:,
+        entity:,
         command: nil,
         display_fields: nil,
-        item_list_key: false,
+        items_key: nil,
+        delete_style: nil,
         id_as_arg: false,
         is_singleton: false,
-        delete_style: nil,
+        tclo: false,
         &block
       )
         command = options.get_next_command(ALL_OPS) if command.nil?
         if is_singleton
-          one_res_path = res_class_path
+          one_res_path = entity
         elsif INSTANCE_OPS.include?(command)
           one_res_id = instance_identifier(&block)
-          one_res_path = "#{res_class_path}/#{one_res_id}"
-          one_res_path = "#{res_class_path}?#{id_as_arg}=#{one_res_id}" if id_as_arg
+          one_res_path = "#{entity}/#{one_res_id}"
+          one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg
         end
 
         case command
         when :create
           raise BadArgument, 'cannot create singleton' if is_singleton
           return do_bulk_operation(command: command, descr: 'data', fields: display_fields) do |params|
-            rest_api.create(res_class_path, params)
+            api.create(entity, params)
           end
         when :delete
           raise BadArgument, 'cannot delete singleton' if is_singleton
           if !delete_style.nil?
             one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
             Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)
-            rest_api.call(
+            api.call(
               operation:    'DELETE',
-              subpath:      res_class_path,
+              subpath:      entity,
               content_type: Rest::MIME_JSON,
               body:         {delete_style => one_res_id},
               headers:      {'Accept' => Rest::MIME_JSON}
@@ -180,25 +182,25 @@ module Aspera
             return Main.result_status('deleted')
           end
           return do_bulk_operation(command: command, values: one_res_id) do |one_id|
-            rest_api.delete("#{res_class_path}/#{one_id}", query_read_delete)
+            api.delete("#{entity}/#{one_id}", query_read_delete)
             {'id' => one_id}
           end
         when :show
-          return Main.result_single_object(rest_api.read(one_res_path), fields: display_fields)
+          return Main.result_single_object(api.read(one_res_path), fields: display_fields)
         when :list
-          resp = rest_api.call(operation: 'GET', subpath: res_class_path, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
-          return Main.result_empty if resp[:http].code == '204'
-          data = resp[:data]
-          # TODO: not generic : which application is this for ?
-          if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
-            Log.log.debug{'is vnd.api'}
-            data = data[res_class_path]
-          end
-          if item_list_key
-            item_list = data[item_list_key]
-            total_count = data['total_count']
+          if tclo
+            data, total_count = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: nil)
             formatter.display_item_count(item_list.length, total_count) unless total_count.nil?
-            data = item_list
+          else
+            resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
+            return Main.result_empty if resp[:http].code == '204'
+            data = resp[:data]
+            # TODO: not generic : which application is this for ?
+            if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
+              Log.log.debug('is vnd.api')
+              data = data[entity]
+            end
+            data = data[items_key] if items_key
           end
           case data
           when Hash
@@ -213,7 +215,7 @@ module Aspera
           parameters = value_create_modify(command: command)
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
-          rest_api.update(one_res_path, parameters)
+          api.update(one_res_path, parameters)
           return Main.result_status('modified')
         else
           raise "unknown action: #{command}"
@@ -258,6 +260,71 @@ module Aspera
           end
         end
         return value
+      end
+
+      # Get a (full or partial) list of all entities of a given type with query: offset/limit
+      # @param api       [Rest]   the API object
+      # @param entity    [String,Symbol] the API endpoint of entity to list
+      # @param items_key [String] key in the result to get the list of items
+      # @param query     [Hash,nil] additional query parameters
+      # @return [Array] items, total_count
+      def list_entities_limit_offset_total_count(
+        api:,
+        entity:,
+        items_key: nil,
+        query: nil
+      )
+        Log.log.trace1{"list_entities_limit_offset_total_count t=#{entity} k=#{items_key} q=#{query}"}
+        entity = entity.to_s if entity.is_a?(Symbol)
+        query = {} if query.nil?
+        Aspera.assert_type(entity, String)
+        Aspera.assert_type(query, Hash)
+        items_key = entity if items_key.nil?
+        result = []
+        offset = 0
+        max_items = query.delete(MAX_ITEMS)
+        remain_pages = query.delete(MAX_PAGES)
+        # merge default parameters, by default 100 per page
+        query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
+        total_count = nil
+        loop do
+          query['offset'] = offset
+          page_result = api.read(entity, query)
+          Aspera.assert_type(page_result[items_key], Array)
+          result.concat(page_result[items_key])
+          # reach the limit set by user ?
+          if !max_items.nil? && (result.length >= max_items)
+            result = result.slice(0, max_items)
+            break
+          end
+          total_count ||= page_result['total_count']
+          break if result.length >= total_count
+          remain_pages -= 1 unless remain_pages.nil?
+          break if remain_pages == 0
+          offset += page_result[items_key].length
+          formatter.long_operation_running
+        end
+        formatter.long_operation_terminated
+        return result, total_count
+      end
+
+      # Lookup an entity id from its name
+      # @param entity    [String] the type of entity to lookup, by default it is the path, and it is also the field name in result
+      # @param value     [String] the value to lookup
+      # @param field     [String] the field to match, by default it is 'name'
+      # @param items_key [String] key in the result to get the list of items (override entity)
+      # @param query     [Hash]   additional query parameters
+      def lookup_entity_by_field(entity:, value:, field: 'name', items_key: nil, query: :default)
+        if query.eql?(:default)
+          Aspera.assert(field.eql?('name')){'Default query is on name only'}
+          query = {'q'=> value}
+        end
+        found, _total = list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).select{ |i| i[field].eql?(value)}
+        case found.length
+        when 0 then raise "No #{entity} with #{field} = #{value}"
+        when 1 then return found.first
+        else raise "Found #{found.length} #{entity} with #{field} = #{value}"
+        end
       end
     end
   end

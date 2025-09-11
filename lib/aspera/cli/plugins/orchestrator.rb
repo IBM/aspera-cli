@@ -150,11 +150,7 @@ module Aspera
               return Main.result_object_list(result['workflows']['workflow'])
             when :list
               result = call_ao('workflows_list/0')
-              return {
-                type:   :object_list,
-                data:   result['workflows']['workflow'],
-                fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
-              }
+              return Main.result_object_list(result['workflows']['workflow'], fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification])
             when :details
               result = call_ao("workflow_details/#{instance_identifier}")
               return Main.result_object_list(result['workflows']['workflow']['statuses'])
