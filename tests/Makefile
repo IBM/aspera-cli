@@ -78,8 +78,9 @@ only_progress: $(F)serv_upload1 $(F)serv_upload3
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
 # package title for faspex and aoc
 PACKAGE_TITLE_BASE=$(CLI_NAME) test $(shell LANG=C date)
-
+# skip private key check step in wizard, for testing only
 WIZ_TEST=--test-mode=yes
+# override $HOME/.aspera/ascli
 CLI_HOME=$(DIR_TMP)$(CLI_NAME)_home/
 #RUBY_WARN=ruby -w
 RUBY_WARN=ruby -w $(DIR_TST)warning_exit_wrapper.rb

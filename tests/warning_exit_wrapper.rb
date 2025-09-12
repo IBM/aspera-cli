@@ -4,11 +4,10 @@
 module Warning
   class << self
     def warn(message)
-      # display and raise only if in custom code, not gems
-      if message.to_s.include?('/aspera/')
-        super
-        raise message.to_s
-      end
+      # display and raise only if in this gem's code, not other gems
+      raise message.to_s if message.to_s.include?('/aspera/')
+      # call original warn method
+      super
     end
   end
 end
