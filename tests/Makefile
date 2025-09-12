@@ -1825,6 +1825,7 @@ $(eval $(call test_suite_all,tcos,$(F)tcos_info1 $(F)tcos_info2 $(F)tcos_info3 $
 $(F)f5_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 health
+	$(INCMAN)$(CLI_TEST) faspex5 version
 	@$(STOP_TEST) $@
 $(F)f5_nag_err: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1842,6 +1843,7 @@ $(F)f5_pack_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 	$(INCMAN)$(CLI_TEST) faspex5 packages list --box=ALL --preset=f5_admin
+	$(INCMAN)$(CLI_TEST) faspex5 packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 	@$(STOP_TEST) $@
 $(F)f5_sh_folder_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1907,7 +1909,7 @@ $(F)f5_user_res: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) faspex5 admin workgroups list
 	$(INCMAN)$(CLI_TEST) faspex5 admin saml_configs list
 	$(INCMAN)$(CLI_TEST) faspex5 admin metadata_profiles list
-	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin alternate_addresses list
+	$(INCMAN)$(CLI_TEST) faspex5 admin configuration show
 	@$(STOP_TEST) $@
 $(F)f5_dist_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1936,6 +1938,10 @@ $(F)f5_adm_nod_lst: $(TMP_EXISTS)
 $(F)f5_adm_api_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin oauth_clients list
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin alternate_addresses list
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin email_notifications list
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin email_notifications show welcome_email
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin configuration modify @json:'{"mfa_required":false}'
 	@$(STOP_TEST) $@
 $(F)f5_adm_reg_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1973,11 +1979,14 @@ $(F)f5_clean_del: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f5_smtp: $(TMP_EXISTS)
 	@$(START_TEST) $@
+	$(BEG_ERR)$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin smtp create @json:'{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'$(END_ERR_SHOW)
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin smtp modify @json:'{"default_time_zone_offset":"0"}'
 	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin smtp show
 	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin smtp test @preset:misc.email_external
 	@$(STOP_TEST) $@
 $(F)f5_user: $(TMP_EXISTS)
 	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) faspex5 user account
 	$(INCMAN)$(CLI_TEST) faspex5 user profile show
 	$(INCMAN)$(CLI_TEST) faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 	@$(STOP_TEST) $@
