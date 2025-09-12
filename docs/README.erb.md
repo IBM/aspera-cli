@@ -210,7 +210,7 @@ If you don't have internet for the installation, refer to section [Installation 
 
 A package with pre-installed Ruby, gem and `ascp` may also be provided.
 
-### <%=tool%> executable
+### Single file executable
 
 It is planned to provide <%=tool%> as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
@@ -670,9 +670,11 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
 
-```console
-$ ./build_package.sh aspera-cli 4.18.0
+```bash
+./build_package.sh aspera-cli 4.18.0
+```
 
+```text
 Archive: aspera-cli-4.18.0-gems.tgz
 ```
 
@@ -1163,8 +1165,11 @@ One can also run <%=tool%> with option `--log-level=debug` to display the comman
 
 It is also possible to display arguments received by Ruby using this command:
 
-```console
+```bat
 C:> ruby -e 'puts ARGV' "Hello World" 1 2
+```
+
+```text
 Hello World
 1
 2
@@ -2196,10 +2201,11 @@ Operations on this preset are done using regular `config` operations:
 
 Plugin `config` provides general commands for <%=tool%>:
 
-- Option Preset, configuration file operations
+- Option Preset operations (configuration file)
 - `wizard`
 - `vault`
 - `ascp`
+- `transferd`
 
 The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
 When <%=tool%> starts, it looks for the `default` Option Preset and checks the value for `config`.
@@ -2211,10 +2217,15 @@ If set, it loads the options independently of the plugin used.
 
 Show current default (global) Option Preset (`config` plugin):
 
-```console
-$ <%=cmd%> config preset get default config
+```bash
+<%=cmd%> config preset get default config
+```
+
+```text
 global_common_defaults
 ```
+
+Set a global parameter:
 
 ```bash
 <%=cmd%> config preset set GLOBAL version_check_days 0
@@ -4548,8 +4559,11 @@ To list the target folder content, add a `/` at the end of the path.
 
 Example:
 
-```console
-$ <%=cmd%> aoc files br the_link
+```bash
+<%=cmd%> aoc files br the_link
+```
+
+```text
 Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 | name       | type | recursive_size | size | modified_time        | access_level |
@@ -4558,8 +4572,11 @@ Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 ```
 
-```console
-$ <%=cmd%> aoc files br the_link/
+```bash
+<%=cmd%> aoc files br the_link/
+```
+
+```text
 Current Workspace: Default (default)
 +-------------+------+----------------+------+----------------------+--------------+
 | name        | type | recursive_size | size | modified_time        | access_level |
@@ -7768,3 +7785,15 @@ To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options
 ```bash
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
+
+### Error: ascp: /lib64/libc.so.6: version `GLIBC_2.28' not found
+
+This happens on Linux x86 if you try to install `transferd` on a Linux version too old to support a newer `ascp` executable.
+
+Workaround: Install an older version:
+
+```bash
+<%=cmd%> config transferd install 1.1.2
+```
+
+Refer to: [Binary](#single-file-executable)

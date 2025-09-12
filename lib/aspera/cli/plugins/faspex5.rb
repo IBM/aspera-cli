@@ -35,12 +35,11 @@ module Aspera
         PATH_AUTH = 'auth'
         PATH_HEALTH = 'configuration/ping'
         PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
-        PER_PAGE_DEFAULT = 100
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt boot].freeze
         HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
         HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
-        private_constant :JOB_RUNNING, :RECIPIENT_TYPES, :PACKAGE_TERMINATED, :PATH_HEALTH, :API_LIST_MAILBOX_TYPES, :PACKAGE_SEND_FROM_REMOTE_SOURCE, :PER_PAGE_DEFAULT, :STD_AUTH_TYPES, :HEADER_ITERATION_TOKEN, :HEADER_FASPEX_VERSION
+        private_constant :JOB_RUNNING, :RECIPIENT_TYPES, :PACKAGE_TERMINATED, :PATH_HEALTH, :API_LIST_MAILBOX_TYPES, :PACKAGE_SEND_FROM_REMOTE_SOURCE, :STD_AUTH_TYPES, :HEADER_ITERATION_TOKEN, :HEADER_FASPEX_VERSION
         class << self
           def application_name
             'Faspex'
@@ -252,82 +251,25 @@ module Aspera
           return result
         end
 
-        # Get a (full or partial) list of all entities of a given type with query: offset/limit
-        # @param type [String] the type of entity to list (just a name)
-        # @param query [Hash,nil] additional query parameters
-        # @param real_path [String] real path if it's n ot just the type
-        # @param item_list_key [String] key in the result to get the list of items
-        def list_entities(type:, real_path: nil, item_list_key: nil, query: nil)
-          Log.log.trace1{"list_entities t=#{type} p=#{real_path} k=#{item_list_key} q=#{query}"}
-          type = type.to_s if type.is_a?(Symbol)
-          query = {} if query.nil?
-          Aspera.assert_type(type, String)
-          Aspera.assert_type(query, Hash)
-          item_list_key = type if item_list_key.nil?
-          real_path = type if real_path.nil?
-          result = []
-          offset = 0
-          max_items = query.delete(MAX_ITEMS)
-          remain_pages = query.delete(MAX_PAGES)
-          # merge default parameters, by default 100 per page
-          query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
-          loop do
-            query['offset'] = offset
-            page_result = @api_v5.read(real_path, query)
-            Aspera.assert_type(page_result[item_list_key], Array)
-            result.concat(page_result[item_list_key])
-            # reach the limit set by user ?
-            if !max_items.nil? && (result.length >= max_items)
-              result = result.slice(0, max_items)
-              break
-            end
-            break if result.length >= page_result['total_count']
-            remain_pages -= 1 unless remain_pages.nil?
-            break if remain_pages == 0
-            offset += page_result[item_list_key].length
-            formatter.long_operation_running
-          end
-          formatter.long_operation_terminated
-          return result
-        end
-
-        # lookup an entity id from its name
-        # @param type [String] the type of entity to lookup, by default it is the path, and it is also the field name in result
-        # @param value [String] the value to lookup
-        # @param field [String] the field to match, by default it is 'name'
-        # @param real_path [String] real path if it's not just the type (override type)
-        # @param item_list_key [String] key in the result to get the list of items (override type)
-        # @param query [Hash] additional query parameters
-        def lookup_entity_by_field(type:, value:, field: 'name', real_path: nil, item_list_key: nil, query: :default)
-          if query.eql?(:default)
-            Aspera.assert(field.eql?('name')){'Default query is on name only'}
-            query = {'q'=> value}
-          end
-          found = list_entities(type: type, real_path: real_path, query: query, item_list_key: item_list_key).select{ |i| i[field].eql?(value)}
-          case found.length
-          when 0 then raise "No #{type} with #{field} = #{value}"
-          when 1 then return found.first
-          else raise "Found #{found.length} #{real_path} with #{field} = #{value}"
-          end
-        end
-
         # list all packages with optional filter
         def list_packages_with_filter(query: {})
           filter = options.get_next_argument('filter', mandatory: false, validation: Proc, default: ->(_x){true})
           # translate box name to API prefix (with ending slash)
           box = options.get_option(:box)
-          real_path =
+          entity =
             case box
             when SpecialValues::ALL then 'packages' # only admin can list all packages globally
             when *API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
-              "#{group_type}/#{lookup_entity_by_field(type: group_type, value: box)['id']}/packages"
+              "#{group_type}/#{lookup_entity_by_field(api: @api_v5, entity: group_type, value: box)['id']}/packages"
             end
-          return list_entities(
-            type: 'packages',
-            query:  query_read_delete(default: query),
-            real_path: real_path).select(&filter)
+          list, total = list_entities_limit_offset_total_count(
+            api: @api_v5,
+            entity: entity,
+            query:  query_read_delete(default: query)
+          )
+          return list.select(&filter), total
         end
 
         def package_receive(package_ids)
@@ -349,12 +291,12 @@ module Aspera
           case package_ids
           when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency){'Only with option once_only'}
-            skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{ |p| p['id']})
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']})
             skip_ids_persistency.save
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
-            packages = list_packages_with_filter(query: {'status' => 'completed'})
+            packages = list_packages_with_filter(query: {'status' => 'completed'}).first
             Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
             Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
             packages.reject!{ |p| skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
@@ -383,7 +325,7 @@ module Aspera
           when /outbox/ then download_params[:type] = 'sent'
           when *API_LIST_MAILBOX_TYPES then nil # nothing to do
           else # shared inbox / workgroup
-            download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
+            download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id']
           end
           packages.each do |package|
             pkg_id = package['id']
@@ -535,7 +477,8 @@ module Aspera
               # send from remote shared folder
               if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
                 shared_folder = lookup_entity_by_field(
-                  type: 'shared_folders',
+                  api: @api_v5,
+                  entity: 'shared_folders',
                   field: m[1],
                   value: ExtendedValue.instance.evaluate(m[2]))['id']
               end
@@ -550,109 +493,99 @@ module Aspera
               return Main.result_single_object(result)
             end
           when :list
-            return {
-              type:   :object_list,
-              data:   list_packages_with_filter,
-              fields: %w[id title release_date total_bytes total_files created_time state]
-            }
+            list, total = list_packages_with_filter
+            return Main.result_object_list(list, total: total, fields: %w[id title release_date total_bytes total_files created_time state])
           end
         end
 
-        def execute_resource(res_type)
-          list_key = res_path = res_type.to_s
-          id_as_arg = false
-          display_fields = nil
-          adm_api = @api_v5
+        def execute_resource(res_sym)
+          exec_args = {
+            api:    @api_v5,
+            entity: res_sym.to_s,
+            tclo:   true
+          }
           res_id_query = :default
-          delete_style = nil
-          available_commands = [].concat(Plugin::ALL_OPS)
-          case res_type
+          available_commands = Plugin::ALL_OPS
+          case res_sym
           when :metadata_profiles
-            res_path = 'configuration/metadata_profiles'
-            list_key = 'profiles'
+            exec_args[:entity] = 'configuration/metadata_profiles'
+            exec_args[:items_key] = 'profiles'
           when :alternate_addresses
-            res_path = 'configuration/alternate_addresses'
+            exec_args[:entity] = 'configuration/alternate_addresses'
           when :distribution_lists
-            res_path = 'account/distribution_lists'
-            list_key = 'distribution_lists'
-            delete_style = 'ids'
+            exec_args[:entity] = 'account/distribution_lists'
+            exec_args[:delete_style] = 'ids'
           when :email_notifications
-            list_key = false
-            id_as_arg = 'type'
+            exec_args.delete(:items_key)
+            exec_args[:id_as_arg] = 'type'
           when :accounts
-            display_fields = Formatter.all_but('user_profile_data_attributes')
-            available_commands.push(:reset_password)
+            exec_args[:display_fields] = Formatter.all_but('user_profile_data_attributes')
+            available_commands += [:reset_password]
           when :oauth_clients
-            display_fields = Formatter.all_but('public_key')
-            adm_api = Rest.new(**@api_v5.params, base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}")
+            exec_args[:display_fields] = Formatter.all_but('public_key')
+            exec_args[:api] = Rest.new(**@api_v5.params, base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}")
+            exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           when :shared_inboxes, :workgroups
-            available_commands.push(:members, :saml_groups, :invite_external_collaborator)
+            available_commands += %i[members saml_groups invite_external_collaborator]
             res_id_query = {'all': true}
           when :nodes
-            available_commands.push(:shared_folders, :browse)
+            available_commands += %i[shared_folders browse]
           end
           res_command = options.get_next_command(available_commands)
           case res_command
           when *Plugin::ALL_OPS
-            return entity_execute(
-              adm_api,
-              res_path,
-              command: res_command,
-              item_list_key: list_key,
-              display_fields: display_fields,
-              id_as_arg: id_as_arg,
-              delete_style: delete_style) do |field, value|
-                     lookup_entity_by_field(
-                       type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
+            return entity_execute(command: res_command, **exec_args) do |field, value|
+                     lookup_entity_by_field(api: @api_v5, entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
                    end
           when :shared_folders
+            # nodes
             node_id = instance_identifier do |field, value|
-              lookup_entity_by_field(type: res_type, field: field, value: value)['id']
+              lookup_entity_by_field(api: @api_v5, entity: 'nodes', field: field, value: value)['id']
             end
-            sh_path = "#{res_path}/#{node_id}/shared_folders"
-            sh_command = options.get_next_command([:user].concat(Plugin::ALL_OPS))
+            shfld_entity = "nodes/#{node_id}/shared_folders"
+            sh_command = options.get_next_command(Plugin::ALL_OPS + [:user])
             case sh_command
             when *Plugin::ALL_OPS
               return entity_execute(
-                adm_api,
-                sh_path,
-                command: sh_command,
-                item_list_key: 'shared_folders') do |field, value|
-                       lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
+                api: @api_v5,
+                entity: shfld_entity,
+                command: sh_command) do |field, value|
+                       lookup_entity_by_field(api: @api_v5, entity: shfld_entity, field: field, value: value)['id']
                      end
             when :user
               sh_id = instance_identifier do |field, value|
-                lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
+                lookup_entity_by_field(api: @api_v5, entity: shfld_entity, field: field, value: value)['id']
               end
-              user_path = "#{sh_path}/#{sh_id}/custom_access_users"
-              return entity_execute(adm_api, user_path, item_list_key: 'users') do |field, value|
-                       lookup_entity_by_field(type: 'users', real_path: user_path, field: field, value: value)['id']
+              user_path = "#{shfld_entity}/#{sh_id}/custom_access_users"
+              return entity_execute(api: @api_v5, entity: user_path, items_key: 'users') do |field, value|
+                       lookup_entity_by_field(api: @api_v5, entity: user_path, items_key: 'users', field: field, value: value)['id']
                      end
 
             end
           when :browse
+            # nodes
             node_id = instance_identifier do |field, value|
-              lookup_entity_by_field(
-                type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
+              lookup_entity_by_field(api: @api_v5, entity: 'nodes', value: value, field: field)['id']
             end
-            return browse_folder("#{res_path}/#{node_id}/browse")
+            return browse_folder("nodes/#{node_id}/browse")
           when :invite_external_collaborator
-            shared_inbox_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            # :shared_inboxes, :workgroups
+            shared_inbox_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
             creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
-            res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
-            result = adm_api.create(res_path, creation_payload)
+            result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
             formatter.display_status(result['message'])
             result = lookup_entity_by_field(
-              type: 'members',
-              real_path: "#{res_type}/#{shared_inbox_id}/members",
+              api: @api_v5,
+              entity: "#{res_sym}/#{shared_inbox_id}/members",
+              items_key: 'members',
               value: creation_payload['email_address'],
               query: {})
             return Main.result_single_object(result)
           when :members, :saml_groups
-            res_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
-            res_prefix = "#{res_type}/#{res_id}"
-            res_path = "#{res_prefix}/#{res_command}"
+            # :shared_inboxes, :workgroups
+            res_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
+            res_path = "#{res_sym}/#{res_id}/#{res_command}"
             list_key = res_command.to_s
             list_key = 'groups' if res_command.eql?(:saml_groups)
             sub_command = options.get_next_command(%i[create list modify delete])
@@ -663,7 +596,8 @@ module Aspera
               users = users.map do |user|
                 if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
                   lookup_entity_by_field(
-                    type: 'accounts',
+                    api: @api_v5,
+                    entity: 'accounts',
                     field: m[1],
                     value: ExtendedValue.instance.evaluate(m[2]),
                     query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
@@ -676,19 +610,21 @@ module Aspera
               options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
             return entity_execute(
-              adm_api,
-              res_path,
+              api: @api_v5,
+              entity: res_path,
               command: sub_command,
-              item_list_key: list_key) do |field, value|
+              items_key: list_key) do |field, value|
                      lookup_entity_by_field(
-                       type: 'accounts',
+                       api: @api_v5,
+                       entity: 'accounts',
                        field: field,
                        value: value,
                        query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
                    end
           when :reset_password
-            contact_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
-            adm_api.create("#{res_type}/#{contact_id}/reset_password", {})
+            # :accounts
+            contact_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
+            @api_v5.create("accounts/#{contact_id}/reset_password", {})
             return Main.result_status('password reset, user shall check email')
           end
           Aspera.error_unreachable_line
@@ -712,12 +648,19 @@ module Aspera
             event_type = options.get_next_command(%i[application webhook])
             case event_type
             when :application
-              return Main.result_object_list(
-                list_entities(type: 'application_events', query: query_read_delete),
-                fields: %w[event_type created_at application user.name])
+              list, total = list_entities_limit_offset_total_count(
+                api: @api_v5,
+                entity: 'application_events',
+                query: query_read_delete)
+
+              return Main.result_object_list(list, total: total, fields: %w[event_type created_at application user.name])
             when :webhook
-              return Main.result_object_list(
-                list_entities(type: 'all_webhooks_events', query: query_read_delete, item_list_key: 'events'))
+              list, total = list_entities_limit_offset_total_count(
+                api: @api_v5,
+                entity: 'all_webhooks_events',
+                query: query_read_delete,
+                items_key: 'events')
+              return Main.result_object_list(list, total: total)
             end
           when :configuration
             conf_path = 'configuration'
@@ -820,12 +763,12 @@ module Aspera
               return Main.result_status('Invitation resent')
             else
               return entity_execute(
-                @api_v5,
-                invitation_endpoint,
+                api: @api_v5,
+                entity: invitation_endpoint,
                 command: invitation_command,
-                item_list_key: invitation_endpoint,
+                items_key: invitation_endpoint,
                 display_fields: %w[id public recipient_type recipient_name email_address]) do |field, value|
-                  lookup_entity_by_field(type: invitation_endpoint, field: field, value: value, query: {})['id']
+                  lookup_entity_by_field(api: @api_v5, entity: invitation_endpoint, field: field, value: value, query: {})['id']
                 end
             end
           when :gateway

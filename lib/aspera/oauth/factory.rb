@@ -12,27 +12,31 @@ module Aspera
 
       # a prefix for persistency of tokens (simplify garbage collect)
       PERSIST_CATEGORY_TOKEN = 'token'
-      # prefix for bearer token when in header
-      BEARER_PREFIX = 'Bearer '
+      # prefix for bearer authorization when in header
+      SPACE_BEARER_AUTH_SCHEME = 'Bearer '
       TOKEN_FIELD = 'access_token'
 
-      private_constant :PERSIST_CATEGORY_TOKEN, :BEARER_PREFIX
+      private_constant :PERSIST_CATEGORY_TOKEN, :SPACE_BEARER_AUTH_SCHEME
 
       class << self
-        def bearer_build(token)
-          return "#{BEARER_PREFIX}#{token}"
+        # @param token [String] The token alone
+        # @return [String] Value suitable for Authorization header
+        def bearer_authorization(token)
+          return "#{SPACE_BEARER_AUTH_SCHEME}#{token}"
         end
 
-        def bearer?(token)
-          return token.start_with?(BEARER_PREFIX)
+        # @return true if the authorization contains a bearer token , i.e. auth scheme is bearer
+        def bearer_auth?(authorization)
+          return authorization.start_with?(SPACE_BEARER_AUTH_SCHEME)
         end
 
-        def bearer_extract(token)
-          Aspera.assert(bearer?(token)){'not a bearer token, wrong prefix'}
-          return token[BEARER_PREFIX.length..-1]
+        # Extract only token from Authorization (remove scheme)
+        def bearer_token(authorization)
+          Aspera.assert(bearer_auth?(authorization)){'not a bearer token, wrong prefix scheme'}
+          return authorization[SPACE_BEARER_AUTH_SCHEME.length..-1]
         end
 
-        # @return a cache identifier
+        # @return a unique cache identifier
         def cache_id(url, creator_class, *params)
           return IdGenerator.from_list([
             PERSIST_CATEGORY_TOKEN,
@@ -54,6 +58,7 @@ module Aspera
         @persist = nil
         # token creation methods
         @token_type_classes = {}
+        # list of lambda
         @decoders = []
         # default parameters, others can be added by handlers
         @parameters = {

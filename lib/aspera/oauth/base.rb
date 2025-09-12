@@ -84,7 +84,7 @@ module Aspera
 
       # @return value suitable for Authorization header
       def authorization(**kwargs)
-        return OAuth::Factory.bearer_build(token(**kwargs))
+        return OAuth::Factory.bearer_authorization(token(**kwargs))
       end
 
       # get an OAuth v2 token (generated, cached, refreshed)

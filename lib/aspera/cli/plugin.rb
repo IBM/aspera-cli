@@ -19,7 +19,7 @@ module Aspera
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
-      PER_PAGE_DEFAULT = 100
+      PER_PAGE_DEFAULT = 1000
       private_constant :PER_PAGE_DEFAULT
 
       class << self
@@ -151,6 +151,7 @@ module Aspera
         delete_style: nil,
         id_as_arg: false,
         is_singleton: false,
+        list_query: nil,
         tclo: false,
         &block
       )
@@ -191,7 +192,7 @@ module Aspera
           return Main.result_single_object(api.read(one_res_path), fields: display_fields)
         when :list
           if tclo
-            data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: nil)
+            data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: list_query)
             return Main.result_object_list(data, total: total, fields: display_fields)
           end
           resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
@@ -264,10 +265,10 @@ module Aspera
       end
 
       # Get a (full or partial) list of all entities of a given type with query: offset/limit
-      # @param api       [Rest]   the API object
-      # @param entity    [String,Symbol] the API endpoint of entity to list
-      # @param items_key [String] key in the result to get the list of items
-      # @param query     [Hash,nil] additional query parameters
+      # @param `api`       [Rest]          the API object
+      # @param `entity`    [String,Symbol] the API endpoint of entity to list
+      # @param `items_key` [String]        key in the result to get the list of items
+      # @param `query`     [Hash,nil]      additional query parameters
       # @return [Array] items, total_count
       def list_entities_limit_offset_total_count(
         api:,
