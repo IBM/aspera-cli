@@ -1838,9 +1838,10 @@ $(F)f5_p1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}' $(TST_ASC_LCL_PATH) --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	@$(STOP_TEST) $@
-$(F)f5_p2: $(TMP_EXISTS)
+$(F)f5_pack_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
+	$(INCMAN)$(CLI_TEST) faspex5 packages list --box=ALL --preset=f5_admin
 	@$(STOP_TEST) $@
 $(F)f5_sh_folder_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1934,7 +1935,7 @@ $(F)f5_adm_nod_lst: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f5_adm_api_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin oauth_clients list --query=@json:'[["client_types[]","public"]]'
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin oauth_clients list
 	@$(STOP_TEST) $@
 $(F)f5_adm_reg_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2051,7 +2052,7 @@ $(F)f5_cert_test: $(TMP_EXISTS)
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(F)f5_nagios $(F)f5_nag_err $(F)f5_p0 $(F)f5_p1 $(F)f5_p2 $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_error $(F)f5_wizard $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
+$(eval $(call test_suite_all,tf5,$(F)f5_nagios $(F)f5_nag_err $(F)f5_p0 $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_error $(F)f5_wizard $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
 #######################################################################################################################
 $(F)httpgw_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@

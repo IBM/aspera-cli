@@ -149,7 +149,7 @@ module Aspera
             if !api.nil?
               # this can be Api::Node or Rest (Shares)
               api
-            elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
+            elsif OAuth::Factory.bearer_auth?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
               Api::Node.new(
                 base_url: options.get_option(:url, mandatory: true),
@@ -513,7 +513,7 @@ module Aspera
             end
             return Main.result_single_object(result) if command_repo.eql?(:node_info)
             # check format of bearer token
-            OAuth::Factory.bearer_extract(result[:password])
+            OAuth::Factory.bearer_token(result[:password])
             return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
@@ -602,6 +602,7 @@ module Aspera
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_SEND)))
           when :download
             source_paths = transfer.ts_source_paths
+            # TODO: not special case, instead find common root for all sources
             # special case for AoC : all files must be in same folder
             source_folder = source_paths.shift['source']
             # if a single file: split into folder and path

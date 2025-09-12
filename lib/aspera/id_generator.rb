@@ -15,7 +15,7 @@ module Aspera
         safe_char = Environment.instance.safe_filename_character
         if object_id.is_a?(Array)
           # compact: remove nils
-          object_id = object_id.compact.map do |i|
+          object_id = object_id.flatten.compact.map do |i|
             i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
           end.join(safe_char)
         end

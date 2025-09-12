@@ -148,7 +148,7 @@ module Aspera
         def bearer_headers(bearer_auth, access_key: nil)
           # if username is not provided, use the access key from the token
           if access_key.nil?
-            access_key = Node.decode_scope(Node.decode_bearer_token(OAuth::Factory.bearer_extract(bearer_auth))['scope'])[:access_key]
+            access_key = Node.decode_scope(Node.decode_bearer_token(OAuth::Factory.bearer_token(bearer_auth))['scope'])[:access_key]
             Aspera.assert(!access_key.nil?)
           end
           return {

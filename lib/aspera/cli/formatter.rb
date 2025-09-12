@@ -251,8 +251,8 @@ module Aspera
       # @param fields [Array<String>] list of fields to display
       # @param name [String] name of the column to display
       def display_results(type:, data: nil, total: nil, fields: nil, name: nil)
-        Log.log.debug{"display_results: #{type} class=#{data.class}"}
-        Log.log.trace1{"display_results:data=#{data}"}
+        Log.log.debug{"display_results: type=#{type} class=#{data.class}"}
+        Log.log.trace1{"display_results: data=#{data}"}
         Aspera.assert_type(type, Symbol){'result must have type'}
         Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
         display_item_count(data.length, total) unless total.nil?
@@ -286,7 +286,7 @@ module Aspera
           end
           Aspera.assert_type(data, String){'URL or blob for image'}
           # Check if URL
-          message =
+          data =
             begin
               # just validate
               URI.parse(data)
@@ -297,18 +297,16 @@ module Aspera
                 'Opened Url'
               end
             rescue URI::InvalidURIError
-              nil
+              data
             end
-          if message.nil?
-            # try base64
-            begin
-              data = Base64.strict_decode64(data)
-            rescue
-              nil
-            end
-            message = Preview::Terminal.build(data, **@options[:image].symbolize_keys)
+          # try base64
+          data = begin
+            Base64.strict_decode64(data)
+          rescue
+            data
           end
-          display_message(:data, message)
+          # here, data is the image blob
+          display_message(:data, Preview::Terminal.build(data, **@options[:image].symbolize_keys))
         when :table, :csv
           case type
           when :single_object
