@@ -82,7 +82,7 @@ PACKAGE_TITLE_BASE=$(CLI_NAME) test $(shell LANG=C date)
 WIZ_TEST=--test-mode=yes
 # override $HOME/.aspera/ascli
 CLI_HOME=$(DIR_TMP)$(CLI_NAME)_home/
-#RUBY_WARN=ruby -w
+# give waring and stop on first warning in this gem code
 RUBY_WARN=ruby -w $(DIR_TST)warning_exit_wrapper.rb
 CLI_NOCONF=$(RUBY_WARN) $(CLI_PATH) --home=$(CLI_HOME)
 # "CLI_TEST" is used to call the tool in the testing environment
@@ -2008,6 +2008,7 @@ $(F)f5_webauth: $(TMP_EXISTS)
 $(F)f5_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
+	$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
 	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
 	$(CLI_TEST) config detect @preset:faspex5_user.url
