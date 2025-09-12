@@ -48,13 +48,14 @@ module Aspera
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
-        # expect some list, but nothing to display
+        # Expect some list, but nothing to display
         def result_empty; return {type: :empty, data: :nil}; end
 
-        # nothing expected
+        # Nothing expected
         def result_nothing; return {type: :nothing, data: :nil}; end
 
-        # status is a fixed text, not a result, such as "complete", "deleted"...
+        # Result is some status, such as "complete", "deleted"...
+        # @param status [String] The status
         def result_status(status); return {type: :status, data: status}; end
 
         # text result coming from command result
@@ -71,7 +72,7 @@ module Aspera
           return Main.result_nothing
         end
 
-        # used when one command executes several transfer jobs (each job being possibly multi session)
+        # Used when one command executes several transfer jobs (each job being possibly multi session)
         # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
         # @return a status object suitable as command result
         # each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
@@ -92,15 +93,18 @@ module Aspera
           return {type: :image, data: url_or_blob}
         end
 
+        # A single object, must be Hash
         def result_single_object(data, fields: nil)
           return {type: :single_object, data: data, fields: fields}
         end
 
+        # An Array of Hash
         def result_object_list(data, fields: nil, total: nil)
           return {type: :object_list, data: data, fields: fields, total: total}
         end
 
-        def result_value_list(data, name)
+        # A list of values
+        def result_value_list(data, name: 'id')
           Aspera.assert_type(data, Array)
           Aspera.assert_type(name, String)
           return {type: :value_list, data: data, name: name}

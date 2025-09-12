@@ -191,13 +191,13 @@ module Aspera
           when :instances
             instances = ats_ibm_api.read('instances')
             Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
-            return Main.result_value_list(instances['data'], 'instance')
+            return Main.result_value_list(instances['data'], name: 'instance')
           when :create
             created_key = ats_ibm_api.create('api_keys', value_create_modify(command: command, default: {}))
             return Main.result_single_object(created_key)
           when :list # list known api keys in ATS (this require an api_key ...)
             res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})
-            return Main.result_value_list(res['data'], 'ats_id')
+            return Main.result_value_list(res['data'], name: 'ats_id')
           when :show # show one of api_key in ATS
             res = ats_ibm_api.read("api_keys/#{concerned_id}")
             return Main.result_single_object(res)

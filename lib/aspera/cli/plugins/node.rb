@@ -727,7 +727,7 @@ module Aspera
           case command
           when :list
             resp = @api_node.read('async/list')['sync_ids']
-            return Main.result_value_list(resp, 'id')
+            return Main.result_value_list(resp)
           when :show
             resp = @api_node.create('async/summary', post_data)['sync_summaries']
             return Main.result_empty if resp.empty?
@@ -813,7 +813,7 @@ module Aspera
             return Main.result_status("#{resp['id']} created")
           when :list
             resp = @api_node.read(res_class_path, query_read_delete)
-            return Main.result_value_list(resp['ids'], 'id')
+            return Main.result_value_list(resp['ids'])
           when :show
             return Main.result_single_object(@api_node.read(one_res_path))
           when :modify

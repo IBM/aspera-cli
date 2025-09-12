@@ -800,7 +800,7 @@ module Aspera
           raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
           case action
           when :list
-            return Main.result_value_list(@config_presets.keys, 'name')
+            return Main.result_value_list(@config_presets.keys, name: 'name')
           when :overview
             # display process modifies the value (hide secrets): we do not want to save removed secrets
             data = self.class.deep_clone(@config_presets)
@@ -972,7 +972,7 @@ module Aspera
             require 'aspera/api/node'
             case options.get_next_command(%i{flush list show})
             when :flush
-              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, 'file')
+              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, name: 'file')
             when :list
               return Main.result_object_list(OAuth::Factory.instance.persisted_tokens)
             when :show
