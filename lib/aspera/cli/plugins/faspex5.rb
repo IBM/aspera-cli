@@ -532,6 +532,38 @@ module Aspera
             available_commands += %i[shared_folders browse]
           end
           res_command = options.get_next_command(available_commands)
+          if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
+            return Main.result_value_list(
+              %w[
+                welcome_email
+                forgot_password
+                package_received
+                package_received_cc
+                package_sent_cc
+                package_downloaded
+                package_downloaded_cc
+                workgroup_package
+                upload_result
+                upload_result_cc
+                relay_started_cc
+                relay_finished_cc
+                relay_error_cc
+                shared_inbox_invitation
+                shared_inbox_submit
+                personal_invitation
+                personal_submit
+                account_approved
+                account_denied
+                package_file_processing_failed_sender
+                package_file_processing_failed_recipient
+                relay_failed_admin
+                relay_failed
+                admin_sync_failed
+                sync_failed
+                account_exist
+                mfa_code
+              ])
+          end
           case res_command
           when *Plugin::ALL_OPS
             return entity_execute(command: res_command, **exec_args) do |field, value|
@@ -672,6 +704,7 @@ module Aspera
               return Main.result_single_object(@api_v5.update(conf_path, value_create_modify(command: conf_cmd)))
             end
           when :smtp
+            # only one SMTP config
             smtp_path = 'configuration/smtp'
             smtp_cmd = options.get_next_command(%i[show create modify delete test])
             case smtp_cmd
