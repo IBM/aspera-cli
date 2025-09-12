@@ -91,10 +91,11 @@ module Aspera
               formatter.display_status('- name: ascli')
               formatter.display_status('- JWT: enabled')
               formatter.display_status("Then, logged in as #{wiz_username.red} go to your profile:")
-              formatter.display_status('👤 → Account Settings → Preferences -> Public Key in PEM:')
+              formatter.display_status('👤 → Account Settings → Preferences → Public Key in PEM:')
               formatter.display_status(pub_key_pem)
               formatter.display_status('Once set, fill in the parameters:')
             end
+            return {preset_value: {}, test_args: ''} if options.get_option(:test_mode)
             return {
               preset_value: {
                 url:           instance_url,
