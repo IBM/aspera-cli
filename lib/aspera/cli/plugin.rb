@@ -19,6 +19,8 @@ module Aspera
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
+      PER_PAGE_DEFAULT = 100
+      private_constant :PER_PAGE_DEFAULT
 
       class << self
         def declare_generic_options(options)
@@ -189,19 +191,18 @@ module Aspera
           return Main.result_single_object(api.read(one_res_path), fields: display_fields)
         when :list
           if tclo
-            data, total_count = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: nil)
-            formatter.display_item_count(item_list.length, total_count) unless total_count.nil?
-          else
-            resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
-            return Main.result_empty if resp[:http].code == '204'
-            data = resp[:data]
-            # TODO: not generic : which application is this for ?
-            if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
-              Log.log.debug('is vnd.api')
-              data = data[entity]
-            end
-            data = data[items_key] if items_key
+            data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: nil)
+            return Main.result_object_list(data, total: total, fields: display_fields)
           end
+          resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
+          return Main.result_empty if resp[:http].code == '204'
+          data = resp[:data]
+          # TODO: not generic : which application is this for ?
+          if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
+            Log.log.debug('is vnd.api')
+            data = data[entity]
+          end
+          data = data[items_key] if items_key
           case data
           when Hash
             return Main.result_single_object(data, fields: display_fields)
@@ -274,12 +275,13 @@ module Aspera
         items_key: nil,
         query: nil
       )
-        Log.log.trace1{"list_entities_limit_offset_total_count t=#{entity} k=#{items_key} q=#{query}"}
         entity = entity.to_s if entity.is_a?(Symbol)
+        items_key = entity.split('/').last if items_key.nil?
         query = {} if query.nil?
         Aspera.assert_type(entity, String)
+        Aspera.assert_type(items_key, String)
         Aspera.assert_type(query, Hash)
-        items_key = entity if items_key.nil?
+        Log.log.debug{"list_entities t=#{entity} k=#{items_key} q=#{query}"}
         result = []
         offset = 0
         max_items = query.delete(MAX_ITEMS)
@@ -314,12 +316,12 @@ module Aspera
       # @param field     [String] the field to match, by default it is 'name'
       # @param items_key [String] key in the result to get the list of items (override entity)
       # @param query     [Hash]   additional query parameters
-      def lookup_entity_by_field(entity:, value:, field: 'name', items_key: nil, query: :default)
+      def lookup_entity_by_field(api:, entity:, value:, field: 'name', items_key: nil, query: :default)
         if query.eql?(:default)
           Aspera.assert(field.eql?('name')){'Default query is on name only'}
           query = {'q'=> value}
         end
-        found, _total = list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).select{ |i| i[field].eql?(value)}
+        found = list_entities_limit_offset_total_count(api: api, entity: entity, items_key: items_key, query: query).first.select{ |i| i[field].eql?(value)}
         case found.length
         when 0 then raise "No #{entity} with #{field} = #{value}"
         when 1 then return found.first
