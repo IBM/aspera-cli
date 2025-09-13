@@ -42,17 +42,20 @@ module Aspera
       STATUS_FIELD = 'status'
       COMMAND_CONFIG = :config
       COMMAND_HELP = :help
+      # types that go to result of type = text
       SCALAR_TYPES = [String, Integer, Symbol].freeze
       USER_INTERFACES = %i[text graphical].freeze
 
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
+        def result_special(how); {type: :special, data: how}; end
+
         # Expect some list, but nothing to display
-        def result_empty; return {type: :empty, data: :nil}; end
+        def result_empty; result_special(:empty); end
 
         # Nothing expected
-        def result_nothing; return {type: :nothing, data: :nil}; end
+        def result_nothing; result_special(:nothing); end
 
         # Result is some status, such as "complete", "deleted"...
         # @param status [String] The status
@@ -113,6 +116,8 @@ module Aspera
         # Determines type of result based on data
         def result_auto(data)
           case data
+          when NilClass
+            return result_special(:null)
           when Hash
             return result_single_object(data)
           when Array

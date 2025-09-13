@@ -327,11 +327,13 @@ module Aspera
           when :value_list
             # :value_list is a simple array of values, name of column provided in `name`
             display_table(data.map{ |i| {name => i}}, [name])
-          when :empty # no table
-            display_message(:info, self.class.special_format('empty'))
+          when :special # no table
+            if data.eql?(:nothing)
+              Log.log.debug('no result expected')
+              return
+            end
+            display_message(:info, self.class.special_format(data.to_s))
             return
-          when :nothing
-            Log.log.debug('no result expected')
           when :status # no table
             # :status displays a simple message
             display_message(:info, data)
