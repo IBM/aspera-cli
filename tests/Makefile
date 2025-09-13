@@ -862,7 +862,7 @@ $(F)aocftr: $(F)aocfupl $(F)aoc_tstdst
 	@$(STOP_TEST) $@
 $(F)aocndinf: $(F)aoc_tstsrc
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) aoc files node_info /testsrc --format=json --display=data | $(INCMAN)$(CLI_TEST) aoc files upload --workspace=@preset:aoc.other_workspace --to-folder=@preset:aoc.other_folder $(TST_ASC_FILENAME) --transfer=node --transfer-info=@json:@stdin:
+	$(INCMAN)$(CLI_TEST) aoc files node_info /testsrc --format=json --display=data | $(INCMAN)$(CLI_TEST) aoc files upload --workspace=@none: --to-folder=@preset:aoc.other_folder $(TST_ASC_FILENAME) --transfer=node --transfer-info=@json:@stdin:
 	@$(STOP_TEST) $@
 $(F)aocfdel: $(F)aocftr $(F)aocndinf
 	@$(START_TEST) $@
