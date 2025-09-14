@@ -39,7 +39,36 @@ module Aspera
         STD_AUTH_TYPES = %i[web jwt boot].freeze
         HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
         HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
-        private_constant :JOB_RUNNING, :RECIPIENT_TYPES, :PACKAGE_TERMINATED, :PATH_HEALTH, :API_LIST_MAILBOX_TYPES, :PACKAGE_SEND_FROM_REMOTE_SOURCE, :STD_AUTH_TYPES, :HEADER_ITERATION_TOKEN, :HEADER_FASPEX_VERSION
+        EMAIL_NOTIF_LIST = %w[
+          welcome_email
+          forgot_password
+          package_received
+          package_received_cc
+          package_sent_cc
+          package_downloaded
+          package_downloaded_cc
+          workgroup_package
+          upload_result
+          upload_result_cc
+          relay_started_cc
+          relay_finished_cc
+          relay_error_cc
+          shared_inbox_invitation
+          shared_inbox_submit
+          personal_invitation
+          personal_submit
+          account_approved
+          account_denied
+          package_file_processing_failed_sender
+          package_file_processing_failed_recipient
+          relay_failed_admin
+          relay_failed
+          admin_sync_failed
+          sync_failed
+          account_exist
+          mfa_code
+        ]
+        private_constant :JOB_RUNNING, :RECIPIENT_TYPES, :PACKAGE_TERMINATED, :PATH_HEALTH, :API_LIST_MAILBOX_TYPES, :PACKAGE_SEND_FROM_REMOTE_SOURCE, :STD_AUTH_TYPES, :HEADER_ITERATION_TOKEN, :HEADER_FASPEX_VERSION, :EMAIL_NOTIF_LIST
         class << self
           def application_name
             'Faspex'
@@ -534,36 +563,7 @@ module Aspera
           end
           res_command = options.get_next_command(available_commands)
           if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
-            return Main.result_value_list(
-              %w[
-                welcome_email
-                forgot_password
-                package_received
-                package_received_cc
-                package_sent_cc
-                package_downloaded
-                package_downloaded_cc
-                workgroup_package
-                upload_result
-                upload_result_cc
-                relay_started_cc
-                relay_finished_cc
-                relay_error_cc
-                shared_inbox_invitation
-                shared_inbox_submit
-                personal_invitation
-                personal_submit
-                account_approved
-                account_denied
-                package_file_processing_failed_sender
-                package_file_processing_failed_recipient
-                relay_failed_admin
-                relay_failed
-                admin_sync_failed
-                sync_failed
-                account_exist
-                mfa_code
-              ])
+            return Main.result_value_list(EMAIL_NOTIF_LIST, name: 'email_id')
           end
           case res_command
           when *Plugin::ALL_OPS
