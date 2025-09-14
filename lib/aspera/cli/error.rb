@@ -4,7 +4,7 @@ module Aspera
   module Cli
     # CLI base exception
     class Error < StandardError; end
-    # raised when an unexpected argument is provided
+    # Raised when an unexpected argument is provided.
     class BadArgument < Error; end
     class NoSuchElement < Error; end
 
