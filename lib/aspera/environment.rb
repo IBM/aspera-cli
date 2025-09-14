@@ -77,9 +77,9 @@ module Aspera
       # @raise  [Exception]         if problem
       def secure_spawn(exec:, args: nil, env: nil, **options)
         Aspera.assert_type(exec, String)
-        Aspera.assert_type(args, Array) unless args.nil?
-        Aspera.assert_type(env, Hash) unless env.nil?
-        Aspera.assert_type(options, Hash) unless options.nil?
+        Aspera.assert_type(args, Array, NilClass)
+        Aspera.assert_type(env, Hash, NilClass)
+        Aspera.assert_type(options, Hash, NilClass)
         Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
         # start ascp in separate process
         spawn_args = []
@@ -100,8 +100,8 @@ module Aspera
       # @return [String] PID of process
       def secure_execute(exec:, args: nil, env: nil, **system_args)
         Aspera.assert_type(exec, String)
-        Aspera.assert_type(args, Array) unless args.nil?
-        Aspera.assert_type(env, Hash) unless env.nil?
+        Aspera.assert_type(args, Array, NilClass)
+        Aspera.assert_type(env, Hash, NilClass)
         Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
         # start in separate process
         spawn_args = []

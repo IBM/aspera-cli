@@ -26,9 +26,9 @@ module Aspera
 
     # Assert that value has the given type
     # @param value [Object] the value to check
-    # @param val_type [Class] the expected type
-    def assert_type(value, val_type, type: AssertError)
-      assert(value.is_a?(val_type), type: type){"#{"#{yield}: " if block_given?}expecting #{val_type}, but have #{value.inspect}"}
+    # @param classes [Class, Array] the expected type(s)
+    def assert_type(value, *classes, type: AssertError)
+      assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have #{value.inspect}"}
     end
 
     # Assert that value is one of the given values
