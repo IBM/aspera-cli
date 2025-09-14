@@ -101,7 +101,7 @@ module Aspera
                 return Main.result_object_list(api_console.read('smart_transfers'))
               when :submit
                 smart_id = options.get_next_argument('smart_id')
-                params = options.get_next_argument('transfer parameters')
+                params = options.get_next_argument('transfer parameters', validation: Hash)
                 return Main.result_object_list(api_console.create("smart_transfers/#{smart_id}", params))
               end
             when :current
