@@ -1374,27 +1374,6 @@ $(F)at14: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tats,$(F)at4 $(F)at5 $(F)at6 $(F)at7 $(F)at2 $(F)at1 $(F)at3 $(F)at8 $(F)at9 $(F)at10 $(F)at11 $(F)at12 $(F)at13 $(F)at14))
 #######################################################################################################################
-$(F)sy1: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async list
-	@$(STOP_TEST) $@
-$(F)sy2: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async show 1
-	$(INCMAN)$(CLI_TEST) node async show ALL
-	@$(STOP_TEST) $@
-$(F)sy3: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async counters 1
-	@$(STOP_TEST) $@
-$(F)sy4: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async bandwidth 1
-	@$(STOP_TEST) $@
-$(F)sy5: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async files 1
-	@$(STOP_TEST) $@
 $(F)nd_sync_pull_conf: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)nd_sync_pull_conf
@@ -1409,7 +1388,28 @@ $(F)ndsyncv2: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)ndsyncv2 @json:'{"name":"my_node_sync2","reset":true}'
 	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)ndsyncv2
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnsync,$(F)sy1 $(F)sy2 $(F)sy3 $(F)sy4 $(F)sy5 $(F)nd_sync_pull_conf $(F)ndsyncv2))
+$(F)sy1: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async list
+	@$(STOP_TEST) $@
+$(F)sy2: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async show ALL
+	$(INCMAN)$(CLI_TEST) node async show %name:my_node_sync2
+	@$(STOP_TEST) $@
+$(F)sy3: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async counters %name:my_node_sync2
+	@$(STOP_TEST) $@
+$(F)sy4: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async bandwidth %name:my_node_sync2
+	@$(STOP_TEST) $@
+$(F)sy5: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async files %name:my_node_sync2
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,tnsync,$(F)nd_sync_pull_conf $(F)ndsyncv2 $(F)sy1 $(F)sy2 $(F)sy3 $(F)sy4 $(F)sy5))
 #######################################################################################################################
 $(F)sync_create: $(TMP_EXISTS)
 	@$(START_TEST) $@
