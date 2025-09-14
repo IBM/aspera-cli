@@ -22,6 +22,7 @@
     * `vault`: When creating an entry, the `label` field is now part of the creation Hash.
     * `console`: Replaced options `filter_from` and `filter_to` with standard option `query`.
     * `sync`: Removed option `sync_info`. Streamlined command line interface. Applies to all plugins with `sync` command.
+    * `async`: Removed option `sync_name`, replaced with percent selector `%name:`.
 
 * 4.23.0 2025-08-11
 

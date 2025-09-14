@@ -61,7 +61,7 @@ optional: use_rmagick use_grpc use_mimemagic use_sym_encryption
 optional_gems:
 	cd $(DIR_TOP) && make install_optional_gems
 # all tests, including interactive ones
-full: all interactive optional
+full: all optional interactive
 
 # just to test nagios, but those are tested in the respective plugins
 only_nagios: $(F)f4_nagios $(F)shares_nagios $(F)cons_nagios $(F)f5_nagios $(F)sadm_nagios_hsts $(F)serv_nagios_transfer $(F)nd_nagios

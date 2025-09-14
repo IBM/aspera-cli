@@ -80,19 +80,19 @@ module Aspera
             @dynamic_key = nil
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
-            options.declare(:sync_name, 'Sync name')
             options.declare(
-              :default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes,
+              :default_ports, 'Gen4: Use standard FASP ports (true) or get from node API (false)', values: :bool, default: :yes,
               handler: {o: Api::Node, m: :use_standard_ports})
             options.declare(
-              :node_cache, 'Set to no to force actual file system read (gen4)', values: :bool,
+              :node_cache, 'Gen4: Set to no to force actual file system read', values: :bool,
               handler: {o: Api::Node, m: :use_node_cache})
-            options.declare(:root_id, 'File id of top folder when using access key (override AK root id)')
+            options.declare(:root_id, 'Gen4: File id of top folder when using access key (override AK root id)')
             options.declare(:dynamic_key, 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key})
             SyncActions.declare_options(options)
             options.parse_options!
           end
 
+          # Using /files/browse: is it a folder (node and shares)
           def gen3_entry_folder?(entry)
             FOLDER_TYPES.include?(entry['type'])
           end
@@ -107,10 +107,10 @@ module Aspera
           '</soapenv:Envelope>'
         # spellchecker: enable
 
-        # fields removed in result of search
+        # Fields removed in result of search
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
-        # actions in execute_command_gen3
+        # Actions in execute_command_gen3
         COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download cat sync transport]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
@@ -401,7 +401,7 @@ module Aspera
                 api: @api_node,
                 entity: 'access_keys',
                 command: ak_command) do |field, value|
-                       raise Cli::BadIdentifier, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
+                       raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
                        @api_node.read('access_keys/self')['id']
                      end
             when :do
@@ -476,7 +476,7 @@ module Aspera
         # @return [Hash] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
           file_path = instance_identifier(description: 'path or %id:<id>') do |attribute, value|
-            raise Cli::BadIdentifier, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
+            raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
             # directly return result for method
             return {api: @api_node, file_id: value}
           end
@@ -701,25 +701,30 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
+        # Search /async by name
+        # @param field [String] name of the field to search
+        # @param value [String] value of the field to search
+        # @return [Integer] id of the sync
+        # @raise [Cli::BadArgument] if no such sync, or not by name
+        def async_lookup(field, value)
+          raise Cli::BadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
+          async_ids = @api_node.read('async/list')['sync_ids']
+          summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
+          selected = summaries.find{ |s| s['name'].eql?(value)}
+          raise Cli::BadIdentifier.new('sync', "#{field}=#{value}") if selected.nil?
+          return selected['snid']
+        end
+
         # Node API: /async (stats only)
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
-            async_name = options.get_option(:sync_name)
-            if async_name.nil?
-              async_id = instance_identifier
-              if async_id.eql?(SpecialValues::ALL) && %i[show delete].include?(command)
-                async_ids = @api_node.read('async/list')['sync_ids']
-              else
-                Integer(async_id) # must be integer
-                async_ids = [async_id]
-              end
-            else
+            async_id = instance_identifier{ |field, value| async_lookup(field, value)}
+            if async_id.eql?(SpecialValues::ALL)
+              raise Cli::BadArgument, 'ALL only for show and delete' unless %i[show delete].include?(command)
               async_ids = @api_node.read('async/list')['sync_ids']
-              summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
-              selected = summaries.find{ |s| s['name'].eql?(async_name)}
-              raise Cli::BadIdentifier, "no such sync: #{async_name}" if selected.nil?
-              async_id = selected['snid']
+            else
+              Integer(async_id) # must be integer
               async_ids = [async_id]
             end
             post_data = {'syncs' => async_ids}
@@ -779,6 +784,7 @@ module Aspera
           end
         end
 
+        # Search /asyncs by name
         # @param field [String] name of the field to search
         # @param value [String] value of the field to search
         # @return [Integer] id of the sync
@@ -790,7 +796,7 @@ module Aspera
             # name is unique, so we can return
             return id if sync_info[field].eql?(value)
           end
-          raise Cli::BadIdentifier, "No such sync: #{field}=#{value}"
+          raise Cli::BadIdentifier.new('ssync', "#{field}=#{value}")
         end
 
         WATCH_FOLDER_MUL = %i[create list].freeze
