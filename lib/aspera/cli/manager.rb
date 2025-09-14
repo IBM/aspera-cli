@@ -307,7 +307,7 @@ module Aspera
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
-        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
+        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :types"}
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
