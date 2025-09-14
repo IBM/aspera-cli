@@ -124,7 +124,7 @@ module Aspera
             all_types = data.map(&:class).uniq
             return result_object_list(data) if all_types.eql?([Hash])
             unsupported_types = all_types - SCALAR_TYPES
-            return result_value_list(data, 'list') if unsupported_types.empty?
+            return result_value_list(data, name: 'list') if unsupported_types.empty?
             Aspera.error_unexpected_value(unsupported_types){'list item types'}
           when *SCALAR_TYPES
             return result_text(data)
