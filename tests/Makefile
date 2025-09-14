@@ -100,7 +100,8 @@ END_ERR_SHOW=;then echo "No error: problem";exit 1;else echo "Test ok";fi
 END_ERR_HIDE=>/dev/null 2>&1$(END_ERR_SHOW)
 # enclose tests that fail, but should not
 BEG_FAI=if 
-END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";exit 1;else echo "Test known to fail";fi
+END_FAI_SHOW=;then echo "TODO: test worked, restore test?";exit 1;else echo "Test known to fail";fi
+END_FAI_HIDE=>/dev/null 2>&1$(END_FAI_SHOW)
 # enclose tests whose status is ignored, mainly optional cleanups, for restarts
 BEG_IGN=
 END_IGN=>/dev/null 2>&1 || true
@@ -237,7 +238,7 @@ $(F)shares_admin_9: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_admin_10: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) shares admin user ldap add the_name$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) shares admin user ldap add the_name$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)shares_admin_11: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -357,7 +358,7 @@ $(F)serv_sync_pull_conf: $(F)serv_sync_pull_args
 	rm -fr $(TMP_SYNCS)serv_sync_pull_conf
 	mkdir -p $(TMP_SYNCS)serv_sync_pull_conf
 	$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_conf  @json:@extend:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(BEG_FAI)$(CLI_TEST) server sync admin status @json:'{"name":"serv_sync_pull_conf"}'$(END_FAI)
+	$(BEG_FAI)$(CLI_TEST) server sync admin status @json:'{"name":"serv_sync_pull_conf"}'$(END_FAI_HIDE)
 	$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf @json:'{"name":"serv_sync_pull_conf"}'
 	$(INCMAN)$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_conf @json:@extend:'{"name":"serv_sync_pull_conf"}'
 	$(INCMAN)$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_conf
@@ -488,7 +489,7 @@ $(F)f4_pri: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f4_prl: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) faspex package receive --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) faspex package receive --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)f4_prall: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -557,15 +558,25 @@ $(F)cons_cur_lst_ex: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) console transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
 	@$(STOP_TEST) $@
+$(F)cons_cur_lst_one: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) console transfer current list --fields=id --format=csv | tail -n 1 > $(STATE)console_xfer_id
+	@$(STOP_TEST) $@
+$(F)cons_cur_show_one: $(F)cons_cur_lst_one
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) console transfer current show $$(cat $(STATE)console_xfer_id)
+	$(INCMAN)$(CLI_TEST) console transfer current files $$(cat $(STATE)console_xfer_id)
+	$(BEG_IGN)$(CLI_TEST) console transfer current resume $$(cat $(STATE)console_xfer_id)$(END_IGN)
+	@$(STOP_TEST) $@
 $(F)cons_sma_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) console transfer smart list
 	@$(STOP_TEST) $@
 $(F)cons_sma_sta: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(END_FAI_SHOW)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconsole,$(F)cons_nagios $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_sma_lst $(F)cons_sma_sta))
+$(eval $(call test_suite_all,tconsole,$(F)cons_nagios $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_cur_show_one $(F)cons_sma_lst $(F)cons_sma_sta))
 #######################################################################################################################
 $(F)nd_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1036,7 +1047,7 @@ $(F)aocp_send_sh_meta_long: $(F)aocp_recv_init
 $(F)aocp_send_sh_meta_short: $(F)aocp_recv_init
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)aocp_recv_shbx: $(F)aocp_send_shbx $(F)aocp_send_sh_meta_long $(F)aocp_send_sh_meta_short
 	@$(START_TEST) $@
@@ -1203,11 +1214,11 @@ $(F)aocat8: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)aocat9: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)aocat10: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key list --fields=name,id$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key list --fields=name,id$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)aocat11: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1215,7 +1226,7 @@ $(F)aocat11: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)aocat13: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocts,$(F)aocat4 $(F)aocat5 $(F)aocat6 $(F)aocat7 $(F)aocat8 $(F)aocat9 $(F)aocat10 $(F)aocat11 $(F)aocat13))
 #######################################################################################################################
@@ -1339,11 +1350,11 @@ $(F)at8: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)at9: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)at10: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key list --fields=name,id$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key list --fields=name,id$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)at11: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1355,11 +1366,11 @@ $(F)at12: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)at13: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key delete ak2ibmcloud$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key delete ak2ibmcloud$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)at14: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key delete ak_aws$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key delete ak_aws$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tats,$(F)at4 $(F)at5 $(F)at6 $(F)at7 $(F)at2 $(F)at1 $(F)at3 $(F)at8 $(F)at9 $(F)at10 $(F)at11 $(F)at12 $(F)at13 $(F)at14))
 #######################################################################################################################
