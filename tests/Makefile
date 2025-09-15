@@ -16,7 +16,8 @@ endif
 # defines targets: $(1), skip_$(1)
 define test_suite
 $(1): $(2)
-skip_$(1): $(TMP_EXISTS)
+skip_$(1):
+	@mkdir -p $(F)
 	touch $(2)
 clean_$(1):
 	rm -f $(2)
@@ -41,6 +42,7 @@ TMP_EXISTS=$(F).exists
 
 skip:
 	@if test -z "$(T)"; then echo "Usage:\nmake $@ T=<case identifier>\n"; exit 1; fi
+	@mkdir -p $(F)
 	@echo "Skipping test: $(T)"
 	@touch $(F)$(T)
 
@@ -866,10 +868,12 @@ $(F)aoc_tstdst: $(F)aoc_some_folder
 $(F)aocfupl: $(F)aoc_tstsrc
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files upload --to-folder=/testsrc $(TST_ASC_LCL_PATH)
+	$(INCMAN)$(CLI_TEST) aoc files upload --to-folder=/testsrc $(TST_ASC_LCL_PATH) $(TST_UTF_LCL_PATH)
 	@$(STOP_TEST) $@
 $(F)aocftr: $(F)aocfupl $(F)aoc_tstdst
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files transfer push /testsrc --to-folder=/testdst $(TST_ASC_FILENAME)
+	$(CLI_TEST) aoc files upload --to-folder=/testdst $(TST_UTF_LCL_PATH)
 	@$(STOP_TEST) $@
 $(F)aocndinf: $(F)aoc_tstsrc
 	@$(START_TEST) $@
@@ -882,6 +886,11 @@ $(F)aocfdel: $(F)aocftr $(F)aocndinf
 $(F)aocfbearnode: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files bearer /
+	@$(STOP_TEST) $@
+$(F)aocfdownd: $(F)aocftr
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) aoc files down --to-folder=$(DIR_TMP). testdst/$(TST_ASC_FILENAME) testdst/$(TST_UTF_FILENAME)
+	$(CLI_TEST) aoc files down --to-folder=$(DIR_TMP). testdst/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)aocfdownc: $(F)aoc_tstdst
 	@$(START_TEST) $@
@@ -991,7 +1000,7 @@ $(F)aocshlk1: $(F)aocshlk2 $(F)aocshlk3
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files short_link /testdst private list
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownd $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aocfxgw))
 #######################################################################################################################
 $(F)aoc_pack_send1: $(TMP_EXISTS)
 	@$(START_TEST) $@

@@ -301,6 +301,50 @@ module Aspera
         return resolve_state[:result]
       end
 
+      # Given a list of paths, finds a common root and list of sub-paths
+      # @param top_file_id [String] Root file id
+      # @param paths [Array(Hash)] List of paths
+      # @return [Array] size=2: apfid, paths (Array(Hash))
+      def resolve_api_fid_paths(top_file_id, paths)
+        Aspera.assert_type(paths, Array)
+        Aspera.assert(paths.size.positive?)
+        split_sources = paths.map{ |p| p['source'].split(File::SEPARATOR).reject(&:empty?)}
+        root = []
+        split_sources.map(&:size).min.times do |i|
+          parts = split_sources.map{ |s| s[i]}
+          break unless parts.uniq.size == 1
+          root << parts.first
+        end
+        source_folder = File.join(root)
+        source_paths = paths.each_with_index.map do |p, i|
+          m = {'source' => File.join(split_sources[i][root.size..])}
+          m['destination'] = p['destination'] if p.key?('destination')
+          m
+        end
+        apifid = resolve_api_fid(top_file_id, source_folder, true)
+        # If a single item
+        if source_paths.size.eql?(1)
+          # Get precise info in this element
+          file_info = apifid[:api].read("files/#{apifid[:file_id]}")
+          source_paths =
+            case file_info['type']
+            when 'file'
+              # if the single source is a file, we need to split into folder path and filename
+              src_dir_elements = source_folder.split(Api::Node::PATH_SEPARATOR)
+              filename = src_dir_elements.pop
+              apifid = resolve_api_fid(top_file_id, src_dir_elements.join(Api::Node::PATH_SEPARATOR), true)
+              # filename is the last one, source folder is what remains
+              [{'source' => filename}]
+            when 'link', 'folder'
+              # single source is 'folder' or 'link'
+              # TODO: add this ? , 'destination'=>file_info['name']
+              [{'source' => '.'}]
+            else Aspera.error_unexpected_value(file_info['type']){'source type'}
+            end
+        end
+        [apifid, source_paths]
+      end
+
       def find_files(top_file_id, test_lambda)
         Log.log.debug{"find_files: file id=#{top_file_id}"}
         find_state = {found: [], test_lambda: test_lambda}

@@ -601,42 +601,10 @@ module Aspera
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_SEND)))
           when :download
-            source_paths = transfer.ts_source_paths
-            # TODO: not special case, instead find common root for all sources
-            # special case for AoC : all files must be in same folder
-            source_folder = source_paths.shift['source']
-            # if a single file: split into folder and path
-            apifid = @api_node.resolve_api_fid(top_file_id, source_folder, true)
-            if source_paths.empty?
-              # get precise info in this element
-              file_info = apifid[:api].read("files/#{apifid[:file_id]}")
-              case file_info['type']
-              when 'file'
-                # if the single source is a file, we need to split into folder path and filename
-                src_dir_elements = source_folder.split(Api::Node::PATH_SEPARATOR)
-                # filename is the last one, source folder is what remains
-                source_paths = [{'source' => src_dir_elements.pop}]
-                apifid = @api_node.resolve_api_fid(top_file_id, src_dir_elements.join(Api::Node::PATH_SEPARATOR), true)
-              when 'link', 'folder'
-                # single source is 'folder' or 'link'
-                # TODO: add this ? , 'destination'=>file_info['name']
-                source_paths = [{'source' => '.'}]
-              else
-                raise BadArgument, "Unknown source type: #{file_info['type']}"
-              end
-            end
+            apifid, source_paths = @api_node.resolve_api_fid_paths(top_file_id, transfer.ts_source_paths)
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :cat
-            source_paths = transfer.ts_source_paths
-            source_folder = source_paths.shift['source']
-            if source_paths.empty?
-              source_folder = source_folder.split(Api::Node::PATH_SEPARATOR)
-              source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(Api::Node::PATH_SEPARATOR)
-            end
-            raise Cli::BadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
-            file_name = source_paths.first['source']
-            apifid = @api_node.resolve_api_fid(top_file_id, File.join(source_folder, file_name))
+            apifid = apifid_from_next_arg(top_file_id)
             result = apifid[:api].call(
               operation: 'GET',
               subpath: "files/#{apifid[:file_id]}/content")
