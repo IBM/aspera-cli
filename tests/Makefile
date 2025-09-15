@@ -898,7 +898,7 @@ $(F)aocfdowna: $(F)aoc_tstdst
 	@$(STOP_TEST) $@
 $(F)aocfhttpd: $(F)aocftr
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) aoc files cat --to-folder=$(DIR_TMP). testdst/$(TST_ASC_FILENAME)
+	$(INCMAN)$(CLI_TEST) aoc files cat testdst/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)aocfv3inf: $(TMP_EXISTS)
 	@$(START_TEST) $@
