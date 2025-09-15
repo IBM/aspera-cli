@@ -372,6 +372,8 @@ module Aspera
           query['exclude_dropbox_packages'] = !query.key?('dropbox_id') unless query.key?('exclude_dropbox_packages')
         end
 
+        # List all packages according to `query` option.
+        # @param <none>
         # @return [Hash] {items,total} with all packages according to combination of user's query and default query
         def list_all_packages_with_query
           query = query_read_delete(default: {})
@@ -943,7 +945,7 @@ module Aspera
               package_data = value_create_modify(command: package_command)
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
-              # works for both normal user auth and link auth
+              # Works for both normal user auth and link auth.
               workspace_id_hash(hash: package_data, string: true) unless package_data.key?('workspace_id')
               if !aoc_api.public_link.nil?
                 aoc_api.assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
@@ -952,7 +954,6 @@ module Aspera
                 # enforce workspace id from link (should be already ok, but in case user wanted to override)
                 package_data['workspace_id'] = aoc_api.public_link['data']['workspace_id']
               end
-
               # transfer may raise an error
               created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
               Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
@@ -962,21 +963,21 @@ module Aspera
               ids_to_download = nil
               if !aoc_api.public_link.nil?
                 aoc_api.assert_public_link_types(['view_received_package'])
-                # set the package id from link
+                # Set the package id from link
                 ids_to_download = aoc_api.public_link['data']['package_id']
               end
-              # get from command line unless it was a public link
+              # Get from command line unless it was a public link
               ids_to_download ||= instance_identifier
               skip_ids_persistency = package_persistency
               case ids_to_download
-              when SpecialValues::ALL, SpecialValues::INIT
+              when SpecialValues::INIT
                 all_packages = list_all_packages_with_query[:items]
-                if ids_to_download.eql?(SpecialValues::INIT)
-                  Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
-                  skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
-                  skip_ids_persistency.save
-                  return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-                end
+                Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
+                skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
+                skip_ids_persistency.save
+                return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+              when SpecialValues::ALL
+                all_packages = list_all_packages_with_query[:items]
                 # remove from list the ones already downloaded
                 reject_packages_from_persistency(all_packages, skip_ids_persistency)
                 ids_to_download = all_packages.map{ |e| e['id']}
