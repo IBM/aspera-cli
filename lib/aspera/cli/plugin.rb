@@ -224,7 +224,7 @@ module Aspera
         end
       end
 
-      # query parameters in URL suitable for REST: list/GET and delete/DELETE
+      # Query parameters in URL suitable for REST: list/GET and delete/DELETE
       def query_read_delete(default: nil)
         query = options.get_option(:query)
         # dup default, as it could be frozen

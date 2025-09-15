@@ -13,6 +13,11 @@ module Aspera
   class AssertError < Error
   end
   class << self
+    # Assert that a condition is true, else raise exception
+    # @param assertion [Bool]       Must be true
+    # @param info      [String,nil] Fixed message in case assert fails
+    # @param type      [Exception]  Exception to raise
+    # @param block     [Proc]       Like info, a string that desribes the problem
     # The block is executed in the context of the Aspera module
     def assert(assertion, info = nil, type: AssertError)
       raise InternalError, 'bad assert: both info and block given' unless info.nil? || !block_given?
