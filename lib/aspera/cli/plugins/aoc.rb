@@ -435,7 +435,7 @@ module Aspera
               server_apfid[:file_id],
               client_direction,
               add_ts)))
-          else Aspera.error_unreachable_line
+          else Aspera.error_unexpected_value(command_repo){'command'}
           end
           Aspera.error_unreachable_line
         end
