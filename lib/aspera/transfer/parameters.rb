@@ -20,6 +20,7 @@ module Aspera
   module Transfer
     # translate transfer specification to ascp parameter list
     class Parameters
+      # `ascp` options to provide a file list
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       private_constant :FILE_LIST_OPTIONS
       HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
