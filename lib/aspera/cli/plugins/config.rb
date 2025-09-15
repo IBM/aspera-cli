@@ -1048,7 +1048,7 @@ module Aspera
             # ensure fpac was provided
             options.get_option(:fpac, mandatory: true)
             server_url = options.get_next_argument('server url')
-            return Main.result_text(@pac_exec.find_proxy_for_url(server_url))
+            return Main.result_text(@pac_exec.get_proxies(server_url))
           when :check_update
             return Main.result_single_object(check_gem_version)
           when :initdemo
