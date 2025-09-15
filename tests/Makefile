@@ -875,9 +875,9 @@ $(F)aocftr: $(F)aocfupl $(F)aoc_tstdst
 	$(INCMAN)$(CLI_TEST) aoc files transfer push /testsrc --to-folder=/testdst $(TST_ASC_FILENAME)
 	$(CLI_TEST) aoc files upload --to-folder=/testdst $(TST_UTF_LCL_PATH)
 	@$(STOP_TEST) $@
-$(F)aocndinf: $(F)aoc_tstsrc
+$(F)aocndinf: $(F)aocftr
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) aoc files node_info /testsrc --format=json --display=data | $(INCMAN)$(CLI_TEST) aoc files upload --workspace=@none: --to-folder=@preset:aoc.other_folder $(TST_ASC_FILENAME) --transfer=node --transfer-info=@json:@stdin:
+	$(INCMAN)$(CLI_TEST) aoc files node_info /testdst --format=json --display=data | $(INCMAN)$(CLI_TEST) aoc files upload --workspace=@preset:aoc.other_workspace --to-folder=@preset:aoc.other_folder $(TST_ASC_FILENAME) --transfer=node --transfer-info=@json:@stdin:
 	@$(STOP_TEST) $@
 $(F)aocfdel: $(F)aocftr $(F)aocndinf
 	@$(START_TEST) $@
@@ -1640,6 +1640,7 @@ $(F)conf_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:aoc.org aoc
 	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
+	$(BEG_ERR)$(CLI_TEST) config detect https://www.ibm.com$(END_ERR_HIDE)
 	@$(STOP_TEST) $@
 $(F)conf_genkey: $(TMP_EXISTS)
 	@$(START_TEST) $@
