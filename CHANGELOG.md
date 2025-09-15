@@ -10,6 +10,7 @@
     * `aoc`: Option `package_folder` allows specification of secondary field.
     * `sync`: Sync operations now use options `ts` and `to_folder`.
     * `format`: `csv` format now tables option `table_style`.
+    * `logger`: New option `log_format` to control formatting of logs.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.
@@ -23,6 +24,8 @@
     * `console`: Replaced options `filter_from` and `filter_to` with standard option `query`.
     * `sync`: Removed option `sync_info`. Streamlined command line interface. Applies to all plugins with `sync` command.
     * `async`: Removed option `sync_name`, replaced with percent selector `%name:`.
+    * `aoc`: `files download` and `download` using gen4 API do not require anymore to provide the containing folder in first position, and then only files. Now, directly provide the path to all files.
+    * `logger`: Log is simplified, date is removed by default. Use option `log_format`.
 
 * 4.23.0 2025-08-11
 
