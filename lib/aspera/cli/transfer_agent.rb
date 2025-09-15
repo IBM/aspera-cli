@@ -12,9 +12,9 @@ module Aspera
     # one of the supported transfer agents
     # provides CLI options to select one of the transfer agents (FASP/ascp client)
     class TransferAgent
-      # special value for --sources : read file list from arguments
+      # @args special value for --sources : read file list from arguments
       FILE_LIST_FROM_ARGS = '@args'
-      # special value for --sources : read file list from transfer spec (--ts)
+      # @ts special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
       FILE_LIST_OPTIONS = [FILE_LIST_FROM_ARGS, FILE_LIST_FROM_TRANSFER_SPEC, 'Array'].freeze
       DEFAULT_TRANSFER_NOTIFY_TEMPLATE = <<~END_OF_TEMPLATE
@@ -63,7 +63,7 @@ module Aspera
         @httpgw_url_lambda = nil
         @opt_mgr.declare(:ts, 'Override transfer spec values', types: Hash, handler: {o: self, m: :option_transfer_spec})
         @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
-        @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
+        @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
         @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
         @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
         @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash, handler: {o: self, m: :transfer_info})
@@ -166,44 +166,8 @@ module Aspera
         @httpgw_url_lambda = httpgw_url_proc
       end
 
-      # This is how the list of files to be transferred is specified
-      # get paths suitable for transfer spec from command line
-      # @param default [String] if set, used as default file for --sources=@args
-      # @return [Hash] {source: (mandatory), destination: (optional)}
-      # computation is done only once, cache is kept in @transfer_paths
-      def ts_source_paths(default: nil)
-        # return cache if set
-        return @transfer_paths unless @transfer_paths.nil?
-        # start with lower priority : get paths from transfer spec on command line
-        @transfer_paths = @transfer_spec_command_line['paths'] if @transfer_spec_command_line.key?('paths')
-        # is there a source list option ?
-        file_list = @opt_mgr.get_option(:sources)
-        case file_list
-        when nil, FILE_LIST_FROM_ARGS
-          Log.log.debug('getting file list as parameters')
-          Aspera.assert_type(default, Array) unless default.nil?
-          # get remaining arguments
-          file_list = @opt_mgr.get_next_argument('source file list', multiple: true, default: default)
-          raise Cli::BadArgument, 'specify at least one file on command line or use ' \
-            "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
-        when FILE_LIST_FROM_TRANSFER_SPEC
-          Log.log.debug('assume list provided in transfer spec')
-          special_case_direct_with_list =
-            @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
-            Transfer::Parameters.ascp_args_file_list?(@opt_mgr.get_option(:transfer_info)['ascp_args'])
-          raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
-          # here we assume check of sources is made in transfer agent
-          return @transfer_paths
-        when Array
-          Log.log.debug('getting file list as extended value')
-          raise Cli::BadArgument, 'sources must be a Array of String' if !file_list.reject{ |f| f.is_a?(String)}.empty?
-        else
-          raise Cli::BadArgument, "sources must be a Array, not #{file_list.class}"
-        end
-        # here, file_list is an Array or String
-        if !@transfer_paths.nil?
-          Log.log.warn('--sources overrides paths from --ts')
-        end
+      # transform the list of paths to a list of hash with source/dest
+      def list_to_paths(file_list)
         source_type = @opt_mgr.get_option(:src_type, mandatory: true)
         case source_type
         when :list
@@ -211,9 +175,47 @@ module Aspera
           @transfer_paths = file_list.map{ |i| {'source' => i}}
         when :pair
           Aspera.assert(file_list.length.even?, type: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
-          @transfer_paths = file_list.each_slice(2).to_a.map{ |s, d| {'source' => s, 'destination' => d}}
+          @transfer_paths = file_list.each_slice(2).map{ |s, d| {'source' => s, 'destination' => d}}
         else Aspera.error_unexpected_value(source_type)
         end
+      end
+
+      # This is how the list of files to be transferred is specified
+      # get paths suitable for transfer spec from command line
+      # computation is done only once, cache is kept in @transfer_paths
+      # @param default [Array] of [String] if set, used as default file for --sources=@args
+      # @return [Array, nil] of Hash {source: (mandatory), destination: (optional)}
+      def ts_source_paths(default: nil)
+        # return cache if set
+        return @transfer_paths unless @transfer_paths.nil?
+        # start with lower priority : get paths from transfer spec on command line
+        @transfer_paths = @transfer_spec_command_line['paths'] if @transfer_spec_command_line.key?('paths')
+        # is there a source list option ?
+        sources = @opt_mgr.get_option(:sources)
+        @transfer_paths =
+          case sources
+          when FILE_LIST_FROM_ARGS
+            Log.log.debug('getting file list as parameters')
+            Aspera.assert_type(default, Array, NilClass)
+            # get remaining arguments
+            list = @opt_mgr.get_next_argument('source file list', multiple: true, default: default)
+            raise Cli::BadArgument, 'specify at least one file on command line or use ' \
+              "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !list.is_a?(Array) || list.empty?
+            list_to_paths(list)
+          when FILE_LIST_FROM_TRANSFER_SPEC
+            Log.log.debug('assume list provided in transfer spec')
+            special_case_direct_with_list =
+              @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
+              Transfer::Parameters.ascp_args_file_list?(@opt_mgr.get_option(:transfer_info)['ascp_args'])
+            raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
+            # can be nil
+            @transfer_paths
+          when Array
+            Log.log.debug('getting file list as extended value')
+            Aspera.assert(sources.all?(String), type: Cli::BadArgument){'sources must be a Array of String'}
+            list_to_paths(sources)
+          else Aspera.error_unexpected_value(sources){'sources'}
+          end
         Log.log.debug{"paths=#{@transfer_paths}"}
         return @transfer_paths
       end
