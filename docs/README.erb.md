@@ -7773,7 +7773,7 @@ To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
 
-### Error: ascp: /lib64/libc.so.6: version `GLIBC_2.28' not found
+### Error: `ascp`: /lib64/libc.so.6: version `GLIBC_2.28' not found
 
 This happens on Linux x86 if you try to install `transferd` on a Linux version too old to support a newer `ascp` executable.
 

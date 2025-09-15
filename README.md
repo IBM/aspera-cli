@@ -215,7 +215,7 @@ If you don't have internet for the installation, refer to section [Installation 
 
 A package with pre-installed Ruby, gem and `ascp` may also be provided.
 
-### `ascli` executable
+### Single file executable
 
 It is planned to provide `ascli` as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
@@ -689,9 +689,11 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
 
-```console
-$ ./build_package.sh aspera-cli 4.18.0
+```bash
+./build_package.sh aspera-cli 4.18.0
+```
 
+```text
 Archive: aspera-cli-4.18.0-gems.tgz
 ```
 
@@ -1182,8 +1184,11 @@ One can also run `ascli` with option `--log-level=debug` to display the command 
 
 It is also possible to display arguments received by Ruby using this command:
 
-```console
+```bat
 C:> ruby -e 'puts ARGV' "Hello World" 1 2
+```
+
+```text
 Hello World
 1
 2
@@ -2215,10 +2220,11 @@ ascli config preset get default _plugin_name_
 
 Plugin `config` provides general commands for `ascli`:
 
-- Option Preset, configuration file operations
+- Option Preset operations (configuration file)
 - `wizard`
 - `vault`
 - `ascp`
+- `transferd`
 
 The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
 When `ascli` starts, it looks for the `default` Option Preset and checks the value for `config`.
@@ -2230,10 +2236,15 @@ If set, it loads the options independently of the plugin used.
 
 Show current default (global) Option Preset (`config` plugin):
 
-```console
-$ ascli config preset get default config
+```bash
+ascli config preset get default config
+```
+
+```text
 global_common_defaults
 ```
+
+Set a global parameter:
 
 ```bash
 ascli config preset set GLOBAL version_check_days 0
@@ -2815,17 +2826,23 @@ It is also possible to force the graphical mode with option `--ui` :
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
-By default, logging level is `warn` and the output channel is `stderr`.
+
 To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `ASCLI_LOG_LEVEL`, or an [Option Preset](#option-preset)).
 
 By default, passwords and secrets are redacted from logs.
 Set option `log_secrets` to `yes` to include secrets in logs.
 
-Option `logger`: `stdout`, `stderr`, `syslog`.
-
-Option `log_level`: `debug`, `info`, `warn`, `error`.
+| Option        | Values | Description |
+|---------------|--------|-------------|
+| `logger`      | `stdout`<br/>`stderr`<br/>`syslog` | Type of output.<br/>Default: `stderr` |
+| `log_level`   | `trace2`<br/>`trace1`<br/>`debug`<br/>`info`<br/>`warn`<br/>`error` | Minimum level displayed.<br/>Default: `warn` |
+| `log_secrets` | `yes`<br/>`no `| Show or hide secrets in logs.<br/>Default: `no` (Hide) |
+| `log_format`  | `Proc` | A lambda function that formats the log.<br/>Default: `->(s, _d, _p, m){"#{s[0]} #{m}\n"}`<br/>`Aspera::Log::DEFAULT_FORMATTER` : see above.<br/>`Aspera::Log::STANDARD_FORMATTER` : Standard Ruby formatter. |
 
 > **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
+
+Option `log_format` is typically set using `@ruby:`.
+It is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
 
 Examples:
 
@@ -4246,6 +4263,7 @@ OPTIONS: global
         --ui=ENUM                    Method to start browser: text, [graphical]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
+        --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
@@ -4314,10 +4332,9 @@ OPTIONS:
         --password=VALUE             User's password
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --sync-name=VALUE            Sync name
-        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
-        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
-        --root-id=VALUE              File id of top folder when using access key (override AK root id)
+        --default-ports=ENUM         Gen4: Use standard FASP ports (true) or get from node API (false): no, [yes]
+        --node-cache=ENUM            Gen4: Set to no to force actual file system read: no, [yes]
+        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
         --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
 
 
@@ -4656,9 +4673,9 @@ Bearer tokens are valid for a period of time defined (by the AoC app, configurab
 
 > **Optional**
 
-If you use the built-in client_id and client_secret, skip this and do not set them in next section.
+If you use the built-in `client_id` and `client_secret`, skip this and do not set them in next section.
 
-Else you can use a specific OAuth API client_id, the first step is to declare `ascli` in Aspera on Cloud using the admin interface.
+Else you can use a specific OAuth API `client_id`, the first step is to declare `ascli` in Aspera on Cloud using the admin interface.
 
 ([AoC documentation: Registering an API Client](https://ibmaspera.com/help/admin/organization/registering_an_api_client)).
 
@@ -4778,12 +4795,13 @@ ascli aoc admin user list
 ```
 
 ```text
-+--------+----------------+
-|   id   |      name      |
-+--------+----------------+
-| 109952 | Tech Support   |
-| 109951 | LAURENT MARTIN |
-+--------+----------------+
+╭─────────┬────────────────┬────────────────────╮
+│ id      │ name           │ email              │
+╞═════════╪════════════════╪════════════════════╡
+│ 1234567 │ John Doe       │ john@example.com   │
+│ 7654321 │ Alice Saprich  │ alice@example.com  │
+│ 1234321 │ Sponge Bob     │ bob@example.com    │
+╰─────────┴────────────────┴────────────────────╯
 ```
 
 ```ruby
@@ -4962,20 +4980,16 @@ Remove the parameters that are either obviously added by the system: `id`, `crea
 And then craft your command:
 
 ```bash
-ascli aoc admin group create @json:'{"description":"test to delete","name":"test 1 to delete","saml_group":false}'
+ascli aoc admin group create @json:'{"wrong":"param"}'
 ```
 
 If the command returns an error, example:
 
 ```text
-+----+-----------------------------------------------------------------------------------+
-| id | status                                                                            |
-+----+-----------------------------------------------------------------------------------+
-|    | found unpermitted parameters: :manager, :owner, :system_group, :system_group_type |
-|    | code: unpermitted_parameters                                                      |
-|    | request_id: b0f45d5b-c00a-4711-acef-72b633f8a6ea                                  |
-|    | api.ibmaspera.com 422 Unprocessable Entity                                        |
-+----+-----------------------------------------------------------------------------------+```
+ERROR: Rest: found unpermitted parameter: :wrong
+code: unpermitted_parameters
+request_id: 2a487dbc-bc5c-41ab-86c8-3b9972dfd4c4
+api.ibmaspera.com 422 Unprocessable Entity
 ```
 
 Well, remove the offending parameters and try again.
@@ -5058,8 +5072,11 @@ To list the target folder content, add a `/` at the end of the path.
 
 Example:
 
-```console
-$ ascli aoc files br the_link
+```bash
+ascli aoc files br the_link
+```
+
+```text
 Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 | name       | type | recursive_size | size | modified_time        | access_level |
@@ -5068,8 +5085,11 @@ Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 ```
 
-```console
-$ ascli aoc files br the_link/
+```bash
+ascli aoc files br the_link/
+```
+
+```text
 Current Workspace: Default (default)
 +-------------+------+----------------+------+----------------------+--------------+
 | name        | type | recursive_size | size | modified_time        | access_level |
@@ -5412,24 +5432,8 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 ### List of files to transfer
 
 Source files are provided as a list with the `sources` option.
-Refer to section [File list](#list-of-files-for-transfers)
-
-> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the file ID API).
-
-Source files are located on **Aspera on cloud**, when :
-
-- The server is Aspera on Cloud, and executing a `download` or `recv`
-- The agent is Aspera on Cloud, and executing an `upload` or `send`
-
-In this case:
-
-- If there is a single file : specify the full path
-- Else, if there are multiple files:
-  - The first item in the list must be the base source folder
-  - followed by the list of file relative paths
-
-If all files are located in the same folder, you can simply specify the folder path followed by the file names.
-If files are in different folders, then the base folder must be the common parent folder of all files, e.g. `/`, followed by the relative paths to each file to that base folder.
+By default, simply the list of files on the command line.
+Refer to section [File list](#list-of-files-for-transfers).
 
 ### Packages app
 
@@ -5954,8 +5958,9 @@ files browse / --url=my_public_link_folder_pass --password=my_public_link_passwo
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
-files cat --to-folder=. testdst/test_file.bin
+files cat testdst/test_file.bin
 files delete /testsrc
+files down --to-folder=. testdst/test_file.bin testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin
 files download --transfer=desktop testdst/test_file.bin
 files find /
@@ -5978,11 +5983,13 @@ files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"doubl
 files transfer push /testsrc --to-folder=/testdst test_file.bin
 files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 files upload --to-folder=/testsrc test_file.bin
-files upload --workspace=my_other_workspace --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
+files upload --to-folder=/testsrc test_file.bin test_file.bin
+files upload --workspace=@none: --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
 files v3 info
 gateway --pid-file=pid_aocfxgw @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
-org --url=my_public_link_recv_from_aoc_user
 organization
+organization --format=image --fields=background_image_url --ui=text
+organization --url=my_public_link_recv_from_aoc_user
 packages browse package_id3 /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
@@ -6751,11 +6758,11 @@ access_key set_bearer_key self @file:my_private_key
 access_key show %id:self
 api_details
 asperabrowser
-async bandwidth 1
-async counters 1
-async files 1
+async bandwidth %name:my_node_sync2
+async counters %name:my_node_sync2
+async files %name:my_node_sync2
 async list
-async show 1
+async show %name:my_node_sync2
 async show ALL
 basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
@@ -6999,10 +7006,14 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 admin accounts list
 admin alternate_addresses list
 admin clean_deleted
+admin configuration modify @json:'{"mfa_required":false}'
+admin configuration show
 admin contacts list
 admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
 admin distribution_lists delete %name:test4
 admin distribution_lists list --query=@json:'{"type":"global"}'
+admin email_notifications list
+admin email_notifications show welcome_email
 admin event app --query=@json:'{"max":20}'
 admin event web
 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
@@ -7013,7 +7024,7 @@ admin node shared_folders %name:Local list
 admin node shared_folders %name:Local show %name:Main
 admin node shared_folders %name:Local user %name:Main list
 admin node show %name:Local
-admin oauth_clients list --query=@json:'[["client_types[]","public"]]'
+admin oauth_clients list
 admin registrations list
 admin saml_configs list
 admin shared_inboxes invite %name:my_shared_box_name johnny@example.com
@@ -7023,6 +7034,8 @@ admin shared_inboxes members %name:my_shared_box_name create %name:john@example.
 admin shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
 admin shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
 admin shared_inboxes members %name:my_shared_box_name list
+admin smtp create @json:'{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'
+admin smtp modify @json:'{"default_time_zone_offset":"0"}'
 admin smtp show
 admin smtp test my_email_external
 admin workgroups list
@@ -7033,8 +7046,10 @@ invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
 packages browse f5_pack_id --query=@json:'{"recursive":true}'
 packages delete f5_pack_id
+packages list --box=ALL
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
+packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
@@ -7056,8 +7071,10 @@ shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
 shared_folders list
+user account
 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 user profile show
+version
 ```
 
 Most commands are directly REST API calls.
@@ -7745,8 +7762,10 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ```bash
 health
+transfer current files console_xfer_id
 transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
+transfer current show console_xfer_id
 transfer smart list
 transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
 ```
@@ -8784,3 +8803,15 @@ To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options
 ```bash
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
+
+### Error: `ascp`: /lib64/libc.so.6: version `GLIBC_2.28' not found
+
+This happens on Linux x86 if you try to install `transferd` on a Linux version too old to support a newer `ascp` executable.
+
+Workaround: Install an older version:
+
+```bash
+ascli config transferd install 1.1.2
+```
+
+Refer to: [Binary](#single-file-executable)
