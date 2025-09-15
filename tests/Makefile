@@ -714,6 +714,7 @@ $(F)nd_ak1: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name browse /
 	$(BEG_ERR)$(CLI_TEST)node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @json:'{}'$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
+	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder @re:'\.jpg$$'
 	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder
 	@$(STOP_TEST) $@
 $(F)nd_ak_mkdir: $(TMP_EXISTS)
