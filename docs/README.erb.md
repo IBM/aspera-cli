@@ -4157,9 +4157,9 @@ Bearer tokens are valid for a period of time defined (by the AoC app, configurab
 
 > **Optional**
 
-If you use the built-in client_id and client_secret, skip this and do not set them in next section.
+If you use the built-in `client_id` and `client_secret`, skip this and do not set them in next section.
 
-Else you can use a specific OAuth API client_id, the first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
+Else you can use a specific OAuth API `client_id`, the first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
 ([AoC documentation: Registering an API Client](https://ibmaspera.com/help/admin/organization/registering_an_api_client)).
 
@@ -4279,12 +4279,13 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 ```
 
 ```text
-+--------+----------------+
-|   id   |      name      |
-+--------+----------------+
-| 109952 | Tech Support   |
-| 109951 | LAURENT MARTIN |
-+--------+----------------+
+╭─────────┬────────────────┬────────────────────╮
+│ id      │ name           │ email              │
+╞═════════╪════════════════╪════════════════════╡
+│ 1234567 │ John Doe       │ john@example.com   │
+│ 7654321 │ Alice Saprich  │ alice@example.com  │
+│ 1234321 │ Sponge Bob     │ bob@example.com    │
+╰─────────┴────────────────┴────────────────────╯
 ```
 
 ```ruby
@@ -4463,20 +4464,16 @@ Remove the parameters that are either obviously added by the system: `id`, `crea
 And then craft your command:
 
 ```bash
-<%=cmd%> aoc admin group create @json:'{"description":"test to delete","name":"test 1 to delete","saml_group":false}'
+<%=cmd%> aoc admin group create @json:'{"wrong":"param"}'
 ```
 
 If the command returns an error, example:
 
 ```text
-+----+-----------------------------------------------------------------------------------+
-| id | status                                                                            |
-+----+-----------------------------------------------------------------------------------+
-|    | found unpermitted parameters: :manager, :owner, :system_group, :system_group_type |
-|    | code: unpermitted_parameters                                                      |
-|    | request_id: b0f45d5b-c00a-4711-acef-72b633f8a6ea                                  |
-|    | api.ibmaspera.com 422 Unprocessable Entity                                        |
-+----+-----------------------------------------------------------------------------------+```
+ERROR: Rest: found unpermitted parameter: :wrong
+code: unpermitted_parameters
+request_id: 2a487dbc-bc5c-41ab-86c8-3b9972dfd4c4
+api.ibmaspera.com 422 Unprocessable Entity
 ```
 
 Well, remove the offending parameters and try again.
