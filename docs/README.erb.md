@@ -2711,17 +2711,23 @@ It is also possible to force the graphical mode with option `--ui` :
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
-By default, logging level is `warn` and the output channel is `stderr`.
+
 To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
 
 By default, passwords and secrets are redacted from logs.
 Set option `log_secrets` to `yes` to include secrets in logs.
 
-Option `logger`: `stdout`, `stderr`, `syslog`.
-
-Option `log_level`: `debug`, `info`, `warn`, `error`.
+| Option        | Values | Description |
+|---------------|--------|-------------|
+| `logger`      | `stdout`<%=br%>`stderr`<%=br%>`syslog` | Type of output.<%=br%>Default: `stderr` |
+| `log_level`   | `trace2`<%=br%>`trace1`<%=br%>`debug`<%=br%>`info`<%=br%>`warn`<%=br%>`error` | Minimum level displayed.<%=br%>Default: `warn` |
+| `log_secrets` | `yes`<%=br%>`no `| Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
+| `log_format`  | `Proc` | A lambda function that formats the log.<%=br%>Default: `->(s, _d, _p, m){"#{s[0]} #{m}\n"}`<%=br%>`Aspera::Log::DEFAULT_FORMATTER` : see above.<%=br%>`Aspera::Log::STANDARD_FORMATTER` : Standard Ruby formatter. |
 
 > **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
+
+Option `log_format` is typically set using `@ruby:`.
+It is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
 
 Examples:
 
@@ -4916,24 +4922,8 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 ### List of files to transfer
 
 Source files are provided as a list with the `sources` option.
-Refer to section [File list](#list-of-files-for-transfers)
-
-> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the file ID API).
-
-Source files are located on **Aspera on cloud**, when :
-
-- The server is Aspera on Cloud, and executing a `download` or `recv`
-- The agent is Aspera on Cloud, and executing an `upload` or `send`
-
-In this case:
-
-- If there is a single file : specify the full path
-- Else, if there are multiple files:
-  - The first item in the list must be the base source folder
-  - followed by the list of file relative paths
-
-If all files are located in the same folder, you can simply specify the folder path followed by the file names.
-If files are in different folders, then the base folder must be the common parent folder of all files, e.g. `/`, followed by the relative paths to each file to that base folder.
+By default, simply the list of files on the command line.
+Refer to section [File list](#list-of-files-for-transfers).
 
 ### Packages app
 

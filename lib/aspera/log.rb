@@ -51,6 +51,8 @@ module Aspera
 
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
+    STANDARD_FORMATTER = Logger::Formatter.new
+    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{s[0]} #{m}\n"}
     # Class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
@@ -93,11 +95,25 @@ module Aspera
     end
 
     attr_reader :logger_type, :logger
-    attr_writer :program_name
+    attr_accessor :dump_format
+
+    def program_name=(value)
+      @program_name = value
+      self.logger_type = @logger_type
+    end
 
     # Set log level of underlying logger given symbol level
     def level=(new_level)
       @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
+    end
+
+    def formatter=(formatter)
+      # Update formatter with password hiding
+      @logger.formatter = SecretHider.log_formatter(formatter)
+    end
+
+    def formatter
+      @logger.formatter
     end
 
     # Get symbol of debug level of underlying logger
@@ -115,9 +131,9 @@ module Aspera
       current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
       case new_log_type
       when :stderr
-        @logger = Logger.new($stderr)
+        @logger = Logger.new($stderr, progname: @program_name, formatter: DEFAULT_FORMATTER)
       when :stdout
-        @logger = Logger.new($stdout)
+        @logger = Logger.new($stdout, progname: @program_name, formatter: DEFAULT_FORMATTER)
       when :syslog
         require 'syslog/logger'
         # the syslog class automatically creates methods from the severity names
@@ -128,16 +144,15 @@ module Aspera
         Logger::Severity.constants.each do |severity|
           Syslog::Logger.make_methods(severity.downcase)
         end
+        # Use `local2` facility, like other Aspera components
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else error_unexpected_value(new_log_type){"log type (#{LOG_TYPES.join(', ')})"}
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
-      # Update formatter with password hiding
-      @logger.formatter = SecretHider.log_formatter(@logger.formatter)
+      # add secret hider to default logger
+      self.formatter = @logger.formatter
     end
-
-    attr_accessor :dump_format
 
     private
 
@@ -145,8 +160,9 @@ module Aspera
       @logger = nil
       @program_name = 'aspera'
       @dump_format = :json
+      @logger_type = :stderr
       # This sets @logger and @logger_type (self needed to call method instead of local var)
-      self.logger_type = :stderr
+      self.logger_type = @logger_type
     end
   end
 end
