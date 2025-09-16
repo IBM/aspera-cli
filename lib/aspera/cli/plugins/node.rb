@@ -202,6 +202,7 @@ module Aspera
           return c_result_remove_prefix_path(final_result, type)
         end
 
+        # Gen3 API
         def browse_gen3
           folders_to_process = [get_one_argument_with_prefix('path')]
           query = options.get_option(:query, default: {})
@@ -528,9 +529,8 @@ module Aspera
             find_lambda = Api::Node.file_matcher_from_argument(options)
             return Main.result_object_list(@api_node.find_files(apifid[:file_id], find_lambda), fields: ['path'])
           when :mkdir, :mklink, :mkfile
-            containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
-            new_item = containing_folder_path.pop
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Api::Node::PATH_SEPARATOR), true)
+            containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
+            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
             query = options.get_option(:query, mandatory: false)
             check_exists = true
             payload = {name: new_item}
