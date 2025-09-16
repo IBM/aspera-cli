@@ -1564,6 +1564,7 @@ $(F)conf_gem: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TMP_CONF) config initdemo
 	$(CLI_TMP_CONF) config initdemo
 	$(CLI_TEST) config gem path --http-proxy=http://test1 --http-options=@json:'{"user_agent":"test1"}'
+	$(CLI_TEST) config coffee --cert_stores=@ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]' --http-options=@json:'{"ssl_options":["CIPHER_SERVER_PREFERENCE","-SAFARI_ECDHE_ECDSA_BUG"]}'
 	@$(STOP_TEST) $@
 $(F)conf_vault_macos: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1630,11 +1631,13 @@ $(F)conf_plugins: $(TMP_EXISTS)
 $(F)conf_wizard_org: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
+	$(INCMAN)$(CLI_TEST) config tokens list
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
 $(F)conf_wizard_gen: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
+	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(F)conf_detect: $(TMP_EXISTS)
