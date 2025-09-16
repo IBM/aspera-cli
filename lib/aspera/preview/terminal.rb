@@ -5,6 +5,7 @@
 require 'rainbow'
 require 'io/console'
 require 'aspera/log'
+require 'aspera/environment'
 module Aspera
   module Preview
     # Display a picture in the terminal.
@@ -27,6 +28,7 @@ module Aspera
         # @param font_ratio [Float]   ratio = font height / font width
         # @return [String] The image as text, or the iTerm2 escape sequence
         def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
+          return '[Image display requires a terminal]' unless Environment.terminal?
           return iterm_display_image(blob) if iterm_supported? && !text
           begin
             # do not require statically, as the package is optional
