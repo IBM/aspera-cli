@@ -2,6 +2,8 @@
 
 require 'aspera/sync/operations'
 require 'aspera/assert'
+require 'aspera/environment'
+require 'pathname'
 
 module Aspera
   module Cli
@@ -52,7 +54,8 @@ module Aspera
             session[dir_key]['path'] = transfer.destination_folder(path_is_remote ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND)
             local_remote = %w[local remote].map{ |i| session[i]['path']}
           end
-          session['quiet'] = false unless session.key?('quiet')
+          # "conf" is quiet by default
+          session['quiet'] = false if !session.key?('quiet') && Environment.terminal?
         end
         if direction
           raise BadArgument, 'direction shall not be in sync_info' if session.key?('direction')
@@ -61,7 +64,7 @@ module Aspera
           if !session.key?('name')
             session['name'] = Environment.instance.sanitized_filename(
               ([direction.to_s] + local_remote).map do |value|
-                value.split(File::SEPARATOR).last(2).join(Environment.instance.safe_filename_character)
+                Pathname(value).each_filename.to_a.last(2).join(Environment.instance.safe_filename_character)
               end.join(Environment.instance.safe_filename_character))
           end
         end

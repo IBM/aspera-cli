@@ -10,6 +10,7 @@ require 'aspera/environment'
 require 'zlib'
 require 'base64'
 require 'openssl'
+require 'pathname'
 require 'net/ssh/buffer'
 
 module Aspera
@@ -37,6 +38,7 @@ module Aspera
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
       SCOPE_USER = 'user:all'
       SCOPE_ADMIN = 'admin:all'
+      # / in cloud
       PATH_SEPARATOR = '/'
 
       # register node special token decoder
@@ -99,6 +101,13 @@ module Aspera
 
         def file_matcher_from_argument(options)
           return file_matcher(options.get_next_argument('filter', validation: MATCH_TYPES, mandatory: false))
+        end
+
+        # @return [Array] containing folder + inside folder/file
+        def split_folder(path)
+          folder = path.split(PATH_SEPARATOR)
+          inside = folder.pop
+          [folder.join(PATH_SEPARATOR), inside]
         end
 
         # node API scopes
@@ -308,7 +317,7 @@ module Aspera
       def resolve_api_fid_paths(top_file_id, paths)
         Aspera.assert_type(paths, Array)
         Aspera.assert(paths.size.positive?)
-        split_sources = paths.map{ |p| p['source'].split(File::SEPARATOR).reject(&:empty?)}
+        split_sources = paths.map{ |p| Pathname(p['source']).each_filename.to_a}
         root = []
         split_sources.map(&:size).min.times do |i|
           parts = split_sources.map{ |s| s[i]}
