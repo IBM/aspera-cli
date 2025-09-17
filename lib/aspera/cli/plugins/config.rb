@@ -744,7 +744,7 @@ module Aspera
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
             return Main.result_object_list(
-              Transfer::SpecDoc.man_table(Formatter, cli: false),
+              Transfer::SpecDoc.man_table(Formatter),
               fields: Transfer::SpecDoc::TABLE_COLUMNS.map(&:to_s)
             )
           when :schema

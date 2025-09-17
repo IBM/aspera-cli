@@ -36,7 +36,7 @@ properties:
     x-cli-option: "-c"
     x-cli-convert: remove_hyphen
   content_protection:
-    description: Enable client-side encryption at rest. (CSEAR, content protection)
+    description: Enable client-side encryption at rest (CSEAR). (content protection)
     enum:
     - encrypt
     - decrypt
@@ -46,7 +46,7 @@ properties:
     type: string
     x-cli-envvar: ASPERA_SCP_FILEPASS
   cookie:
-    description: Metadata for transfer specified by application
+    description: Metadata for transfer specified by application.
     type: string
     x-cli-envvar: ASPERA_SCP_COOKIE
   create_dir:
@@ -64,7 +64,7 @@ properties:
       on the source are not deleted.
     x-cli-switch: true
   delete_source: # duplicate of remove_after_transfer ?
-    description: Remove SRC files after transfer success
+    description: Remove transfered source files after transfer success.
     type: boolean
     x-agents:
     - node
@@ -84,7 +84,7 @@ properties:
     x-agents:
     - transferd
   direction:
-    description: 'Direction of transfer (on client side)'
+    description: "Direction of transfer (on client side)."
     enum:
     - send
     - receive
@@ -119,7 +119,7 @@ properties:
     default: 33001
     x-cli-option: "-O"
   fasp_proxy:
-    description: Proxy for communications between the remote server and the (local) client. 
+    description: Proxy for communications between the remote server and the (local) client.
     type: object
     x-agents:
     - transferd
@@ -147,11 +147,11 @@ properties:
       true: 1
       false: 0
   http_fallback_port:
-    description: Specifies http port when no cipher is used
+    description: Specifies HTTP port when no cipher is used.
     type: integer
     x-cli-option: "-t"
   https_fallback_port:
-    description: Specifies https port when cipher is used
+    description: Specifies HTTPS port when cipher is used.
     type: integer
     x-cli-option: "-t"
   icos:
@@ -206,11 +206,11 @@ properties:
     - transferd
   move_after_transfer:
     description: >-
-      Move source files to the specified directory after they are transferred correctly.
-      
+      Move source files to the specified `archive-dir` directory after they are transferred correctly.
+
       Available as of 3.8.0.
       Details in ascp manual.
-      
+
       Requires write permissions on the source.
 
       If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.
@@ -237,7 +237,7 @@ properties:
 
       Each participant on one host needs an independent UDP (-O) port.
 
-      Large files are split between sessions only when transferring with resume_policy=none.
+      Large files are split between sessions only when transferring with `resume_policy`=`none`.
     type: integer
     x-cli-option: "-C"
     x-cli-special: true
@@ -256,43 +256,43 @@ properties:
     description: >-
       Overwrite files at the destination with source files of the same name based 
       on the policy:
-      
-      - always – Always overwrite the file.
-      
-      - never – Never overwrite the file.
+
+      - `always` : Always overwrite the file.
+
+      - `never` : Never overwrite the file.
       If the destination contains partial files that are older or the same 
       as the source files and resume is enabled, the partial files resume transfer.
       Partial files with checksums or sizes that differ from the source files 
       are not overwritten.
-      
-      - diff – Overwrite the file if it is different from the source, 
-      depending on the compare method (default is size). 
-      If the destination is object storage, diff has the same effect as always. 
-      If resume is not enabled, partial files are overwritten if they are different 
-      from the source, otherwise they are skipped. 
-      If resume is enabled, only partial files with different sizes or checksums 
-      from the source are overwritten; otherwise, files resume. 
-      
-      - diff+older – Overwrite the file if it is older and different from the source, 
-      depending on the compare method (default is size). 
-      If resume is not enabled, partial files are overwritten if they are older 
-      and different from the source, otherwise they are skipped. 
-      If resume is enabled, only partial files that are different and older than 
-      the source are overwritten, otherwise they are resumed. 
-      
-      - older – Overwrite the file if its timestamp is older than the source timestamp. 
 
-      If you set an overwrite policy of diff or diff+older, difference is determined 
-      by the value set for resume_policy:
-      
-      "none" - the source and destination files are always considered different and 
+      - `diff` : (default) Overwrite the file if it is different from the source, 
+      depending on the compare method (default is size).
+      If the destination is object storage, `diff` has the same effect as always.
+      If resume is not enabled, partial files are overwritten if they are different 
+      from the source, otherwise they are skipped.
+      If resume is enabled, only partial files with different sizes or checksums 
+      from the source are overwritten; otherwise, files resume.
+
+      - `diff+older` : Overwrite the file if it is older and different from the source, 
+      depending on the compare method (default is size).
+      If resume is not enabled, partial files are overwritten if they are older 
+      and different from the source, otherwise they are skipped.
+      If resume is enabled, only partial files that are different and older than 
+      the source are overwritten, otherwise they are resumed.
+
+      - `older` : Overwrite the file if its timestamp is older than the source timestamp.
+
+      If you set an overwrite policy of `diff` or `diff+older`, difference is determined 
+      by the value set for `resume_policy`:
+
+      `none` : The source and destination files are always considered different and 
       the destination file is always overwritten
-      
-      "attributes" - the source and destination files are compared based on file attributes 
-      
-      "sparse_checksum" - the source and destination files are compared based on sparse checksums, (currently file size)
-      
-      "full_checksum" - the source and destination files are compared based on full checksums 
+
+      `attributes` : The source and destination files are compared based on file attributes 
+
+      `sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)
+
+      `full_checksum` : The source and destination files are compared based on full checksums
     default: diff
     enum:
     - never
@@ -302,12 +302,12 @@ properties:
     - diff+older
   password:
     description: >-
-      Password for local Windows user when transfer user associated with node api user is not
-      the same as the one running asperanoded.
+      Password for local Windows user when transfer user associated with node API user is not
+      the same as the one running `asperanoded`.
 
       Allows impersonating the transfer user and have access to resources (e.g. network shares).
 
-      Windows only, node api only.
+      Windows only, node API only.
     type: string
     x-agents:
     - node
@@ -355,14 +355,14 @@ properties:
     - transferd
     x-cli-option: "--preserve-xattrs"
   preserve_file_owner_gid:
-    description: Preserve the group ID for a file owner
+    description: Preserve the group ID for a file owner.
     type: boolean
     x-agents:
     - transferd
     - direct
     x-cli-switch: true
   preserve_file_owner_uid:
-    description: Preserve the user ID for a file owner
+    description: Preserve the user ID for a file owner.
     type: boolean
     x-agents:
     - transferd
@@ -398,7 +398,7 @@ properties:
     - direct
     x-cli-option: "--remote-preserve-xattrs"
   preserve_source_access_time:
-    description: Preserve the time logged for when the source file was accessed
+    description: Preserve the time logged for when the source file was accessed.
     type: boolean
     x-agents:
     - transferd
@@ -416,17 +416,17 @@ properties:
     description: >-
       The transfer rate policy to use when sharing bandwidth.
       Allowable values:
-      
-      - high : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.
-      
-      - fair : (Default) Share bandwidth equally with other traffic.
-      
-      - low : Use only unused bandwidth.
-      
-      - fixed : Transfer at the target rate, regardless of the actual network capacity.
+
+      - `high` : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.
+
+      - `fair` : (Default) Share bandwidth equally with other traffic.
+
+      - `low` : Use only unused bandwidth.
+
+      - `fixed` : Transfer at the target rate, regardless of the actual network capacity.
       Do not share bandwidth.
       Aspera recommends that you do not use this setting except under special circumstances, 
-      otherwise the destination storage can be damaged. 
+      otherwise the destination storage can be damaged.
     enum:
     - low
     - fair
@@ -439,16 +439,16 @@ properties:
     x-agents:
     - transferd
   remote_host:
-    description: IP or fully qualified domain name of the remote server
+    description: IP or fully qualified domain name (FQDN) of the remote server.
     x-cli-option: "--host"
   remote_password:
     description: SSH session password
     x-cli-envvar: ASPERA_SCP_PASS
   remote_user:
-    description: Remote user. Default value is "xfer" on node or connect.
+    description: Remote user. Default value is `xfer` on node or connect.
     x-cli-option: "--user"
   remove_after_transfer:
-    description: Remove SRC files after transfer success
+    description: Remove SRC files after transfer success.
     type: boolean
     x-agents:
     - direct
@@ -475,7 +475,7 @@ properties:
     - direct
     x-cli-switch: true
   remove_skipped:
-    description: Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.
+    description: Must also have `remove_after_transfer` set to `true`. Defaults to `false`. If `true`, skipped files will be removed as well.
     type: boolean
     x-agents:
     - direct
@@ -486,11 +486,11 @@ properties:
     description: >-
       Specify the address of the Aspera high-speed proxy server.
 
-      dnat(s)://[user[:password]@]server:port
+      `dnat(s)://[user[:password]@]server:port`
 
       Default ports for DNAT and DNATS protocols are 9091 and 9092.
 
-      Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
+      Password, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.
     x-agents:
     - direct
     - noded
@@ -499,16 +499,16 @@ properties:
       If a transfer is interrupted or fails to finish,
       this policy directs the transfer to resume without retransferring the files.
       Allowable values:
-      
-      - none : Always re-transfer the entire file
-      
-      - attrs : Compare file attributes and resume if they match, and re-transfer if they do not
-      
-      - sparse_csum : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not
-      
-      - full_csum : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not. 
 
-      Note: transferd uses values: attributes, sparse_checksum, full_checksum.
+      - `none` : Always re-transfer the entire file.
+
+      - `attrs` : Compare file attributes and resume if they match, and re-transfer if they do not.
+
+      - `sparse_csum` : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not.
+
+      - `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.
+
+      Note: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.
     default: faspmgr:none;other:sparse_csum
     enum:
     - none
@@ -555,7 +555,7 @@ properties:
     description: >-
       All assets other than files, directories and symbolic links are considered special.
       A transfer will fail if the user attempts to transfer special assets.
-      If true, ascp skips special assets and proceeds with the transfer of all other assets. 
+      If true, ascp skips special assets and proceeds with the transfer of all other assets.
     type: boolean
     x-agents:
     - transferd
@@ -633,7 +633,7 @@ properties:
     - transferd
     x-cli-option: "-i"
   symlink_policy:
-    description: "Handle source side symbolic links"
+    description: Handle source side symbolic links.
     enum:
     - follow
     - copy
@@ -645,7 +645,7 @@ properties:
     description: >-
       Metadata for transfer as JSON.
       Key `aspera` is reserved.
-      Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
+      Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
     type: object
     x-cli-option: "--tags64"
     x-cli-convert: json64
@@ -653,14 +653,14 @@ properties:
     description: >-
       Metadata for transfer as JSON.
       Key `aspera` is reserved.
-      Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
+      Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
     type: string
     x-agents:
     - transferd
     - direct
   target_rate_cap_kbps:
     description: >-
-      Maximum target rate for incoming transfers, in kilobits per second. 
+      Maximum target rate for incoming transfers, in kilobits per second.
       Returned by upload/download_setup node API.
     type: integer
     x-agents:
@@ -678,7 +678,7 @@ properties:
     - connect
     - transferd
   token:
-    description: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
+    description: "Authorization token: Bearer, Basic or ATM (Also arg -W)"
     x-cli-envvar: ASPERA_SCP_TOKEN
   use_ascp4:
     description: Specify version of protocol. Do not use ascp4.
@@ -730,11 +730,11 @@ properties:
     description: Only used in Faspex.
     x-agents: []
   authentication:
-    description: 'value=token for SSH bypass keys, else password asked if not provided.'
+    description: "value=token for SSH bypass keys, else password asked if not provided."
     x-agents:
     - connect
   cipher_allowed:
-    description: returned by node API. Valid literals include "aes-128" and "none".
+    description: returned by node API. Valid literals include `aes-128` and `none`.
     x-agents:
     - connect
   obfuscate_file_names:
