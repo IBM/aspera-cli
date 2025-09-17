@@ -138,7 +138,7 @@ module Aspera
       def upload(transfer_spec)
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        @notify_cb&.call(:pre_start, session_id: nil, info: 'starting')
+        @notify_cb&.call(:sessions_init, info: 'starting')
         # process files to send, modify `paths` in transfer_spec
         files_to_send = process_upload_list(transfer_spec)
         # total size of all files is last element
@@ -147,7 +147,7 @@ module Aspera
         Log.dump(:files_to_send, files_to_send, level: :trace1)
         # TODO: check that this is available in endpoints: @api_info['endpoints']
         upload_url = File.join(@gw_root_url, @upload_version, 'upload')
-        @notify_cb&.call(:pre_start, session_id: nil, info: 'connecting wss')
+        @notify_cb&.call(:sessions_init, info: 'connecting wss')
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_session = Rest.start_http_session(upload_url)
         # get the underlying socket i/o
@@ -233,7 +233,8 @@ module Aspera
         end
         # throttling may have skipped last one
         @notify_cb&.call(:transfer, session_id: session_id, info: session_sent_bytes)
-        @notify_cb&.call(:end, session_id: session_id)
+        @notify_cb&.call(:session_end, session_id: session_id)
+        @notify_cb&.call(:end)
         ws_send(ws_type: :close, data: nil)
         Log.log.debug("Finished upload, waiting for end of #{THR_RECV} thread.")
         @ws_read_thread.join

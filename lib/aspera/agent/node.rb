@@ -82,7 +82,7 @@ module Aspera
           transfer_data = node_api_.read("ops/transfers/#{@transfer_id}") || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
           when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)'
-            notify_progress(:pre_start, session_id: nil, info: transfer_data['status'])
+            notify_progress(:sessions_init, info: transfer_data['status'])
           when 'running'
             if !session_started
               notify_progress(:session_start, session_id: @transfer_id)
@@ -90,7 +90,7 @@ module Aspera
             end
             message = transfer_data['status']
             message = "#{message} (#{transfer_data['error_desc']})" if !transfer_data['error_desc']&.empty?
-            notify_progress(:pre_start, session_id: nil, info: message)
+            notify_progress(:sessions_init, info: message)
             if bytes_expected.nil? &&
                 transfer_data['precalc'].is_a?(Hash) &&
                 transfer_data['precalc']['status'].eql?('ready')
@@ -100,10 +100,12 @@ module Aspera
             notify_progress(:transfer, session_id: @transfer_id, info: transfer_data['bytes_transferred'])
           when 'completed'
             notify_progress(:transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
-            notify_progress(:end, session_id: @transfer_id)
+            notify_progress(:session_end, session_id: @transfer_id)
+            notify_progress(:end)
             break
           when 'failed'
-            notify_progress(:end, session_id: @transfer_id)
+            notify_progress(:session_end, session_id: @transfer_id)
+            notify_progress(:end)
             # Bug in HSTS ? transfer is marked failed, but there is no reason
             break if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"

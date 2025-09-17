@@ -90,7 +90,7 @@ module Aspera
               # TODO: get session id
               case transfer['status']
               when 'initiating', 'queued'
-                notify_progress(:pre_start, session_id: nil, info: transfer['status'])
+                notify_progress(:sessions_init, info: transfer['status'])
               when 'running'
                 if !started
                   notify_progress(:session_start, session_id: @transfer_id)
@@ -103,16 +103,20 @@ module Aspera
                   notify_progress(:transfer, session_id: @transfer_id, info: transfer['bytes_written'])
                 end
               when 'completed'
-                notify_progress(:end, session_id: @transfer_id)
+                notify_progress(:session_end, session_id: @transfer_id)
+                notify_progress(:end)
                 break
               when 'failed'
-                notify_progress(:end, session_id: @transfer_id)
+                notify_progress(:session_end, session_id: @transfer_id)
+                notify_progress(:end)
                 raise Transfer::Error, transfer['error_desc']
               when 'cancelled'
-                notify_progress(:end, session_id: @transfer_id)
+                notify_progress(:session_end, session_id: @transfer_id)
+                notify_progress(:end)
                 raise Transfer::Error, 'Transfer cancelled by user'
               else
-                notify_progress(:end, session_id: @transfer_id)
+                notify_progress(:session_end, session_id: @transfer_id)
+                notify_progress(:end)
                 raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end

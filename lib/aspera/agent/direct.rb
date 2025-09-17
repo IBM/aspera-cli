@@ -171,6 +171,7 @@ module Aspera
           session[:thread].join
           result.push(session[:error] || :success)
         end
+        notify_progress(:end)
         Log.log.debug('all transfers joined')
         # since all are finished and we return the result, clear statuses
         @sessions.clear
@@ -238,7 +239,7 @@ module Aspera
         args:
       )
         Aspera.assert_type(session, Hash)
-        notify_progress(:pre_start, session_id: nil, info: 'starting')
+        notify_progress(:sessions_init, info: 'starting')
         begin
           command_pid = nil
           command_arguments = []
@@ -264,7 +265,7 @@ module Aspera
           command_path = Ascp::Installation.instance.path(name)
           command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, err: stderr_w)
           stderr_w.close
-          notify_progress(:pre_start, session_id: nil, info: "waiting for #{name} to start")
+          notify_progress(:sessions_init, info: "waiting for #{name} to start")
           # "ensure" block will wait for process
           return unless @monitor
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
@@ -377,7 +378,7 @@ module Aspera
           if @pre_calc_last_size != total_size
             notify_progress(:transfer, session_id: session_id, info: total_size)
           end
-          notify_progress(:end, session_id: session_id)
+          notify_progress(:session_end, session_id: session_id)
           # cspell:disable
         when 'SESSION'
         when 'ARGSTOP'

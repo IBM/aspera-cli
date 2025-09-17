@@ -142,13 +142,15 @@ module Aspera
             notify_progress(:transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
           when :COMPLETED
             notify_progress(:transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
-            notify_progress(:end, session_id: @transfer_id)
+            notify_progress(:session_end, session_id: @transfer_id)
+            notify_progress(:end)
             break
           when :FAILED, :CANCELED
-            notify_progress(:end, session_id: @transfer_id)
+            notify_progress(:session_end, session_id: @transfer_id)
+            notify_progress(:end)
             raise Transfer::Error, JSON.parse(response.message)['Description']
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
-            notify_progress(:pre_start, session_id: nil, info: response.status.to_s.downcase)
+            notify_progress(:sessions_init, info: response.status.to_s.downcase)
           else
             Log.log.error{"unknown status#{response.status}"}
           end
