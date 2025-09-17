@@ -50,7 +50,7 @@
       "type": "string"
     },
     "cipher_allowed": {
-      "description": "returned by node API. Valid literals include \"aes-128\" and \"none\".",
+      "description": "returned by node API. Valid literals include `aes-128` and `none`.",
       "x-agents": [
         "connect"
       ],
@@ -62,7 +62,7 @@
       "x-agents": []
     },
     "content_protection": {
-      "description": "Enable client-side encryption at rest. (CSEAR, content protection)",
+      "description": "Enable client-side encryption at rest (CSEAR). (content protection)",
       "enum": [
         "encrypt",
         "decrypt"
@@ -76,7 +76,7 @@
       "x-cli-envvar": "ASPERA_SCP_FILEPASS"
     },
     "cookie": {
-      "description": "Metadata for transfer specified by application",
+      "description": "Metadata for transfer specified by application.",
       "type": "string",
       "x-cli-envvar": "ASPERA_SCP_COOKIE"
     },
@@ -93,7 +93,7 @@
       "x-cli-option": "--delete-before-transfer"
     },
     "delete_source": {
-      "description": "Remove SRC files after transfer success",
+      "description": "Remove transfered source files after transfer success.",
       "type": "boolean",
       "x-agents": [
         "node",
@@ -122,7 +122,7 @@
       "x-cli-option": "-Z"
     },
     "direction": {
-      "description": "Direction of transfer (on client side)",
+      "description": "Direction of transfer (on client side).",
       "enum": [
         "send",
         "receive"
@@ -204,12 +204,12 @@
       }
     },
     "http_fallback_port": {
-      "description": "Specifies http port when no cipher is used",
+      "description": "Specifies HTTP port when no cipher is used.",
       "type": "integer",
       "x-cli-option": "-t"
     },
     "https_fallback_port": {
-      "description": "Specifies https port when cipher is used",
+      "description": "Specifies HTTPS port when cipher is used.",
       "type": "integer",
       "x-cli-option": "-t"
     },
@@ -283,7 +283,7 @@
       "x-cli-option": "-m"
     },
     "move_after_transfer": {
-      "description": "Move source files to the specified directory after they are transferred correctly.\nAvailable as of 3.8.0. Details in ascp manual.\nRequires write permissions on the source.\nIf `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.\n`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.\n`archive-dir` is subject to the same docroot restrictions as source files.\n`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.\nAfter files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.",
+      "description": "Move source files to the specified `archive-dir` directory after they are transferred correctly.\nAvailable as of 3.8.0. Details in ascp manual.\nRequires write permissions on the source.\nIf `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.\n`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.\n`archive-dir` is subject to the same docroot restrictions as source files.\n`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.\nAfter files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.",
       "type": "string",
       "x-agents": [
         "direct",
@@ -293,7 +293,7 @@
       "x-cli-option": "--move-after-transfer"
     },
     "multi_session": {
-      "description": "Use multi-session transfer. max 128.\nEach participant on one host needs an independent UDP (-O) port.\nLarge files are split between sessions only when transferring with resume_policy=none.",
+      "description": "Use multi-session transfer. max 128.\nEach participant on one host needs an independent UDP (-O) port.\nLarge files are split between sessions only when transferring with `resume_policy`=`none`.",
       "type": "integer",
       "x-cli-option": "-C",
       "x-cli-special": true
@@ -316,7 +316,7 @@
       ]
     },
     "overwrite": {
-      "description": "Overwrite files at the destination with source files of the same name based  on the policy:\n- always – Always overwrite the file.\n- never – Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.\n- diff – Overwrite the file if it is different from the source,  depending on the compare method (default is size).  If the destination is object storage, diff has the same effect as always.  If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped.  If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume. \n- diff+older – Overwrite the file if it is older and different from the source,  depending on the compare method (default is size).  If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped.  If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed. \n- older – Overwrite the file if its timestamp is older than the source timestamp. \nIf you set an overwrite policy of diff or diff+older, difference is determined  by the value set for resume_policy:\n\"none\" - the source and destination files are always considered different and  the destination file is always overwritten\n\"attributes\" - the source and destination files are compared based on file attributes \n\"sparse_checksum\" - the source and destination files are compared based on sparse checksums, (currently file size)\n\"full_checksum\" - the source and destination files are compared based on full checksums ",
+      "description": "Overwrite files at the destination with source files of the same name based  on the policy:\n- `always` : Always overwrite the file.\n- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.\n- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.\n- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.\n- `older` : Overwrite the file if its timestamp is older than the source timestamp.\nIf you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:\n`none` : The source and destination files are always considered different and  the destination file is always overwritten\n`attributes` : The source and destination files are compared based on file attributes \n`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)\n`full_checksum` : The source and destination files are compared based on full checksums",
       "default": "diff",
       "enum": [
         "never",
@@ -329,7 +329,7 @@
       "x-cli-option": "--overwrite"
     },
     "password": {
-      "description": "Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.\nAllows impersonating the transfer user and have access to resources (e.g. network shares).\nWindows only, node api only.",
+      "description": "Password for local Windows user when transfer user associated with node API user is not the same as the one running `asperanoded`.\nAllows impersonating the transfer user and have access to resources (e.g. network shares).\nWindows only, node API only.",
       "type": "string",
       "x-agents": [
         "node"
@@ -389,7 +389,7 @@
       "type": "string"
     },
     "preserve_file_owner_gid": {
-      "description": "Preserve the group ID for a file owner",
+      "description": "Preserve the group ID for a file owner.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -399,7 +399,7 @@
       "x-cli-option": "--preserve-file-owner-gid"
     },
     "preserve_file_owner_uid": {
-      "description": "Preserve the user ID for a file owner",
+      "description": "Preserve the user ID for a file owner.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -445,7 +445,7 @@
       "type": "string"
     },
     "preserve_source_access_time": {
-      "description": "Preserve the time logged for when the source file was accessed",
+      "description": "Preserve the time logged for when the source file was accessed.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -465,7 +465,7 @@
       "x-cli-option": "-p"
     },
     "proxy": {
-      "description": "Specify the address of the Aspera high-speed proxy server.\ndnat(s)://[user[:password]@]server:port\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.",
+      "description": "Specify the address of the Aspera high-speed proxy server.\n`dnat(s)://[user[:password]@]server:port`\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.",
       "x-agents": [
         "direct",
         "noded"
@@ -474,7 +474,7 @@
       "x-cli-option": "--proxy"
     },
     "rate_policy": {
-      "description": "The transfer rate policy to use when sharing bandwidth. Allowable values:\n- high : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.\n- fair : (Default) Share bandwidth equally with other traffic.\n- low : Use only unused bandwidth.\n- fixed : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged. ",
+      "description": "The transfer rate policy to use when sharing bandwidth. Allowable values:\n- `high` : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.\n- `fair` : (Default) Share bandwidth equally with other traffic.\n- `low` : Use only unused bandwidth.\n- `fixed` : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged.",
       "enum": [
         "low",
         "fair",
@@ -510,7 +510,7 @@
       ]
     },
     "remote_host": {
-      "description": "IP or fully qualified domain name of the remote server",
+      "description": "IP or fully qualified domain name (FQDN) of the remote server.",
       "x-cli-option": "--host",
       "type": "string"
     },
@@ -520,12 +520,12 @@
       "type": "string"
     },
     "remote_user": {
-      "description": "Remote user. Default value is \"xfer\" on node or connect.",
+      "description": "Remote user. Default value is `xfer` on node or connect.",
       "x-cli-option": "--user",
       "type": "string"
     },
     "remove_after_transfer": {
-      "description": "Remove SRC files after transfer success",
+      "description": "Remove SRC files after transfer success.",
       "type": "boolean",
       "x-agents": [
         "direct",
@@ -563,7 +563,7 @@
       "x-cli-option": "--remove-empty-source-directory"
     },
     "remove_skipped": {
-      "description": "Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.",
+      "description": "Must also have `remove_after_transfer` set to `true`. Defaults to `false`. If `true`, skipped files will be removed as well.",
       "type": "boolean",
       "x-agents": [
         "direct",
@@ -574,7 +574,7 @@
       "x-cli-option": "--remove-skipped"
     },
     "resume_policy": {
-      "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- none : Always re-transfer the entire file\n- attrs : Compare file attributes and resume if they match, and re-transfer if they do not\n- sparse_csum : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not\n- full_csum : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not. \nNote: transferd uses values: attributes, sparse_checksum, full_checksum.",
+      "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- `none` : Always re-transfer the entire file.\n- `attrs` : Compare file attributes and resume if they match, and re-transfer if they do not.\n- `sparse_csum` : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not.\n- `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.\nNote: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.",
       "default": "faspmgr:none;other:sparse_csum",
       "enum": [
         "none",
@@ -624,7 +624,7 @@
       "x-cli-switch": true
     },
     "skip_special_files": {
-      "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets. ",
+      "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -714,7 +714,7 @@
       "type": "string"
     },
     "symlink_policy": {
-      "description": "Handle source side symbolic links",
+      "description": "Handle source side symbolic links.",
       "enum": [
         "follow",
         "copy",
@@ -726,13 +726,13 @@
       "type": "string"
     },
     "tags": {
-      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
+      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
       "type": "object",
       "x-cli-option": "--tags64",
       "x-cli-convert": "json64"
     },
     "tags64": {
-      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
+      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
       "type": "string",
       "x-agents": [
         "transferd",
@@ -741,7 +741,7 @@
       "x-cli-option": "--tags64"
     },
     "target_rate_cap_kbps": {
-      "description": "Maximum target rate for incoming transfers, in kilobits per second.  Returned by upload/download_setup node API.",
+      "description": "Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.",
       "type": "integer",
       "x-agents": [
         "connect",

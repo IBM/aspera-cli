@@ -22,7 +22,7 @@ Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_C
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 # Format special value depending on context
-class HtmlFormatter
+class MarkdownFormatter
   class << self
     def special_format(special)
       "&lt;#{special}&gt;"
@@ -33,6 +33,14 @@ class HtmlFormatter
         row[k] = row[k].join('<br/>') if row[k].is_a?(Array)
         row[k] = '&nbsp;' if row[k].to_s.strip.empty?
       end
+    end
+
+    def keyword_highlight(value)
+      "`#{value}`"
+    end
+
+    def tick(bool)
+      bool ? 'Y' : ' '
     end
   end
 end
@@ -134,7 +142,7 @@ end
 def spec_table
   agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
   agents.unshift(%w[ID Name])
-  props = Aspera::Transfer::SpecDoc.man_table(HtmlFormatter, color: false).map do |param|
+  props = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true).map do |param|
     Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map{ |field_name| param[field_name]}
   end
   # Column titles

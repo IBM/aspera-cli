@@ -2681,21 +2681,23 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb184-1"><a href
 <span id="cb184-74"><a href="#cb184-74" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> only https://node.example.com/path</span>
 <span id="cb184-75"><a href="#cb184-75" aria-hidden="true" tabindex="-1"></a><span class="ex">smtp_settings</span></span>
 <span id="cb184-76"><a href="#cb184-76" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> flush</span>
-<span id="cb184-77"><a href="#cb184-77" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> install</span>
-<span id="cb184-78"><a href="#cb184-78" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> list</span>
-<span id="cb184-79"><a href="#cb184-79" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> create @json:<span class="st">&#39;{&quot;label&quot;:&quot;my_label&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;my secret&quot;}&#39;</span></span>
-<span id="cb184-80"><a href="#cb184-80" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> delete my_label</span>
-<span id="cb184-81"><a href="#cb184-81" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> info</span>
-<span id="cb184-82"><a href="#cb184-82" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> list</span>
-<span id="cb184-83"><a href="#cb184-83" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> show my_label</span>
-<span id="cb184-84"><a href="#cb184-84" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://console.example.com/path console</span>
-<span id="cb184-85"><a href="#cb184-85" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb184-86"><a href="#cb184-86" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex5.example.com/path faspex5 <span class="at">--key-path</span><span class="op">=</span>my_private_key</span>
-<span id="cb184-87"><a href="#cb184-87" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb184-88"><a href="#cb184-88" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb184-89"><a href="#cb184-89" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb184-90"><a href="#cb184-90" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb184-91"><a href="#cb184-91" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
+<span id="cb184-77"><a href="#cb184-77" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> list</span>
+<span id="cb184-78"><a href="#cb184-78" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> show foobar</span>
+<span id="cb184-79"><a href="#cb184-79" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> install</span>
+<span id="cb184-80"><a href="#cb184-80" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> list</span>
+<span id="cb184-81"><a href="#cb184-81" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> create @json:<span class="st">&#39;{&quot;label&quot;:&quot;my_label&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;my secret&quot;}&#39;</span></span>
+<span id="cb184-82"><a href="#cb184-82" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> delete my_label</span>
+<span id="cb184-83"><a href="#cb184-83" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> info</span>
+<span id="cb184-84"><a href="#cb184-84" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> list</span>
+<span id="cb184-85"><a href="#cb184-85" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> show my_label</span>
+<span id="cb184-86"><a href="#cb184-86" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://console.example.com/path console</span>
+<span id="cb184-87"><a href="#cb184-87" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb184-88"><a href="#cb184-88" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex5.example.com/path faspex5 <span class="at">--key-path</span><span class="op">=</span>my_private_key</span>
+<span id="cb184-89"><a href="#cb184-89" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb184-90"><a href="#cb184-90" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb184-91"><a href="#cb184-91" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb184-92"><a href="#cb184-92" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb184-93"><a href="#cb184-93" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
 <h3 data-number="4.11.1" id="format-of-file"><span
 class="header-section-number">4.11.1</span> Format of file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
@@ -4448,7 +4450,8 @@ description.</p>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Apply local docroot to source paths.<br/>(–apply-local-docroot)</td>
+<td>Apply local docroot to source
+paths.<br/>(<code>--apply-local-docroot</code>)</td>
 </tr>
 <tr>
 <td>authentication</td>
@@ -4471,9 +4474,12 @@ provided.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>In transit encryption algorithms.<br/>Allowed values: none, aes-128,
-aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm,
-aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
+<td>In transit encryption algorithms.<br/>Allowed values:
+<code>none</code>, <code>aes-128</code>, <code>aes-192</code>,
+<code>aes-256</code>, <code>aes-128-cfb</code>,
+<code>aes-192-cfb</code>, <code>aes-256-cfb</code>,
+<code>aes-128-gcm</code>, <code>aes-192-gcm</code>,
+<code>aes-256-gcm</code><br/>(<code>-c (conversion){enum}</code>)</td>
 </tr>
 <tr>
 <td>cipher_allowed</td>
@@ -4484,8 +4490,8 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>returned by node API. Valid literals include “aes-128” and
-“none”.</td>
+<td>returned by node API. Valid literals include <code>aes-128</code>
+and <code>none</code>.</td>
 </tr>
 <tr>
 <td>compression</td>
@@ -4507,9 +4513,9 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Enable client-side encryption at rest. (CSEAR, content
-protection)<br/>Allowed values: encrypt,
-decrypt<br/>(–file-crypt={enum})</td>
+<td>Enable client-side encryption at rest (CSEAR). (content
+protection)<br/>Allowed values: <code>encrypt</code>,
+<code>decrypt</code><br/>(<code>--file-crypt={enum}</code>)</td>
 </tr>
 <tr>
 <td>content_protection_password</td>
@@ -4521,7 +4527,7 @@ decrypt<br/>(–file-crypt={enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Specifies CSEAR password. (content
-protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
+protection)<br/>(env:<code>ASPERA_SCP_FILEPASS</code>)</td>
 </tr>
 <tr>
 <td>cookie</td>
@@ -4533,7 +4539,7 @@ protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Metadata for transfer specified by
-application<br/>(env:ASPERA_SCP_COOKIE)</td>
+application.<br/>(env:<code>ASPERA_SCP_COOKIE</code>)</td>
 </tr>
 <tr>
 <td>create_dir</td>
@@ -4544,7 +4550,8 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies whether to create new directories.<br/>(-d)</td>
+<td>Specifies whether to create new
+directories.<br/>(<code>-d</code>)</td>
 </tr>
 <tr>
 <td>delete_before_transfer</td>
@@ -4559,7 +4566,7 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 at the source.<br/>The source and destination arguments must be
 directories that have matching names.<br/>Objects on the destination
 that have the same name but different type or size as objects on the
-source are not deleted.<br/>(–delete-before-transfer)</td>
+source are not deleted.<br/>(<code>--delete-before-transfer</code>)</td>
 </tr>
 <tr>
 <td>delete_source</td>
@@ -4570,8 +4577,8 @@ source are not deleted.<br/>(–delete-before-transfer)</td>
 <td> </td>
 <td>Y</td>
 <td>Y</td>
-<td>Remove SRC files after transfer
-success<br/>(–remove-after-transfer)</td>
+<td>Remove transfered source files after transfer
+success.<br/>(<code>--remove-after-transfer</code>)</td>
 </tr>
 <tr>
 <td>destination_root</td>
@@ -4582,7 +4589,8 @@ success<br/>(–remove-after-transfer)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Destination root directory.<br/>(&lt;special&gt;)</td>
+<td>Destination root
+directory.<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>destination_root_id</td>
@@ -4605,7 +4613,7 @@ using Bearer token auth for the destination node.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>UDP datagram size in bytes<br/>(-Z {integer})</td>
+<td>UDP datagram size in bytes<br/>(<code>-Z {integer}</code>)</td>
 </tr>
 <tr>
 <td>direction</td>
@@ -4616,8 +4624,9 @@ using Bearer token auth for the destination node.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Direction of transfer (on client side)<br/>Allowed values: send,
-receive<br/>(–mode=(conversion){enum})</td>
+<td>Direction of transfer (on client side).<br/>Allowed values:
+<code>send</code>,
+<code>receive</code><br/>(<code>--mode=(conversion){enum}</code>)</td>
 </tr>
 <tr>
 <td>exclude_newer_than</td>
@@ -4631,7 +4640,7 @@ receive<br/>(–mode=(conversion){enum})</td>
 <td>Exclude files, but not directories, from the transfer if they are
 newer than the specified number of seconds added to the source
 computer’s epoch.<br/>e.g. “-86400” for newer than a day
-back.<br/>(–exclude-newer-than={string})</td>
+back.<br/>(<code>--exclude-newer-than={string}</code>)</td>
 </tr>
 <tr>
 <td>exclude_older_than</td>
@@ -4645,7 +4654,7 @@ back.<br/>(–exclude-newer-than={string})</td>
 <td>Exclude files, but not directories, from the transfer if they are
 older than the specified number of seconds added to the source
 computer’s epoch.<br/>e.g. “-86400” for older than a day
-back.<br/>(–exclude-older-than={string})</td>
+back.<br/>(<code>--exclude-older-than={string}</code>)</td>
 </tr>
 <tr>
 <td>fail_bad_filepass</td>
@@ -4657,7 +4666,7 @@ back.<br/>(–exclude-older-than={string})</td>
 <td> </td>
 <td>Y</td>
 <td>Fail on bad file decryption
-passphrase.<br/>(–fail-bad-filepass)</td>
+passphrase.<br/>(<code>--fail-bad-filepass</code>)</td>
 </tr>
 <tr>
 <td>fasp_port</td>
@@ -4668,7 +4677,7 @@ passphrase.<br/>(–fail-bad-filepass)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies fasp (UDP) port.<br/>(-O {integer})</td>
+<td>Specifies fasp (UDP) port.<br/>(<code>-O {integer}</code>)</td>
 </tr>
 <tr>
 <td>fasp_proxy</td>
@@ -4703,8 +4712,10 @@ client.</td>
 <td>Y</td>
 <td> </td>
 <td>Enable checksum reporting for transferred files by specifying the
-hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5,
-none<br/>(–file-checksum={enum})</td>
+hash to use.<br/>Allowed values: <code>sha-512</code>,
+<code>sha-384</code>, <code>sha-256</code>, <code>sha1</code>,
+<code>md5</code>,
+<code>none</code><br/>(<code>--file-checksum={enum}</code>)</td>
 </tr>
 <tr>
 <td>http_fallback</td>
@@ -4716,7 +4727,8 @@ none<br/>(–file-checksum={enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
-transfer cannot be performed.<br/>(-y (conversion){boolean|string})</td>
+transfer cannot be
+performed.<br/>(<code>-y (conversion){boolean\|string}</code>)</td>
 </tr>
 <tr>
 <td>http_fallback_port</td>
@@ -4727,7 +4739,8 @@ transfer cannot be performed.<br/>(-y (conversion){boolean|string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies http port when no cipher is used<br/>(-t {integer})</td>
+<td>Specifies HTTP port when no cipher is
+used.<br/>(<code>-t {integer}</code>)</td>
 </tr>
 <tr>
 <td>https_fallback_port</td>
@@ -4738,7 +4751,8 @@ transfer cannot be performed.<br/>(-y (conversion){boolean|string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies https port when cipher is used<br/>(-t {integer})</td>
+<td>Specifies HTTPS port when cipher is
+used.<br/>(<code>-t {integer}</code>)</td>
 </tr>
 <tr>
 <td>icos</td>
@@ -4761,7 +4775,7 @@ transfer cannot be performed.<br/>(-y (conversion){boolean|string})</td>
 <td> </td>
 <td>Y</td>
 <td>The session is running in persistent session
-mode.<br/>(–keepalive)</td>
+mode.<br/>(<code>--keepalive</code>)</td>
 </tr>
 <tr>
 <td>lock_min_rate</td>
@@ -4845,8 +4859,8 @@ no cap to the minimum rate. (Default: 0)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Set the minimum transfer rate in kilobits per second.<br/>(-m
-{integer})</td>
+<td>Set the minimum transfer rate in kilobits per
+second.<br/>(<code>-m {integer}</code>)</td>
 </tr>
 <tr>
 <td>move_after_transfer</td>
@@ -4857,10 +4871,10 @@ no cap to the minimum rate. (Default: 0)</td>
 <td> </td>
 <td>Y</td>
 <td>Y</td>
-<td>Move source files to the specified directory after they are
-transferred correctly.<br/>Available as of 3.8.0. Details in ascp
-manual.<br/>Requires write permissions on the source.<br/>If
-<code>src_base</code> is specified, files are moved to
+<td>Move source files to the specified <code>archive-dir</code>
+directory after they are transferred correctly.<br/>Available as of
+3.8.0. Details in ascp manual.<br/>Requires write permissions on the
+source.<br/>If <code>src_base</code> is specified, files are moved to
 <code>archive-dir</code>/<code>path-relative-to-srcbase</code>.<br/><code>archive-dir</code>
 must be in the same file system (or cloud storage account) as the source
 files being transferred.<br/><code>archive-dir</code> is subject to the
@@ -4877,7 +4891,8 @@ examination starts at the <code>srcbase</code> and proceeds down any
 subdirectories. If no <code>srcbase</code> is used and a file path (as
 opposed to a directory path) is specified, then only the immediate
 parent directory is examined and removed if it is empty following the
-move of the source file.<br/>(–move-after-transfer={string})</td>
+move of the source
+file.<br/>(<code>--move-after-transfer={string}</code>)</td>
 </tr>
 <tr>
 <td>multi_session</td>
@@ -4891,7 +4906,7 @@ move of the source file.<br/>(–move-after-transfer={string})</td>
 <td>Use multi-session transfer. max 128.<br/>Each participant on one
 host needs an independent UDP (-O) port.<br/>Large files are split
 between sessions only when transferring with
-resume_policy=none.<br/>(&lt;special&gt;)</td>
+<code>resume_policy</code>=<code>none</code>.<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>multi_session_threshold</td>
@@ -4904,7 +4919,7 @@ resume_policy=none.<br/>(&lt;special&gt;)</td>
 <td>Y</td>
 <td>Split files across multiple ascp sessions if their size in bytes is
 greater than or equal to the specified value.<br/>(0=no file is
-split)<br/>(–multi-session-threshold={integer})</td>
+split)<br/>(<code>--multi-session-threshold={integer}</code>)</td>
 </tr>
 <tr>
 <td>obfuscate_file_names</td>
@@ -4927,34 +4942,39 @@ split)<br/>(–multi-session-threshold={integer})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Overwrite files at the destination with source files of the same
-name based on the policy:<br/>- always – Always overwrite the
-file.<br/>- never – Never overwrite the file. If the destination
-contains partial files that are older or the same as the source files
-and resume is enabled, the partial files resume transfer. Partial files
-with checksums or sizes that differ from the source files are not
-overwritten.<br/>- diff – Overwrite the file if it is different from the
-source, depending on the compare method (default is size). If the
-destination is object storage, diff has the same effect as always. If
-resume is not enabled, partial files are overwritten if they are
-different from the source, otherwise they are skipped. If resume is
-enabled, only partial files with different sizes or checksums from the
-source are overwritten; otherwise, files resume. <br/>- diff+older –
-Overwrite the file if it is older and different from the source,
-depending on the compare method (default is size). If resume is not
-enabled, partial files are overwritten if they are older and different
-from the source, otherwise they are skipped. If resume is enabled, only
-partial files that are different and older than the source are
-overwritten, otherwise they are resumed. <br/>- older – Overwrite the
-file if its timestamp is older than the source timestamp. <br/>If you
-set an overwrite policy of diff or diff+older, difference is determined
-by the value set for resume_policy:<br/>“none” - the source and
+name based on the policy:<br/>- <code>always</code> : Always overwrite
+the file.<br/>- <code>never</code> : Never overwrite the file. If the
+destination contains partial files that are older or the same as the
+source files and resume is enabled, the partial files resume transfer.
+Partial files with checksums or sizes that differ from the source files
+are not overwritten.<br/>- <code>diff</code> : (default) Overwrite the
+file if it is different from the source, depending on the compare method
+(default is size). If the destination is object storage,
+<code>diff</code> has the same effect as always. If resume is not
+enabled, partial files are overwritten if they are different from the
+source, otherwise they are skipped. If resume is enabled, only partial
+files with different sizes or checksums from the source are overwritten;
+otherwise, files resume.<br/>- <code>diff+older</code> : Overwrite the
+file if it is older and different from the source, depending on the
+compare method (default is size). If resume is not enabled, partial
+files are overwritten if they are older and different from the source,
+otherwise they are skipped. If resume is enabled, only partial files
+that are different and older than the source are overwritten, otherwise
+they are resumed.<br/>- <code>older</code> : Overwrite the file if its
+timestamp is older than the source timestamp.<br/>If you set an
+overwrite policy of <code>diff</code> or <code>diff+older</code>,
+difference is determined by the value set for
+<code>resume_policy</code>:<br/><code>none</code> : The source and
 destination files are always considered different and the destination
-file is always overwritten<br/>“attributes” - the source and destination
-files are compared based on file attributes <br/>“sparse_checksum” - the
-source and destination files are compared based on sparse checksums,
-(currently file size)<br/>“full_checksum” - the source and destination
-files are compared based on full checksums <br/>Allowed values: never,
-always, diff, older, diff+older<br/>(–overwrite={enum})</td>
+file is always overwritten<br/><code>attributes</code> : The source and
+destination files are compared based on file attributes
+<br/><code>sparse_checksum</code> : The source and destination files are
+compared based on sparse checksums, (currently file
+size)<br/><code>full_checksum</code> : The source and destination files
+are compared based on full checksums<br/>Allowed values:
+<code>never</code>, <code>always</code>, <code>diff</code>,
+<code>older</code>,
+<code>diff+older</code><br/>(<code>--overwrite={enum}</code>)</td>
 </tr>
 <tr>
 <td>password</td>
@@ -4966,9 +4986,10 @@ always, diff, older, diff+older<br/>(–overwrite={enum})</td>
 <td>Y</td>
 <td> </td>
 <td>Password for local Windows user when transfer user associated with
-node api user is not the same as the one running asperanoded.<br/>Allows
-impersonating the transfer user and have access to resources
-(e.g. network shares).<br/>Windows only, node api only.</td>
+node API user is not the same as the one running
+<code>asperanoded</code>.<br/>Allows impersonating the transfer user and
+have access to resources (e.g. network shares).<br/>Windows only, node
+API only.</td>
 </tr>
 <tr>
 <td>paths</td>
@@ -4980,7 +5001,7 @@ impersonating the transfer user and have access to resources
 <td>Y</td>
 <td>Y</td>
 <td>Array of path to the source (required) and a path to the destination
-(optional).<br/>(&lt;special&gt;)</td>
+(optional).<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>precalculate_job_size</td>
@@ -4992,7 +5013,7 @@ impersonating the transfer user and have access to resources
 <td>Y</td>
 <td>Y</td>
 <td>Specifies whether to precalculate the job
-size.<br/>(–precalculate-job-size)</td>
+size.<br/>(<code>--precalculate-job-size</code>)</td>
 </tr>
 <tr>
 <td>preserve_access_time</td>
@@ -5006,7 +5027,7 @@ size.<br/>(–precalculate-job-size)</td>
 <td>Preserve the source-file access timestamps at the
 destination.<br/>Because source access times are updated by the transfer
 operation, the timestamp that is preserved is the one just before to the
-transfer.<br/>(–preserve-access-time)</td>
+transfer.<br/>(<code>--preserve-access-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_acls</td>
@@ -5017,8 +5038,9 @@ transfer.<br/>(–preserve-access-time)</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Preserve access control lists.<br/>Allowed values: none, native,
-metafile<br/>(–preserve-acls={enum})</td>
+<td>Preserve access control lists.<br/>Allowed values:
+<code>none</code>, <code>native</code>,
+<code>metafile</code><br/>(<code>--preserve-acls={enum}</code>)</td>
 </tr>
 <tr>
 <td>preserve_creation_time</td>
@@ -5032,7 +5054,7 @@ metafile<br/>(–preserve-acls={enum})</td>
 <td>(Windows only) Preserve source-file creation timestamps at the
 destination.<br/>Only Windows systems retain information about creation
 time.<br/>If the destination is not a Windows computer, this option is
-ignored.<br/>(–preserve-creation-time)</td>
+ignored.<br/>(<code>--preserve-creation-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_extended_attrs</td>
@@ -5043,8 +5065,9 @@ ignored.<br/>(–preserve-creation-time)</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Preserve the extended attributes.<br/>Allowed values: none, native,
-metafile<br/>(–preserve-xattrs={enum})</td>
+<td>Preserve the extended attributes.<br/>Allowed values:
+<code>none</code>, <code>native</code>,
+<code>metafile</code><br/>(<code>--preserve-xattrs={enum}</code>)</td>
 </tr>
 <tr>
 <td>preserve_file_owner_gid</td>
@@ -5056,7 +5079,7 @@ metafile<br/>(–preserve-xattrs={enum})</td>
 <td> </td>
 <td>Y</td>
 <td>Preserve the group ID for a file
-owner<br/>(–preserve-file-owner-gid)</td>
+owner.<br/>(<code>--preserve-file-owner-gid</code>)</td>
 </tr>
 <tr>
 <td>preserve_file_owner_uid</td>
@@ -5068,7 +5091,7 @@ owner<br/>(–preserve-file-owner-gid)</td>
 <td> </td>
 <td>Y</td>
 <td>Preserve the user ID for a file
-owner<br/>(–preserve-file-owner-uid)</td>
+owner.<br/>(<code>--preserve-file-owner-uid</code>)</td>
 </tr>
 <tr>
 <td>preserve_modification_time</td>
@@ -5082,7 +5105,8 @@ owner<br/>(–preserve-file-owner-uid)</td>
 <td>Set the modification time, the last time a file or directory was
 modified (written), of a transferred file to the modification of the
 source file or directory.<br/>Preserve source-file modification
-timestamps at the destination.<br/>(–preserve-modification-time)</td>
+timestamps at the
+destination.<br/>(<code>--preserve-modification-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_remote_acls</td>
@@ -5093,8 +5117,9 @@ timestamps at the destination.<br/>(–preserve-modification-time)</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Preserve remote access control lists.<br/>Allowed values: none,
-native, metafile<br/>(–remote-preserve-acls={enum})</td>
+<td>Preserve remote access control lists.<br/>Allowed values:
+<code>none</code>, <code>native</code>,
+<code>metafile</code><br/>(<code>--remote-preserve-acls={enum}</code>)</td>
 </tr>
 <tr>
 <td>preserve_remote_extended_attrs</td>
@@ -5105,8 +5130,9 @@ native, metafile<br/>(–remote-preserve-acls={enum})</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Preserve remote extended attributes.<br/>Allowed values: none,
-native, metafile<br/>(–remote-preserve-xattrs={enum})</td>
+<td>Preserve remote extended attributes.<br/>Allowed values:
+<code>none</code>, <code>native</code>,
+<code>metafile</code><br/>(<code>--remote-preserve-xattrs={enum}</code>)</td>
 </tr>
 <tr>
 <td>preserve_source_access_time</td>
@@ -5118,7 +5144,7 @@ native, metafile<br/>(–remote-preserve-xattrs={enum})</td>
 <td> </td>
 <td>Y</td>
 <td>Preserve the time logged for when the source file was
-accessed<br/>(–preserve-source-access-time)</td>
+accessed.<br/>(<code>--preserve-source-access-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_times</td>
@@ -5129,7 +5155,7 @@ accessed<br/>(–preserve-source-access-time)</td>
 <td> </td>
 <td>Y</td>
 <td>Y</td>
-<td>Preserve file timestamps.<br/>(-p {boolean})</td>
+<td>Preserve file timestamps.<br/>(<code>-p {boolean}</code>)</td>
 </tr>
 <tr>
 <td>proxy</td>
@@ -5141,10 +5167,10 @@ accessed<br/>(–preserve-source-access-time)</td>
 <td> </td>
 <td> </td>
 <td>Specify the address of the Aspera high-speed proxy
-server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports
-for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if
+server.<br/><code>dnat(s)://[user[:password]@]server:port</code><br/>Default
+ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if
 specified here, overrides the value of environment variable
-ASPERA_PROXY_PASS.<br/>(–proxy={string})</td>
+<code>ASPERA_PROXY_PASS</code>.<br/>(<code>--proxy={string}</code>)</td>
 </tr>
 <tr>
 <td>rate_policy</td>
@@ -5156,14 +5182,16 @@ ASPERA_PROXY_PASS.<br/>(–proxy={string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>The transfer rate policy to use when sharing bandwidth. Allowable
-values:<br/>- high : When sharing bandwidth, transfer at twice the rate
-of a transfer using a fair policy.<br/>- fair : (Default) Share
-bandwidth equally with other traffic.<br/>- low : Use only unused
-bandwidth.<br/>- fixed : Transfer at the target rate, regardless of the
+values:<br/>- <code>high</code> : When sharing bandwidth, transfer at
+twice the rate of a transfer using a fair policy.<br/>-
+<code>fair</code> : (Default) Share bandwidth equally with other
+traffic.<br/>- <code>low</code> : Use only unused bandwidth.<br/>-
+<code>fixed</code> : Transfer at the target rate, regardless of the
 actual network capacity. Do not share bandwidth. Aspera recommends that
 you do not use this setting except under special circumstances,
-otherwise the destination storage can be damaged. <br/>Allowed values:
-low, fair, high, fixed<br/>(–policy={enum})</td>
+otherwise the destination storage can be damaged.<br/>Allowed values:
+<code>low</code>, <code>fair</code>, <code>high</code>,
+<code>fixed</code><br/>(<code>--policy={enum}</code>)</td>
 </tr>
 <tr>
 <td>rate_policy_allowed</td>
@@ -5175,7 +5203,8 @@ low, fair, high, fixed<br/>(–policy={enum})</td>
 <td> </td>
 <td> </td>
 <td>Specifies most aggressive rate policy that is allowed.<br/>Returned
-by node API.<br/>Allowed values: low, fair, high, fixed</td>
+by node API.<br/>Allowed values: <code>low</code>, <code>fair</code>,
+<code>high</code>, <code>fixed</code></td>
 </tr>
 <tr>
 <td>read_threads</td>
@@ -5209,8 +5238,8 @@ bearer token that is used to authenticate to the remote node.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>IP or fully qualified domain name of the remote
-server<br/>(–host={string})</td>
+<td>IP or fully qualified domain name (FQDN) of the remote
+server.<br/>(<code>--host={string}</code>)</td>
 </tr>
 <tr>
 <td>remote_password</td>
@@ -5221,7 +5250,7 @@ server<br/>(–host={string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td>
+<td>SSH session password<br/>(env:<code>ASPERA_SCP_PASS</code>)</td>
 </tr>
 <tr>
 <td>remote_user</td>
@@ -5232,8 +5261,8 @@ server<br/>(–host={string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Remote user. Default value is “xfer” on node or
-connect.<br/>(–user={string})</td>
+<td>Remote user. Default value is <code>xfer</code> on node or
+connect.<br/>(<code>--user={string}</code>)</td>
 </tr>
 <tr>
 <td>remove_after_transfer</td>
@@ -5245,7 +5274,7 @@ connect.<br/>(–user={string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Remove SRC files after transfer
-success<br/>(–remove-after-transfer)</td>
+success.<br/>(<code>--remove-after-transfer</code>)</td>
 </tr>
 <tr>
 <td>remove_empty_directories</td>
@@ -5257,7 +5286,7 @@ success<br/>(–remove-after-transfer)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Specifies whether to remove empty
-directories.<br/>(–remove-empty-directories)</td>
+directories.<br/>(<code>--remove-empty-directories</code>)</td>
 </tr>
 <tr>
 <td>remove_empty_source_dir</td>
@@ -5281,7 +5310,8 @@ itself, if empty.</td>
 <td> </td>
 <td> </td>
 <td>Remove empty source subdirectories and remove the source directory
-itself, if empty.<br/>(–remove-empty-source-directory)</td>
+itself, if
+empty.<br/>(<code>--remove-empty-source-directory</code>)</td>
 </tr>
 <tr>
 <td>remove_skipped</td>
@@ -5292,9 +5322,10 @@ itself, if empty.<br/>(–remove-empty-source-directory)</td>
 <td> </td>
 <td>Y</td>
 <td> </td>
-<td>Must also have remove_after_transfer set to true, Defaults to false,
-if true, skipped files will be removed as
-well.<br/>(–remove-skipped)</td>
+<td>Must also have <code>remove_after_transfer</code> set to
+<code>true</code>. Defaults to <code>false</code>. If <code>true</code>,
+skipped files will be removed as
+well.<br/>(<code>--remove-skipped</code>)</td>
 </tr>
 <tr>
 <td>resume_policy</td>
@@ -5307,15 +5338,17 @@ well.<br/>(–remove-skipped)</td>
 <td>Y</td>
 <td>If a transfer is interrupted or fails to finish, this policy directs
 the transfer to resume without retransferring the files. Allowable
-values:<br/>- none : Always re-transfer the entire file<br/>- attrs :
-Compare file attributes and resume if they match, and re-transfer if
-they do not<br/>- sparse_csum : Compare file attributes and the sparse
-file checksums; resume if they match, and re-transfer if they do
-not<br/>- full_csum : Compare file attributes and the full file
-checksums; resume if they match, and re-transfer if they do not.
-<br/>Note: transferd uses values: attributes, sparse_checksum,
-full_checksum.<br/>Allowed values: none, attrs, sparse_csum,
-full_csum<br/>(-k (conversion){enum})</td>
+values:<br/>- <code>none</code> : Always re-transfer the entire
+file.<br/>- <code>attrs</code> : Compare file attributes and resume if
+they match, and re-transfer if they do not.<br/>-
+<code>sparse_csum</code> : Compare file attributes and the sparse file
+checksums; resume if they match, and re-transfer if they do not.<br/>-
+<code>full_csum</code> : Compare file attributes and the full file
+checksums; resume if they match, and re-transfer if they do
+not.<br/>Note: transferd uses values: <code>attributes</code>,
+<code>sparse_checksum</code>, <code>full_checksum</code>.<br/>Allowed
+values: <code>none</code>, <code>attrs</code>, <code>sparse_csum</code>,
+<code>full_csum</code><br/>(<code>-k (conversion){enum}</code>)</td>
 </tr>
 <tr>
 <td>retry_duration</td>
@@ -5344,7 +5377,7 @@ being overwritten, move that file to
 the beginning of each new second and incremented for each file saved in
 this manner during the same second) in the same directory before writing
 the new file.<br/>File attributes are maintained in the renamed
-file.<br/>(–save-before-overwrite)</td>
+file.<br/>(<code>--save-before-overwrite</code>)</td>
 </tr>
 <tr>
 <td>skip_duplicate_check</td>
@@ -5356,7 +5389,7 @@ file.<br/>(–save-before-overwrite)</td>
 <td> </td>
 <td>Y</td>
 <td>Don’t check for duplicate files at the
-destination.<br/>(–skip-dir-traversal-dupes)</td>
+destination.<br/>(<code>--skip-dir-traversal-dupes</code>)</td>
 </tr>
 <tr>
 <td>skip_special_files</td>
@@ -5370,7 +5403,8 @@ destination.<br/>(–skip-dir-traversal-dupes)</td>
 <td>All assets other than files, directories and symbolic links are
 considered special. A transfer will fail if the user attempts to
 transfer special assets. If true, ascp skips special assets and proceeds
-with the transfer of all other assets. <br/>(–skip-special-files)</td>
+with the transfer of all other
+assets.<br/>(<code>--skip-special-files</code>)</td>
 </tr>
 <tr>
 <td>source_root</td>
@@ -5383,7 +5417,7 @@ with the transfer of all other assets. <br/>(–skip-special-files)</td>
 <td>Y</td>
 <td>Path to be prepended to each source path.<br/>This is either a
 conventional path or it can be a URI but only if there is no root
-defined.<br/>(–source-prefix64=(conversion){string})</td>
+defined.<br/>(<code>--source-prefix64=(conversion){string}</code>)</td>
 </tr>
 <tr>
 <td>source_root_id</td>
@@ -5409,7 +5443,7 @@ token auth for the source node.</td>
 <td>Specify the prefix to be stripped off from each source
 object.<br/>The remaining portion of the source path is kept intact at
 the destination.<br/>Special care must be taken when used with cloud
-storage.<br/>(–src-base64=(conversion){string})</td>
+storage.<br/>(<code>--src-base64=(conversion){string}</code>)</td>
 </tr>
 <tr>
 <td>src_base64</td>
@@ -5421,7 +5455,7 @@ storage.<br/>(–src-base64=(conversion){string})</td>
 <td> </td>
 <td>Y</td>
 <td>The folder name below which the directory structure is preserved
-(base64 encoded).<br/>(–src-base64={string})</td>
+(base64 encoded).<br/>(<code>--src-base64={string}</code>)</td>
 </tr>
 <tr>
 <td>ssh_args</td>
@@ -5432,8 +5466,8 @@ storage.<br/>(–src-base64=(conversion){string})</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Array of arguments to pass to SSH. Use with caution.<br/>(-i
-{array})</td>
+<td>Array of arguments to pass to SSH. Use with
+caution.<br/>(<code>-i {array}</code>)</td>
 </tr>
 <tr>
 <td>ssh_port</td>
@@ -5444,7 +5478,7 @@ storage.<br/>(–src-base64=(conversion){string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies SSH (TCP) port.<br/>(-P {integer})</td>
+<td>Specifies SSH (TCP) port.<br/>(<code>-P {integer}</code>)</td>
 </tr>
 <tr>
 <td>ssh_private_key</td>
@@ -5457,7 +5491,7 @@ storage.<br/>(–src-base64=(conversion){string})</td>
 <td>Y</td>
 <td>Private key used for SSH authentication.<br/>Shall look like:
 —–BEGIN RSA PRIV4TE KEY—–…<br/>Note the JSON encoding: for
-newlines.<br/>(env:ASPERA_SCP_KEY)</td>
+newlines.<br/>(env:<code>ASPERA_SCP_KEY</code>)</td>
 </tr>
 <tr>
 <td>ssh_private_key_passphrase</td>
@@ -5469,7 +5503,7 @@ newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 <td> </td>
 <td>Y</td>
 <td>The passphrase associated with the transfer user’s SSH private key.
-Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
+Available as of 3.7.2.<br/>(env:<code>ASPERA_SCP_PASS</code>)</td>
 </tr>
 <tr>
 <td>ssh_private_key_path</td>
@@ -5480,7 +5514,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>Path to private key for SSH.<br/>(-i {string})</td>
+<td>Path to private key for SSH.<br/>(<code>-i {string}</code>)</td>
 </tr>
 <tr>
 <td>sshfp</td>
@@ -5492,7 +5526,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Check it against server SSH host key
-fingerprint.<br/>(–check-sshfp={string})</td>
+fingerprint.<br/>(<code>--check-sshfp={string}</code>)</td>
 </tr>
 <tr>
 <td>symlink_policy</td>
@@ -5503,8 +5537,9 @@ fingerprint.<br/>(–check-sshfp={string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Handle source side symbolic links<br/>Allowed values: follow, copy,
-copy+force, skip<br/>(–symbolic-links={enum})</td>
+<td>Handle source side symbolic links.<br/>Allowed values:
+<code>follow</code>, <code>copy</code>, <code>copy+force</code>,
+<code>skip</code><br/>(<code>--symbolic-links={enum}</code>)</td>
 </tr>
 <tr>
 <td>tags</td>
@@ -5517,7 +5552,8 @@ copy+force, skip<br/>(–symbolic-links={enum})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
 Key <code>aspera.xfer_retry</code> specifies a retry timeout for node
-api initiated transfers.<br/>(–tags64=(conversion){object})</td>
+API initiated
+transfers.<br/>(<code>--tags64=(conversion){object}</code>)</td>
 </tr>
 <tr>
 <td>tags64</td>
@@ -5530,7 +5566,7 @@ api initiated transfers.<br/>(–tags64=(conversion){object})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
 Key <code>aspera.xfer_retry</code> specifies a retry timeout for node
-api initiated transfers.<br/>(–tags64={string})</td>
+API initiated transfers.<br/>(<code>--tags64={string}</code>)</td>
 </tr>
 <tr>
 <td>target_rate_cap_kbps</td>
@@ -5553,7 +5589,8 @@ Returned by upload/download_setup node API.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies desired speed for the transfer.<br/>(-l {integer})</td>
+<td>Specifies desired speed for the
+transfer.<br/>(<code>-l {integer}</code>)</td>
 </tr>
 <tr>
 <td>target_rate_percentage</td>
@@ -5587,7 +5624,7 @@ Returned by upload/download_setup node API.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Authorization token: Bearer, Basic or ATM (Also arg
--W)<br/>(env:ASPERA_SCP_TOKEN)</td>
+-W)<br/>(env:<code>ASPERA_SCP_TOKEN</code>)</td>
 </tr>
 <tr>
 <td>use_ascp4</td>
@@ -5599,7 +5636,7 @@ Returned by upload/download_setup node API.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Specify version of protocol. Do not use
-ascp4.<br/>(&lt;special&gt;)</td>
+ascp4.<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>use_system_ssh</td>
@@ -5610,7 +5647,7 @@ ascp4.<br/>(&lt;special&gt;)</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
-<td>TODO, comment…<br/>(-SSH {string})</td>
+<td>TODO, comment…<br/>(<code>-SSH {string}</code>)</td>
 </tr>
 <tr>
 <td>write_threads</td>
@@ -5632,7 +5669,8 @@ ascp4.<br/>(&lt;special&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Server has Web Socket service enabled<br/>(&lt;special&gt;)</td>
+<td>Server has Web Socket service
+enabled<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>wss_port</td>
@@ -5643,7 +5681,8 @@ ascp4.<br/>(&lt;special&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>TCP port used for websocket service feed<br/>(&lt;special&gt;)</td>
+<td>TCP port used for websocket service
+feed<br/>(<code>&amp;lt;special&amp;gt;</code>)</td>
 </tr>
 <tr>
 <td>xfer_max_retries</td>
@@ -8189,7 +8228,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb432-1"><a href
 <span id="cb432-93"><a href="#cb432-93" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/ test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_folder_no_pass</span>
 <span id="cb432-94"><a href="#cb432-94" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc test_file.bin</span>
 <span id="cb432-95"><a href="#cb432-95" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc test_file.bin test_file.bin</span>
-<span id="cb432-96"><a href="#cb432-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--workspace</span><span class="op">=</span>@none: <span class="at">--to-folder</span><span class="op">=</span>my_other_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
+<span id="cb432-96"><a href="#cb432-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
 <span id="cb432-97"><a href="#cb432-97" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> v3 info</span>
 <span id="cb432-98"><a href="#cb432-98" aria-hidden="true" tabindex="-1"></a><span class="ex">gateway</span> <span class="at">--pid-file</span><span class="op">=</span>pid_aocfxgw @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:12345/aspera/faspex&quot;}&#39;</span> <span class="kw">&amp;</span></span>
 <span id="cb432-99"><a href="#cb432-99" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span></span>
@@ -9025,74 +9064,75 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb490-1"><a href
 <span id="cb490-6"><a href="#cb490-6" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name delete test_nd_ak3</span>
 <span id="cb490-7"><a href="#cb490-7" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name download test_nd_ak3 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb490-8"><a href="#cb490-8" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name find my_test_folder</span>
-<span id="cb490-9"><a href="#cb490-9" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name find my_test_folder @ruby:<span class="st">&#39;-&gt;(f){f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)}&#39;</span></span>
-<span id="cb490-10"><a href="#cb490-10" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name mkdir /tst_nd_ak</span>
-<span id="cb490-11"><a href="#cb490-11" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name node_info /</span>
-<span id="cb490-12"><a href="#cb490-12" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name rename /tst_nd_ak test_nd_ak2</span>
-<span id="cb490-13"><a href="#cb490-13" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name show %id:1</span>
-<span id="cb490-14"><a href="#cb490-14" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name show /test_nd_ak3</span>
-<span id="cb490-15"><a href="#cb490-15" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name upload <span class="st">&#39;faux:///test_nd_ak3?100k&#39;</span> <span class="at">--default-ports</span><span class="op">=</span>no</span>
-<span id="cb490-16"><a href="#cb490-16" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission %id:root_id create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;666&quot;}&#39;</span></span>
-<span id="cb490-17"><a href="#cb490-17" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission / show 1</span>
-<span id="cb490-18"><a href="#cb490-18" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self show / <span class="at">--fields</span><span class="op">=</span>id <span class="at">--output</span><span class="op">=</span>root_id</span>
-<span id="cb490-19"><a href="#cb490-19" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> list</span>
-<span id="cb490-20"><a href="#cb490-20" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> set_bearer_key self @file:my_private_key</span>
-<span id="cb490-21"><a href="#cb490-21" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> show %id:self</span>
-<span id="cb490-22"><a href="#cb490-22" aria-hidden="true" tabindex="-1"></a><span class="ex">api_details</span></span>
-<span id="cb490-23"><a href="#cb490-23" aria-hidden="true" tabindex="-1"></a><span class="ex">asperabrowser</span></span>
-<span id="cb490-24"><a href="#cb490-24" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> bandwidth %name:my_node_sync2</span>
-<span id="cb490-25"><a href="#cb490-25" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> counters %name:my_node_sync2</span>
-<span id="cb490-26"><a href="#cb490-26" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:my_node_sync2</span>
-<span id="cb490-27"><a href="#cb490-27" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> list</span>
-<span id="cb490-28"><a href="#cb490-28" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show %name:my_node_sync2</span>
-<span id="cb490-29"><a href="#cb490-29" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show ALL</span>
-<span id="cb490-30"><a href="#cb490-30" aria-hidden="true" tabindex="-1"></a><span class="ex">basic_token</span></span>
-<span id="cb490-31"><a href="#cb490-31" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
-<span id="cb490-32"><a href="#cb490-32" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
-<span id="cb490-33"><a href="#cb490-33" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb490-34"><a href="#cb490-34" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
-<span id="cb490-35"><a href="#cb490-35" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
-<span id="cb490-36"><a href="#cb490-36" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
-<span id="cb490-37"><a href="#cb490-37" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
-<span id="cb490-38"><a href="#cb490-38" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
-<span id="cb490-39"><a href="#cb490-39" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb490-40"><a href="#cb490-40" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
-<span id="cb490-41"><a href="#cb490-41" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url,host){return &quot;DIRECT&quot;}&#39;</span></span>
-<span id="cb490-42"><a href="#cb490-42" aria-hidden="true" tabindex="-1"></a><span class="ex">license</span></span>
-<span id="cb490-43"><a href="#cb490-43" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/a_folder</span>
-<span id="cb490-44"><a href="#cb490-44" aria-hidden="true" tabindex="-1"></a><span class="ex">mkfile</span> my_upload_folder/a_file1 <span class="st">&quot;hello world&quot;</span></span>
-<span id="cb490-45"><a href="#cb490-45" aria-hidden="true" tabindex="-1"></a><span class="ex">mklink</span> my_upload_folder/a_folder my_upload_folder/tdlink</span>
-<span id="cb490-46"><a href="#cb490-46" aria-hidden="true" tabindex="-1"></a><span class="ex">rename</span> my_upload_folder a_file1 a_file</span>
-<span id="cb490-47"><a href="#cb490-47" aria-hidden="true" tabindex="-1"></a><span class="ex">search</span> / <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;mtime&quot;}&#39;</span></span>
-<span id="cb490-48"><a href="#cb490-48" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> create @json:<span class="st">&#39;{&quot;id&quot;:&quot;service1&quot;,&quot;type&quot;:&quot;WATCHD&quot;,&quot;run_as&quot;:{&quot;user&quot;:&quot;user1&quot;}}&#39;</span></span>
-<span id="cb490-49"><a href="#cb490-49" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> delete service1</span>
-<span id="cb490-50"><a href="#cb490-50" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> list</span>
-<span id="cb490-51"><a href="#cb490-51" aria-hidden="true" tabindex="-1"></a><span class="ex">slash</span></span>
-<span id="cb490-52"><a href="#cb490-52" aria-hidden="true" tabindex="-1"></a><span class="ex">space</span> /</span>
-<span id="cb490-53"><a href="#cb490-53" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> bandwidth %name:my_node_sync</span>
-<span id="cb490-54"><a href="#cb490-54" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> counters %name:my_node_sync</span>
-<span id="cb490-55"><a href="#cb490-55" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> create @json:<span class="st">&#39;{&quot;configuration&quot;:{&quot;name&quot;:&quot;my_node_sync&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_path_real&quot;},&quot;remote&quot;:{&quot;host&quot;:&quot;my_host&quot;,&quot;port&quot;:my_port,&quot;user&quot;:&quot;my_username&quot;,&quot;pass&quot;:&quot;my_password_here&quot;,&quot;path&quot;:&quot;my_remote_path&quot;}}}&#39;</span></span>
-<span id="cb490-56"><a href="#cb490-56" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> delete %name:my_node_sync</span>
-<span id="cb490-57"><a href="#cb490-57" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> files %name:my_node_sync</span>
-<span id="cb490-58"><a href="#cb490-58" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> list</span>
-<span id="cb490-59"><a href="#cb490-59" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> show %name:my_node_sync</span>
-<span id="cb490-60"><a href="#cb490-60" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> start %name:my_node_sync</span>
-<span id="cb490-61"><a href="#cb490-61" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> state %name:my_node_sync</span>
-<span id="cb490-62"><a href="#cb490-62" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> stop %name:my_node_sync</span>
-<span id="cb490-63"><a href="#cb490-63" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> summary %name:my_node_sync</span>
-<span id="cb490-64"><a href="#cb490-64" aria-hidden="true" tabindex="-1"></a><span class="ex">stream</span> list</span>
-<span id="cb490-65"><a href="#cb490-65" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status /data/local_sync</span>
-<span id="cb490-66"><a href="#cb490-66" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync2&quot;,&quot;reset&quot;:true}&#39;</span></span>
-<span id="cb490-67"><a href="#cb490-67" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
-<span id="cb490-68"><a href="#cb490-68" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb490-69"><a href="#cb490-69" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
-<span id="cb490-70"><a href="#cb490-70" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span> <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb490-71"><a href="#cb490-71" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> sessions</span>
-<span id="cb490-72"><a href="#cb490-72" aria-hidden="true" tabindex="-1"></a><span class="ex">transport</span></span>
-<span id="cb490-73"><a href="#cb490-73" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span>
-<span id="cb490-74"><a href="#cb490-74" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret test_file.bin</span>
-<span id="cb490-75"><a href="#cb490-75" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
-<span id="cb490-76"><a href="#cb490-76" aria-hidden="true" tabindex="-1"></a><span class="ex">watch_folder</span> list</span></code></pre></div>
+<span id="cb490-9"><a href="#cb490-9" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name find my_test_folder @re:<span class="st">&#39;\.jpg$&#39;</span></span>
+<span id="cb490-10"><a href="#cb490-10" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name find my_test_folder @ruby:<span class="st">&#39;-&gt;(f){f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)}&#39;</span></span>
+<span id="cb490-11"><a href="#cb490-11" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name mkdir /tst_nd_ak</span>
+<span id="cb490-12"><a href="#cb490-12" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name node_info /</span>
+<span id="cb490-13"><a href="#cb490-13" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name rename /tst_nd_ak test_nd_ak2</span>
+<span id="cb490-14"><a href="#cb490-14" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name show %id:1</span>
+<span id="cb490-15"><a href="#cb490-15" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name show /test_nd_ak3</span>
+<span id="cb490-16"><a href="#cb490-16" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name upload <span class="st">&#39;faux:///test_nd_ak3?100k&#39;</span> <span class="at">--default-ports</span><span class="op">=</span>no</span>
+<span id="cb490-17"><a href="#cb490-17" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission %id:root_id create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;666&quot;}&#39;</span></span>
+<span id="cb490-18"><a href="#cb490-18" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission / show 1</span>
+<span id="cb490-19"><a href="#cb490-19" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self show / <span class="at">--fields</span><span class="op">=</span>id <span class="at">--output</span><span class="op">=</span>root_id</span>
+<span id="cb490-20"><a href="#cb490-20" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> list</span>
+<span id="cb490-21"><a href="#cb490-21" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> set_bearer_key self @file:my_private_key</span>
+<span id="cb490-22"><a href="#cb490-22" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> show %id:self</span>
+<span id="cb490-23"><a href="#cb490-23" aria-hidden="true" tabindex="-1"></a><span class="ex">api_details</span></span>
+<span id="cb490-24"><a href="#cb490-24" aria-hidden="true" tabindex="-1"></a><span class="ex">asperabrowser</span></span>
+<span id="cb490-25"><a href="#cb490-25" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> bandwidth %name:my_node_sync2</span>
+<span id="cb490-26"><a href="#cb490-26" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> counters %name:my_node_sync2</span>
+<span id="cb490-27"><a href="#cb490-27" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:my_node_sync2</span>
+<span id="cb490-28"><a href="#cb490-28" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> list</span>
+<span id="cb490-29"><a href="#cb490-29" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show %name:my_node_sync2</span>
+<span id="cb490-30"><a href="#cb490-30" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show ALL</span>
+<span id="cb490-31"><a href="#cb490-31" aria-hidden="true" tabindex="-1"></a><span class="ex">basic_token</span></span>
+<span id="cb490-32"><a href="#cb490-32" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
+<span id="cb490-33"><a href="#cb490-33" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
+<span id="cb490-34"><a href="#cb490-34" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb490-35"><a href="#cb490-35" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
+<span id="cb490-36"><a href="#cb490-36" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
+<span id="cb490-37"><a href="#cb490-37" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
+<span id="cb490-38"><a href="#cb490-38" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
+<span id="cb490-39"><a href="#cb490-39" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
+<span id="cb490-40"><a href="#cb490-40" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb490-41"><a href="#cb490-41" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
+<span id="cb490-42"><a href="#cb490-42" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url,host){return &quot;DIRECT&quot;}&#39;</span></span>
+<span id="cb490-43"><a href="#cb490-43" aria-hidden="true" tabindex="-1"></a><span class="ex">license</span></span>
+<span id="cb490-44"><a href="#cb490-44" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/a_folder</span>
+<span id="cb490-45"><a href="#cb490-45" aria-hidden="true" tabindex="-1"></a><span class="ex">mkfile</span> my_upload_folder/a_file1 <span class="st">&quot;hello world&quot;</span></span>
+<span id="cb490-46"><a href="#cb490-46" aria-hidden="true" tabindex="-1"></a><span class="ex">mklink</span> my_upload_folder/a_folder my_upload_folder/tdlink</span>
+<span id="cb490-47"><a href="#cb490-47" aria-hidden="true" tabindex="-1"></a><span class="ex">rename</span> my_upload_folder a_file1 a_file</span>
+<span id="cb490-48"><a href="#cb490-48" aria-hidden="true" tabindex="-1"></a><span class="ex">search</span> / <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;mtime&quot;}&#39;</span></span>
+<span id="cb490-49"><a href="#cb490-49" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> create @json:<span class="st">&#39;{&quot;id&quot;:&quot;service1&quot;,&quot;type&quot;:&quot;WATCHD&quot;,&quot;run_as&quot;:{&quot;user&quot;:&quot;user1&quot;}}&#39;</span></span>
+<span id="cb490-50"><a href="#cb490-50" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> delete service1</span>
+<span id="cb490-51"><a href="#cb490-51" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> list</span>
+<span id="cb490-52"><a href="#cb490-52" aria-hidden="true" tabindex="-1"></a><span class="ex">slash</span></span>
+<span id="cb490-53"><a href="#cb490-53" aria-hidden="true" tabindex="-1"></a><span class="ex">space</span> /</span>
+<span id="cb490-54"><a href="#cb490-54" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> bandwidth %name:my_node_sync</span>
+<span id="cb490-55"><a href="#cb490-55" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> counters %name:my_node_sync</span>
+<span id="cb490-56"><a href="#cb490-56" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> create @json:<span class="st">&#39;{&quot;configuration&quot;:{&quot;name&quot;:&quot;my_node_sync&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_path_real&quot;},&quot;remote&quot;:{&quot;host&quot;:&quot;my_host&quot;,&quot;port&quot;:my_port,&quot;user&quot;:&quot;my_username&quot;,&quot;pass&quot;:&quot;my_password_here&quot;,&quot;path&quot;:&quot;my_remote_path&quot;}}}&#39;</span></span>
+<span id="cb490-57"><a href="#cb490-57" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> delete %name:my_node_sync</span>
+<span id="cb490-58"><a href="#cb490-58" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> files %name:my_node_sync</span>
+<span id="cb490-59"><a href="#cb490-59" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> list</span>
+<span id="cb490-60"><a href="#cb490-60" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> show %name:my_node_sync</span>
+<span id="cb490-61"><a href="#cb490-61" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> start %name:my_node_sync</span>
+<span id="cb490-62"><a href="#cb490-62" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> state %name:my_node_sync</span>
+<span id="cb490-63"><a href="#cb490-63" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> stop %name:my_node_sync</span>
+<span id="cb490-64"><a href="#cb490-64" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> summary %name:my_node_sync</span>
+<span id="cb490-65"><a href="#cb490-65" aria-hidden="true" tabindex="-1"></a><span class="ex">stream</span> list</span>
+<span id="cb490-66"><a href="#cb490-66" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status /data/local_sync</span>
+<span id="cb490-67"><a href="#cb490-67" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync2&quot;,&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb490-68"><a href="#cb490-68" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb490-69"><a href="#cb490-69" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb490-70"><a href="#cb490-70" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
+<span id="cb490-71"><a href="#cb490-71" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span> <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb490-72"><a href="#cb490-72" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> sessions</span>
+<span id="cb490-73"><a href="#cb490-73" aria-hidden="true" tabindex="-1"></a><span class="ex">transport</span></span>
+<span id="cb490-74"><a href="#cb490-74" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span>
+<span id="cb490-75"><a href="#cb490-75" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret test_file.bin</span>
+<span id="cb490-76"><a href="#cb490-76" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
+<span id="cb490-77"><a href="#cb490-77" aria-hidden="true" tabindex="-1"></a><span class="ex">watch_folder</span> list</span></code></pre></div>
 <h2 data-number="8.14" id="open-telemetry"><span
 class="header-section-number">8.14</span> Open Telemetry</h2>
 <p>The <code>node</code> plugin supports Open Telemetry (OTel) for

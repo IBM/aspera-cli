@@ -16,7 +16,7 @@ require 'word_wrap'
 
 module Aspera
   module Cli
-    # Take care of CLI output
+    # Take care of CLI output on terminal
     class Formatter
       # remove a fields from the list
       FIELDS_LESS = '-'
@@ -34,35 +34,38 @@ module Aspera
       HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
       class << self
-        def all_but(list)
-          list = [list] unless list.is_a?(Array)
-          return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
-        end
-
         # nicer display for boolean
-        def tick(yes, color: true)
+        # used by spec_doc
+        def tick(yes)
           result =
             if Environment.terminal_supports_unicode?
-              if yes
-                "\u2713"
-              else
-                "\u2717"
-              end
-            elsif yes
-              'Y'
+              yes ? "\u2713" : "\u2717"
             else
-              ' '
+              yes ? 'Y' : ' '
             end
-          return result if !color
           return result.green if yes
           return result.red
         end
 
         # Highlight special values on terminal
         # empty values are dim
+        # used by spec_doc
         def special_format(what)
           result = "<#{what}>"
           return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
+        end
+
+        # for transfer spec table, build line for display in terminal
+        # used by spec_doc
+        def check_row(row)
+          row.each_key do |k|
+            row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
+          end
+        end
+
+        # used by spec_doc
+        def keyword_highlight(value)
+          value.bold
         end
 
         # replace empty values with a readable version
@@ -127,11 +130,9 @@ module Aspera
           flat
         end
 
-        # for transfer spec table, build line for display
-        def check_row(row)
-          row.each_key do |k|
-            row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
-          end
+        def all_but(list)
+          list = [list] unless list.is_a?(Array)
+          return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
       end
 
