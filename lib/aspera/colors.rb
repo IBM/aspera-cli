@@ -10,7 +10,7 @@ class String
     def vt_cmd(code); "\e[#{code}m"; end
   end
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
-  # symbol is the method name added to String
+  # symbol is the method name added to String, e.g. "hello".bold
   # it adds control chars to set color (and reset at the end).
   VT_STYLES = {
     bold:          1,
@@ -42,17 +42,20 @@ class String
   VT_STYLES.each do |name, code|
     if $stdout.tty?
       begin_seq = vt_cmd(code)
-      end_code = 0 # by default reset all
-      if code <= 7 then code + 20
-      elsif code <= 37 then 39
-      elsif code <= 47 then 49
-      end
+      end_code =
+        if code <= 8 then code + 20
+        elsif code <= 37 then 39
+        elsif code <= 47 then 49
+        else
+          0 # by default reset all
+        end
       end_seq = vt_cmd(end_code)
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}
     end
   end
+  # Transform capitalized to snake case
   def capital_to_snake
     return gsub(/([a-z\d])([A-Z])/, '\1_\2')
         .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
