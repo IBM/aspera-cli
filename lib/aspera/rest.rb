@@ -239,7 +239,7 @@ module Aspera
     )
       Aspera.assert_type(base_url, String)
       # base url with no trailing slashes (note: string may be frozen)
-      @base_url = base_url.gsub(%r{/+$}, '')
+      @base_url = base_url.chomp('/')
       # remove trailing port if it is 443 and scheme is https
       @base_url = @base_url.gsub(/:443$/, '') if @base_url.start_with?('https://')
       @base_url = @base_url.gsub(/:80$/, '') if @base_url.start_with?('http://')
