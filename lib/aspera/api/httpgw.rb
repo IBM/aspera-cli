@@ -299,7 +299,7 @@ module Aspera
         raise Error, 'GW URL shall be with scheme https' unless url.start_with?('https://')
         # remove trailing slash and version (o=only once) if present
         # TODO: issue warning ?
-        url = url.gsub(%r{/+$}, '').gsub(%r{/#{API_V1}$}o, '')
+        url = url.chomp('/').gsub(%r{/#{API_V1}$}o, '')
         # assume GW is always under specific path (TODO: remove this ?)
         url = File.join(url, DEFAULT_BASE_PATH) unless url.end_with?(DEFAULT_BASE_PATH)
         @gw_root_url = url
