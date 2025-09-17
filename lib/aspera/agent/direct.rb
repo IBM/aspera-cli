@@ -293,7 +293,6 @@ module Aspera
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
             process_progress(event)
-            Log.log.error(event['Description'].to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
           Log.log.debug('management io closed')
           # check that last status was received before process exit
@@ -311,9 +310,7 @@ module Aspera
               env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
             raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
-          else
-            Log.log.error{"unexpected last event type: #{last_event['Type']}"}
-            # raise Transfer::Error, "unexpected last event type: #{last_event['Type']}, #{last_event['Description']}"
+          else Aspera.error_unexpected_value(last_event['Type'], :error){'last event type'}
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
@@ -329,9 +326,13 @@ module Aspera
             # collect process exit status or wait for termination
             _, status = Process.wait2(command_pid)
             # process stderr of ascp
+            stderr_flag = false
             stderr_r.each_line do |line|
-              Log.log.error(line.chomp)
+              Log.log.error{"BEGIN stderr #{name}"} unless stderr_flag
+              Log.log.error{line.chomp}
+              stderr_flag = true
             end
+            Log.log.error{"END stderr #{name}"} if stderr_flag
             stderr_r.close
             # status is nil if an exception occurred before starting command
             if !status&.success?
@@ -381,6 +382,7 @@ module Aspera
         when 'SESSION'
         when 'ARGSTOP'
         when 'FILEERROR'
+          Log.log.error{"#{event['Type']} #{event['Description']}"}
         when 'STOP'
           # cspell:enable
           # stop event when one file is completed
