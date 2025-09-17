@@ -2834,13 +2834,13 @@ E.g. `http://myproxy.org.net:3128`.
 Credentials for proxy are optional but can also be specified:
 
 ```bash
-export http_proxy=http://user:password@proxy.example.com:3128
+export http_proxy=http://my_user_here:my_pass_here@proxy.example.com:3128
 ```
 
 Option `http_proxy` does the same (set env var) but on command line:
 
 ```bash
-<%=cmd%> --http-proxy=http://username:password@host:port ...
+<%=cmd%> --http-proxy=http://my_user_here:my_pass_here@host:port ...
 ```
 
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) JavaScript value.
@@ -5252,7 +5252,7 @@ An optional payload can be provided at creation, for example to protect with a p
 A password can be provided on `create` and `modify` for `public` links:
 
 ```json
-{"password":"my_password"}
+{"password":"my_password_here"}
 ```
 
 To remove a password:
