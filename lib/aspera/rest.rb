@@ -395,7 +395,8 @@ module Aspera
                 RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
               end
             end
-            RestParameters.instance.progress_bar&.event(:end, session_id: session_id)
+            RestParameters.instance.progress_bar&.event(:session_end, session_id: session_id)
+            RestParameters.instance.progress_bar&.event(:end)
             # rename at the end
             File.rename(target_file_tmp, target_file)
             file_saved = true
