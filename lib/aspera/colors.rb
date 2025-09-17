@@ -20,6 +20,7 @@ class String
     blink:         5,
     reverse_color: 7,
     invisible:     8,
+    strike:        9,
     black:         30,
     red:           31,
     green:         32,
@@ -38,18 +39,18 @@ class String
     bg_gray:       47
   }.freeze
   private_constant :VT_STYLES
-  # defines methods to String, one per entry in VT_STYLES
+  # Defines methods to String, one per entry in VT_STYLES
   VT_STYLES.each do |name, code|
     if $stdout.tty?
       begin_seq = vt_cmd(code)
-      # end_code =
-      #  if code <= 8 then code + 20
-      #  elsif code <= 37 then 39
-      #  elsif code <= 47 then 49
-      #  else
-      #    0 # by default reset all
-      #  end
-      end_seq = vt_cmd(0)
+      end_seq = vt_cmd(
+        if code <= 2 then 22
+        elsif code <= 8 then code + 20
+        elsif code <= 37 then 39
+        elsif code <= 47 then 49
+        else
+          0 # by default reset all
+        end)
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}
