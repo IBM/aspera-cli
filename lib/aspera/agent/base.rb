@@ -5,6 +5,10 @@ require 'aspera/assert'
 module Aspera
   module Agent
     # Base class for transfer agents
+    # Transfer agents provide methods:
+    # - `start_transfer` : take a transfer spec and start a transfer asynchronously
+    # - `wait_for_transfers_completion` : waits for all transfer sessions to finish
+    # - `notify_progress` : called back by transfer agent to notify transfer progress
     class Base
       RUBY_EXT = '.rb'
       private_constant :RUBY_EXT
