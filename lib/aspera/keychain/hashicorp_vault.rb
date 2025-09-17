@@ -10,9 +10,9 @@ module Aspera
   module Keychain
     # Manage secrets in a Hashicorp Vault
     class HashicorpVault < Base
-      SECRET_PATH = 'secret/data/'
+      STORE_PATH = 'secret/data/'
 
-      private_constant :SECRET_PATH
+      private_constant :STORE_PATH
 
       def initialize(url:, token:)
         super()
@@ -30,7 +30,7 @@ module Aspera
       end
 
       def list
-        metadata_path = SECRET_PATH.sub('/data/', '/metadata/')
+        metadata_path = STORE_PATH.sub('/data/', '/metadata/')
         return Vault.logical.list(metadata_path).filter_map do |label|
           get(label: label).merge(label: label)
         end
@@ -67,7 +67,7 @@ module Aspera
       private
 
       def path(label)
-        "#{SECRET_PATH}#{label}"
+        "#{STORE_PATH}#{label}"
       end
     end
   end

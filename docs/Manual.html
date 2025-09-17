@@ -3538,11 +3538,11 @@ valid.</p>
 </blockquote>
 <p>Credentials for proxy are optional but can also be specified:</p>
 <div class="sourceCode" id="cb226"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://user:password@proxy.example.com:3128</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://my_user_here:my_pass_here@proxy.example.com:3128</span></code></pre></div>
 <p>Option <code>http_proxy</code> does the same (set env var) but on
 command line:</p>
 <div class="sourceCode" id="cb227"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--http-proxy</span><span class="op">=</span>http://username:password@host:port ...</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--http-proxy</span><span class="op">=</span>http://my_user_here:my_pass_here@host:port ...</span></code></pre></div>
 <p>Alternatively, the <code>fpac</code> option (function for proxy auto
 config) can be set to a <a
 href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto
@@ -7996,7 +7996,7 @@ password, or set an expiry date. A password can be provided on
 <code>create</code> and <code>modify</code> for <code>public</code>
 links:</p>
 <div class="sourceCode" id="cb420"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb420-1"><a href="#cb420-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password&quot;</span><span class="fu">}</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb420-1"><a href="#cb420-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p>To remove a password:</p>
 <div class="sourceCode" id="cb421"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb421-1"><a href="#cb421-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;password_enabled&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">}</span></span></code></pre></div>
