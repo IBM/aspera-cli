@@ -1339,7 +1339,7 @@ module Aspera
 
         # version of URL without trailing "/" and removing default port
         def canonical_url(url)
-          url.sub(%r{/+$}, '').sub(%r{^(https://[^/]+):443$}, '\1')
+          url.chomp('/').sub(%r{^(https://[^/]+):443$}, '\1')
         end
 
         # Look for a preset that has the corresponding URL and username
