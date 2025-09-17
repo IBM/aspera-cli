@@ -241,6 +241,9 @@ module Aspera
         Aspera.assert_type(session, Hash)
         notify_progress(:sessions_init, info: 'starting')
         begin
+          capture_stderr = false
+          stderr_r, stderr_w = nil
+          spawn_args = {}
           command_pid = nil
           command_arguments = []
           if @monitor
@@ -259,12 +262,16 @@ module Aspera
             end
           end
           command_arguments.concat(args)
-          # capture process stderr
-          stderr_r, stderr_w = IO.pipe
+          if capture_stderr
+            # capture process stderr
+            stderr_r, stderr_w = IO.pipe
+            spawn_args[err] = stderr_w
+          end
           # get location of command executable (ascp, async)
           command_path = Ascp::Installation.instance.path(name)
-          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, err: stderr_w)
-          stderr_w.close
+          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, **spawn_args)
+          # close here, but still used in other process (pipe)
+          stderr_w&.close
           notify_progress(:sessions_init, info: "waiting for #{name} to start")
           # "ensure" block will wait for process
           return unless @monitor
@@ -326,15 +333,17 @@ module Aspera
             Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
             # collect process exit status or wait for termination
             _, status = Process.wait2(command_pid)
-            # process stderr of ascp
-            stderr_flag = false
-            stderr_r.each_line do |line|
-              Log.log.error{"BEGIN stderr #{name}"} unless stderr_flag
-              Log.log.error{line.chomp}
-              stderr_flag = true
+            if stderr_r
+              # process stderr of ascp
+              stderr_flag = false
+              stderr_r.each_line do |line|
+                Log.log.error{"BEGIN stderr #{name}"} unless stderr_flag
+                Log.log.error{line.chomp}
+                stderr_flag = true
+              end
+              Log.log.error{"END stderr #{name}"} if stderr_flag
+              stderr_r.close
             end
-            Log.log.error{"END stderr #{name}"} if stderr_flag
-            stderr_r.close
             # status is nil if an exception occurred before starting command
             if !status&.success?
               message = "#{name} failed (#{status})"
