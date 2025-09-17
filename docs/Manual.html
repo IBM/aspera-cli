@@ -5836,13 +5836,13 @@ destination.</p>
 docroot) unless docroot is not set (relative to home).</p>
 <p>In the following table source folder <code>d3</code> contains 2
 files: <code>f1</code> and <code>d4/f2</code>.</p>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 16%" />
+<col style="width: 15%" />
 <col style="width: 14%" />
 <col style="width: 21%" />
-<col style="width: 13%" />
-<col style="width: 33%" />
+<col style="width: 15%" />
+<col style="width: 32%" />
 </colgroup>
 <thead>
 <tr>
@@ -5936,9 +5936,9 @@ destination.</p>
 <table>
 <colgroup>
 <col style="width: 26%" />
-<col style="width: 18%" />
-<col style="width: 14%" />
-<col style="width: 40%" />
+<col style="width: 17%" />
+<col style="width: 16%" />
+<col style="width: 39%" />
 </colgroup>
 <thead>
 <tr>
@@ -6175,9 +6175,11 @@ same:</li>
 <div class="sourceCode" id="cb300"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb300-1"><a href="#cb300-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/flock</span> <span class="at">-w</span> 0 /var/cron.lock ascli ...</span></code></pre></div>
 <p><code>ascli</code> natively supports a locking mechanism with option
-<code>lock_port</code>. (Technically, this opens a local TCP server
-port, and fails if this port is already used, providing a local lock.
-Lock is released when process exits).</p>
+<code>lock_port</code>. Technically, this opens a local TCP server port,
+and fails if this port is already used, providing a local lock. Lock is
+released when process exits. When using <code>ascli</code> in a
+container, this does not work with other containers, as each container
+have its own network.</p>
 <p>Testing <code>ascli</code> locking:</p>
 <p>Run this same command in two separate terminals within less than 30
 seconds:</p>
@@ -6301,14 +6303,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb307-1"><a href
 <tr>
 <td>seq</td>
 <td>enum</td>
-<td>Sequence in determining next file size<br/>Values: random,
-sequential<br/>Default: sequential</td>
+<td>Sequence in determining next file size<br/>Values:
+<code>random</code>, <code>sequential</code><br/>Default:
+<code>sequential</code></td>
 </tr>
 <tr>
 <td>buf_init</td>
 <td>enum</td>
-<td>How source data is initialized<br/>Option ‘none’ is not allowed for
-downloads.<br/>Values:none, zero, random<br/>Default:zero</td>
+<td>How source data is initialized<br/>Option <code>none</code> is not
+allowed for downloads.<br/>Values:<code>none</code>, <code>zero</code>,
+<code>random</code><br/>Default:<code>zero</code></td>
 </tr>
 </tbody>
 </table>
@@ -8855,10 +8859,10 @@ following elements:</li>
 </ul>
 <table>
 <colgroup>
-<col style="width: 19%" />
 <col style="width: 23%" />
-<col style="width: 9%" />
-<col style="width: 47%" />
+<col style="width: 22%" />
+<col style="width: 13%" />
+<col style="width: 40%" />
 </colgroup>
 <thead>
 <tr>
@@ -9206,8 +9210,8 @@ Aspera Faspex v5</h1>
 <code>auth</code>):</p>
 <table>
 <colgroup>
-<col style="width: 15%" />
-<col style="width: 84%" />
+<col style="width: 17%" />
+<col style="width: 82%" />
 </colgroup>
 <thead>
 <tr>
@@ -9914,9 +9918,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb528-1"><a href
 <table>
 <colgroup>
 <col style="width: 21%" />
-<col style="width: 11%" />
+<col style="width: 12%" />
 <col style="width: 7%" />
-<col style="width: 59%" />
+<col style="width: 58%" />
 </colgroup>
 <thead>
 <tr>
@@ -11728,3 +11732,46 @@ class="header-section-number">26.6</span> Error: <code>ascp</code>:
 <div class="sourceCode" id="cb600"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb600-1"><a href="#cb600-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config transferd install 1.1.2</span></code></pre></div>
 <p>Refer to: <a href="#single-file-executable">Binary</a></p>
+<h2 data-number="26.7" id="error-cannot-rename-partial-file"><span
+class="header-section-number">26.7</span> Error: Cannot rename partial
+file</h2>
+<p>This is an error coming from <code>ascp</code> when it is configured
+to use a partial file name, and at the end of the transfer, the partial
+file, now complete, does not exist anymore.</p>
+<p>This often happens when two transfers start in parallel for the same
+file:</p>
+<ul>
+<li>session 1 starts for file1, it creates file: file1.partial and fills
+it</li>
+<li>session 2 starts for file1 (same), it creates file: file1.partial
+and fills it</li>
+<li>session 1 finishes, and renames file1.partial to file1</li>
+<li>session 2 finishes, and tries to rename file1.partial to file1, but
+it fails as it does not exist anymore…</li>
+</ul>
+<p>By default, <code>ascli</code> creates a config
+file:<code>~/.aspera/sdk/aspera.conf</code> like this:</p>
+<div class="sourceCode" id="cb601"><pre
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb601-1"><a href="#cb601-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb601-2"><a href="#cb601-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+<span id="cb601-3"><a href="#cb601-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">default</span>&gt;</span>
+<span id="cb601-4"><a href="#cb601-4" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">file_system</span>&gt;</span>
+<span id="cb601-5"><a href="#cb601-5" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">resume_suffix</span>&gt;.aspera-ckpt&lt;/<span class="kw">resume_suffix</span>&gt;</span>
+<span id="cb601-6"><a href="#cb601-6" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">partial_file_suffix</span>&gt;.partial&lt;/<span class="kw">partial_file_suffix</span>&gt;</span>
+<span id="cb601-7"><a href="#cb601-7" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">file_system</span>&gt;</span>
+<span id="cb601-8"><a href="#cb601-8" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">default</span>&gt;</span>
+<span id="cb601-9"><a href="#cb601-9" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
+<p>In container, this is located in <code>/ibm_aspera</code>.</p>
+<p>One possibility to avoid that error is to disable partial filename
+suffix… But that only hides the problem.</p>
+<p>For example, when using the container, override that file with a
+volume and remove the line for extension. Another possibility is to add
+this option:
+<code>--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'</code>
+: this overrides the value in config file.</p>
+<blockquote>
+<p><strong>Note:</strong> If one relies on <code>--lock-port</code> when
+using containers to avoir parallel transfers in a cron job, this can be
+the problem, as <code>lock_port</code> does not lock between containers.
+Use <code>flock</code> instead.</p>
+</blockquote>
