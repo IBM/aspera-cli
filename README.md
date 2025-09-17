@@ -2838,7 +2838,7 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 |---------------|--------|-------------|
 | `logger`      | `stdout`<br/>`stderr`<br/>`syslog` | Type of output.<br/>Default: `stderr` |
 | `log_level`   | `trace2`<br/>`trace1`<br/>`debug`<br/>`info`<br/>`warn`<br/>`error` | Minimum level displayed.<br/>Default: `warn` |
-| `log_secrets` | `yes`<br/>`no `| Show or hide secrets in logs.<br/>Default: `no` (Hide) |
+| `log_secrets` | `yes`<br/>`no` | Show or hide secrets in logs.<br/>Default: `no` (Hide) |
 | `log_format`  | `Proc` | A lambda function that formats the log.<br/>Default: `->(s, _d, _p, m){"#{s[0]} #{m}\n"}`<br/>`Aspera::Log::DEFAULT_FORMATTER` : see above.<br/>`Aspera::Log::STANDARD_FORMATTER` : Standard Ruby formatter. |
 
 > **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
@@ -3836,26 +3836,26 @@ A leading `/` on destination is ignored (relative to docroot) unless docroot is 
 
 In the following table source folder `d3` contains 2 files: `f1` and `d4/f2`.
 
-| Source files | Destination | Folders on Dest.  |`create_dir`| Destination Files           |
-|--------------|-------------|-------------------|------------|-----------------------------|
-| `f1`         | `d/f`       | -                 | false      | Error: `d` does not exist.  |
-| `f1`         | `d/f`       | `d`               | false      | `d/f` (renamed)          |
-| `f1`         | `d/f/.`     | `d`               | false      | `d/f` (renamed)          |
-| `f1`         | `d/f`       | `d/f`             | false      | `d/f/f1`                    |
-| `f1` `f2`    | `d`         | `d`               | false      | `d/f1` `d/f2`               |
-| `d3`         | `d`         | -                 | false      | `d/f1` `d/f2` (renamed)    |
-| `f1`         | `d`         | -                 | true       | `d/f1`                      |
-| `f1` `f2`    | `d`         | -                 | true       | `d/f1` `d/f2`               |
-| `d1/f1` `d2/f2` | `d`      | -                 | true       | `d/f1` `d/f2`               |
-| `d3`         | `d`         | -                 | true       | `d/d3/f1` `d/d3/d4/f2`      |
+| Source files | Destination | Folders on Dest.  | `create_dir` | Destination Files           |
+|--------------|-------------|-------------------|--------------|-----------------------------|
+| `f1`         | `d/f`       | -                 | false        | Error: `d` does not exist.  |
+| `f1`         | `d/f`       | `d`               | false        | `d/f` (renamed)          |
+| `f1`         | `d/f/.`     | `d`               | false        | `d/f` (renamed)          |
+| `f1`         | `d/f`       | `d/f`             | false        | `d/f/f1`                    |
+| `f1` `f2`    | `d`         | `d`               | false        | `d/f1` `d/f2`               |
+| `d3`         | `d`         | -                 | false        | `d/f1` `d/f2` (renamed)    |
+| `f1`         | `d`         | -                 | true         | `d/f1`                      |
+| `f1` `f2`    | `d`         | -                 | true         | `d/f1` `d/f2`               |
+| `d1/f1` `d2/f2` | `d`      | -                 | true         | `d/f1` `d/f2`               |
+| `d3`         | `d`         | -                 | true         | `d/d3/f1` `d/d3/d4/f2`      |
 
 If a file par list is provided then it is possible to rename or specify a different destination folder for each source (relative to the destination).
 
 If transfer spec has a `src_base`, it has the side effect that the simple source file list is considered as a file pair list, and so the lower structure of source folders is preserved on destination.
 
-| Source files      | Destination |`src_base`| Destination Files           |
-|-------------------|-------------|----------|-----------------------------|
-| `d1/d2/f2` `d1/d3/f3` | `d`     | `d1`     | `d/d2/f2` `d/d3/f3`         |
+| Source files      | Destination | `src_base` | Destination Files           |
+|-------------------|-------------|------------|-----------------------------|
+| `d1/d2/f2` `d1/d3/f3` | `d`     | `d1`       | `d/d2/f2` `d/d3/f3`         |
 
 Advanced Example: Send files `./file1` and `./folder2/files2` to server (e.g. `/Upload`) and keep the original file names and folders, i.e. send `file1` to `/Upload/file1` and `files2` to `/Upload/folder2/files2`.
 
@@ -4067,8 +4067,9 @@ Usually the OS native scheduler already provides some sort of protection against
 ```
 
 `ascli` natively supports a locking mechanism with option `lock_port`.
-(Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock.
-Lock is released when process exits).
+Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock.
+Lock is released when process exits.
+When using `ascli` in a container, this does not work with other containers, as each container have its own network.
 
 Testing `ascli` locking:
 
@@ -4159,12 +4160,12 @@ where:
 
 | Name     | Type  | Description |
 |----------|-------|-------------|
-| count    | int   | Number of files<br/>Mandatory|
-| file     | string| Basename for files<br/>Default: `file`|
-| size     | int   | Size of first file.<br/>Default: 0|
-| inc      | int   | Increment applied to determine next file size<br/>Default: 0|
-| seq      | enum  | Sequence in determining next file size<br/>Values: random, sequential<br/>Default: sequential|
-| buf_init | enum  | How source data is initialized<br/>Option 'none' is not allowed for downloads.<br/>Values:none, zero, random<br/>Default:zero|
+| count    | int   | Number of files<br/>Mandatory |
+| file     | string| Basename for files<br/>Default: `file` |
+| size     | int   | Size of first file.<br/>Default: 0 |
+| inc      | int   | Increment applied to determine next file size<br/>Default: 0 |
+| seq      | enum  | Sequence in determining next file size<br/>Values: `random`, `sequential`<br/>Default: `sequential` |
+| buf_init | enum  | How source data is initialized<br/>Option `none` is not allowed for downloads.<br/>Values:`none`, `zero`, `random`<br/>Default:`zero` |
 
 The sequence parameter is applied as follows:
 
@@ -6617,17 +6618,17 @@ Bearer tokens can be generated using `ascli` command `bearer_token`: it takes tw
 - The private key used to sign the token.
 - The token information, which is a `Hash` containing the following elements:
 
-| Parameter                 | Default                     | Type      | Description                                              |
-| ------------------------  |-----------------------------|-----------|----------------------------------------------------------|
-| `_scope`                  | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
-| `_validity`               | 86400                       | Special   | Validity in seconds from now.                            |
-| `user_id`                 | -                           | Mandatory | Identifier of user                                       |
-| `scope`                   | `node.<access_key>:<_scope>`| Mandatory | API scope, e.g. `node.<access_key>:<node scope>`         |
-| `expires_at`              | `now+<_validity>`           | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ` e.g. `2021-12-31T23:59:59Z` |
-| `auth_type`               | `access_key`                | Optional  | `access_key`, `node_user`                                |
-| `group_ids`               | -                           | Optional  | List of group IDs                                        |
-| `organization_id`         | -                           | Optional  | Organization ID                                          |
-| `watermarking_json_base64` | -                           | Optional  | Watermarking information (not used)                      |
+| Parameter          | Default           | Type      | Description                      |
+|--------------------|-------------------|-----------|----------------------------------|
+| `_scope`           | `user:all`        | Special   | Either `user:all` or `admin:all` |
+| `_validity`        | 86400             | Special   | Validity in seconds from now.    |
+| `user_id`          | -                 | Mandatory | Identifier of user               |
+| `scope` | `node.<access_key>:<_scope>` | Mandatory | API scope, e.g. `node.<access_key>:<node scope>`         |
+| `expires_at`       | `now+<_validity>` | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ` e.g. `2021-12-31T23:59:59Z` |
+| `auth_type`        | `access_key`      | Optional  | `access_key`, `node_user`        |
+| `group_ids`        | -                 | Optional  | List of group IDs                |
+| `organization_id`  | -                 | Optional  | Organization ID                  |
+| `watermarking_json_base64` | -         | Optional  | Watermarking information (not used) |
 
 > **Note:** For convenience, `ascli` provides additional parameters `_scope` and `_validity`.
 > They are not part of the API and are removed from the final payload.
@@ -6859,12 +6860,12 @@ IBM Aspera's newer self-managed application.
 
 3 authentication methods are supported (option `auth`):
 
-| Method       | Description                                                         |
-| ------------ | ------------------------------------------------------------------- |
-| `jwt`        | General purpose, private-key based authentication                   |
-| `web`        | Requires authentication with web browser                            |
-| `public_link`| Public link authentication (set when option `url` is a public link) |
-| `boot`       | Use authentication token copied from browser (experimental)         |
+| Method        | Description                                                         |
+|---------------|---------------------------------------------------------------------|
+| `jwt`         | General purpose, private-key based authentication                   |
+| `web`         | Requires authentication with web browser                            |
+| `public_link` | Public link authentication (set when option `url` is a public link) |
+| `boot`        | Use authentication token copied from browser (experimental)         |
 
 > **Note:** If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
@@ -7408,12 +7409,12 @@ ascli faspex5 postprocessing
 
 An optional positional parameter can be provided as extended value `Hash`:
 
-| Parameter         | Type     | Default | Description                                         |
-|-------------------|----------|-------|-----------------------------------------------------|
-| **server info**   | -        | -     | See [Web service](#web-service).                    |
-| `script_folder`   | `String` | `.`   | Prefix added to script path (Default: CWD)          |
-| `fail_on_error`   | `Bool`   | false | Fail if true and process exits with non-zero code   |
-| `timeout_seconds` | `Integer`| 60    | Time out before script is killed                    |
+| Parameter         | Type      | Default | Description                                       |
+|-------------------|-----------|-------|-----------------------------------------------------|
+| **server info**   | -         | -     | See [Web service](#web-service).                    |
+| `script_folder`   | `String`  | `.`   | Prefix added to script path (Default: CWD)          |
+| `fail_on_error`   | `Bool`    | false | Fail if true and process exits with non-zero code   |
+| `timeout_seconds` | `Integer` | 60    | Time out before script is killed                    |
 
 When a request on `ascli` is received the following happens:
 
@@ -8818,3 +8819,37 @@ ascli config transferd install 1.1.2
 ```
 
 Refer to: [Binary](#single-file-executable)
+
+### Error: Cannot rename partial file
+
+This is an error coming from `ascp` when it is configured to use a partial file name, and at the end of the transfer, the partial file, now complete, does not exist anymore.
+
+This often happens when two transfers start in parallel for the same file:
+
+- session 1 starts for file1, it creates file: file1.partial and fills it
+- session 2 starts for file1 (same), it creates file: file1.partial and fills it
+- session 1 finishes, and renames file1.partial to file1
+- session 2 finishes, and tries to rename file1.partial to file1, but it fails as it does not exist anymore...
+
+By default, `ascli` creates a config file:`~/.aspera/sdk/aspera.conf` like this:
+
+```xml
+<?xml version='1.0' encoding='UTF-8'?>
+<CONF version="2">
+<default>
+    <file_system>
+        <resume_suffix>.aspera-ckpt</resume_suffix>
+        <partial_file_suffix>.partial</partial_file_suffix>
+    </file_system>
+</default>
+</CONF>
+```
+
+In container, this is located in `/ibm_aspera`.
+
+One possibility to avoid that error is to disable partial filename suffix... But that only hides the problem.
+
+For example, when using the container, override that file with a volume and remove the line for extension.
+Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
+
+> **Note:** If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers. Use `flock` instead.
