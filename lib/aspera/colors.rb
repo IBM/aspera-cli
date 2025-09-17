@@ -42,14 +42,14 @@ class String
   VT_STYLES.each do |name, code|
     if $stdout.tty?
       begin_seq = vt_cmd(code)
-      end_code =
-        if code <= 8 then code + 20
-        elsif code <= 37 then 39
-        elsif code <= 47 then 49
-        else
-          0 # by default reset all
-        end
-      end_seq = vt_cmd(end_code)
+      # end_code =
+      #  if code <= 8 then code + 20
+      #  elsif code <= 37 then 39
+      #  elsif code <= 47 then 49
+      #  else
+      #    0 # by default reset all
+      #  end
+      end_seq = vt_cmd(0)
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}
