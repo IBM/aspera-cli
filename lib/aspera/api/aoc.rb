@@ -82,7 +82,9 @@ module Aspera
         end
 
         def saas_url?(url)
-          url.include?(SAAS_DOMAIN_PROD)
+          URI.parse(url).host&.end_with?(".#{SAAS_DOMAIN_PROD}")
+        rescue URI::InvalidURIError
+          false
         end
 
         # @param url [String] URL of AoC public link
