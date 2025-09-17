@@ -43,20 +43,19 @@ module Aspera
             columns[:description].push("Allowed values: #{properties['enum'].map{ |v| formatter.keyword_highlight(v)}.join(', ')}") if properties.key?('enum')
             envvar = ''
             cli_option =
-              if properties['x-cli-switch']
+              if properties.key?('x-cli-envvar')
+                envvar = 'env:'
+                properties['x-cli-envvar']
+              elsif properties['x-cli-switch']
                 properties['x-cli-option']
               elsif properties['x-cli-special']
-                formatter.special_format('special')
+                ''
               elsif properties['x-cli-option']
                 arg_type = properties.key?('enum') ? '{enum}' : "{#{[properties['type']].flatten.join('|')}}"
                 conversion_tag = properties.key?('x-cli-convert') ? '(conversion)' : ''
                 sep = properties['x-cli-option'].start_with?('--') ? '=' : ' '
                 "#{properties['x-cli-option']}#{sep}#{conversion_tag}#{arg_type}"
               end
-            if properties.key?('x-cli-envvar')
-              cli_option = properties['x-cli-envvar']
-              envvar = 'env:'
-            end
             columns[:description].push("(#{envvar}#{formatter.keyword_highlight(cli_option)})") if include_option && !cli_option.to_s.empty?
             formatter.check_row(columns)
           end.sort_by{ |i| i[:name]}
