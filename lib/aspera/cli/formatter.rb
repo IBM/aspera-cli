@@ -295,7 +295,8 @@ module Aspera
                 UriReader.read(data)
               else
                 Environment.instance.open_uri(data)
-                'Opened Url'
+                display_message(:info, "Opened URL in browser: #{data}")
+                :done
               end
             rescue URI::InvalidURIError
               data
@@ -307,7 +308,7 @@ module Aspera
             data
           end
           # here, data is the image blob
-          display_message(:data, Preview::Terminal.build(data, **@options[:image].symbolize_keys))
+          display_message(:data, Preview::Terminal.build(data, **@options[:image].symbolize_keys)) unless data.eql?(:done)
         when :table, :csv
           case type
           when :single_object
