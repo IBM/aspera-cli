@@ -1564,7 +1564,7 @@ $(F)conf_gem: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TMP_CONF) config initdemo
 	$(CLI_TMP_CONF) config initdemo
 	$(CLI_TEST) config gem path --http-proxy=http://test1 --http-options=@json:'{"user_agent":"test1"}'
-	$(CLI_TEST) config coffee --cert_stores=@ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]' --http-options=@json:'{"ssl_options":["CIPHER_SERVER_PREFERENCE","-SAFARI_ECDHE_ECDSA_BUG"]}'
+	$(CLI_TEST) config coffee --cert_stores=@ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]' --http-options=@json:'{"ssl_options":["CIPHER_SERVER_PREFERENCE","-NETSCAPE_CA_DN_BUG"]}' --insecure=yes
 	@$(STOP_TEST) $@
 $(F)conf_vault_macos: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1574,7 +1574,7 @@ $(F)conf_vault_macos: $(TMP_EXISTS)
 	$(BEG_IGN)$(CLI_TEST) -N config vault delete foo --vault=@json:'{"type":"system"}'$(END_IGN)
 	@$(STOP_TEST) $@
 VAULT_FILE=$(shell realpath $(DIR_TOP))/tmp/sample_vault.bin
-NEW_VAULT_PASS=_other_one_
+NEW_VAULT_PASS=my_other_pass_here
 $(F)conf_vault_file: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(VAULT_FILE) $(TEST_CONFIG)

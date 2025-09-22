@@ -206,7 +206,7 @@ href="#container">container</a> (<code>docker</code>,
 <p>The direct installation is recommended and consists in
 installing:</p>
 <ul>
-<li><a href="#ruby">Ruby</a></li>
+<li><a href="#ruby">Ruby language</a></li>
 <li><a href="#ruby-gem-aspera-cli">aspera-cli</a>
 <!-- markdownlint-disable-line --></li>
 <li><a href="#fasp-protocol-ascp">Aspera Transfer Daemon
@@ -223,8 +223,6 @@ installation methods.</p>
 have internet for the installation, refer to section <a
 href="#installation-in-air-gapped-environment">Installation without
 internet access</a>.</p>
-<p>A package with pre-installed Ruby, gem and <code>ascp</code> may also
-be provided.</p>
 <h2 data-number="3.1" id="single-file-executable"><span
 class="header-section-number">3.1</span> Single file executable</h2>
 <p>It is planned to provide <code>ascli</code> as a single
@@ -501,8 +499,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href=
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="va">JRUBY_OPTS</span><span class="op">=</span>--dev <span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
 <h3 data-number="3.2.8" id="optional-gems"><span
 class="header-section-number">3.2.8</span> Optional gems</h3>
-<p>Some additional gems are required for some specific features, see <a
-href="Gemfile">Gemfile</a>:</p>
+<p>Some additional gems are required for some specific features. Those
+are not installed as part of dependencies because they involve
+compilation of native code but concern less-used features.</p>
+<p>See <a href="Gemfile">Gemfile</a>:</p>
 <table>
 <colgroup>
 <col style="width: 22%" />
@@ -569,10 +569,6 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href=
 <span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install sqlite3 <span class="at">-v</span> <span class="st">&#39;~&gt; 2.7&#39;</span></span>
 <span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install jdbc-sqlite3 <span class="at">-v</span> <span class="st">&#39;~&gt; 3.46&#39;</span></span>
 <span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install sequel <span class="at">-v</span> <span class="st">&#39;~&gt; 5.96&#39;</span></span></code></pre></div>
-<blockquote>
-<p><strong>Note:</strong> Those are not installed as part of
-dependencies because they involve compilation of native code.</p>
-</blockquote>
 <h2 data-number="3.3" id="ruby-gem-aspera-cli"><span
 class="header-section-number">3.3</span> Ruby Gem:
 <code>aspera-cli</code></h2>
@@ -631,27 +627,38 @@ class="header-section-number">3.4.1</span> Installation of
 the IBM Aspera Transfer Daemon (<code>transferd</code>). Install using
 <code>ascli</code> for the current platform with:</p>
 <div class="sourceCode" id="cb50"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config transferd install</span></code></pre></div>
 <p>or</p>
 <div class="sourceCode" id="cb51"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config transferd install</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install</span></code></pre></div>
 <p>The installation of the transfer binaries follows those steps:</p>
 <ul>
-<li>Check the value of option <code>sdk_url</code>: if the value is the
-default value <code>DEF</code>, then the procedure follows, else it
-specifies directly the URL where to take the archive from.</li>
-<li>Download the YAML file from the URL specified by option
-<code>locations_url</code> whose default value is <a
-href="https://ibm.biz/sdk_location"
-class="uri">https://ibm.biz/sdk_location</a>. This file provides the
-list of supported OS, CPU and versions of the Aspera Transfer
-Daemon.</li>
-<li>Select the archive for the current system architecture (CPU and OS)
-is selected and downloaded. An alternate version can be specified as
-position argument, e.g. <code>1.1.3</code>.</li>
+<li><strong>Select the SDK package to use</strong>. Check the
+<code>sdk_url</code> option:
+<ul>
+<li>If the value is <strong>not</strong> the default value
+(<code>DEF</code>), it directly specifies the archive URL to
+download.</li>
+<li>If the value is <code>DEF</code>, <code>ascli</code> downloads the
+YAML file from the URL specified by the <code>locations_url</code>
+option (default: <a href="https://ibm.biz/sdk_location"
+class="uri">https://ibm.biz/sdk_location</a>).
+<ul>
+<li>This YAML file lists supported architectures (OS, CPU) and Aspera
+Transfer Daemon versions with their associated package URLs.</li>
+<li>If an additional positional parameter is provided, it specifies the
+SDK version to use; otherwise the latest version is selected.</li>
+<li>The package URL matching the current system architecture is then
+used.</li>
+</ul></li>
+</ul></li>
+<li><strong>Extract the archive</strong>
+<ul>
 <li>By default, the archive is extracted to
-<code>$HOME/.aspera/sdk</code>, this can be changed by setting the
+<code>$HOME/.aspera/sdk</code>.</li>
+<li>The destination folder can be changed by setting the
 <code>sdk_folder</code> option.</li>
+</ul></li>
 </ul>
 <table>
 <colgroup>

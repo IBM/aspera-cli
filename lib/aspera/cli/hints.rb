@@ -37,8 +37,9 @@ module Aspera
           exception:   OpenSSL::SSL::SSLError,
           match:       /(does not match the server certificate|certificate verify failed)/,
           remediation: [
-            'You can ignore SSL errors with option:',
-            '--insecure=yes'
+            'You can ignore SSL errors with either of the following options:',
+            '--insecure=yes  (global skip)',
+            '--ignore-certificate=@list,https://<address>[:<port>]  (selective skip)'
           ]
         },
         {

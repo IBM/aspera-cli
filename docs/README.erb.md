@@ -197,7 +197,7 @@ It is possible to install **either** directly on the host operating system (Linu
 
 The direct installation is recommended and consists in installing:
 
-- [Ruby](#ruby)
+- [Ruby language](#ruby)
 - [<%=gemspec.name%>](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
 - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp)
 
@@ -207,8 +207,6 @@ The following sections provide information on the various installation methods.
 
 An internet connection is required for the installation.
 If you don't have internet for the installation, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
-
-A package with pre-installed Ruby, gem and `ascp` may also be provided.
 
 ### Single file executable
 
@@ -521,7 +519,10 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 
 #### Optional gems
 
-Some additional gems are required for some specific features, see [Gemfile](Gemfile):
+Some additional gems are required for some specific features.
+Those are not installed as part of dependencies because they involve compilation of native code but concern less-used features.
+
+See [Gemfile](Gemfile):
 
 <%=gem_opt_md_list%>
 
@@ -530,8 +531,6 @@ Install like this:
 ```bash
 <%=gem_opt_cmd%>
 ```
-
-> **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
 
 ### Ruby Gem: `<%=gemspec.name%>`
 
@@ -591,21 +590,26 @@ The easiest option to install `ascp` is through the use of the IBM Aspera Transf
 Install using <%=tool%> for the current platform with:
 
 ```bash
-<%=cmd%> config ascp install
+<%=cmd%> config transferd install
 ```
 
 or
 
 ```bash
-<%=cmd%> config transferd install
+<%=cmd%> config ascp install
 ```
 
 The installation of the transfer binaries follows those steps:
 
-- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specifies directly the URL where to take the archive from.
-- Download the YAML file from the URL specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>. This file provides the list of supported OS, CPU and versions of the Aspera Transfer Daemon.
-- Select the archive for the current system architecture (CPU and OS) is selected and downloaded. An alternate version can be specified as position argument, e.g. `1.1.3`.
-- By default, the archive is extracted to `$HOME/.aspera/sdk`, this can be changed by setting the `sdk_folder` option.
+- **Select the SDK package to use**. Check the `sdk_url` option:
+  - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
+  - If the value is `DEF`, <%=tool%> downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
+    - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
+    - If an additional positional parameter is provided, it specifies the SDK version to use; otherwise the latest version is selected.
+    - The package URL matching the current system architecture is then used.
+- **Extract the archive**
+  - By default, the archive is extracted to `$HOME/.aspera/sdk`.
+  - The destination folder can be changed by setting the `sdk_folder` option.
 
 | Option          | Default | Description |
 |-----------------|---------|-------------|
