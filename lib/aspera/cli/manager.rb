@@ -56,7 +56,11 @@ module Aspera
       OPTION_SEP_SYMBOL = '_'
       SOURCE_USER = 'cmdline' # cspell:disable-line
       OPTION_VALUE_SEPARATOR = '='
+      # TODO : an option like a.b.c=d does: a={"b":{"c":"d"}}, and all Hash are additive, + way to reset Hash (e.g. --opt=@none:)
+      OPTION_HASH_SEPARATOR = '.'
+      # starts an option
       OPTION_PREFIX = '--'
+      # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
 
       DEFAULT_PARSER_TYPES = [Array, Hash].freeze
@@ -156,6 +160,7 @@ module Aspera
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
         return if argv.nil?
+        # true until `--` is found (stop options)
         process_options = true
         until argv.empty?
           value = argv.shift
@@ -534,11 +539,12 @@ module Aspera
         return result
       end
 
+      # TODO: use formatter
       def highlight_current(value)
         $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
       end
 
-      # try to evaluate options set ib batch
+      # try to evaluate options set in batch
       # @param unprocessed_options [Array] list of options to apply (key_sym,value)
       # @param where [String] where the options come from
       def consume_option_pairs(unprocessed_options, where)
