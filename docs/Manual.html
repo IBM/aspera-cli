@@ -520,7 +520,7 @@ href="Gemfile">Gemfile</a>:</p>
 <tr>
 <td>grpc</td>
 <td>~&gt; 1.71</td>
-<td>for Aspera Transfer Daemon</td>
+<td>(no jruby) for Aspera Transfer Daemon</td>
 </tr>
 <tr>
 <td>mimemagic</td>
@@ -530,7 +530,7 @@ href="Gemfile">Gemfile</a>:</p>
 <tr>
 <td>rmagick</td>
 <td>~&gt; 6.1</td>
-<td>for terminal view</td>
+<td>(no jruby) for terminal view</td>
 </tr>
 <tr>
 <td>symmetric-encryption</td>
@@ -545,7 +545,17 @@ href="Gemfile">Gemfile</a>:</p>
 <tr>
 <td>sqlite3</td>
 <td>~&gt; 2.7</td>
-<td></td>
+<td>(no jruby) for async DB</td>
+</tr>
+<tr>
+<td>jdbc-sqlite3</td>
+<td>~&gt; 3.46</td>
+<td>(jruby) for async DB</td>
+</tr>
+<tr>
+<td>sequel</td>
+<td>~&gt; 5.96</td>
+<td>(jruby) for async DB</td>
 </tr>
 </tbody>
 </table>
@@ -556,7 +566,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href=
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install rmagick <span class="at">-v</span> <span class="st">&#39;~&gt; 6.1&#39;</span></span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install symmetric-encryption <span class="at">-v</span> <span class="st">&#39;~&gt; 4.6&#39;</span></span>
 <span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install bigdecimal <span class="at">-v</span> <span class="st">&#39;~&gt; 3.1&#39;</span></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install sqlite3 <span class="at">-v</span> <span class="st">&#39;~&gt; 2.7&#39;</span></span></code></pre></div>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install sqlite3 <span class="at">-v</span> <span class="st">&#39;~&gt; 2.7&#39;</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install jdbc-sqlite3 <span class="at">-v</span> <span class="st">&#39;~&gt; 3.46&#39;</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install sequel <span class="at">-v</span> <span class="st">&#39;~&gt; 5.96&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> Those are not installed as part of
 dependencies because they involve compilation of native code.</p>
@@ -2557,7 +2569,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb176-1"><a href
 <div class="sourceCode" id="cb177"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb177-1"><a href="#cb177-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset get default _plugin_name_</span></code></pre></div>
 <div class="sourceCode" id="cb178"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="er">&quot;_default_preset_for_plugin_&quot;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;_default_preset_for_plugin_&quot;</span></span></code></pre></div>
 <h3 data-number="4.10.4" id="plugin-config-configuration"><span
 class="header-section-number">4.10.4</span> Plugin: <code>config</code>:
 Configuration</h3>
@@ -3391,10 +3403,10 @@ e.g. <code>--ignore-certificate=@list:,https://127.0.0.1:9092</code></p>
 <p><strong>Note:</strong> Ignoring certificate also applies to
 <code>ascp</code> WSS.</p>
 </blockquote>
-<p>Ignoring a certificate is not recommended, it is better to add the
-certificate to the trusted store. So, a warning is displayed when a
-certificate is ignored. To disable the warning, use option
-<code>silent_insecure</code> set to <code>no</code>.</p>
+<p>Ignoring a certificate is <strong>not recommended</strong>. It is
+preferable to add the certificate to the trusted store. When certificate
+validation is skipped, a warning is displayed. To disable this warning,
+set the option <code>warn_insecure</code> to <code>no</code>.</p>
 <p>HTTP connection parameters (not <code>ascp</code> WSS) can be
 adjusted using option <code>http_options</code>:</p>
 <table>
@@ -3984,8 +3996,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb261-1"><a href
 sections <code>default</code> and <code>trunks</code> like this for a
 global 100 Mbps virtual link:</p>
 <div class="sourceCode" id="cb262"><pre
-class="sourceCode xml"><code class="sourceCode xml"><span id="cb262-1"><a href="#cb262-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
-<span id="cb262-2"><a href="#cb262-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb262-1"><a href="#cb262-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&#39;1.0&#39;</span> <span class="ot">encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb262-2"><a href="#cb262-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span> <span class="ot">version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
 <span id="cb262-3"><a href="#cb262-3" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">default</span>&gt;</span>
 <span id="cb262-4"><a href="#cb262-4" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">transfer</span>&gt;</span>
 <span id="cb262-5"><a href="#cb262-5" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">in</span>&gt;</span>
@@ -4010,14 +4022,14 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb262-1"><a href="
 <span id="cb262-24"><a href="#cb262-24" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;in&lt;/<span class="kw">name</span>&gt;</span>
 <span id="cb262-25"><a href="#cb262-25" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
 <span id="cb262-26"><a href="#cb262-26" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
-<span id="cb262-27"><a href="#cb262-27" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
+<span id="cb262-27"><a href="#cb262-27" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span> <span class="ot">format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
 <span id="cb262-28"><a href="#cb262-28" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
 <span id="cb262-29"><a href="#cb262-29" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
 <span id="cb262-30"><a href="#cb262-30" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">trunk</span>&gt;</span>
 <span id="cb262-31"><a href="#cb262-31" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">id</span>&gt;2&lt;/<span class="kw">id</span>&gt;</span>
 <span id="cb262-32"><a href="#cb262-32" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;out&lt;/<span class="kw">name</span>&gt;</span>
 <span id="cb262-33"><a href="#cb262-33" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
-<span id="cb262-34"><a href="#cb262-34" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
+<span id="cb262-34"><a href="#cb262-34" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span> <span class="ot">format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
 <span id="cb262-35"><a href="#cb262-35" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
 <span id="cb262-36"><a href="#cb262-36" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
 <span id="cb262-37"><a href="#cb262-37" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
@@ -4052,8 +4064,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb264-1"><a href
 class="sourceCode xml"><code class="sourceCode xml"><span id="cb265-1"><a href="#cb265-1" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">replace_illegal_chars</span>&gt;_|&lt;/<span class="kw">replace_illegal_chars</span>&gt;</span></code></pre></div>
 <p>The result should look like this:</p>
 <div class="sourceCode" id="cb266"><pre
-class="sourceCode xml"><code class="sourceCode xml"><span id="cb266-1"><a href="#cb266-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
-<span id="cb266-2"><a href="#cb266-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb266-1"><a href="#cb266-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&#39;1.0&#39;</span> <span class="ot">encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb266-2"><a href="#cb266-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span> <span class="ot">version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
 <span id="cb266-3"><a href="#cb266-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">default</span>&gt;</span>
 <span id="cb266-4"><a href="#cb266-4" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">file_system</span>&gt;</span>
 <span id="cb266-5"><a href="#cb266-5" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">resume_suffix</span>&gt;.aspera-ckpt&lt;/<span class="kw">resume_suffix</span>&gt;</span>
@@ -5762,7 +5774,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb280-1"><a href
 <span id="cb280-2"><a href="#cb280-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> secondfile <span class="op">&gt;&gt;</span> myfilelist.txt</span></code></pre></div>
 <p>Use the file list: one path per line:</p>
 <div class="sourceCode" id="cb281"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb281-1"><a href="#cb281-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@lines</span><span class="op">:</span><span class="ot">@file</span><span class="op">:</span>myfilelist<span class="at">.txt</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb281-1"><a href="#cb281-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@lines</span><span class="wa">:@file</span><span class="op">:</span>myfilelist<span class="at">.txt</span></span></code></pre></div></li>
 <li><p>Using JSON array</p>
 <div class="sourceCode" id="cb282"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb282-1"><a href="#cb282-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@json:</span><span class="st">&#39;[&quot;file1&quot;,&quot;file2&quot;]&#39;</span></span></code></pre></div></li>
@@ -5771,7 +5783,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb282-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@lines:@stdin:</span></span></code></pre></div></li>
 <li><p>Using Ruby code (one path per line in file)</p>
 <div class="sourceCode" id="cb284"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb284-1"><a href="#cb284-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@ruby</span><span class="op">:</span><span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb284-1"><a href="#cb284-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@ruby</span><span class="wa">:</span><span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
 </ul></li>
 <li><p><code>@ts</code> : the user provides the list of files directly
 in the <code>paths</code> field of transfer spec (option
@@ -6460,7 +6472,7 @@ OPTIONS: global
         --notify-template=VALUE      Email: ERB template for notification of transfers
         --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
         --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
-        --silent-insecure=ENUM       HTTP/S: Issue a warning if certificate is ignored: no, [yes]
+        --warn-insecure=ENUM         HTTP/S: Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array, String)
         --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
         --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials (String)
@@ -7304,7 +7316,7 @@ id="example-find-deactivated-users-since-more-than-2-years"><span
 class="header-section-number">5.4.11</span> Example: Find deactivated
 users since more than 2 years</h3>
 <div class="sourceCode" id="cb360"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb360-1"><a href="#cb360-1" aria-hidden="true" tabindex="-1"></a>ascli aoc admin user list <span class="op">--</span>query<span class="op">=</span><span class="ot">@ruby</span><span class="op">:</span><span class="vs">&#39;{&quot;deactivated&quot;=&gt;true,&quot;q&quot;=&gt;&quot;last_login_at:&lt;#{(DateTime.now.to_time.utc-2*365*86400).iso8601}&quot;}&#39;</span></span></code></pre></div>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb360-1"><a href="#cb360-1" aria-hidden="true" tabindex="-1"></a>ascli aoc admin user list <span class="op">--</span>query<span class="op">=</span><span class="ot">@ruby</span><span class="wa">:</span><span class="vs">&#39;{&quot;deactivated&quot;=&gt;true,&quot;q&quot;=&gt;&quot;last_login_at:&lt;#{(DateTime.now.to_time.utc-2*365*86400).iso8601}&quot;}&#39;</span></span></code></pre></div>
 <p>To delete them use the same method as before</p>
 <h3 data-number="5.4.12"
 id="example-display-current-users-workspaces"><span
@@ -11752,8 +11764,8 @@ it fails as it does not exist anymore…</li>
 <p>By default, <code>ascli</code> creates a config
 file:<code>~/.aspera/sdk/aspera.conf</code> like this:</p>
 <div class="sourceCode" id="cb601"><pre
-class="sourceCode xml"><code class="sourceCode xml"><span id="cb601-1"><a href="#cb601-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
-<span id="cb601-2"><a href="#cb601-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb601-1"><a href="#cb601-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&#39;1.0&#39;</span> <span class="ot">encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb601-2"><a href="#cb601-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span> <span class="ot">version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
 <span id="cb601-3"><a href="#cb601-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">default</span>&gt;</span>
 <span id="cb601-4"><a href="#cb601-4" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">file_system</span>&gt;</span>
 <span id="cb601-5"><a href="#cb601-5" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">resume_suffix</span>&gt;.aspera-ckpt&lt;/<span class="kw">resume_suffix</span>&gt;</span>

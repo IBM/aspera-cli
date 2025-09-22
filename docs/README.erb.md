@@ -2761,9 +2761,10 @@ To ignore SSL certificate for a list of specific address/port, use option `ignor
 
 > **Note:** Ignoring certificate also applies to `ascp` WSS.
 
-Ignoring a certificate is not recommended, it is better to add the certificate to the trusted store.
-So, a warning is displayed when a certificate is ignored.
-To disable the warning, use option `silent_insecure` set to `no`.
+Ignoring a certificate is **not recommended**.
+It is preferable to add the certificate to the trusted store.
+When certificate validation is skipped, a warning is displayed.
+To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 

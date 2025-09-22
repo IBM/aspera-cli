@@ -110,7 +110,7 @@ class DocHelper
       {
         name:    m[1],
         version: m[2],
-        comment: m[3].gsub('# ', '').strip.sub('unless defined?(JRUBY_VERSION)', '(no jruby)')
+        comment: m[3].gsub('# ', '').strip.sub('unless defined?(JRUBY_VERSION)', '(no jruby)').sub('if defined?(JRUBY_VERSION)', '(jruby)')
       }
     end
   end

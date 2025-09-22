@@ -532,12 +532,14 @@ Some additional gems are required for some specific features, see [Gemfile](Gemf
 
 | name | version | comment |
 | ---- | ------- | ------- |
-| grpc | ~> 1.71 | for Aspera Transfer Daemon |
+| grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | mimemagic | ~> 0.4 | for preview |
-| rmagick | ~> 6.1 | for terminal view |
+| rmagick | ~> 6.1 | (no jruby) for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
-| sqlite3 | ~> 2.7 |  |
+| sqlite3 | ~> 2.7 | (no jruby) for async DB |
+| jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
+| sequel | ~> 5.96 | (jruby) for async DB |
 
 Install like this:
 
@@ -548,6 +550,8 @@ gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
 gem install sqlite3 -v '~> 2.7'
+gem install jdbc-sqlite3 -v '~> 3.46'
+gem install sequel -v '~> 5.96'
 ```
 
 > **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
@@ -2878,9 +2882,10 @@ To ignore SSL certificate for a list of specific address/port, use option `ignor
 
 > **Note:** Ignoring certificate also applies to `ascp` WSS.
 
-Ignoring a certificate is not recommended, it is better to add the certificate to the trusted store.
-So, a warning is displayed when a certificate is ignored.
-To disable the warning, use option `silent_insecure` set to `no`.
+Ignoring a certificate is **not recommended**.
+It is preferable to add the certificate to the trusted store.
+When certificate validation is skipped, a warning is displayed.
+To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
@@ -4301,7 +4306,7 @@ OPTIONS: global
         --notify-template=VALUE      Email: ERB template for notification of transfers
         --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
         --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
-        --silent-insecure=ENUM       HTTP/S: Issue a warning if certificate is ignored: no, [yes]
+        --warn-insecure=ENUM         HTTP/S: Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array, String)
         --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
         --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials (String)
