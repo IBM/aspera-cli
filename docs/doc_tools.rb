@@ -10,6 +10,7 @@ require 'aspera/environment'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
+require 'aspera/cli/main'
 require 'aspera/transfer/spec_doc'
 require 'aspera/log'
 require 'aspera/rest'
@@ -101,7 +102,7 @@ class DocHelper
   end
 
   # Get list of optional gems
-  # not very reliable
+  # not super strict, but it gets comments
   def gem_opt_list
     File.read(@paths[:gemfile]).lines.filter_map do |l|
       m = l.match(/^ *gem\('([^']+)', '([^']+)'\)(.*)/)
@@ -109,7 +110,7 @@ class DocHelper
       {
         name:    m[1],
         version: m[2],
-        comment: m[3].gsub('# ', '').strip
+        comment: m[3].gsub('# ', '').strip.sub('unless defined?(JRUBY_VERSION)', '(no jruby)')
       }
     end
   end
@@ -179,11 +180,17 @@ class DocHelper
   # generate help for the given command
   # @paths varname name of tool
   def generate_help(tool_name)
+    # if tool_name.eql?(:ascli)
+    #  tool = Aspera::Cli::Main.new({})
+    #  tool.init_agents_options_plugins
+    #  tool.show_usage(exit: false)
+    #  return
+    # end
     raise "missing #{tool_name}" unless @paths.key?(tool_name)
     exec_path = @paths[tool_name]
     # Add library path for Ruby CLI execution
     lib_path = File.expand_path('../lib', File.dirname(exec_path))
-    output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1)
+    output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1).gsub(/^Ignoring.+Try: gem pristine.*\n/, '')
     raise "Error executing: ruby -I #{lib_path} #{exec_path} -h" unless $CHILD_STATUS.success?
     return output
   end

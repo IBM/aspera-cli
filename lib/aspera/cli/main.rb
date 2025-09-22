@@ -49,6 +49,21 @@ module Aspera
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
+        # early debug for parser
+        # Note: does not accept shortcuts
+        def early_debug_setup(argv)
+          Log.instance.program_name = Info::CMD_NAME
+          argv.each do |arg|
+            case arg
+            when '--' then break
+            when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
+            when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
+            end
+          rescue => e
+            $stderr.puts("Error: #{e}")
+          end
+        end
+
         def result_special(how); {type: :special, data: how}; end
 
         # Expect some list, but nothing to display
@@ -136,7 +151,6 @@ module Aspera
       # minimum initialization, no exception raised
       def initialize(argv)
         @argv = argv
-        early_debug_setup
         Log.dump(:argv, @argv, level: :trace2)
         @option_help = false
         @option_show_config = false
@@ -152,11 +166,9 @@ module Aspera
         execute_command = true
         # catch exceptions
         begin
-          init_agents_and_options
-          # find plugins, shall be after parse! ?
-          PluginFactory.instance.add_plugins_from_lookup_folders
+          init_agents_options_plugins
           # help requested without command ? (plugins must be known here)
-          exit_with_usage(true) if @option_help && @env.options.command_or_arg_empty?
+          show_usage if @option_help && @env.options.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           @env.config.periodic_check_newer_gem_version
           command_sym =
@@ -170,7 +182,7 @@ module Aspera
           # main plugin is not dynamically instantiated
           case command_sym
           when COMMAND_HELP
-            exit_with_usage(true)
+            show_usage
           when COMMAND_CONFIG
             command_plugin = @env.config
           else
@@ -180,7 +192,7 @@ module Aspera
             @env.options.parse_options!
           end
           # help requested for current plugin
-          exit_with_usage(false) if @option_help
+          show_usage(all: false) if @option_help
           if @option_show_config
             @env.formatter.display_results(type: :single_object, data: @env.options.known_options(only_defined: true).stringify_keys)
             execute_command = false
@@ -248,6 +260,32 @@ module Aspera
           Process.exit(1)
         end
         return nil
+      end
+
+      def init_agents_options_plugins
+        init_agents_and_options
+        # find plugins, shall be after parse! ?
+        PluginFactory.instance.add_plugins_from_lookup_folders
+      end
+
+      def show_usage(all: true, exit: true)
+        # display main plugin options (+config)
+        @env.formatter.display_message(:error, @env.options.parser)
+        if all
+          @env.only_manual
+          # list plugins that have a "require" field, i.e. all but main plugin
+          PluginFactory.instance.plugin_list.each do |plugin_name_sym|
+            # config was already included in the global options
+            next if plugin_name_sym.eql?(COMMAND_CONFIG)
+            # override main option parser with a brand new, to avoid having global options
+            @env.options = Manager.new(Info::CMD_NAME)
+            @env.options.parser.banner = '' # remove default banner
+            get_plugin_instance_with_options(plugin_name_sym)
+            # display generated help for plugin options
+            @env.formatter.display_message(:error, @env.options.parser.help)
+          end
+        end
+        Process.exit(0) if exit
       end
 
       private
@@ -359,42 +397,6 @@ module Aspera
           Log.log.warn('only first level completion so far')
         end
         Process.exit(0)
-      end
-
-      def exit_with_usage(include_all_plugins)
-        Log.log.debug{"exit_with_usage(#{include_all_plugins})".bg_red}
-        # display main plugin options (+config)
-        @env.formatter.display_message(:error, @env.options.parser)
-        if include_all_plugins
-          @env.only_manual
-          # list plugins that have a "require" field, i.e. all but main plugin
-          PluginFactory.instance.plugin_list.each do |plugin_name_sym|
-            # config was already included in the global options
-            next if plugin_name_sym.eql?(COMMAND_CONFIG)
-            # override main option parser with a brand new, to avoid having global options
-            @env.options = Manager.new(Info::CMD_NAME)
-            @env.options.parser.banner = '' # remove default banner
-            get_plugin_instance_with_options(plugin_name_sym)
-            # display generated help for plugin options
-            @env.formatter.display_message(:error, @env.options.parser.help)
-          end
-        end
-        Process.exit(0)
-      end
-
-      # early debug for parser
-      # Note: does not accept shortcuts
-      def early_debug_setup
-        Log.instance.program_name = Info::CMD_NAME
-        @argv.each do |arg|
-          case arg
-          when '--' then break
-          when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
-          when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
-          end
-        rescue => e
-          $stderr.puts("Error: #{e}")
-        end
       end
     end
   end

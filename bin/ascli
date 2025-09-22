@@ -12,5 +12,6 @@ $VERBOSE = old_verbose
 require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/cli/main'
+Aspera::Cli::Main.early_debug_setup(ARGV)
 Aspera::Environment.instance.fix_home
 Aspera::Cli::Main.new(ARGV).process_command_line
