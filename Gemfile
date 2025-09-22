@@ -7,14 +7,15 @@ gemspec
 
 # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
-  gem('grpc', '~> 1.71') # for Aspera Transfer Daemon
+  gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
   gem('mimemagic', '~> 0.4') # for preview
-  gem('rmagick', '~> 6.1') # for terminal view
+  gem('rmagick', '~> 6.1') unless defined?(JRUBY_VERSION) # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
-  gem('sqlite3', '~> 2.7')
+  gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
 end
 
+# Used only for development
 group :development do
   gem 'grpc-tools', '~> 1.67'
   gem 'rake', '~> 13.0'
