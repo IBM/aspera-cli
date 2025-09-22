@@ -17,7 +17,7 @@ endif
 define test_suite
 $(1): $(2)
 skip_$(1):
-	@mkdir -p $(F)
+	@make $(TMP_EXISTS)
 	touch $(2)
 clean_$(1):
 	rm -f $(2)
