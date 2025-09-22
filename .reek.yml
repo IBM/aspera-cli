@@ -1,11 +1,15 @@
 ---
 detectors:
+  ManualDispatch:
+    enabled: false
   DuplicateMethodCall:
     enabled: false
     exclude:
       - Log.log
   TooManyStatements:
-    max_statements: 48
+    max_statements: 80
+  Attribute:
+    enabled: false
   FeatureEnvy:
     enabled: false
   BooleanParameter:
@@ -19,6 +23,7 @@ detectors:
       - _
       - k
       - v
+      - h
       - i
       - m
       - e

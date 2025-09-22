@@ -45,8 +45,8 @@ module Aspera
           return hash_array
         end
 
-        def assert_no_value(v, what)
-          raise "no value allowed for extended value type: #{what}" unless v.empty?
+        def assert_no_value(value, what)
+          raise "no value allowed for extended value type: #{what}" unless value.empty?
         end
       end
 
@@ -56,25 +56,25 @@ module Aspera
         # base handlers
         # other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
         @handlers = {
-          val:    lambda{ |v| v},
-          base64: lambda{ |v| Base64.decode64(v)},
-          csvt:   lambda{ |v| ExtendedValue.decode_csvt(v)},
-          env:    lambda{ |v| ENV.fetch(v, nil)},
-          file:   lambda{ |v| File.read(File.expand_path(v))},
-          uri:    lambda{ |v| UriReader.read(v)},
-          json:   lambda{ |v| JSON_parse(v)},
-          lines:  lambda{ |v| v.split("\n")},
-          list:   lambda{ |v| v[1..-1].split(v[0])},
-          none:   lambda{ |v| ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
-          path:   lambda{ |v| File.expand_path(v)},
-          re:     lambda{ |v| Regexp.new(v, Regexp::MULTILINE)},
-          ruby:   lambda{ |v| Environment.secure_eval(v, __FILE__, __LINE__)},
-          secret: lambda{ |v| prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
-          stdin:  lambda{ |v| ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
-          stdbin: lambda{ |v| ExtendedValue.assert_no_value(v, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
-          yaml:   lambda{ |v| YAML.load(v)},
-          zlib:   lambda{ |v| Zlib::Inflate.inflate(v)},
-          extend: lambda{ |v| ExtendedValue.instance.evaluate_all(v)}
+          val:    lambda{ |i| i},
+          base64: lambda{ |i| Base64.decode64(i)},
+          csvt:   lambda{ |i| ExtendedValue.decode_csvt(i)},
+          env:    lambda{ |i| ENV.fetch(i, nil)},
+          file:   lambda{ |i| File.read(File.expand_path(i))},
+          uri:    lambda{ |i| UriReader.read(i)},
+          json:   lambda{ |i| JSON_parse(i)},
+          lines:  lambda{ |i| i.split("\n")},
+          list:   lambda{ |i| i[1..-1].split(i[0])},
+          none:   lambda{ |i| ExtendedValue.assert_no_value(i, :none); nil}, # rubocop:disable Style/Semicolon
+          path:   lambda{ |i| File.expand_path(i)},
+          re:     lambda{ |i| Regexp.new(i, Regexp::MULTILINE)},
+          ruby:   lambda{ |i| Environment.secure_eval(i, __FILE__, __LINE__)},
+          secret: lambda{ |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
+          stdin:  lambda{ |i| ExtendedValue.assert_no_value(i, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
+          stdbin: lambda{ |i| ExtendedValue.assert_no_value(i, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
+          yaml:   lambda{ |i| YAML.load(i)},
+          zlib:   lambda{ |i| Zlib::Inflate.inflate(i)},
+          extend: lambda{ |i| ExtendedValue.instance.evaluate_all(i)}
         }
         @default_decoder = nil
       end
@@ -85,14 +85,14 @@ module Aspera
       end
 
       # JSON Parser, with more information on error location
-      def JSON_parse(v)
-        JSON.parse(v)
+      def JSON_parse(value) # :reek:UncommunicativeMethodName
+        JSON.parse(value)
       rescue JSON::ParserError => e
         m = /at line (\d+) column (\d+)/.match(e.message)
         raise if m.nil?
         line = m[1].to_i - 1
         column = m[2].to_i - 1
-        lines = v.lines
+        lines = value.lines
         raise if line >= lines.size
         error_line = lines[line].chomp
         context_col_beg = [column - 10, 0].max

@@ -34,6 +34,8 @@ module Aspera
         Aspera.assert(respond_to?(:create_token), 'create_token method must be defined', type: InternalError)
         # this is the OAuth API
         @api = Rest.new(**rest_params)
+        @scope = nil
+        @token_cache_id = nil
         @path_token = path_token
         @token_field = token_field
         @client_id = client_id
@@ -54,7 +56,7 @@ module Aspera
         @token_cache_id = Factory.cache_id(@api.base_url, self.class, @base_cache_ids, @scope)
       end
 
-      attr_reader :scope
+      attr_reader :scope, :api, :path_token
 
       # helper method to create token as per RFC
       def create_token_call(creation_params)

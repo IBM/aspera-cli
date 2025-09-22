@@ -18,6 +18,8 @@ module Aspera
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE
         def initialize(**_)
+          @ats_api_pub = nil
+          @ats_api_pub_v1_cache = nil
           super
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
           options.declare(:instance, 'ATS instance in ibm cloud')

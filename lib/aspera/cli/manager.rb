@@ -317,7 +317,7 @@ module Aspera
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
-          sensitive:  SecretHider.secret?(option_symbol, '')
+          sensitive:  SecretHider.instance.secret?(option_symbol, '')
         }
         if !types.nil?
           types = [types] unless types.is_a?(Array)

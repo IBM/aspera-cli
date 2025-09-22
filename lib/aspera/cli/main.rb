@@ -372,7 +372,7 @@ module Aspera
         @env.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @env.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
         @env.options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
-        @env.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
+        @env.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
         @env.options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         @env.options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
         # parse declared options

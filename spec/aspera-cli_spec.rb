@@ -18,8 +18,8 @@ require 'uri'
 require 'openssl'
 
 class LocalExecutor
-  def execute(cmd, input: line)
-    %Q(echo "#{line}"|#{cmd})
+  def execute(cmd, input:)
+    %Q(echo "#{input}"|#{cmd})
   end
 end
 

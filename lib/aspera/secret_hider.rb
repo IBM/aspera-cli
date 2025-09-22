@@ -2,10 +2,13 @@
 
 # cspell:ignore FILEPASS
 require 'logger'
+require 'singleton'
 
 module Aspera
   # remove secret from logs and output
   class SecretHider
+    include Singleton
+
     # configurable:
     ADDITIONAL_KEYS_TO_HIDE = []
     # display string for hidden secrets
@@ -34,56 +37,59 @@ module Aspera
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
     private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :KEY_FALSE_POSITIVES, :REGEX_LOG_REPLACES
-    @log_secrets = false
-    class << self
-      attr_accessor :log_secrets
+    attr_accessor :log_secrets
 
-      # @return new log formatter that hides secrets
-      def log_formatter(original_formatter)
-        original_formatter ||= Logger::Formatter.new
-        # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
-        return lambda do |severity, date_time, program_name, msg|
-          if msg.is_a?(String) && !@log_secrets
-            REGEX_LOG_REPLACES.each do |reg_ex|
-              msg = msg.gsub(reg_ex){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
-            end
-          end
-          original_formatter.call(severity, date_time, program_name, msg)
-        end
-      end
-
-      def hide_secrets_in_string(value)
-        return value.gsub(REGEX_LOG_REPLACES.first){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
-      end
-
-      # @return true if the key denotes a secret
-      def secret?(keyword, value)
-        keyword = keyword.to_s if keyword.is_a?(Symbol)
-        # only Strings can be secrets, not booleans, or hash, arrays
-        return false unless keyword.is_a?(String) && value.is_a?(String)
-        # those are not secrets
-        return false if KEY_FALSE_POSITIVES.any?{ |f| f.match?(keyword)}
-        return true if ADDITIONAL_KEYS_TO_HIDE.include?(keyword)
-        # check if keyword (name) contains an element that designate it as a secret
-        ALL_SECRETS.any?{ |kw| keyword.include?(kw)}
-      end
-
-      # Hides recursively secrets in Hash or Array of Hash
-      def deep_remove_secret(obj)
-        case obj
-        when Array
-          obj.each{ |i| deep_remove_secret(i)}
-        when Hash
-          obj.each do |k, v|
-            if secret?(k, v)
-              obj[k] = HIDDEN_PASSWORD
-            elsif obj[k].is_a?(Hash)
-              deep_remove_secret(obj[k])
-            end
+    # @return new log formatter that hides secrets
+    def log_formatter(original_formatter)
+      original_formatter ||= Logger::Formatter.new
+      # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
+      return lambda do |severity, date_time, program_name, msg|
+        if msg.is_a?(String) && !@log_secrets
+          REGEX_LOG_REPLACES.each do |reg_ex|
+            msg = msg.gsub(reg_ex){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
           end
         end
-        return obj
+        original_formatter.call(severity, date_time, program_name, msg)
       end
+    end
+
+    def hide_secrets_in_string(value)
+      return value.gsub(REGEX_LOG_REPLACES.first){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
+    end
+
+    # @return true if the key denotes a secret
+    def secret?(keyword, value)
+      keyword = keyword.to_s if keyword.is_a?(Symbol)
+      # only Strings can be secrets, not booleans, or hash, arrays
+      return false unless keyword.is_a?(String) && value.is_a?(String)
+      # those are not secrets
+      return false if KEY_FALSE_POSITIVES.any?{ |f| f.match?(keyword)}
+      return true if ADDITIONAL_KEYS_TO_HIDE.include?(keyword)
+      # check if keyword (name) contains an element that designate it as a secret
+      ALL_SECRETS.any?{ |kw| keyword.include?(kw)}
+    end
+
+    # Hides recursively secrets in Hash or Array of Hash
+    def deep_remove_secret(obj)
+      case obj
+      when Array
+        obj.each{ |i| deep_remove_secret(i)}
+      when Hash
+        obj.each do |k, v|
+          if secret?(k, v)
+            obj[k] = HIDDEN_PASSWORD
+          elsif obj[k].is_a?(Hash)
+            deep_remove_secret(obj[k])
+          end
+        end
+      end
+      return obj
+    end
+
+    private
+
+    def initialize
+      @log_secrets = false
     end
   end
 end

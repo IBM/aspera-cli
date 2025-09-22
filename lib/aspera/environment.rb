@@ -321,7 +321,7 @@ module Aspera
         filename = filename.tr(@file_illegal_characters[1..-1], safe_char)
       end
       # ensure only one safe_char is used at a time
-      return filename.gsub(/#{Regexp.escape(safe_char)}+/, safe_char)
+      return filename.gsub(/#{Regexp.escape(safe_char)}+/, safe_char).chomp(safe_char)
     end
   end
 end

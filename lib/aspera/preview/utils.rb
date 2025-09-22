@@ -88,13 +88,13 @@ module Aspera
           end
         end
 
-        def video_blend_frames(temp_folder, index1, index2)
-          img1 = get_tmp_num_filepath(temp_folder, index1)
-          img2 = get_tmp_num_filepath(temp_folder, index2)
-          count = index2 - index1 - 1
+        def video_blend_frames(temp_folder, index_begin, index_end)
+          img1 = get_tmp_num_filepath(temp_folder, index_begin)
+          img2 = get_tmp_num_filepath(temp_folder, index_end)
+          count = index_end - index_begin - 1
           1.upto(count) do |i|
             percent = i * 100 / (count + 1)
-            filename = get_tmp_num_filepath(temp_folder, index1 + i)
+            filename = get_tmp_num_filepath(temp_folder, index_begin + i)
             external_command(:magick, ['composite', '-blend', percent, img2, img1, filename])
           end
         end

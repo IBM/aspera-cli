@@ -177,6 +177,7 @@ module Aspera
       def initialize(app_info: nil, add_tspec: nil, **rest_args)
         # init Rest
         super(**rest_args)
+        @dynamic_key = nil
         @app_info = app_info
         # this is added to transfer spec, for instance to add tags (COS)
         @add_tspec = add_tspec

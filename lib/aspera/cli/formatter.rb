@@ -214,7 +214,7 @@ module Aspera
       # info: additional info, displayed if level==info
       # error: always displayed on stderr
       def display_message(message_level, message, hide_secrets: true)
-        message = SecretHider.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
+        message = SecretHider.instance.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
         case message_level
         when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
         when :info then $stdout.puts(message) if @options[:display].eql?(:info)
@@ -242,7 +242,7 @@ module Aspera
 
       # hides secrets in Hash or Array
       def hide_secrets(data)
-        SecretHider.deep_remove_secret(data) if hide_secrets?
+        SecretHider.instance.deep_remove_secret(data) if hide_secrets?
       end
 
       # this method displays the results, especially the table format
@@ -258,7 +258,7 @@ module Aspera
         Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
         display_item_count(data.length, total) unless total.nil?
         hide_secrets(data)
-        data = SecretHider.hide_secrets_in_string(data) if data.is_a?(String) && hide_secrets?
+        data = SecretHider.instance.hide_secrets_in_string(data) if data.is_a?(String) && hide_secrets?
         @options[:format] = :image if type.eql?(:image)
         case @options[:format]
         when :text

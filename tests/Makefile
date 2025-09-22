@@ -163,10 +163,6 @@ clean::
 	rm -fr $(DIR_TOP)coverage
 	rm -f $(DIR_TOP)simplecov.log
 
-ignore:
-	@if test -z "$(TEST)"; then echo "Usage:\nmake $@ TEST=_case_\n"; exit 1; fi
-	touch $(F)$(TEST)
-
 ###########
 # Tests
 # all test cases depend on this

@@ -47,6 +47,7 @@ class MarkdownFormatter
   end
 end
 
+# :reek:TooManyMethods
 class DocHelper
   # Place warning in generated file
   def doc_warn(_)
@@ -402,6 +403,9 @@ class DocHelper
   end
 
   def initialize(args)
+    @commands = nil
+    @gem_spec = nil
+    @undocumented_plugins = nil
     @paths = {}
     %i[outfile template ascli asession makefile gemspecfile gemfile].each do |name|
       @paths[name] = args.shift

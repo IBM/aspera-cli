@@ -37,7 +37,7 @@ module Aspera
             }
           end
 
-          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+          def wizard(object:)
             options = object.options
             return {
               preset_value: {

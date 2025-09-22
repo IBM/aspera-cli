@@ -109,7 +109,7 @@ module Aspera
 
     def formatter=(formatter)
       # Update formatter with password hiding
-      @logger.formatter = SecretHider.log_formatter(formatter)
+      @logger.formatter = SecretHider.instance.log_formatter(formatter)
     end
 
     def formatter

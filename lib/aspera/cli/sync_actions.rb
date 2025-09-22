@@ -15,7 +15,7 @@ module Aspera
         %w[Syncd Error Confl Pconf] +
         (23..24).map{ |i| "P(#{i})"}).freeze
       class << self
-        def declare_options(options)
+        def declare_options(_options)
         end
       end
 

@@ -38,7 +38,7 @@ module Aspera
             return nil
           end
 
-          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+          def wizard(object:)
             options = object.options
             return {
               preset_value: {
@@ -52,6 +52,7 @@ module Aspera
         end
 
         def initialize(**env)
+          @api_orch = nil
           super
           options.declare(:result, "Specify result value as: 'work_step:parameter'")
           options.declare(:synchronous, 'Wait for completion', values: :bool, default: :no)
