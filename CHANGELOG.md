@@ -6,11 +6,12 @@
     * `sync`: Added operations on sync database with command: `db`.
     * `http_options`: New field `ssl_options` allows setting SSL Context options.
     * `console`: Added support for extended filters in transfer queries.
-    * **global**: New option `invalid_characters` ensures generated file names are valid.
+    * `config`: New option `invalid_characters` ensures generated file names are valid.
     * `aoc`: Option `package_folder` allows specification of secondary field.
     * `sync`: Sync operations now use options `ts` and `to_folder`.
     * `format`: `csv` format now tables option `table_style`.
     * `logger`: New option `log_format` to control formatting of logs.
+    * `config`: Option `silent_insecure` renamed `warn_insecure`: `yes` shows warning (default)
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.

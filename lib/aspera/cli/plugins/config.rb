@@ -223,7 +223,7 @@ module Aspera
           # HTTP options
           options.declare(:insecure, 'HTTP/S: Do not validate any certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
           options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
-          options.declare(:silent_insecure, 'HTTP/S: Issue a warning if certificate is ignored', values: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
+          options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', values: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
           options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'HTTP/S: Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', types: String, handler: {o: self, m: :option_http_proxy})

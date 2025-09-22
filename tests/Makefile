@@ -768,7 +768,7 @@ $(F)aocfxgw: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_aocfxgw)
-	$(CLI_TEST) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --silent-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
+	$(CLI_TEST) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --warn-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -TERM $$(cat $(DIR_TMP)pid_aocfxgw)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
