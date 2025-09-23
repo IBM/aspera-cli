@@ -169,15 +169,15 @@ properties:
       - connect
   lock_min_rate_kbps:
     description: >-
-      If true, lock the minimum transfer rate to the value set for min_rate_kbps.
+      If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.
 
-      If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+      If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
     type: boolean
     x-agents:
       - transferd
       - connect
   lock_rate_policy:
-    description: If true, lock the rate policy to the default value.
+    description: If `true`, lock the rate policy to the default value.
     type: boolean
     x-agents:
       - transferd
@@ -559,7 +559,7 @@ properties:
     description: >-
       All assets other than files, directories and symbolic links are considered special.
       A transfer will fail if the user attempts to transfer special assets.
-      If true, ascp skips special assets and proceeds with the transfer of all other assets.
+      If `true`, `ascp` skips special assets and proceeds with the transfer of all other assets.
     type: boolean
     x-agents:
       - transferd
