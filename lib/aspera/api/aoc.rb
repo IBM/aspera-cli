@@ -482,6 +482,15 @@ module Aspera
 
         validate_metadata(package_data) if validate_meta
 
+        # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
+        # TODO: if multi session was used we should probably tell
+        # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
+        # `single_source` is required to allow web UI to ask for CSEAR password on download, see API doc
+        package_data.merge!({
+          'single_source'      => true,
+          'sent'               => true,
+          'transfers_expected' => 1})
+
         #  create a new package container
         created_package = create('packages', package_data)
 
@@ -489,11 +498,6 @@ module Aspera
           node_id: created_package['node_id'],
           workspace_id: created_package['workspace_id'],
           package_info: created_package)
-
-        # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
-        # TODO: if multi session was used we should probably tell
-        # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
-        update("packages/#{created_package['id']}", {'sent' => true, 'transfers_expected' => 1})
 
         return {
           spec: package_node_api.transfer_spec_gen4(created_package['contents_file_id'], Transfer::Spec::DIRECTION_SEND),
