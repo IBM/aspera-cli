@@ -88,9 +88,9 @@ The transfer is not directly implemented in `ascli`, rather `ascli` uses one of 
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
-> A **[Transfer Agent](#transfer-clients-agents)** can be local or remote...
-For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
-i.e. using option `--transfer=node`
+> It can be local or remote.
+> For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
+> i.e. using option `--transfer=node`
 
 ## Quick Start
 
@@ -509,10 +509,11 @@ Choose the latest version from:
 <https://www.jruby.org/download>
 
 > [!NOTE]
-> The startup time is slightly longer using `jruby` than the native Ruby, refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
-This can be reduced by using the `--dev` option.
+> The startup time is slightly longer using `jruby` than the native Ruby.
+> Refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
+> This can be reduced by using the `--dev` option.
 > The transfer speed is not impacted (executed by `ascp` binary).
->
+
 > [!NOTE]
 > JRuby can be [installed](https://www.jruby.org/getting-started) using `rvm`.
 
@@ -937,7 +938,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 > [!NOTE]
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
->
+
 > [!NOTE]
 > Do not use too many volumes, as the legacy `aufs` limits the number. (anyway, prefer to use `overlay2`)
 
@@ -1547,10 +1548,10 @@ For example sub-commands appear after entity selection (identifier), e.g. `ascli
 
 > [!NOTE]
 > It could also have been designed as an option.
-But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
-The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
-The disadvantage is that it is not possible to define a default value in a configuration file or environment variable using an option value.
-Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
+> But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
+> The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
+> The disadvantage is that it is not possible to define a default value in a configuration file or environment variable using an option value.
+> Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
 
 If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
 
@@ -1999,7 +2000,7 @@ The following decoders are supported:
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
-For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` `i`.
+> For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` `i`.
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -2088,9 +2089,9 @@ EOF
 
 > [!NOTE]
 > `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
-It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
-`ascli` sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists.
-So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
+> It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
+> `ascli` sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists.
+> So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
 The configuration folder can be displayed using :
 
@@ -2269,7 +2270,7 @@ If set, it loads the options independently of the plugin used.
 
 > [!NOTE]
 > If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
->
+
 > [!NOTE]
 > If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
@@ -3247,7 +3248,7 @@ The following agents are supported and selected with option `transfer`:
 
 > [!NOTE]
 > All transfer operations are seen from the point of view of the agent.
-For example, an agent executing an **upload**, or **package send** operation will effectively push files to the related server from the system where the agent runs.
+> For example, an agent executing an **upload**, or **package send** operation will effectively push files to the related server from the system where the agent runs.
 
 All above agents (including `direct`) receive transfer parameters as a [**transfer-spec**](#transfer-specification).
 Parameters in transfer-spec can be modified with option `ts`.
@@ -3337,10 +3338,10 @@ In addition to standard methods described in section [File List](#list-of-files-
 
 > [!NOTE]
 > File lists is shown here, there are also similar options for file pair lists.
->
+
 > [!NOTE]
 > Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
->
+
 > [!NOTE]
 > Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
@@ -3806,12 +3807,12 @@ Example:
 
 - An [Extended Value](#extended-value-syntax) with type **Array of String**
 
-  > [!NOTE]
-> extended values can be tested with the command `config echo`
+> [!NOTE]
+> Extended values can be tested with the command `config echo`
 
   Examples:
 
-  - Using extended value
+- Using extended value
 
     Create the file list:
 
@@ -3826,19 +3827,19 @@ Example:
     --sources=@lines:@file:myfilelist.txt
     ```
 
-  - Using JSON array
+- Using JSON array
 
     ```bash
     --sources=@json:'["file1","file2"]'
     ```
 
-  - Using STDIN, one path per line
+- Using STDIN, one path per line
 
     ```bash
     --sources=@lines:@stdin:
     ```
 
-  - Using Ruby code (one path per line in file)
+- Using Ruby code (one path per line in file)
 
     ```ruby
     --sources=@ruby:'File.read("myfilelist.txt").split("\n")'
@@ -4203,7 +4204,7 @@ where:
 
 > [!NOTE]
 > Characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`).
-If not, the shell may give error: `no matches found` or equivalent.
+> If not, the shell may give error: `no matches found` or equivalent.
 
 For all sizes, a suffix can be added (case-insensitive) to the size: k, m, g, t, p, e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte).
 The maximum allowed value is 8\*2<sup>60</sup>.
@@ -4763,7 +4764,7 @@ Let's start by a registration with web based authentication (auth=web):
 
 > [!NOTE]
 > For web based authentication, `ascli` listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there.
-For `ascli`, HTTP is required, and 12345 is the default port.
+> For `ascli`, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
 
@@ -4794,7 +4795,7 @@ ascli config preset set default aoc my_aoc_org
 
 > [!NOTE]
 > Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`.
-Leave those default values.
+> Leave those default values.
 
 #### Authentication with private key
 
@@ -4903,9 +4904,9 @@ ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.asp
 
 > [!NOTE]
 > The private key argument represents the actual PEM string.
-In order to read the content from a file, use the `@file:` prefix.
-But if the `@file:` argument is used as is, it will read the file and set in the configuration file.
-So, to keep the `@file:` tag in the configuration file, the `@val:` prefix is added.
+> In order to read the content from a file, use the `@file:` prefix.
+> But if the `@file:` argument is used as is, it will read the file and set in the configuration file.
+> So, to keep the `@file:` tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
 
@@ -5488,9 +5489,9 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   Once executed, the access key `id` and `secret`, randomly generated by the Node API, is displayed.
   
-  > [!NOTE]
+> [!NOTE]
 > Once returned by the API, the secret will not be available anymore, so store this preciously.
-ATS secrets can only be reset by asking IBM support.
+> ATS secrets can only be reset by asking IBM support.
 
 - Create the AoC node entity
 
@@ -5627,7 +5628,7 @@ Examples:
 
 > [!NOTE]
 > When `<field1>+<field2>?` is used, if two packages are downloaded and have the same fields, they will be downloaded in the same folder.
-If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
+> If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
 
 ##### Example: Receive all packages from a given shared inbox
 
@@ -5700,7 +5701,7 @@ The current workspace is added unless specified in the query.
 
 > [!NOTE]
 > By default, `exclude_dropbox_packages` is set to `true` for user packages, and to false for shared inbox packages.
-This can be overridden in the query.
+> This can be overridden in the query.
 
 Using shared inbox name:
 
@@ -6419,10 +6420,10 @@ The authentication is `username` and `password` or `access_key` and `secret` thr
 
 > [!NOTE]
 > Capabilities of this plugin are used in other plugins which access to the Node API, such as `aoc`, `ats`, `shares`.
->
+
 > [!NOTE]
 > This plugin can be used with any type of **Aspera Node**, either on premise or ATS, provided that you have Node API credentials.
-Those credentials can be either Node API user or Access Key (e.g. on ATS).
+> Those credentials can be either Node API user or Access Key (e.g. on ATS).
 
 ### File Operations
 
@@ -6491,7 +6492,7 @@ The following are examples of Ruby lambda code to be provided in the following t
 
 > [!NOTE]
 > Single quotes are used here above to protect the whole **Ruby** expression from the shell.
-Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
+> Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
 
 - Find files more recent than 100 days
 
@@ -6671,7 +6672,7 @@ ascli aoc files thumbnail /preview_samples/Aspera.mpg
 
 > [!NOTE]
 > To specify the file by its file ID, use the selector syntax: `%id:_file_id_here_`
->
+
 > [!NOTE]
 > To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL` or use option: ``
 
@@ -6792,7 +6793,8 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
   my_folder_id=$(ascli node access_key do self show / --fields=id)
   ```
 
-  > [!NOTE]
+> [!NOTE]
+>
 > Here we simply select `/`, but any folder can be selected in the access key storage.
 
 - Let's designate a user by its ID:
@@ -6801,9 +6803,9 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
   my_user_id=777
   ```
 
-  > [!NOTE]
+> [!NOTE]
 > This is an arbitrary identifier, typically managed by the web application.
-  > Not related to Linux user IDs or anything else.
+> Not related to Linux user IDs or anything else.
 
 - Grant this user access to the selected folder:
 
@@ -6819,8 +6821,8 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
-Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
-Code for token generation is provided in [`lib/aspera/api/node.rb`](lib/aspera/api/node.rb)
+> Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
+> Code for token generation is provided in [`lib/aspera/api/node.rb`](lib/aspera/api/node.rb)
 
 #### Bearer token: User side
 
@@ -7479,7 +7481,7 @@ ascli faspex5 admin clean_deleted
 
 > [!NOTE]
 > The expiration period taken by default is the one from `admin configuration show`.
-To use a different period than the default, specify it on command line with: `@json:'{"days_before_deleting_package_records":15}'`
+> To use a different period than the default, specify it on command line with: `@json:'{"days_before_deleting_package_records":15}'`
 
 To delete all packages, one can use the following command:
 
@@ -7560,7 +7562,7 @@ Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
 > [!NOTE]
 > This is not a feature for production.
-It's provided for testing only.
+> It's provided for testing only.
 
 For legacy Faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
 
@@ -7599,7 +7601,7 @@ curl -H "Authorization: $(ascli ascli bearer)" https://faspex5.example.com/asper
 > Faspex v4 is end of support since Sept. 30th, 2024.
 So this plugin for Faspex v4 is deprecated.
 If you still need to use Faspex4, then use `ascli` version 4.19.0 or earlier.
->
+
 > [!NOTE]
 > For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
@@ -7993,7 +7995,7 @@ The field `resource_instance_id` is for option `crn`
 The field `apikey` is for option `apikey`
 
 > [!NOTE]
-> endpoints for regions can be found by querying the `endpoints` URL from file or from the IBM Cloud Console.
+> Endpoints for regions can be found by querying the `endpoints` URL from file or from the IBM Cloud Console.
 
 The required options for this method are:
 
@@ -8103,7 +8105,7 @@ asnodeadmin --reload
 
 > [!NOTE]
 > The configuration `preview_dir` is **relative** to the storage root, no need leading or trailing `/`.
-In general just set the value to `previews`
+> In general just set the value to `previews`
 
 If another folder is configured on the HSTS, then specify it to `ascli` using the option `previews_folder`.
 
@@ -8444,7 +8446,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 > [!NOTE]
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
-The Aspera Transfer Daemon 1.3+ includes this.
+>The Aspera Transfer Daemon 1.3+ includes this.
 
 ### Starting a sync session
 
@@ -8534,10 +8536,10 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 > [!NOTE]
 > `ascli` takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
->
+
 > [!NOTE]
 > Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
->
+
 > [!NOTE]
 > Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info`.
 
@@ -8547,7 +8549,7 @@ Virtually any transfer on a **repository** on a regular basis might emulate a ho
 
 > [!NOTE]
 > File detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
->
+
 > [!NOTE]
 > Options may be saved in an [Option Preset](#option-preset) and used with `-P`.
 
@@ -8584,7 +8586,7 @@ ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --d
 
 > [!NOTE]
 > Option `delete_before_transfer` will delete files locally, if they are not present on remote side.
->
+
 > [!NOTE]
 > Options `progress` and `display` limit output for headless operation (e.g. cron job)
 
