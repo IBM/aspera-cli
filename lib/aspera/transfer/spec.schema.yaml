@@ -33,7 +33,7 @@ properties:
       - aes-192-gcm
       - aes-256-gcm
     default: none
-    x-cli-option: "-c"
+    x-cli-option: -c
     x-cli-convert: remove_hyphen
   content_protection:
     description: Enable client-side encryption at rest (CSEAR).
@@ -41,7 +41,7 @@ properties:
     enum:
       - encrypt
       - decrypt
-    x-cli-option: "--file-crypt"
+    x-cli-option: --file-crypt
   content_protection_password:
     description: Specifies CSEAR password.
       (content protection)
@@ -54,7 +54,7 @@ properties:
   create_dir:
     description: Specifies whether to create new directories.
     type: boolean
-    x-cli-option: "-d"
+    x-cli-option: -d
     x-cli-switch: true
   delete_before_transfer:
     description: >-
@@ -65,14 +65,15 @@ properties:
       Objects on the destination that have the same name but different type or size as objects
       on the source are not deleted.
     x-cli-switch: true
-  delete_source: # duplicate of remove_after_transfer ?
+  delete_source:
     description: Remove transfered source files after transfer success.
+      TODO equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`
     type: boolean
     x-agents:
       - node
       - direct
       - transferd
-    x-cli-option: "--remove-after-transfer"
+    x-cli-option: --remove-after-transfer
     x-cli-switch: true
   destination_root:
     description: Destination root directory.
@@ -90,7 +91,7 @@ properties:
     enum:
       - send
       - receive
-    x-cli-option: "--mode"
+    x-cli-option: --mode
     x-cli-convert:
       receive: recv
       send: send
@@ -119,7 +120,7 @@ properties:
     description: Specifies fasp (UDP) port.
     type: integer
     default: 33001
-    x-cli-option: "-O"
+    x-cli-option: -O
   fasp_proxy:
     description: Proxy for communications between the remote server and the (local) client.
     type: object
@@ -143,7 +144,7 @@ properties:
     type:
       - boolean
       - string
-    x-cli-option: "-y"
+    x-cli-option: -y
     x-cli-convert:
       force: F
       true: 1
@@ -151,11 +152,11 @@ properties:
   http_fallback_port:
     description: Specifies HTTP port when no cipher is used.
     type: integer
-    x-cli-option: "-t"
+    x-cli-option: -t
   https_fallback_port:
     description: Specifies HTTPS port when cipher is used.
     type: integer
-    x-cli-option: "-t"
+    x-cli-option: -t
   icos:
     description: Configuration parameters for IBM Cloud Object Storage (ICOS).
     type: object
@@ -188,9 +189,9 @@ properties:
       - connect
   lock_target_rate_kbps:
     description: >-
-      If true, lock the target transfer rate to the default value set for target_rate_kbps.
+      If `true`, lock the target transfer rate to the default value set for target_rate_kbps.
 
-      If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+      If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
     type: boolean
     x-agents:
       - transferd
@@ -241,7 +242,7 @@ properties:
 
       Large files are split between sessions only when transferring with `resume_policy`=`none`.
     type: integer
-    x-cli-option: "-C"
+    x-cli-option: -C
     x-cli-special: true
   multi_session_threshold:
     description: >-
@@ -340,10 +341,9 @@ properties:
       - transferd
   preserve_creation_time:
     description: >-
-      (Windows only) Preserve source-file creation timestamps at the destination.
+      Preserve source-file creation timestamps at the destination.
 
       Only Windows systems retain information about creation time.
-
       If the destination is not a Windows computer, this option is ignored.
     x-cli-switch: true
   preserve_extended_attrs:
@@ -355,7 +355,7 @@ properties:
     default: none
     x-agents:
       - transferd
-    x-cli-option: "--preserve-xattrs"
+    x-cli-option: --preserve-xattrs
   preserve_file_owner_gid:
     description: Preserve the group ID for a file owner.
     type: boolean
@@ -387,7 +387,7 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "--remote-preserve-acls"
+    x-cli-option: --remote-preserve-acls
   preserve_remote_extended_attrs:
     description: Preserve remote extended attributes.
     enum:
@@ -398,7 +398,7 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "--remote-preserve-xattrs"
+    x-cli-option: --remote-preserve-xattrs
   preserve_source_access_time:
     description: Preserve the time logged for when the source file was accessed.
     type: boolean
@@ -413,7 +413,7 @@ properties:
       - transferd
       - node
       - direct
-    x-cli-option: "-p"
+    x-cli-option: -p
   rate_policy:
     description: >-
       The transfer rate policy to use when sharing bandwidth.
@@ -434,7 +434,7 @@ properties:
       - fair
       - high
       - fixed
-    x-cli-option: "--policy"
+    x-cli-option: --policy
   remote_access_key:
     description: The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.
     type: string
@@ -442,13 +442,13 @@ properties:
       - transferd
   remote_host:
     description: IP or fully qualified domain name (FQDN) of the remote server.
-    x-cli-option: "--host"
+    x-cli-option: --host
   remote_password:
-    description: SSH session password
+    description: SSH session password.
     x-cli-envvar: ASPERA_SCP_PASS
   remote_user:
     description: Remote user. Default value is `xfer` on node or connect.
-    x-cli-option: "--user"
+    x-cli-option: --user
   remove_after_transfer:
     description: Remove SRC files after transfer success.
     type: boolean
@@ -477,7 +477,9 @@ properties:
       - direct
     x-cli-switch: true
   remove_skipped:
-    description: Must also have `remove_after_transfer` set to `true`. Defaults to `false`. If `true`, skipped files will be removed as well.
+    description: Must also have `remove_after_transfer` set to `true`.
+      Defaults to `false`.
+      If `true`, skipped files will be removed as well.
     type: boolean
     x-agents:
       - direct
@@ -517,14 +519,14 @@ properties:
       - attrs
       - sparse_csum
       - full_csum
-    x-cli-option: "-k"
+    x-cli-option: -k
     x-cli-convert:
       none: 0
       attrs: 1
       sparse_csum: 2
       full_csum: 3
   retry_duration:
-    description: Specifies how long to wait before retrying transfer. (e.g. `5min`)
+    description: Specifies how long to wait before retrying transfer (e.g. `5min`).
     $comment: "TODO: check this."
     type:
       - integer
@@ -551,7 +553,7 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "--skip-dir-traversal-dupes"
+    x-cli-option: --skip-dir-traversal-dupes
     x-cli-switch: true
   skip_special_files:
     description: >-
@@ -568,7 +570,7 @@ properties:
       Path to be prepended to each source path.
 
       This is either a conventional path or it can be a URI but only if there is no root defined.
-    x-cli-option: "--source-prefix64"
+    x-cli-option: --source-prefix64
     x-cli-convert: base64
   source_root_id:
     description: >-
@@ -589,7 +591,7 @@ properties:
       - direct
       - node
       - transferd
-    x-cli-option: "--src-base64"
+    x-cli-option: --src-base64
     x-cli-convert: base64
   src_base64:
     description: The folder name below which the directory structure is preserved (base64 encoded).
@@ -597,12 +599,12 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "--src-base64"
+    x-cli-option: --src-base64
   ssh_port:
     description: Specifies SSH (TCP) port.
     default: "direct:22, other:33001"
     type: integer
-    x-cli-option: "-P"
+    x-cli-option: -P
   ssh_private_key:
     description: >-
       Private key used for SSH authentication.
@@ -627,13 +629,13 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "-i"
+    x-cli-option: -i
   ssh_args:
     description: Array of arguments to pass to SSH. Use with caution.
     type: array
     x-agents:
       - transferd
-    x-cli-option: "--ssh-args"
+    x-cli-option: --ssh-args
   symlink_policy:
     description: Handle source side symbolic links.
     enum:
@@ -642,14 +644,14 @@ properties:
       - copy+force
       - skip
     default: follow
-    x-cli-option: "--symbolic-links"
+    x-cli-option: --symbolic-links
   tags:
     description: >-
       Metadata for transfer as JSON.
       Key `aspera` is reserved.
       Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
     type: object
-    x-cli-option: "--tags64"
+    x-cli-option: --tags64
     x-cli-convert: json64
   tags64:
     description: >-
@@ -671,7 +673,7 @@ properties:
   target_rate_kbps:
     description: Specifies desired speed for the transfer.
     type: integer
-    x-cli-option: "-l"
+    x-cli-option: -l
   title:
     description: Title of the transfer.
     type: string
@@ -697,7 +699,7 @@ properties:
     x-agents:
       - transferd
       - direct
-    x-cli-option: "-SSH"
+    x-cli-option: -SSH
   keepalive:
     description: The session is running in persistent session mode.
     x-agents:
@@ -705,17 +707,17 @@ properties:
       - direct
     x-cli-switch: true
   dgram_size:
-    description: UDP datagram size in bytes
+    description: UDP datagram size in bytes.
     type: integer
-    x-cli-option: "-Z"
+    x-cli-option: -Z
   min_rate_kbps:
     description: Set the minimum transfer rate in kilobits per second.
     type: integer
     default: 0
-    x-cli-option: "-m"
+    x-cli-option: -m
   sshfp:
     description: Check it against server SSH host key fingerprint.
-    x-cli-option: "--check-sshfp"
+    x-cli-option: --check-sshfp
   target_rate_percentage:
     description: "TODO: remove ?"
     x-agents: []
