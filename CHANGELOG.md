@@ -18,6 +18,7 @@
     * `desktop`: Fixed discrepancies in transfer spec resume policies.
     * `format`: Value list now properly display column header.
     * `select`: Filter is now done on values before enhanced display in table mode.
+    * `aoc`: #221 Fixed package encryption at rest status.
   * Breaking Changes:
     * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
     * `ssh_options` : Now additive option, like `ts`.

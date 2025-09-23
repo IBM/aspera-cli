@@ -954,6 +954,7 @@ module Aspera
                 # enforce workspace id from link (should be already ok, but in case user wanted to override)
                 package_data['workspace_id'] = aoc_api.public_link['data']['workspace_id']
               end
+              package_data['encryption_at_rest'] = true if transfer.option_transfer_spec['content_protection'].eql?('encrypt')
               # transfer may raise an error
               created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
               Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
