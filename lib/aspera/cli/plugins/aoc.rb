@@ -923,7 +923,7 @@ module Aspera
               end
             end
           when :packages
-            package_command = options.get_next_command(%i[shared_inboxes send receive list show delete].concat(Node::NODE4_READ_ACTIONS), aliases: {recv: :receive})
+            package_command = options.get_next_command(%i[shared_inboxes send receive list show delete modify].concat(Node::NODE4_READ_ACTIONS), aliases: {recv: :receive})
             case package_command
             when :shared_inboxes
               case options.get_next_command(%i[list show short_link])
@@ -1048,6 +1048,11 @@ module Aspera
                 Aspera.assert_values(id.class, [String, Integer]){'identifier'}
                 aoc_api.delete("packages/#{id}")
               end
+            when :modify
+              id = instance_identifier
+              package_data = value_create_modify(command: package_command)
+              aoc_api.update("packages/#{id}", package_data)
+              return Main.result_status('modified')
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
