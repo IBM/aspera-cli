@@ -45,15 +45,12 @@ properties:
     type: integer
     default: 0
   cooloff_seconds:
-    description:
-      Delay the start of the transfer to confirm that the content is
-      not changing. Value must be between 0 and 60
+    description: Delay the start of the transfer to confirm that the content is not changing.
+      Value must be between 0 and 60
     type: integer
     default: 3
   create_dir:
-    description:
-      Create the source directory, target directory, or both, if they
-      do not exist
+    description: Create the source directory, target directory, or both, if they do not exist
     type: boolean
     default: false
   db_cache_size:
@@ -69,9 +66,7 @@ properties:
     type: boolean
     default: false
   dedup:
-    description:
-      Take the specified action when async detects duplicate files
-      on the source
+    description: Take the specified action when async detects duplicate files on the source
     enum:
       - copy
       - inode
@@ -136,14 +131,12 @@ properties:
     type: boolean
     default: false
   ignore_mode:
-    description:
-      Source files that have had their mode changed after the initial
-      transfer will not update the destination file mode
+    description: Source files that have had their mode changed after the initial
+      transfer will not update the destination file mode.
     type: boolean
     default: false
   ignore_remote_host_sync_name:
-    description:
-      Do not check that the remote host being used for the current
+    description: Do not check that the remote host being used for the current
       transfer matches the host used when the local database was created
     type: boolean
     default: false
@@ -164,9 +157,8 @@ properties:
     type: boolean
     default: false
   local_db_dir:
-    description:
-      Use the specified database directory on the local host. Default
-      is .private-asp at the root level of the synchronized directory
+    description: Use the specified database directory on the local host.
+      Default is `.private-asp` at the root level of the synchronized directory.
     type: string
     default: ""
   local_checksum_threads:
@@ -176,40 +168,31 @@ properties:
     type: integer
     default: 4
   local_db_store_dir:
-    description:
-      Store/Restore the database to/from the specified directory on
-      the local host. The value can be an absolute path, an URI or - (use the
-      local sync dir)
+    description: Store/Restore the database to/from the specified directory on the local host.
+      The value can be an absolute path, an URI or - (use the local sync dir)
     type: string
     default: ""
   local_force_stat:
-    description:
-      Forces the local async to retrieve file information even when
-      no changes are detected by the scanner or monitor
+    description: Forces the local async to retrieve file information even when
+      no changes are detected by the scanner or monitor.
     type: boolean
     default: false
   local_fs_threads:
-    description:
-      Maximum number of threads to do file system operations on the
-      local host. Value must be between 1 and 99
+    description: Maximum number of threads to do file system operations on the local host.
+      Value must be between 1 and 99.
     type: integer
     default: 1
   local_keep_dir:
-    description:
-      Move deleted files into the specified directory on the local
-      host
+    description: Move deleted files into the specified directory on the local host
     type: string
     default: ""
   local_mount_signature:
-    description:
-      Verify that the file system is mounted by the existence of this
-      file on the local host
+    description: Verify that the file system is mounted by the existence of this file on the local host.
     type: string
     default: ""
   local_move_cache_timeout_seconds:
-    description:
-      Delay in seconds before aborting moving a file from local cache
-      to final destination. -1 for disabled
+    description: Delay in seconds before aborting moving a file from local cache to final destination.
+      -1 for disabled.
     type: integer
     default: -1
   local_preserve_acls:
@@ -233,9 +216,8 @@ properties:
     type: integer
     default: -1
   local_scan_threads:
-    description:
-      Number of directory scanning threads on the local host. Value
-      must be between 1 and 99
+    description: Number of directory scanning threads on the local host.
+      Value must be between 1 and 99
     type: integer
     default: 1
   local_stat_cache_size:
@@ -283,18 +265,17 @@ properties:
       - continuous
     default: one_time
   monitor_buffer_size:
-    description:
-      Bytes to allocate for the change monitor buffer. Applies to any
-      windows machine on either side. -1 to use the computed value
+    description: Bytes to allocate for the change monitor buffer.
+      Applies to any Windows machine on either side.
+      -1 to use the computed value.
     type: integer
     default: -1
   name:
     description: Name of the synchronization pair
     type: string
   no_log:
-    description:
-      Suppress log messages for ITEM. The only currently supported
-      ITEM is 'stats', which suppresses both STATS and PROG log messages
+    description: Suppress log messages for ITEM.
+      The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.
     type: string
     default: ""
   no_preserve_root_attrs:
@@ -306,22 +287,20 @@ properties:
     type: boolean
     default: false
   notifications_sharing_retry_max:
-    description:
-      Retry processing filesystem notifications up to the specified
-      maximum number after a sharing violation
+    description: Retry processing filesystem notifications up to the specified
+      maximum number after a sharing violation.
     type: integer
     default: 3
   overwrite:
-    description:
-      "Overwrite files according to the specified policy. Default is
-      determined by the direction: conflict for bidi, otherwise always"
+    description: >-
+      Overwrite files according to the specified policy.
+      Default is determined by the direction: conflict for bidi, otherwise always.
     enum:
       - always
       - older
       - conflict
   pending_max:
-    description:
-      Allow the maximum number of files that are pending transfer to
+    description: Allow the maximum number of files that are pending transfer to
       be no more than the specified number
     type: integer
     default: 2000
@@ -342,9 +321,7 @@ properties:
     type: boolean
     default: false
   preserve_object_lock_legal_hold:
-    description:
-      Preserve object lock legal hold status from the source to the
-      destination
+    description: Preserve object lock legal hold status from the source to the destination
     type: boolean
     default: false
   preserve_object_lock_retention:
@@ -388,16 +365,15 @@ properties:
         description: Synchronize the specified directory on the remote host
         type: string
       port:
-        description:
-          Use the specified TCP port for SSH. Used when connect_mode
-          is 'ssh'
+        description: Use the specified TCP port for SSH.
+          Used when connect_mode is `ssh`
         type: integer
         default: 22
         x-ts-name: ssh_port
       ws_port:
         description:
-          Use the specified port for Websocket. Used when connect_mode
-          is 'ws'
+          Use the specified port for Websocket.
+          Used when connect_mode is `ws`.
         type: integer
         default: 9093
         x-ts-name: wss_port
@@ -426,8 +402,7 @@ properties:
             type: string
             default: ""
           port:
-            description:
-              Use the specified port, default is 9091 for dnat, 9092
+            description: Use the specified port, default is 9091 for dnat, 9092
               for dnats
             type: integer
           protocol:
@@ -447,9 +422,8 @@ properties:
         default: ""
         x-ts-name: token
       token_node_user:
-        description:
-          Node API user identity associated with the token. Required
-          for node user bearer tokens
+        description: Node API user identity associated with the token.
+          Required for node user bearer tokens
         type: string
         default: ""
       user:
@@ -457,82 +431,75 @@ properties:
         type: string
         x-ts-name: remote_user
   remote_checksum_threads:
-    description:
-      Maximum number of threads to do checksum on the remote host.
+    description: Maximum number of threads to do checksum on the remote host.
       Value must be between 1 and 99
     type: integer
     default: 4
   remote_db_dir:
     description:
-      Use the specified database directory on the remote host. Default
-      is .private-asp at the root level of the synchronized directory
+      Use the specified database directory on the remote host.
+      Default is `.private-asp` at the root level of the synchronized directory.
     type: string
     default: ""
   remote_db_store_dir:
-    description:
-      Store/Restore the database to/from the specified directory on
-      the remote host. The value can be an absolute path, an URI or - (use the
-      remote sync dir)
+    description: Store/Restore the database to/from the specified directory on the remote host.
+      The value can be an absolute path, an URI or - (use the remote sync dir).
     type: string
     default: ""
   remote_force_stat:
-    description:
-      Forces the remote async to retrieve file information even when
-      no changes are detected by the scanner or monitor
+    description: Forces the remote async to retrieve file information even when
+      no changes are detected by the scanner or monitor.
     type: boolean
     default: false
   remote_fs_threads:
-    description:
-      Maximum number of threads to do file system operations on the
-      remote host. Value must be between 1 and 99
+    description: Maximum number of threads to do file system operations on the remote host.
+      Value must be between 1 and 99.
     type: integer
     default: 1
   remote_keep_dir:
-    description:
-      Move deleted files into the specified directory on the remote
-      host
+    description: Move deleted files into the specified directory on the remote host.
     type: string
     default: ""
   remote_mount_signature:
-    description:
-      Verify that the file system is mounted by the existence of this
-      file on the remote host
+    description: Verify that the file system is mounted by the existence of this file on the remote host.
     type: string
     default: ""
   remote_move_cache_timeout_seconds:
     description:
       Delay in seconds before aborting moving a file from remote cache
-      to final destination. -1 for disabled
+      to final destination.
+      -1 for disabled.
     type: integer
     default: -1
   remote_preserve_acls:
     description:
-      Preserve access control lists on the remote host. If not specified,
-      the default behavior is to use the same storage mode as specified by preserve_acls
+      Preserve access control lists on the remote host.
+      If not specified, the default behavior is to use the same storage mode as specified by `preserve_acls`.
     enum:
       - native
       - metafile
       - none
   remote_preserve_xattrs:
     description:
-      Preserve extended attributes on the remote host. If not specified,
-      the default behavior is to use the same storage mode as specified by preserve_xattrs
+      Preserve extended attributes on the remote host.
+      If not specified, the default behavior is to use the same storage mode as specified by `preserve_xattrs`.
     enum:
       - native
       - metafile
       - none
   remote_scan_interval_milliseconds:
-    description: Enable periodic scans on the remote host. -1 for disabled
+    description: Enable periodic scans on the remote host.
+      -1 for disabled.
     type: integer
     default: -1
   remote_scan_threads:
-    description:
-      Number of directory scanning threads on the remote host. Value
-      must be between 1 and 99
+    description: Number of directory scanning threads on the remote host.
+      Value must be between 1 and 99.
     type: integer
     default: 1
   remote_stat_cache_size:
-    description: Set stat cache size on the remote host. 0 for disabled
+    description: Set stat cache size on the remote host.
+      0 for disabled.
     type: integer
     default: 0
   remove_after_transfer:
@@ -546,33 +513,27 @@ properties:
     type: boolean
     default: false
   resume:
-    description:
-      Partial transfers may exist if communication disruptions caused
-      the underlying ascp processes to terminate early. Note that transfer resumption
-      can only happen if the 'reset' option is disabled. If an async session starts
-      with 'reset' enabled and resume enabled, transfers interrupted during that
-      session will be resumeable, but only if async is then restarted with 'reset'
-      disabled
+    description: Partial transfers may exist if communication disruptions caused
+      the underlying ascp processes to terminate early.
+      Note that transfer resumption can only happen if the `reset` option is disabled.
+      If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that
+      session will be resumeable, but only if async is then restarted with 'reset' disabled.
     type: object
     properties:
       enabled:
         description:
-          Enable the possibility of resuming individual file transfers
-          between async sessions
+          Enable the possibility of resuming individual file transfers between async sessions.
         type: boolean
         default: false
       min_size:
-        description:
-          This field specifies the minimum size of files that will
-          be allowed to resume
+        description: This field specifies the minimum size of files that will be allowed to resume.
         type: integer
         default: "1048576"
       max_age:
-        description:
-          Sets the age limit in days for temporary files that will
+        description: Sets the age limit in days for temporary files that will
           be preserved on cleanup (usually at async's start and stop) for potential
           transfer resume. Temp files older than the given value will be removed
-          regardless of whether they might be resumeable
+          regardless of whether they might be resumeable.
         type: integer
         default: "5"
   resume_scan:
@@ -580,21 +541,20 @@ properties:
     type: boolean
     default: false
   scan_dir_rename:
-    description:
-      Enable the detection of renamed directories and files compared
+    description: Enable the detection of renamed directories and files compared
       to the previous scan, based on matching inodes
     type: boolean
     default: false
   scan_file_rename:
-    description:
-      Enable the detection of renamed files compared to the previous
+    description: Enable the detection of renamed files compared to the previous
       scan, based on matching inodes
     type: boolean
     default: false
   scan_intensity:
     description:
-      Scan at the set intensity. vlow minimizes system activity. vhigh
-      maximizes system activity by continuously scanning files without rest
+      Scan at the set intensity.
+      `vlow` minimizes system activity.
+      `vhigh` maximizes system activity by continuously scanning files without rest.
     enum:
       - vlow
       - low
@@ -603,15 +563,13 @@ properties:
       - vhigh
     default: medium
   sharing_retry_max:
-    description:
-      Retry synchronizations up to the specified maximum number after
-      a sharing violation
+    description: Retry synchronizations up to the specified maximum number after a sharing violation.
     type: integer
     default: 3
   symbolic_links:
     description:
-      Handle symbolic links with the specified method. Default is 'skip'
-      on windows, 'copy' otherwise
+      Handle symbolic links with the specified method.
+      Default is `skip` on windows, `copy` otherwise.
     enum:
       - copy
       - skip
@@ -632,7 +590,8 @@ properties:
         - threads
       properties:
         size:
-          description: Upper limit. -1 for infinity
+          description: Upper limit.
+            -1 for infinity.
           type: integer
           default: -1
         threads:
@@ -663,17 +622,15 @@ properties:
         default: none
       datagram_size:
         description:
-          Specify the datagram size (MTU) for FASP. By default it uses
-          the detected path MTU
+          Specify the datagram size (MTU) for FASP.
+          By default it uses the detected path MTU.
         type: integer
       min_rate:
-        description:
-          Attempt to transfer no slower than the specified rate (in
-          bps)
+        description: Attempt to transfer no slower than the specified rate (in bps).
         type: integer
         default: 0
       rate_policy:
-        description: Defines how ascp will manage the bandwidth
+        description: Defines how `ascp` will manage the bandwidth.
         enum:
           - fair
           - fixed
@@ -681,19 +638,19 @@ properties:
           - low
         default: fair
       raw_options:
-        description: Pass arbitrary arguments to ascp
+        description: Pass arbitrary arguments to `ascp`.
         type: array
         items:
           type: string
       read_block_size:
         description:
-          Use the specified block size (in bytes) for reading. Default
-          is determined by aspera.conf
+          Use the specified block size (in bytes) for reading.
+          Default is determined by `aspera.conf`.
         type: integer
       rexmsg_size:
         description:
           Use the specified size (in bytes) for a retransmission request.
-          Default is determined by aspera.conf
+          Default is determined by `aspera.conf`.
         type: integer
       target_rate:
         description: Transfer no faster than the specified rate (in bps)
@@ -703,33 +660,31 @@ properties:
         x-ts-convert: kbps_to_bps
       write_block_size:
         description:
-          Use the specified block size (in bytes) for writing. Default
-          is determined by aspera.conf
+          Use the specified block size (in bytes) for writing.
+          Default is determined by `aspera.conf`.
         type: integer
       udp_port:
-        description: Use the specified UDP port for FASP data transfer
+        description: Use the specified UDP port for FASP data transfer.
         type: integer
         default: 33001
   watchd:
-    description:
-      When connection is configured, asperawatchd is used to detect
+    description: When connection is configured, `asperawatchd` is used to detect
       the changes on the source directory
     type: object
     properties:
       datastore:
-        description: Specify the type of datastore, none for disabled
+        description: Specify the type of datastore, `none` for disabled.
         enum:
           - none
           - redis
           - scalekv
         default: none
       domain:
-        description: Specify the domain. Default is the current username
+        description: Specify the domain.
+          Default is the current username.
         type: string
       host:
-        description:
-          Use the specified host name or address to connect to the
-          datastore
+        description: Use the specified host name or address to connect to the datastore
         type: string
         default: ""
       port:

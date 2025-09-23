@@ -97,6 +97,7 @@ module Aspera
             # get transfer spec if possible, and feed back to new structure
             if block_given?
               transfer_spec = yield(direction_sym(sync_params), sync_params['local']['path'], remote['path'])
+              Log.dump(:auth_ts, transfer_spec)
               transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
               tspec_to_sync_info(transfer_spec, sync_params, CONF_SCHEMA)
               update_remote_dir(remote, 'path', transfer_spec)
@@ -123,6 +124,7 @@ module Aspera
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
+                Log.dump(:auth_ts, transfer_spec)
                 transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
                 tspec_to_sync_info(transfer_spec, session, SESSION_SCHEMA)
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
@@ -259,10 +261,10 @@ module Aspera
         # private
 
         # Transfer specification to synchronization information
-        # tag 'x-ts-name' in schema is used to map transfer spec parameters to async sync_info
+        # tag `x-ts-name` in schema is used to map transfer spec parameters to async `sync_info`
         # @param transfer_spec [Hash] transfer specification
-        # @param sync_info [Hash] synchronization information
-        # @param schema [Hash] schema definition
+        # @param sync_info     [Hash] synchronization information
+        # @param schema        [Hash] schema definition
         def tspec_to_sync_info(transfer_spec, sync_info, schema)
           Log.dump(:tspec_to_sync_info, transfer_spec)
           schema['properties'].each do |name, property|

@@ -584,18 +584,15 @@ module Aspera
           when :sync
             return execute_sync_action do |sync_direction, _local_path, remote_path|
               # Gen4 API
-              # direction is push pull, bidi
               Aspera.assert_values(sync_direction, %i[push pull bidi])
               ts_direction = case sync_direction
               when :push, :bidi then Transfer::Spec::DIRECTION_SEND
               when :pull then Transfer::Spec::DIRECTION_RECEIVE
               else Aspera.error_unreachable_line
               end
-              # remote is specified by option to_folder
+              # remote is specified by option: `to_folder`
               apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
-              transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], ts_direction)
-              Log.dump(:ts, transfer_spec)
-              transfer_spec
+              apifid[:api].transfer_spec_gen4(apifid[:file_id], ts_direction)
             end
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
@@ -1128,16 +1125,18 @@ module Aspera
         end
 
         # Executes the provided API call in loop
-        # @param api [Rest]  the API to call
-        # @param iteration [Array] a single element array with the iteration token or nil
-        # @param max [Integer] maximum number of items to return, or nil for no limit
-        # @param query [Hash] query parameters to use for the API call
-        # @param call_args [Hash] additional arguments to pass to the API call
+        # @param api       [Rest]    the API to call
+        # @param iteration [Array]   a single element array with the iteration token or nil
+        # @param max       [Integer] maximum number of items to return, or nil for no limit
+        # @param query     [Hash]    query parameters to use for the API call
+        # @param call_args [Hash]    additional arguments to pass to the API call
         # @return [Array] list of items returned by the API call
         def call_with_iteration(api:, iteration: nil, max: nil, query: nil, **call_args)
-          query_token = query.clone || {}
+          Aspera.assert_type(iteration, Array, NilClass){'iteration'}
+          Aspera.assert_type(query, Hash, NilClass){'query'}
+          query_token = query&.dup || {}
           item_list = []
-          query_token[:iteration_token] = iteration.first if iteration.is_a?(Array)
+          query_token[:iteration_token] = iteration[0] unless iteration.nil?
           loop do
             result = api.call(**call_args, query: query_token)
             Aspera.assert_type(result[:data], Array){"Expected data to be an Array, got: #{result[:data].class}"}

@@ -8,7 +8,7 @@ else
   require 'sqlite3'
 end
 
-# A wrappen class that provides a common class for Ruby and JRuby
+# A wrapper class that provides common API for Ruby and JRuby
 class SqLite3Wrapper
   def initialize(db_path)
     @db_path = db_path
