@@ -220,7 +220,7 @@ module Aspera
         case message_level
         when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
         when :info then $stdout.puts(message) if @options[:display].eql?(:info)
-        when :error then $stderr.puts(message)
+        when :error then $stderr.puts(message) # rubocop:disable Style/StderrPuts
         else Aspera.error_unexpected_value(message_level)
         end
       end

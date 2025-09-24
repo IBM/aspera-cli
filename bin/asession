@@ -21,6 +21,7 @@ SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ss
 SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
 def assert_usage(assertion, error_message)
   return if assertion
+  # rubocop:disable Style/StderrPuts
   $stderr.puts('ERROR: '.red.blink + error_message) if error_message
   $stderr.puts('USAGE')
   $stderr.puts('    asession')
@@ -47,6 +48,7 @@ def assert_usage(assertion, error_message)
   $stderr.puts('EXAMPLES')
   $stderr.puts(%Q(    asession @json:'{"#{PARAM_SPEC}":{#{SAMPLE_DEMO},#{SAMPLE_DEMO2},"paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'))
   $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession @json:@stdin))
+  # rubocop:enable Style/StderrPuts
   Process.exit(0)
 end
 parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'

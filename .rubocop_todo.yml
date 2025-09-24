@@ -49,7 +49,7 @@ Style/RedundantReturn:
 Style/StringConcatenation:
   Enabled: false
 Style/StderrPuts:
-  Enabled: false
+  Enabled: true
 Metrics/BlockLength:
   Enabled: false
 Layout/SpaceAroundEqualsInParameterDefault:

@@ -60,7 +60,8 @@ module Aspera
             when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
             end
           rescue => e
-            $stderr.puts("Error: #{e}")
+            $stderr.puts("Error: #{e}") # rubocop:disable Style/StderrPuts
+            Process.exit(1)
           end
         end
 

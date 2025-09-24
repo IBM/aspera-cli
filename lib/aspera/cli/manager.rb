@@ -491,7 +491,7 @@ module Aspera
           if sym_list.any?{ |a| a.eql?(input)}
             return input
           else
-            $stderr.puts("No such #{prompt}: #{input}, select one of: #{sym_list.join(', ')}")
+            $stderr.puts("No such #{prompt}: #{input}, select one of: #{sym_list.join(', ')}") # rubocop:disable Style/StderrPuts
           end
         end
       end
