@@ -70,7 +70,8 @@ module Aspera
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
             '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
-            input_file]).to_f
+            input_file
+          ]).to_f
         end
 
         def ffmpeg_fmt(temp_folder)

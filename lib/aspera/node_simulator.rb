@@ -277,7 +277,8 @@ module Aspera
               token_encryption_key
               byok_enabled
               bandwidth_flow_network_rc_module
-              file_checksum_type],
+              file_checksum_type
+            ],
             server:   %w[
               activity_event_logging
               activity_file_event_logging
@@ -290,7 +291,8 @@ module Aspera
               discovery
               auto_delete
               allow
-              deny]
+              deny
+            ]
           },
           capabilities:                          [
             {name:  'sync', value: true},
@@ -303,7 +305,8 @@ module Aspera
             {name:  'aej_version', value: '1.0'},
             {name:  'page', value: true},
             {name:  'file_id_version', value: '2.0'},
-            {name:  'auto_delete', value: false}],
+            {name:  'auto_delete', value: false}
+          ],
           settings:                              [
             {name:  'content_protection_required', value: false},
             {name:  'content_protection_strong_pass_required', value: false},

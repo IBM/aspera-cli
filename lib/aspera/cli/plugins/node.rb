@@ -733,7 +733,8 @@ module Aspera
                   'sync_files',
                   options.get_option(:url, mandatory: true),
                   options.get_option(:username, mandatory: true),
-                  async_id]))
+                  async_id
+                ]))
               unless iteration_data.first.nil?
                 data.select!{ |l| l['fnid'].to_i > iteration_data.first}
               end

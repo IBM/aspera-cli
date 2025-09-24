@@ -116,7 +116,8 @@ module Aspera
             '-filter:v', "scale='trunc(iw/2)*2:trunc(ih/2)*2'",
             '-codec:v', 'libx264',
             '-r', 30,
-            '-pix_fmt', 'yuv420p'])
+            '-pix_fmt', 'yuv420p'
+          ])
       end
 
       # generate n clips starting at offset
@@ -135,7 +136,8 @@ module Aspera
                 '-ss', offset_seconds * 0.1,
                 '-t', @options.clips_length,
                 '-filter:v', "scale=#{@options.video_scale}",
-                '-codec:a', 'libmp3lame'])
+                '-codec:a', 'libmp3lame'
+              ])
             f.puts("file '#{tmp_file_name}'")
           end
         end
@@ -174,7 +176,8 @@ module Aspera
             '-codec:a', 'libmp3lame',
             '-ac', '2',
             '-b:a', '128k',
-            '-movflags', 'faststart'])
+            '-movflags', 'faststart'
+          ])
       end
 
       def convert_video_to_png_using_fixed
@@ -209,7 +212,8 @@ module Aspera
         Utils.external_command(:unoconv, [
           '-f', 'pdf',
           '-o', tmp_pdf_file,
-          @source_file_path])
+          @source_file_path
+        ])
         convert_pdf_to_png(tmp_pdf_file)
       end
 
@@ -221,7 +225,8 @@ module Aspera
           '-background', 'white',
           '-flatten',
           "#{source_file_path}[0]",
-          @destination_file_path])
+          @destination_file_path
+        ])
       end
 
       def convert_image_to_png
@@ -233,7 +238,8 @@ module Aspera
           '+dither',
           '-posterize', 40,
           "#{@source_file_path}[0]",
-          @destination_file_path])
+          @destination_file_path
+        ])
         Utils.external_command(:optipng, [@destination_file_path])
       end
 
@@ -253,7 +259,8 @@ module Aspera
           '-bordercolor', 'white',
           '-border', 8,
           '+repage',
-          @destination_file_path])
+          @destination_file_path
+        ])
       end
     end
   end

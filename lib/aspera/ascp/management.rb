@@ -184,7 +184,8 @@ module Aspera
         ChunkSize
         PostTransferValidation
         OverwritePolicyCap
-        ExtraCreatePolicy]
+        ExtraCreatePolicy
+      ]
       # Management port start message
       MGT_HEADER = 'FASPMGR 2'
       # empty line is separator to end event information

@@ -5,7 +5,7 @@ inherit_gem:
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  SuggestExtensions: false
+  SuggestExtensions: true
   TargetRubyVersion: 3.1
   NewCops: enable
   Exclude:
@@ -55,7 +55,6 @@ Style/ReturnNil:
   EnforcedStyle: return
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: no_comma
-#  Enabled: false
 Style/Encoding:
   Enabled: true
 Lint/RedundantCopDisableDirective:

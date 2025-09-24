@@ -44,7 +44,8 @@ module Aspera
           application
           client_registration_token
           client_access_key
-          kms_profile].freeze
+          kms_profile
+        ].freeze
         # query to list fully received packages
         PACKAGE_RECEIVED_BASE_QUERY = {
           'archived'    => false,
@@ -854,8 +855,7 @@ module Aspera
             id: IdGenerator.from_list(
               ['aoc_recv',
                options.get_option(:url, mandatory: true),
-               aoc_api.workspace[:id]
-              ].concat(aoc_api.additional_persistence_ids)))
+               aoc_api.workspace[:id]].concat(aoc_api.additional_persistence_ids)))
         end
 
         def reject_packages_from_persistency(all_packages, skip_ids_persistency)
