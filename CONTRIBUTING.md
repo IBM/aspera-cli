@@ -118,8 +118,9 @@ A few macros/env vars control some aspects:
 
 Those macros can be set either in an env var, or on the `make` command line.
 
-> **Note:** Env vars `ASPERA_CLI_TEST_` are typically set in user's shell profile for development.
-Others are more for "one shot" use.
+> [!NOTE]
+> Env vars `ASPERA_CLI_TEST_*` are typically set in user's shell profile for development.
+> Others are more for "one shot" use.
 
 To use the CLI directly from the development environment, add this to your shell profile:
 

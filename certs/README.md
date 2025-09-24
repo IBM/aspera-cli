@@ -17,14 +17,16 @@ cd /path/to/vault
 gem cert --build maintainer@example.com
 ```
 
-> **Note:** The email must match the field `spec.email` in `aspera-cli.gemspec`
+> [!NOTE]
+> The email must match the field `spec.email` in `aspera-cli.gemspec`
 
 This creates two files in folder `/path/to/vault` (e.g. `$HOME/.ssh`):
 
 - `gem-private_key.pem` : This file shall be kept secret in a vault.
 - `gem-public_cert.pem` : This file is copied to a public place, here in folder `certs`
 
-> **Note:** Alternatively, use an existing key or generate one, and then `make new`
+> [!NOTE]
+> Alternatively, use an existing key or generate one, and then `make new`
 
 Subsequently, the private key path is specified using `SIGNING_KEY` as env var or `make` macro.
 

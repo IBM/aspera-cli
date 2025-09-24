@@ -16,8 +16,9 @@ This does the following:
 - Build the image for the local version number in the current repository or the remote one
 - creates tags for both the version and `latest`
 
-> **Note:** This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template.
-A template is used as it allows some level of customization to tell where to take the gem from.
+> [!NOTE]
+> This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template.
+> A template is used as it allows some level of customization to tell where to take the gem from.
 
 Then, to push to the image registry (both tags: version and `latest`):
 
@@ -34,10 +35,11 @@ make GEM_VERSION=4.11.0
 make push GEM_VERSION=4.11.0
 ```
 
-> **Note:** This does not use the locally generated gem file.
-Only the local build file and Makefile versions are used.
-The gem is installed from <rubygems.org>.
-This also sets the `latest` tag.
+> [!NOTE]
+> This does not use the locally generated gem file.
+> Only the local build file and Makefile versions are used.
+> The gem is installed from <rubygems.org>.
+> This also sets the `latest` tag.
 
 ## Development version image build
 
