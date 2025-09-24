@@ -24,7 +24,7 @@
       "x-cli-option": "--apply-local-docroot"
     },
     "authentication": {
-      "description": "value=token for SSH bypass keys, else password asked if not provided.",
+      "description": "Set to `token` for SSH bypass keys, else password asked if not provided.",
       "x-agents": [
         "connect"
       ],
@@ -50,7 +50,7 @@
       "type": "string"
     },
     "cipher_allowed": {
-      "description": "returned by node API. Valid literals include `aes-128` and `none`.",
+      "description": "Returned by node API. Valid literals include `aes-128` and `none`.",
       "x-agents": [
         "connect"
       ],
@@ -93,7 +93,7 @@
       "x-cli-option": "--delete-before-transfer"
     },
     "delete_source": {
-      "description": "Remove transfered source files after transfer success.",
+      "description": "Remove transfered source files after transfer success. TODO equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`",
       "type": "boolean",
       "x-agents": [
         "node",
@@ -117,7 +117,7 @@
       ]
     },
     "dgram_size": {
-      "description": "UDP datagram size in bytes",
+      "description": "UDP datagram size in bytes.",
       "type": "integer",
       "x-cli-option": "-Z"
     },
@@ -135,12 +135,12 @@
       "type": "string"
     },
     "exclude_newer_than": {
-      "description": "Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.\ne.g. \"-86400\" for newer than a day back.",
+      "description": "Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.\ne.g. `-86400` for newer than a day back.",
       "type": "string",
       "x-cli-option": "--exclude-newer-than"
     },
     "exclude_older_than": {
-      "description": "Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.\ne.g. \"-86400\" for older than a day back.",
+      "description": "Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.\ne.g. `-86400` for older than a day back.",
       "type": "string",
       "x-cli-option": "--exclude-older-than"
     },
@@ -238,7 +238,7 @@
       ]
     },
     "lock_min_rate_kbps": {
-      "description": "If true, lock the minimum transfer rate to the value set for min_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "description": "If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.\nIf `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -246,7 +246,7 @@
       ]
     },
     "lock_rate_policy": {
-      "description": "If true, lock the rate policy to the default value.",
+      "description": "If `true`, lock the rate policy to the default value.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -261,7 +261,7 @@
       ]
     },
     "lock_target_rate_kbps": {
-      "description": "If true, lock the target transfer rate to the default value set for target_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "description": "If `true`, lock the target transfer rate to the default value set for target_rate_kbps.\nIf `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -309,7 +309,7 @@
       "x-cli-option": "--multi-session-threshold"
     },
     "obfuscate_file_names": {
-      "description": "HTTP Gateway obfuscates file names when set to true.",
+      "description": "HTTP Gateway obfuscates file names when set to `true`.",
       "type": "boolean",
       "x-agents": [
         "httpgw"
@@ -369,7 +369,7 @@
       "x-cli-option": "--preserve-acls"
     },
     "preserve_creation_time": {
-      "description": "(Windows only) Preserve source-file creation timestamps at the destination.\nOnly Windows systems retain information about creation time.\nIf the destination is not a Windows computer, this option is ignored.",
+      "description": "Preserve source-file creation timestamps at the destination.\nOnly Windows systems retain information about creation time. If the destination is not a Windows computer, this option is ignored.",
       "x-cli-switch": true,
       "type": "boolean",
       "x-cli-option": "--preserve-creation-time"
@@ -485,7 +485,7 @@
       "type": "string"
     },
     "rate_policy_allowed": {
-      "description": "Specifies most aggressive rate policy that is allowed.\nReturned by node API.",
+      "description": "Specifies most aggressive rate policy that is allowed. Returned by node API.",
       "enum": [
         "low",
         "fair",
@@ -515,7 +515,7 @@
       "type": "string"
     },
     "remote_password": {
-      "description": "SSH session password",
+      "description": "SSH session password.",
       "x-cli-envvar": "ASPERA_SCP_PASS",
       "type": "string"
     },
@@ -592,7 +592,7 @@
       "type": "string"
     },
     "retry_duration": {
-      "description": "Specifies how long to wait before retrying transfer. (e.g. \"5min\")",
+      "description": "Specifies how long to wait before retrying transfer (e.g. `5min`).",
       "$comment": "TODO: check this.",
       "type": [
         "integer",
@@ -624,7 +624,7 @@
       "x-cli-switch": true
     },
     "skip_special_files": {
-      "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets.",
+      "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If `true`, `ascp` skips special assets and proceeds with the transfer of all other assets.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -673,7 +673,7 @@
       "x-agents": [
         "transferd"
       ],
-      "x-cli-option": "-i"
+      "x-cli-option": "--ssh-args"
     },
     "ssh_port": {
       "description": "Specifies SSH (TCP) port.",
@@ -768,7 +768,7 @@
       ]
     },
     "token": {
-      "description": "Authorization token: Bearer, Basic or ATM (Also arg -W)",
+      "description": "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)",
       "x-cli-envvar": "ASPERA_SCP_TOKEN",
       "type": "string"
     },
@@ -799,13 +799,13 @@
       "x-agents": []
     },
     "wss_enabled": {
-      "description": "Server has Web Socket service enabled",
+      "description": "Server has Web Socket service enabled.",
       "type": "boolean",
       "x-cli-special": true,
       "x-cli-option": "--wss-enabled"
     },
     "wss_port": {
-      "description": "TCP port used for websocket service feed",
+      "description": "TCP port used for websocket service feed.",
       "type": "integer",
       "x-cli-special": true,
       "x-cli-option": "--wss-port"
