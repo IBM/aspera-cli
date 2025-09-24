@@ -1728,6 +1728,8 @@ $(F)conf_hint: $(TMP_EXISTS)
 $(F)conf_logger: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config file --logger=syslog --log-level=debug
+	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log_format=@ruby:Aspera::Log::STANDARD_FORMATTER
+	$(CLI_TEST) config echo @ruby:'%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"' --log-level=trace2
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tconfig,$(F)conf_ascp_show $(F)conf_ascp_spec $(F)conf_ascp_schema $(F)conf_ascp_errors $(F)conf_ascp_2 $(F)conf_ascp_3 $(F)conf_ascp_4 $(F)conf_ascp_5 $(F)conf_ascp_6 $(F)conf_ascp_install $(F)conf_ascp_8 $(F)conf_pset_1 $(F)conf_pset_2 $(F)conf_pset_3 $(F)conf_pset_4 $(F)conf_pset_5 $(F)conf_pset_6 $(F)conf_open $(F)conf_list $(F)conf_over $(F)conf_vers_check $(F)conf_gem $(F)conf_help_1 $(F)conf_help_2 $(F)conf_coffee_1 $(F)conf_coffee_2 $(F)conf_plugins $(F)conf_wizard_org $(F)conf_wizard_gen $(F)conf_detect $(F)conf_genkey $(F)conf_cert $(F)conf_smtp $(F)conf_pac $(F)conf_check_gem $(F)conf_doc $(F)conf_echo $(F)conf_extended $(F)conf_hint $(F)conf_logger))
 #######################################################################################################################

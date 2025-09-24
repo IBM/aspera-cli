@@ -52,9 +52,24 @@ module Aspera
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
     STANDARD_FORMATTER = Logger::Formatter.new
-    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{s[0]} #{m}\n"}
+    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{Log.color_level(s)} #{m}\n"}
     # Class methods
     class << self
+      def color_level(level)
+        l = level.to_s[0]
+        case level
+        when :TRACE2 then '2'.dim
+        when :TRACE1 then '1'.blue
+        when :DEBUG then l.cyan
+        when :INFO  then l.green
+        when :WARN  then l.bg_brown.black
+        when :ERROR then l.bg_red.blink
+        when :FATAL then l.magenta
+        when :UNKNOWN then l.blink
+        else Aspera.error_unexpected_value(level){'log level'}
+        end
+      end
+
       # levels are :debug,:info,:warn,:error,fatal,:unknown
       def levels; Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}; end
 
