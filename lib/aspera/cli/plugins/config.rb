@@ -745,10 +745,8 @@ module Aspera
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
-            return Main.result_object_list(
-              Transfer::SpecDoc.man_table(Formatter),
-              fields: Transfer::SpecDoc::TABLE_COLUMNS.map(&:to_s)
-            )
+            fields, data = Transfer::SpecDoc.man_table(Formatter)
+            return Main.result_object_list(data, fields: fields.map(&:to_s))
           when :schema
             schema = Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
             agent = options.get_next_argument('transfer agent name', mandatory: false)

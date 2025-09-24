@@ -230,11 +230,10 @@ class DocHelper
   def spec_table
     agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
     agents.unshift(%w[ID Name])
-    props = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true).map do |param|
-      Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map{ |field_name| param[field_name]}
-    end
+    fields, data = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true, agent_columns: false)
+    props = data.map{ |param| fields.map{ |field_name| param[field_name]}}
     # Column titles
-    props.unshift(Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map(&:capitalize))
+    props.unshift(fields.map(&:capitalize))
     props.first[0] = 'Field'
     [markdown_table(agents), markdown_table(props)].join("\n\n")
   end
