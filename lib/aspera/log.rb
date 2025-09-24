@@ -56,16 +56,15 @@ module Aspera
     # Class methods
     class << self
       def color_level(level)
-        l = level.to_s[0]
         case level
-        when :TRACE2 then '2'.dim
-        when :TRACE1 then '1'.blue
-        when :DEBUG then l.cyan
-        when :INFO  then l.green
-        when :WARN  then l.bg_brown.black
-        when :ERROR then l.bg_red.blink
-        when :FATAL then l.magenta
-        when :UNKNOWN then l.blink
+        when :TRACE2 then 'TR2'.dim
+        when :TRACE1 then 'TR1'.blue
+        when :DEBUG then 'DBG'.cyan
+        when :INFO  then 'INF'.green
+        when :WARN  then 'WRN'.bg_brown.black
+        when :ERROR then 'ERR'.bg_red.blink
+        when :FATAL then 'FTL'.magenta
+        when :UNKNOWN then 'UKN'.blink
         else Aspera.error_unexpected_value(level){'log level'}
         end
       end
@@ -123,6 +122,10 @@ module Aspera
     end
 
     def formatter=(formatter)
+      if formatter.is_a?(String)
+        formatter = self.class.const_get("#{formatter.upcase}_FORMATTER") rescue nil
+        raise Error, "Unknown formatter #{formatter}" if formatter.nil?
+      end
       # Update formatter with password hiding
       @logger.formatter = SecretHider.instance.log_formatter(formatter)
     end

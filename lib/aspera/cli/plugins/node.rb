@@ -193,7 +193,7 @@ module Aspera
             result = success_msg
             if p.key?('error')
               Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
-              result = "ERROR: #{p['error']['user_message']}"
+              result = p['error']['user_message']
               errors.push([p['path'], p['error']['user_message']])
             end
             final_result[:data].push({type => p['path'], 'result' => result})

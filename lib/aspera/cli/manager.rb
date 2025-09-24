@@ -176,7 +176,7 @@ module Aspera
           end
         end
         @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
-        Log.log.debug{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
+        Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
         @parser.separator('')
         @parser.separator('OPTIONS: global')
         declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
@@ -251,7 +251,7 @@ module Aspera
           result = attributes[:value]
         else Aspera.error_unexpected_value(attributes[:read_write]){'attribute read/write'}
         end
-        Log.log.debug{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
+        Log.log.trace1{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
         result = default if result.nil?
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && mandatory && !@fail_on_missing_mandatory
@@ -284,7 +284,7 @@ module Aspera
         Log.log.warn("#{option_symbol}: Option is deprecated: #{attributes[:deprecation]}") if attributes[:deprecation]
         value = evaluate_extended_value(value, attributes[:types])
         value = Manager.enum_to_bool(value) if attributes[:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug{"(#{attributes[:read_write]}/#{where}) set #{option_symbol}=#{value}"}
+        Log.log.trace1{"(#{attributes[:read_write]}/#{where}) set #{option_symbol}=#{value}"}
         self.class.validate_type(:option, option_symbol, value, attributes[:types])
         case attributes[:read_write]
         when :accessor
@@ -326,7 +326,7 @@ module Aspera
           opt[:deprecation] = deprecation
           description = "#{description} (#{'deprecated'.blue}: #{deprecation})"
         end
-        Log.log.debug{"declare: #{option_symbol}: #{opt[:read_write]}".green}
+        Log.log.trace1{"declare: #{option_symbol}: #{opt[:read_write]}".green}
         if opt[:read_write].eql?(:accessor)
           Aspera.assert_type(handler, Hash)
           Aspera.assert(handler.keys.sort.eql?(%i[m o]))

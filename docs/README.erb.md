@@ -2762,6 +2762,9 @@ The gem is equipped with traces, mainly for debugging and learning APIs.
 
 To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
 
+> [!NOTE]
+> When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
+
 By default, passwords and secrets are redacted from logs.
 Set option `log_secrets` to `yes` to include secrets in logs.
 
@@ -2770,13 +2773,15 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 | `logger`      | `stdout`<%=br%>`stderr`<%=br%>`syslog` | Type of output.<%=br%>Default: `stderr` |
 | `log_level`   | `trace2`<%=br%>`trace1`<%=br%>`debug`<%=br%>`info`<%=br%>`warn`<%=br%>`error` | Minimum level displayed.<%=br%>Default: `warn` |
 | `log_secrets` | `yes`<%=br%>`no` | Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
-| `log_format`  | `Proc` | A lambda function that formats the log.<%=br%>Default: `->(s, _d, _p, m){"#{s[0]} #{m}\n"}`<%=br%>`Aspera::Log::DEFAULT_FORMATTER` : see above.<%=br%>`Aspera::Log::STANDARD_FORMATTER` : Standard Ruby formatter. |
-
-> [!NOTE]
-> When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
+| `log_format`  | `Proc`<%=br%>`String` | The name of a formatter or a lambda function that formats the log (see below).<%=br%>Default: `default`<%=br%>Alternative: `standard` |
 
 Option `log_format` is typically set using `@ruby:`.
 It is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
+The default formatter is:
+
+```ruby
+->(s, _d, _p, m){"#{s[0..2]} #{m}\n"}
+```
 
 Examples:
 

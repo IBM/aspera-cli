@@ -48,7 +48,7 @@ module Aspera
 
       # @return Class object for plugin
       def plugin_class(plugin_name_sym)
-        raise "ERROR: plugin not found: #{plugin_name_sym}" unless @plugins.key?(plugin_name_sym)
+        raise NoSuchElement, "plugin not found: #{plugin_name_sym}" unless @plugins.key?(plugin_name_sym)
         require @plugins[plugin_name_sym][:require_stanza]
         # Module.nesting[1] is Aspera::Cli
         return Object.const_get("#{Module.nesting[1]}::#{PLUGINS_MODULE}::#{plugin_name_sym.to_s.capitalize}")
@@ -67,7 +67,7 @@ module Aspera
       # add plugin information to list
       # @param path [String] path to plugin source file
       def add_plugin_info(path)
-        raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
+        raise Error, "plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
         plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
         req = path.sub(/#{RUBY_FILE_EXT}$/o, '')
         if @plugins.key?(plugin_symbol)
