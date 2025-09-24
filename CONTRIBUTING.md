@@ -2,61 +2,98 @@
 <!-- cspell:words passin -->
 ## Reporting Issues and Vulnerabilities
 
-You can report issues at <https://github.com/IBM/aspera-cli/issues>
+If you encounter a problem or vulnerability, please report it at [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
 
-Before you go ahead please search existing issues for your problem.
+Before submitting a new issue:
 
-To make sure that we can help you quickly please include and check the following information:
+- Search existing issues to see if your problem has already been reported or resolved.
 
-- Include the `ascli` version you are running in your report.
-- If you are not running the latest version (please check) then update.
-- Include your `ruby -e "puts RUBY_DESCRIPTION"`.
+To help us assist you efficiently, include the following in your report:
 
-Thanks!
+- The version of ascli you are using:
+
+  ```bash
+  ascli version
+  ```
+
+- Confirmation that you're using the latest version (update if not).
+- The output of your Ruby environment:
+
+  ```bash
+  ruby -e "puts RUBY_DESCRIPTION"
+  ```
 
 ## Making Contributions
 
-To fetch and test the gem for development, do:
+We welcome contributions to improve the aspera-cli project!
+
+### Getting Started
+
+Clone the repository and navigate to the project folder:
 
 ```bash
 git clone https://github.com/IBM/aspera-cli.git
 cd aspera-cli
 ```
 
-Then see [Running Tests](#running-tests).
+For testing instructions, refer to [Running Tests](#running-tests).
 
-If you want to contribute, please:
+### How to Contribute
 
-- Fork the project.
-- Make your feature addition or bug fix.
-- Add tests for it. This is important, so it doesn't break in a future version unintentionally.
-- Run `rubocop` to comply for coding standards
-- Update `CHANGELOG.md`
-- Send a pull request on GitHub.
+To submit a contribution:
+
+1. **Fork** the repository on GitHub.
+
+1. **Create a feature branch** for your changes.
+
+1. **Implement** your feature or bug fix.
+
+1. **Write tests** to ensure your changes are robust and won’t break future versions.
+
+1. Run `rubocop` to ensure your code follows the Ruby style guide.
+
+1. Update `CHANGELOG.md` with a summary of your changes.
+
+1. Submit a **pull request** with a clear description of your contribution.
+
+> [!TIP]
+> Make sure your pull request is focused and includes only relevant changes.
 
 ## Architecture
 
-A list of classes are provided in <docs/uml.png>
-
-Architecture:
+The overall architecture of aspera-cli is modular and extensible.
 
 ![Architecture](docs/architecture.png)
 
-The entry point is: `lib/aspera/cli/main.rb`.
+Structure Highlights:
 
-Plugins are located in: `lib/aspera/cli/plugins`.
+- Entry Point:
 
-Transfer agents, in: `lib/aspera/agent`.
+  `lib/aspera/cli/main.rb` - This is where the CLI execution begins.
+
+- Plugins:
+
+  Located in `lib/aspera/cli/plugins`, plugins extend CLI functionality and encapsulate specific features.
+
+- Transfer Agents:
+
+  Found in `lib/aspera/agent`, these handle data transfers operations.
+
+A list of classes are provided in <docs/uml.png>
 
 ## Ruby version
 
-Install Ruby using your preferred method.
+`aspera-cli` is built with Ruby.
+You can install Ruby using any method you prefer (e.g., rbenv, rvm, system package manager).
 
-To clean up installed gems to start fresh:
+To start with a clean slate and remove all installed gems:
 
 ```bash
 make clean_gems
 ```
+
+> [!TIP]
+> This is especially useful before testing across different Ruby versions or preparing for a release.
 
 ## Tool chain
 
@@ -111,7 +148,7 @@ tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
-To check URL during doc generation, set env var: `ASPERA_CLI_DOC_CHECK_LINKS`.
+To check URL during doc generation, set env var: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
 
 To debug doc generation, set env var: `ASPERA_CLI_DOC_DEBUG=debug`.
 

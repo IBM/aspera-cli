@@ -1,6 +1,5 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 #verbosity: INFO
-#from: markdown_mmd
 from: gfm
 to: pdf
 pdf-engine: lualatex

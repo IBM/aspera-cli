@@ -4,7 +4,7 @@
 
 `docs/README.erb.md` uses markdown format with embedded ruby macros (`erb`).
 
-Those macros as basically functions defined in `doc_tools.rb`, for example:
+Those macros are basically functions defined in `doc_tools.rb`, for example:
 
 * `<%=cmd%>` just the command line tool name
 * `<%=tool%>` the tool name in pre-formatted to be included in text paragraphs
