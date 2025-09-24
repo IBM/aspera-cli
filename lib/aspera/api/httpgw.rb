@@ -110,7 +110,7 @@ module Aspera
         Log.log.debug{"#{LOG_WS_RECV}read thread started"}
         frame_parser = ::WebSocket::Frame::Incoming::Client.new(version: @ws_handshake.version)
         until @ws_io.eof?
-          begin # rubocop:disable Style/RedundantBegin
+          begin
             # ready byte by byte until frame is ready
             # blocking read
             byte = @ws_io.read(1)

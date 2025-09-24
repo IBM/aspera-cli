@@ -90,7 +90,7 @@ job_id = client.start_transfer(session_spec[PARAM_SPEC])
 Thread.new do
   # we assume here a single session
   session_id = client.sessions_by_job(job_id).first
-  begin # rubocop:disable Style/RedundantBegin
+  begin
     loop do
       data = JSON.parse($stdin.gets)
       client.send_command(session_id, data)

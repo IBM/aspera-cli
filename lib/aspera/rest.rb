@@ -522,7 +522,7 @@ module Aspera
         name_matches = matching_items.select{ |i| i['name'].casecmp?(search_name)}
         case name_matches.length
         when 1 then return name_matches.first
-        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
+        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
         else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{ |i| i['name']}}"
         end
       end

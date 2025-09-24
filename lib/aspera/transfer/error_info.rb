@@ -6,8 +6,6 @@ module Aspera
   module Transfer
     # from https://www.google.com/search?q=FASP+error+codes
     # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
-    # rubocop:disable Layout/MultilineHashKeyLineBreaks
-    # rubocop:disable Layout/FirstHashElementLineBreak
     ERROR_INFO = {
       # id   retry-able     mnemo                       message                                              additional info
       1  => {r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},

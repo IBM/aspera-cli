@@ -359,7 +359,7 @@ module Aspera
         @env.options.declare(:help, 'Show this message', values: :none, short: 'h'){@option_help = true}
         @env.options.declare(:bash_comp, 'Generate bash completion for command', values: :none){@bash_completion = true}
         @env.options.declare(:show_config, 'Display parameters used for the provided action', values: :none){@option_show_config = true}
-        @env.options.declare(:version, 'Display version', values: :none, short: 'v'){@env.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon, Layout/LineLength
+        @env.options.declare(:version, 'Display version', values: :none, short: 'v'){@env.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @env.options.declare(
           :ui, 'Method to start browser',
           values: USER_INTERFACES,

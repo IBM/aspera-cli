@@ -142,7 +142,7 @@ module Aspera
         result[:dir].each do |file|
           if file.key?(:smode)
             # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type] = case file[:smode][0, 1]; when 'd' then:directory; when '-' then:file; when 'l' then:link; else; :other; end # rubocop:disable Style/Semicolon
+            file[:type] = case file[:smode][0, 1]; when 'd' then:directory; when '-' then:file; when 'l' then:link; else; :other; end
           end
         end
       end

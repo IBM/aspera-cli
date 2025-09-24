@@ -59,4 +59,4 @@ Style/TrailingCommaInArguments:
 Style/Encoding:
   Enabled: true
 Lint/RedundantCopDisableDirective:
-  Enabled: false
+  Enabled: true
