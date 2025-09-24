@@ -11,9 +11,10 @@ variables:
   mainfont: "IBM Plex Sans"
   monofont: "IBM Plex Mono"
   urlcolor: blue
-  geometry: margin=15mm
+  geometry: margin=12mm
   include-before:
     - '\newpage'
+  tables: longtable
 resource-path:
   - ${.}
 include-in-header:

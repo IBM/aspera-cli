@@ -60,13 +60,11 @@ function Div(el)
       "enhanced, breakable, colback=%s, colframe=%s, coltitle=%s, colbacktitle=%s, title={%s}",
       style.colback, style.colbacktitle, style.coltitle, style.colbacktitle, title
     )
-
     local body_parts = {}
     for _, b in ipairs(content_blocks) do
       table.insert(body_parts, pandoc.write(pandoc.Pandoc({ b }), "latex"))
     end
     local body = table.concat(body_parts, "\n")
-
     return pandoc.RawBlock("latex",
       "\\begin{tcolorbox}[" .. opts .. "]\n" ..
       body .. "\n" ..
@@ -77,7 +75,6 @@ function Div(el)
       table.insert(body_parts, pandoc.write(pandoc.Pandoc({ b }), "html"))
     end
     local body = table.concat(body_parts, "\n")
-
     local html = string.format(
       '<div class="%s">\n<div class="admonition-title">%s</div>\n<div class="admonition-body">%s</div>\n</div>',
       style.htmlclass, title, body
