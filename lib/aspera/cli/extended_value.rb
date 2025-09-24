@@ -86,7 +86,7 @@ module Aspera
 
       # JSON Parser, with more information on error location
       # :reek:UncommunicativeMethodName
-      def JSON_parse(value)
+      def JSON_parse(value) # rubocop:disable Naming/MethodName
         JSON.parse(value)
       rescue JSON::ParserError => e
         m = /at line (\d+) column (\d+)/.match(e.message)

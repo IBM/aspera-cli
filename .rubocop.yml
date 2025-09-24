@@ -12,7 +12,10 @@ AllCops:
     - tmp/**/*
     - "lib/*_pb.rb"
 Naming/MethodName:
-  Enabled: false
+  Enabled: true
+  AllowedPatterns:
+    - do_POST
+    - do_GET
 Naming/FileName:
   Exclude:
     - "**/*.gemspec"
