@@ -68,12 +68,12 @@ module Aspera
             # only org provided ?
             base_url = "#{base_url}.#{Api::AoC::SAAS_DOMAIN_PROD}" unless base_url.include?('.')
             # AoC is only https
-            return nil unless base_url.start_with?('https://')
+            return unless base_url.start_with?('https://')
             res_http = Rest.new(base_url: base_url, redirect_max: 0).call(operation: 'GET', subpath: 'auth/ping', return_error: true)[:http]
-            return nil if res_http['Location'].nil?
+            return if res_http['Location'].nil?
             redirect_uri = URI.parse(res_http['Location'])
             od = Api::AoC.split_org_domain(URI.parse(base_url))
-            return nil unless redirect_uri.path.end_with?("oauth2/#{od[:organization]}/login")
+            return unless redirect_uri.path.end_with?("oauth2/#{od[:organization]}/login")
             # either in standard domain, or product name in page
             return {
               version: Api::AoC.saas_url?(base_url) ? 'SaaS' : 'Self-managed',
@@ -846,7 +846,7 @@ module Aspera
 
         # @return persistency object if option `once_only` is used.
         def package_persistency
-          return nil unless options.get_option(:once_only, mandatory: true)
+          return unless options.get_option(:once_only, mandatory: true)
           # TODO: add query info to id
           PersistencyActionOnce.new(
             manager: persistency,

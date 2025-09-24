@@ -475,7 +475,7 @@ module Aspera
           default_config_name = get_plugin_default_config_name(plugin_name_sym)
           Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
           options.add_option_preset(preset_by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
-          return nil
+          return
         end
 
         # get the default global preset, or set default one
@@ -1253,7 +1253,7 @@ module Aspera
           Aspera.assert(!@config_presets.nil?){'config_presets shall be defined'}
           if !@use_plugin_defaults
             Log.log.debug('skip default config')
-            return nil
+            return
           end
           if @config_presets.key?(CONF_PRESET_DEFAULTS) &&
               @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
@@ -1269,7 +1269,7 @@ module Aspera
             raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name
           end
-          return nil
+          return
         end
 
         # @return [Hash] result of execution of vault command

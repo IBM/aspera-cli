@@ -161,7 +161,7 @@ module Aspera
         </html>
       HTML
 
-      return nil
+      return
     end
   end
 

@@ -106,7 +106,7 @@ module Aspera
       # set result
       env_args[:env].merge!(@result[:env])
       env_args[:args].concat(@result[:args])
-      return nil
+      return
     end
 
     # add options directly to command line
@@ -161,7 +161,7 @@ module Aspera
       @processed_parameters.push(name) if !properties['x-cli-special'] || read
 
       # process only non-nil values
-      return nil if parameter_value.nil?
+      return if parameter_value.nil?
 
       # check that value is of an accepted type (string, integer, boolean)
       raise "Enum value #{parameter_value} is not allowed for #{name}" if properties.key?('enum') && !properties['enum'].include?(parameter_value)

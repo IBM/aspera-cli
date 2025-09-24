@@ -214,7 +214,7 @@ module Aspera
       end
 
       def public_link
-        return nil unless auth_params[:grant_method].eql?(:url_json)
+        return unless auth_params[:grant_method].eql?(:url_json)
         return @cache_url_token_info unless @cache_url_token_info.nil?
         # TODO: can there be several in list ?
         @cache_url_token_info = read('url_tokens').first
@@ -297,7 +297,7 @@ module Aspera
             }
           end
         Log.dump(:context, @workspace_info)
-        return nil unless application.eql?(:files)
+        return unless application.eql?(:files)
         @home_info =
           if !public_link.nil?
             assert_public_link_types(['view_shared_file'])
@@ -445,7 +445,7 @@ module Aspera
         end
         # replace with resolved elements
         package_data[recipient_list_field] = resolved_list
-        return nil
+        return
       end
 
       # CLI allows simplified format for metadata: transform if necessary for API
@@ -463,7 +463,7 @@ module Aspera
           pkg_data['metadata'] = api_meta
         else Aspera.error_unexpected_value(pkg_meta.class)
         end
-        return nil
+        return
       end
 
       # create a package

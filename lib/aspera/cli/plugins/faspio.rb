@@ -17,8 +17,8 @@ module Aspera
             api = Rest.new(base_url: base_url)
             ping_result = api.call(operation: 'GET', subpath: 'ping', headers: {'Accept' => Rest::MIME_JSON})
             server_type = ping_result[:http]['Server']
-            return nil unless ping_result[:data].is_a?(Hash) && ping_result[:data].empty?
-            return nil unless server_type.is_a?(String) && server_type.include?('faspio')
+            return unless ping_result[:data].is_a?(Hash) && ping_result[:data].empty?
+            return unless server_type.is_a?(String) && server_type.include?('faspio')
             return {
               version: server_type.gsub(%r{^.*/}, ''),
               url:     base_url

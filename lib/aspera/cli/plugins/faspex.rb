@@ -71,7 +71,7 @@ module Aspera
               Log.log.debug{"detect error: #{e}"}
             end
             raise error if error
-            return nil
+            return
           end
 
           # @param object [Plugin] An instance of this class
@@ -108,7 +108,7 @@ module Aspera
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
               raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
-              return nil
+              return
             end
             result = entry['link'].find{ |e| e['rel'].eql?('package')}['href']
             return result

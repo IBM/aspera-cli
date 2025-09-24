@@ -154,7 +154,7 @@ module Aspera
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else Aspera.error_unexpected_value(k)
         end
-        return nil unless file_is_required || File.exist?(file)
+        return unless file_is_required || File.exist?(file)
         Aspera.assert(File.exist?(file), type: Errno::ENOENT){"#{k} not found (#{file})"}
         return file
       end
@@ -185,7 +185,7 @@ module Aspera
       def get_exe_version(exe_path, vers_arg)
         Aspera.assert_type(exe_path, String)
         Aspera.assert_type(vers_arg, String)
-        return nil unless File.exist?(exe_path)
+        return unless File.exist?(exe_path)
         exe_version = nil
         cmd_out = %x("#{exe_path}" #{vers_arg})
         raise "An error occurred when testing #{exe_path}: #{cmd_out}" unless $CHILD_STATUS == 0

@@ -35,7 +35,7 @@ module Aspera
               Log.log.debug{"detect error: #{e}"}
             end
             raise error if error
-            return nil
+            return
           end
 
           def wizard(object:)

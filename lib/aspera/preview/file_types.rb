@@ -69,7 +69,7 @@ module Aspera
         return :office if mimetype.start_with?('application/vnd.openxmlformats-officedocument')
         return :video if mimetype.start_with?('video/')
         return :image if mimetype.start_with?('image/')
-        return nil
+        return
       end
 
       # @param filepath [String] full path to file
@@ -119,7 +119,7 @@ module Aspera
         return Environment.secure_capture(exec: 'file', args: ['--mime-type', '--brief', filepath]).strip
       rescue => e
         Log.log.error{"error using 'file' command: #{e.message}"}
-        return nil
+        return
       end
     end
   end

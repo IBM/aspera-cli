@@ -112,7 +112,7 @@ module Aspera
       # @return [Hash] token internal information , including Date object for `expiration_date`
       def get_token_info(id)
         token_raw_string = persist_mgr.get(id)
-        return nil if token_raw_string.nil?
+        return if token_raw_string.nil?
         token_data = JSON.parse(token_raw_string)
         Aspera.assert_type(token_data, Hash)
         decoded_token = decode_token(token_data[TOKEN_FIELD])
@@ -145,7 +145,7 @@ module Aspera
           result = decoder.call(token) rescue nil
           return result unless result.nil?
         end
-        return nil
+        return
       end
 
       # register a token creation method

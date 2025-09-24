@@ -20,7 +20,7 @@ module Aspera
               url:     api.base_url,
               version: api_info['version']
             } if api_info.is_a?(Hash) && api_info.key?('download_endpoint')
-            return nil
+            return
           end
 
           # @param object [Plugin] An instance of this class

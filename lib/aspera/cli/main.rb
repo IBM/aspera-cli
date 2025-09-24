@@ -259,7 +259,7 @@ module Aspera
           @env.formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)
         end
-        return nil
+        return
       end
 
       def init_agents_options_plugins

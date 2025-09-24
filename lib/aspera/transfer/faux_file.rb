@@ -13,7 +13,7 @@ module Aspera
       class << self
         # @return nil if not a faux: scheme, else a FauxFile instance
         def create(name)
-          return nil unless name.start_with?(PREFIX)
+          return unless name.start_with?(PREFIX)
           name_params = name[PREFIX.length..-1].split('?', 2)
           raise Error, 'Format: #{PREFIX}<file path>?<size>' unless name_params.length.eql?(2)
           raise Error, "Format: <integer>[#{SIZE_UNITS.join(',')}]" unless (m = name_params[1].downcase.match(/^(\d+)([#{SIZE_UNITS.join('')}])$/))
@@ -37,7 +37,7 @@ module Aspera
       end
 
       def read(chunk_size)
-        return nil if eof?
+        return if eof?
         bytes_to_read = [chunk_size, @size - @offset].min
         @offset += bytes_to_read
         @chunk_by_size[bytes_to_read] = "\x00" * bytes_to_read unless @chunk_by_size.key?(bytes_to_read)

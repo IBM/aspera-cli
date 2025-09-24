@@ -54,7 +54,7 @@ module Aspera
         secret = Vault.logical.read(path(label))
         if secret.nil?
           raise "Secret '#{label}' not found" if exception
-          return nil
+          return
         end
         return secret.data[:data]
       end

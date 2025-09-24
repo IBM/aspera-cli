@@ -25,7 +25,7 @@ module Aspera
                 found = true
               end
             end
-            return nil unless found
+            return unless found
             version = 'unknown'
             test_page = api.call(operation: 'GET', subpath: 'login')
             if (m = test_page[:http].body.match(/\(v(1\..*)\)/))

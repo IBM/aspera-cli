@@ -148,7 +148,7 @@ module Aspera
           else
             raise Error, 'At least one of `local` or `sessions` must be present in async parameters'
           end
-          return nil
+          return
         end
 
         # Parse output of asyncadmin

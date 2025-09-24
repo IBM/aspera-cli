@@ -262,7 +262,7 @@ module Aspera
           return @last_event
         else Aspera.error_unexpected_value(line){'mgt port'}
         end
-        return nil
+        return
       end
     end
   end

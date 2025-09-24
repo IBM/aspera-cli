@@ -219,7 +219,7 @@ module Aspera
             workspace_name: @app_info[:workspace_name])
         end
         Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
-        return nil
+        return
       end
 
       # Check if a link entry in folder has target information
