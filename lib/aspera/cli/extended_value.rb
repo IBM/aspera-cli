@@ -146,9 +146,7 @@ module Aspera
       # parse string value as extended value
       # use default decoder if none is specified
       def evaluate_with_default(value)
-        if value.is_a?(String) && value.match(/^#{handler_regex_string}.*$/).nil? && !@default_decoder.nil?
-          value = [MARKER_START, @default_decoder, MARKER_END, value].join
-        end
+        value = [MARKER_START, @default_decoder, MARKER_END, value].join if value.is_a?(String) && value.match(/^#{handler_regex_string}.*$/).nil? && !@default_decoder.nil?
         return evaluate(value)
       end
 

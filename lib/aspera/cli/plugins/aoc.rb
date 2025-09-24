@@ -807,9 +807,7 @@ module Aspera
               # embed: 'updated_by_user',
               sort:        '-created_at'
             }
-            if command.eql?(:list)
-              return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
-            end
+            return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params) if command.eql?(:list)
             one_id = instance_identifier
             found = api_read_all('short_links', list_params)[:items].find{ |item| item['id'].eql?(one_id)}
             raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?

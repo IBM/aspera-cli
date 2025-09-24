@@ -194,9 +194,7 @@ module Aspera
 
     # create and start keep alive connection on demand
     def http_session
-      if @http_session.nil?
-        @http_session = self.class.start_http_session(@base_url)
-      end
+      @http_session = self.class.start_http_session(@base_url) if @http_session.nil?
       return @http_session
     end
 
@@ -375,9 +373,7 @@ module Aspera
             # override user's path to path in header
             if !response['Content-Disposition'].nil?
               disposition = self.class.parse_header(response['Content-Disposition'])
-              if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
-                target_file = File.join(File.dirname(target_file), disposition[:parameters][:filename])
-              end
+              target_file = File.join(File.dirname(target_file), disposition[:parameters][:filename]) if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
             end
             # download with temp filename
             target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"

@@ -153,9 +153,7 @@ module Aspera
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
         ENV.each do |k, v|
-          if k.start_with?(env_prefix)
-            @option_pairs_env[k[env_prefix.length..-1].downcase.to_sym] = v
-          end
+          @option_pairs_env[k[env_prefix.length..-1].downcase.to_sym] = v if k.start_with?(env_prefix)
         end
         Log.log.debug{"env=#{@option_pairs_env}".red}
         @unprocessed_cmd_line_options = []
@@ -265,9 +263,7 @@ module Aspera
             # ask_missing_mandatory
             accept_list = nil
             # print "please enter: #{option_symbol.to_s}"
-            if @declared_options.key?(option_symbol) && attributes.key?(:values)
-              accept_list = attributes[:values]
-            end
+            accept_list = attributes[:values] if @declared_options.key?(option_symbol) && attributes.key?(:values)
             result = get_interactive(option_symbol.to_s, option: true, accept_list: accept_list)
             set_option(option_symbol, result, where: 'interactive')
           end
@@ -536,9 +532,7 @@ module Aspera
       private
 
       def evaluate_extended_value(value, types)
-        if DEFAULT_PARSER_TYPES.include?(types) || (types.is_a?(Array) && types.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)})
-          return ExtendedValue.instance.evaluate_with_default(value)
-        end
+        return ExtendedValue.instance.evaluate_with_default(value) if DEFAULT_PARSER_TYPES.include?(types) || (types.is_a?(Array) && types.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)})
         return ExtendedValue.instance.evaluate(value)
       end
 
@@ -563,9 +557,7 @@ module Aspera
         unprocessed_options.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
-            if @declared_options[k].key?(:values) && v.is_a?(String)
-              v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k][:values])
-            end
+            v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k][:values]) if @declared_options[k].key?(:values) && v.is_a?(String)
             options_to_set[k] = v
           else
             Log.log.trace1{"unprocessed: #{k}: #{v}"}

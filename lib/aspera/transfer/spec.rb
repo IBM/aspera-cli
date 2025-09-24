@@ -45,9 +45,7 @@ module Aspera
 
         def fix_transferd_resume_policy(transfer_spec)
           # Fix discrepency in transfer spec
-          if transfer_spec.key?('resume_policy')
-            transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']]
-          end
+          transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']] if transfer_spec.key?('resume_policy')
         end
       end
       SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'spec')

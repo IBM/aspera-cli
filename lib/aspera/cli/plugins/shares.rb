@@ -21,9 +21,7 @@ module Aspera
               # TODO: use ping instead ?
               api.read("#{NODE_API_PATH}/app")
             rescue RestCallError => e
-              if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-                found = true
-              end
+              found = true if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
             end
             return unless found
             version = 'unknown'

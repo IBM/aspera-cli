@@ -336,9 +336,7 @@ module Aspera
       def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::SCOPE_USER, package_info: nil)
         Aspera.assert_type(node_id, String)
         node_info = read("nodes/#{node_id}")
-        if workspace_name.nil? && !workspace_id.nil?
-          workspace_name = read("workspaces/#{workspace_id}")['name']
-        end
+        workspace_name = read("workspaces/#{workspace_id}")['name'] if workspace_name.nil? && !workspace_id.nil?
         app_info = {
           api:            self, # for callback
           app:            package_info.nil? ? FILES_APP : PACKAGES_APP,

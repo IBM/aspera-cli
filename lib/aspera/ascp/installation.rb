@@ -222,9 +222,7 @@ module Aspera
               data['ascp_version'] = Regexp.last_match(1)
             end
           end
-          if !thread.value.exitstatus.eql?(1) && !data.key?('root')
-            raise last_line
-          end
+          raise last_line if !thread.value.exitstatus.eql?(1) && !data.key?('root')
         end
         return data
       end

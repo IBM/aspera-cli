@@ -71,9 +71,7 @@ assert_usage(session_spec[PARAM_SPEC].is_a?(Hash), "The value must contain key #
 # additional debug capability
 Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL] if session_spec.key?(PARAM_LOG_LEVEL)
 # possibly override temp folder
-if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
-  Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER]
-end
+Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER] if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
 session_spec[PARAM_SDK] = File.join(Dir.home, '.aspera', 'sdk') unless session_spec.key?(PARAM_SDK)
 Aspera::Products::Transferd.sdk_directory = session_spec[PARAM_SDK]
 session_spec[PARAM_AGENT] = {} unless session_spec.key?(PARAM_AGENT)

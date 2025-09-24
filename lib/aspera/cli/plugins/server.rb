@@ -59,9 +59,7 @@ module Aspera
               socket = TCPSocket.new(server_uri.hostname, server_uri.port)
               socket.puts('SSH-2.0-Ascli_0.0')
               version = socket.gets.chomp
-              if version.match?(/^SSH-2.0-/)
-                return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url}
-              end
+              return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url} if version.match?(/^SSH-2.0-/)
             rescue StandardError => e
               error = e
               Log.log.debug{"detect error: #{e}"}

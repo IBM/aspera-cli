@@ -200,12 +200,8 @@ module Aspera
               if !file_entry.nil? &&
                   @option_skip_folders.none?{ |d| file_entry['path'].start_with?(d)}
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
-                if event['types'].include?('file.deleted')
-                  Log.log.error('TODO'.red)
-                end
-                if event['types'].include?('file.deleted')
-                  generate_preview(file_entry)
-                end
+                Log.log.error('TODO'.red) if event['types'].include?('file.deleted')
+                generate_preview(file_entry) if event['types'].include?('file.deleted')
               end
             end
             # log/persist periodically or last one
@@ -339,9 +335,7 @@ module Aspera
             File.delete(File.join(@tmp_folder, entry['name']))
           end
           # force read file updated previews
-          if @option_folder_reset_cache.eql?(:read)
-            @api_node.read("files/#{entry['id']}")
-          end
+          @api_node.read("files/#{entry['id']}") if @option_folder_reset_cache.eql?(:read)
         rescue StandardError => e
           Log.log.error{"Ignore: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
@@ -388,9 +382,7 @@ module Aspera
                   # process all items in current folder
                   folder_entries.each do |folder_entry|
                     # add path for older versions of ES
-                    if !folder_entry.key?('path')
-                      folder_entry['path'] = entry_path_with_slash + folder_entry['name']
-                    end
+                    folder_entry['path'] = entry_path_with_slash + folder_entry['name'] if !folder_entry.key?('path')
                     folder_entry['parent_file_id'] = entry['id']
                     entries_to_process.push(folder_entry)
                   end

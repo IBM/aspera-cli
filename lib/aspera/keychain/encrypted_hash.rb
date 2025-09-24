@@ -39,9 +39,7 @@ module Aspera
         end
         # setting password also creates the cipher
         @cipher = cipher(password)
-        if !vault_encrypted_data.nil?
-          @all_secrets = YAML.load_stream(@cipher.decrypt(vault_encrypted_data)).first
-        end
+        @all_secrets = YAML.load_stream(@cipher.decrypt(vault_encrypted_data)).first if !vault_encrypted_data.nil?
       end
 
       def info

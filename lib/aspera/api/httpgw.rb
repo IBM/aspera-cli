@@ -67,9 +67,7 @@ module Aspera
                 @shared_info[:read_exception].nil? &&
                 (((@shared_info[:count][:sent_general] - @shared_info[:count][:received_general]) > 1) ||
                   ((@shared_info[:count][:received_v2_delimiter] - @shared_info[:count][:sent_v2_delimiter]) > 1))
-              if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
-                Log.log.trace1{"#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}"}
-              end
+              Log.log.trace1{"#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}"} if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
             end
           end
         end
@@ -255,9 +253,7 @@ module Aspera
           # by default it is the name of first file
           download_name = File.basename(default_file_name, '.*')
           # add indication of number of files if there is more than one
-          if transfer_spec['paths'].length > 1
-            download_name += " #{transfer_spec['paths'].length} Files"
-          end
+          download_name += " #{transfer_spec['paths'].length} Files" if transfer_spec['paths'].length > 1
           transfer_spec['download_name'] = download_name
         end
         # start transfer session on httpgw

@@ -402,9 +402,7 @@ module Aspera
                   ssl_options = opt
                 when String
                   name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
-                  if !OpenSSL::SSL.const_defined?(name)
-                    raise Cli::BadArgument, "No such ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}"
-                  end
+                  raise Cli::BadArgument, "No such ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}" if !OpenSSL::SSL.const_defined?(name)
                   if opt.start_with?('-')
                     ssl_options &= ~OpenSSL::SSL.const_get(name)
                   else
@@ -841,9 +839,7 @@ module Aspera
             return Main.result_nothing
           when :initialize
             config_value = options.get_next_argument('extended value', validation: Hash)
-            if @config_presets.key?(name)
-              Log.log.warn{"configuration already exists: #{name}, overwriting"}
-            end
+            Log.log.warn{"configuration already exists: #{name}, overwriting"} if @config_presets.key?(name)
             @config_presets[name] = config_value
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
@@ -966,9 +962,7 @@ module Aspera
           when :download
             file_url = options.get_next_argument('source URL').chomp
             file_dest = options.get_next_argument('file path', mandatory: false)
-            if file_dest.nil?
-              file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, ''))
-            end
+            file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
             formatter.display_status("Downloading: #{file_url}")
             Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
             return Main.result_status("Saved to: #{file_dest}")
@@ -1121,9 +1115,7 @@ module Aspera
               private_key_path = options.get_option(:key_path, mandatory: true).to_s
             end
             # else generate path
-            if private_key_path.empty?
-              private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
-            end
+            private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
             if File.exist?(private_key_path)
               formatter.display_status('Using existing key:')
             else

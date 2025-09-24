@@ -64,9 +64,7 @@ module Aspera
             # remove unused parameter (avoid warning)
             remote.delete('ws_port')
             # add SSH bypass keys when authentication is token and no auth is provided
-            if remote.key?('token') && !remote.key?('pass')
-              certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa))
-            end
+            certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa)) if remote.key?('token') && !remote.key?('pass')
           end
           return certificates_to_use
         end

@@ -136,9 +136,7 @@ module Aspera
         end
 
         def api_v3
-          if @api_v3.nil?
-            @api_v3 = basic_auth_api
-          end
+          @api_v3 = basic_auth_api if @api_v3.nil?
           return @api_v3
         end
 
@@ -242,9 +240,7 @@ module Aspera
           delivery_info = package_create_params['delivery']
           # pub link user
           link_data = self.class.get_link_data(public_link_url)
-          if !['external/submissions/new', 'external/dropbox_submissions/new'].include?(link_data[:subpath])
-            raise Cli::BadArgument, "pub link is #{link_data[:subpath]}, expecting external/submissions/new"
-          end
+          raise Cli::BadArgument, "pub link is #{link_data[:subpath]}, expecting external/submissions/new" if !['external/submissions/new', 'external/dropbox_submissions/new'].include?(link_data[:subpath])
           create_path = link_data[:subpath].split('/')[0..-2].join('/')
           package_create_params[:passcode] = link_data[:query]['passcode']
           delivery_info[:transfer_type] = 'connect'
@@ -377,9 +373,7 @@ module Aspera
                 pkg_id_uri = [{id: 'package', uri: link_url}]
               else
                 link_data = self.class.get_link_data(link_url)
-                if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
-                  raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
-                end
+                raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}" if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
                 # NOTE: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new(base_url: link_data[:base_url])
                 package_creation_data = api_public_link.call(
@@ -457,9 +451,7 @@ module Aspera
                   Aspera.assert(storage.key?(key), type: Cli::Error){"storage '#{name}' must have a '#{key}'"}
                 end
               end
-              if !source_hash.key?(source_name)
-                raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
-              end
+              raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]" if !source_hash.key?(source_name)
               source_info = source_hash[source_name]
               Log.dump(:source_info, source_info)
               case command_source

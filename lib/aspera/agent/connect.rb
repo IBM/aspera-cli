@@ -141,9 +141,7 @@ module Aspera
         ['', 's'].each do |ext|
           uri_file = File.join(folder, "http#{ext}.uri")
           Log.log.debug{"checking connect port file: #{uri_file}"}
-          if File.exist?(uri_file)
-            return File.open(uri_file, &:gets).strip
-          end
+          return File.open(uri_file, &:gets).strip if File.exist?(uri_file)
         end
         raise "no connect uri file found in #{folder}"
       end

@@ -85,9 +85,7 @@ module Aspera
                   # specific one do not have s3 end point in id
                   params['transfer_server_id'] = server_data2['id']
                 end
-                if !params['storage'].key?('authentication_endpoint')
-                  params['storage']['endpoint'] = server_data2['s3_authentication_endpoint']
-                end
+                params['storage']['endpoint'] = server_data2['s3_authentication_endpoint'] if !params['storage'].key?('authentication_endpoint')
               end
             end
             res = ats_api_pub_v1.create('access_keys', params)
@@ -179,9 +177,7 @@ module Aspera
 
         def execute_action_api_key
           command = options.get_next_command(%i[instances create list show delete])
-          if %i[show delete].include?(command)
-            concerned_id = instance_identifier
-          end
+          concerned_id = instance_identifier if %i[show delete].include?(command)
           rest_add_header = {}
           if !command.eql?(:instances)
             instance = options.get_option(:instance)

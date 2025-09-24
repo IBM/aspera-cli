@@ -186,9 +186,7 @@ module Aspera
                 # implicitly, call is synchronous
                 call_params['synchronous'] = true
               end
-              if call_params['synchronous']
-                result[:type] = :text
-              end
+              result[:type] = :text if call_params['synchronous']
               result[:data] = call_ao("initiate/#{wf_id}", args: call_params)
               return result
             end

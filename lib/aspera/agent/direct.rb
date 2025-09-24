@@ -381,12 +381,8 @@ module Aspera
           notify_progress(:transfer, session_id: session_id, info: @pre_calc_last_size)
         when 'DONE', 'ERROR' # end of session
           total_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          if !@pre_calc_sent && !total_size.zero?
-            notify_progress(:session_size, session_id: session_id, info: total_size)
-          end
-          if @pre_calc_last_size != total_size
-            notify_progress(:transfer, session_id: session_id, info: total_size)
-          end
+          notify_progress(:session_size, session_id: session_id, info: total_size) if !@pre_calc_sent && !total_size.zero?
+          notify_progress(:transfer, session_id: session_id, info: total_size) if @pre_calc_last_size != total_size
           notify_progress(:session_end, session_id: session_id)
           # cspell:disable
         when 'SESSION'

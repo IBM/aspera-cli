@@ -64,9 +64,7 @@ class DocHelper
       configuration = YAML.load_file(local_config)
       configuration.each do |k, preset_hash|
         preset_hash.each do |param_name, param_value|
-          if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
-            param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')}
-          end
+          param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')} if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
           next unless param_value.is_a?(String)
           next if param_value.start_with?('@preset:')
           if k.eql?('config') && param_name.eql?('version')
@@ -157,9 +155,7 @@ class DocHelper
   def container_image; Aspera::Cli::Info::CONTAINER; end
 
   def gemspec
-    if !@gem_spec
-      @gem_spec = Gem::Specification.load(@paths[:gemspecfile]) || raise("error loading #{@paths[:gemspecfile]}")
-    end
+    @gem_spec = Gem::Specification.load(@paths[:gemspecfile]) || raise("error loading #{@paths[:gemspecfile]}") if !@gem_spec
     @gem_spec
   end
 
@@ -253,9 +249,7 @@ class DocHelper
   # get minimum required Ruby version and future one
   def ruby_version
     message = "version: #{gemspec.required_ruby_version}"
-    unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
-      message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
-    end
+    message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
     return message
   end
 

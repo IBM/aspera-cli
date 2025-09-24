@@ -226,9 +226,7 @@ module Aspera
       def start(transfer_spec, rest_token: nil)
         # check parameters
         Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}
-        if transfer_spec['remote_host'].eql?(CP4I_REMOTE_HOST_LB)
-          raise "Wrong remote host: #{CP4I_REMOTE_HOST_LB}"
-        end
+        raise "Wrong remote host: #{CP4I_REMOTE_HOST_LB}" if transfer_spec['remote_host'].eql?(CP4I_REMOTE_HOST_LB)
         # process :src option
         case transfer_spec['direction']
         when Transfer::Spec::DIRECTION_RECEIVE
@@ -255,9 +253,7 @@ module Aspera
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
-        if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
-          transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', sensitive: true)
-        end
+        transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"

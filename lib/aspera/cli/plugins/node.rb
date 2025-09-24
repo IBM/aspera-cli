@@ -199,9 +199,7 @@ module Aspera
             final_result[:data].push({type => p['path'], 'result' => result})
           end
           # one error make all fail
-          unless errors.empty?
-            raise errors.map{ |i| "#{i.first}: #{i.last}"}.join(', ')
-          end
+          raise errors.map{ |i| "#{i.first}: #{i.last}"}.join(', ') unless errors.empty?
           return c_result_remove_prefix_path(final_result, type)
         end
 
@@ -242,9 +240,7 @@ module Aspera
                 formatter.display_item_count(response['item_count'], total_count)
                 break
               end
-              if recursive
-                folders_to_process.concat(items.select{ |i| Node.gen3_entry_folder?(i)}.map{ |i| i['path']})
-              end
+              folders_to_process.concat(items.select{ |i| Node.gen3_entry_folder?(i)}.map{ |i| i['path']}) if recursive
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
@@ -469,9 +465,7 @@ module Aspera
           when :license
             # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
             node_license = @api_node.read('license')
-            if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
-              Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal')
-            end
+            Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal') if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
             return Main.result_single_object(node_license)
           when :api_details
             return Main.result_single_object({base_url: @api_node.base_url}.merge(@api_node.params))
@@ -742,9 +736,7 @@ module Aspera
                   async_id
                 ])
               )
-              unless iteration_data.first.nil?
-                data.select!{ |l| l['fnid'].to_i > iteration_data.first}
-              end
+              data.select!{ |l| l['fnid'].to_i > iteration_data.first} unless iteration_data.first.nil?
               iteration_data[0] = data.last['fnid'].to_i unless data.empty?
             end
             return Main.result_empty if data.empty?
@@ -965,9 +957,7 @@ module Aspera
             end
           when :service
             command = options.get_next_command(%i[list create delete])
-            if [:delete].include?(command)
-              service_id = instance_identifier
-            end
+            service_id = instance_identifier if [:delete].include?(command)
             case command
             when :list
               resp = @api_node.read('rund/services')

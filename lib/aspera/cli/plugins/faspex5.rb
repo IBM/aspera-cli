@@ -423,17 +423,13 @@ module Aspera
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
               end
-              if recursive
-                folders_to_process.concat(response[:data]['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']})
-              end
+              folders_to_process.concat(response[:data]['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
               if use_paging
                 iteration_token = response[:http][HEADER_ITERATION_TOKEN]
                 break if iteration_token.nil? || iteration_token.empty?
                 query['iteration_token'] = iteration_token
               else
-                if total_count.nil?
-                  total_count = response[:data]['total_count']
-                end
+                total_count = response[:data]['total_count'] if total_count.nil?
                 break if response[:data]['item_count'].eql?(0)
                 query['offset'] += response[:data]['item_count']
               end
@@ -567,9 +563,7 @@ module Aspera
             available_commands += %i[shared_folders browse]
           end
           res_command = options.get_next_command(available_commands)
-          if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
-            return Main.result_value_list(EMAIL_NOTIF_LIST, name: 'email_id')
-          end
+          return Main.result_value_list(EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
           case res_command
           when *Plugin::ALL_OPS
             return entity_execute(command: res_command, **exec_args) do |field, value|

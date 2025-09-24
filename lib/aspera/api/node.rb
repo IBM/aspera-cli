@@ -79,9 +79,7 @@ module Aspera
         # Adds fields `ssh_private_key` in provided Hash, if dynamic key is set.
         # @param h [Hash] Hash to add private key to
         def add_private_key(h)
-          if @dynamic_key
-            h['ssh_private_key'] = @dynamic_key.to_pem
-          end
+          h['ssh_private_key'] = @dynamic_key.to_pem if @dynamic_key
           return h
         end
 
@@ -268,9 +266,7 @@ module Aspera
           Log.dump(:folder_contents, folder_contents)
           folder_contents.each do |entry|
             if entry.key?('error')
-              if entry['error'].is_a?(Hash) && entry['error'].key?('user_message')
-                Log.log.error(entry['error']['user_message'])
-              end
+              Log.log.error(entry['error']['user_message']) if entry['error'].is_a?(Hash) && entry['error'].key?('user_message')
               next
             end
             current_path = File.join(current_item[:path], entry['name'])
@@ -437,9 +433,7 @@ module Aspera
           # by default: same address as node API
           transfer_spec['remote_host'] = URI.parse(base_url).host
           # AoC allows specification of other url
-          if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
-            transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
-          end
+          transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url'] if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
           info = read('info')
           # get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
@@ -485,9 +479,7 @@ module Aspera
             if state[:process_last_link]
               # we found it
               other_node = nil
-              if entry_has_link_information(entry)
-                other_node = node_id_to_node(entry['target_node_id'])
-              end
+              other_node = node_id_to_node(entry['target_node_id']) if entry_has_link_information(entry)
               raise Error, 'Cannot resolve link' if other_node.nil?
               state[:result] = {api: other_node, file_id: entry['target_id']}
             else

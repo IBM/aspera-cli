@@ -33,7 +33,7 @@ Layout/MultilineHashKeyLineBreaks:
 Layout/MultilineMethodCallBraceLayout:
   Enabled: true
 Style/IfUnlessModifier:
-  Enabled: false
+  Enabled: true
 Style/RescueModifier:
   Enabled: false
 Style/Lambda:
