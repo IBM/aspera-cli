@@ -146,7 +146,8 @@ module Aspera
         validate_set(options)
         @keychain.password(
           :add, :generic, service: options[:label],
-          account: options[:username] || 'none', password: options[:password], comment: options[:description])
+          account: options[:username] || 'none', password: options[:password], comment: options[:description]
+        )
       end
 
       def get(options)

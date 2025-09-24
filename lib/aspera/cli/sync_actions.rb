@@ -65,7 +65,8 @@ module Aspera
             session['name'] = Environment.instance.sanitized_filename(
               ([direction.to_s] + local_remote).map do |value|
                 Pathname(value).each_filename.to_a.last(2).join(Environment.instance.safe_filename_character)
-              end.join(Environment.instance.safe_filename_character))
+              end.join(Environment.instance.safe_filename_character)
+            )
           end
         end
         sync_info
@@ -113,7 +114,8 @@ module Aspera
             end
             return Main.result_object_list(
               result,
-              fields: %w[sstate record_id f_meta_path message])
+              fields: %w[sstate record_id f_meta_path message]
+            )
           when :overview
             return Main.result_object_list(
               db_from_args.overview,

@@ -194,7 +194,8 @@ module Aspera
                 grant_method: :web,
                 client_id:    options.get_option(:client_id, mandatory: true),
                 redirect_uri: options.get_option(:redirect_uri, mandatory: true)
-              })
+              }
+            )
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
             @api_v5 = Rest.new(
@@ -211,7 +212,8 @@ module Aspera
                 },
                 private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
                 headers:         {typ: 'JWT'}
-              })
+              }
+            )
           else Aspera.error_unexpected_value(auth_type)
           end
           # in case user wants to use HTTPGW tell transfer agent how to get address
@@ -316,7 +318,8 @@ module Aspera
                 options.get_option(:url, mandatory: true),
                 options.get_option(:username, mandatory: true),
                 options.get_option(:box, mandatory: true)
-              ]))
+              ])
+            )
           end
           packages = []
           case package_ids
@@ -511,7 +514,8 @@ module Aspera
                   api: @api_v5,
                   entity: 'shared_folders',
                   field: m[1],
-                  value: ExtendedValue.instance.evaluate(m[2]))['id']
+                  value: ExtendedValue.instance.evaluate(m[2])
+                )['id']
               end
               transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
               # start remote transfer and get first status
@@ -583,7 +587,8 @@ module Aspera
               return entity_execute(
                 api: @api_v5,
                 entity: shfld_entity,
-                command: sh_command) do |field, value|
+                command: sh_command
+              ) do |field, value|
                        lookup_entity_by_field(api: @api_v5, entity: shfld_entity, field: field, value: value)['id']
                      end
             when :user
@@ -614,7 +619,8 @@ module Aspera
               entity: "#{res_sym}/#{shared_inbox_id}/members",
               items_key: 'members',
               value: creation_payload['email_address'],
-              query: {})
+              query: {}
+            )
             return Main.result_single_object(result)
           when :members, :saml_groups
             # :shared_inboxes, :workgroups
@@ -634,7 +640,8 @@ module Aspera
                     entity: 'accounts',
                     field: m[1],
                     value: ExtendedValue.instance.evaluate(m[2]),
-                    query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
+                    query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})}
+                  )['id']
                 else
                   # it's the user id (not member id...)
                   user
@@ -647,13 +654,15 @@ module Aspera
               api: @api_v5,
               entity: res_path,
               command: sub_command,
-              items_key: list_key) do |field, value|
+              items_key: list_key
+            ) do |field, value|
                      lookup_entity_by_field(
                        api: @api_v5,
                        entity: 'accounts',
                        field: field,
                        value: value,
-                       query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
+                       query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})}
+                     )['id']
                    end
           when :reset_password
             # :accounts
@@ -685,7 +694,8 @@ module Aspera
               list, total = list_entities_limit_offset_total_count(
                 api: @api_v5,
                 entity: 'application_events',
-                query: query_read_delete)
+                query: query_read_delete
+              )
 
               return Main.result_object_list(list, total: total, fields: %w[event_type created_at application user.name])
             when :webhook
@@ -693,7 +703,8 @@ module Aspera
                 api: @api_v5,
                 entity: 'all_webhooks_events',
                 query: query_read_delete,
-                items_key: 'events')
+                items_key: 'events'
+              )
               return Main.result_object_list(list, total: total)
             end
           when :configuration
@@ -802,9 +813,10 @@ module Aspera
                 entity: invitation_endpoint,
                 command: invitation_command,
                 items_key: invitation_endpoint,
-                display_fields: %w[id public recipient_type recipient_name email_address]) do |field, value|
-                  lookup_entity_by_field(api: @api_v5, entity: invitation_endpoint, field: field, value: value, query: {})['id']
-                end
+                display_fields: %w[id public recipient_type recipient_name email_address]
+              ) do |field, value|
+                lookup_entity_by_field(api: @api_v5, entity: invitation_endpoint, field: field, value: value, query: {})['id']
+              end
             end
           when :gateway
             require 'aspera/faspex_gw'

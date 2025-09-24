@@ -72,7 +72,8 @@ module Aspera
                 .call(
                   operation: 'GET',
                   subpath: 'ping',
-                  headers: {'content-type': Rest::MIME_JSON})
+                  headers: {'content-type': Rest::MIME_JSON}
+                )
               raise Error, 'Shares not detected' unless res[:http].body.eql?(' ')
               nagios.add_ok('shares api', 'accessible')
             rescue StandardError => e
@@ -99,7 +100,8 @@ module Aspera
                   api: api_shares_admin,
                   entity: 'data/shares',
                   command: share_command,
-                  display_fields: %w[id name node_id directory percent_free])
+                  display_fields: %w[id name node_id directory percent_free]
+                )
               when :user_permissions, :group_permissions
                 share_id = instance_identifier
                 return entity_execute(api: api_shares_admin, entity: "data/shares/#{share_id}/#{share_command}")
@@ -110,7 +112,8 @@ module Aspera
                 api: api_shares_admin,
                 entity: 'data/transfer_settings',
                 command: xfer_settings_command,
-                is_singleton: true)
+                is_singleton: true
+              )
             when :user, :group
               entity_type = admin_command
               entities_location = options.get_next_command(%i[all local ldap saml])
@@ -141,7 +144,8 @@ module Aspera
                   api: api_shares_admin,
                   entity: entities_path,
                   command: entity_verb,
-                  display_fields: display_fields)
+                  display_fields: display_fields
+                )
               when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
                 group_id = instance_identifier
                 entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"

@@ -303,7 +303,8 @@ module Aspera
         current_prog_name = File.basename($PROGRAM_NAME)
         @env.formatter.display_message(
           :error,
-          "#{Formatter::WARNING_FLASH} Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(Info::CMD_NAME)
+          "#{Formatter::WARNING_FLASH} Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"
+        ) unless current_prog_name.eql?(Info::CMD_NAME)
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
@@ -363,10 +364,12 @@ module Aspera
         @env.options.declare(
           :ui, 'Method to start browser',
           values: USER_INTERFACES,
-          handler: {o: Environment.instance, m: :url_method})
+          handler: {o: Environment.instance, m: :url_method}
+        )
         @env.options.declare(
           :invalid_characters, 'Replacement character and invalid filename characters',
-          handler: {o: Environment.instance, m: :file_illegal_characters})
+          handler: {o: Environment.instance, m: :file_illegal_characters}
+        )
         @env.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         @env.options.declare(:log_format, 'Log formatter', types: [Proc, Logger::Formatter], handler: {o: Log.instance, m: :formatter})
         @env.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})

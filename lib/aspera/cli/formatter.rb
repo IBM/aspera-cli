@@ -170,13 +170,15 @@ module Aspera
         options.declare(
           :fields, "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", handler: {o: self, m: :option_handler},
           types: [String, Array, Regexp, Proc],
-          default: SpecialValues::DEF)
+          default: SpecialValues::DEF
+        )
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
         options.declare(:table_style, '(Table) Display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
         options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(
           :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', values: %i[no yes single],
-          handler: {o: self, m: :option_handler}, default: :no)
+          handler: {o: self, m: :option_handler}, default: :no
+        )
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
         options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
@@ -465,14 +467,16 @@ module Aspera
               display_message(:data, Terminal::Table.new(
                 headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
-                style:     @options[:table_style].symbolize_keys))
+                style:     @options[:table_style].symbolize_keys
+              ))
             end
           else
             # display the table ! as single table
             display_message(:data, Terminal::Table.new(
               headings:  fields,
               rows:      final_table_rows,
-              style:     @options[:table_style].symbolize_keys))
+              style:     @options[:table_style].symbolize_keys
+            ))
           end
         when :csv
           params = @options[:table_style].symbolize_keys

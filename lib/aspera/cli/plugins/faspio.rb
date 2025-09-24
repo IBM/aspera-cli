@@ -70,7 +70,8 @@ module Aspera
                   },
                   private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
-                })
+                }
+              )
             end
           command = options.get_next_command(ACTIONS)
           case command

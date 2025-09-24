@@ -25,7 +25,8 @@ module Aspera
               test_page = api.call(
                 operation: 'GET',
                 subpath:   test_endpoint,
-                query:     {local: true})
+                query:     {local: true}
+              )
               next unless test_page[:http].body.include?('Aspera Console')
               version = 'unknown'
               if (m = test_page[:http].body.match(/\(v([1-9]\..*)\)/))

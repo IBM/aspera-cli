@@ -458,15 +458,17 @@ module Aspera
           # forwards the request to the new location
           return self.class.new(
             base_url: new_url,
-            redirect_max: tries_remain_redirect).call(
-              operation: operation,
-              subpath: new_url.end_with?('/') ? '/' : nil,
-              query: query,
-              body: body,
-              content_type: content_type,
-              save_to_file: save_to_file,
-              return_error: return_error,
-              headers: headers)
+            redirect_max: tries_remain_redirect
+          ).call(
+            operation: operation,
+            subpath: new_url.end_with?('/') ? '/' : nil,
+            query: query,
+            body: body,
+            content_type: content_type,
+            save_to_file: save_to_file,
+            return_error: return_error,
+            headers: headers
+          )
         end
         # raise exception if could not retry and not return error in result
         raise e unless return_error

@@ -48,7 +48,8 @@ module Aspera
             grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
             response_type: 'cloud_iam',
             apikey:        @api_key
-          })
+          }
+        )
         # read FASP connection information for bucket
         xml_result_text = s3_api.call(
           operation: 'GET',

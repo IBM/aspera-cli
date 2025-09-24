@@ -28,7 +28,8 @@ module Aspera
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
-            headers: {'Origin' => RestParameters.instance.user_agent})
+            headers: {'Origin' => RestParameters.instance.user_agent}
+          )
           connect_info = @connect_api.read('info/version')
           Log.log.info('Connect was reached') if method_index > 0
           Log.dump(:connect_version, connect_info)

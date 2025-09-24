@@ -117,7 +117,8 @@ module Aspera
             '-codec:v', 'libx264',
             '-r', 30,
             '-pix_fmt', 'yuv420p'
-          ])
+          ]
+        )
       end
 
       # generate n clips starting at offset
@@ -137,7 +138,8 @@ module Aspera
                 '-t', @options.clips_length,
                 '-filter:v', "scale=#{@options.video_scale}",
                 '-codec:a', 'libmp3lame'
-              ])
+              ]
+            )
             f.puts("file '#{tmp_file_name}'")
           end
         end
@@ -146,7 +148,8 @@ module Aspera
           in_f: file_list_file,
           in_p: ['-f', 'concat'],
           out_f: @destination_file_path,
-          out_p: ['-codec', 'copy'])
+          out_p: ['-codec', 'copy']
+        )
         File.delete(file_list_file)
       end
 
@@ -177,7 +180,8 @@ module Aspera
             '-ac', '2',
             '-b:a', '128k',
             '-movflags', 'faststart'
-          ])
+          ]
+        )
       end
 
       def convert_video_to_png_using_fixed
@@ -185,7 +189,8 @@ module Aspera
           @source_file_path,
           Utils.video_get_duration(@source_file_path) * @options.thumb_vid_fraction,
           @options.thumb_vid_scale,
-          @destination_file_path)
+          @destination_file_path
+        )
       end
 
       # https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
@@ -204,7 +209,8 @@ module Aspera
             '-vf', 'fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
             '-loop', 0,
             '-f', 'gif'
-          ])
+          ]
+        )
       end
 
       def convert_office_to_png

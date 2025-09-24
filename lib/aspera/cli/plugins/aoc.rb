@@ -436,7 +436,8 @@ module Aspera
             return Main.result_transfer(transfer.start(server_apfid[:api].transfer_spec_gen4(
               server_apfid[:file_id],
               client_direction,
-              add_ts)))
+              add_ts
+            )))
           else Aspera.error_unexpected_value(command_repo){'command'}
           end
           Aspera.error_unreachable_line
@@ -656,7 +657,8 @@ module Aspera
                     startDate:       start_date,
                     endDate:         end_date
                   }
-                })['data']
+                }
+              )['data']
               return Main.result_single_object(result['aoc'])
             end
           when :ats
@@ -700,7 +702,8 @@ module Aspera
                     aoc_api.workspace[:name],
                     event_resource_type.to_s,
                     event_resource_id
-                  ]))
+                  ])
+                )
                 start_date_time = saved_date.first
                 stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
                 saved_date[0] = stop_date_time
@@ -857,7 +860,9 @@ module Aspera
             id: IdGenerator.from_list(
               ['aoc_recv',
                options.get_option(:url, mandatory: true),
-               aoc_api.workspace[:id]].concat(aoc_api.additional_persistence_ids)))
+               aoc_api.workspace[:id]].concat(aoc_api.additional_persistence_ids)
+            )
+          )
         end
 
         def reject_packages_from_persistency(all_packages, skip_ids_persistency)
@@ -1008,11 +1013,13 @@ module Aspera
                 package_node_api = aoc_api.node_api_from(
                   node_id: package_info['node_id'],
                   package_info: package_info,
-                  **workspace_id_hash(name: true))
+                  **workspace_id_hash(name: true)
+                )
                 transfer_spec = package_node_api.transfer_spec_gen4(
                   package_info['contents_file_id'],
                   Transfer::Spec::DIRECTION_RECEIVE,
-                  {'paths'=> ts_paths})
+                  {'paths'=> ts_paths}
+                )
                 unless per_package_def.nil?
                   # folder based on first field
                   folder = File.join(
@@ -1022,12 +1029,14 @@ module Aspera
                   transfer.option_transfer_spec['destination_root'] = self.class.unique_folder(
                     folder,
                     extension: per_package_field2.eql?('seq') ? :seq : package_info[per_package_field2],
-                    always: per_package_sub_always)
+                    always: per_package_sub_always
+                  )
                 end
                 formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{destination_folder}]})
                 statuses = transfer.start(
                   transfer_spec,
-                  rest_token: package_node_api)
+                  rest_token: package_node_api
+                )
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
                 if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
@@ -1071,7 +1080,8 @@ module Aspera
               folder_dest = options.get_next_argument('path', validation: String)
               home_node_api = aoc_api.node_api_from(
                 node_id: aoc_api.home[:node_id],
-                **workspace_id_hash(name: true))
+                **workspace_id_hash(name: true)
+              )
               shared_apfid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
               return short_link_command(
                 purpose_public: 'view_shared_file',

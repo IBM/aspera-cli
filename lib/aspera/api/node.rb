@@ -200,7 +200,8 @@ module Aspera
           operation: 'GET',
           subpath:   subpath,
           headers:   headers,
-          query:     query)[:data]
+          query:     query
+        )[:data]
       end
 
       # update transfer spec with special additional tags
@@ -216,7 +217,8 @@ module Aspera
           return @app_info[:api].node_api_from(
             node_id: node_id,
             workspace_id: @app_info[:workspace_id],
-            workspace_name: @app_info[:workspace_name])
+            workspace_name: @app_info[:workspace_name]
+          )
         end
         Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
         return
@@ -285,7 +287,8 @@ module Aspera
                   method_sym:    method_sym,
                   state:         state,
                   top_file_id:   entry['target_id'],
-                  top_file_path: current_path)
+                  top_file_path: current_path
+                )
               end
             end
           end

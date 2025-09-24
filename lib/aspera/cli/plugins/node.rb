@@ -82,10 +82,12 @@ module Aspera
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(
               :default_ports, 'Gen4: Use standard FASP ports (true) or get from node API (false)', values: :bool, default: :yes,
-              handler: {o: Api::Node, m: :use_standard_ports})
+              handler: {o: Api::Node, m: :use_standard_ports}
+            )
             options.declare(
               :node_cache, 'Gen4: Set to no to force actual file system read', values: :bool,
-              handler: {o: Api::Node, m: :use_node_cache})
+              handler: {o: Api::Node, m: :use_node_cache}
+            )
             options.declare(:root_id, 'Gen4: File id of top folder when using access key (override AK root id)')
             options.declare(:dynamic_key, 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key})
             SyncActions.declare_options(options)
@@ -163,7 +165,8 @@ module Aspera
                   type:     :basic,
                   username: options.get_option(:username, mandatory: true),
                   password: options.get_option(:password, mandatory: true)
-                })
+                }
+              )
             end
         end
 
@@ -381,7 +384,8 @@ module Aspera
             File.basename(remote_path)
             result = @api_node.call(
               operation: 'GET',
-              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents")
+              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents"
+            )
             return Main.result_text(result[:http].body)
           when :transport
             return Main.result_single_object(@api_node.transport_params)
@@ -401,7 +405,8 @@ module Aspera
               return entity_execute(
                 api: @api_node,
                 entity: 'access_keys',
-                command: ak_command) do |field, value|
+                command: ak_command
+              ) do |field, value|
                        raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
                        @api_node.read('access_keys/self')['id']
                      end
@@ -604,7 +609,8 @@ module Aspera
             apifid = apifid_from_next_arg(top_file_id)
             result = apifid[:api].call(
               operation: 'GET',
-              subpath: "files/#{apifid[:file_id]}/content")
+              subpath: "files/#{apifid[:file_id]}/content"
+            )
             return Main.result_text(result[:http].body)
           when :show
             apifid = apifid_from_next_arg(top_file_id)
@@ -734,7 +740,8 @@ module Aspera
                   options.get_option(:url, mandatory: true),
                   options.get_option(:username, mandatory: true),
                   async_id
-                ]))
+                ])
+              )
               unless iteration_data.first.nil?
                 data.select!{ |l| l['fnid'].to_i > iteration_data.first}
               end
@@ -828,7 +835,8 @@ module Aspera
                 api: @api_node,
                 entity: :asyncs,
                 command: sync_command,
-                items_key: 'ids'){ |field, value| ssync_lookup(field, value)}
+                items_key: 'ids'
+              ){ |field, value| ssync_lookup(field, value)}
             else
               asyncs_id = instance_identifier{ |field, value| ssync_lookup(field, value)}
               if %i[start stop].include?(sync_command)
@@ -878,7 +886,8 @@ module Aspera
                     'node_transfers',
                     options.get_option(:url, mandatory: true),
                     options.get_option(:username, mandatory: true)
-                  ]))
+                  ])
+                )
                 if transfer_filter.delete('reset')
                   iteration_persistency.data.clear
                   iteration_persistency.save

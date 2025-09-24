@@ -247,7 +247,8 @@ module Aspera
       def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
         value = options.get_next_argument(
           "parameters for #{command}#{" (#{description})" unless description.nil?}", mandatory: default.nil?,
-          validation: bulk ? Array : type)
+          validation: bulk ? Array : type
+        )
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)

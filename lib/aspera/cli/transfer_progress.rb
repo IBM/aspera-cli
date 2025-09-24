@@ -36,7 +36,8 @@ module Aspera
             format:      '%t %a %B %p%% %r Mbps %E',
             rate_scale:  lambda{ |rate| rate / Environment::BYTES_PER_MEBIBIT},
             title:       '',
-            total:       nil)
+            total:       nil
+          )
         end
         progress_provided = false
         case type

@@ -83,7 +83,8 @@ module Aspera
             exec: Ascp::Installation.instance.path(:transferd),
             args: ['--config', conf_file],
             out: log_stdout,
-            err: log_stderr)
+            err: log_stderr
+          )
           begin
             # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do
@@ -111,7 +112,8 @@ module Aspera
         transfer_request = ::Transferd::Api::TransferRequest.new(
           transferType: ::Transferd::Api::TransferType::FILE_REGULAR, # transfer type (file/stream)
           config: ::Transferd::Api::TransferConfig.new, # transfer configuration
-          transferSpec: transfer_spec.to_json) # transfer definition
+          transferSpec: transfer_spec.to_json
+        ) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_response = @transfer_client.start_transfer(transfer_request)
         raise Transfer::Error, start_response.error.description if start_response.status.eql?(:FAILED)

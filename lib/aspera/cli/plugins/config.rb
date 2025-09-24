@@ -171,7 +171,8 @@ module Aspera
             :home, 'Home folder for tool',
             handler: {o: self, m: :main_folder},
             types: String,
-            default: self.class.default_app_main_folder(app_name: Info::CMD_NAME))
+            default: self.class.default_app_main_folder(app_name: Info::CMD_NAME)
+          )
           options.parse_options!
           Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
           # data persistency manager, created by config plugin, set for global object
@@ -183,7 +184,8 @@ module Aspera
           options.declare(
             :config_file, 'Path to YAML file with preset configuration',
             handler: {o: self, m: :option_config_file},
-            default: File.join(@main_folder, DEFAULT_CONFIG_FILENAME))
+            default: File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
+          )
           options.parse_options!
           # read config file (set @config_presets)
           read_config_file
@@ -362,7 +364,8 @@ module Aspera
               if !@ssl_warned_urls.include?(base_url)
                 formatter.display_message(
                   :error,
-                  "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
+                  "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production."
+                )
                 @ssl_warned_urls.push(base_url)
               end
             end
@@ -451,7 +454,8 @@ module Aspera
           check_date_persist = PersistencyActionOnce.new(
             manager: persistency,
             data:    last_check_array,
-            id:      'version_last_check')
+            id:      'version_last_check'
+          )
           # get persisted date or nil
           current_date = Date.today
           last_check_days = (current_date - Date.strptime(last_check_array.first, GEM_CHECK_DATE_FMT)) rescue nil

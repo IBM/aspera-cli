@@ -64,12 +64,14 @@ module Aspera
           # link CLI options to gen_info attributes
           options.declare(
             :skip_format, 'Skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
-            handler: {o: self, m: :option_skip_format}, default: [])
+            handler: {o: self, m: :option_skip_format}, default: []
+          )
           options.declare(
             :folder_reset_cache, 'Force detection of generated preview by refresh cache',
             values: %i[no header read],
             handler: {o: self, m: :option_folder_reset_cache},
-            default: :no)
+            default: :no
+          )
           options.declare(:skip_types, 'Skip types in comma separated list', handler: {o: self, m: :option_skip_types})
           options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
           options.declare(:temp_folder, 'Path to temp folder', default: Dir.tmpdir)
@@ -83,7 +85,8 @@ module Aspera
             :file_access, 'How to read and write files in repository',
             values: %i[local remote],
             handler: {o: self, m: :option_file_access},
-            default: :local)
+            default: :local
+          )
 
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -132,7 +135,8 @@ module Aspera
             operation: 'GET',
             subpath:   "files/#{file_id}/files",
             headers:   headers,
-            query:     request_args)[:data]
+            query:     request_args
+          )[:data]
         end
 
         # old version based on folders
@@ -480,7 +484,8 @@ module Aspera
                   command.to_s,
                   options.get_option(:url, mandatory: true),
                   options.get_option(:username, mandatory: true)
-                ]))
+                ])
+              )
             end
             # call processing method specified by command line command
             send(:"process_#{command}", iteration_persistency)

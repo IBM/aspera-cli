@@ -154,7 +154,8 @@ module Aspera
                 auth:         {type: :basic, username: options.get_option(:username, mandatory: true), password: options.get_option(:password, mandatory: true)},
                 scope:        'admin',
                 grant_type:   'password'
-              })
+              }
+            )
           end
           return @api_v4
         end
@@ -187,7 +188,8 @@ module Aspera
               operation: 'GET',
               subpath:   "#{mailbox}.atom",
               headers:   {'Accept' => 'application/xml'},
-              query:     mailbox_query)[:http].body
+              query:     mailbox_query
+            )[:http].body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
             Log.dump(:box_data, box_data)
             items = box_data.key?('entry') ? box_data['entry'] : []
@@ -342,7 +344,8 @@ module Aspera
                       options.get_option(:url, mandatory: true),
                       options.get_option(:username, mandatory: true),
                       options.get_option(:box, mandatory: true).to_s
-                    ]))
+                    ])
+                  )
                 end
                 # get command line parameters
                 delivery_id = instance_identifier
@@ -383,7 +386,8 @@ module Aspera
                   operation: 'GET',
                   subpath:   link_data[:subpath],
                   headers:   {'Accept' => 'application/xml'},
-                  query:     {passcode: link_data[:query]['passcode']})
+                  query:     {passcode: link_data[:query]['passcode']}
+                )
                 if !package_creation_data[:http].body.start_with?('<?xml ')
                   Environment.instance.open_uri(link_url)
                   raise Cli::Error, 'Unexpected response: package not found ?'
@@ -471,7 +475,8 @@ module Aspera
                     type:     :basic,
                     username: node_config['username'],
                     password: node_config['password']
-                  })
+                  }
+                )
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
                 return Node.new(**init_params, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
               end

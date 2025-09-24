@@ -32,7 +32,8 @@ module Aspera
         random_state = SecureRandom.uuid
         login_page_url = Rest.build_uri(
           "#{api.base_url}/#{@path_authorize}",
-          optional_scope_client_id.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state))
+          optional_scope_client_id.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state)
+        )
         # here, we need a human to authorize on a web page
         Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
         # start a web server to receive request code
@@ -46,7 +47,8 @@ module Aspera
         return create_token_call(optional_scope_client_id(add_secret: true).merge(
           grant_type:   'authorization_code',
           code:         received_params['code'],
-          redirect_uri: @redirect_uri))
+          redirect_uri: @redirect_uri
+        ))
       end
     end
     Factory.instance.register_token_creator(Web)

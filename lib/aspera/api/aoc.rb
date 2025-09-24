@@ -498,7 +498,8 @@ module Aspera
         package_node_api = node_api_from(
           node_id: created_package['node_id'],
           workspace_id: created_package['workspace_id'],
-          package_info: created_package)
+          package_info: created_package
+        )
 
         return {
           spec: package_node_api.transfer_spec_gen4(created_package['contents_file_id'], Transfer::Spec::DIRECTION_SEND),

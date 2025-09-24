@@ -50,7 +50,8 @@ class String
         elsif code <= 47 then 49
         else
           0 # by default reset all
-        end)
+        end
+      )
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}

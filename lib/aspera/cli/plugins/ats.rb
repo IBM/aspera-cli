@@ -123,7 +123,8 @@ module Aspera
                 type:     :basic,
                 username: access_key_id,
                 password: config.lookup_secret(url: node_url, username: access_key_id)
-              })
+              }
+            )
             command = options.get_next_command(Node::COMMANDS_GEN4)
             return Node.new(**init_params, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
@@ -134,7 +135,8 @@ module Aspera
                 type:     :basic,
                 username: access_key_id,
                 password: config.lookup_secret(url: ats_url, username: access_key_id)
-              })
+              }
+            )
             return Main.result_single_object(api_ak_auth.read('servers'))
           else Aspera.error_unexpected_value(command)
           end
@@ -171,7 +173,8 @@ module Aspera
               grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
               response_type: 'cloud_iam',
               apikey:        options.get_option(:ibm_api_key, mandatory: true)
-            })
+            }
+          )
         end
 
         def execute_action_api_key
