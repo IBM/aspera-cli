@@ -24,7 +24,8 @@ module Aspera
       Log.log.debug{'Faspex4PostProcServlet initialized'}
     end
 
-    def do_POST(request, response) # :reek:UncommunicativeMethodName
+    # :reek:UncommunicativeMethodName
+    def do_POST(request, response)
       Log.log.debug{"request=#{request.path}"}
       begin
         # only accept requests on the root

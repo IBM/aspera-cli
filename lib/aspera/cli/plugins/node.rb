@@ -813,7 +813,7 @@ module Aspera
           telemetry
         ].concat(COMMON_ACTIONS).freeze
 
-        def execute_action(command=nil)
+        def execute_action(command = nil)
           command ||= options.get_next_command(ACTIONS)
           case command
           when *COMMON_ACTIONS then return execute_simple_common(command)

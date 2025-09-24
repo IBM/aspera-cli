@@ -158,7 +158,7 @@ module Aspera
           end
         end
 
-        def ats_api_v2_auth_ibm(rest_add_headers={})
+        def ats_api_v2_auth_ibm(rest_add_headers = {})
           return Rest.new(
             base_url: "#{Api::Ats::SERVICE_BASE_URL}/v2",
             headers:  rest_add_headers,

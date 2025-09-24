@@ -523,7 +523,7 @@ module Aspera
         # @return the hash from name (also expands possible includes)
         # @param config_name name of the preset in config file
         # @param include_path used to detect and avoid include loops
-        def preset_by_name(config_name, include_path=[])
+        def preset_by_name(config_name, include_path = [])
           raise Cli::Error, 'loop in include' if include_path.include?(config_name)
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets

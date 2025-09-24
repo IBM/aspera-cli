@@ -13,7 +13,7 @@ module URI
       def register_proxy_finder
         Aspera.assert(block_given?)
         # overload the method in URI : call user's provided block and fallback to original method
-        define_method(:find_proxy){ |env_vars=ENV| yield(to_s) || find_proxy_orig(env_vars)}
+        define_method(:find_proxy){ |env_vars = ENV| yield(to_s) || find_proxy_orig(env_vars)}
       end
     end
   end

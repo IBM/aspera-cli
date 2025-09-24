@@ -31,7 +31,7 @@ module Aspera
         end
 
         # check that external tools can be executed
-        def check_tools(skip_types=[])
+        def check_tools(skip_types = [])
           tools_to_check = EXTERNAL_TOOLS.dup
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
@@ -99,7 +99,7 @@ module Aspera
           end
         end
 
-        def video_dump_frame(input_file, offset_seconds, scale, output_file, index=nil)
+        def video_dump_frame(input_file, offset_seconds, scale, output_file, index = nil)
           output_file = get_tmp_num_filepath(output_file, index) unless index.nil?
           ffmpeg(
             in_f: input_file,

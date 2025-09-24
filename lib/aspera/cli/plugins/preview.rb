@@ -125,7 +125,7 @@ module Aspera
 
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
-        def get_folder_entries(file_id, request_args=nil)
+        def get_folder_entries(file_id, request_args = nil)
           headers = {'Accept' => Rest::MIME_JSON}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
           return @api_node.call(
@@ -215,7 +215,7 @@ module Aspera
           end
         end
 
-        def do_transfer(direction, folder_id, source_filename, destination='/')
+        def do_transfer(direction, folder_id, source_filename, destination = '/')
           Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)))
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
@@ -268,7 +268,7 @@ module Aspera
         end
 
         # Generate a file name based on basename and format (extension)
-        def preview_filename(preview_format, base_name=nil)
+        def preview_filename(preview_format, base_name = nil)
           base_name ||= PREVIEW_BASENAME
           return "#{base_name}.#{preview_format}"
         end
@@ -345,7 +345,7 @@ module Aspera
 
         # scan all files in provided folder entry
         # @param top_path subpath to start folder scan inside
-        def scan_folder_files(top_entry, top_path=nil)
+        def scan_folder_files(top_entry, top_path = nil)
           unless top_path.nil?
             # canonical path: start with / and ends with /
             top_path = '/' + top_path.split('/').reject(&:empty?).join('/') + '/'

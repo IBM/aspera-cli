@@ -16,7 +16,7 @@ module Aspera
     }.freeze
 
     # @param params see DEFAULTS
-    def initialize(params=nil)
+    def initialize(params = nil)
       @parameters = DEFAULTS.dup
       if !params.nil?
         Aspera.assert_type(params, Hash)

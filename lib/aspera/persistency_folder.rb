@@ -60,7 +60,7 @@ module Aspera
     end
 
     # Delete persisted items
-    def garbage_collect(persist_category, max_age_seconds=nil)
+    def garbage_collect(persist_category, max_age_seconds = nil)
       garbage_files = current_files(persist_category)
       if !max_age_seconds.nil?
         current_time = Time.now

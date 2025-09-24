@@ -88,7 +88,7 @@ module Aspera
       # Build URI from URL and parameters and check it is http or https
       # encode array [] parameters
       # @param query [Hash,Array]
-      def build_uri(url, query=nil)
+      def build_uri(url, query = nil)
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
         return uri if query.nil? || query.respond_to?(:empty?) && query.empty?
@@ -484,7 +484,7 @@ module Aspera
       return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
     end
 
-    def read(subpath, query=nil)
+    def read(subpath, query = nil)
       return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query)[:data]
     end
 
@@ -492,7 +492,7 @@ module Aspera
       return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
     end
 
-    def delete(subpath, params=nil)
+    def delete(subpath, params = nil)
       return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params)[:data]
     end
 

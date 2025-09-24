@@ -213,7 +213,7 @@ module Aspera
         convert_pdf_to_png(tmp_pdf_file)
       end
 
-      def convert_pdf_to_png(source_file_path=nil)
+      def convert_pdf_to_png(source_file_path = nil)
         source_file_path ||= @source_file_path
         Utils.external_command(:magick, [
           'convert',

@@ -61,7 +61,7 @@ module Aspera
       # class static methods
       class << self
         # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
-        def get_client_info(client_name=nil)
+        def get_client_info(client_name = nil)
           client_key = client_name.nil? ? GLOBAL_CLIENT_APPS.first : client_name.to_sym
           return client_key, DataRepository.instance.item(client_key)
         end

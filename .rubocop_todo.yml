@@ -53,7 +53,7 @@ Style/StderrPuts:
 Metrics/BlockLength:
   Enabled: false
 Layout/SpaceAroundEqualsInParameterDefault:
-  Enabled: false
+  Enabled: true
 Style/Documentation:
   Enabled: false
 Metrics/CyclomaticComplexity:

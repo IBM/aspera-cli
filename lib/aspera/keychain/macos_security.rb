@@ -38,7 +38,7 @@ module Aspera
           getpass:  :g
         }.freeze
         class << self
-          def execute(command, options=nil, supported=nil, last_opt=nil)
+          def execute(command, options = nil, supported = nil, last_opt = nil)
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
@@ -72,7 +72,7 @@ module Aspera
             key_chains(execute('login-keychain')).first
           end
 
-          def list(options={})
+          def list(options = {})
             Aspera.assert_values(options[:domain], DOMAINS, type: ArgumentError){'domain'} unless options[:domain].nil?
             key_chains(execute('list-keychains', options, LIST_OPTIONS))
           end

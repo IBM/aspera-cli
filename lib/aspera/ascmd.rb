@@ -177,7 +177,7 @@ module Aspera
 
       # Decodes the provided buffer as provided type name
       # @return a decoded type: single, Array, or Hash
-      def parse(buffer, type_name, indent_level=nil)
+      def parse(buffer, type_name, indent_level = nil)
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]
         raise "Unexpected type #{type_name}" if type_descr.nil?

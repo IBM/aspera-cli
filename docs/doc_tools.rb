@@ -49,6 +49,87 @@ end
 
 # :reek:TooManyMethods
 class DocHelper
+  # REMOVED_OPTIONS = %w[insecure].freeze
+  KEEP_HOSTS = %w[localhost 127.0.0.1].freeze
+  SAMPLE_EMAIL = 'my_user@example.com'
+  SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
+  SECRET_QUERIES = %w[token passcode context].freeze
+  class << self
+    # main function to generate template configuration file for tests
+    # hide sensitive information
+    def generate_generic_conf
+      local_config = ENV['ASPERA_CLI_TEST_CONF_FILE']
+      raise 'missing env var ASPERA_CLI_TEST_CONF_FILE: local config file' if local_config.nil?
+      raise "Missing conf file: #{local_config}" if !File.exist?(local_config)
+      configuration = YAML.load_file(local_config)
+      configuration.each do |k, preset_hash|
+        preset_hash.each do |param_name, param_value|
+          if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
+            param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')}
+          end
+          next unless param_value.is_a?(String)
+          next if param_value.start_with?('@preset:')
+          if k.eql?('config') && param_name.eql?('version')
+            preset_hash[param_name] = '4.0'
+            next
+          end
+          if param_value.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
+            preset_hash[param_name] = SAMPLE_EMAIL
+            next
+          end
+          if param_name.eql?('client_id')
+            preset_hash[param_name] = 'my_client_id'
+            next
+          end
+          if param_name.eql?('bucket_name') || param_name.eql?('bucket')
+            preset_hash[param_name] = 'my_bucket'
+            next
+          end
+          if param_value.is_a?(String) && param_value.start_with?('/')
+            preset_hash[param_name] = "/my_#{param_name}"
+            next
+          end
+          begin
+            uri = URI.parse(param_value)
+            if uri.scheme.nil? ||
+                uri.host.nil? ||
+                KEEP_HOSTS.include?(uri.host)
+              nil
+            elsif uri.host.eql?('aspera.pub')
+              preset_hash[param_name] = SHORT_LINK
+              next
+            else
+              uri.host = if uri.host.end_with?('.ibmaspera.com')
+                'example.ibmaspera.com'
+              else
+                uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example').gsub('my_local_server', '127.0.0.1')
+              end
+              if uri.query.is_a?(String)
+                SECRET_QUERIES.each do |key|
+                  uri.query = uri.query.gsub(/&?#{key}=[^&]*/, "#{key}=some_#{key}")
+                end
+              end
+              preset_hash[param_name] = uri.to_s
+            end
+          rescue URI::InvalidURIError
+            nil
+          end
+          case param_name
+          when 'url'
+          when 'username'
+            preset_hash[param_name] = param_value.include?('@') ? SAMPLE_EMAIL : 'my_user'
+            next
+          when /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
+            preset_hash[param_name] = 'your value here'
+            next
+          end
+        end
+      end
+      File.open(ARGV.shift, 'w') do |f|
+        f.puts(configuration.to_yaml)
+      end
+    end
+  end
   # Place warning in generated file
   def doc_warn(_)
     'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md'
@@ -294,87 +375,6 @@ class DocHelper
       all.concat(v)
     end
     return all.join("\n")
-  end
-
-  # REMOVED_OPTIONS = %w[insecure].freeze
-  KEEP_HOSTS = %w[localhost 127.0.0.1].freeze
-  SAMPLE_EMAIL = 'my_user@example.com'
-  SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
-  SECRET_QUERIES = %w[token passcode context].freeze
-
-  # main function to generate template configuration file for tests
-  # hide sensitive information
-  def self.generate_generic_conf
-    local_config = ENV['ASPERA_CLI_TEST_CONF_FILE']
-    raise 'missing env var ASPERA_CLI_TEST_CONF_FILE: local config file' if local_config.nil?
-    raise "Missing conf file: #{local_config}" if !File.exist?(local_config)
-    configuration = YAML.load_file(local_config)
-    configuration.each do |k, preset_hash|
-      preset_hash.each do |param_name, param_value|
-        if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
-          param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')}
-        end
-        next unless param_value.is_a?(String)
-        next if param_value.start_with?('@preset:')
-        if k.eql?('config') && param_name.eql?('version')
-          preset_hash[param_name] = '4.0'
-          next
-        end
-        if param_value.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
-          preset_hash[param_name] = SAMPLE_EMAIL
-          next
-        end
-        if param_name.eql?('client_id')
-          preset_hash[param_name] = 'my_client_id'
-          next
-        end
-        if param_name.eql?('bucket_name') || param_name.eql?('bucket')
-          preset_hash[param_name] = 'my_bucket'
-          next
-        end
-        if param_value.is_a?(String) && param_value.start_with?('/')
-          preset_hash[param_name] = "/my_#{param_name}"
-          next
-        end
-        begin
-          uri = URI.parse(param_value)
-          if uri.scheme.nil? ||
-              uri.host.nil? ||
-              KEEP_HOSTS.include?(uri.host)
-            nil
-          elsif uri.host.eql?('aspera.pub')
-            preset_hash[param_name] = SHORT_LINK
-            next
-          else
-            uri.host = if uri.host.end_with?('.ibmaspera.com')
-              'example.ibmaspera.com'
-            else
-              uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example').gsub('my_local_server', '127.0.0.1')
-            end
-            if uri.query.is_a?(String)
-              SECRET_QUERIES.each do |key|
-                uri.query = uri.query.gsub(/&?#{key}=[^&]*/, "#{key}=some_#{key}")
-              end
-            end
-            preset_hash[param_name] = uri.to_s
-          end
-        rescue URI::InvalidURIError
-          nil
-        end
-        case param_name
-        when 'url'
-        when 'username'
-          preset_hash[param_name] = param_value.include?('@') ? SAMPLE_EMAIL : 'my_user'
-          next
-        when /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
-          preset_hash[param_name] = 'your value here'
-          next
-        end
-      end
-    end
-    File.open(ARGV.shift, 'w') do |f|
-      f.puts(configuration.to_yaml)
-    end
   end
 
   # read markdown file line by line, and check that all links are valid

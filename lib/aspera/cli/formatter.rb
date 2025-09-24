@@ -183,7 +183,7 @@ module Aspera
 
       # method accessed by option manager
       # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
-      def option_handler(option_symbol, operation, value=nil)
+      def option_handler(option_symbol, operation, value = nil)
         Aspera.assert_values(operation, %i[set get])
         case operation
         when :set

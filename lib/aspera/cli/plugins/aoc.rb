@@ -301,7 +301,7 @@ module Aspera
         # Call block with same query using paging and response information
         # block must return a hash with :data and :http keys
         # @return [Hash] {items: , total: }
-        def api_call_paging(base_query={})
+        def api_call_paging(base_query = {})
           Aspera.assert_type(base_query, Hash){'query'}
           Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
@@ -337,7 +337,7 @@ module Aspera
 
         # read using the query and paging
         # @return [Hash] {data: , total: }
-        def api_read_all(resource_class_path, base_query={})
+        def api_read_all(resource_class_path, base_query = {})
           return api_call_paging(base_query) do |query|
             aoc_api.call(operation: 'GET', subpath: resource_class_path, headers: {'Accept' => Rest::MIME_JSON}, query: query)
           end

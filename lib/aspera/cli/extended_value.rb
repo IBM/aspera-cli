@@ -85,7 +85,8 @@ module Aspera
       end
 
       # JSON Parser, with more information on error location
-      def JSON_parse(value) # :reek:UncommunicativeMethodName
+      # :reek:UncommunicativeMethodName
+      def JSON_parse(value)
         JSON.parse(value)
       rescue JSON::ParserError => e
         m = /at line (\d+) column (\d+)/.match(e.message)

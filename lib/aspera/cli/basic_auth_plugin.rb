@@ -22,7 +22,7 @@ module Aspera
       end
 
       # returns a Rest object with basic auth
-      def basic_auth_params(subpath=nil)
+      def basic_auth_params(subpath = nil)
         api_url = options.get_option(:url, mandatory: true)
         api_url = "#{api_url}/#{subpath}" unless subpath.nil?
         return {
@@ -34,7 +34,7 @@ module Aspera
           }}
       end
 
-      def basic_auth_api(subpath=nil)
+      def basic_auth_api(subpath = nil)
         return Rest.new(**basic_auth_params(subpath))
       end
     end

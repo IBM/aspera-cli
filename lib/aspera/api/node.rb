@@ -193,7 +193,7 @@ module Aspera
       end
 
       # Call node API, possibly adding cache control header, as globally specified
-      def read_with_cache(subpath, query=nil)
+      def read_with_cache(subpath, query = nil)
         headers = {'Accept' => Rest::MIME_JSON}
         headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless self.class.use_node_cache
         return call(
@@ -298,7 +298,7 @@ module Aspera
       # @param path [String] file or folder path (end with "/" is like setting process_last_link)
       # @param process_last_link [Boolean] if true, follow the last link
       # @return [Hash] {.api,.file_id}
-      def resolve_api_fid(top_file_id, path, process_last_link=false)
+      def resolve_api_fid(top_file_id, path, process_last_link = false)
         Aspera.assert_type(top_file_id, String)
         Aspera.assert_type(path, String)
         process_last_link ||= path.end_with?(PATH_SEPARATOR)
@@ -392,7 +392,7 @@ module Aspera
       # @param file_id destination or source folder (id)
       # @param direction one of Transfer::Spec::DIRECTION_SEND, Transfer::Spec::DIRECTION_RECEIVE
       # @param ts_merge additional transfer spec to merge
-      def transfer_spec_gen4(file_id, direction, ts_merge=nil)
+      def transfer_spec_gen4(file_id, direction, ts_merge = nil)
         ak_name = nil
         ak_token = nil
         case auth_params[:type]

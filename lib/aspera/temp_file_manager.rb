@@ -45,7 +45,7 @@ module Aspera
     end
 
     # same as above but in global temp folder, with user's name
-    def new_file_path_global(prefix=nil, suffix: nil)
+    def new_file_path_global(prefix = nil, suffix: nil)
       username =
         begin
           Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
