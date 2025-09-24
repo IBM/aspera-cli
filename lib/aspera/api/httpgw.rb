@@ -262,7 +262,7 @@ module Aspera
         file_name =
           if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
             # it is a zip file if zip is required or there is more than 1 file
-            transfer_spec['download_name'] + '.zip'
+            "#{transfer_spec['download_name']}.zip"
           else
             # it is a plain file if we don't require zip and there is only one file
             File.basename(default_file_name)
@@ -329,7 +329,7 @@ module Aspera
       # @return [Array] info on files to send
       def process_upload_list(transfer_spec)
         total_bytes_to_transfer = 0
-        source_prefix = transfer_spec.key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] + '/' : ''
+        source_prefix = transfer_spec.key?('source_root') && !transfer_spec['source_root'].empty? ? "#{transfer_spec['source_root']}/" : ''
         files_to_send = []
         transfer_spec['paths'].each do |one_path|
           source_path = source_prefix + one_path['source']

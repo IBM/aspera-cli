@@ -47,7 +47,7 @@ Style/SingleLineMethods:
 Style/RedundantReturn:
   Enabled: false
 Style/StringConcatenation:
-  Enabled: false
+  Enabled: true
 Style/StderrPuts:
   Enabled: true
 Metrics/BlockLength:

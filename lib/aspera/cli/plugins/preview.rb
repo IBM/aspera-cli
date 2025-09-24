@@ -346,7 +346,7 @@ module Aspera
         def scan_folder_files(top_entry, top_path = nil)
           unless top_path.nil?
             # canonical path: start with / and ends with /
-            top_path = '/' + top_path.split('/').reject(&:empty?).join('/') + '/'
+            top_path = "/#{top_path.split('/').reject(&:empty?).join('/')}/"
           end
           Log.log.debug{"scan: #{top_entry} : #{top_path}".green}
           # don't use recursive call, use list instead
@@ -414,7 +414,7 @@ module Aspera
             Log.log.debug{"remote: #{@access_remote}"}
             Log.log.debug{"access key info: #{@access_key_self}"}
             # TODO: can the previews folder parameter be read from node api ?
-            @option_skip_folders.push('/' + @option_previews_folder)
+            @option_skip_folders.push("/#{@option_previews_folder}")
             if @access_remote
               # NOTE: the filter "name", it's why we take the first one
               @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'], {name: @option_previews_folder}).first

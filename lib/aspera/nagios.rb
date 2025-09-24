@@ -36,9 +36,8 @@ module Aspera
         # build message: if multiple components: concatenate
         # message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
         message = data
-          .map{ |i| i['component']}
-          .uniq
-          .map{ |comp| comp + ':' + data.select{ |d| d['component'].eql?(comp)}.map{ |d| d['message']}.join(',')}
+          .group_by{ |d| d['component']}
+          .map{ |comp, items| "#{comp}:#{items.map{ |d| d['message']}.join(',')}"}
           .join(', ')
           .tr("\n", ' ')
         status = data.first['status'].upcase

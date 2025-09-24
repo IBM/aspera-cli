@@ -75,7 +75,7 @@ module Aspera
     end
 
     def current_files(persist_category)
-      Dir[File.join(@folder, persist_category + '*' + FILE_SUFFIX)]
+      Dir[File.join(@folder, "#{persist_category}*#{FILE_SUFFIX}")]
     end
 
     def current_items(persist_category)

@@ -214,7 +214,7 @@ module Aspera
       end
 
       def convert_office_to_png
-        tmp_pdf_file = File.join(this_tmpdir, File.basename(@source_file_path, File.extname(@source_file_path)) + '.pdf')
+        tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
         Utils.external_command(:unoconv, [
           '-f', 'pdf',
           '-o', tmp_pdf_file,

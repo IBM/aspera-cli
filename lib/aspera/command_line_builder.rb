@@ -62,7 +62,7 @@ module Aspera
           # by default : string, unless it's without arg
           info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
           # add default cli option name if not present, and if supported in "direct".
-          info['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
+          info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
           info.freeze
         end
       end

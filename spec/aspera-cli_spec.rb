@@ -53,26 +53,33 @@ PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}")
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
 PAC_FILE = "file:///#{project_top_folder}/tests/proxy.pac"
-SAMPLE_FASPE_URI = 'faspe://my_user_here:my_pass_here@host:33001/path?' + {
-  'cookie'      => 'foo',
-  'token'       => 'foo',
-  'sshfp'       => 'foo',
-  'policy'      => 'foo',
-  'httpport'    => 'foo',
-  'targetrate'  => 'foo',
-  'minrate'     => 'foo',
-  'port'        => 'foo',
-  'bwcap'       => 'foo',
-  'enc'         => 'foo',
-  'tags64'      => 'ImZvbyIK',
-  'createpath'  => 'no',
-  'fallback'    => 'no',
-  'lockpolicy'  => 'no',
-  'lockminrate' => 'yes',
-  'auth'        => 'foo',
-  'v'           => 'foo',
-  'protect'     => 'foo'
-}.to_a.map{ |a| a.join('=')}.join('&')
+SAMPLE_FASPE_URI = URI::Generic.build(
+  scheme:  'faspe',
+  userinfo: 'my_user_here:my_pass_here',
+  host:    'host',
+  port:    33_001,
+  path:    '/path',
+  query:   URI.encode_www_form(
+    cookie:      'foo',
+    token:       'foo',
+    sshfp:       'foo',
+    policy:      'foo',
+    httpport:    'foo',
+    targetrate:  'foo',
+    minrate:     'foo',
+    port:        'foo',
+    bwcap:       'foo',
+    enc:         'foo',
+    tags64:      'ImZvbyIK',
+    createpath:  'no',
+    fallback:    'no',
+    lockpolicy:  'no',
+    lockminrate: 'yes',
+    auth:        'foo',
+    v:           'foo',
+    protect:     'foo'
+  )
+).to_s.freeze
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
 RSpec.describe(Aspera::Transfer::Uri) do
