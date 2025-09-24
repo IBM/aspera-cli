@@ -285,7 +285,7 @@ class DocHelper
     commands = all_test_commands_by_plugin.delete(plugin_name.to_s)
     raise "plugin #{plugin_name} not found in test makefile" if commands.nil?
     @undocumented_plugins.delete(plugin_name.to_sym)
-    return "### #{sample_commands_title(plugin_name)}\n\n> **Note:** Add `#{cmd} #{plugin_name}` in front of the commands:\n\n```bash\n#{commands.join("\n")}\n```"
+    return "### #{sample_commands_title(plugin_name)}\n\n> [!NOTE]\n> Add `#{cmd} #{plugin_name}` in front of the following commands:\n\n```bash\n#{commands.join("\n")}\n```"
   end
 
   def include_commands

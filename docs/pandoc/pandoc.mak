@@ -1,9 +1,11 @@
 # See README.md for more information
 DIR_PANDOC := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PANDOC_DEPS=\
-$(DIR_PANDOC)manual_pandoc_defaults.yaml \
-$(DIR_PANDOC)manual_include_in_header.tex \
+$(DIR_PANDOC)gfm_admonition.css \
+$(DIR_PANDOC)gfm_admonition.lua \
 $(DIR_PANDOC)manual_include_after_body.tex \
+$(DIR_PANDOC)manual_include_in_header.tex \
+$(DIR_PANDOC)manual_pandoc_defaults.yaml \
 $(DIR_PANDOC)pandoc.mak
 define markdown_to_pdf
 $(2): $(1) $$(PANDOC_DEPS)

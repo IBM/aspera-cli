@@ -220,12 +220,13 @@ If you don't have internet for the installation, refer to section [Installation 
 It is planned to provide `ascli` as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is a Beta feature.
-On Linux, the executable requires a minimum GLIBC version.
-Installation of `ascp` is still required separately.
-Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
-
-On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+> [!CAUTION]
+> This is a Beta feature.
+> On Linux, the executable requires a minimum GLIBC version.
+> Installation of `ascp` is still required separately.
+> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+>
+> On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
 ```bash
 ldd --version | head -n1
@@ -508,7 +509,7 @@ Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> [!NOTE]
+> [!CAUTION]
 > The startup time is slightly longer using `jruby` than the native Ruby.
 > Refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
 > This can be reduced by using the `--dev` option.
@@ -865,7 +866,9 @@ Add options:
 ```
 
 > [!NOTE]
-> If you are using a `podman machine`, e.g. on macOS, make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> If you are using a `podman machine`, e.g. on macOS, make sure that the folder is also shared between the VM and the host, so that sharing is:
+>
+> container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and `ascli` available,
 you can change the entry point, add option:
@@ -881,7 +884,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-> [!NOTE]
+> [!CAUTION]
 > `ascli` is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
@@ -903,7 +906,9 @@ asclish
 A convenience sample script is also provided: download the script [`dascli`](../container/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/container/dascli) :
 
 > [!NOTE]
-> If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../container/dascli ascli`
+> If you have installed `ascli`, the script `dascli` can also be found like this:
+>
+> `cp $(ascli config gem path)/../container/dascli ascli`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -939,7 +944,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > [!NOTE]
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
-> [!NOTE]
+> [!CAUTION]
 > Do not use too many volumes, as the legacy `aufs` limits the number. (anyway, prefer to use `overlay2`)
 
 #### Container: Offline installation
@@ -1352,7 +1357,8 @@ To be evaluated by shell, the shell variable must not be in single quotes.
 Even if the variable contains spaces it results only in one argument for `ascli` because word parsing is made before variable expansion by shell.
 
 > [!NOTE]
-> We use a shell variable here: the variable is not necessarily an environment variable (`export`).
+> We use a simple shell variable in this example.
+> Note that it does not need to be exported as an environment variable.
 
 ```bash
 MYVAR="Hello World"
@@ -2235,7 +2241,7 @@ This is the version of `ascli` which created the file.
 
 This preset name is reserved and contains an array of key-value, where the key is the name of a plugin, and the value is the name of another preset.
 
-When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option --no-default (or -N) is used.
+When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
 
 > [!NOTE]
 > Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
@@ -2302,7 +2308,8 @@ ascli config preset set default config my_common_defaults
 
 ### Tested commands for `config`
 
-> **Note:** Add `ascli config` in front of the commands:
+> [!NOTE]
+> Add `ascli config` in front of the following commands:
 
 ```bash
 ascp connect info 'Aspera Connect for Windows'
@@ -2439,6 +2446,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended-va
 
 > [!NOTE]
 > If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
+
 Example:
 
 ```bash
@@ -2649,7 +2657,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 #### Vault: System keychain
 
-> [!NOTE]
+> [!CAUTION]
 > **macOS only**
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
@@ -2802,7 +2810,7 @@ mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
-> [!NOTE]
+> [!CAUTION]
 > Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### Web service
@@ -5974,7 +5982,8 @@ For instructions, refer to section `find` for plugin `node`.
 
 ### Tested commands for `aoc`
 
-> **Note:** Add `ascli aoc` in front of the commands:
+> [!NOTE]
+> Add `ascli aoc` in front of the following commands:
 
 ```bash
 admin analytics transfers nodes
@@ -6235,7 +6244,8 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ### Tested commands for `ats`
 
-> **Note:** Add `ascli ats` in front of the commands:
+> [!NOTE]
+> Add `ascli ats` in front of the following commands:
 
 ```bash
 access_key cluster ak2ibmcloud --secret=my_secret_here
@@ -6277,7 +6287,8 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ### Tested commands for `server`
 
-> **Note:** Add `ascli server` in front of the commands:
+> [!NOTE]
+> Add `ascli server` in front of the following commands:
 
 ```bash
 browse /
@@ -6840,7 +6851,8 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 
 ### Tested commands for `node`
 
-> **Note:** Add `ascli node` in front of the commands:
+> [!NOTE]
+> Add `ascli node` in front of the following commands:
 
 ```bash
 --url=https://tst.example.com/path --password="Bearer bearer_666" --root-id=root_id access_key do self br /
@@ -7044,7 +7056,8 @@ Activation is in two steps:
 
 - The user will authenticate with a private key and set the public key in his Faspex 5 profile.
 
-  **Note:** If you don't have a private key refer to section [Private Key](#private-key) to generate one.
+  > [!NOTE]
+  > If you don't have a private key refer to section [Private Key](#private-key) to generate one.
   
   This operation is done by each user using the CLI.
 
@@ -7113,7 +7126,8 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 
 ### Tested commands for `faspex5`
 
-> **Note:** Add `ascli faspex5` in front of the commands:
+> [!NOTE]
+> Add `ascli faspex5` in front of the following commands:
 
 ```bash
 admin accounts list
@@ -7766,7 +7780,8 @@ ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 
 ### Tested commands for `faspex`
 
-> **Note:** Add `ascli faspex` in front of the commands:
+> [!NOTE]
+> Add `ascli faspex` in front of the following commands:
 
 ```bash
 address_book
@@ -7840,7 +7855,8 @@ ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$u
 
 ### Tested commands for `shares`
 
-> **Note:** Add `ascli shares` in front of the commands:
+> [!NOTE]
+> Add `ascli shares` in front of the following commands:
 
 ```bash
 admin group all list
@@ -7884,7 +7900,8 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ### Tested commands for `console`
 
-> **Note:** Add `ascli console` in front of the commands:
+> [!NOTE]
+> Add `ascli console` in front of the following commands:
 
 ```bash
 health
@@ -7900,7 +7917,8 @@ transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"sou
 
 ### Tested commands for `orchestrator`
 
-> **Note:** Add `ascli orchestrator` in front of the commands:
+> [!NOTE]
+> Add `ascli orchestrator` in front of the following commands:
 
 ```bash
 health
@@ -8028,7 +8046,8 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 ### Tested commands for `cos`
 
-> **Note:** Add `ascli cos` in front of the commands:
+> [!NOTE]
+> Add `ascli cos` in front of the following commands:
 
 ```bash
 node download test_file.bin --to-folder=.
@@ -8042,7 +8061,8 @@ node upload test_file.bin
 
 ### Tested commands for `httpgw`
 
-> **Note:** Add `ascli httpgw` in front of the commands:
+> [!NOTE]
+> Add `ascli httpgw` in front of the following commands:
 
 ```bash
 health
@@ -8053,7 +8073,8 @@ info
 
 ### Tested commands for `faspio`
 
-> **Note:** Add `ascli faspio` in front of the commands:
+> [!NOTE]
+> Add `ascli faspio` in front of the following commands:
 
 ```bash
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
@@ -8068,7 +8089,8 @@ Retrieve information on subscription.
 
 ### Tested commands for `alee`
 
-> **Note:** Add `ascli alee` in front of the commands:
+> [!NOTE]
+> Add `ascli alee` in front of the following commands:
 
 ```bash
 entitlement
@@ -8403,7 +8425,8 @@ If the preview generator does not have access to files on the file system (it is
 
 ### Tested commands for `preview`
 
-> **Note:** Add `ascli preview` in front of the commands:
+> [!NOTE]
+> Add `ascli preview` in front of the following commands:
 
 ```bash
 check --skip-types=office

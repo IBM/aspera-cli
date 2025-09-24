@@ -1,6 +1,7 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 #verbosity: INFO
-from: markdown_mmd
+#from: markdown_mmd
+from: gfm
 to: pdf
 pdf-engine: lualatex
 toc: true
@@ -20,3 +21,5 @@ include-in-header:
   - manual_include_in_header.tex
 include-after-body:
   - manual_include_after_body.tex
+filters:
+  - ${.}/gfm_admonition.lua

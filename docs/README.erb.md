@@ -215,12 +215,13 @@ If you don't have internet for the installation, refer to section [Installation 
 It is planned to provide <%=tool%> as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is a Beta feature.
-On Linux, the executable requires a minimum GLIBC version.
-Installation of `ascp` is still required separately.
-Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
-
-On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+> [!CAUTION]
+> This is a Beta feature.
+> On Linux, the executable requires a minimum GLIBC version.
+> Installation of `ascp` is still required separately.
+> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+>
+> On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
 ```bash
 ldd --version | head -n1
@@ -501,7 +502,7 @@ Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> [!NOTE]
+> [!CAUTION]
 > The startup time is slightly longer using `jruby` than the native Ruby.
 > Refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
 > This can be reduced by using the `--dev` option.
@@ -842,7 +843,9 @@ Add options:
 ```
 
 > [!NOTE]
-> If you are using a `podman machine`, e.g. on macOS, make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> If you are using a `podman machine`, e.g. on macOS, make sure that the folder is also shared between the VM and the host, so that sharing is:
+>
+> container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
@@ -858,7 +861,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-> [!NOTE]
+> [!CAUTION]
 > <%=tool%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
@@ -880,7 +883,9 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 A convenience sample script is also provided: download the script [`d<%=cmd%>`](../container/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/container/d<%=cmd%>) :
 
 > [!NOTE]
-> If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> config gem path)/../container/d<%=cmd%> <%=cmd%>`
+> If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found like this:
+>
+> `cp $(<%=cmd%> config gem path)/../container/d<%=cmd%> <%=cmd%>`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -916,7 +921,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > [!NOTE]
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
-> [!NOTE]
+> [!CAUTION]
 > Do not use too many volumes, as the legacy `aufs` limits the number. (anyway, prefer to use `overlay2`)
 
 #### Container: Offline installation
@@ -1329,7 +1334,8 @@ To be evaluated by shell, the shell variable must not be in single quotes.
 Even if the variable contains spaces it results only in one argument for <%=tool%> because word parsing is made before variable expansion by shell.
 
 > [!NOTE]
-> We use a shell variable here: the variable is not necessarily an environment variable (`export`).
+> We use a simple shell variable in this example.
+> Note that it does not need to be exported as an environment variable.
 
 ```bash
 MYVAR="Hello World"
@@ -2212,7 +2218,7 @@ This is the version of <%=tool%> which created the file.
 
 This preset name is reserved and contains an array of key-value, where the key is the name of a plugin, and the value is the name of another preset.
 
-When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option --no-default (or -N) is used.
+When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
 
 > [!NOTE]
 > Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
@@ -2318,6 +2324,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended-va
 
 > [!NOTE]
 > If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
+
 Example:
 
 ```bash
@@ -2528,7 +2535,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 #### Vault: System keychain
 
-> [!NOTE]
+> [!CAUTION]
 > **macOS only**
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
@@ -2681,7 +2688,7 @@ mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
-> [!NOTE]
+> [!CAUTION]
 > Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### Web service
@@ -6257,7 +6264,8 @@ Activation is in two steps:
 
 - The user will authenticate with a private key and set the public key in his Faspex 5 profile.
 
-  **Note:** If you don't have a private key refer to section [Private Key](#private-key) to generate one.
+  > [!NOTE]
+  > If you don't have a private key refer to section [Private Key](#private-key) to generate one.
   
   This operation is done by each user using the CLI.
 
