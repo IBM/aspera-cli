@@ -122,7 +122,7 @@ module Aspera
           info[:decoded] = decoded_token
           # TODO: move date decoding to token decoder ?
           expiration_date =
-            if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
+            if    decoded_token['expires_at'].is_a?(String) then Time.parse(decoded_token['expires_at']).to_time
             elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
             end
           unless expiration_date.nil?

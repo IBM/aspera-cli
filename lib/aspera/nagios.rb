@@ -58,8 +58,8 @@ module Aspera
     # compare remote time with local time
     def check_time_offset(remote_date, component)
       # check date if specified : 2015-10-13T07:32:01Z
-      remote_time = DateTime.strptime(remote_date)
-      diff_time = (remote_time - DateTime.now).abs
+      remote_time = Time.strptime(remote_date)
+      diff_time = (remote_time - Time.now).abs
       diff_rounded = diff_time.round(-2)
       Log.log.debug{"DATE: #{remote_date} #{remote_time} diff=#{diff_rounded}"}
       msg = "offset #{diff_rounded} sec"

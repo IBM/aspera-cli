@@ -49,7 +49,7 @@ Style/NumericLiteralPrefix:
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: no_comma
 Style/DateTime:
-  Enabled: false
+  Enabled: true
 Style/ReturnNil:
   Enabled: false
 Style/TrailingCommaInArguments:
