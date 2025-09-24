@@ -54,18 +54,19 @@ module Aspera
       OPTION_SEP_LINE = '-'
       # option name separator in code (symbol)
       OPTION_SEP_SYMBOL = '_'
-      SOURCE_USER = 'cmdline' # cspell:disable-line
       OPTION_VALUE_SEPARATOR = '='
-      # TODO : an option like a.b.c=d does: a={"b":{"c":"d"}}, and all Hash are additive, + way to reset Hash (e.g. --opt=@none:)
+      # an option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
+      # TODO: all Hash are additive, + way to reset Hash (e.g. --opt=@none:)
       OPTION_HASH_SEPARATOR = '.'
       # starts an option
       OPTION_PREFIX = '--'
       # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
+      SOURCE_USER = 'cmdline' # cspell:disable-line
 
       DEFAULT_PARSER_TYPES = [Array, Hash].freeze
 
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :DEFAULT_PARSER_TYPES
 
       class << self
         def enum_to_bool(enum)
@@ -453,11 +454,20 @@ module Aspera
         unknown_options = []
         begin
           # remove known options one by one, exception if unknown
-          Log.log.trace1('before parse'.red)
+          Log.log.trace1('Before parse')
           @parser.parse!(@unprocessed_cmd_line_options)
-          Log.log.trace1('After parse'.red)
+          Log.log.trace1('After parse')
         rescue OptionParser::InvalidOption => e
           Log.log.trace1{"InvalidOption #{e}".red}
+          if (m = e.args.first.match(/^--([a-z\-]+)\.([^=]+)=(.+)$/))
+            option, path, raw_value = m.captures
+            option_sym = self.class.option_line_to_name(option).to_sym
+            if @declared_options.key?(option_sym)
+              value = path.split(OPTION_HASH_SEPARATOR).reverse.inject(evaluate_extended_value(raw_value, nil)){ |v, k| {k => v}}
+              set_option(option_sym, value, where: 'dotted')
+              retry
+            end
+          end
           # save for later processing
           unknown_options.push(e.args.first)
           retry

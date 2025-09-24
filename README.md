@@ -1565,20 +1565,21 @@ A few **Command Parameters** are optional, they are always located at the end of
 
 #### Options
 
-All options, e.g. `--log-level=debug`, are command line arguments that:
+Command-line options, such as `--log-level=debug`, follow these conventions:
 
-- Start with `--`
-- Have a name, in lowercase, using `-` as word separator in name (e.g. `--log-level=debug`)
-- Have a value, separated from name with a `=`
-- Can be used by prefix (not recommended), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
-- Is optional on command line (it has a default value or no value)
-- whose position is not significant, but order is significant
+- **Prefix**: All options begin with `--`.
+- **Naming**: Option names use lowercase letters and hyphens (`-`) as word separators. Example: `--log-level=debug`.
+- **Values**: An option’s value is assigned using `=` (e.g., `--log-level=debug`).
+- **Prefix Usage**: Options can be abbreviated by a unique prefix, though this is not recommended. Example: `--log-l=debug` is equivalent to `--log-level=debug`.
+- **Optionality**: Most options are optional; they either have a default value or do not require one.
+- **Order**: Options can appear in any position on the command line, but their order may affect processing.
 
-Exceptions:
+Exceptions and Special Cases:
 
-- Some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
-- Some options (flags) don't take a value, e.g. `-N`
-- The special option `--` stops option processing and is ignored, following command line arguments are taken as **Positional Arguments**, including the ones starting with a `-`.
+- **Short Forms**: Some options have short forms. For example, `-Ptoto` is equivalent to `--preset=toto`. Refer to the manual or `-h` for details.
+- **Flags**: Certain options are flags and do not require a value (e.g., `-N`).
+- **Option Terminator**: The special option `--` ends option parsing. All subsequent arguments, including those starting with `-`, are treated as positional arguments.
+- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. For example, `--a.b.c=d` is equivalent to `--a=@json'{"b":{"c":extended_value(d)}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
 
 Example:
 

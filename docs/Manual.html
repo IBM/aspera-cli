@@ -135,8 +135,7 @@ color: #1f2937;
 .admonition-body {
 margin-top: 0;
 line-height: 1.4;
-}
-</style>
+}</style>
 </head>
 <body>
 <header id="title-block-header">
@@ -2148,30 +2147,44 @@ then either use the <code>@val:</code> syntax (see <a href="#extended-value-synt
 <p>A few <strong>Command Parameters</strong> are optional, they are
 always located at the end of the command line.</p>
 <h3 data-number="4.3.2" id="options"><span class="header-section-number">4.3.2</span> Options</h3>
-<p>All options, e.g. <code>--log-level=debug</code>, are command line
-arguments that:</p>
+<p>Command-line options, such as <code>--log-level=debug</code>, follow
+these conventions:</p>
 <ul>
-<li>Start with <code>--</code></li>
-<li>Have a name, in lowercase, using <code>-</code> as word separator in
-name (e.g. <code>--log-level=debug</code>)</li>
-<li>Have a value, separated from name with a <code>=</code></li>
-<li>Can be used by prefix (not recommended), provided that it is unique.
-E.g. <code>--log-l=debug</code> is the same as
-<code>--log-level=debug</code></li>
-<li>Is optional on command line (it has a default value or no
-value)</li>
-<li>whose position is not significant, but order is significant</li>
+<li><strong>Prefix</strong>: All options begin with
+<code>--</code>.</li>
+<li><strong>Naming</strong>: Option names use lowercase letters and
+hyphens (<code>-</code>) as word separators. Example:
+<code>--log-level=debug</code>.</li>
+<li><strong>Values</strong>: An option’s value is assigned using
+<code>=</code> (e.g., <code>--log-level=debug</code>).</li>
+<li><strong>Prefix Usage</strong>: Options can be abbreviated by a
+unique prefix, though this is not recommended. Example:
+<code>--log-l=debug</code> is equivalent to
+<code>--log-level=debug</code>.</li>
+<li><strong>Optionality</strong>: Most options are optional; they either
+have a default value or do not require one.</li>
+<li><strong>Order</strong>: Options can appear in any position on the
+command line, but their order may affect processing.</li>
 </ul>
-<p>Exceptions:</p>
+<p>Exceptions and Special Cases:</p>
 <ul>
-<li>Some options accept a short form, e.g. <code>-Ptoto</code> is
-equivalent to <code>--preset=toto</code>, refer to the manual or
-<code>-h</code>.</li>
-<li>Some options (flags) don&#39;t take a value, e.g. <code>-N</code></li>
-<li>The special option <code>--</code> stops option processing and is
-ignored, following command line arguments are taken as
-<strong>Positional Arguments</strong>, including the ones starting with
-a <code>-</code>.</li>
+<li><strong>Short Forms</strong>: Some options have short forms. For
+example, <code>-Ptoto</code> is equivalent to
+<code>--preset=toto</code>. Refer to the manual or <code>-h</code> for
+details.</li>
+<li><strong>Flags</strong>: Certain options are flags and do not require
+a value (e.g., <code>-N</code>).</li>
+<li><strong>Option Terminator</strong>: The special option
+<code>--</code> ends option parsing. All subsequent arguments, including
+those starting with <code>-</code>, are treated as positional
+arguments.</li>
+<li><strong>Dot Notation for Hashes</strong>: If an option name contains
+a dot (<code>.</code>), it is interpreted as a <code>Hash</code>. Each
+segment separated by a dot represents a key in a nested structure. For
+example, <code>--a.b.c=d</code> is equivalent to
+<code>--a=@json&#39;{&quot;b&quot;:{&quot;c&quot;:extended_value(d)}}&#39;</code>. This allows
+specifying nested keys directly on the command line using a concise
+dot-separated syntax.</li>
 </ul>
 <p>Example:</p>
 <div class="sourceCode" id="cb129"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo <span class="at">--</span> <span class="at">--sample</span></span></code></pre></div>

@@ -12,6 +12,7 @@
     * `format`: `csv` format now tables option `table_style`.
     * `logger`: New option `log_format` to control formatting of logs.
     * `config`: Option `silent_insecure` renamed `warn_insecure`: `yes` shows warning (default)
+    * `config`: Added support for dot-separated option names, allowing nested hash structures to be specified directly on the command line.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.
