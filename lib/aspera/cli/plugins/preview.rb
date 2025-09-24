@@ -460,7 +460,8 @@ module Aspera
                   'id'   => @access_key_self['root_file_id'],
                   'name' => '/',
                   'type' => 'folder',
-                  'path' => '/'}
+                  'path' => '/'
+                }
               else
                 @api_node.read("files/#{scan_id}")
               end

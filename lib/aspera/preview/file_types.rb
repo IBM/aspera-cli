@@ -48,7 +48,8 @@ module Aspera
         'application/x-xfig'                 => :image,
         'font/ttf'                           => :image,
         'text/troff'                         => :image,
-        'video/x-mng'                        => :image}.freeze
+        'video/x-mng'                        => :image
+      }.freeze
 
       private_constant :SUPPORTED_MIME_TYPES
 

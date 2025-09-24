@@ -119,7 +119,8 @@ module Aspera
           checksum:        nil,
           start_byte:      0,
           bytes_written:   26,
-          session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
+          session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'
+        }]
       }
       Log.dump(:job, result, level: :trace2)
       return result
@@ -310,7 +311,8 @@ module Aspera
             {name:  'ssh_fingerprint', value: nil},
             {name:  'wss_enabled', value: false},
             {name:  'wss_port', value: 443}
-          ]})
+          ]
+        })
       when PATH_TRANSFERS
         set_json_response(request, response, @simulator.all_sessions)
       when PATH_ONE_TRANSFER

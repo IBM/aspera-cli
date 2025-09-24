@@ -470,7 +470,8 @@ module Aspera
                   auth:     {
                     type:     :basic,
                     username: node_config['username'],
-                    password: node_config['password']})
+                    password: node_config['password']
+                  })
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
                 return Node.new(**init_params, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
               end

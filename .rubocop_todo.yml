@@ -17,7 +17,7 @@ Layout/SpaceInsideHashLiteralBraces:
   Enabled: true
   EnforcedStyle: no_space
 Layout/MultilineHashBraceLayout:
-  Enabled: false
+  Enabled: true
 Layout/MultilineArrayBraceLayout:
   Enabled: false
 Layout/MultilineMethodArgumentLineBreaks:

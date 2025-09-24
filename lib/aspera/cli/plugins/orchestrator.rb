@@ -102,7 +102,8 @@ module Aspera
                 type:      :url,
                 url_query: {
                   'login'    => options.get_option(:username, mandatory: true),
-                  'password' => options.get_option(:password, mandatory: true)}
+                  'password' => options.get_option(:password, mandatory: true)
+                }
               }
             when :head_basic
               {

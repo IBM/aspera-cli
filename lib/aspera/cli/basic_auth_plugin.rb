@@ -31,7 +31,8 @@ module Aspera
             type:     :basic,
             username: options.get_option(:username, mandatory: true),
             password: options.get_option(:password, mandatory: true)
-          }}
+          }
+        }
       end
 
       def basic_auth_api(subpath = nil)

@@ -240,7 +240,8 @@ module Aspera
         def api_from_options(aoc_base_path)
           create_values = OPTIONS_NEW.each_with_object({
             subpath:       aoc_base_path,
-            secret_finder: config}) do |i, m|
+            secret_finder: config
+          }) do |i, m|
             m[i] = options.get_option(i) unless options.get_option(i).nil?
           end
           create_values[:scope] = Api::AoC::SCOPE_FILES_USER if create_values[:scope].nil?
@@ -651,7 +652,8 @@ module Aspera
                    organization_id: org['id'],
                    aggregate:       aggregate,
                    startDate:       start_date,
-                   endDate:         end_date}})['data']
+                   endDate:         end_date
+                 }})['data']
               return Main.result_single_object(result['aoc'])
             end
           when :ats

@@ -489,7 +489,8 @@ module Aspera
         package_data.merge!({
           'single_source'      => true,
           'sent'               => true,
-          'transfers_expected' => 1})
+          'transfers_expected' => 1
+        })
 
         #  create a new package container
         created_package = create('packages', package_data)

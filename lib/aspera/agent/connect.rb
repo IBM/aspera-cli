@@ -54,7 +54,8 @@ module Aspera
             'title'                   => 'Select Files',
             'suggestedName'           => '',
             'allowMultipleSelection'  => true,
-            'allowedFileTypes'        => ''})
+            'allowedFileTypes'        => ''
+          })
           transfer_spec['paths'] = selection['dataTransfer']['files'].map{ |i| {'source' => i['name']}}
         end
         # if there is a token, we ask connect client to use well known ssh private keys
@@ -67,7 +68,8 @@ module Aspera
           }),
           'transfer_specs'          => [{
             'transfer_spec' => transfer_spec
-          }]}
+          }]
+        }
         # asynchronous anyway
         res = @connect_api.create('transfers/start', connect_transfer_args)
         @transfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id']

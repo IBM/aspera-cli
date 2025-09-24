@@ -47,7 +47,8 @@ module Aspera
             auth:     {
               type:     :basic,
               username: options.get_option(:ats_key, mandatory: true),
-              password: options.get_option(:ats_secret, mandatory: true)}
+              password: options.get_option(:ats_secret, mandatory: true)
+            }
           )
         end
 
