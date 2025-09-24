@@ -332,7 +332,7 @@ $(F)serv_upload2: $(F)serv_mkdir
 $(F)serv_upload3: $(F)serv_mkdir 
 	@$(START_TEST) $@
 	$(BEG_IGN)$(CLI_TEST) server delete @extend:@preset:server.inside_folder@/other_name_3$(END_IGN)
-	$(INCMAN)$(CLI_TEST) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
+	$(INCMAN)$(CLI_TEST) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info.quiet=false --progress=no
 	@$(STOP_TEST) $@
 $(F)serv_upload4: $(F)serv_mkdir 
 	@$(START_TEST) $@
@@ -382,7 +382,7 @@ $(F)serv_down_lcl: $(F)serv_upload1
 	@$(STOP_TEST) $@
 $(F)serv_down_from_node: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) server download @preset:server.large_file --to-folder=@preset:server.upload_folder --transfer=node --ts=@json:'{"resume_policy":"none"}'
+	$(INCMAN)$(CLI_TEST) server download @preset:server.large_file --to-folder=@preset:server.upload_folder --transfer=node --ts.resume_policy=none
 	@$(STOP_TEST) $@
 $(F)serv_down_from_node_fail: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -466,7 +466,7 @@ $(F)f4_wizard: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f4_pack_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) faspex package list --query=@json:'{"max":5}'
+	$(INCMAN)$(CLI_TEST) faspex package list --query.max=5
 	@$(STOP_TEST) $@
 $(F)f4_pack_send: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -475,14 +475,14 @@ $(F)f4_pack_send: $(TMP_EXISTS)
 	@sleep 8
 $(F)f4_prs: $(F)f4_pack_send
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(STATE)f4_prs1
+	$(INCMAN)$(CLI_TEST) faspex package list --query.max=1 --fields=package_id --display=data --format=csv --output=$(STATE)f4_prs1
 	$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_prs1) --to-folder=$(DIR_TMP).
-	$(INCMAN)$(CLI_TEST) faspex package list --box=sent --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(STATE)f4_prs2
+	$(INCMAN)$(CLI_TEST) faspex package list --box=sent --query.max=1 --fields=package_id --display=data --format=csv --output=$(STATE)f4_prs2
 	$(INCMAN)$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_prs2) --to-folder=$(DIR_TMP). --box=sent
 	@$(STOP_TEST) $@
 $(F)f4_pri: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(STATE)f4_pri1
+	$(CLI_TEST) faspex package list --query.max=1 --fields=package_id --display=data --format=csv --output=$(STATE)f4_pri1
 	$(INCMAN)$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_pri1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(F)f4_prl: $(TMP_EXISTS)
@@ -527,12 +527,12 @@ $(F)f4_db1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex dropbox list --recipient=@extend:"*@preset:faspex4.dbx@"
 	$(INCMAN)$(CLI_TEST) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["*@preset:faspex4.dbx@"]}' $(TST_ASC_LCL_PATH)
-	$(INCMAN)$(CLI_TEST) faspex package list --recipient=@extend:"*@preset:faspex4.dbx@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(STATE)f4_db_id1
+	$(INCMAN)$(CLI_TEST) faspex package list --recipient=@extend:"*@preset:faspex4.dbx@" --format=csv --fields=package_id --query.max=1 --output=$(STATE)f4_db_id1
 	$(INCMAN)$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_db_id1) --recipient=@extend:"*@preset:faspex4.dbx@" --to-folder=$(DIR_TMP).
 	$(INCMAN)$(CLI_TEST) faspex dropbox list --recipient=@extend:"*@preset:faspex4.dbx@"
 	$(INCMAN)$(CLI_TEST) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["*@preset:faspex4.wkg@"]}' $(TST_ASC_LCL_PATH)
 	sleep 10
-	$(INCMAN)$(CLI_TEST) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(STATE)f4_db_id2
+	$(INCMAN)$(CLI_TEST) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query.max=1 --output=$(STATE)f4_db_id2
 	$(INCMAN)$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 NOT_TESTED=$(F)f4_nagios $(F)f4_nagios_fail $(F)f4_detect $(F)f4_wizard $(F)f4_pack_list $(F)f4_pack_send $(F)f4_prs $(F)f4_pri $(F)f4_pslu $(F)f4_psld $(F)f4_remote_src $(F)f4_prall $(F)f4_misc $(F)f4_v4 $(F)f4_db1 $(F)f4_prl
@@ -554,7 +554,7 @@ $(F)cons_cur_lst: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)cons_cur_lst_ex: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) console transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
+	$(INCMAN)$(CLI_TEST) console transfer current list --query.filter='(transfer_name contain aoc)'
 	@$(STOP_TEST) $@
 $(F)cons_cur_lst_one: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1168,7 +1168,7 @@ $(F)aoccltreg: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin client_registration_token list
-	$(CLI_TEST) --preset=aoc_admin aoc admin client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' --output=$(STATE)client_reg_id
+	$(CLI_TEST) --preset=aoc_admin aoc admin client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query.max=1 --output=$(STATE)client_reg_id
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin client_registration_token delete $$(cat $(STATE)client_reg_id)
 	@$(STOP_TEST) $@
 $(F)aocadmndcr: $(TMP_EXISTS)

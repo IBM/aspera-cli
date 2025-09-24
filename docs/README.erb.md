@@ -1556,7 +1556,7 @@ Exceptions and Special Cases:
 - **Short Forms**: Some options have short forms. For example, `-Ptoto` is equivalent to `--preset=toto`. Refer to the manual or `-h` for details.
 - **Flags**: Certain options are flags and do not require a value (e.g., `-N`).
 - **Option Terminator**: The special option `--` ends option parsing. All subsequent arguments, including those starting with `-`, are treated as positional arguments.
-- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. For example, `--a.b.c=d` is equivalent to `--a=@json'{"b":{"c":extended_value(d)}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
+- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. <%=tool%> tries to convert the value to the simplest type (bool, int, float, string). If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax. For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
 
 Example:
 

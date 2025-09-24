@@ -1579,7 +1579,7 @@ Exceptions and Special Cases:
 - **Short Forms**: Some options have short forms. For example, `-Ptoto` is equivalent to `--preset=toto`. Refer to the manual or `-h` for details.
 - **Flags**: Certain options are flags and do not require a value (e.g., `-N`).
 - **Option Terminator**: The special option `--` ends option parsing. All subsequent arguments, including those starting with `-`, are treated as positional arguments.
-- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. For example, `--a.b.c=d` is equivalent to `--a=@json'{"b":{"c":extended_value(d)}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
+- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. `ascli` tries to convert the value to the simplest type (bool, int, float, string). If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax. For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
 
 Example:
 
@@ -6301,7 +6301,7 @@ delete my_inside_folder
 delete my_upload_folder/to.delete
 df
 download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
-download my_large_file --to-folder=my_upload_folder --transfer=node --ts=@json:'{"resume_policy":"none"}'
+download my_large_file --to-folder=my_upload_folder --transfer=node --ts.resume_policy=none
 du /
 health transfer --to-folder=my_upload_folder --format=nagios
 info
@@ -6318,7 +6318,7 @@ upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelis
 upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=transferd
 upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
-upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
+upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ```
@@ -7790,11 +7790,11 @@ dropbox list --recipient="*my_dbx"
 health
 login_methods
 me
-package list --box=sent --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs2
-package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs1
-package list --query=@json:'{"max":5}'
-package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id1
-package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id2
+package list --box=sent --query.max=1 --fields=package_id --display=data --format=csv --output=f4_prs2
+package list --query.max=1 --fields=package_id --display=data --format=csv --output=f4_prs1
+package list --query.max=5
+package list --recipient="*my_dbx" --format=csv --fields=package_id --query.max=1 --output=f4_db_id1
+package list --recipient="*my_wkg" --format=csv --fields=package_id --query.max=1 --output=f4_db_id2
 package receive --to-folder=. --link=https://app.example.com/recv_from_user_path
 package receive ALL --once-only=yes --to-folder=. --query=@json:'{"max":10}'
 package receive f4_db_id1 --recipient="*my_dbx" --to-folder=.
@@ -7907,7 +7907,7 @@ In addition, it is possible to place a single `query` parameter in the request t
 ```bash
 health
 transfer current files console_xfer_id
-transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
+transfer current list --query.filter='(transfer_name contain aoc)'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
 transfer current show console_xfer_id
 transfer smart list

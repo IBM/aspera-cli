@@ -459,7 +459,7 @@ module Aspera
             option, path, raw_value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
-              value = path.split(OPTION_HASH_SEPARATOR).reverse.inject(evaluate_extended_value(raw_value, nil)){ |v, k| {k => v}}
+              value = path.split(OPTION_HASH_SEPARATOR).reverse.inject(smart_convert(raw_value)){ |v, k| {k => v}}
               set_option(option_sym, value, where: 'dotted')
               retry
             end
@@ -530,6 +530,19 @@ module Aspera
       end
 
       private
+
+      # Using dotted hash notation, convert value to bool, int, float or extended value
+      def smart_convert(value)
+        return true  if value == 'true'
+        return false if value == 'false'
+        Integer(value)
+      rescue ArgumentError
+        begin
+          Float(value)
+        rescue ArgumentError
+          evaluate_extended_value(value, nil)
+        end
+      end
 
       def evaluate_extended_value(value, types)
         return ExtendedValue.instance.evaluate_with_default(value) if DEFAULT_PARSER_TYPES.include?(types) || (types.is_a?(Array) && types.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)})
