@@ -39,6 +39,7 @@ module Aspera
     # - :buffer_list : an array of {btype,buffer}
     # - :field_list : a hash, or array
     # :check: ???
+    # rubocop:disable Layout/FirstHashElementLineBreak
     TYPES_DESCR = {
       result: {decode: :field_list,
                fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :list_tlv_list}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
@@ -72,6 +73,7 @@ module Aspera
       zstr:   {decode: :base, unpack: 'Z*'},
       blist:  {decode: :buffer_list}
     }.freeze
+    # rubocop:enable Layout/FirstHashElementLineBreak
 
     private_constant :TYPES_DESCR, :ENUM_START, :OPS_ARGS
 

@@ -6,6 +6,7 @@ module Aspera
   module Transfer
     # from https://www.google.com/search?q=FASP+error+codes
     # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
+    # rubocop:disable Layout/FirstHashElementLineBreak
     ERROR_INFO = {
       # id   retry-able     mnemo                       message                                              additional info
       1  => {r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
@@ -85,6 +86,6 @@ module Aspera
       66 => {r: false, c: 'PEER_REQUIRES_FIPS',          m: 'Peer rejects cipher due to FIPS mode enabled on peer',
                                                               a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
     }.freeze
-    # rubocop:enable Layout/MultilineHashKeyLineBreaks
+    # rubocop:enable Layout/FirstHashElementLineBreak
   end
 end

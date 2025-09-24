@@ -25,7 +25,7 @@ Layout/MultilineMethodArgumentLineBreaks:
 Layout/MultilineArrayLineBreaks:
   Enabled: false
 Layout/FirstHashElementLineBreak:
-  Enabled: false
+  Enabled: true
 Layout/FirstArrayElementLineBreak:
   Enabled: false
 Layout/MultilineHashKeyLineBreaks:

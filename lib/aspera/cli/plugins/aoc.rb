@@ -648,13 +648,15 @@ module Aspera
               # cspell:enable
               result = bss_graphql.create(
                 nil,
-                {query:     graphql_query,
-                 variables: {
-                   organization_id: org['id'],
-                   aggregate:       aggregate,
-                   startDate:       start_date,
-                   endDate:         end_date
-                 }})['data']
+                {
+                  query:     graphql_query,
+                  variables: {
+                    organization_id: org['id'],
+                    aggregate:       aggregate,
+                    startDate:       start_date,
+                    endDate:         end_date
+                  }
+                })['data']
               return Main.result_single_object(result['aoc'])
             end
           when :ats
