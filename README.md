@@ -27,7 +27,8 @@ Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/ge
 
 Minimum required Ruby version: >= 3.1.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.2 in a future version.
+> [!WARNING]
+> The minimum Ruby version will be 3.2 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -208,7 +209,8 @@ The direct installation is recommended and consists in installing:
 
 Ruby version: >= 3.1.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.2 in a future version.
+> [!WARNING]
+> The minimum Ruby version will be 3.2 in a future version.
 
 The following sections provide information on the various installation methods.
 
@@ -257,7 +259,8 @@ A Ruby interpreter is required to run `ascli`.
 
 Required Ruby version: >= 3.1.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.2 in a future version.
+> [!WARNING]
+> The minimum Ruby version will be 3.2 in a future version.
 
 **Ruby can be installed using any method** : `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 

@@ -1,7 +1,9 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 #verbosity: INFO
-from: gfm
-to: pdf
+#we do not use `gfm` because it does not format tables well in pdf output
+#from: gfm
+from: markdown_mmd
+#to: pdf
 pdf-engine: lualatex
 toc: true
 number-sections: true
@@ -14,7 +16,6 @@ variables:
   geometry: margin=12mm
   include-before:
     - '\newpage'
-  tables: longtable
 resource-path:
   - ${.}
 include-in-header:
@@ -22,4 +23,6 @@ include-in-header:
 include-after-body:
   - manual_include_after_body.tex
 filters:
+  - ${.}/find_admonition.lua
   - ${.}/gfm_admonition.lua
+  - ${.}/better_tables.lua

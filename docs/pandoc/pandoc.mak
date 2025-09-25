@@ -3,6 +3,8 @@ DIR_PANDOC := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PANDOC_DEPS=\
 $(DIR_PANDOC)gfm_admonition.css \
 $(DIR_PANDOC)gfm_admonition.lua \
+$(DIR_PANDOC)find_admonition.lua \
+$(DIR_PANDOC)better_tables.lua \
 $(DIR_PANDOC)manual_include_after_body.tex \
 $(DIR_PANDOC)manual_include_in_header.tex \
 $(DIR_PANDOC)manual_pandoc_defaults.yaml \

@@ -39,7 +39,7 @@ clean_doc::
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \
-		--from=gfm \
+		--from=markdown_mmd \
 		--to=html5 \
 		--toc \
 		--number-sections \
@@ -47,6 +47,7 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 		--standalone \
 		--embed-resources \
 		--resource-path=$(DIR_DOC)pandoc \
+		--lua-filter=$(DIR_DOC)pandoc/find_admonition.lua \
 		--lua-filter=$(DIR_DOC)pandoc/gfm_admonition.lua \
 		--css=$(DIR_DOC)pandoc/gfm_admonition.css \
 		--output=$@ \

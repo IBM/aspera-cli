@@ -248,7 +248,7 @@ class DocHelper
   # get minimum required Ruby version and future one
   def ruby_version
     message = "version: #{gemspec.required_ruby_version}"
-    message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
+    message += ".\n\n> [!WARNING]\n> The minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
     return message
   end
 
