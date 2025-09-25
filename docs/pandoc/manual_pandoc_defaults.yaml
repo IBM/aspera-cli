@@ -25,4 +25,4 @@ include-after-body:
 filters:
   - ${.}/find_admonition.lua
   - ${.}/gfm_admonition.lua
-  - ${.}/better_tables.lua
+  - ${.}/break_replace.lua
