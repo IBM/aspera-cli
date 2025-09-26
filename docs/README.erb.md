@@ -2783,6 +2783,13 @@ The default formatter is:
 ->(s, _d, _p, m){"#{s[0..2]} #{m}\n"}
 ```
 
+Availaible formatters for `log_format`:
+
+| Name      | Description                             |
+|-----------|-----------------------------------------|
+| `default` | Default formatter.                      |
+| `standard`| Standard Ruby formatter.                |
+
 Examples:
 
 - Display debugging log on `stdout`:
@@ -2797,7 +2804,8 @@ Examples:
 <%=cmd%> config pre over --log-level=error --logger=syslog
 ```
 
-When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file.
+> [!NOTE]
+> When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file (`history | grep <%=cmd%>`).
 
 ### Learning Aspera Product APIs (REST)
 

@@ -28,7 +28,7 @@
     * `sync`: Removed option `sync_info`. Streamlined command line interface. Applies to all plugins with `sync` command.
     * `async`: Removed option `sync_name`, replaced with percent selector `%name:`.
     * `aoc`: `files download` using gen4 API do not require anymore to provide the containing folder in first position, and then only file names. Now, directly provide the path to all files.
-    * `logger`: Log is simplified, date is removed by default. Use option `log_format` to add details.
+    * `logger`: Log is simplified, date is removed by default. Use `--log_format=STANDARD` to revert to standard Ruby logger. See option `log_format` for details.
 
 * 4.23.0 2025-08-11
 

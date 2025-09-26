@@ -51,8 +51,11 @@ module Aspera
 
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
-    STANDARD_FORMATTER = Logger::Formatter.new
     DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{Log.color_level(s)} #{m}\n"}
+    FORMATTERS = {
+      standard: Logger::Formatter.new,
+      default:  DEFAULT_FORMATTER
+    }.freeze
     # Class methods
     class << self
       def color_level(level)
@@ -123,8 +126,10 @@ module Aspera
 
     def formatter=(formatter)
       if formatter.is_a?(String)
-        formatter = self.class.const_get("#{formatter.upcase}_FORMATTER") rescue nil
-        raise Error, "Unknown formatter #{formatter}" if formatter.nil?
+        raise Error, "Unknown formatter #{formatter}, use one of: #{FORMATTERS.keys.join(', ')}" unless FORMATTERS.key?(formatter.to_sym)
+        formatter = FORMATTERS[formatter.to_sym]
+      elsif !formatter.respond_to?(:call) && !formatter.is_a?(Logger::Formatter)
+        raise Error, 'Formatter must be a String, a Logger::Formatter or a Proc'
       end
       # Update formatter with password hiding
       @logger.formatter = SecretHider.instance.log_formatter(formatter)
