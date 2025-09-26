@@ -830,7 +830,8 @@ ascli server ls /
 That is simple, but there are limitations:
 
 - Everything happens in the container
-- Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
+- Any generated file in the container will be lost on container (shell) exit.
+  Including configuration files and downloaded files.
 - No possibility to upload files located on the host system
 
 #### Container: Details
@@ -948,7 +949,8 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
 > [!CAUTION]
-> Do not use too many volumes, as the legacy `aufs` limits the number. (anyway, prefer to use `overlay2`)
+> Do not use too many volumes, as the legacy `aufs` limits the number.
+> (anyway, prefer to use `overlay2`)
 
 #### Container: Offline installation
 
@@ -1030,9 +1032,17 @@ Where `[openssl library folder]` is the path to the folder containing the `lib` 
 For example, on macOS, to use the `openssl@3` library installed with `brew`:
 
 ```bash
-$ openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p'
+openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p'
+```
+
+```text
 /opt/homebrew/Cellar/openssl@3/3.3.0
-$ gem install openssl -- --with-openssl-dir=/opt/homebrew/Cellar/openssl@3/3.3.0
+```
+
+Then install the `openssl` gem with:
+
+```bash
+gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p')
 ```
 
 ### SSL CA certificate bundle
@@ -1570,19 +1580,40 @@ A few **Command Parameters** are optional, they are always located at the end of
 
 Command-line options, such as `--log-level=debug`, follow these conventions:
 
-- **Prefix**: All options begin with `--`.
-- **Naming**: Option names use lowercase letters and hyphens (`-`) as word separators. Example: `--log-level=debug`.
-- **Values**: An option’s value is assigned using `=` (e.g., `--log-level=debug`).
-- **Prefix Usage**: Options can be abbreviated by a unique prefix, though this is not recommended. Example: `--log-l=debug` is equivalent to `--log-level=debug`.
-- **Optionality**: Most options are optional; they either have a default value or do not require one.
-- **Order**: Options can appear in any position on the command line, but their order may affect processing.
+- **Prefix**:
+  All options begin with `--`.
+- **Naming**:
+  Option names on command line use lowercase letters and hyphens (`-`) as word separators.
+  Option name in config file use underscores (`_`) as word separators.
+  Example: `--log-level=debug` is `log_level` in config file.
+- **Values**:
+  An option’s value is assigned using `=` (e.g., `--log-level=debug`).
+- **Prefix Usage**:
+  Options can be abbreviated by a unique prefix, though this is not recommended.
+  Example: `--log-l=debug` is equivalent to `--log-level=debug`.
+- **Optionality**:
+  Most options are optional; they either have a default value or do not require one.
+- **Order**:
+  Options can appear in any position on the command line, but their order may affect processing.
 
 Exceptions and Special Cases:
 
-- **Short Forms**: Some options have short forms. For example, `-Ptoto` is equivalent to `--preset=toto`. Refer to the manual or `-h` for details.
-- **Flags**: Certain options are flags and do not require a value (e.g., `-N`).
-- **Option Terminator**: The special option `--` ends option parsing. All subsequent arguments, including those starting with `-`, are treated as positional arguments.
-- **Dot Notation for Hashes**: If an option name contains a dot (`.`), it is interpreted as a `Hash`. Each segment separated by a dot represents a key in a nested structure. `ascli` tries to convert the value to the simplest type (bool, int, float, string). If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax. For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`. This allows specifying nested keys directly on the command line using a concise dot-separated syntax.
+- **Short Forms**:
+  Some options have short forms.
+  For example, `-Ptoto` is equivalent to `--preset=toto`.
+  Refer to the manual or `-h` for details.
+- **Flags**:
+  Certain options are flags and do not require a value (e.g., `-N`).
+- **Option Terminator**:
+  The special option `--` ends option parsing.
+  All subsequent arguments, including those starting with `-`, are treated as positional arguments.
+- **Dot Notation for Hashes**:
+  If an option name contains a dot (`.`), it is interpreted as a `Hash`.
+  Each segment separated by a dot represents a key in a nested structure.
+  `ascli` tries to convert the value to the simplest type (bool, int, float, string).
+  If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
+  For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
+  This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
 
 Example:
 
@@ -1648,12 +1679,12 @@ Depending on action, the output will contain:
 
 | Result Type     | Description |
 |-----------------|-------------------|
-| `single_object` | displayed as a 2 dimensional table: one line per field, first column is field name, and second is field value. Nested hashes are collapsed. |
-| `object_list`   | displayed as a 2 dimensional table: one line per item, one column per field. |
-| `value_list`    | a table with one column. |
+| `single_object` | Displayed as a 2 dimensional table: one line per field, first column is field name, and second is field value. Nested hashes are collapsed. |
+| `object_list`   | Displayed as a 2 dimensional table: one line per item, one column per field. |
+| `value_list`    | A table with one column. |
 | `empty`         | nothing |
-| `status`        | a message |
-| `other_struct`  | a complex structure that cannot be displayed as an array |
+| `status`        | A message. |
+| `other_struct`  | A complex structure that cannot be displayed as an array. |
 
 #### Option: `format`
 
@@ -2113,11 +2144,14 @@ ascli config folder
 /Users/kenji/.aspera/ascli
 ```
 
+> [!NOTE]
+> This is equivalent to: `ascli --show-config --fields=home`
+
 It can be overridden using option `home`.
 
 Example (Windows):
 
-```text
+```bat
 set ASCLI_HOME=C:\Users\Kenji\.aspera\ascli
 
 ascli config folder
@@ -2363,8 +2397,10 @@ echo @zlib:@stdin:
 echo hello
 email_test --notify-to=my_email_external
 file
-file --log-level=debug --log_format=@ruby:Aspera::Log::STANDARD_FORMATTER
-file --logger=syslog --log-level=debug
+file --log-level=debug --log-format=@ruby:'->(s, d, p, m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}'
+file --log-level=debug --log-format=default
+file --log-level=debug --log-format=standard
+file --log-level=debug --logger=syslog
 folder
 gem name
 gem path
@@ -2909,6 +2945,13 @@ The default formatter is:
 ->(s, _d, _p, m){"#{s[0..2]} #{m}\n"}
 ```
 
+Availaible formatters for `log_format`:
+
+| Name      | Description                             |
+|-----------|-----------------------------------------|
+| `default` | Default formatter.                      |
+| `standard`| Standard Ruby formatter.                |
+
 Examples:
 
 - Display debugging log on `stdout`:
@@ -2923,7 +2966,8 @@ ascli config pre over --log-level=debug --logger=stdout
 ascli config pre over --log-level=error --logger=syslog
 ```
 
-When `ascli` is used interactively in a shell, the shell itself will usually log executed commands in the history file.
+> [!NOTE]
+> When `ascli` is used interactively in a shell, the shell itself will usually log executed commands in the history file (`history | grep ascli`).
 
 ### Learning Aspera Product APIs (REST)
 
@@ -3571,7 +3615,8 @@ Options for `transfer_info` are:
 | `stop`   | `Bool`   | Stop daemon when exiting `ascli`<br/>Default: `true` |
 
 > [!NOTE]
-> If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
+> If port zero is specified in the URL, then the daemon will listen on a random available port.
+> If no address is specified, then `127.0.0.1` is used.
 
 For example, to use an external, already running `transferd`, use option:
 
@@ -5633,11 +5678,20 @@ If `?` is used, then the sequence number is used only if the folder already exis
 
 Examples:
 
-- `id` : subfolder named after package ID. If the same package is downloaded several times, it will always be placed in the same folder.
-- `name` : subfolder named after package name. If two packages with the same name are downloaded, they will be combined in the same folder.
-- `name+id` : subfolder named after the combination of package name and ID.
-- `name+id?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of both fields with `.`.
-- `name+seq?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of name and sequence number.
+- `id` :
+  Subfolder named after package ID.
+  If the same package is downloaded several times, it will always be placed in the same folder.
+- `name` :
+  Subfolder named after package name.
+  If two packages with the same name are downloaded, they will be combined in the same folder.
+- `name+id` :
+  Subfolder named after the combination of package name and ID.
+- `name+id?` :
+  Subfolder named after the package's name is created, unless it already exists.
+  Else it falls back to the combination of both fields with `.`.
+- `name+seq?` :
+  Subfolder named after the package's name is created, unless it already exists.
+  Else it falls back to the combination of name and sequence number.
 
 > [!NOTE]
 > When `<field1>+<field2>?` is used, if two packages are downloaded and have the same fields, they will be downloaded in the same folder.
@@ -6406,7 +6460,9 @@ URL schemes `local` and `https` are also supported (mainly for testing purpose).
 (`--url=local:`, `--url=https://...`)
 
 - `local` will execute `ascmd` locally, instead of using an SSH connection.
-- `https` will use Web Socket Session: This requires the use of a transfer token. For example a `Basic` token can be used.
+- `https` will use Web Socket Session:
+  This requires the use of a transfer token.
+  For example a `Basic` token can be used.
 
 As, most of the time, SSH is used, if a `http` scheme is provided without token, the plugin will fallback to SSH and port 33001.
 
@@ -6482,9 +6538,9 @@ It recursively scans storage to find files/folders matching criteria and then re
 
 `[filter_expr]` is either:
 
-- Optional (default) : all files and folder are selected
-- Type `String` : the expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
-- Type `Proc` : the expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
+- Optional (default) : All files and folder are selected
+- Type `String` : The expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
+- Type `Proc` : The expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
 
 Examples of expressions:
 
@@ -6954,7 +7010,7 @@ The command expects the following parameters provided as a `Hash` positional par
 |-------------|----------|---------|---------------------------------------------------|
 | `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.        |
 | `key`       | `String` | -       | Agent key for the backend.                        |
-| `interval`  | `Float`  | 10      | Polling interval in seconds. `0` for single shot. |
+| `interval`  | `Float`  | 10      | Polling interval in seconds.<br/>`0` for single shot. |
 
 To retrieve OTel backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
 Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, i.e. replace `ingress` with `otlp`.
@@ -7055,7 +7111,8 @@ Activation is in two steps:
   - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
   - Give a name, like `ascli`
   - Activate JWT
-  - There is an option to set a global public key allowing the owner of the private key to impersonate any user. Unless you want to do this, leave this field empty.
+  - There is an option to set a global public key allowing the owner of the private key to impersonate any user.
+    Unless you want to do this, leave this field empty.
   - Click on `Create` Button
   - Take note of Client ID (and Client Secret, but not used in current version)
 
@@ -7618,11 +7675,12 @@ curl -H "Authorization: $(ascli ascli bearer)" https://faspex5.example.com/asper
 
 > [!NOTE]
 > Faspex v4 is end of support since Sept. 30th, 2024.
-So this plugin for Faspex v4 is deprecated.
-If you still need to use Faspex4, then use `ascli` version 4.19.0 or earlier.
+> So this plugin for Faspex v4 is deprecated.
+> If you still need to use Faspex4, then use `ascli` version 4.19.0 or earlier.
 
 > [!NOTE]
-> For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
+> For full details on Faspex API, refer to:
+> [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
 This plugin uses APIs versions 3 Faspex v4.
 The `v4` command requires the use of API v4, refer to the Faspex Admin manual on how to activate.
@@ -8865,7 +8923,7 @@ EXAMPLES
 Main components:
 
 - `Aspera` generic classes for REST and OAuth
-- `Aspera::Agent::Direct`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
+- `Aspera::Agent::Direct`: Starting and monitoring transfers using `ascp`.
 - `Aspera::Cli`: `ascli`.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
@@ -9016,4 +9074,5 @@ For example, when using the container, override that file with a volume and remo
 Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
 
 > [!NOTE]
-> If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers. Use `flock` instead.
+> If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers.
+> Use `flock` instead.

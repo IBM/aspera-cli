@@ -3,32 +3,32 @@
 * 4.24.0.pre
 
   * New Features:
-    * `sync`: Added operations on sync database with command: `db`.
-    * `http_options`: New field `ssl_options` allows setting SSL Context options.
-    * `console`: Added support for extended filters in transfer queries.
-    * `config`: New option `invalid_characters` ensures generated file names are valid.
     * `aoc`: Option `package_folder` allows specification of secondary field.
+    * `config`: New option `invalid_characters` ensures generated file names are valid.
+    * `config`: Added support for **dot-separated** option names, allowing nested hash structures to be specified directly on the command line.
+    * `console`: Added support for extended filters in transfer queries.
+    * `http_options`: New field `ssl_options` allows setting SSL Context options.
+    * `format`: `csv` format now supports option `table_style` for customizable output.
+    * `logger`: New option: `log_format` to control log formatting.
+    * `sync`: New command: `db` for operations on sync database.
     * `sync`: Sync operations now use options `ts` and `to_folder`.
-    * `format`: `csv` format now tables option `table_style`.
-    * `logger`: New option `log_format` to control formatting of logs.
-    * `config`: Option `silent_insecure` renamed `warn_insecure`: `yes` shows warning (default)
-    * `config`: Added support for dot-separated option names, allowing nested hash structures to be specified directly on the command line.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.
     * `desktop`: Fixed discrepancies in transfer spec resume policies.
-    * `format`: Value list now properly display column header.
+    * `format`: Value of type `list` now properly display column headers.
     * `select`: Filter is now done on values before enhanced display in table mode.
-    * `aoc`: #221 Fixed package encryption at rest status.
+    * `aoc`: #221 Fixed package encryption at rest (CSEAR) status.
   * Breaking Changes:
-    * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
+    * `config`: Option `silent_insecure` renamed `warn_insecure`. `yes` shows warning (default).
+    * `ts` : Default transfer spec includes `resume_policy=sparse_csum`.
     * `ssh_options` : Now additive option, like `ts`.
     * `vault`: When creating an entry, the `label` field is now part of the creation Hash.
-    * `console`: Replaced options `filter_from` and `filter_to` with standard option `query`.
-    * `sync`: Removed option `sync_info`. Streamlined command line interface. Applies to all plugins with `sync` command.
-    * `async`: Removed option `sync_name`, replaced with percent selector `%name:`.
+    * `console`: Removed options `filter_from` and `filter_to`. Use standard option `query` instead.
+    * `sync`: Removed option `sync_info`. Replaced with positional parameters. Streamlined command line interface. Applies to all plugins with `sync` command.
+    * `async`: Removed option `sync_name`. Replaced with percent selector `%name:`.
     * `aoc`: `files download` using gen4 API do not require anymore to provide the containing folder in first position, and then only file names. Now, directly provide the path to all files.
-    * `logger`: Log is simplified, date is removed by default. Use `--log_format=STANDARD` to revert to standard Ruby logger. See option `log_format` for details.
+    * `logger`: Log is simplified, date is removed by default. Use `--log_format=standard` to revert to standard Ruby logger. See option `log_format` for details.
 
 * 4.23.0 2025-08-11
 
