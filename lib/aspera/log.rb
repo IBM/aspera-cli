@@ -79,10 +79,11 @@ module Aspera
       def log; instance.logger; end
 
       # Dump object (`Hash`) using specified level
-      # @param name string or symbol
-      # @param object Hash or nil
-      # @param level debug level
-      # @param block give computed object
+      #
+      # @param name   [String, Symbol]  Name of object dumped
+      # @param object [Hash, nil]       Data to dump
+      # @param level  [Symbol]          Debug level
+      # @param block  [Proc, nil]       Give computed object
       def dump(name, object = nil, level: :debug)
         return unless instance.logger.send(:"#{level}?")
         object = yield if block_given?
