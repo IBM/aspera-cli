@@ -3,6 +3,7 @@
 require 'aspera/oauth/base'
 require 'aspera/assert'
 require 'securerandom'
+require 'openssl'
 module Aspera
   module OAuth
     # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
@@ -13,6 +14,17 @@ module Aspera
     # https://tools.ietf.org/html/rfc7523
     # https://tools.ietf.org/html/rfc7519
     class Jwt < Base
+      class << self
+        def generate_rsa_private_key(path:, length: DEFAULT_PRIV_KEY_LENGTH)
+          priv_key = OpenSSL::PKey::RSA.new(length)
+          File.write(path, priv_key.to_s)
+          File.write("#{path}.pub", priv_key.public_key.to_s)
+          Environment.restrict_file_access(path)
+          Environment.restrict_file_access("#{path}.pub")
+          nil
+        end
+      end
+      DEFAULT_PRIV_KEY_LENGTH = 4096
       GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
       # @param private_key_obj private key object
       # @param payload payload to be included in the JWT
