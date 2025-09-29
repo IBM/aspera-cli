@@ -37,7 +37,7 @@ module Aspera
         end
         ACTIONS = %i[health info].freeze
 
-        def initialize(**env)
+        def initialize(**_)
           super
           options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
           options.parse_options!

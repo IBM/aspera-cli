@@ -142,11 +142,11 @@ module Aspera
 
         # @param api [Rest] an existing API object for the Node API
         # @param prefix_path [String,nil] for Faspex 4, allows browsing a package
-        def initialize(api: nil, prefix_path: nil, **env)
+        def initialize(context:, api: nil, prefix_path: nil)
           @prefix_path = prefix_path
-          super(**env, basic_options: api.nil?)
+          super(context: context, basic_options: api.nil?)
           Node.declare_options(options)
-          return if env[:broker].only_manual?
+          return if context.only_manual?
           @api_node =
             if !api.nil?
               # this can be Api::Node or Rest (Shares)
@@ -494,7 +494,7 @@ module Aspera
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
-            return Node.new(**init_params, api: apifid[:api]).execute_action(command_legacy)
+            return Node.new(context: context, api: apifid[:api]).execute_action(command_legacy)
           when :node_info, :bearer_token_node
             apifid = apifid_from_next_arg(top_file_id)
             result = {

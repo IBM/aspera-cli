@@ -28,10 +28,6 @@ module Aspera
         @parent.formatter
       end
 
-      def init_params
-        @parent.init_params
-      end
-
       # Find a plugin, and issue the "require"
       # @return [Hash] plugin info: { product:, name:, url:, version: }
       def identify_plugins_for_url
@@ -94,7 +90,7 @@ module Aspera
           "Detected: #{identification[:product]}, but this application has no wizard"
         end
         # instantiate plugin: command line options will be known, e.g. private_key
-        plugin_instance = wiz_plugin_class.new(**init_params)
+        plugin_instance = wiz_plugin_class.new(context: @parent.context)
         wiz_params = {
           object: plugin_instance
         }

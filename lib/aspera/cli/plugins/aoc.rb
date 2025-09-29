@@ -397,7 +397,7 @@ module Aspera
             **workspace_id_hash(name: true)
           )
           file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")['root_file_id'] if file_id.nil?
-          node_plugin = Node.new(**init_params, api: top_node_api)
+          node_plugin = Node.new(context: context, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
             return node_plugin.execute_command_gen4(command_repo, file_id)
@@ -666,7 +666,7 @@ module Aspera
               base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
               auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
             }))
-            return Ats.new(**init_params).execute_action_gen(ats_api)
+            return Ats.new(context: context).execute_action_gen(ats_api)
           when :analytics
             analytics_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",

@@ -81,7 +81,7 @@ module Aspera
           end
         end
 
-        def initialize(**env)
+        def initialize(**_)
           super
           @ssh_opts = {}
           @connection_type = :ssh

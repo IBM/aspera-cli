@@ -31,19 +31,22 @@ module Aspera
         end
       end
 
-      def options; @broker.options; end
-      def transfer; @broker.transfer; end
-      def config; @broker.config; end
-      def formatter; @broker.formatter; end
-      def persistency; @broker.persistency; end
-
-      def initialize(broker:, man_header: true)
+      def initialize(context:)
         # check presence in descendant of mandatory method and constant
-        Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
-        Aspera.assert(self.class.constants.include?(:ACTIONS)){"Missing constant 'ACTIONS' in #{self.class}"}
-        @broker = broker
-        add_manual_header if man_header
+        Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
+        Aspera.assert(self.class.constants.include?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
+        @context = context
+        add_manual_header if @context.man_header
       end
+
+      # Global objects
+      attr_reader :context
+
+      def options; @context.options; end
+      def transfer; @context.transfer; end
+      def config; @context.config; end
+      def formatter; @context.formatter; end
+      def persistency; @context.persistency; end
 
       def add_manual_header(has_options = true)
         # manual header for all plugins
@@ -51,11 +54,6 @@ module Aspera
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:') if has_options
-      end
-
-      # @return a hash of instance variables
-      def init_params
-        return {broker: @broker}
       end
 
       # Must be called AFTER the instance action:

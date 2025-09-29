@@ -49,7 +49,7 @@ module Aspera
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
 
-        def initialize(**env)
+        def initialize(**_)
           super
           @skip_types = []
           @default_transfer_spec = nil

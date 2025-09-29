@@ -18,9 +18,9 @@ module Aspera
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE
         def initialize(**_)
+          super
           @ats_api_pub = nil
           @ats_api_pub_v1_cache = nil
-          super
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
           options.declare(:instance, 'ATS instance in ibm cloud')
           options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
@@ -124,7 +124,7 @@ module Aspera
               }
             )
             command = options.get_next_command(Node::COMMANDS_GEN4)
-            return Node.new(**init_params, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
+            return Node.new(context: context, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
             ats_url = ats_api_pub_v1.base_url
             api_ak_auth = Rest.new(

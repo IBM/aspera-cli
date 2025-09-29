@@ -51,9 +51,9 @@ module Aspera
           end
         end
 
-        def initialize(**env)
-          @api_orch = nil
+        def initialize(**_)
           super
+          @api_orch = nil
           options.declare(:result, "Specify result value as: 'work_step:parameter'")
           options.declare(:synchronous, 'Wait for completion', values: :bool, default: :no)
           options.declare(:ret_style, 'How return type is requested in api', values: %i[header arg ext], default: :arg)

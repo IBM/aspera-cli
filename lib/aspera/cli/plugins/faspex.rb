@@ -122,7 +122,7 @@ module Aspera
           end
         end
 
-        def initialize(**env)
+        def initialize(**_)
           super
           @api_v3 = nil
           @api_v4 = nil
@@ -470,7 +470,7 @@ module Aspera
                   }
                 )
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
-                return Node.new(**init_params, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
+                return Node.new(context: context, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
               end
             end
           when :me

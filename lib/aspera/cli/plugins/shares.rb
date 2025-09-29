@@ -82,7 +82,7 @@ module Aspera
             api_shares_node = basic_auth_api(NODE_API_PATH)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
             return Node
-                .new(**init_params, api: api_shares_node)
+                .new(context: context, api: api_shares_node)
                 .execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api(ADMIN_API_PATH)

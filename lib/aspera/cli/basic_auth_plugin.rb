@@ -9,15 +9,15 @@ module Aspera
     class BasicAuthPlugin < Cli::Plugin
       class << self
         def declare_options(options)
-          options.declare(:url, 'URL of application, e.g. https://faspex.example.com/aspera/faspex')
-          options.declare(:username, "User's name to log in")
+          options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
+          options.declare(:username, "User's identifier")
           options.declare(:password, "User's password")
           options.parse_options!
         end
       end
 
-      def initialize(basic_options: true, **env)
-        super(**env)
+      def initialize(context:, basic_options: true)
+        super(context: context)
         BasicAuthPlugin.declare_options(options) if basic_options
       end
 

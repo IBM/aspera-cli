@@ -144,7 +144,7 @@ module Aspera
           end
         end
 
-        def initialize(**env)
+        def initialize(**_)
           super
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')

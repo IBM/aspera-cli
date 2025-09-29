@@ -162,7 +162,7 @@ module Aspera
           options.parse_options!
           Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
           # data persistency manager, created by config plugin, set for global object
-          @broker.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
+          context.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folders for plugin lookup
           PluginFactory.instance.add_lookup_folder(self.class.gem_plugins_folder)
           PluginFactory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))

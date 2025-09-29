@@ -39,7 +39,7 @@ module Aspera
         end
         ACTIONS = %i[health bridges].freeze
 
-        def initialize(**env)
+        def initialize(**_)
           super
           options.declare(:auth, 'OAuth type of authentication', values: %i[jwt basic])
           options.declare(:client_id, 'OAuth client identifier')

@@ -60,7 +60,7 @@ module Aspera
           end
         end
 
-        def initialize(**env)
+        def initialize(**_)
           super
         end
 

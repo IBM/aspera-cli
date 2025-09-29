@@ -16,9 +16,13 @@ require 'aspera/assert'
 module Aspera
   module Cli
     # Global objects shared with plugins
-    class Objects
-      MEMBERS = %i[options transfer config formatter persistency].freeze
+    class Context
+      MEMBERS = %i[options transfer config formatter persistency man_header].freeze
       attr_accessor(*MEMBERS)
+
+      def initialize
+        @man_header = true
+      end
 
       def validate
         MEMBERS.each do |i|
@@ -156,7 +160,7 @@ module Aspera
         @option_help = false
         @option_show_config = false
         @bash_completion = false
-        @env = Objects.new
+        @context = Context.new
       end
 
       # this is the main function called by initial script just after constructor
@@ -169,37 +173,37 @@ module Aspera
         begin
           init_agents_options_plugins
           # help requested without command ? (plugins must be known here)
-          show_usage if @option_help && @env.options.command_or_arg_empty?
+          show_usage if @option_help && @context.options.command_or_arg_empty?
           generate_bash_completion if @bash_completion
-          @env.config.periodic_check_newer_gem_version
+          @context.config.periodic_check_newer_gem_version
           command_sym =
-            if @option_show_config && @env.options.command_or_arg_empty?
+            if @option_show_config && @context.options.command_or_arg_empty?
               COMMAND_CONFIG
             else
-              @env.options.get_next_command(PluginFactory.instance.plugin_list.unshift(COMMAND_HELP))
+              @context.options.get_next_command(PluginFactory.instance.plugin_list.unshift(COMMAND_HELP))
             end
           # command will not be executed, but we need manual
-          @env.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
+          @context.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
           # main plugin is not dynamically instantiated
           case command_sym
           when COMMAND_HELP
             show_usage
           when COMMAND_CONFIG
-            command_plugin = @env.config
+            command_plugin = @context.config
           else
             # get plugin, set options, etc
             command_plugin = get_plugin_instance_with_options(command_sym)
             # parse plugin specific options
-            @env.options.parse_options!
+            @context.options.parse_options!
           end
           # help requested for current plugin
           show_usage(all: false) if @option_help
           if @option_show_config
-            @env.formatter.display_results(type: :single_object, data: @env.options.known_options(only_defined: true).stringify_keys)
+            @context.formatter.display_results(type: :single_object, data: @context.options.known_options(only_defined: true).stringify_keys)
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
-          lock_port = @env.options.get_option(:lock_port)
+          lock_port = @context.options.get_option(:lock_port)
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
@@ -211,18 +215,18 @@ module Aspera
               Log.log.warn{"Another instance is already running (#{e.message})."}
             end
           end
-          pid_file = @env.options.get_option(:pid_file)
+          pid_file = @context.options.get_option(:pid_file)
           if !pid_file.nil?
             File.write(pid_file, Process.pid)
             Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
             at_exit{File.delete(pid_file)}
           end
           # execute and display (if not exclusive execution)
-          @env.formatter.display_results(**command_plugin.execute_action) if execute_command
+          @context.formatter.display_results(**command_plugin.execute_action) if execute_command
           # save config file if command modified it
-          @env.config.save_config_file_if_needed
+          @context.config.save_config_file_if_needed
           # finish
-          @env.transfer.shutdown
+          @context.transfer.shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
@@ -239,15 +243,15 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          @env.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
-          @env.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
+          @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
-          Hints.hint_for(exception_info[:e], @env.formatter)
+          Hints.hint_for(exception_info[:e], @context.formatter)
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
-          @env.options.final_errors.each do |msg|
-            @env.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} Argument: #{msg}")
+          @context.options.final_errors.each do |msg|
+            @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end
@@ -257,7 +261,7 @@ module Aspera
           # show stack trace in debug mode
           raise exception_info[:e] if Log.log.debug?
           # else give hint and exit
-          @env.formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
+          @context.formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)
         end
         return
@@ -271,19 +275,19 @@ module Aspera
 
       def show_usage(all: true, exit: true)
         # display main plugin options (+config)
-        @env.formatter.display_message(:error, @env.options.parser)
+        @context.formatter.display_message(:error, @context.options.parser)
         if all
-          @env.only_manual
+          @context.only_manual
           # list plugins that have a "require" field, i.e. all but main plugin
           PluginFactory.instance.plugin_list.each do |plugin_name_sym|
             # config was already included in the global options
             next if plugin_name_sym.eql?(COMMAND_CONFIG)
             # override main option parser with a brand new, to avoid having global options
-            @env.options = Manager.new(Info::CMD_NAME)
-            @env.options.parser.banner = '' # remove default banner
+            @context.options = Manager.new(Info::CMD_NAME)
+            @context.options.parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym)
             # display generated help for plugin options
-            @env.formatter.display_message(:error, @env.options.parser.help)
+            @context.formatter.display_message(:error, @context.options.parser.help)
           end
         end
         Process.exit(0) if exit
@@ -294,31 +298,34 @@ module Aspera
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
       def init_agents_and_options
         # create formatter, in case there is an exception, it is used to display.
-        @env.formatter = Formatter.new
+        @context.formatter = Formatter.new
         # create command line manager with arguments
-        @env.options = Manager.new(Info::CMD_NAME, @argv)
+        @context.options = Manager.new(Info::CMD_NAME, @argv)
         # formatter adds options
-        @env.formatter.declare_options(@env.options)
-        ExtendedValue.instance.default_decoder = @env.options.get_option(:struct_parser)
+        @context.formatter.declare_options(@context.options)
+        ExtendedValue.instance.default_decoder = @context.options.get_option(:struct_parser)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        @env.formatter.display_message(
+        @context.formatter.display_message(
           :error,
           "#{Formatter::WARNING_FLASH} Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"
         ) unless current_prog_name.eql?(Info::CMD_NAME)
         # declare and parse global options
         declare_global_options
+        # do not display config commands if help is asked
+        @context.man_header = false
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @env.config = Plugins::Config.new(broker: @env, man_header: false)
+        @context.config = Plugins::Config.new(context: @context)
+        @context.man_header = true
         # data persistency is set in config
-        Aspera.assert(@env.persistency){'missing persistency object'}
+        Aspera.assert(@context.persistency){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
-        @env.transfer = TransferAgent.new(@env.options, @env.config)
+        @context.transfer = TransferAgent.new(@context.options, @context.config)
         # add commands for config plugin after all options have been added
-        @env.config.add_manual_header(false)
-        @env.validate
+        @context.config.add_manual_header(false)
+        @context.validate
         # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
-        @env.options.parser.banner = app_banner
+        @context.options.parser.banner = app_banner
       end
 
       def app_banner
@@ -358,29 +365,29 @@ module Aspera
       # define header for manual
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @env.options.declare(:help, 'Show this message', values: :none, short: 'h'){@option_help = true}
-        @env.options.declare(:bash_comp, 'Generate bash completion for command', values: :none){@bash_completion = true}
-        @env.options.declare(:show_config, 'Display parameters used for the provided action', values: :none){@option_show_config = true}
-        @env.options.declare(:version, 'Display version', values: :none, short: 'v'){@env.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
-        @env.options.declare(
+        @context.options.declare(:help, 'Show this message', values: :none, short: 'h'){@option_help = true}
+        @context.options.declare(:bash_comp, 'Generate bash completion for command', values: :none){@bash_completion = true}
+        @context.options.declare(:show_config, 'Display parameters used for the provided action', values: :none){@option_show_config = true}
+        @context.options.declare(:version, 'Display version', values: :none, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(
           :ui, 'Method to start browser',
           values: USER_INTERFACES,
           handler: {o: Environment.instance, m: :url_method}
         )
-        @env.options.declare(
+        @context.options.declare(
           :invalid_characters, 'Replacement character and invalid filename characters',
           handler: {o: Environment.instance, m: :file_illegal_characters}
         )
-        @env.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
-        @env.options.declare(:log_format, 'Log formatter', types: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
-        @env.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @env.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
-        @env.options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
-        @env.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
-        @env.options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
-        @env.options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
+        @context.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
+        @context.options.declare(:log_format, 'Log formatter', types: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
+        @context.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
+        @context.options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
+        @context.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
+        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
         # parse declared options
-        @env.options.parse_options!
+        @context.options.parse_options!
       end
 
       # @return the plugin instance, based on name
@@ -389,13 +396,13 @@ module Aspera
       def get_plugin_instance_with_options(plugin_name_sym)
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         # load default params only if no param already loaded before plugin instantiation
-        @env.config.add_plugin_default_preset(plugin_name_sym)
-        command_plugin = PluginFactory.instance.create(plugin_name_sym, broker: @env)
+        @context.config.add_plugin_default_preset(plugin_name_sym)
+        command_plugin = PluginFactory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
       end
 
       def generate_bash_completion
-        if @env.options.get_next_argument('', multiple: true, mandatory: false).nil?
+        if @context.options.get_next_argument('', multiple: true, mandatory: false).nil?
           PluginFactory.instance.plugin_list.each{ |p| puts p}
         else
           Log.log.warn('only first level completion so far')
