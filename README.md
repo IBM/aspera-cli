@@ -14,6 +14,31 @@ PANDOC_META_END
 
 ## Introduction
 
+![Hootput the Owl](../docs/ascli-impersonation-small.png)
+
+Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
+Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
+It doesn’t chatter; it hoots—clear, precise, and always on time.
+
+Like ascli, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
+Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
+When you hear Hootput’s call, you know your data is already in flight.
+
+---
+
+
+"Hey, I’m ascli — your data’s personal courier.
+I don’t do flashy dashboards; I’m happiest in a terminal window.
+Hand me a command, and I’ll zip your files across the network faster than you thought possible.
+
+Need to automate? I’m script-friendly.
+
+Need to integrate? I’ve got APIs on speed-dial.
+
+Need to debug? I’ll show you what’s going on under the hood.
+
+Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
+
 Version : 4.24.0.pre
 
 Laurent/2016-2025
@@ -4443,16 +4468,16 @@ SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_t
 COMMAND: shares
 SUBCOMMANDS: admin files health
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
 
 
 COMMAND: node
 SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync telemetry transfer transport upload watch_folder
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
@@ -4465,8 +4490,8 @@ OPTIONS:
 COMMAND: faspio
 SUBCOMMANDS: bridges health
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --auth=ENUM                  OAuth type of authentication: jwt, basic
         --client-id=VALUE            OAuth client identifier
@@ -4477,8 +4502,8 @@ OPTIONS:
 COMMAND: orchestrator
 SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --result=VALUE               Specify result value as: 'work_step:parameter'
         --synchronous=ENUM           Wait for completion: [no], yes
@@ -4489,8 +4514,8 @@ OPTIONS:
 COMMAND: alee
 SUBCOMMANDS: entitlement health
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
 
 
@@ -4509,8 +4534,8 @@ OPTIONS:
 COMMAND: faspex5
 SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
@@ -4544,8 +4569,8 @@ OPTIONS:
 COMMAND: faspex
 SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --link=VALUE                 Public link for specific operation
         --delivery-info=VALUE        Package delivery information (Hash)
@@ -4558,8 +4583,8 @@ OPTIONS:
 COMMAND: preview
 SUBCOMMANDS: check events scan show test trevents
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
@@ -4594,8 +4619,8 @@ OPTIONS:
 COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --auth=ENUM                  OAuth type of authentication: web, [jwt]
         --client-id=VALUE            OAuth API client identifier
@@ -4613,8 +4638,8 @@ OPTIONS:
 COMMAND: server
 SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
         --ssh-keys=VALUE             SSH key path list (Array or single)
         --passphrase=VALUE           SSH private key passphrase
@@ -4624,8 +4649,8 @@ OPTIONS:
 COMMAND: console
 SUBCOMMANDS: health transfer
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
         --password=VALUE             User's password
 
 

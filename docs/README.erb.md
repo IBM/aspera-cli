@@ -13,6 +13,31 @@ PANDOC_META_END
 
 ## Introduction
 
+![Hootput the Owl](../docs/ascli-impersonation-small.png)
+
+Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
+Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
+It doesn’t chatter; it hoots—clear, precise, and always on time.
+
+Like ascli, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
+Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
+When you hear Hootput’s call, you know your data is already in flight.
+
+---
+
+
+"Hey, I’m ascli — your data’s personal courier.
+I don’t do flashy dashboards; I’m happiest in a terminal window.
+Hand me a command, and I’ll zip your files across the network faster than you thought possible.
+
+Need to automate? I’m script-friendly.
+
+Need to integrate? I’ve got APIs on speed-dial.
+
+Need to debug? I’ll show you what’s going on under the hood.
+
+Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
+
 Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>

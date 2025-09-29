@@ -18,6 +18,7 @@ variables:
     - '\newpage'
 resource-path:
   - ${.}
+  - ..
 include-in-header:
   - manual_include_in_header.tex
 include-after-body:
