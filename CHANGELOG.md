@@ -2,6 +2,9 @@
 
 * 4.25.0.pre
 
+  * Issues Fixed:
+    * `wizard`: Fixed wizard.
+
 * 4.24.0
 
   * New Features:

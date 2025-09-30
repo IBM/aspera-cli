@@ -2034,6 +2034,7 @@ $(F)f5_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
 	$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
+	$(CLI_TEST) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
 	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
 	$(CLI_TEST) config detect @preset:faspex5_user.url

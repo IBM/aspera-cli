@@ -473,6 +473,18 @@ module Aspera
           return result
         end
 
+        def defaults_preset
+          @config_presets[CONF_PRESET_DEFAULTS] ||= {}
+        end
+
+        def preset?(name)
+          @config_presets.key?(name)
+        end
+
+        def preset_set(name, value)
+          @config_presets[name] = value
+        end
+
         def set_preset_key(preset, param_name, param_value)
           Aspera.assert_values(param_name.class, [String, Symbol]){'parameter'}
           param_name = param_name.to_s
@@ -505,9 +517,9 @@ module Aspera
         attr_reader :gem_url
         attr_accessor :option_config_file
 
-        # @return the hash from name (also expands possible includes)
         # @param config_name name of the preset in config file
         # @param include_path used to detect and avoid include loops
+        # @return copy of the hash from name (also expands possible includes)
         def preset_by_name(config_name, include_path = [])
           raise Cli::Error, 'loop in include' if include_path.include?(config_name)
           include_path = include_path.clone # avoid messing up if there are multiple branches

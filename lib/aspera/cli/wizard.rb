@@ -28,6 +28,10 @@ module Aspera
         @parent.formatter
       end
 
+      def config
+        @parent.config
+      end
+
       # Find a plugin, and issue the "require"
       # @return [Hash] plugin info: { product:, name:, url:, version: }
       def identify_plugins_for_url
@@ -138,17 +142,17 @@ module Aspera
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")
         # init defaults if necessary
-        @config_presets[CONF_PRESET_DEFAULTS] ||= {}
+        defaults = config.defaults_preset
         option_override = options.get_option(:override, mandatory: true)
         raise Cli::Error, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
-          if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULTS].key?(identification[:product])
+          if !option_override && options.get_option(:default, mandatory: true) && defaults.key?(identification[:product])
         raise Cli::Error, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
-          if !option_override && @config_presets.key?(wiz_preset_name)
-        @config_presets[wiz_preset_name] = wizard_result[:preset_value].stringify_keys
+          if !option_override && config.preset?(wiz_preset_name)
+        config.preset_set(wiz_preset_name, wizard_result[:preset_value].stringify_keys)
         test_args = wizard_result[:test_args]
         if options.get_option(:default, mandatory: true)
           formatter.display_status("Setting config preset as default for #{identification[:product]}")
-          @config_presets[CONF_PRESET_DEFAULTS][identification[:product].to_s] = wiz_preset_name
+          defaults[identification[:product].to_s] = wiz_preset_name
         else
           test_args = "-P#{wiz_preset_name} #{test_args}"
         end
