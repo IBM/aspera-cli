@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.24.0.pre
+* 4.24.0
 
   * New Features:
     * `aoc`: Option `package_folder` allows specification of secondary field.
