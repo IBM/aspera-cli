@@ -378,7 +378,7 @@ module Aspera
           :invalid_characters, 'Replacement character and invalid filename characters',
           handler: {o: Environment.instance, m: :file_illegal_characters}
         )
-        @context.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
+        @context.options.declare(:log_level, 'Log level', values: Log::LEVELS, handler: {o: Log.instance, m: :level})
         @context.options.declare(:log_format, 'Log formatter', types: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
         @context.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)

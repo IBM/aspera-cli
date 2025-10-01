@@ -17,12 +17,17 @@ $VERBOSE = nil
 class Logger
   # Two additionnal trace levels
   TRACE_MAX = 2
+
   # Add custom level to logger severity, below debug level
   module Severity
     1.upto(TRACE_MAX).each{ |level| const_set(:"TRACE#{level}", - level)}
   end
-  # Quick access to label
+
+  # Hash : key: log level int, value: uppercase log level label
   SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
+
+  # @param severity [Integer] Log severity as int
+  # @return [String] Log severity upper case label
   def format_severity(severity)
     SEVERITY_LABEL[severity] || 'ANY'
   end
@@ -51,34 +56,23 @@ module Aspera
 
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
-    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{Log.color_level(s)} #{m}\n"}
-    FORMATTERS = {
-      standard: Logger::Formatter.new,
-      default:  DEFAULT_FORMATTER
-    }.freeze
+
+    # Levels are :trace2,:trace1,:debug,:info,:warn,:error,fatal,:unknown
+    LEVELS = Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}.freeze
+
     # Class methods
     class << self
-      def color_level(level)
-        case level
-        when :TRACE2 then 'TR2'.dim
-        when :TRACE1 then 'TR1'.blue
-        when :DEBUG then 'DBG'.cyan
-        when :INFO  then 'INF'.green
-        when :WARN  then 'WRN'.bg_brown.black
-        when :ERROR then 'ERR'.bg_red.blink
-        when :FATAL then 'FTL'.magenta
-        when :UNKNOWN then 'UKN'.blink
-        else Aspera.error_unexpected_value(level){'log level'}
-        end
+      # Applies the provided list of string decoration (colors) to the value.
+      # @param value [String]         Value to enhance.
+      # @param colors [Array(Symbol)] List of decorations
+      def apply_colors(value, colors)
+        colors.inject(value){ |s, c| s.send(c)}
       end
 
-      # levels are :debug,:info,:warn,:error,fatal,:unknown
-      def levels; Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}; end
-
-      # get the logger object of singleton
+      # Get the logger object of singleton
       def log; instance.logger; end
 
-      # Dump object (`Hash`) using specified level
+      # Dump object (`Hash`) to log using specified level
       #
       # @param name   [String, Symbol]  Name of object dumped
       # @param object [Hash, nil]       Data to dump
@@ -90,14 +84,16 @@ module Aspera
         instance.logger.send(level, obj_dump(name, object))
       end
 
+      # @return [String] Dump of object
       def obj_dump(name, object)
-        dump_text = case instance.dump_format
-        when :json
-          JSON.pretty_generate(object) rescue PP.pp(object, +'')
-        when :ruby
-          PP.pp(object, +'')
-        else error_unexpected_value(instance.dump_format){'dump format'}
-        end
+        dump_text =
+          case instance.dump_format
+          when :json
+            JSON.pretty_generate(object) rescue PP.pp(object, +'')
+          when :ruby
+            PP.pp(object, +'')
+          else error_unexpected_value(instance.dump_format){'dump format'}
+          end
         "#{name.to_s.green} (#{instance.dump_format})=\n#{dump_text}"
       end
 
@@ -121,6 +117,7 @@ module Aspera
     end
 
     # Set log level of underlying logger given symbol level
+    # @param new_level [Symbol] One of LEVELS
     def level=(new_level)
       @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
     end
@@ -141,6 +138,7 @@ module Aspera
     end
 
     # Get symbol of debug level of underlying logger
+    # @return [Symbol] One of LEVELS
     def level
       Logger::Severity.constants.each do |name|
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
@@ -188,5 +186,30 @@ module Aspera
       # This sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type = @logger_type
     end
+
+    # Define decoration of levels
+    LVL_DECO = {
+      TRACE2:  %i{dim},
+      TRACE1:  %i{blue},
+      DEBUG:   %i{cyan},
+      INFO:    %i{green},
+      WARN:    %i{bg_brown black},
+      ERROR:   %i{bg_red blink},
+      FATAL:   %i{magenta},
+      UNKNOWN: %i{blink}
+    }.freeze
+
+    # Short levels with color
+    LVL_COLOR = LVL_DECO.map{ |k, v| [k, apply_colors("#{k[..2]}#{k[-1]}", v)]}.to_h.freeze
+
+    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{m}\n"}
+
+    # pre-defined formatters
+    FORMATTERS = {
+      standard: Logger::Formatter.new,
+      default:  DEFAULT_FORMATTER
+    }.freeze
+
+    private_constant :LVL_DECO, :LVL_COLOR, :DEFAULT_FORMATTER, :FORMATTERS
   end
 end
