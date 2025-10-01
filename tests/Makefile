@@ -127,6 +127,8 @@ TEMPORIZE_FILE=sleep 30
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
 TMP_SYNCS=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/syncs/
 
+SYNC_NAME=my_sync_session
+
 ifdef ASPERA_CLI_TEST_MACOS
 all:: $(F).ssh_ok
 # ensure SSH is enabled on macos only
@@ -875,6 +877,7 @@ $(F)aoc_tstdst: $(F)aoc_some_folder
 	$(BEG_IGN)$(CLI_TEST) aoc files delete /testdst$(END_IGN)
 	$(TEMPORIZE_FILE)
 	$(CLI_TEST) aoc files browse / --node-cache=no
+	$(INCMAN)$(CLI_TEST) aoc files modify /some_folder @json:'{"mount_point":false}'
 	$(INCMAN)$(CLI_TEST) aoc files rename /some_folder testdst
 	@$(STOP_TEST) $@
 $(F)aocfupl: $(F)aoc_tstsrc
@@ -1402,35 +1405,40 @@ $(F)nd_sync_pull_conf: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)nd_sync_pull_conf @json:'{"reset":true}'
 	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)nd_sync_pull_conf
 	@$(STOP_TEST) $@
-$(F)ndsyncv2: $(TMP_EXISTS)
+$(F)nd_sync_v2: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)ndsyncv2
-	mkdir -p $(TMP_SYNCS)ndsyncv2
-	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)ndsyncv2 @json:'{"name":"my_node_sync2","reset":true}'
-	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)ndsyncv2
+	rm -fr $(TMP_SYNCS)nd_sync_v2
+	mkdir -p $(TMP_SYNCS)nd_sync_v2
+	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)nd_sync_v2 @json:'{"name":"$(SYNC_NAME)","reset":true}'
+	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)nd_sync_v2
 	@$(STOP_TEST) $@
-$(F)sy1: $(TMP_EXISTS)
+$(F)nd_async_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node async list
 	@$(STOP_TEST) $@
-$(F)sy2: $(TMP_EXISTS)
+$(F)nd_async_show: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node async show ALL
-	$(INCMAN)$(CLI_TEST) node async show %name:my_node_sync2
+	$(INCMAN)$(CLI_TEST) node async show %name:$(SYNC_NAME)
 	@$(STOP_TEST) $@
-$(F)sy3: $(TMP_EXISTS)
+$(F)nd_async_cntr: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async counters %name:my_node_sync2
+	$(INCMAN)$(CLI_TEST) node async counters %name:$(SYNC_NAME)
 	@$(STOP_TEST) $@
-$(F)sy4: $(TMP_EXISTS)
+$(F)nd_async_bw: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async bandwidth %name:my_node_sync2
+	$(INCMAN)$(CLI_TEST) node async bandwidth %name:$(SYNC_NAME)
 	@$(STOP_TEST) $@
-$(F)sy5: $(TMP_EXISTS)
+$(F)nd_async_files: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async files %name:my_node_sync2
+	$(INCMAN)$(CLI_TEST) node async files %name:$(SYNC_NAME)
+	$(INCMAN)$(CLI_TEST) node async files %name:$(SYNC_NAME) --once-only=yes
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnsync,$(F)nd_sync_pull_conf $(F)ndsyncv2 $(F)sy1 $(F)sy2 $(F)sy3 $(F)sy4 $(F)sy5))
+$(F)nd_async_del: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) node async delete ALL
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,tnsync,$(F)nd_sync_pull_conf $(F)nd_sync_v2 $(F)nd_async_list $(F)nd_async_show $(F)nd_async_cntr $(F)nd_async_bw $(F)nd_async_files $(F)nd_async_del))
 #######################################################################################################################
 $(F)sync_create: $(TMP_EXISTS)
 	@$(START_TEST) $@
