@@ -7,6 +7,8 @@ author: "Laurent MARTIN"
 PANDOC_META_END
 -->
 
+<!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
+
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
@@ -122,7 +124,7 @@ First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start 
 
 Once the gem is installed, <%=tool%> shall be accessible:
 
-```bash
+```shell
 <%=cmd%> --version
 ```
 
@@ -141,11 +143,11 @@ If you want to test with Aspera on Cloud, jump to section: [Wizard](#configurati
 
 To test with Aspera demo transfer server, set up the environment and then test:
 
-```bash
+```shell
 <%=cmd%> config initdemo
 ```
 
-```bash
+```shell
 <%=cmd%> server browse /
 ```
 
@@ -168,7 +170,7 @@ The following example will:
 - List files in a folder
 - Download a file
 
-```bash
+```shell
 <%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
 ```
 
@@ -177,7 +179,7 @@ Updated: myserver
 Saving config file.
 ```
 
-```bash
+```shell
 <%=cmd%> config preset set default server myserver
 ```
 
@@ -186,7 +188,7 @@ Updated: default: server <- myserver
 Saving config file.
 ```
 
-```bash
+```shell
 <%=cmd%> server browse /aspera-test-dir-large
 ```
 
@@ -203,7 +205,7 @@ Saving config file.
 ╰────────────┴──────┴───────────┴─────────────┴───────────────────────────┴───────╯
 ```
 
-```bash
+```shell
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
@@ -248,7 +250,7 @@ It is planned to provide <%=tool%> as a single platform-dependent executable.
 >
 > On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
-```bash
+```shell
 ldd --version | head -n1
 ```
 
@@ -258,7 +260,7 @@ ldd (GNU libc) 2.34
 
 Check an executable's (e.g. `/bin/bash`, <%=tool%>, `ascp`) minimum required GLIBC version:
 
-```bash
+```shell
 objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 ```
 
@@ -305,7 +307,7 @@ The Ruby installer supports silent installation, to see the options, execute it 
 
 Download the Ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
 
-```bat
+```batchfile
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
@@ -318,7 +320,7 @@ Do not use it.
 
 The recommended way is to use [Homebrew](https://brew.sh/).
 
-```bash
+```shell
 brew install ruby
 ```
 
@@ -326,7 +328,7 @@ This installs a recent Ruby suitable for <%=tool%>.
 
 To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
 
-```bash
+```shell
 use_ruby(){
     local version=$1
     case $version in list) for r in $(brew list -1 | grep '^ruby'); do
@@ -357,48 +359,48 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 
 - Check available Ruby versions:
 
-  ```bash
+  ```shell
   dnf module list ruby
   ```
 
 - If Ruby was already installed with an older version, remove it:
 
-  ```bash
+  ```shell
   dnf module -y reset ruby
   ```
 
 - Install packages needed to build native gems:
   
-  ```bash
+  ```shell
   dnf install -y make automake gcc gcc-c++ kernel-devel
   ```
 
 - Enable the Ruby version you want:
 
-  ```bash
+  ```shell
   dnf module -y enable ruby:3.1
   dnf install -y ruby-devel
   ```
 
 **Example:** Ubuntu
 
-```bash
+```shell
 apt-get install -y ruby-full
 ```
 
 **Other examples:**
 
-```bash
+```shell
 yum install -y ruby ruby-devel rubygems ruby-json
 ```
 
-```bash
+```shell
 apt install -y ruby ruby-dev rubygems ruby-json
 ```
 
 One can remove all installed gems, for example to start fresh:
 
-```bash
+```shell
 gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 ```
 
@@ -410,7 +412,7 @@ Follow [https://rvm.io/](https://rvm.io/).
 Execute the shell/curl command.
 As regular user, it installs in the user's home: `~/.rvm`.
 
-```bash
+```shell
 \curl -sSL https://get.rvm.io | bash -s stable
 ```
 
@@ -418,19 +420,19 @@ Follow on-screen instructions to install keys, and then re-execute the command.
 
 Upon RVM installation, open a new terminal or initialize with:
 
-```bash
+```shell
 source ~/.rvm/scripts/rvm
 ```
 
 It is advised to get one of the pre-compiled Ruby version, you can list with:
 
-```bash
+```shell
 rvm list --remote
 ```
 
 Install the chosen pre-compiled Ruby version:
 
-```bash
+```shell
 rvm install 3.2.2
 ```
 
@@ -440,30 +442,30 @@ Alternatively RVM can be installed system-wide, for this execute as `root`.
 It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
 One can install in another location with:
 
-```bash
+```shell
 curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
 If so, one can rename the environment script so that it is not loaded by default:
 
-```bash
+```shell
 mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
 ```
 
 To activate Ruby (and <%=cmd%>) later, source it:
 
-```bash
+```shell
 source /etc/profile.d/rvm.sh.ok
 ```
 
-```bash
+```shell
 rvm version
 ```
 
 On macOS, one way to force use of OpenSSL 3.0 is:
 
-```bash
+```shell
 RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
 ```
 
@@ -471,19 +473,19 @@ RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm instal
 
 If you don't have root access, you can install Ruby in your home directory using `rbenv` see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
-```bash
+```shell
 curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 ```
 
 Then open a new terminal, or `source` the shell initialization script:
 
-```bash
+```shell
 source ~/.bashrc
 ```
 
 Then install Ruby:
 
-```bash
+```shell
 rbenv install 3.2.2
 ```
 
@@ -498,7 +500,7 @@ If your Unix does not provide a pre-built Ruby, you can get it using one of thos
 
 For instance to build from source and install in `/opt/ruby` :
 
-```bash
+```shell
 wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
 
 gzip -d ruby-2.7.2.tar.gz
@@ -538,14 +540,14 @@ Choose the latest version from:
 
 Example: start <%=tool%> with JRuby and reduce startup time:
 
-```bash
+```shell
 export JRUBY_OPTS=--dev
 <%=cmd%> -v
 ```
 
 or
 
-```bash
+```shell
 JRUBY_OPTS=--dev <%=cmd%> -v
 ```
 
@@ -560,7 +562,7 @@ See [Gemfile](Gemfile):
 
 Install like this:
 
-```bash
+```shell
 <%=gem_opt_cmd%>
 ```
 
@@ -568,13 +570,13 @@ Install like this:
 
 Once you have Ruby and rights to install gems, install the `<%=gemspec.name%>` gem and its dependencies:
 
-```bash
+```shell
 gem install <%=gemspec.name%><%=geminstadd%>
 ```
 
 To upgrade to the latest version:
 
-```bash
+```shell
 gem update <%=gemspec.name%>
 ```
 
@@ -583,7 +585,7 @@ To deactivate this feature, globally set the option `version_check_days` to `0`,
 
 To check if a new version is available (independently of `version_check_days`):
 
-```bash
+```shell
 <%=cmd%> config check_update
 ```
 
@@ -596,13 +598,13 @@ For [secure installation](https://guides.rubygems.org/security/#using-gems), one
 
 Import the verification certificate:
 
-```bash
+```shell
 gem cert --add <(curl -Ls https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem)
 ```
 
 The user installs the gem with `HighSecurity` or `MediumSecurity`: this will succeed only of the gem is trusted:
 
-```bash
+```shell
 gem install -P MediumSecurity <%=gemspec.name%>
 ```
 
@@ -621,13 +623,13 @@ This can be installed either be installing an Aspera transfer software or using 
 The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
 Install using <%=tool%> for the current platform with:
 
-```bash
+```shell
 <%=cmd%> config transferd install
 ```
 
 or
 
-```bash
+```shell
 <%=cmd%> config ascp install
 ```
 
@@ -653,25 +655,25 @@ Available Transfer Daemon versions available from `locations_url` can be listed 
 
 To install a specific version, e.g. 1.1.3:
 
-```bash
+```shell
 <%=cmd%> config ascp install 1.1.3
 ```
 
 To get the download URL for a specific platform and version:
 
-```bash
+```shell
 <%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
 ```
 
 To download it, pipe to `config download`:
 
-```bash
+```shell
 <%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
 ```
 
 If installation from a local file preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
-```bash
+```shell
 <%=cmd%> config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
@@ -707,7 +709,7 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
 
-```bash
+```shell
 ./build_package.sh aspera-cli 4.18.0
 ```
 
@@ -725,7 +727,7 @@ The procedure:
 
 - Archive (zip, tar) the main RVM folder (includes <%=cmd%>):
 
-```bash
+```shell
 cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 ```
 
@@ -735,7 +737,7 @@ cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 
 - On target system
 
-```bash
+```shell
 cd $HOME
 
 tar zxvf rvm-<%=cmd%>.tgz
@@ -747,7 +749,7 @@ source ~/.rvm/scripts/rvm
 
 - Add those lines to shell environment (`.profile`)
 
-```bash
+```shell
 source ~/.rvm/scripts/rvm
 ```
 
@@ -759,7 +761,7 @@ It is essentially the same procedure as installation for Windows with internet, 
 
 - Download the Ruby installer from <https://rubyinstaller.org/downloads/>
 
-  ```bash
+  ```shell
   v=$(curl -s https://rubyinstaller.org/downloads/ | sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p' | head -n 1)
   curl -o ${v##*/} $v
   ```
@@ -775,19 +777,19 @@ Then, on the target system:
 - Unzip the archive
 - Execute the installer:
 
-```bat
+```batchfile
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
 - Install the gems: Extract the gem archive and then:
 
-```bat
+```batchfile
 gem install --force --local *.gem
 ```
 
 - Install the Aspera Transfer Daemon SDK
 
-```bash
+```shell
 <%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
 
@@ -800,7 +802,7 @@ The container image is: [`<%=container_image%>`](https://hub.docker.com/r/<%=con
 The container contains: Ruby, <%=tool%> and the Aspera Transfer Daemon.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
-```bash
+```shell
 podman --version
 ```
 
@@ -810,7 +812,7 @@ podman --version
 
 Execute this:
 
-```bash
+```shell
 podman run --rm --tty --interactive --entrypoint bash <%=container_image%>:latest
 ```
 
@@ -819,7 +821,7 @@ podman run --rm --tty --interactive --entrypoint bash <%=container_image%>:lates
 
 Then, execute individual <%=tool%> commands such as:
 
-```bash
+```shell
 <%=cmd%> config init
 <%=cmd%> config preset overview
 <%=cmd%> config ascp info
@@ -840,19 +842,19 @@ The entry point is <%=tool%> and the default command is `help`.
 
 The container can be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
 
-```bash
+```shell
 podman run --rm --tty --interactive <%=container_image%>:latest
 ```
 
 For more convenience, you may define a shell alias:
 
-```bash
+```shell
 alias <%=cmd%>='podman run --rm --tty --interactive <%=container_image%>:latest'
 ```
 
 Then, you can execute the container like a local command:
 
-```bash
+```shell
 <%=cmd%> -v
 ```
 
@@ -864,7 +866,7 @@ In order to keep persistency of configuration on the host, you should specify yo
 To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/<%=cmd%>`).
 Add options:
 
-```bash
+```shell
 --user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
@@ -876,14 +878,14 @@ Add options:
 As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
 
-```bash
+```shell
 --entrypoint bash
 ```
 
 You may also probably want that files downloaded in the container are directed to the host.
 In this case you need also to specify the shared transfer folder as a volume:
 
-```bash
+```shell
 --volume $HOME/xferdir:/xferfiles
 ```
 
@@ -892,11 +894,11 @@ In this case you need also to specify the shared transfer folder as a volume:
 
 And if you want all the above, simply use all the options:
 
-```bash
+```shell
 alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
 ```
 
-```bash
+```shell
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
@@ -930,7 +932,7 @@ To add local storage as a volume, you can use the env var `docker_args`:
 
 Example of use:
 
-```bash
+```shell
 curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/container/d<%=cmd%>
 chmod a+x <%=cmd%>
 export xferdir=$HOME/xferdir
@@ -955,14 +957,14 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 - First create the image archive:
 
-```bash
+```shell
 podman pull <%=container_image%>
 podman save <%=container_image%>|gzip><%=cmd%>_image_latest.tar.gz
 ```
 
 - Then, on air-gapped system:
 
-```bash
+```shell
 podman load -i <%=cmd%>_image_latest.tar.gz
 ```
 
@@ -972,13 +974,13 @@ podman load -i <%=cmd%>_image_latest.tar.gz
 As the container is immutable, it is not recommended modifying this file.
 If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/<%=cmd%>` mapped to the container folder `/home/cliuser/.aspera/<%=cmd%>`:
 
-```bash
+```shell
 echo '<CONF/>' > $HOME/.aspera/<%=cmd%>/aspera.conf
 ```
 
 Then, tell `ascp` to use that other configuration file:
 
-```bash
+```shell
 --transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/<%=cmd%>/aspera.conf"]}'
 ```
 
@@ -988,25 +990,25 @@ Singularity is another type of use of container.
 
 On Linux install:
 
-```bash
+```shell
 dnf install singularity-ce
 ```
 
 Build an image like this:
 
-```bash
+```shell
 singularity build <%=cmd%>.sif docker://<%=container_image%>
 ```
 
 Then, start <%=tool%> like this:
 
-```bash
+```shell
 singularity run <%=cmd%>.sif
 ```
 
 Or get a shell with access to <%=tool%> like this:
 
-```bash
+```shell
 singularity shell <%=cmd%>.sif
 ```
 
@@ -1016,13 +1018,13 @@ singularity shell <%=cmd%>.sif
 
 To display the version of **OpenSSL** used in <%=tool%>:
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:OpenSSL::OPENSSL_VERSION --format=text
 ```
 
 It is possible to specify to use another SSL library or version by executing:
 
-```bash
+```shell
 gem install openssl -- --with-openssl-dir=[openssl library folder]
 ```
 
@@ -1030,7 +1032,7 @@ Where `[openssl library folder]` is the path to the folder containing the `lib` 
 
 For example, on macOS, to use the `openssl@3` library installed with `brew`:
 
-```bash
+```shell
 openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p'
 ```
 
@@ -1040,7 +1042,7 @@ openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p'
 
 Then install the `openssl` gem with:
 
-```bash
+```shell
 gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p')
 ```
 
@@ -1050,7 +1052,7 @@ SSL certificates are validated using a certificate store, by default it is the o
 
 To display trusted certificate store locations:
 
-```bash
+```shell
 <%=cmd%> --show-config --fields=cert_stores
 ```
 
@@ -1059,7 +1061,7 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 
 One can display those default values:
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
 <%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
@@ -1069,7 +1071,7 @@ Check this repository on how to update the system's CA certificate bundle: [http
 
 For example on RHEL/Rocky Linux:
 
-```bash
+```shell
 dnf install -y ca-certificates
 update-ca-trust extract
 ```
@@ -1089,7 +1091,7 @@ When `cert_stores` is provided:
 
 For example, on Linux to force the use the system's certificate store:
 
-```bash
+```shell
 --cert-stores=$(openssl version -d|cut -f2 -d'"')/cert.pem
 ```
 
@@ -1098,7 +1100,7 @@ For example, on Linux to force the use the system's certificate store:
 By default,`ascp` uses a hard coded root location `OPENSSLDIR`.
 Original `ascp`'s hard coded locations can be found using:
 
-```bash
+```shell
 <%=cmd%> config ascp info --fields=openssldir
 ```
 
@@ -1112,13 +1114,13 @@ Typically done by updating the system's root certificate store.
 
 An up-to-date version of the certificate bundle can also be retrieved with:
 
-```bash
+```shell
 <%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 ```
 
 To download that certificate store:
 
-```bash
+```shell
 <%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
 ```
 
@@ -1126,7 +1128,7 @@ Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_F
 
 To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
-```bash
+```shell
 <%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
 ```
 
@@ -1135,7 +1137,7 @@ To trust a specific certificate (e.g. self-signed), **provided that the `CN` is 
 
 Then, use this file as certificate store (e.g. here, Node API):
 
-```bash
+```shell
 <%=cmd%> config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
 ```
 
@@ -1169,7 +1171,7 @@ The `<%=gemspec.name%>` gem provides a command line interface (CLI) which intera
 
 Basic usage is displayed by executing:
 
-```bash
+```shell
 <%=cmd%> -h
 ```
 
@@ -1226,7 +1228,7 @@ One can also run <%=tool%> with option `--log-level=debug` to display the comman
 
 It is also possible to display arguments received by Ruby using this command:
 
-```bat
+```batchfile
 C:> ruby -e 'puts ARGV' "Hello World" 1 2
 ```
 
@@ -1263,19 +1265,19 @@ The following examples give the same result on Windows using `cmd.exe`:
 
 - Single quote protects the double quote
 
-  ```cmd
+  ```batchfile
   <%=cmd%> config echo @json:'{"url":"https://..."}'
   ```
 
 - Triple double quotes are replaced with a single double quote
 
-  ```cmd
+  ```batchfile
   <%=cmd%> config echo @json:{"""url""":"""https://..."""}
   ```
 
 - Double quote is escaped with backslash within double quotes
 
-  ```cmd
+  ```batchfile
   <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
   ```
 
@@ -1329,7 +1331,7 @@ Unprocessed command line arguments are shown in the error message.
 Example:
 The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
-```bash
+```shell
 <%=cmd%> config echo 1 2 3
 ```
 
@@ -1353,7 +1355,7 @@ For example, in the simple string `Hello World`, the space character is special 
 Double quotes are processed by the shell to create a single string argument.
 For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
-```bash
+```shell
 <%=cmd%> config echo "Hello World" --format=text
 <%=cmd%> config echo 'Hello World' --format=text
 <%=cmd%> config echo Hello\ World --format=text
@@ -1372,7 +1374,7 @@ Even if the variable contains spaces it results only in one argument for <%=tool
 > We use a simple shell variable in this example.
 > Note that it does not need to be exported as an environment variable.
 
-```bash
+```shell
 MYVAR="Hello World"
 <%=cmd%> config echo @json:'{"title":"'$MYVAR'"}' --format=json
 <%=cmd%> config echo @json:{\"title\":\"$MYVAR\"} --format=json
@@ -1387,7 +1389,7 @@ MYVAR="Hello World"
 Double quote is a shell special character.
 Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
 
-```bash
+```shell
 <%=cmd%> config echo \"
 <%=cmd%> config echo '"'
 ```
@@ -1399,7 +1401,7 @@ Like any shell special character, it can be protected either by preceding with a
 Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
 Both shell and JSON syntax allow protecting `"`, but only the shell allows protection using single quote.
 
-```bash
+```shell
 <%=cmd%> config echo @json:'"\""' --format=text
 <%=cmd%> config echo @json:\"\\\"\" --format=text
 <%=cmd%> config echo @ruby:\'\"\' --format=text
@@ -1435,7 +1437,7 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
   
 - Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
 
-```bash
+```shell
 <%=cmd%> config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
 <%=cmd%> config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
 <%=cmd%> config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
@@ -1449,7 +1451,7 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 
 If <%=tool%> is used interactively (a user typing on terminal), it is easy to require the user to type values:
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:"{'title'=>gets.chomp}" --format=json
 ```
 
@@ -1459,13 +1461,13 @@ If <%=tool%> is used interactively (a user typing on terminal), it is easy to re
 
 If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
 
-```bash
+```shell
 xargs -a lines.txt -d \\n <%=cmd%> config echo
 ```
 
 This is equivalent to execution of:
 
-```bash
+```shell
 <%=cmd%> config echo [line1] [line2] [line3] ...
 ```
 
@@ -1475,7 +1477,7 @@ If there are spaces in the lines, those are not taken as separator, as we provid
 
 Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
 
-```bash
+```shell
 export MYTITLE='Test " '\'' & \'
 echo -n $MYTITLE > title.txt
 ```
@@ -1484,7 +1486,7 @@ Using those values will not require any escaping of characters since values do n
 
 If the value is to be assigned directly to an option of <%=cmd%>, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
 
-```bash
+```shell
 <%=cmd%> config echo @file:title.txt --format=text
 <%=cmd%> config echo @env:MYTITLE --format=text
 ```
@@ -1496,7 +1498,7 @@ Test " ' & \
 If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var.
 In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
 <%=cmd%> config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
 ```
@@ -1517,7 +1519,7 @@ The tokenization of the command line is typically done by the shell, refer to th
 
 For example:
 
-```bash
+```shell
 <%=cmd%> command subcommand --option-name=VAL1 VAL2
 ```
 
@@ -1543,7 +1545,7 @@ Its value is a `String` that must belong to a fixed list of values in a given co
 
 Example:
 
-```bash
+```shell
 <%=cmd%> config ascp info
 ```
 
@@ -1616,11 +1618,11 @@ Exceptions and Special Cases:
 
 Example:
 
-```bash
+```shell
 <%=cmd%> config echo -- --sample
 ```
 
-```bash
+```shell
 "--sample"
 ```
 
@@ -1713,13 +1715,13 @@ For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/cs
 
 For example, to display a table with thick Unicode borders:
 
-```bash
+```shell
 <%=cmd%> config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 ```
 
 For example, to display a CSV with headers and quotes:
 
-```bash
+```shell
 <%=cmd%> config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 ```
 
@@ -1739,7 +1741,7 @@ In this case, it is possible to filter fields using the option `fields` using th
 
 Example: Result of command is a list of objects with a single object:
 
-```bash
+```shell
 <%=cmd%> config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}'
 ```
 
@@ -1757,7 +1759,7 @@ Example: Result of command is a list of objects with a single object:
 ╰────────┴───────╯
 ```
 
-```bash
+```shell
 <%=cmd%> config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}' -
 -flat=no
 ```
@@ -1786,7 +1788,7 @@ Special values are highlighted as follows::
 
 Example:
 
-```bash
+```shell
 <%=cmd%> config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
 ```
 
@@ -1828,7 +1830,7 @@ The display of result is as follows:
 
 This parameter can be set as a global default with:
 
-```bash
+```shell
 <%=cmd%> config preset set GLOBAL multi_single single
 ```
 
@@ -1836,7 +1838,7 @@ Examples:
 
 Simulate a result by executing this command:
 
-```bash
+```shell
 <%=cmd%> config echo @json:'<json value here>' --multi-single=<no|yes|single>
 ```
 
@@ -1952,7 +1954,7 @@ The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda e
 
 Example:
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
@@ -1970,7 +1972,7 @@ Example:
 
 In above example, the same result is obtained with option:
 
-```bash
+```shell
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
@@ -1985,7 +1987,7 @@ Syntax: `%<field>:<value>`
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
 For example, in the following command, `1234` is the user's identifier:
 
-```bash
+```shell
 <%=cmd%> aoc admin user show 1234
 ```
 
@@ -1993,7 +1995,7 @@ Some commands provide the following capability:
 If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
 For example, if the name of the user is `john` and a field for this entity named `name` has a value `john`:
 
-```bash
+```shell
 <%=cmd%> aoc admin user show %name:john
 ```
 
@@ -2007,7 +2009,7 @@ The **Extended Value** Syntax allows to specify such values and even read values
 
 The syntax is:
 
-```bash
+```shell
 <0 or more decoders><some text value or nothing>
 ```
 
@@ -2049,35 +2051,35 @@ It expects a `@` to close the embedded extended value syntax.
 
 Example: Create a `Hash` value with the convenient `@json:` decoder:
 
-```bash
+```shell
 <%=cmd%> config echo @json:'{"key1":"value1","key2":"value2"}'
 ```
 
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
-```bash
+```shell
 <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
 Example: Create a `Hash` value with one key and the value is read from a file:
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("mykey.txt")}'
 ```
 
 Example: read a CSV file and create an `Array` of `Hash` for bulk provisioning:
 
-```bash
+```shell
 cat test.csv
 ```
 
-```bash
+```shell
 name,email
 lolo,laurent@example.com
 toto,titi@tutu.tata
 ```
 
-```bash
+```shell
 <%=cmd%> config echo @csvt:@file:test.csv
 ```
 
@@ -2092,7 +2094,7 @@ toto,titi@tutu.tata
 
 Example: create a `Hash` with values coming from a preset named `config`
 
-```bash
+```shell
 <%=cmd%> config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
 ```
 
@@ -2107,7 +2109,7 @@ Example: create a `Hash` with values coming from a preset named `config`
 
 Example: Create a `Hash` from YAML provided as shell **Here document**:
 
-```bash
+```shell
 <%=cmd%> config echo @yaml:@stdin: --format=json<<EOF
 key1: value1
 key2:
@@ -2135,11 +2137,11 @@ EOF
 
 The configuration folder can be displayed using :
 
-```bash
+```shell
 <%=cmd%> config folder
 ```
 
-```bash
+```shell
 /Users/kenji/.aspera/<%=cmd%>
 ```
 
@@ -2150,7 +2152,7 @@ It can be overridden using option `home`.
 
 Example (Windows):
 
-```bat
+```batchfile
 set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
 
 <%=cmd%> config folder
@@ -2206,13 +2208,13 @@ An [Option Preset](#option-preset) is a collection of options and their associat
 
 A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file :
 
-```bash
+```shell
 <%=cmd%> config preset set|delete|show|initialize|update <option preset>
 ```
 
 The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g. :
 
-```bash
+```shell
 <%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
 ```
 
@@ -2220,32 +2222,32 @@ The command `update` allows the easy creation of [Option Preset](#option-preset)
 
 The command `set` allows setting individual options in an [Option Preset](#option-preset).
 
-```bash
+```shell
 <%=cmd%> config preset set demo_server password my_password_here
 ```
 
 The command `initialize`, like `update` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
 
-```bash
+```shell
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
-```bash
+```shell
 <%=cmd%> config preset over
 ```
 
 A list of [Option Preset](#option-preset) can be displayed using:
 
-```bash
+```shell
 <%=cmd%> config preset list
 ```
 
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be opened in a text editor with:
 
-```bash
+```shell
 <%=cmd%> config open
 ```
 
@@ -2254,7 +2256,7 @@ If necessary, the configuration file can be opened in a text editor with:
 
 The former format for commands is still supported:
 
-```bash
+```shell
 <%=cmd%> config preset set|delete|show|initialize|update <name>
 <%=cmd%> config preset over
 <%=cmd%> config preset list
@@ -2263,7 +2265,7 @@ The former format for commands is still supported:
 It is possible to load an [Option Preset](#option-preset) from within another [Option Preset](#option-preset) using the `preset` option.
 For example if `pcommon` is a preset with common options, and `pspecific` is a preset with specific options, then `pspecific` can load `pcommon` using:
 
-```bash
+```shell
 <%=cmd%> config preset set pspecific preset pcommon
 ```
 
@@ -2285,11 +2287,11 @@ When a plugin is invoked, the preset associated with the name of the plugin is l
 
 Operations on this preset are done using regular `config` operations:
 
-```bash
+```shell
 <%=cmd%> config preset set default _plugin_name_ _default_preset_for_plugin_
 ```
 
-```bash
+```shell
 <%=cmd%> config preset get default _plugin_name_
 ```
 
@@ -2314,12 +2316,12 @@ If set, it loads the options independently of the plugin used.
 > [!NOTE]
 > If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
 
-> [!NOTE]
+> [!TIP]
 > If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
 Show current default (global) Option Preset (`config` plugin):
 
-```bash
+```shell
 <%=cmd%> config preset get default config
 ```
 
@@ -2329,17 +2331,17 @@ global_common_defaults
 
 Set a global parameter:
 
-```bash
+```shell
 <%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
 If the default global Option Preset is not set, and you want to use a different name:
 
-```bash
+```shell
 <%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
-```bash
+```shell
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
@@ -2387,7 +2389,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended-va
 
 Example:
 
-```bash
+```shell
 <%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
 ```
 
@@ -2423,29 +2425,29 @@ E.g. `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
 
 The main plugin name is `config`, so it is possible to define a default [Option Preset](#option-preset) for the main plugin with:
 
-```bash
+```shell
 <%=cmd%> config preset set cli_default interactive no
 ```
 
-```bash
+```shell
 <%=cmd%> config preset set default config cli_default
 ```
 
 An [Option Preset](#option-preset) value can be removed with `unset`:
 
-```bash
+```shell
 <%=cmd%> config preset unset cli_default interactive
 ```
 
 Example: Define options using command line:
 
-```bash
+```shell
 <%=cmd%> -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config
 ```
 
 Example: Define options using a `Hash`:
 
-```bash
+```shell
 <%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
 ```
 
@@ -2473,7 +2475,7 @@ They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
 
-```bash
+```shell
 <%=cmd%> config wizard
 ```
 
@@ -2483,7 +2485,7 @@ For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
 only username/password and URL are required (either on command line, or from configuration file).
 Those can be usually provided on the command line:
 
-```bash
+```shell
 <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
@@ -2491,7 +2493,7 @@ This can also be provisioned in a configuration file:
 
 - Build [Option Preset](#option-preset)
 
-```bash
+```shell
 <%=cmd%> config preset set shares06 url https://10.25.0.6
 <%=cmd%> config preset set shares06 username john
 <%=cmd%> config preset set shares06 password my_password_here
@@ -2499,31 +2501,31 @@ This can also be provisioned in a configuration file:
 
 This can also be done with one single command:
 
-```bash
+```shell
 <%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"my_password_here"}'
 ```
 
 or
 
-```bash
+```shell
 <%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
 - Define this [Option Preset](#option-preset) as the default [Option Preset](#option-preset) for the specified plugin (`shares`)
 
-```bash
+```shell
 <%=cmd%> config preset set default shares shares06
 ```
 
 - Display the content of configuration file in table format
 
-```bash
+```shell
 <%=cmd%> config preset overview
 ```
 
 - Execute a command on the **Shares** application using default options
 
-```bash
+```shell
 <%=cmd%> shares repo browse /
 ```
 
@@ -2546,7 +2548,7 @@ Mandatory command line options can be requested interactively (e.g. password) us
 It is possible to use extended value `@secret:[name]` to ask for a secret interactively.
 It is also possible to enter an option as an environment variable, e.g. `<%=opt_env(%Q`password`)%>` for option `password` and read the env var like this:
 
-```bash
+```shell
 read -s <%=opt_env(%Q`password`)%>
 export <%=opt_env(%Q`password`)%>
 ```
@@ -2566,7 +2568,7 @@ The vault is used with options `vault` and `vault_password`.
 Although it can be specified on command line, for security reason you should avoid exposing the secret.
 For example, it can be securely specified on command line like this:
 
-```bash
+```shell
 read -s <%=opt_env(%Q`vault_password`)%>
 export <%=opt_env(%Q`vault_password`)%>
 ```
@@ -2577,7 +2579,7 @@ export <%=opt_env(%Q`vault_password`)%>
 
 Quick start macOS:
 
-```bash
+```shell
 brew tap hashicorp/tap
 brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=dev-only-token
@@ -2589,7 +2591,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 | `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
 | `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
 
-```bash
+```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
 ```
 
@@ -2605,7 +2607,7 @@ It is possible to manage secrets in macOS keychain (only read supported currentl
 | `type`    | `system` | The type of the vault |
 | `name`    | `<%=tool%>`  | The name of the keychain to use |
 
-```bash
+```shell
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
 ```
 
@@ -2633,7 +2635,7 @@ Then secrets can be manipulated using commands:
 - `list`
 - `delete`
 
-```bash
+```shell
 <%=cmd%> config vault create @json:'{"label":"mylabel","password":"my_password_here","description":"for this account"}'
 ```
 
@@ -2648,17 +2650,17 @@ The lookup is done by comparing the service URL and username (or access key).
 A password can be saved in clear in an [Option Preset](#option-preset) together with other account information (URL, username, etc...).
 Example:
 
-```bash
+```shell
 <%=cmd%> config preset update myconf --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
-```bash
+```shell
 <%=cmd%> config preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
 ```
 
-```bash
+```shell
 <%=cmd%> config vault create @json:'{"label":"myconf","password":"my_password_here"}'
 ```
 
@@ -2683,7 +2685,7 @@ Set it to the desired safe location of the private key.
 Typically, located in folder `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`.
 For example:
 
-```bash
+```shell
 KEY_PAIR_PATH=~/.aspera/<%=cmd%>/my_private_key
 ```
 
@@ -2699,13 +2701,13 @@ The generated key is of type `RSA`, by default: **4096** bit.
 For convenience, the public key is also extracted with extension `.pub`.
 The key is not passphrase protected.
 
-```bash
+```shell
 <%=cmd%> config genkey ${KEY_PAIR_PATH} 4096
 ```
 
 To display the public key of a private key:
 
-```bash
+```shell
 <%=cmd%> config pubkey @file:${KEY_PAIR_PATH}
 ```
 
@@ -2713,7 +2715,7 @@ To display the public key of a private key:
 
 Both private and public keys are generated, option `-N` is for passphrase.
 
-```bash
+```shell
 ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${KEY_PAIR_PATH}
 ```
 
@@ -2721,7 +2723,7 @@ ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${KEY_PAIR_PATH}
 
 To generate a key pair with a passphrase the following can be used on any system:
 
-```bash
+```shell
 openssl genrsa -passout pass:_passphrase_here_ -out ${KEY_PAIR_PATH} 4096
 openssl rsa -pubout -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.pub
 ```
@@ -2731,14 +2733,14 @@ In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` t
 
 If option `-nodes` is not available, the passphrase can be removed using this method:
 
-```bash
+```shell
 openssl rsa -passin pass:_passphrase_here_ -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.no_des
 mv ${KEY_PAIR_PATH}.no_des ${KEY_PAIR_PATH}
 ```
 
 To change (or add) the passphrase for a key do:
 
-```bash
+```shell
 openssl rsa -des3 -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.with_des
 mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 ```
@@ -2790,15 +2792,15 @@ The following options can be specified in the option `image`:
 | double     | `Bool`    | Display double text resolution (half characters) |
 | font_ratio | `Float`   | Font height/width ratio in terminal |
 
-```bash
+```shell
 <%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
 ```
 
-```bash
+```shell
 curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @stdbin:
 ```
 
-```bash
+```shell
 echo -n https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @uri:@stdin:
 ```
 
@@ -2853,13 +2855,13 @@ Examples:
 
 - Display debugging log on `stdout`:
 
-```bash
+```shell
 <%=cmd%> config pre over --log-level=debug --logger=stdout
 ```
 
 - Log errors to `syslog`:
 
-```bash
+```shell
 <%=cmd%> config pre over --log-level=error --logger=syslog
 ```
 
@@ -2913,7 +2915,7 @@ Like any other option, those can be set either on command line, or in configurat
 
 Example:
 
-```bash
+```shell
 <%=cmd%> aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
@@ -2957,13 +2959,13 @@ E.g. `http://myproxy.org.net:3128`.
 
 Credentials for proxy are optional but can also be specified:
 
-```bash
+```shell
 export http_proxy=http://my_user_here:my_pass_here@proxy.example.com:3128
 ```
 
 Option `http_proxy` does the same (set env var) but on command line:
 
-```bash
+```shell
 <%=cmd%> --http-proxy=http://my_user_here:my_pass_here@host:port ...
 ```
 
@@ -2974,14 +2976,14 @@ Note that proxy credentials are not supported in PAC files.
 To read the script from a URL (`http:`, `https:` and `file:`), use prefix: `@uri:`.
 A minimal script can be specified to define the use of a local proxy:
 
-```bash
+```shell
 <%=cmd%> --fpac='function FindProxyForURL(url, host){return "PROXY localhost:3128"}' ...
 ```
 
 The result of a PAC file can be tested with command: `config proxy_check`.
 Example, using command line option:
 
-```bash
+```shell
 <%=cmd%> config proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:3128;DIRECT";}' http://example.com
 ```
 
@@ -2989,7 +2991,7 @@ Example, using command line option:
 PROXY proxy.example.com:1234;DIRECT
 ```
 
-```bash
+```shell
 <%=cmd%> config proxy_check --fpac=@file:./proxy.pac http://www.example.com
 ```
 
@@ -2997,7 +2999,7 @@ PROXY proxy.example.com:1234;DIRECT
 PROXY proxy.example.com:8080
 ```
 
-```bash
+```shell
 <%=cmd%> config proxy_check --fpac=@uri:http://server/proxy.pac http://www.example.com
 ```
 
@@ -3007,11 +3009,11 @@ PROXY proxy.example.com:8080
 
 If the proxy found with the PAC requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
 
-```bash
+```shell
 <%=cmd%> --proxy-credentials=@json:'["__username_here__","__password_here__"]' ...
 ```
 
-```bash
+```shell
 <%=cmd%> --proxy-credentials=@list::__username_here__:__password_here__ ...
 ```
 
@@ -3025,13 +3027,13 @@ To specify a FASP proxy (forward), set the [**transfer-spec**](#transfer-specifi
 
 For example, for an Aspera forward proxy not encrypted (HTTP) without authentication running on port 9091, the option would be:
 
-```bash
+```shell
 --ts=@json:'{"proxy":"dnat://proxy.example.org:9091"}'
 ```
 
 Or, alternatively, (prefer transfer spec like above, generally):
 
-```bash
+```shell
 --transfer-info=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
 ```
 
@@ -3060,7 +3062,7 @@ It provides the following commands for `ascp` sub-command:
 
 #### Show path of currently used `ascp`
 
-```bash
+```shell
 <%=cmd%> config ascp show
 ```
 
@@ -3068,7 +3070,7 @@ It provides the following commands for `ascp` sub-command:
 /Users/laurent/.aspera/<%=cmd%>/sdk/ascp
 ```
 
-```bash
+```shell
 <%=cmd%> config ascp info
 ```
 
@@ -3091,7 +3093,7 @@ For a permanent change, the command `config ascp use` sets the same option for t
 
 Using a POSIX shell:
 
-```bash
+```shell
 <%=cmd%> config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
 ```
 
@@ -3122,7 +3124,7 @@ this is equivalent to using option: `--use-product=FIRST`.
 
 Locally installed Aspera products can be listed with:
 
-```bash
+```shell
 <%=cmd%> config ascp products list
 ```
 
@@ -3141,14 +3143,14 @@ Using the option `use_product` finds the `ascp` binary of the selected product.
 
 To permanently use the `ascp` of a product:
 
-```bash
+```shell
 <%=cmd%> config ascp products use 'Aspera Connect'
 saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 #### Installation of Connect Client on command line
 
-```bash
+```shell
 <%=cmd%> config ascp connect list
 ```
 
@@ -3165,7 +3167,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 +-----------------------------------------------+--------------------------------------+-----------+
 ```
 
-```bash
+```shell
 <%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' list
 ```
 
@@ -3180,7 +3182,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 +-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
 ```
 
-```bash
+```shell
 <%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' download enclosure --to-folder=.
 ```
 
@@ -3246,7 +3248,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
 
-```bash
+```shell
 max( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
@@ -3262,13 +3264,13 @@ To use `ascp`'s default, use option: `--transfer-info=@json:'{"trusted_certs":nu
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
 The list of known protocol errors and retry level can be listed:
 
-```bash
+```shell
 <%=cmd%> config ascp errors
 ```
 
 Examples:
 
-```bash
+```shell
 <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
@@ -3276,7 +3278,7 @@ Examples:
 This can be useful to activate logging using option `-L` of `ascp`.
 For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
 
-```bash
+```shell
 --transfer-info=@json:'{"ascp_args":["-DDL-"]}'
 ```
 
@@ -3291,7 +3293,7 @@ In addition to standard methods described in section [File List](#list-of-files-
 
 - Using option `transfer_info` parameter `ascp_args`
 
-```bash
+```shell
 --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","myfilelist"]}'
 ```
 
@@ -3310,7 +3312,7 @@ This agent supports a local configuration file: `aspera.conf` where Virtual link
 
 On a server (HSTS), the following commands can be used to set a global virtual link:
 
-```bash
+```shell
 asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true'
 asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true'
 asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
@@ -3378,7 +3380,7 @@ For example, let's assume we want to replace illegal character: `|` with an unde
 
 1. First, locate the configuration file with:
 
-```bash
+```shell
 <%=cmd%> conf ascp info --fields=aspera_conf
 ```
 
@@ -3457,13 +3459,13 @@ Parameters provided in option `transfer_info` are:
 
 Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
 
-```bash
+```shell
 --transfer-info=@preset:_name_here_
 ```
 
 or be specified using the extended value syntax :
 
-```bash
+```shell
 --transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'
 ```
 
@@ -3489,7 +3491,7 @@ Parameters provided in option `transfer_info` are:
 
 Example:
 
-```bash
+```shell
 <%=cmd%> faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy"}'
 ```
 
@@ -3517,20 +3519,20 @@ Options for `transfer_info` are:
 
 For example, to use an external, already running `transferd`, use option:
 
-```bash
+```shell
 --transfer-info=@json:'{"url":":55002","start":false,"stop":false}'
 ```
 
 The gem `grpc` is not part of default dependencies, as it requires compilation of a native part.
 So, to use the Transfer Daemon you should install this gem:
 
-```bash
+```shell
 gem install grpc
 ```
 
 If the execution complains about incompatible libraries, then force recompilation of the native part:
 
-```bash
+```shell
 gem uninstall grpc
 
 gem install grpc --platform ruby
@@ -3572,7 +3574,7 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 > [!NOTE]
 > Default transfer spec values can be displayed with command:
 
-```bash
+```shell
 <%=cmd%> config ascp info --fields=ts --flat-hash=no
 ```
 
@@ -3598,20 +3600,20 @@ References:
 
 Parameters can be displayed with commands:
 
-```bash
+```shell
 <%=cmd%> config ascp spec
 <%=cmd%> config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
 
 A JSON Schema can be generated with command:
 
-```bash
+```shell
 <%=cmd%> config ascp schema --format=jsonpp
 ```
 
 An optional parameter can be specified to display the schema for a specific transfer agent:
 
-```bash
+```shell
 <%=cmd%> config ascp schema transferd --format=jsonpp
 ```
 
@@ -3650,19 +3652,19 @@ Possible values for option `sources` are:
 So, by default, the list of files to transfer will be simply specified on the command line.
 Example:
 
-  ```bash
+  ```shell
   <%=cmd%> server upload ~/first.file secondfile
   ```
 
   This is the same as (with default values):
 
-  ```bash
+  ```shell
   <%=cmd%> server upload --sources=@args --src-type=list ~/mysample.file secondfile
   ```
 
 - An [Extended Value](#extended-value-syntax) with type **Array of String**
 
-> [!NOTE]
+> [!TIP]
 > Extended values can be tested with the command `config echo`
 
   Examples:
@@ -3671,7 +3673,7 @@ Example:
 
     Create the file list:
 
-    ```bash
+    ```shell
     echo ~/mysample.file > myfilelist.txt
     echo secondfile >> myfilelist.txt
     ```
@@ -3684,13 +3686,13 @@ Example:
 
 - Using JSON array
 
-    ```bash
+    ```shell
     --sources=@json:'["file1","file2"]'
     ```
 
 - Using STDIN, one path per line
 
-    ```bash
+    ```shell
     --sources=@lines:@stdin:
     ```
 
@@ -3705,7 +3707,7 @@ Examples:
 
   - Using transfer spec
 
-  ```bash
+  ```shell
   --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
   ```
 
@@ -3721,7 +3723,7 @@ Supported values for `src_type` are:
 
 Example: Source file `200KB.1` is renamed `sample1` on destination:
 
-```bash
+```shell
 <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
@@ -3792,7 +3794,7 @@ Multi session, i.e. starting a transfer of a file set using multiple sessions (o
 
 - `--transfer=node`
 
-```bash
+```shell
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -3800,7 +3802,7 @@ Multi-session is directly supported by the node daemon.
 
 - `--transfer=direct`
 
-```bash
+```shell
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
@@ -3823,7 +3825,7 @@ Activating CSEAR consists in using transfer spec parameters:
 
 Example: parameter to download a Faspex package and decrypt on the fly
 
-```bash
+```shell
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
 ```
 
@@ -3831,25 +3833,25 @@ Example: parameter to download a Faspex package and decrypt on the fly
 
 - Change target rate
 
-```bash
+```shell
 --ts=@json:'{"target_rate_kbps":500000}'
 ```
 
 - Override the FASP SSH port to a specific TCP port:
 
-```bash
+```shell
 --ts=@json:'{"ssh_port":33002}'
 ```
 
 - Force HTTP fallback mode:
 
-```bash
+```shell
 --ts=@json:'{"http_fallback":"force"}'
 ```
 
 - Activate progress when not activated by default on server
 
-```bash
+```shell
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
@@ -3884,7 +3886,7 @@ Linux also provides `anacron`, if tasks are hourly or daily.
 
 For example, on Linux it is convenient to create a wrapping script, e.g. `cron_<%=cmd%>` that will set up the environment (e.g. Ruby) to properly start <%=tool%>:
 
-```bash
+```shell
 #!/bin/bash
 # load the Ruby environment
 . /etc/profile.d/rvm.sh
@@ -3897,7 +3899,7 @@ exec timeout ${tmout} <%=cmd%> "${@}"
 
 Example of cronjob created for user `xfer`.
 
-```bash
+```shell
 crontab<<EOF
 0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
 2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
@@ -3919,7 +3921,7 @@ Let's give a base name for our service: `my_<%=cmd%>_svc`
 
 The startup script can be simply the <%=tool%> command line, for example: `/usr/local/bin/start_my_<%=cmd%>_svc.sh`:
 
-```bash
+```shell
 #!/bin/bash
 set -e
 echo "Starting my_<%=cmd%>_svc at $(date)"
@@ -3929,7 +3931,7 @@ exec <%=cmd%> .....
 
 And make this script executable:
 
-```bash
+```shell
 chmod a+x /usr/local/bin/start_my_<%=cmd%>_svc.sh
 ```
 
@@ -3957,7 +3959,7 @@ WantedBy=multi-user.target
 
 Then enable and start with:
 
-```bash
+```shell
 sudo systemctl daemon-reload
 sudo systemctl enable --now my_<%=cmd%>_svc.service
 systemctl status my_<%=cmd%>_svc.service
@@ -3979,7 +3981,7 @@ Usually the OS native scheduler already provides some sort of protection against
 - The Windows scheduler does this by default
 - Linux `cron` can leverage the utility [`flock`](https://man.cx/flock%281%29) to do the same:
 
-```bash
+```shell
 /usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
 ```
 
@@ -3992,13 +3994,13 @@ Testing <%=tool%> locking:
 
 Run this same command in two separate terminals within less than 30 seconds:
 
-```bash
+```shell
 <%=cmd%> config echo @ruby:'sleep(30)' --lock-port=12345
 ```
 
 The first instance will sleep 30 seconds, the second one will immediately exit like this:
 
-```bash
+```shell
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
 ```
 
@@ -4010,7 +4012,7 @@ Several **PVCL** adapters are available, one is embedded in `ascp`, the others a
 
 The list of supported **PVCL** adapters can be retrieved with command:
 
-```bash
+```shell
 <%=cmd%> config ascp info --fields=@re:'^pvcl'
 ```
 
@@ -4031,7 +4033,7 @@ They act as a **pseudo drive**.
 
 The simplified format is:
 
-```bash
+```shell
 <adapter>:///<sub file path>?<arg1>=<val1>&...
 ```
 
@@ -4048,7 +4050,7 @@ To discard data at the destination, the destination argument is set to `faux://`
 
 To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form:
 
-```bash
+```shell
 faux:///filename?filesize
 ```
 
@@ -4067,7 +4069,7 @@ Very large `faux` file sizes (petabyte range and above) will likely fail due to 
 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
-```bash
+```shell
 faux:///dirname?<arg1>=<val1>&...
 ```
 
@@ -4108,25 +4110,25 @@ Examples:
 
 - Upload 20 gibibyte of random data to file `myfile` to directory /Upload
 
-```bash
+```shell
 <%=cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
 ```
 
 - Upload a file /tmp/sample but do not save results to disk (no docroot on destination)
 
-```bash
+```shell
 <%=cmd%> server upload /tmp/sample --to-folder=faux://
 ```
 
 - Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 Mebibyte - 2 bytes, with the base name of each file being `testfile` to /Upload
 
-```bash
+```shell
 <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
 ```
 
 - Upload a faux directory `mydir` containing 1000 files, of size 1 byte, with the base name of each file being `testfile` to /Upload
 
-```bash
+```shell
 <%=cmd%> server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=/Upload
 ```
 
@@ -4172,7 +4174,7 @@ For instance, the plugin `faspex` allows operations on **Aspera Faspex**.
 
 Available plugins can be found using command:
 
-```bash
+```shell
 <%=cmd%> config plugin list
 ```
 
@@ -4194,13 +4196,13 @@ Aspera on Cloud and Faspex 5 rely on OAuth.
 
 By default, plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
-```bash
+```shell
 <%=cmd%> --show-config --fields=plugin_folder
 ```
 
 You can create the skeleton of a new plugin like this:
 
-```bash
+```shell
 <%=cmd%> config plugin create foo .
 ```
 
@@ -4208,7 +4210,7 @@ You can create the skeleton of a new plugin like this:
 Created ./foo.rb
 ```
 
-```bash
+```shell
 <%=cmd%> --plugin-folder=. foo
 ```
 
@@ -4267,7 +4269,7 @@ For this, specify the option: `--use-generic-client=no`.
 
 If you already know the application, and want to limit the detection to it, provide URL and plugin name:
 
-```bash
+```shell
 <%=cmd%> config wizard _your_instance_ aoc
 ```
 
@@ -4277,7 +4279,7 @@ If you already know the application, and want to limit the detection to it, prov
 After successful completion of the wizard, a new configuration preset is created, and set as default for the `aoc` plugin.
 This can be verified with command:
 
-```bash
+```shell
 <%=cmd%> config preset over
 ```
 
@@ -4339,7 +4341,7 @@ If you did not use the wizard, you can also manually create an [Option Preset](#
 
 Let's create an [Option Preset](#option-preset) called: `my_aoc_org` using `ask` for interactive input (client info from previous step):
 
-```bash
+```shell
 <%=cmd%> config preset ask my_aoc_org url client_id client_secret
 option: url> https://_your_instance_.ibmaspera.com/
 option: client_id> my_client_id_here
@@ -4354,7 +4356,7 @@ updated: my_aoc_org
 
 Define this [Option Preset](#option-preset) as default configuration for the `aspera` plugin:
 
-```bash
+```shell
 <%=cmd%> config preset set default aoc my_aoc_org
 ```
 
@@ -4386,7 +4388,7 @@ This can be done in two manners:
 
 - Using command line
 
-```bash
+```shell
 <%=cmd%> aoc admin client list
 ```
 
@@ -4402,7 +4404,7 @@ Items: 4/4
 ╰────────────┴─────────────────────╯
 ```
 
-```bash
+```shell
 <%=cmd%> aoc admin client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
@@ -4428,7 +4430,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 
 ##### Using command line
 
-```bash
+```shell
 <%=cmd%> aoc admin user list
 ```
 
@@ -4450,7 +4452,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 modified
 ```
 
-> [!NOTE]
+> [!TIP]
 > The `aspera user info show` command can be used to verify modifications.
 
 #### [Option Preset](#option-preset) modification for JWT
@@ -4463,7 +4465,7 @@ To activate default use of JWT authentication for <%=tool%> using the [Option Pr
 
 Execute:
 
-```bash
+```shell
 <%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=someuser@example.com
 ```
 
@@ -4492,7 +4494,7 @@ In that case, it is possible to list those shared folder by using a value for op
 
 Once client has been registered and [Option Preset](#option-preset) created: <%=tool%> can be used:
 
-```bash
+```shell
 <%=cmd%> aoc files br /
 ```
 
@@ -4508,17 +4510,17 @@ This can be useful when a command is not yet available.
 
 Example:
 
-```bash
+```shell
 curl -s -H "Authorization: $(<%=cmd%> aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:
 
-```bash
+```shell
 <%=cmd%> aoc files bearer_token_node /
 ```
 
-```bash
+```shell
 <%=cmd%> aoc admin node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 ```
 
@@ -4563,25 +4565,25 @@ Examples:
 
 - List users with `laurent` in name:
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query=@json:'{"q":"laurent"}'
 ```
 
 - List users who logged-in before a date:
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
 - List external users and sort in reverse alphabetical order using name:
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
 
 Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
-> [!NOTE]
+> [!TIP]
 > The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).
 
 #### Selecting a resource
@@ -4599,7 +4601,7 @@ To execute an action on a specific resource, select it using one of those method
 
 New resources (users, groups, workspaces, etc...) can be created using a command like:
 
-```bash
+```shell
 <%=cmd%> aoc admin create <resource type> @json:'{<...parameters...>}'
 ```
 
@@ -4608,7 +4610,7 @@ Sadly, not all.
 
 Nevertheless, it is possible to guess the structure of the creation value by simply dumping an existing resource, and use the same parameters for the creation.
 
-```bash
+```shell
 <%=cmd%> aoc admin group show 12345 --format=json
 ```
 
@@ -4620,7 +4622,7 @@ Remove the parameters that are either obviously added by the system: `id`, `crea
 
 And then craft your command:
 
-```bash
+```shell
 <%=cmd%> aoc admin group create @json:'{"wrong":"param"}'
 ```
 
@@ -4644,7 +4646,7 @@ In order to access some administrative actions on **nodes** (in fact, access key
 The secret is provided using the `secret` option.
 For example in a command like:
 
-```bash
+```shell
 <%=cmd%> aoc admin node 123 --secret="my_secret_here" v3 info
 ```
 
@@ -4654,7 +4656,7 @@ It is also possible to store secrets in the [secret vault](#secret-vault) and th
 
 The activity app can be queried with:
 
-```bash
+```shell
 <%=cmd%> aoc admin analytics transfers
 ```
 
@@ -4681,7 +4683,7 @@ The environment provided contains the following additional variable:
 
 Example:
 
-```bash
+```shell
 <%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=active --notify-template=@file:mytemplate.erb
 ```
 
@@ -4715,7 +4717,7 @@ To list the target folder content, add a `/` at the end of the path.
 
 Example:
 
-```bash
+```shell
 <%=cmd%> aoc files br the_link
 ```
 
@@ -4728,7 +4730,7 @@ Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 ```
 
-```bash
+```shell
 <%=cmd%> aoc files br the_link/
 ```
 
@@ -4743,7 +4745,7 @@ Current Workspace: Default (default)
 
 #### Example: Bulk creation of users
 
-```bash
+```shell
 <%=cmd%> aoc admin user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 ```
 
@@ -4758,7 +4760,7 @@ Current Workspace: Default (default)
 
 #### Example: Find with filter and delete
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
@@ -4771,7 +4773,7 @@ Current Workspace: Default (default)
 +-------+------------------------+
 ```
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
@@ -4794,7 +4796,7 @@ To delete them use the same method as before
 
 #### Example: Display current user's workspaces
 
-```bash
+```shell
 <%=cmd%> aoc user workspaces list
 ```
 
@@ -4812,13 +4814,13 @@ To delete them use the same method as before
 
 Creation of a sub-access key is like creation of access key with the following difference: authentication to Node API is made with access key (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
-```bash
+```shell
 <%=cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create @json:'{"storage":{"path":"/folder1"}}'
 ```
 
 #### Example: Display transfer events (ops/transfer)
 
-```bash
+```shell
 <%=cmd%> aoc admin node --secret=_secret_ v3 transfer list --query=@json:'[["q","*"],["count",5]]'
 ```
 
@@ -4834,13 +4836,13 @@ Examples of query:
 
 #### Example: Display node events (events)
 
-```bash
+```shell
 <%=cmd%> aoc admin node --secret=_secret_ v3 events
 ```
 
 #### Example: Display members of a workspace
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ```
 
@@ -4867,45 +4869,45 @@ Other query parameters:
 
 a- Get ID of first workspace
 
-```bash
+```shell
 WS1='First Workspace'
 WS1ID=$(<%=cmd%> aoc admin workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- Get ID of second workspace
 
-```bash
+```shell
 WS2='Second Workspace'
 WS2ID=$(<%=cmd%> aoc admin workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- Extract membership information
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
 
-```bash
+```shell
 grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
 ```
 
 or, using `jq`:
 
-```bash
+```shell
 jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
 ```
 
 e- Add members to second workspace
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 #### Example: Get users who did not log since a date
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
@@ -4920,7 +4922,7 @@ e- Add members to second workspace
 
 #### Example: List **Limited** users
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
@@ -4928,7 +4930,7 @@ e- Add members to second workspace
 
 - Create the group and take note of `id`
 
-```bash
+```shell
 <%=cmd%> aoc admin group create @json:'{"name":"group 1","description":"my super group"}'
 ```
 
@@ -4936,7 +4938,7 @@ Group: `11111`
 
 - Get the workspace ID
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
 ```
 
@@ -4944,13 +4946,13 @@ Workspace: 22222
 
 - Add group to workspace
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
 ```
 
 - Get a user's ID
 
-```bash
+```shell
 <%=cmd%> aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
 ```
 
@@ -4958,7 +4960,7 @@ User: 33333
 
 - Add user to group
 
-```bash
+```shell
 <%=cmd%> aoc admin group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
 ```
 
@@ -4968,7 +4970,7 @@ In this example, a user has access to a workspace where two shared folders are l
 
 First, set up the environment (skip if already done)
 
-```bash
+```shell
 <%=cmd%> config wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
 ```
 
@@ -5000,7 +5002,7 @@ Then, create two shared folders located in two regions, in your files home, in a
 
 Then, transfer between those:
 
-```bash
+```shell
 <%=cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -5008,13 +5010,13 @@ Then, transfer between those:
 
 The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
 
-```bash
+```shell
 <%=cmd%> aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
 ```
 
 #### Example: Delete all registration keys
 
-```bash
+```shell
 <%=cmd%> aoc admin client_registration_token list --fields=id --format=csv|<%=cmd%> aoc admin client_registration_token delete @lines:@stdin: --bulk=yes
 ```
 
@@ -5048,7 +5050,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   The creation options are the ones of ATS API, refer to the [section on ATS](#ats-access-key-creation-parameters) for more details and examples.
 
-  ```bash
+  ```shell
   <%=cmd%> aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
   ```
 
@@ -5062,13 +5064,13 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   First, Retrieve the ATS node address
 
-  ```bash
+  ```shell
   <%=cmd%> aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
   ```
 
   Then use the returned address for the `url` key to actually create the AoC Node entity:
 
-  ```bash
+  ```shell
   <%=cmd%> aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
   ```
 
@@ -5088,7 +5090,7 @@ The web-mail-like application.
 
 General syntax:
 
-```bash
+```shell
 <%=cmd%> aoc packages send [package extended value] [other parameters such as options and file list]
 ```
 
@@ -5097,7 +5099,7 @@ Refer to the AoC package creation API, or display an existing package in JSON to
 
 List allowed shared inbox destinations with:
 
-```bash
+```shell
 <%=cmd%> aoc packages shared_inboxes list
 ```
 
@@ -5115,19 +5117,19 @@ If a user recipient (email) is not already registered and the workspace allows e
 
 ##### Example: Send a package with one file to two users, using their email
 
-```bash
+```shell
 <%=cmd%> aoc packages send @json:'{"name":"my title","note":"my note","recipients":["someuser@example.com","other@example.com"]}' my_file.dat
 ```
 
 ##### Example: Send a package to a shared inbox with metadata
 
-```bash
+```shell
 <%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
-```bash
+```shell
 <%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
@@ -5135,7 +5137,7 @@ It is also possible to use identifiers and API parameters:
 
 Find files in Files app:
 
-```bash
+```shell
 <%=cmd%> aoc files browse /src_folder
 ```
 
@@ -5152,7 +5154,7 @@ Find files in Files app:
 
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
 
-```bash
+```shell
 <%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
 ```
 
@@ -5160,7 +5162,7 @@ Let's send a package with the file `10M.dat` from subfolder /src_folder in a pac
 
 The command to receive one or multiple packages is:
 
-```bash
+```shell
 <%=cmd%> aoc packages recv <package id> [<file> ...]
 ```
 
@@ -5206,7 +5208,7 @@ Examples:
 
 ##### Example: Receive all packages from a given shared inbox
 
-```bash
+```shell
 <%=cmd%> aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 ```
 
@@ -5216,7 +5218,7 @@ To list packages that would be downloaded, without actually downloading them, re
 
 It is possible to automatically download new packages, like using Aspera Cargo:
 
-```bash
+```shell
 <%=cmd%> aoc packages recv ALL --once-only=yes --lock-port=12345
 ```
 
@@ -5232,7 +5234,7 @@ Some `node` operations are available for a package, such as `browse` and `find`.
 
 To list the content of a package, use command `packages browse <package id> <folder>`:
 
-```bash
+```shell
 <%=cmd%> aoc package browse my5CnbeWng /
 ```
 
@@ -5240,7 +5242,7 @@ Use command `find` to list recursively.
 
 For advanced users, it's also possible to pipe node information for the package and use node operations:
 
-```bash
+```shell
 <%=cmd%> aoc package node_info <package ID here> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
 ```
 
@@ -5274,22 +5276,22 @@ Additional parameters can be specified, as supported by the API (to find out ava
 The current workspace is added unless specified in the query.
 
 > [!NOTE]
-> By default, `exclude_dropbox_packages` is set to `true` for user packages, and to false for shared inbox packages.
+> By default, `exclude_dropbox_packages` is set to `true` for user packages, and to `false` for shared inbox packages.
 > This can be overridden in the query.
 
 Using shared inbox name:
 
-```bash
+```shell
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
 Using shared inbox identifier: first retrieve the ID of the shared inbox, and then list packages with the appropriate filter.
 
-```bash
+```shell
 shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id)
 ```
 
-```bash
+```shell
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_id":"'$shared_box_id'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
@@ -5305,7 +5307,7 @@ Files located here are either user's files, or shared folders.
 
 The general download command is:
 
-```bash
+```shell
 <%=cmd%> aoc files download <source folder path> <source filename 1> ...
 ```
 
@@ -5313,7 +5315,7 @@ I.e. the first argument is the source folder, and the following arguments are th
 
 If a single file or folder is to be downloaded, then a single argument can be provided.
 
-```bash
+```shell
 <%=cmd%> aoc files download <single file path>
 ```
 
@@ -5365,41 +5367,41 @@ In order to share a folder with a different, special tags are set, but this is c
 
 Personal shared folders, created by users in a workspace follow the syntax:
 
-```bash
+```shell
 <%=cmd%> aoc files permission --workspace=<workspace name> <path to folder> ...
 ```
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-To use an identifier instead, one can use the percent selector, like `%id:1234`
+> To use an identifier instead, one can use the percent selector, like `%id:1234`
 
 ##### Admin Shared Folders
 
 Admin shared folders, created by administrators in a workspace follow the syntax:
 
-```bash
+```shell
 <%=cmd%> aoc admin node do <node ID> permission --workspace=<workspace name> <path to folder>
 ```
 
-> [!NOTE]
+> [!TIP]
 > The node is identified by identifier.
-To use an name instead, one can use the percent selector, like `%name:"my node"`
+> To use an name instead, one can use the percent selector, like `%name:"my node"`
 
 ##### Example: List permissions on a shared folder
 
-```bash
+```shell
 <%=cmd%> aoc files permission /shared_folder_test1 list
 ```
 
 ##### Example: Share a personal folder with other users
 
-```bash
+```shell
 <%=cmd%> aoc files permission /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
 ##### Example: Revoke shared access
 
-```bash
+```shell
 <%=cmd%> aoc files permission /shared_folder_test1 delete 6161
 ```
 
@@ -5407,7 +5409,7 @@ To use an name instead, one can use the percent selector, like `%name:"my node"`
 
 They can be managed with commands:
 
-```bash
+```shell
 <%=cmd%> aoc files short_link <path to folder> private create
 <%=cmd%> aoc files short_link <path to folder> private list
 <%=cmd%> aoc files short_link <path to folder> public list
@@ -5442,19 +5444,19 @@ First, identify the node ID where the shared folder will be created.
 
 To get the node ID of the default node for workspace `my ws`, use the command:
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace show %name:'my ws' --fields=node_id
 ```
 
 Alternatively (longer):
 
-```bash
+```shell
 <%=cmd%> aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
 ```
 
 Or select a node identifier manually from the list of nodes:
 
-```bash
+```shell
 <%=cmd%> aoc admin node list --fields=id,name
 ```
 
@@ -5468,7 +5470,7 @@ The node can also be conveniently identified using the **percent selector** inst
 
 If the shared folder does not exist, then create it:
 
-```bash
+```shell
 <%=cmd%> aoc admin node do 1234 mkdir /folder_on_node
 ```
 
@@ -5476,7 +5478,7 @@ Create the shared folder in workspace `my ws` (set `with` to empty string, or do
 Optionally use `as` to set the name of the shared folder if different from the folder name on the node.
 For other options, refer to the previous section on shared folders.
 
-```bash
+```shell
 <%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
 ```
 
@@ -5487,15 +5489,15 @@ To share with a user, group, or workspace, use the `with` parameter with the nam
 The `"with"` parameter will perform a lookup, and set fields `access_type` and `access_id` accordingly.
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
-```bash
+```shell
 <%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
 ```
 
-```bash
+```shell
 <%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
 ```
 
-```bash
+```shell
 <%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
 ```
 
@@ -5516,7 +5518,7 @@ Procedure to send a file from org1 to org2:
 - Check that access works and locate the destination folder `mydestfolder`
 - Execute the following:
 
-```bash
+```shell
 <%=cmd%> -Porg1 aoc files node_info /mydestfolder --format=json --display=data | <%=cmd%> -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
 ```
 
@@ -5540,7 +5542,7 @@ The command `aoc files find` allows searching for files in a given workspace.
 
 It works also on `node` resource using the `v4` command:
 
-```bash
+```shell
 <%=cmd%> aoc admin node --name='my node name' --secret='my_secret_here' v4 find ...
 ```
 
@@ -5564,7 +5566,7 @@ If you are using ATS as part of AoC, then authentication is through AoC, not IBM
 First get your IBM Cloud API key.
 For instance, it can be created using the IBM Cloud web interface, or using command line:
 
-```bash
+```shell
 ibmcloud iam api-key-create mykeyname -d 'my sample key'
 ```
 
@@ -5593,15 +5595,15 @@ References:
 Then, to register the key by default for the `ats` plugin, create a preset.
 Execute:
 
-```bash
+```shell
 <%=cmd%> config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here
 ```
 
-```bash
+```shell
 <%=cmd%> config preset set default ats my_ibm_ats
 ```
 
-```bash
+```shell
 <%=cmd%> ats api_key instances
 ```
 
@@ -5613,11 +5615,11 @@ Execute:
 +--------------------------------------+
 ```
 
-```bash
+```shell
 <%=cmd%> config preset update my_ibm_ats --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
-```bash
+```shell
 <%=cmd%> ats api_key create
 ```
 
@@ -5640,19 +5642,19 @@ Those are directly the parameters expected by the [ATS API](https://developer.ib
 
 Example: create access key on IBM Cloud (Softlayer):
 
-```bash
+```shell
 <%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"my_secret_here","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
-```bash
+```shell
 <%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"my_secret_here"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
-```bash
+```shell
 <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
@@ -5661,13 +5663,13 @@ Example: create access key on Azure SAS:
 
 Example: create access key on Azure:
 
-```bash
+```shell
 <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
 delete all my access keys:
 
-```bash
+```shell
 <%=cmd%> ats access_key list --field=id --format=csv | <%=cmd%> ats access_key delete @lines:@stdin: --bulk=yes
 ```
 
@@ -5686,11 +5688,11 @@ The URL to be provided with option `url` shall be like `ssh://_server_address_:3
 
 Typically:
 
-```bash
+```shell
 <%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
 ```
 
-```bash
+```shell
 <%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
@@ -5709,19 +5711,20 @@ If neither SSH password nor key is provided and a transfer token is provided in 
 
 Example:
 
-```bash
+```shell
 <%=cmd%> server --url=ssh://_server_address_:33001 ... --ts=@json:'{"token":"Basic _token_here_"}'
 ```
 
 > [!NOTE]
-> If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
+> If you need to use the Aspera public keys, then specify an empty token:
+> `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
 
 The value of the `ssh_keys` option can be a single value or an `Array`.
 Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
 
-```bash
+```shell
 <%=cmd%> server --ssh-keys=~/.ssh/id_rsa
 <%=cmd%> server --ssh-keys=@list:,~/.ssh/id_rsa
 <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
@@ -5741,13 +5744,13 @@ By default, the SSH library will check if a local `ssh-agent` is running.
 
 On Linux, if you get an error message such as:
 
-```bash
+```shell
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
 or on Windows:
 
-```bash
+```shell
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
@@ -5759,11 +5762,11 @@ This means that your environment suggests using an agent, but you don't have suc
 - [Check the Ruby SSH options in start method](https://github.com/net-ssh/net-ssh/blob/master/lib/net/ssh.rb)
 - To disable the use of `ssh-agent`, use the option `ssh_options` like this:
 
-```bash
+```shell
 <%=cmd%> server --ssh-options=@json:'{"use_agent": false}' ...
 ```
 
-> [!NOTE]
+> [!TIP]
 > This can also be set using a preset.
 
 If one of the SSH private keys is passphrase-protected, then option `passphrase` can be used.
@@ -5785,7 +5788,7 @@ As, most of the time, SSH is used, if a `http` scheme is provided without token,
 
 One can test the `server` application using the well known demo server:
 
-```bash
+```shell
 <%=cmd%> config initdemo
 <%=cmd%> server browse /aspera-test-dir-large
 <%=cmd%> server download /aspera-test-dir-large/200MB
@@ -5795,7 +5798,7 @@ One can test the `server` application using the well known demo server:
 
 If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options` (for browsing) and `ts` (for transfers):
 
-```bash
+```shell
 <%=cmd%> server --url=ssh://_server_address_here_:33001 --username=_user_here_ --ssh_keys=_private_key_path_here_ --passphrase=_passphrase_here_
 ```
 
@@ -5861,23 +5864,23 @@ Examples of expressions:
 
 - Find all files and folders under `/`
 
-  ```bash
+  ```shell
   <%=cmd%> node access_keys do self find
   ```
 
 - Find all text files `/Documents`
 
-  ```bash
+  ```shell
   <%=cmd%> node access_keys do self find /Documents '*.txt'
   ```
 
 The following are examples of Ruby lambda code to be provided in the following template command:
 
-```bash
+```shell
  <%=cmd%> node access_keys do self find / @ruby:'->(f){[code here]}'
 ```
 
-> [!NOTE]
+> [!TIP]
 > Single quotes are used here above to protect the whole **Ruby** expression from the shell.
 > Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
 
@@ -5913,12 +5916,12 @@ The following are examples of Ruby lambda code to be provided in the following t
 
 <%=tool%> commands can be piped in order to combine operations, such as **find and delete**:
 
-```bash
+```shell
 <%=cmd%> node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' --fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
 ```
 
 > [!NOTE]
-> The pipe `|` character on the last line.
+> The pipe `|` character on the last line is used to chain commands.
 
 ### Listing transfer events
 
@@ -5929,7 +5932,7 @@ If the number of transfers is too large, then the list will be retrieved using s
 
 In addition, it is possible to list "only new information" using option `once_only`.
 
-```bash
+```shell
 <%=cmd%> node transfer list --once-only=yes
 ```
 
@@ -5945,7 +5948,7 @@ It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
 
-```bash
+```shell
 <%=cmd%> node central file list
 ```
 
@@ -5958,11 +5961,15 @@ By providing the `validator` option, offline transfer validation can be done.
 
 There are three commands related to file synchronisation:
 
-- `sync`: Perform a local sync, by executing `async` locally.
-- `ssync` : Calls the newer `async` API on node : `/asyncs` : it can start a sync operation on the server side, and monitor only those.
-- `async`: Calls the legacy `async` API on node : `/async` : get status on sync operation on server side, like Aspera Console.
+| Command | `node` | `shares` | `aoc` | `server` | Description |
+|---------|--------|----------|-------|----------|-------------|
+| `sync`  | Yes    | Yes      | Yes   | Yes      | Perform a local sync, by executing `async` locally. |
+| `async` | Yes    |          |       |          | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
+| `ssync` | Yes    |          |       |          | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
 
 For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
+
+`async` subcommands: `show` and `delete` accept special identifier `ALL`.
 
 ### FASP Stream
 
@@ -5984,7 +5991,7 @@ Operations are:
 - Start `watchd` and `watchfolderd` services running as a system user having access to files
 - Configure a **Watchfolder** to define automated transfers
 
-```bash
+```shell
 <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
@@ -5996,7 +6003,7 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 
 The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
 
-```bash
+```shell
 <%=cmd%> node central file list --validator=<%=cmd%> @json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
@@ -6010,7 +6017,7 @@ The following command lists one file that requires validation, and assign it to 
 
 To update the status of the file, use the following command:
 
-```bash
+```shell
 <%=cmd%> node central file update --validator=<%=cmd%> @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
@@ -6027,7 +6034,7 @@ Then create a configuration for the **SHOD** instance in the configuration file:
 Create another configuration for the Azure ATS instance: in section **node**, named `azure_ats`.
 Then execute the following command:
 
-```bash
+```shell
 <%=cmd%> node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=node --transfer-info=@preset:azure_ats
 ```
 
@@ -6040,38 +6047,39 @@ When Node API is used with an **Access key**, extra information can be retrieved
 > [!NOTE]
 > Display of preview on terminal requires installation of extra gem: `rmagick`
 
-```bash
+```shell
 dnf install -y ImageMagick-devel
 gem install rmagick rainbow
 ```
 
 For example, it is possible to display the preview of a file, if it exists, using an access key on node:
 
-```bash
+```shell
 <%=cmd%> node access_key do self thumbnail /preview_samples/Aspera.mpg
 ```
 
 Previews are mainly used in AoC, this also works with AoC:
 
-```bash
+```shell
 <%=cmd%> aoc files thumbnail /preview_samples/Aspera.mpg
 ```
 
-> [!NOTE]
+> [!TIP]
 > To specify the file by its file ID, use the selector syntax: `%id:_file_id_here_`
 
 > [!NOTE]
-> To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL` or use option: ``
+> To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
 
 ### Create access key
 
-```bash
+```shell
 <%=cmd%> node access_key create @json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
-> [!NOTE]
-> The `id` and `secret` are optional.
+> [!TIP]
+> The `id` and `secret` fields are optional.
 > If not provided, they will be generated and returned into the result.
+> In that case, provide option `--show-secrets=yes` to get the generated secret.
 
 Access keys support extra overriding parameters using parameter: `configuration` and sub keys `transfer` and `server`.
 For example, an access key can be modified or created with the following options:
@@ -6082,7 +6090,7 @@ For example, an access key can be modified or created with the following options
 
 The list of supported options can be displayed using command:
 
-```bash
+```shell
 <%=cmd%> node info --field=@ruby:'/^access_key_configuration_capabilities.*/'
 ```
 
@@ -6146,18 +6154,19 @@ Using <%=tool%>, an access key can be created using the `access_key create` on t
 
 Create a private key (organization key) that will be used to sign bearer tokens:
 
-```bash
+```shell
 my_private_pem=./myorgkey.pem
 <%=cmd%> config genkey $my_private_pem
 ```
 
 > [!NOTE]
-> This key is not used for authentication, it is used to sign bearer tokens.
+> This private key is not used for authentication.
+> It is used to sign bearer tokens.
 > Refer to section [private key](#private-key) for more details on generation.
 
 The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<id>`):
 
-```bash
+```shell
 <%=cmd%> node access_key set_bearer_key self @file:$my_private_pem
 ```
 
@@ -6168,7 +6177,7 @@ The corresponding public key shall be placed as an attribute of the **access key
 
 Alternatively, use the following equivalent command, as <%=tool%> kindly extracts the public key with extension `.pub`:
 
-```bash
+```shell
 <%=cmd%> node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
 ```
 
@@ -6176,17 +6185,16 @@ Alternatively, use the following equivalent command, as <%=tool%> kindly extract
 
 - Select a folder for which we want to grant access to a user, and get its identifier:
 
-  ```bash
+  ```shell
   my_folder_id=$(<%=cmd%> node access_key do self show / --fields=id)
   ```
 
 > [!NOTE]
->
 > Here we simply select `/`, but any folder can be selected in the access key storage.
 
 - Let's designate a user by its ID:
 
-  ```bash
+  ```shell
   my_user_id=777
   ```
 
@@ -6196,13 +6204,13 @@ Alternatively, use the following equivalent command, as <%=tool%> kindly extract
 
 - Grant this user access to the selected folder:
 
-  ```bash
+  ```shell
   <%=cmd%> node access_key do self permission %id:$my_folder_id create @json:'{"access_type":"user","access_id":"'$my_user_id'"}'
   ```
 
 - Create a Bearer token for the user:
 
-  ```bash
+  ```shell
   <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
   ```
 
@@ -6221,7 +6229,7 @@ Now, let's assume we are the user, the only information received are:
 
 Let's use it:
 
-```bash
+```shell
 <%=cmd%> node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
 ```
 
@@ -6249,13 +6257,13 @@ Identify the region and the endpoint URL will be `https://otlp-[region]-saas.ins
 
 For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
 
-```bash
+```shell
 <%=cmd%> config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"*********","interval":1.1}'
 ```
 
 Then it is invoked like this (assuming a default node is configured):
 
-```bash
+```shell
 <%=cmd%> node telemetry @preset:otel_default
 ```
 
@@ -6283,7 +6291,7 @@ IBM Aspera's newer self-managed application.
 
 For a quick start, one can use the wizard, which will help to create an [Option Preset](#option-preset):
 
-```bash
+```shell
 <%=cmd%> config wizard
 ```
 
@@ -6376,7 +6384,7 @@ As usual, typically a user will create preset to avoid having to type these opti
 
 Example:
 
-```bash
+```shell
 <%=cmd%> config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
 <%=cmd%> config preset set default faspx5 myf5
@@ -6414,7 +6422,7 @@ For `boot` method: (will be removed in future)
 
 Use this token as password and use `--auth=boot`.
 
-```bash
+```shell
 <%=cmd%> config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
@@ -6454,7 +6462,7 @@ To select another inbox, use option `box` with one of the following values:
 
 A package can be sent with the command:
 
-```bash
+```shell
 <%=cmd%> faspex5 packages send [extended value: Hash with package info] [files...]
 ```
 
@@ -6464,7 +6472,7 @@ Required fields are `title` and `recipients`.
 
 Example (assuming a default preset is created for the connection information):
 
-```bash
+```shell
 <%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybygfile1
 ```
 
@@ -6535,13 +6543,13 @@ Examples:
 
 - List only available packages: (filtering is done in Faspex)
 
-  ```bash
+  ```shell
   <%=cmd%> faspex5 packages list --query=@json:'{"status":"completed"}'
   ```
 
 - Similar, using filtering in <%=tool%>:
 
-  ```bash
+  ```shell
   <%=cmd%> faspex5 packages list @ruby:'->(p){p["state"].eql?("released")}'
   ```
 
@@ -6594,26 +6602,26 @@ To keep the content encrypted, use option: `--ts=@json:'{"content_protection":nu
 
 If you are a regular user, to list work groups you belong to:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin workgroup list
 ```
 
 If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
 Example:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin shared list --query=@json:'{"all":true}' --fields=id,name
 ```
 
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
 
-```bash
+```shell
 <%=cmd%> faspex5 admin shared_inboxes invite '%name:the shared inbox' john@example.com
 ```
 
 It is equivalent to:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
@@ -6625,52 +6633,52 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 
 ### Faspex 5: Create Metadata profile
 
-```bash
+```shell
 <%=cmd%> faspex5 admin metadata_profiles create @json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
 ### Faspex 5: Create a Shared inbox with specific metadata profile
 
-```bash
+```shell
 <%=cmd%> faspex5 admin shared create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
 ### Faspex 5: List content in Shared folder and send package from remote source
 
-```bash
+```shell
 <%=cmd%> faspex5 shared_folders list --fields=id,name
 ```
 
-```markdown
-+----+----------+
-| id | name     |
-+----+----------+
-| 3  | partages |
-+----+----------+
+```text
+╭────┬──────────────╮
+│ id │ name         │
+╞════╪══════════════╡
+│ 2  │ Server Files │
+╰────┴──────────────╯
 ```
 
-```bash
-<%=cmd%> faspex5 shared_folders br %name:partages /folder
+```shell
+<%=cmd%> faspex5 shared_folders br %name:'Server Files' /folder
 ```
 
-```bash
+```shell
 <%=cmd%> faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
-> [!NOTE]
+> [!TIP]
 > The shared folder can be identified by its numerical `id` or by name using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
 ### Faspex 5: Receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 
-```bash
+```shell
 <%=cmd%> faspex5 packages receive ALL --once-only=yes --query=@json:'{"status":"completed"}'
 ```
 
 To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:
 
-```bash
+```shell
 <%=cmd%> faspex5 packages receive INIT --once-only=yes
 ```
 
@@ -6680,7 +6688,7 @@ There are two types of invitations of package submission: public or private.
 
 Public invitations are for external users, provide just the email address.
 
-```bash
+```shell
 <%=cmd%> faspex5 invitations create @json:'{"email_address":"john@example.com"}' --fields=access_url
 ```
 
@@ -6688,24 +6696,24 @@ Private invitations are for internal users, provide the user or shared inbox ide
 
 ### Faspex 5: Cleanup packages
 
-> [!NOTE]
+> [!WARNING]
 > Operation requires admin level.
 
 The default automated cleanup period can be displayed with:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin configuration show --fields=days_before_deleting_package_records
 ```
 
 This parameter can be modified with:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin configuration modify @json:'{"days_before_deleting_package_records":30}'
 ```
 
 To start package purge, i.e. permanently remove packages marked for deletion older than `days_before_deleting_package_records`, use command:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin clean_deleted
 ```
 
@@ -6715,7 +6723,7 @@ To start package purge, i.e. permanently remove packages marked for deletion old
 
 To delete all packages, one can use the following command:
 
-```bash
+```shell
 <%=cmd%> faspex5 packages list --box=ALL --format=yaml --fields=id | <%=cmd%> faspex5 packages delete @yaml:@stdin:
 ```
 
@@ -6727,11 +6735,11 @@ To delete all packages, one can use the following command:
 
 To unlock a user, you can deactivate and then re-activate the user:
 
-```bash
+```shell
 <%=cmd%> faspex5 admin accounts modify %name:some.user@example.com @json:'{"account_activated":false}'
 ```
 
-```bash
+```shell
 <%=cmd%> faspex5 admin accounts modify %name:some.user@example.com @json:'{"account_activated":true}'
 ```
 
@@ -6751,7 +6759,7 @@ Nevertheless, on long term, a native approach shall be considered, such as using
 
 It is invoked like this:
 
-```bash
+```shell
 <%=cmd%> faspex5 postprocessing
 ```
 
@@ -6774,7 +6782,7 @@ When a request on <%=tool%> is received the following happens:
 
 For example:
 
-```bash
+```shell
 <%=cmd%> faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing","script_folder":"/opt/scripts"}'
 ```
 
@@ -6798,7 +6806,7 @@ For legacy Faspex client applications that use the `send` API (only) of Faspex v
 
 It takes a single argument which is the URL at which the gateway will be located (locally):
 
-```bash
+```shell
 <%=cmd%> faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
 ```
 
@@ -6821,14 +6829,14 @@ For other parameters, see [Web service](#web-service).
 
 If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
 
-```bash
+```shell
 curl -H "Authorization: $(<%=cmd%> <%=cmd%> bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
 ```
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
 > [!NOTE]
-> Faspex v4 is end of support since Sept. 30th, 2024.
+> Faspex v4 is end of support since September 30th, 2024.
 > So this plugin for Faspex v4 is deprecated.
 > If you still need to use Faspex4, then use <%=tool%> version 4.19.0 or earlier.
 
@@ -6875,7 +6883,7 @@ By default, `count` is `0` (`10`), it can be increased to issue less HTTP calls.
 
 #### Example: List packages in dropbox
 
-```bash
+```shell
 <%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
@@ -6889,14 +6897,14 @@ The command is `package recv`, possible methods are:
 - Provide a public link with option `link`
 - Provide a `faspe:` URI with option `link`
 
-```bash
+```shell
 <%=cmd%> faspex package recv 12345
 <%=cmd%> faspex package recv --link=faspe://...
 ```
 
 If the package is in a specific **dropbox**/**workgroup**, add option `recipient` for both the `list` and `recv` commands.
 
-```bash
+```shell
 <%=cmd%> faspex package list --recipient='*dropbox_name'
 <%=cmd%> faspex package recv 125 --recipient='*dropbox_name'
 ```
@@ -6911,7 +6919,7 @@ The content of `delivery_info` is directly the contents of the `send` v3 [API of
 
 Example:
 
-```bash
+```shell
 <%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
 ```
 
@@ -6939,7 +6947,7 @@ Like for any transfer, a notification can be sent by email using options: `notif
 
 Example:
 
-```bash
+```shell
 <%=cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notify-to=aspera.user1@gmail.com --notify-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
@@ -6951,7 +6959,7 @@ The template can be placed in a file using modifier: `@file:`
 
 Example:
 
-```bash
+```shell
 <%=cmd%> faspex v4 dropbox create @json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
 <%=cmd%> faspex v4 dropbox list
 <%=cmd%> faspex v4 dropbox delete 36
@@ -6991,7 +6999,7 @@ The node configuration name is `my_faspex_node` here.
 It is possible to tell <%=tool%> to download newly received packages, much like the official cargo client, or drive.
 Refer to the [same section](#receive-new-packages-only-cargo) in the Aspera on Cloud plugin:
 
-```bash
+```shell
 <%=cmd%> faspex packages recv ALL --once-only=yes --lock-port=12345
 ```
 
@@ -7023,7 +7031,7 @@ Example: Create a Node: Attributes are like API:
 
 Example: Create a share and add a user to it.
 
-```bash
+```shell
 <%=cmd%> shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
 share_id=$(<%=cmd%> shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
@@ -7076,7 +7084,7 @@ If you have those parameters already, then following options shall be provided:
 
 For example, let us create a default configuration:
 
-```bash
+```shell
 <%=cmd%> config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
 <%=cmd%> config preset set default cos mycos
 ```
@@ -7101,7 +7109,7 @@ Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 
 or using the IBM Cloud CLI:
 
-```bash
+```shell
 ibmcloud resource service-keys
 ibmcloud resource service-key _service_key_name_here_ --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
@@ -7143,7 +7151,7 @@ The required options for this method are:
 
 For example, let us create a default configuration:
 
-```bash
+```shell
 <%=cmd%> config preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
 <%=cmd%> config preset set default cos mycos
 ```
@@ -7154,7 +7162,7 @@ Let's assume you created a default configuration from one of the two previous st
 
 A subset of `node` plugin operations are supported, basically Node API:
 
-```bash
+```shell
 <%=cmd%> cos node info
 <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
@@ -7199,7 +7207,7 @@ Specify the preview's folder as shown in:
 By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root.
 On the transfer server execute:
 
-```bash
+```shell
 PATH=/opt/aspera/bin:$PATH
 
 asconfigurator -x "server;preview_dir,previews"
@@ -7218,7 +7226,7 @@ This size is internally capped to `1<<24` Bytes (16777216), i.e. 16384 KB, i.e. 
 To change this parameter in `aspera.conf`, use `asconfigurator`.
 To display the value, use `asuserdata`:
 
-```bash
+```shell
 asuserdata -a | grep max_request_file_create_size_kb
 ```
 
@@ -7226,7 +7234,7 @@ asuserdata -a | grep max_request_file_create_size_kb
   max_request_file_create_size_kb: "1024"
 ```
 
-```bash
+```shell
 asconfigurator -x "server; max_request_file_create_size_kb,16384"
 ```
 
@@ -7250,13 +7258,13 @@ Other OSes should work as well, but are not tested.
 
 To check if all tools are found properly, execute:
 
-```bash
+```shell
 <%=cmd%> preview check
 ```
 
 #### Image: ImageMagick and `optipng`
 
-```bash
+```shell
 dnf install -y ImageMagick optipng
 ```
 
@@ -7268,14 +7276,14 @@ More info on ImageMagick at <https://imagemagick.org/>
 
 If your OS has only ImageMagick v6, then you can create a script called `magick` and add it to your `PATH`:
 
-```bash
+```shell
 #!/bin/bash
 exec "$@"
 ```
 
 make it executable:
 
-```bash
+```shell
 chmod a+x /usr/local/bin/magick
 ```
 
@@ -7283,7 +7291,7 @@ chmod a+x /usr/local/bin/magick
 
 The easiest method is to download and install the latest released version of `ffmpeg` with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
 
-```bash
+```shell
 curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && rm -f ffmpeg /usr/bin/{ffmpeg,ffprobe} && rm -fr ffmpeg-*-amd64-static && tar xJvf - && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
 ```
 
@@ -7295,13 +7303,13 @@ The generation of preview in based on the use of LibreOffice's `unoconv`.
 
 - RHEL 8/Rocky Linux 8+
 
-```bash
+```shell
 dnf install unoconv
 ```
 
 - Amazon Linux
 
-```bash
+```shell
 amazon-linux-extras enable libreoffice
 yum clean metadata
 yum install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress
@@ -7322,7 +7330,7 @@ The configuration file must be created with the same user used to run so that it
 The `xfer` user has a special protected shell: `aspshell`, so in order to update the configuration, and when changing identity, specify an alternate shell.
 E.g.:
 
-```bash
+```shell
 su -s /bin/bash - xfer
 
 <%=cmd%> config preset update mypreviewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
@@ -7335,7 +7343,7 @@ Here we assume that Office file generation is disabled, else remove this option.
 
 One can check if the access key is well configured using:
 
-```bash
+```shell
 <%=cmd%> -Ppreviewconf node browse /
 ```
 
@@ -7358,19 +7366,19 @@ So, in order to be consistent, and generate the appropriate access rights, the g
 
 Let's do a one shot test, using the configuration previously created:
 
-```bash
+```shell
 su -s /bin/bash - xfer
 ```
 
 or
 
-```bash
+```shell
 sudo -u xfer /bin/bash
 ```
 
 and then:
 
-```bash
+```shell
 <%=cmd%> preview scan --overwrite=always
 ```
 
@@ -7386,7 +7394,7 @@ Shorter commands can be specified if a configuration preset was created as shown
 
 For example the timeout value can be differentiated depending on the option: event versus scan:
 
-```bash
+```shell
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 ```
 
@@ -7413,7 +7421,7 @@ Deletion of preview for deleted source files: not implemented yet (TODO).
 If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders.
 It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
-```bash
+```shell
 <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
@@ -7475,7 +7483,7 @@ If the `mimemagic` gem complains about missing mime info file:
   - Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
   - Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace `VV` with version) to the exact path of this file:
 
-  ```cmd
+  ```batchfile
   SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
   ```
 
@@ -7483,13 +7491,13 @@ If the `mimemagic` gem complains about missing mime info file:
 
 - Linux RHEL 8+:
 
-```bash
+```shell
 dnf install shared-mime-info
 ```
 
 - **macOS**:
 
-```bash
+```shell
 brew install shared-mime-info
 ```
 
@@ -7622,7 +7630,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 > [!NOTE]
 > Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
 
-> [!NOTE]
+> [!TIP]
 > Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info`.
 
 #### Server side and configuration
@@ -7632,7 +7640,7 @@ Virtually any transfer on a **repository** on a regular basis might emulate a ho
 > [!NOTE]
 > File detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
 
-> [!NOTE]
+> [!TIP]
 > Options may be saved in an [Option Preset](#option-preset) and used with `-P`.
 
 #### Scheduling
@@ -7643,7 +7651,7 @@ Refer to section [Scheduler](#scheduler).
 
 ### Example: Upload hot folder
 
-```bash
+```shell
 <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
 ```
 
@@ -7654,7 +7662,7 @@ If a transfer takes more than the execution period, then the subsequent executio
 
 ### Example: Unidirectional synchronization (upload) to server
 
-```bash
+```shell
 <%=cmd%> server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
 ```
 
@@ -7662,7 +7670,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 
 ### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
-```bash
+```shell
 <%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
@@ -7677,7 +7685,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 Most plugin provide a `health` command that will check the health status of the application.
 Example:
 
-```bash
+```shell
 <%=cmd%> console health
 ```
 
@@ -7698,7 +7706,7 @@ Typically, the health check uses the REST API of the application with the follow
 <%=tool%> can be called by Nagios to check the health status of an Aspera server.
 The output can be made compatible to Nagios with option `--format=nagios` :
 
-```bash
+```shell
 <%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
 ```
 
@@ -7729,7 +7737,7 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 
 ### Example of configuration
 
-```bash
+```shell
 <%=cmd%> config preset set smtp_google server smtp.google.com
 <%=cmd%> config preset set smtp_google username john@gmail.com
 <%=cmd%> config preset set smtp_google password my_password_here
@@ -7737,19 +7745,19 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 
 or
 
-```bash
+```shell
 <%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"my_password_here"}'
 ```
 
 or
 
-```bash
+```shell
 <%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=my_password_here
 ```
 
 Set this configuration as global default, for instance:
 
-```bash
+```shell
 <%=cmd%> config preset set cli_default smtp @val:@preset:smtp_google
 <%=cmd%> config preset set default config cli_default
 ```
@@ -7773,7 +7781,7 @@ Other variables are defined depending on context.
 Check settings with `smtp_settings` command.
 Send test email with `email_test`.
 
-```bash
+```shell
 <%=cmd%> config --smtp=@preset:smtp_google smtp
 <%=cmd%> config --smtp=@preset:smtp_google email --notify-to=sample.dest@example.com
 ```
@@ -7853,11 +7861,11 @@ Create a file `session.json` with:
 
 ```json
 {"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"my_password_here","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
-````
+```
 
 Then start the session:
 
-```bash
+```shell
 asession < session.json
 ```
 
@@ -7884,7 +7892,7 @@ NodeJS: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ### Help
 
-```bash
+```shell
 asession -h
 <%=include_asession%>
 ```
@@ -7923,7 +7931,7 @@ It had the advantage of being relatively easy to installed, as a single executab
 
 Enjoy a coffee on me:
 
-```bash
+```shell
 <%=cmd%> config coffee --ui=text
 <%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
 <%=cmd%> config coffee
@@ -7941,7 +7949,7 @@ Cause: `ascp` >= 4.x checks fingerprint of the highest server host key, includin
 
 Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the configuration file):
 
-```bash
+```shell
 --ts=@json:'{"sshfp":null}'
 ```
 
@@ -7987,7 +7995,7 @@ Add the following to option `ssh_options`:
 
 e.g.
 
-```bash
+```shell
 --ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
 ```
 
@@ -7996,7 +8004,7 @@ e.g.
 Newer OpenSSL library expects a clean SSL close.
 To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options` in option `http_options`.
 
-```bash
+```shell
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
 
@@ -8006,7 +8014,7 @@ This happens on Linux x86 if you try to install `transferd` on a Linux version t
 
 Workaround: Install an older version:
 
-```bash
+```shell
 <%=cmd%> config transferd install 1.1.2
 ```
 
