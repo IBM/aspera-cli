@@ -311,11 +311,12 @@ module Aspera
     # @return [String] A file name safe to use on file system
     def sanitized_filename(filename)
       safe_char = safe_filename_character
-      # Windows does not allow file name ending with space or dot
-      # nor control characters anywhere.
+      # Windows does not allow file name:
+      # - with control characters anywhere
+      # - ending with space or dot
       filename = filename
-        .gsub(/[\. ]+$/, safe_char)
         .gsub(/[\x00-\x1F\x7F]/, safe_char)
+        .sub(/[. ]+\z/, safe_char)
       if @file_illegal_characters&.size.to_i >= 2
         # replace all illegal characters with safe_char
         filename = filename.tr(@file_illegal_characters[1..-1], safe_char)
