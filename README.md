@@ -14,7 +14,7 @@ PANDOC_META_END
 
 ## Introduction
 
-![Hootput the Owl](../docs/ascli-impersonation-small.png)
+![Hootput the Owl](docs/ascli-impersonation-small.png)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
@@ -6952,6 +6952,8 @@ access_key do my_ak_name find my_test_folder
 access_key do my_ak_name find my_test_folder @re:'\.jpg$'
 access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
 access_key do my_ak_name mkdir /tst_nd_ak
+access_key do my_ak_name mkfile /mkfile.txt "hello world"
+access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}'
 access_key do my_ak_name node_info /
 access_key do my_ak_name rename /tst_nd_ak test_nd_ak2
 access_key do my_ak_name show %id:1
@@ -6974,7 +6976,7 @@ async show ALL
 basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
 browse / --log-level=trace2
-cat my_upload_folder/test_file.bin --to-folder=.
+cat my_upload_folder/test_file.bin
 central file list
 central file modify --validator=1 @json:'{"files":[]}'
 central session list

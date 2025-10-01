@@ -13,7 +13,7 @@ PANDOC_META_END
 
 ## Introduction
 
-![Hootput the Owl](../docs/ascli-impersonation-small.png)
+![Hootput the Owl](docs/ascli-impersonation-small.png)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
