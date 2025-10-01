@@ -6286,7 +6286,7 @@ IBM Aspera's newer self-managed application.
 | `public_link` | Public link authentication (set when option `url` is a public link) |
 | `boot`        | Use authentication token copied from browser (experimental)         |
 
-> [!NOTE]
+> [!TIP]
 > If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
 For a quick start, one can use the wizard, which will help to create an [Option Preset](#option-preset):
@@ -6334,9 +6334,9 @@ Saving configuration file.
 ```
 
 > [!NOTE]
-> Include the public key `BEGIN` and `END` lines when pasting in the user profile.
+> Paste the entire public key, including the BEGIN and END lines, into the user profile.
 
-For details on the JWT method, see the following section.
+For more information on the JWT method, refer to the section below.
 
 ### Faspex 5 JWT authentication
 
@@ -6358,14 +6358,14 @@ Activation is in two steps:
 
 - The user will authenticate with a private key and set the public key in his Faspex 5 profile.
 
-  > [!NOTE]
-  > If you don't have a private key refer to section [Private Key](#private-key) to generate one.
+  > [!TIP]
+  > If you don’t have a private key, see [Private Key](#private-key) to generate one.
   
   This operation is done by each user using the CLI.
 
-  - As user, click on the user logo, left to the app switcher on top right.
-  - Select `Account Settings`
-  - on the bottom in the text field: `Public key in PEM format` paste the **public** key corresponding to the private key used by the user.
+  - As a user, click the user logo located to the left of the app switcher in the top-right corner.
+  - Select `Account Settings`.
+  - At the bottom, in the `Public key in PEM format` field, paste the **public key** that corresponds to the private key assigned to your account.
 
 Then use these options:
 
@@ -6378,9 +6378,10 @@ Then use these options:
 ```
 
 > [!NOTE]
-> The `private_key` option must contain the PEM **value** (not file path) of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+> Use the `private_key` option to provide the PEM content (not the file path).
+> To load from a file, prefix the path with `@file:`, e.g. `@file:/path/to/key.pem`.
 
-As usual, typically a user will create preset to avoid having to type these options each time.
+Typically, users create a preset so they don’t have to enter these options each time.
 
 Example:
 
@@ -6394,7 +6395,7 @@ Example:
 
 ### Faspex 5 web authentication
 
-The administrator must create an **API client** in Faspex for an external web app support:
+For web-based authentication, the administrator must create an **API client** in Faspex for an external web app support:
 
 - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 - Do not Activate JWT
@@ -6428,16 +6429,16 @@ Use this token as password and use `--auth=boot`.
 
 <%=include_commands_for_plugin('faspex5')%>
 
-Most commands are directly REST API calls.
+Most commands correspond directly to REST API calls.
 Parameters to commands are carried through option `query`, as extended value, for `list`, or through **Command Parameter** for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
-> [!NOTE]
+> [!TIP]
 > The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
 
 ### Faspex 5: Inbox selection
 
-By default, package operations (send, receive, list) are done on the user's inbox.
+By default, package operations (`send`, `receive`, `list`) are performed on the user's inbox.
 
 To select another inbox, use option `box` with one of the following values:
 
@@ -6453,10 +6454,10 @@ To select another inbox, use option `box` with one of the following values:
 | `pending_history`   | |
 | `all`               | |
 | `ALL`               | **admin only**, all inboxes of all users |
-| Any other value     | Name of a shared inbox if `group_type` is `shared_inboxes` (default)<%=br%>or workgroup if `group_type` is `workgroups` |
+| Open value          | Name of a shared inbox if `group_type` is `shared_inboxes` (default)<%=br%>or workgroup if `group_type` is `workgroups` |
 
 > [!NOTE]
-> In case the name of the `box` is an open value, use option `group_type` with either `shared_inboxes` or `workgroups`.
+> In case the name of the `box` is an open value, use option `group_type` set to either `shared_inboxes` or `workgroups`.
 
 ### Faspex 5: Send a package
 
@@ -6473,7 +6474,7 @@ Required fields are `title` and `recipients`.
 Example (assuming a default preset is created for the connection information):
 
 ```shell
-<%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybygfile1
+<%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybigfile1
 ```
 
 Longer example for the payload of `@json:`:
@@ -6743,7 +6744,7 @@ To unlock a user, you can deactivate and then re-activate the user:
 <%=cmd%> faspex5 admin accounts modify %name:some.user@example.com @json:'{"account_activated":true}'
 ```
 
-> [!NOTE]
+> [!TIP]
 > Here we use the convenient percent selector, but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `reset_password` on the `account`.
@@ -6835,7 +6836,7 @@ curl -H "Authorization: $(<%=cmd%> <%=cmd%> bearer)" https://faspex5.example.com
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
-> [!NOTE]
+> [!WARNING]
 > Faspex v4 is end of support since September 30th, 2024.
 > So this plugin for Faspex v4 is deprecated.
 > If you still need to use Faspex4, then use <%=tool%> version 4.19.0 or earlier.

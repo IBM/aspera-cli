@@ -107,7 +107,7 @@ module Aspera
           private_key_path = options.get_option(:key_path)
           # give a chance to provide
           if private_key_path.nil?
-            formatter.display_status('Please provide the path to your private RSA key, or nothing to generate one:')
+            formatter.display_status('Path to private RSA key (leave empty to generate):')
             private_key_path = options.get_option(:key_path, mandatory: true).to_s
           end
           # else generate path

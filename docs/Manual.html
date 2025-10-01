@@ -9087,8 +9087,8 @@ public link)</td>
 </tr>
 </tbody>
 </table>
-<div class="admonition note">
-<div class="admonition-title">ℹ️  Note</div>
+<div class="admonition tip">
+<div class="admonition-title">💡  Tip</div>
 <div class="admonition-body"><div class="title">
 
 </div>
@@ -9138,10 +9138,11 @@ Saving configuration file.</code></pre>
 <div class="admonition-body"><div class="title">
 
 </div>
-<p>Include the public key <code>BEGIN</code> and <code>END</code> lines
-when pasting in the user profile.</p></div>
+<p>Paste the entire public key, including the BEGIN and END lines, into
+the user profile.</p></div>
 </div>
-<p>For details on the JWT method, see the following section.</p>
+<p>For more information on the JWT method, refer to the section
+below.</p>
 <h2 data-number="9.1" id="faspex-5-jwt-authentication"><span class="header-section-number">9.1</span> Faspex 5 JWT
 authentication</h2>
 <p>This is the general purpose and <strong>recommended</strong> method
@@ -9165,21 +9166,22 @@ version)</li>
 </ul></li>
 <li><p>The user will authenticate with a private key and set the public
 key in his Faspex 5 profile.</p>
-<div class="admonition note">
-<div class="admonition-title">ℹ️  Note</div>
+<div class="admonition tip">
+<div class="admonition-title">💡  Tip</div>
 <div class="admonition-body"><div class="title">
 
 </div>
-<p>If you don&#39;t have a private key refer to section <a href="#private-key">Private Key</a> to generate one.</p></div>
+<p>If you don’t have a private key, see <a href="#private-key">Private
+Key</a> to generate one.</p></div>
 </div>
 <p>This operation is done by each user using the CLI.</p>
 <ul>
-<li>As user, click on the user logo, left to the app switcher on top
-right.</li>
-<li>Select <code>Account Settings</code></li>
-<li>on the bottom in the text field:
-<code>Public key in PEM format</code> paste the <strong>public</strong>
-key corresponding to the private key used by the user.</li>
+<li>As a user, click the user logo located to the left of the app
+switcher in the top-right corner.</li>
+<li>Select <code>Account Settings</code>.</li>
+<li>At the bottom, in the <code>Public key in PEM format</code> field,
+paste the <strong>public key</strong> that corresponds to the private
+key assigned to your account.</li>
 </ul></li>
 </ul>
 <p>Then use these options:</p>
@@ -9193,13 +9195,12 @@ key corresponding to the private key used by the user.</li>
 <div class="admonition-body"><div class="title">
 
 </div>
-<p>The <code>private_key</code> option must contain the PEM
-<strong>value</strong> (not file path) of the private key which can be
-read from a file using the modifier: <code>@file:</code>, e.g.
-<code>@file:/path/to/key.pem</code>.</p></div>
+<p>Use the <code>private_key</code> option to provide the PEM content
+(not the file path). To load from a file, prefix the path with
+<code>@file:</code>, e.g. <code>@file:/path/to/key.pem</code>.</p></div>
 </div>
-<p>As usual, typically a user will create preset to avoid having to type
-these options each time.</p>
+<p>Typically, users create a preset so they don’t have to enter these
+options each time.</p>
 <p>Example:</p>
 <pre class="shell"><code>ascli config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
@@ -9208,8 +9209,9 @@ ascli config preset set default faspx5 myf5
 ascli faspex5 user profile show</code></pre>
 <h2 data-number="9.2" id="faspex-5-web-authentication"><span class="header-section-number">9.2</span> Faspex 5 web
 authentication</h2>
-<p>The administrator must create an <strong>API client</strong> in
-Faspex for an external web app support:</p>
+<p>For web-based authentication, the administrator must create an
+<strong>API client</strong> in Faspex for an external web app
+support:</p>
 <ul>
 <li>As Admin, Navigate to the web UI: Admin → Configurations → API
 Clients → Create</li>
@@ -9319,13 +9321,13 @@ commands:</p></div>
 <span id="cb502-70"><a href="#cb502-70" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
 <span id="cb502-71"><a href="#cb502-71" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
 <span id="cb502-72"><a href="#cb502-72" aria-hidden="true" tabindex="-1"></a><span class="ex">version</span></span></code></pre></div>
-<p>Most commands are directly REST API calls. Parameters to commands are
-carried through option <code>query</code>, as extended value, for
-<code>list</code>, or through <strong>Command Parameter</strong> for
-creation. One can conveniently use the JSON format with prefix
-<code>@json:</code>.</p>
-<div class="admonition note">
-<div class="admonition-title">ℹ️  Note</div>
+<p>Most commands correspond directly to REST API calls. Parameters to
+commands are carried through option <code>query</code>, as extended
+value, for <code>list</code>, or through <strong>Command
+Parameter</strong> for creation. One can conveniently use the JSON
+format with prefix <code>@json:</code>.</p>
+<div class="admonition tip">
+<div class="admonition-title">💡  Tip</div>
 <div class="admonition-body"><div class="title">
 
 </div>
@@ -9333,8 +9335,9 @@ creation. One can conveniently use the JSON format with prefix
 Faspex API</strong>.</p></div>
 </div>
 <h2 data-number="9.5" id="faspex-5-inbox-selection"><span class="header-section-number">9.5</span> Faspex 5: Inbox selection</h2>
-<p>By default, package operations (send, receive, list) are done on the
-user&#39;s inbox.</p>
+<p>By default, package operations (<code>send</code>,
+<code>receive</code>, <code>list</code>) are performed on the user&#39;s
+inbox.</p>
 <p>To select another inbox, use option <code>box</code> with one of the
 following values:</p>
 <table>
@@ -9390,7 +9393,7 @@ following values:</p>
 <td><strong>admin only</strong>, all inboxes of all users</td>
 </tr>
 <tr>
-<td>Any other value</td>
+<td>Open value</td>
 <td>Name of a shared inbox if <code>group_type</code> is
 <code>shared_inboxes</code> (default)<br />or workgroup if
 <code>group_type</code> is <code>workgroups</code></td>
@@ -9403,7 +9406,7 @@ following values:</p>
 
 </div>
 <p>In case the name of the <code>box</code> is an open value, use option
-<code>group_type</code> with either <code>shared_inboxes</code> or
+<code>group_type</code> set to either <code>shared_inboxes</code> or
 <code>workgroups</code>.</p></div>
 </div>
 <h2 data-number="9.6" id="faspex-5-send-a-package"><span class="header-section-number">9.6</span> Faspex 5: Send a package</h2>
@@ -9417,7 +9420,7 @@ of parameters, or look at request in browser).</p>
 <code>recipients</code>.</p>
 <p>Example (assuming a default preset is created for the connection
 information):</p>
-<pre class="shell"><code>ascli faspex5 packages send @json:&#39;{&quot;title&quot;:&quot;some title&quot;,&quot;recipients&quot;:[&quot;user@example.com&quot;]}&#39; mybygfile1</code></pre>
+<pre class="shell"><code>ascli faspex5 packages send @json:&#39;{&quot;title&quot;:&quot;some title&quot;,&quot;recipients&quot;:[&quot;user@example.com&quot;]}&#39; mybigfile1</code></pre>
 <p>Longer example for the payload of <code>@json:</code>:</p>
 <div class="sourceCode" id="cb505"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb505-1"><a href="#cb505-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;some title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;recipient_type&quot;</span><span class="fu">:</span><span class="st">&quot;user&quot;</span><span class="fu">,</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;user@example.com&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <p><code>recipient_type</code> is one of (Refer to API):</p>
@@ -9734,8 +9737,8 @@ user</h2>
 user:</p>
 <pre class="shell"><code>ascli faspex5 admin accounts modify %name:some.user@example.com @json:&#39;{&quot;account_activated&quot;:false}&#39;</code></pre>
 <pre class="shell"><code>ascli faspex5 admin accounts modify %name:some.user@example.com @json:&#39;{&quot;account_activated&quot;:true}&#39;</code></pre>
-<div class="admonition note">
-<div class="admonition-title">ℹ️  Note</div>
+<div class="admonition tip">
+<div class="admonition-title">💡  Tip</div>
 <div class="admonition-body"><div class="title">
 
 </div>
@@ -9868,8 +9871,8 @@ by calling directly the API on the command line using
 <pre class="shell"><code>curl -H &quot;Authorization: $(ascli ascli bearer)&quot; https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here</code></pre>
 <h1 data-number="10" id="plugin-faspex-ibm-aspera-faspex-v4"><span class="header-section-number">10</span> Plugin: <code>faspex</code>: IBM
 Aspera Faspex v4</h1>
-<div class="admonition note">
-<div class="admonition-title">ℹ️  Note</div>
+<div class="admonition warning">
+<div class="admonition-title">⚠️  Warning</div>
 <div class="admonition-body"><div class="title">
 
 </div>
