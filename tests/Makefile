@@ -86,6 +86,7 @@ WIZ_TEST=--test-mode=yes
 CLI_HOME=$(DIR_TMP)$(CLI_NAME)_home/
 # give waring and stop on first warning in this gem code
 RUBY_WARN=ruby -w $(DIR_TST)warning_exit_wrapper.rb
+# CLI with default config file
 CLI_NOCONF=$(RUBY_WARN) $(CLI_PATH) --home=$(CLI_HOME)
 # "CLI_TEST" is used to call the tool in the testing environment
 CLI_TEST=$(CLI_NOCONF) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
@@ -639,7 +640,7 @@ $(F)nd_slash: $(TMP_EXISTS)
 $(F)nd2_http: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
-	$(INCMAN)$(CLI_TEST) node cat @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
+	$(INCMAN)$(CLI_TEST) node cat @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)
 	$(INCMAN)$(CLI_TEST) node delete @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(F)nd_2_nd_xfer: $(TMP_EXISTS)
@@ -647,7 +648,7 @@ $(F)nd_2_nd_xfer: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node upload --to-folder=@preset:server.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:node_user.url@","username":"@preset:node_user.username@","password":"@preset:node_user.password@"}'
 	$(BEG_IGN)$(CLI_TEST) node delete @extend:@preset:server.upload_folder@/10MB.2$(END_IGN)
 	@$(STOP_TEST) $@
-$(F)nd4: $(TMP_EXISTS)
+$(F)nd_service: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(BEG_IGN)$(CLI_TEST) node --preset=node_ak_adm service delete service1$(END_IGN)
 	@echo "waiting a little...";$(TEMPORIZE_CREATE)
@@ -661,7 +662,7 @@ $(F)nd4: $(TMP_EXISTS)
 	@echo "waiting a little...";$(TEMPORIZE_CREATE)
 	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm service list
 	@$(STOP_TEST) $@
-$(F)nd6: $(TMP_EXISTS)
+$(F)nd_xfer_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node transfer list --query=@json:'{"active_only":true}'
 	$(INCMAN)$(CLI_TEST) node transfer list --query=@json:'{"reset":true}' --once-only=yes
@@ -696,7 +697,7 @@ $(F)nd_stream_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node stream list --preset=node_ak_adm
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(F)nd_wizard $(F)nd_nagios $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2 $(F)nd_2_nd_xfer $(F)nd4 $(F)nd6 $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
+$(eval $(call test_suite_all,tnodegen3,$(F)nd_wizard $(F)nd_nagios $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################
@@ -718,6 +719,20 @@ $(F)nd_ak_mkdir: $(TMP_EXISTS)
 	$(BEG_IGN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /tst_nd_ak$(END_IGN)
 	$(TEMPORIZE_CREATE)
 	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mkdir /tst_nd_ak
+	$(TEMPORIZE_CREATE)
+	@$(STOP_TEST) $@
+$(F)nd_ak_mkfile: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(BEG_IGN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /mkfile.txt$(END_IGN)
+	$(TEMPORIZE_CREATE)
+	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mkfile /mkfile.txt "hello world"
+	$(TEMPORIZE_CREATE)
+	@$(STOP_TEST) $@
+$(F)nd_ak_mklink: $(F)nd_ak_mkfile
+	@$(START_TEST) $@
+	$(BEG_IGN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /mklink.txt$(END_IGN)
+	$(TEMPORIZE_CREATE)
+	$(INCMAN)$(CLI_TEST) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}'
 	$(TEMPORIZE_CREATE)
 	@$(STOP_TEST) $@
 $(F)nd_ak_mvdir: $(F)nd_ak_mkdir
@@ -756,7 +771,7 @@ $(F)nd_ak_bearer: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node -N --url=@preset:tst_node_preview.url --password="Bearer $$(cat $(STATE)bearer_666)" --root-id=$$(cat $(STATE)root_id) access_key do self br /
 	$(INCMAN)$(CLI_TEST) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tndak,$(F)nd_ak $(F)nd_ak1 $(F)nd_ak_mkdir $(F)nd_ak_mvdir $(F)nd_ak_deldir $(F)nd_ak3 $(F)nd_ak4 $(F)nd_ak_bearer))
+$(eval $(call test_suite_all,tndak,$(F)nd_ak $(F)nd_ak1 $(F)nd_ak_mkdir $(F)nd_ak_mkfile $(F)nd_ak_mklink $(F)nd_ak_mvdir $(F)nd_ak_deldir $(F)nd_ak3 $(F)nd_ak4 $(F)nd_ak_bearer))
 #######################################################################################################################
 $(F)aocfxgw: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2034,7 +2049,7 @@ $(F)f5_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
 	$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
-	$(CLI_TEST) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
+	$(CLI_TMP_CONF) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
 	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
 	$(CLI_TEST) config detect @preset:faspex5_user.url

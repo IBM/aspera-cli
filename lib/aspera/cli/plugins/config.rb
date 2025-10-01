@@ -473,16 +473,17 @@ module Aspera
           return result
         end
 
-        def defaults_preset
+        def defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
           @config_presets[CONF_PRESET_DEFAULTS] ||= {}
-        end
-
-        def preset?(name)
-          @config_presets.key?(name)
-        end
-
-        def preset_set(name, value)
-          @config_presets[name] = value
+          raise Cli::Error, "A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
+            if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name)
+          raise Cli::Error, "Preset already exists: #{preset_name}  (use --override=yes or provide alternate name on command line)" \
+            if !option_override && @config_presets.key?(preset_name)
+          if option_default
+            formatter.display_status("Setting config preset as default for #{plugin_name}")
+            @config_presets[CONF_PRESET_DEFAULTS][plugin_name.to_s] = preset_name
+          end
+          @config_presets[preset_name] = preset_values
         end
 
         def set_preset_key(preset, param_name, param_value)

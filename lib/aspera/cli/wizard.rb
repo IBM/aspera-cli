@@ -72,6 +72,8 @@ module Aspera
         return found_apps
       end
 
+      # Wizard function, creates configuration
+      # @param apps [Array] list of detected apps
       def find(apps)
         identification = if apps.length.eql?(1)
           Log.log.debug{"Detected: #{identification}"}
@@ -142,20 +144,11 @@ module Aspera
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")
         # init defaults if necessary
-        defaults = config.defaults_preset
         option_override = options.get_option(:override, mandatory: true)
-        raise Cli::Error, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
-          if !option_override && options.get_option(:default, mandatory: true) && defaults.key?(identification[:product])
-        raise Cli::Error, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
-          if !option_override && config.preset?(wiz_preset_name)
-        config.preset_set(wiz_preset_name, wizard_result[:preset_value].stringify_keys)
+        option_default = options.get_option(:default, mandatory: true)
+        config.defaults_set(identification[:product], wiz_preset_name, wizard_result[:preset_value].stringify_keys, option_default, option_override)
         test_args = wizard_result[:test_args]
-        if options.get_option(:default, mandatory: true)
-          formatter.display_status("Setting config preset as default for #{identification[:product]}")
-          defaults[identification[:product].to_s] = wiz_preset_name
-        else
-          test_args = "-P#{wiz_preset_name} #{test_args}"
-        end
+        test_args = "-P#{wiz_preset_name} #{test_args}" unless option_default
         # TODO: actually test the command
         return Main.result_status("You can test with:\n#{Info::CMD_NAME} #{identification[:product]} #{test_args}")
       end
