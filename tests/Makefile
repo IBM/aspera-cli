@@ -66,7 +66,7 @@ optional_gems:
 full: all optional interactive
 
 # just to test nagios, but those are tested in the respective plugins
-only_nagios: $(F)f4_nagios $(F)shares_nagios $(F)cons_nagios $(F)f5_nagios $(F)sadm_nagios_hsts $(F)serv_nagios_transfer $(F)nd_nagios
+only_health: $(F)f4_health $(F)shares_health $(F)cons_health $(F)f5_health $(F)serv_health_xfer_nagios $(F)nd_health
 
 only_sync_local: $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)shares_sync
 
@@ -74,7 +74,7 @@ only_sync: tnsync tnsyncs only_sync_local
 
 only_progress: $(F)serv_upload1 $(F)serv_upload3
 
-.PHONY: interactive use_rmagick use_grpc use_mimemagic use_sym_encryption optional optional_gems full only_nagios only_sync only_progress
+.PHONY: interactive use_rmagick use_grpc use_mimemagic use_sym_encryption optional optional_gems full only_health only_sync only_progress
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
@@ -188,7 +188,7 @@ $(F)unit: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tunit,$(F)unit))
 #######################################################################################################################
-$(F)shares_nagios: $(TMP_EXISTS)
+$(F)shares_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) shares health
 	$(CLI_TEST) shares health --url=https://wrong.example.com
@@ -304,7 +304,7 @@ $(F)shares_sync: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst @json:'{"reset":true}'
 	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tshares,$(F)shares_nagios $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
+$(eval $(call test_suite_all,tshares,$(F)shares_health $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
 #######################################################################################################################
 $(F)serv_browse: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -419,7 +419,7 @@ $(F)serv_df: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server df
 	@$(STOP_TEST) $@
-$(F)serv_nagios_transfer: $(TMP_EXISTS)
+$(F)serv_health_xfer_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server health transfer --to-folder=@preset:server.upload_folder --format=nagios 
 	$(BEG_ERR)$(CLI_TEST) server health transfer --to-folder=/wrong --format=nagios$(END_ERR_HIDE)
@@ -449,13 +449,13 @@ $(F)serv_pr2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tserver,$(F)serv_error $(F)serv_browse $(F)serv_mkdir $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)serv_upload5 $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)serv_upload_ex $(F)serv_md5 $(F)serv_down_lcl $(F)serv_down_from_node $(F)serv_down_from_node_fail $(F)serv_cp $(F)serv_mv $(F)serv_delete $(F)serv_cleanup1 $(F)serv_info $(F)serv_du $(F)serv_df $(F)asession $(F)serv_nagios_transfer $(F)serv_key))
+$(eval $(call test_suite_all,tserver,$(F)serv_error $(F)serv_browse $(F)serv_mkdir $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)serv_upload5 $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)serv_upload_ex $(F)serv_md5 $(F)serv_down_lcl $(F)serv_down_from_node $(F)serv_down_from_node_fail $(F)serv_cp $(F)serv_mv $(F)serv_delete $(F)serv_cleanup1 $(F)serv_info $(F)serv_du $(F)serv_df $(F)asession $(F)serv_health_xfer_nagios $(F)serv_key))
 #######################################################################################################################
-$(F)f4_nagios: $(TMP_EXISTS)
+$(F)f4_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex health
 	@$(STOP_TEST) $@
-$(F)f4_nagios_fail: $(TMP_EXISTS)
+$(F)f4_health_bad: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) faspex health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
@@ -538,10 +538,10 @@ $(F)f4_db1: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query.max=1 --output=$(STATE)f4_db_id2
 	$(INCMAN)$(CLI_TEST) faspex package receive $$(cat $(STATE)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
-NOT_TESTED=$(F)f4_nagios $(F)f4_nagios_fail $(F)f4_detect $(F)f4_wizard $(F)f4_pack_list $(F)f4_pack_send $(F)f4_prs $(F)f4_pri $(F)f4_pslu $(F)f4_psld $(F)f4_remote_src $(F)f4_prall $(F)f4_misc $(F)f4_v4 $(F)f4_db1 $(F)f4_prl
+NOT_TESTED=$(F)f4_health $(F)f4_health_bad $(F)f4_detect $(F)f4_wizard $(F)f4_pack_list $(F)f4_pack_send $(F)f4_prs $(F)f4_pri $(F)f4_pslu $(F)f4_psld $(F)f4_remote_src $(F)f4_prall $(F)f4_misc $(F)f4_v4 $(F)f4_db1 $(F)f4_prl
 $(eval $(call test_suite_all,tfaspex4,$(NOT_TESTED)))
 #######################################################################################################################
-$(F)cons_nagios: $(TMP_EXISTS)
+$(F)cons_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) console health
 	$(CLI_TEST) console health --url=https://wrong.example.com
@@ -577,9 +577,9 @@ $(F)cons_sma_sta: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(BEG_FAI)$(CLI_TEST) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(END_FAI_SHOW)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconsole,$(F)cons_nagios $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_cur_show_one $(F)cons_sma_lst $(F)cons_sma_sta))
+$(eval $(call test_suite_all,tconsole,$(F)cons_health $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_cur_show_one $(F)cons_sma_lst $(F)cons_sma_sta))
 #######################################################################################################################
-$(F)nd_nagios: $(TMP_EXISTS)
+$(F)nd_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node health
 	$(CLI_TEST) node health --url=https://wrong.example.com
@@ -699,7 +699,7 @@ $(F)nd_stream_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node stream list --preset=node_ak_adm
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(F)nd_wizard $(F)nd_nagios $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
+$(eval $(call test_suite_all,tnodegen3,$(F)nd_wizard $(F)nd_health $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################
@@ -1871,16 +1871,23 @@ $(F)tcos_download: $(F)tcos_upload
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tcos,$(F)tcos_info1 $(F)tcos_info2 $(F)tcos_info3 $(F)tcos_show $(F)tcos_upload $(F)tcos_download))
 #######################################################################################################################
-$(F)f5_nagios: $(TMP_EXISTS)
+$(F)f5_version: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) faspex5 health
 	$(INCMAN)$(CLI_TEST) faspex5 version
 	@$(STOP_TEST) $@
-$(F)f5_nag_err: $(TMP_EXISTS)
+$(F)f5_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(BEG_ERR)$(CLI_TEST) faspex5 health --url=https://wrong.example --format=nagios$(END_ERR_HIDE)
+	$(INCMAN)$(CLI_TEST) faspex5 health -N --url=@preset:faspex5_user.url
 	@$(STOP_TEST) $@
-$(F)f5_p0: $(TMP_EXISTS)
+$(F)f5_health_nagios: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(BEG_ERR)$(CLI_TEST) faspex5 health -N --url=https://www.ibm.com --format=nagios$(END_ERR_SHOW)
+	@$(STOP_TEST) $@
+$(F)f5_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) faspex5 health --url=https://www.ibm.com
+	@$(STOP_TEST) $@
+$(F)f5_pack_rcv_init: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 packages receive INIT --once-only=yes
 	@$(STOP_TEST) $@
@@ -2045,10 +2052,6 @@ $(F)f5_invite: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) faspex5 invitation list
 	$(CLI_TEST) faspex5 invitation list --fields=id --display=data --format=csv | $(CLI_TEST) faspex5 invitation delete --bulk=yes @lines:@stdin:
 	@$(STOP_TEST) $@
-$(F)f5_error: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(CLI_TEST) faspex5 health --url=wrong
-	@$(STOP_TEST) $@
 $(F)f5_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) --preset=f5_web faspex5 version
@@ -2112,7 +2115,7 @@ $(F)f5_cert_test: $(TMP_EXISTS)
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(F)f5_nagios $(F)f5_nag_err $(F)f5_p0 $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_error $(F)f5_wizard $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
+$(eval $(call test_suite_all,tf5,$(F)f5_version $(F)f5_health $(F)f5_health_nagios $(F)f5_pack_rcv_init $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_health_bad $(F)f5_wizard $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
 #######################################################################################################################
 $(F)httpgw_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
