@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.25.0.pre
+* 4.24.1
 
   * Issues Fixed:
     * `wizard`: Fixed wizard.
