@@ -246,16 +246,21 @@ If you don't have internet for the installation, refer to section [Installation 
 
 ### Single file executable
 
+> [!CAUTION]
+> This is still experimental.
+
 It is planned to provide `ascli` as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
+Installation of `ascp` is still required separately.
+Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+
+#### Linux: GLIBC version
+
 > [!CAUTION]
-> This is a Beta feature.
-> On Linux, the executable requires a minimum GLIBC version.
-> Installation of `ascp` is still required separately.
-> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
->
-> On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+> On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
+
+On Linux, check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
 ```shell
 ldd --version | head -n1
@@ -7269,7 +7274,7 @@ admin smtp test my_email_external
 admin workgroups list
 bearer_token
 gateway --pid-file=pid_f5_fxgw @json:'{"url":"https://localhost:12346/aspera/faspex"}' &
-health
+health --url=https://faspex5.example.com/path
 invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
 packages browse f5_pack_id --query=@json:'{"recursive":true}'

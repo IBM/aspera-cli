@@ -12,38 +12,40 @@
 # dwarfs requires boost >= 1.65
 # boost requires cmake >= 3.30
 # https://hub.docker.com/search?q=tebako
-# https://github.com/tamatebako/tebako-ci-containers
 set -ex
 
 if test $# -lt 3; then
     echo "Usage: $0 <CLI_EXECUTABLE> <CLI_NAME> <GEM_SPEC...>" 1>&2
-    echo "Env: TMPDIR" 1>&2
     exit 1
 fi
 
 CLI_EXECUTABLE=$1
 CLI_NAME=$2
-shift 2
-DIR_TMP=$TMPDIR
+CLI_GEM=$3
+shift 3
+tmp=$(dirname $0)/../tmp/tebako
+mkdir -p $tmp
+export TMPDIR=$(realpath $tmp)
 
 echo "Building: $(basename $CLI_EXECUTABLE)"
 
+# https://github.com/tamatebako/tebako-ci-containers
+tebako_container=ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4
+
 # tebako compilation
-tebako_env=$DIR_TMP/tebako-env
+tebako_env=$TMPDIR/env
 # project files (gem)
-tebako_root=$DIR_TMP/tebako-root
+tebako_root=$TMPDIR/root
 # only provide the name, not path
 tebako_entry=$CLI_NAME
 tebako_output=$CLI_EXECUTABLE
-
 mkdir -p $tebako_env $tebako_root
-#(cd $tebako_root && gem fetch $GEM_NAME:$GEM_VERSION && ls -1)
 # Pull gem and dependencies
-tmp_dir_install=$DIR_TMP/tebako-install
+tmp_dir_install=$TMPDIR/install
 # only main gem and its dependencies
-gem install "$1" --no-document --install-dir $tmp_dir_install
+gem install $CLI_GEM --no-document --install-dir $tmp_dir_install
 # including optional gems
-#for spec in "$@"; do gem install "$spec" --no-document --install-dir $tmp_dir_install; done
+for spec in "$@"; do gem install "$spec" --no-document --install-dir $tmp_dir_install; done
 mv $tmp_dir_install/cache/*.gem $tebako_root
 rm -fr $tmp_dir_install
 case $(uname -s) in
@@ -52,7 +54,12 @@ Darwin)
     # install tools
     brew install bash binutils bison flex gnu-sed lz4 pkg-config xz
     # install libs
-    brew install boost double-conversion fmt gdbm glog jemalloc libevent libffi libsodium libyaml ncurses openssl@3 zlib
+    brew install double-conversion fmt gdbm glog jemalloc libevent libffi libsodium libyaml ncurses openssl@3 zlib
+    brew install boost@1.85
+    brew link --force boost@1.85
+    test -e /opt/homebrew/opt/boost || sudo ln -s boost@1.85 /opt/homebrew/opt/boost
+    #export BOOST_ROOT="$(brew --prefix boost@1.85)"
+    #export CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DCMAKE_PREFIX_PATH=$BOOST_ROOT"
     # make sure tools are reachable
     brew_root=$(brew --prefix)
     export PATH=$brew_root/opt/flex/bin:$brew_root/opt/bison/bin:$PATH
@@ -61,13 +68,11 @@ Darwin)
     gem install tebako
     ;;
 Linux)
-    #tebako_container_tag=alpine-3.17
-    tebako_container_tag=ubuntu-20.04
-    tebako_container_version=0.13.4
     local_root=$tebako_root
     tebako_root=/mnt/w
-    tebako_prefix="podman run --rm -v $local_root:$tebako_root ghcr.io/tamatebako/tebako-$tebako_container_tag:$tebako_container_version"
+    tebako_prefix="podman run --rm -v $local_root:$tebako_root $tebako_container"
     tebako_opts=--patchelf
+    tebako_output_orig=$tebako_output
     tebako_output=$tebako_root/$(basename $CLI_EXECUTABLE)
     ;;
 LinuxLocal)
@@ -83,5 +88,8 @@ LinuxLocal)
     exit 1
     ;;
 esac
-set -x
-exec $tebako_prefix tebako press --root=$tebako_root --entry-point=$tebako_entry --output=$tebako_output --prefix=$tebako_env $tebako_opts
+$tebako_prefix tebako press --root=$tebako_root --entry-point=$tebako_entry --output=$tebako_output --prefix=$tebako_env $tebako_opts
+if test -n "$tebako_output_orig";then
+    mv $tebako_output $tebako_output_orig
+    tebako_output=$tebako_output_orig
+fi
