@@ -239,16 +239,21 @@ If you don't have internet for the installation, refer to section [Installation 
 
 ### Single file executable
 
+> [!CAUTION]
+> This is a Beta feature.
+
 It is planned to provide <%=tool%> as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
+Installation of `ascp` is still required separately.
+Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+
+#### Linux: GLIBC version
+
 > [!CAUTION]
-> This is a Beta feature.
-> On Linux, the executable requires a minimum GLIBC version.
-> Installation of `ascp` is still required separately.
-> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
->
-> On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+> On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
+
+On Linux, check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
 ```shell
 ldd --version | head -n1

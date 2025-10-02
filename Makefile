@@ -90,12 +90,10 @@ grpc:
 
 ##################################
 # Gem publish
-version:
-	@echo $(GEM_VERSION)
-release: all
-	gem push $(PATH_GEMFILE)
 # in case of big problem on released gem version, it can be deleted from rubygems
 # gem yank -v $(GEM_VERSION) $(GEM_NAME) 
+release: all
+	gem push $(PATH_GEMFILE)
 
 ##################################
 # tools

@@ -1,38 +1,60 @@
 # Container image build
 
-The template: `Dockerfile.tmpl.erb` allows building the container image either using a local gem file or from <rubygems.org>.
-
-## Default image build
-
-Build the image:
-
-```bash
-make
-```
-
-This does the following:
-
-- Install the gem version from local gem file or <rubygems.org>.
-- Build the image for the local version number in the current repository or the remote one
-- creates tags for both the version and `latest`
+The `Dockerfile.tmpl.erb` template enables building the container image using either a local `.gem` file or by fetching the gem from <rubygems.org>.
 
 > [!NOTE]
-> This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template.
-> A template is used as it allows some level of customization to tell where to take the gem from.
+> An `ERB` (embedded Ruby) template is used as it allows some level of customization to tell where to take the gem from.
 
-Then, to push to the image registry (both tags: version and `latest`):
+The repository can be displayed with:
 
-```bash
-make push
+```shell
+make repo
 ```
 
-## Specific version image build
+## Image build
 
-To build a specific version: override `make` macro `GEM_VERSION`:
+To build the image for a released version:
 
-```bash
-make GEM_VERSION=4.11.0
-make push GEM_VERSION=4.11.0
+- Check that version out using the version tag:
+
+  ```shell
+  git checkout v4.23.0
+  ```
+
+- Check the version:
+
+  ```shell
+  make version
+  ```
+
+- Build the container image:
+
+  ```shell
+  make
+  ```
+
+  This command performs the following steps:
+
+  - Uses the version specified in the current repository.
+  - Builds the container image using this version of the gem retrieved from <rubygems.org>. This creates the `Dockerfile` from the template.
+  - Tags the image with both the specific version and `latest`.
+
+- Push to the image registry (both tags: version and `latest`):
+
+  ```shell
+  make push
+  ```
+
+## Image build using current branch
+
+To build a specific version outside that version branch:
+Override `make` macro `GEM_VERSION`:
+
+```shell
+v=4.23.0
+cd container
+make GEM_VERSION=$v
+make push GEM_VERSION=$v
 ```
 
 > [!NOTE]
@@ -41,13 +63,16 @@ make push GEM_VERSION=4.11.0
 > The gem is installed from <rubygems.org>.
 > This also sets the `latest` tag.
 
-## Development version image build
+## Image build for development version
 
 To build/push a beta/development container:
-it does not create the `latest` tag, it uses the gem file generated locally with a special version number.
 
-```bash
+```shell
+cd container
 make beta_build
 make beta_test
 make beta_push
 ```
+
+> [!NOTE]
+> It does not create the `latest` tag, it uses the gem file generated locally with a special version number.

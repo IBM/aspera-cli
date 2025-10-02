@@ -41,3 +41,7 @@ gem_check_signing_key:
 	@if test -z '$(SIGNING_KEY)';then echo 'Error: Missing env var SIGNING_KEY' 1>&2;exit 1;fi
 	@if test ! -e '$(SIGNING_KEY)';then echo 'Error: No such file: $(SIGNING_KEY)' 1>&2;exit 1;fi
 clean:: clean_gems_installed
+version:
+	@echo $(GEM_VERSION)
+repo:
+	@echo $(DCK_REPO)
