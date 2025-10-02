@@ -739,19 +739,21 @@ module Aspera
 
         def execute_action
           command = options.get_next_command(ACTIONS)
-          set_api unless command.eql?(:postprocessing)
+          set_api unless %i{postprocessing health}.include?(command)
           case command
           when :version
             return Main.result_single_object(@api_v5.read('version'))
           when :health
             nagios = Nagios.new
             begin
-              result = Rest.new(base_url: @faspex5_api_base_url).read('health')
-              result.each do |k, v|
+              http_res = Rest.new(base_url: options.get_option(:url, mandatory: true))
+                .call(operation: 'GET', subpath: 'health', headers: {'Accept' => Rest::MIME_JSON})
+              http_res[:data].each do |k, v|
                 nagios.add_ok(k, v.to_s)
               end
+              nagios.add_ok('version', http_res[:http]['X-IBM-Aspera']) if http_res[:http]['X-IBM-Aspera']
             rescue StandardError => e
-              nagios.add_critical('faspex api', e.to_s)
+              nagios.add_critical('core', e.to_s)
             end
             return nagios.result
           when :user
