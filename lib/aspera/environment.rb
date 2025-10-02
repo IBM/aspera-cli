@@ -314,9 +314,8 @@ module Aspera
       # Windows does not allow file name:
       # - with control characters anywhere
       # - ending with space or dot
-      filename = filename
-        .gsub(/[\x00-\x1F\x7F]/, safe_char)
-        .sub(/[. ]+\z/, safe_char)
+      filename = filename.gsub(/[\x00-\x1F\x7F]/, safe_char)
+      filename = filename.chop while filename.end_with?(' ', '.')
       if @file_illegal_characters&.size.to_i >= 2
         # replace all illegal characters with safe_char
         filename = filename.tr(@file_illegal_characters[1..-1], safe_char)
