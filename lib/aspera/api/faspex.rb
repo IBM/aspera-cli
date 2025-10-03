@@ -1,8 +1,58 @@
 # frozen_string_literal: true
 
 require 'aspera/rest'
+require 'aspera/oauth/base'
+require 'digest'
 
 module Aspera
+  # Implement OAuth eschange for Faspex public link
+  class FaspexPubLink < OAuth::Base
+    class << self
+      attr_accessor :additionnal_info
+    end
+    # @param context         The `context` query parameter in public link
+    # @param redirect_uri    URI of web UI login
+    # @param path_authorize  Path to provide passcode
+    def initialize(
+      context:,
+      redirect_uri:,
+      path_authorize: 'authorize_public_link',
+      **base_params
+    )
+      # a unique identifier could also be the passcode inside
+      super(**base_params, cache_ids: [Digest::SHA256.hexdigest(context)[0..23]])
+      @context = context
+      @redirect_uri = redirect_uri
+      @path_authorize = path_authorize
+    end
+
+    def create_token
+      # Exchange context (passcode) for code
+      resp = api.call(
+        operation: 'GET',
+        subpath:   @path_authorize,
+        query: {
+          response_type: :code,
+          state:         @context,
+          client_id:     client_id,
+          redirect_uri:  @redirect_uri
+        },
+        exception: false
+      )
+      # code / state located in redirected URL query
+      info = Rest.query_to_h(URI.parse(resp[:http]['Location']).query)
+      Log.dump(:info, info)
+      raise Error, info['action_message'] if info['action_message']
+      Aspera.assert(info['code']){'Missing code in answer'}
+      # Exchange code for token
+      return create_token_call(optional_scope_client_id.merge(
+        grant_type:   'authorization_code',
+        code:         info['code'],
+        redirect_uri: @redirect_uri
+      ))
+    end
+  end
+  OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
     class Faspex < Aspera::Rest
       PATH_API_V5 = 'api/v5'
@@ -78,29 +128,38 @@ module Aspera
         private_key: nil,
         passphrase: nil
       )
-        # Remove unnecessary trailing slashes
-        url = url.chomp('/')
         auth = :public_link if self.class.public_link?(url)
         @pub_link_context = nil
         super(**
           case auth
           when :public_link
-            # resolve any redirect
-            resp = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET')
-            redir_url = resp[:http].uri.to_s
+            # Get URL of final redirect of public link
+            redir_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
+            Log.dump(:redir_url, redir_url, level: :trace1)
+            # get context from query
             encoded_context = Rest.query_to_h(URI.parse(redir_url).query)['context']
             raise ArgumentError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
-            # public link information (allowed usage)
+            # public link information (contains passcode and allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.dump(:pub_link_context, @pub_link_context, level: :trace1)
-            # ok, we have the additional parameters, get the base url
+            # Get the base url, i.e. .../aspera/faspex
             base_url = redir_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
-            val = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET')[:data].sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"'))
-            Log.dump(:datapage, val)
+            # Get web UI client_id and redirect_uri
+            # TODO: change this for something more reliable
+            config = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET')[:data].sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
+            Log.dump(:configjs, config)
             {
               base_url: "#{base_url}/#{PATH_API_V5}",
-              headers:  {'Passcode' => @pub_link_context['passcode']}
+              auth:     {
+                type:         :oauth2,
+                base_url:     "#{base_url}/#{PATH_AUTH}",
+                grant_method: :faspex_pub_link,
+                context:      encoded_context,
+                client_id:    config[:client_id],
+                redirect_uri: config[:redirect_uri]
+              }
             }
+          # old: headers:  {'Passcode' => @pub_link_context['passcode']}
           when :boot
             Aspera.assert(password, type: ArgumentError){'Missing password'}
             # the password here is the token copied directly from browser in developer mode
@@ -129,8 +188,8 @@ module Aspera
               base_url: "#{url}/#{PATH_API_V5}",
               auth:     {
                 type:            :oauth2,
-                grant_method:    :jwt,
                 base_url:        "#{url}/#{PATH_AUTH}",
+                grant_method:    :jwt,
                 client_id:       client_id,
                 payload:         {
                   iss: client_id, # issuer

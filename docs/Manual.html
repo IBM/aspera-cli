@@ -982,7 +982,7 @@ internet access</a>.</p>
 <div class="admonition-body"><div class="title">
 
 </div>
-<p>This is still experimental.</p></div>
+<p>This is a Beta feature.</p></div>
 </div>
 <p>It is planned to provide <code>ascli</code> as a single
 platform-dependent executable. <a href="https://ibm.biz/aspera-cli-exe">Beta releases can be found
@@ -9330,9 +9330,10 @@ commands:</p></div>
 <span id="cb502-67"><a href="#cb502-67" aria-hidden="true" tabindex="-1"></a><span class="ex">shared_folders</span> browse %name:my_shared_folder_name</span>
 <span id="cb502-68"><a href="#cb502-68" aria-hidden="true" tabindex="-1"></a><span class="ex">shared_folders</span> list</span>
 <span id="cb502-69"><a href="#cb502-69" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> account</span>
-<span id="cb502-70"><a href="#cb502-70" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
-<span id="cb502-71"><a href="#cb502-71" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
-<span id="cb502-72"><a href="#cb502-72" aria-hidden="true" tabindex="-1"></a><span class="ex">version</span></span></code></pre></div>
+<span id="cb502-70"><a href="#cb502-70" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> account <span class="at">--query.expand</span><span class="op">=</span>true</span>
+<span id="cb502-71"><a href="#cb502-71" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
+<span id="cb502-72"><a href="#cb502-72" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
+<span id="cb502-73"><a href="#cb502-73" aria-hidden="true" tabindex="-1"></a><span class="ex">version</span></span></code></pre></div>
 <p>Most commands correspond directly to REST API calls. Parameters to
 commands are carried through option <code>query</code>, as extended
 value, for <code>list</code>, or through <strong>Command

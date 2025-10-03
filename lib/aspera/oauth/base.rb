@@ -56,16 +56,20 @@ module Aspera
         @token_cache_id = Factory.cache_id(@api.base_url, self.class, @base_cache_ids, @scope)
       end
 
-      attr_reader :scope, :api, :path_token
+      attr_reader :scope, :api, :path_token, :client_id
 
       # helper method to create token as per RFC
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
-        payload = {content_type: Rest::MIME_WWW}
-        if @use_query
-          payload[:query] = creation_params
+        payload = if @use_query
+          {
+            query: creation_params
+          }
         else
-          payload[:body] = creation_params
+          {
+            content_type: Rest::MIME_WWW,
+            body:         creation_params
+          }
         end
         return @api.call(
           operation: 'POST',

@@ -247,7 +247,7 @@ If you don't have internet for the installation, refer to section [Installation 
 ### Single file executable
 
 > [!CAUTION]
-> This is still experimental.
+> This is a Beta feature.
 
 It is planned to provide `ascli` as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
@@ -7305,6 +7305,7 @@ shared list
 shared_folders browse %name:my_shared_folder_name
 shared_folders list
 user account
+user account --query.expand=true
 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 user profile show
 version

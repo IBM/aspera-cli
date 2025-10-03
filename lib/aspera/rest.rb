@@ -121,14 +121,22 @@ module Aspera
       end
 
       # Decode query string as Hash
-      # Does not support arrays in query string, no standard, e.g. PHP's way is p[]=1&p[]=2
+      # Support arrays in query string, e.g. PHP's way is p[]=1&p[]=2
       # @param query [String] query string as in URI.query
       # @return [Hash] decoded query
       def query_to_h(query)
         URI.decode_www_form(query).each_with_object({}) do |pair, h|
           key = pair.first
-          raise "Array not supported in query string: #{key}" if key.include?('[]') || h.key?(key)
-          h[key] = pair.last
+          if key.end_with?('[]')
+            key = key[..-3]
+            h[key] = [] unless h.key?(key)
+          end
+          if h.key?(key)
+            h[key] = [h[key]] if !h[key].is_a?(Array)
+            h[key].push(pair.last)
+          else
+            h[key] = pair.last
+          end
         end
       end
 
@@ -280,7 +288,7 @@ module Aspera
     # @param body [Hash, String] body parameters
     # @param headers [Hash] additional headers (override Content-Type)
     # @param save_to_file (filepath)
-    # @param return_error (bool)
+    # @param exception (bool) true, error raise exception
     def call(
       operation:,
       subpath: nil,
@@ -289,7 +297,7 @@ module Aspera
       body: nil,
       headers: nil,
       save_to_file: nil,
-      return_error: false
+      exception: true
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
@@ -464,12 +472,12 @@ module Aspera
             body: body,
             content_type: content_type,
             save_to_file: save_to_file,
-            return_error: return_error,
+            exception: exception,
             headers: headers
           )
         end
         # raise exception if could not retry and not return error in result
-        raise e unless return_error
+        raise e if exception
       end
       Log.log.debug{"result=http:#{result[:http]}, data:#{result[:data].class}"}
       return result

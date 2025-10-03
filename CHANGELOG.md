@@ -1,7 +1,9 @@
 # Changes (Release notes)
 
 * 4.25.0.pre
-  * 
+
+  * Issues Fixed:
+    * `faspex5`: Fix public link auth for Faspex 5.0.13.
 
 * 4.24.1
 
