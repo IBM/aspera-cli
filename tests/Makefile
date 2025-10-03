@@ -2043,6 +2043,7 @@ $(F)f5_smtp: $(TMP_EXISTS)
 $(F)f5_user: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 user account
+	$(INCMAN)$(CLI_TEST) faspex5 user account --query.expand=true
 	$(INCMAN)$(CLI_TEST) faspex5 user profile show
 	$(INCMAN)$(CLI_TEST) faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 	@$(STOP_TEST) $@

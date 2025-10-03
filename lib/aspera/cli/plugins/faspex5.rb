@@ -102,7 +102,6 @@ module Aspera
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
-          @pub_link_context = nil
         end
 
         def set_api
@@ -343,7 +342,7 @@ module Aspera
           command = options.get_next_command(%i[show browse status delete receive send list])
           package_id =
             if %i[receive show browse status delete].include?(command)
-              @pub_link_context&.key?('package_id') ? @pub_link_context['package_id'] : instance_identifier
+              @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : instance_identifier
             end
           case command
           when :show
@@ -378,10 +377,10 @@ module Aspera
           when :send
             parameters = value_create_modify(command: command)
             # autofill recipient for public url
-            if @pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
+            if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
               parameters['recipients'] = [{
-                name:           @pub_link_context['name'],
-                recipient_type: @pub_link_context['recipient_type']
+                name:           @api_v5.pub_link_context['name'],
+                recipient_type: @api_v5.pub_link_context['recipient_type']
               }]
             end
             normalize_recipients(parameters)
@@ -656,7 +655,7 @@ module Aspera
           when :user
             case options.get_next_command(%i[account profile])
             when :account
-              return Main.result_single_object(@api_v5.read('account'))
+              return Main.result_single_object(@api_v5.read('account', query_read_delete))
             when :profile
               case options.get_next_command(%i[show modify])
               when :show

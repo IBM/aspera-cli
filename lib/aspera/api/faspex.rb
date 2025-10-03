@@ -65,6 +65,8 @@ module Aspera
           url.include?('?context=')
         end
       end
+      attr_reader :pub_link_context
+
       def initialize(
         url:,
         auth:,
@@ -79,20 +81,24 @@ module Aspera
         # Remove unnecessary trailing slashes
         url = url.chomp('/')
         auth = :public_link if self.class.public_link?(url)
+        @pub_link_context = nil
         super(**
           case auth
           when :public_link
             # resolve any redirect
-            url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
-            encoded_context = Rest.query_to_h(URI.parse(url).query)['context']
+            resp = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET')
+            redir_url = resp[:http].uri.to_s
+            encoded_context = Rest.query_to_h(URI.parse(redir_url).query)['context']
             raise ArgumentError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
-            Log.dump(:@pub_link_context, @pub_link_context, level: :trace1)
+            Log.dump(:pub_link_context, @pub_link_context, level: :trace1)
             # ok, we have the additional parameters, get the base url
-            url = url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
+            base_url = redir_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
+            val = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET')[:data].sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"'))
+            Log.dump(:datapage, val)
             {
-              base_url: "#{url}/#{PATH_API_V5}",
+              base_url: "#{base_url}/#{PATH_API_V5}",
               headers:  {'Passcode' => @pub_link_context['passcode']}
             }
           when :boot
