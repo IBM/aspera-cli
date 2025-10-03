@@ -5,6 +5,9 @@ module Aspera
   class Error < StandardError
   end
 
+  class ArgumentError < Error
+  end
+
   # Error that shall not happen, else it's a bug
   class InternalError < Error
   end

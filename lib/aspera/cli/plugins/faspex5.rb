@@ -5,6 +5,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
+require 'aspera/api/faspex'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/nagios'
@@ -16,59 +17,9 @@ module Aspera
   module Cli
     module Plugins
       class Faspex5 < Cli::BasicAuthPlugin
-        RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
-        PACKAGE_TERMINATED = %w[completed failed].freeze
-        # list of supported mailbox types (to list packages)
-        API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
-        PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
-        # Faspex API v5: get transfer spec for connect
-        TRANSFER_CONNECT = 'connect'
-        ADMIN_RESOURCES = %i[
-          accounts distribution_lists contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
-          metadata_profiles email_notifications alternate_addresses webhooks
-        ].freeze
-        # states for jobs not in final state
-        JOB_RUNNING = %w[queued working].freeze
-        PATH_STANDARD_ROOT = '/aspera/faspex'
-        PATH_API_V5 = 'api/v5'
-        # endpoint for authentication API
-        PATH_AUTH = 'auth'
-        PATH_HEALTH = 'configuration/ping'
-        PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
-        # OAuth methods supported
-        STD_AUTH_TYPES = %i[web jwt boot].freeze
-        HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
-        HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
-        EMAIL_NOTIF_LIST = %w[
-          welcome_email
-          forgot_password
-          package_received
-          package_received_cc
-          package_sent_cc
-          package_downloaded
-          package_downloaded_cc
-          workgroup_package
-          upload_result
-          upload_result_cc
-          relay_started_cc
-          relay_finished_cc
-          relay_error_cc
-          shared_inbox_invitation
-          shared_inbox_submit
-          personal_invitation
-          personal_submit
-          account_approved
-          account_denied
-          package_file_processing_failed_sender
-          package_file_processing_failed_recipient
-          relay_failed_admin
-          relay_failed
-          admin_sync_failed
-          sync_failed
-          account_exist
-          mfa_code
-        ]
-        private_constant :JOB_RUNNING, :RECIPIENT_TYPES, :PACKAGE_TERMINATED, :PATH_HEALTH, :API_LIST_MAILBOX_TYPES, :PACKAGE_SEND_FROM_REMOTE_SOURCE, :STD_AUTH_TYPES, :HEADER_ITERATION_TOKEN, :HEADER_FASPEX_VERSION, :EMAIL_NOTIF_LIST
+        # options and parameters for Api::Faspex.new
+        OPTIONS_NEW = %i[url auth client_id client_secret redirect_uri private_key passphrase username password].freeze
+        private_constant :OPTIONS_NEW
         class << self
           def application_name
             'Faspex'
@@ -78,19 +29,19 @@ module Aspera
             # add scheme if missing
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
-            urls.push("#{address_or_url}#{PATH_STANDARD_ROOT}") unless address_or_url.end_with?(PATH_STANDARD_ROOT)
+            urls.push("#{address_or_url}#{Api::Faspex::PATH_STANDARD_ROOT}") unless address_or_url.end_with?(Api::Faspex::PATH_STANDARD_ROOT)
             error = nil
             urls.each do |base_url|
               # Faspex is always HTTPS
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
-              response = api.call(operation: 'GET', subpath: PATH_API_DETECT)[:http]
+              response = api.call(operation: 'GET', subpath: Api::Faspex::PATH_API_DETECT)[:http]
               next unless response.code.start_with?('2') && response.body.strip.empty?
               # end is at -1, and subtract 1 for "/"
-              url_length = -2 - PATH_API_DETECT.length
+              url_length = -2 - Api::Faspex::PATH_API_DETECT.length
               # take redirect if any
               return {
-                version: response[HEADER_FASPEX_VERSION] || '5',
+                version: response[Api::Faspex::HEADER_FASPEX_VERSION] || '5',
                 url:     response.uri.to_s[0..url_length]
               }
             rescue StandardError => e
@@ -137,11 +88,6 @@ module Aspera
               test_args:    'user profile show'
             }
           end
-
-          # @return true if the URL is a public link
-          def public_link?(url)
-            url.include?('?context=')
-          end
         end
 
         def initialize(**_)
@@ -149,10 +95,10 @@ module Aspera
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
+          options.declare(:auth, 'OAuth type of authentication', values: Api::Faspex::STD_AUTH_TYPES, default: :jwt)
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
-          options.declare(:box, "Package inbox, either shared inbox name or one of: #{API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
@@ -160,62 +106,13 @@ module Aspera
         end
 
         def set_api
-          # get endpoint, remove unnecessary trailing slashes
-          @faspex5_api_base_url = options.get_option(:url, mandatory: true).gsub(%r{/+$}, '')
-          auth_type = self.class.public_link?(@faspex5_api_base_url) ? :public_link : options.get_option(:auth, mandatory: true)
-          case auth_type
-          when :public_link
-            # resolve any redirect
-            @faspex5_api_base_url = Rest.new(base_url: @faspex5_api_base_url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
-            encoded_context = Rest.query_to_h(URI.parse(@faspex5_api_base_url).query)['context']
-            raise BadArgument, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
-            # public link information (allowed usage)
-            @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
-            Log.dump(:@pub_link_context, @pub_link_context, level: :trace1)
-            # ok, we have the additional parameters, get the base url
-            @faspex5_api_base_url = @faspex5_api_base_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
-            @api_v5 = Rest.new(
-              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
-              headers:  {'Passcode' => @pub_link_context['passcode']}
-            )
-          when :boot
-            # the password here is the token copied directly from browser in developer mode
-            @api_v5 = Rest.new(
-              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
-              headers:  {'Authorization' => options.get_option(:password, mandatory: true)}
-            )
-          when :web
-            # opens a browser and ask user to auth using web
-            @api_v5 = Rest.new(
-              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
-              auth:     {
-                type:         :oauth2,
-                base_url:     "#{@faspex5_api_base_url}/#{PATH_AUTH}",
-                grant_method: :web,
-                client_id:    options.get_option(:client_id, mandatory: true),
-                redirect_uri: options.get_option(:redirect_uri, mandatory: true)
-              }
-            )
-          when :jwt
-            app_client_id = options.get_option(:client_id, mandatory: true)
-            @api_v5 = Rest.new(
-              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
-              auth:     {
-                type:            :oauth2,
-                grant_method:    :jwt,
-                base_url:        "#{@faspex5_api_base_url}/#{PATH_AUTH}",
-                client_id:       app_client_id,
-                payload:         {
-                  iss: app_client_id, # issuer
-                  aud: app_client_id, # audience (this field is not clear...)
-                  sub: "user:#{options.get_option(:username, mandatory: true)}" # subject is a user
-                },
-                private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
-                headers:         {typ: 'JWT'}
-              }
-            )
-          else Aspera.error_unexpected_value(auth_type)
+          create_values = OPTIONS_NEW.each_with_object({}) do |i, m|
+            v = options.get_option(i)
+            m[i] = v unless v.nil?
           end
+          # create an API object with the same options, but with a different subpath
+          @api_v5 = Api::Faspex.new(**create_values)
+
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
         end
@@ -224,7 +121,7 @@ module Aspera
         def normalize_recipients(parameters)
           return unless parameters.key?('recipients')
           Aspera.assert_type(parameters['recipients'], Array){'recipients'}
-          recipient_types = RECIPIENT_TYPES
+          recipient_types = Api::Faspex::RECIPIENT_TYPES
           if parameters.key?('recipient_types')
             recipient_types = parameters['recipient_types']
             parameters.delete('recipient_types')
@@ -245,7 +142,7 @@ module Aspera
         end
 
         # wait for package status to be in provided list
-        def wait_package_status(id, status_list: PACKAGE_TERMINATED)
+        def wait_package_status(id, status_list: Api::Faspex::PACKAGE_TERMINATED)
           total_sent = false
           loop do
             status = @api_v5.read("packages/#{id}/upload_details")
@@ -276,7 +173,7 @@ module Aspera
           result = nil
           loop do
             result = @api_v5.read("jobs/#{job_id}", {type: :formatted})
-            break unless JOB_RUNNING.include?(result['status'])
+            break unless Api::Faspex::JOB_RUNNING.include?(result['status'])
             formatter.long_operation_running(result['status'])
             sleep(0.5)
           end
@@ -292,7 +189,7 @@ module Aspera
           entity =
             case box
             when SpecialValues::ALL then 'packages' # only admin can list all packages globally
-            when *API_LIST_MAILBOX_TYPES then "#{box}/packages"
+            when *Api::Faspex::API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
               "#{group_type}/#{lookup_entity_by_field(api: @api_v5, entity: group_type, value: box)['id']}/packages"
@@ -352,12 +249,12 @@ module Aspera
           end
           download_params = {
             type:          'received',
-            transfer_type: TRANSFER_CONNECT
+            transfer_type: Api::Faspex::TRANSFER_CONNECT
           }
           box = options.get_option(:box)
           case box
           when /outbox/ then download_params[:type] = 'sent'
-          when *API_LIST_MAILBOX_TYPES then nil # nothing to do
+          when *Api::Faspex::API_LIST_MAILBOX_TYPES then nil # nothing to do
           else # shared inbox / workgroup
             download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id']
           end
@@ -425,7 +322,7 @@ module Aspera
               end
               folders_to_process.concat(response[:data]['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
               if use_paging
-                iteration_token = response[:http][HEADER_ITERATION_TOKEN]
+                iteration_token = response[:http][Api::Faspex::HEADER_ITERATION_TOKEN]
                 break if iteration_token.nil? || iteration_token.empty?
                 query['iteration_token'] = iteration_token
               else
@@ -495,7 +392,7 @@ module Aspera
               transfer_spec = @api_v5.call(
                 operation:    'POST',
                 subpath:      "packages/#{package['id']}/transfer_spec/upload",
-                query:        {transfer_type: TRANSFER_CONNECT},
+                query:        {transfer_type: Api::Faspex::TRANSFER_CONNECT},
                 content_type: Rest::MIME_JSON,
                 body:         {paths: transfer.source_list},
                 headers:      {'Accept' => Rest::MIME_JSON}
@@ -554,7 +451,7 @@ module Aspera
             available_commands += [:reset_password]
           when :oauth_clients
             exec_args[:display_fields] = Formatter.all_but('public_key')
-            exec_args[:api] = Rest.new(**@api_v5.params, base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}")
+            exec_args[:api] = Rest.new(**@api_v5.params, base_url: "#{@api_v5.base_url.sub(Api::Faspex::PATH_API_V5, '')}#{Api::Faspex::PATH_AUTH}")
             exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           when :shared_inboxes, :workgroups
             available_commands += %i[members saml_groups invite_external_collaborator]
@@ -563,7 +460,7 @@ module Aspera
             available_commands += %i[shared_folders browse]
           end
           res_command = options.get_next_command(available_commands)
-          return Main.result_value_list(EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
+          return Main.result_value_list(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
           case res_command
           when *Plugin::ALL_OPS
             return entity_execute(command: res_command, **exec_args) do |field, value|
@@ -668,13 +565,13 @@ module Aspera
         end
 
         def execute_admin
-          command = options.get_next_command(%i[configuration smtp resource events clean_deleted].concat(ADMIN_RESOURCES).freeze)
+          command = options.get_next_command(%i[configuration smtp resource events clean_deleted].concat(Api::Faspex::ADMIN_RESOURCES).freeze)
           case command
           when :resource
             # resource will be deprecated
             Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
-            return execute_resource(options.get_next_command(ADMIN_RESOURCES))
-          when *ADMIN_RESOURCES
+            return execute_resource(options.get_next_command(Api::Faspex::ADMIN_RESOURCES))
+          when *Api::Faspex::ADMIN_RESOURCES
             return execute_resource(command)
           when :clean_deleted
             delete_data = value_create_modify(command: command, default: {})
