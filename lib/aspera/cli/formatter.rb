@@ -68,7 +68,7 @@ module Aspera
           value.bold
         end
 
-        # replace empty values with a readable version
+        # replace empty values with a readable version on terminal
         def enhance_display_values_hash(input_hash)
           stack = [input_hash]
           until stack.empty?
@@ -79,6 +79,8 @@ module Aspera
                 current[key] = special_format('null')
               when String
                 current[key] = special_format('empty string') if value.empty?
+              when Proc
+                current[key] = special_format('lambda')
               when Array
                 if value.empty?
                   current[key] = special_format('empty list')
