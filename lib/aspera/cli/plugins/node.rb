@@ -628,7 +628,7 @@ module Aspera
             command_perm = options.get_next_command(%i[list show create delete])
             case command_perm
             when :list
-              list_query = query_read_delete(default: {'include' => Rest.array_params(%w[access_level permission_count])})
+              list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
               # specify file to get permissions for unless not specified
               list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')

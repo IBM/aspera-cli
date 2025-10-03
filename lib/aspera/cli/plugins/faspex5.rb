@@ -233,7 +233,7 @@ module Aspera
           parameters['recipients'].map! do |recipient_data|
             # if just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
-              matched = @api_v5.lookup_by_name('contacts', recipient_data, query: {context: 'packages', type: Rest.array_params(recipient_types)})
+              matched = @api_v5.lookup_by_name('contacts', recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
               recipient_data = {
                 name:           matched['name'],
                 recipient_type: matched['type']
@@ -634,7 +634,7 @@ module Aspera
                     entity: 'accounts',
                     field: m[1],
                     value: ExtendedValue.instance.evaluate(m[2]),
-                    query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})}
+                    query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
                   )['id']
                 else
                   # it's the user id (not member id...)
@@ -655,7 +655,7 @@ module Aspera
                        entity: 'accounts',
                        field: field,
                        value: value,
-                       query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})}
+                       query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
                      )['id']
                    end
           when :reset_password

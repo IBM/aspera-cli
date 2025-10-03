@@ -54,11 +54,6 @@ module Aspera
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    # flag for array parameters prefixed with []
-    ARRAY_PARAMS = '[]'
-
-    private_constant :ARRAY_PARAMS
-
     # error message when entity not found (TODO: use specific exception)
     ENTITY_NOT_FOUND = 'No such'
 
@@ -75,48 +70,54 @@ module Aspera
       # @return [String] Basic auth token
       def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
-      # Build a parameter list prefixed with "[]"
-      # @param values [Array] list of values
-      def array_params(values)
-        return [ARRAY_PARAMS].concat(values)
-      end
-
-      def array_params?(values)
-        return values.first.eql?(ARRAY_PARAMS)
+      # Indicate that the given Hash query uses php style for array parameters
+      # a[]=1&a[]=2
+      def php_style(query)
+        Aspera.assert_type(query, Hash){'query'}
+        query[:x_array_php_style] = true
+        query
       end
 
       # Build URI from URL and parameters and check it is http or https
-      # encode array [] parameters
-      # @param query [Hash,Array]
-      def build_uri(url, query = nil)
+      # Check iof php style is specified
+      # @param url   [String]            The URL without query.
+      # @param query [Hash,Array,String] The query.
+      def build_uri(url, query)
         uri = URI.parse(url)
-        Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
+        Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
         return uri if query.nil? || query.respond_to?(:empty?) && query.empty?
         Log.dump(:query, query)
-        query_array = []
-        case query
-        when Hash
-          query.each do |k, v|
-            case v
-            when Array
-              # support array for query parameter, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
-              suffix = array_params?(v) ? v.shift : ''
-              v.each do |e|
-                query_array.push(["#{k}#{suffix}", e])
-              end
-            else
-              query_array.push([k, v])
-            end
-          end
-        when Array
-          Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays or 2 elements'}
-          query_array = query
-        else
-          raise "Query must be Hash or Array, not #{query.class}"
-        end
+        uri.query =
+          case query
+          when String
+            query
+          when Hash
+            URI.encode_www_form(h_to_query_array(query))
+          when Array
+            Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays of 2 elements'}
+            URI.encode_www_form(query)
+          else Aspera.error_unexpected_value(query.class){'query type'}
+          end.gsub('%5B%5D=', '[]=')
         # [] is allowed in url parameters
-        uri.query = URI.encode_www_form(query_array).gsub('%5B%5D=', '[]=')
-        return uri
+        uri
+      end
+
+      # @param query [Hash] HTTP query as hash
+      def h_to_query_array(query)
+        Aspera.assert_type(query, Hash)
+        # Support array for query parameter, there is no standard.
+        # Either p[]=1&p[]=2, or p=1&p=2
+        suffix = query.delete(:x_array_php_style) ? '[]' : nil
+        query.each_with_object([]) do |(k, v), query_array|
+          case v
+          when Array
+            v.each do |e|
+              query_array.push(["#{k}#{suffix}", e])
+            end
+          else
+            query_array.push([k, v])
+          end
+        end
       end
 
       # Decode query string as Hash
@@ -135,13 +136,14 @@ module Aspera
       # @param base_url [String] base url of HTTP/S session
       # @return [Net::HTTP] a started HTTP session
       def start_http_session(base_url)
-        uri = build_uri(base_url)
-        # this honors http_proxy env var
+        uri = URI.parse(base_url)
+        Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
+        # This honors http_proxy env var
         http_session = Net::HTTP.new(uri.host, uri.port)
         http_session.use_ssl = uri.scheme.eql?('https')
-        # set http options in callback, such as timeout and cert. verification
+        # Set http options in callback, such as timeout and cert. verification
         RestParameters.instance.session_cb&.call(http_session)
-        # manually start session for keep alive (if supported by server, else, session is closed every time)
+        # Manually start session for keep alive (if supported by server, else, session is closed every time)
         http_session.start
         return http_session
       end
@@ -478,24 +480,24 @@ module Aspera
     # If specific elements are needed, then use the full `call` method
     #
 
-    def create(subpath, params)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
+    def create(subpath, params, **kwargs)
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
     end
 
-    def read(subpath, query = nil)
+    def read(subpath, query = nil, **kwargs)
       return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query)[:data]
     end
 
-    def update(subpath, params)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
+    def update(subpath, params, **kwargs)
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
     end
 
-    def delete(subpath, params = nil)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params)[:data]
+    def delete(subpath, params = nil, **kwargs)
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params, **kwargs)[:data]
     end
 
-    def cancel(subpath)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON})[:data]
+    def cancel(subpath, **kwargs)
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON}, **kwargs)[:data]
     end
 
     # Query entity by general search (read with parameter `q`)
