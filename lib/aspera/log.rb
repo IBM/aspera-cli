@@ -23,9 +23,12 @@ class Logger
     1.upto(TRACE_MAX).each{ |level| const_set(:"TRACE#{level}", - level)}
   end
 
-  # Hash : key: log level int, value: uppercase log level label
+  # Hash
+  # key   [Integer] Log level (e.g. 0 for DEBUG)
+  # value [Symbol]  Lppercase log level label (e.g. :DEBUG)
   SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
 
+  # Override
   # @param severity [Integer] Log severity as int
   # @return [String] Log severity upper case label
   def format_severity(severity)
@@ -119,6 +122,7 @@ module Aspera
     # Set log level of underlying logger given symbol level
     # @param new_level [Symbol] One of LEVELS
     def level=(new_level)
+      Aspera.assert_values(new_level, LEVELS)
       @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
     end
 
@@ -140,10 +144,8 @@ module Aspera
     # Get symbol of debug level of underlying logger
     # @return [Symbol] One of LEVELS
     def level
-      Logger::Severity.constants.each do |name|
-        return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
-      end
-      Aspera.error_unexpected_value(@logger.level){'log level'}
+      Aspera.assert(Logger::SEVERITY_LABEL.key?(@logger.level))
+      Logger::SEVERITY_LABEL[@logger.level].downcase
     end
 
     # Change underlying logger, but keep log level
@@ -158,8 +160,8 @@ module Aspera
         @logger = Logger.new($stdout, progname: @program_name, formatter: DEFAULT_FORMATTER)
       when :syslog
         require 'syslog/logger'
-        # the syslog class automatically creates methods from the severity names
-        # we just need to add the mapping (but syslog lowest is DEBUG)
+        # The syslog class automatically creates methods from the severity names.
+        # We just need to add the mapping (but syslog lowest is DEBUG)
         1.upto(Logger::TRACE_MAX).each do |level|
           Syslog::Logger.const_get(:LEVEL_MAP)[Logger.const_get("TRACE#{level}")] = Syslog::LOG_DEBUG
         end
