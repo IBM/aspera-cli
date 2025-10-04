@@ -111,7 +111,6 @@ module Aspera
           end
           # create an API object with the same options, but with a different subpath
           @api_v5 = Api::Faspex.new(**create_values)
-
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
         end
@@ -450,7 +449,7 @@ module Aspera
             available_commands += [:reset_password]
           when :oauth_clients
             exec_args[:display_fields] = Formatter.all_but('public_key')
-            exec_args[:api] = Rest.new(**@api_v5.params, base_url: "#{@api_v5.base_url.sub(Api::Faspex::PATH_API_V5, '')}#{Api::Faspex::PATH_AUTH}")
+            exec_args[:api] = @api_v5.auth_api
             exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           when :shared_inboxes, :workgroups
             available_commands += %i[members saml_groups invite_external_collaborator]

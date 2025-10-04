@@ -8,10 +8,12 @@ require 'json'
 module Aspera
   # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
+    AOC_API = 'Aspera::Api::AoC'
+    FX_API = 'Aspera::Api::Faspex'
     # @param app_api     [Rest]   API object
     # @param app_context [String] workspace id (aoc only)
     def initialize(server, app_api, app_context)
-      Aspera.assert_values(app_api.class.name, ['Aspera::Api::AoC', 'Aspera::Rest'])
+      Aspera.assert_values(app_api.class.name, [AOC_API, FX_API])
       super(server)
       @app_api = app_api
       @app_context = app_context
@@ -49,7 +51,7 @@ module Aspera
       transfer_spec = @app_api.call(
         operation:    'POST',
         subpath:      "packages/#{package['id']}/transfer_spec/upload",
-        query:        {transfer_type: Cli::Plugins::Faspex5::TRANSFER_CONNECT},
+        query:        {transfer_type: Api::Faspex::TRANSFER_CONNECT},
         content_type: Rest::MIME_JSON,
         body:         {paths: [{'destination'=>'/'}]},
         headers:      {'Accept' => Rest::MIME_JSON}
@@ -72,9 +74,9 @@ module Aspera
           # compare string, as class is not yet known here
           faspex_package_create_result =
             case @app_api.class.name
-            when 'Aspera::Api::AoC'
+            when AOC_API
               faspex4_send_to_aoc(faspex_pkg_parameters)
-            when 'Aspera::Rest'
+            when FX_API
               faspex4_send_to_faspex5(faspex_pkg_parameters)
             else Aspera.error_unexpected_value(@app_api.class.name)
             end

@@ -55,10 +55,13 @@ module Aspera
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
     class Faspex < Aspera::Rest
+      # endpoint for authentication API
+      PATH_AUTH = 'auth'
       PATH_API_V5 = 'api/v5'
       PATH_HEALTH = 'configuration/ping'
       private_constant :PATH_API_V5,
-        :PATH_HEALTH
+        :PATH_HEALTH,
+        :PATH_AUTH
       RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
       PACKAGE_TERMINATED = %w[completed failed].freeze
       # list of supported mailbox types (to list packages)
@@ -73,8 +76,6 @@ module Aspera
       # states for jobs not in final state
       JOB_RUNNING = %w[queued working].freeze
       PATH_STANDARD_ROOT = '/aspera/faspex'
-      # endpoint for authentication API
-      PATH_AUTH = 'auth'
       PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
       # OAuth methods supported
       STD_AUTH_TYPES = %i[web jwt boot].freeze
@@ -203,6 +204,10 @@ module Aspera
           else Aspera.error_unexpected_value(auth, type: ArgumentError){'auth'}
           end
         )
+      end
+
+      def auth_api
+        Rest.new(**params, base_url: base_url.sub(PATH_API_V5, PATH_AUTH))
       end
     end
   end
