@@ -213,14 +213,6 @@ module Aspera
           )
       end
 
-      def public_link
-        return unless auth_params[:grant_method].eql?(:url_json)
-        return @cache_url_token_info unless @cache_url_token_info.nil?
-        # TODO: can there be several in list ?
-        @cache_url_token_info = read('url_tokens').first
-        return @cache_url_token_info
-      end
-
       def assert_public_link_types(expected)
         Aspera.assert_values(public_link['purpose'], expected){'public link type'}
       end
@@ -230,7 +222,17 @@ module Aspera
         return [] # TODO : public_link['id'] ?
       end
 
-      # cached user information
+      # Cached public link information
+      # @return [Hash, nil] token info if public link or nil
+      def public_link
+        return unless auth_params[:grant_method].eql?(:url_json)
+        return @cache_url_token_info unless @cache_url_token_info.nil?
+        # TODO: can there be several in list ?
+        @cache_url_token_info = read('url_tokens').first
+        return @cache_url_token_info
+      end
+
+      # Cached user information
       def current_user_info(exception: false)
         return @cache_user_info unless @cache_user_info.nil?
         # get our user's default information
@@ -246,21 +248,9 @@ module Aspera
         return @cache_user_info
       end
 
+      # Cached workspace information
       def workspace
-        Aspera.assert(!@workspace_info.nil?){'AoC workspace context is not set'}
-        @workspace_info
-      end
-
-      def home
-        Aspera.assert(!@home_info.nil?){'AoC home context is not set'}
-        @home_info
-      end
-
-      # Set the application context
-      # @param application [Symbol,NilClass] :files or :packages
-      # @return [Hash] current context information: workspace, and home node/file if app is "Files"
-      def context=(application)
-        Aspera.assert_values(application, %i[files packages])
+        return @workspace_info unless @workspace_info.nil?
         ws_id =
           if !public_link.nil?
             Log.log.debug('Using workspace of public link')
@@ -278,26 +268,21 @@ module Aspera
           else
             lookup_by_name('workspaces', @workspace_name)['id']
           end
-        ws_info =
-          if ws_id.nil?
-            nil
-          else
-            read("workspaces/#{ws_id}")
-          end
         @workspace_info =
-          if ws_info.nil?
+          if ws_id.nil?
             {
-              id:   nil,
-              name: "Shared #{application}"
+              name: 'Shared (no workspace)'
             }
           else
-            {
-              id:   ws_info['id'],
-              name: ws_info['name']
-            }
+            read("workspaces/#{ws_id}").slice('id', 'name', 'home_node_id', 'home_file_id').symbolize_keys
           end
-        Log.dump(:context, @workspace_info)
-        return unless application.eql?(:files)
+        Log.dump(:workspace_info, @workspace_info)
+        @workspace_info
+      end
+
+      # Cached Home information for current user in Files app
+      def home
+        return @home_info unless @home_info.nil?
         @home_info =
           if !public_link.nil?
             assert_public_link_types(['view_shared_file'])
@@ -310,10 +295,10 @@ module Aspera
               node_id: private_link[:node_id],
               file_id: private_link[:file_id]
             }
-          elsif ws_info
+          elsif workspace[:home_node_id] && workspace[:home_file_id]
             {
-              node_id: ws_info['home_node_id'],
-              file_id: ws_info['home_file_id']
+              node_id: workspace[:home_node_id],
+              file_id: workspace[:home_file_id]
             }
           else
             # not part of any workspace, but has some folder shared
@@ -325,6 +310,7 @@ module Aspera
           end
         raise "Cannot get user's home node id, check your default workspace or specify one" if @home_info[:node_id].to_s.empty?
         Log.dump(:context, @home_info)
+        @home_info
       end
 
       # @param node_id [String] identifier of node in AoC

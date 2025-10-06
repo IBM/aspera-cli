@@ -521,8 +521,6 @@ module Aspera
             return Main.result_success
           when :do
             command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
-            # init context
-            aoc_api.context = :files
             return execute_nodegen4_command(command_repo, res_id)
           else Aspera.error_unexpected_value(command)
           end
@@ -690,7 +688,6 @@ module Aspera
               filter = query_read_delete(default: {})
               filter['limit'] ||= 100
               if options.get_option(:once_only, mandatory: true)
-                aoc_api.context = :files
                 saved_date = []
                 start_date_persistency = PersistencyActionOnce.new(
                   manager: persistency,
@@ -735,7 +732,6 @@ module Aspera
               return Main.result_object_list(events)
             end
           when :usage_reports
-            aoc_api.context = :files
             return result_list('usage_reports', base_query: workspace_id_hash)
           end
         end
@@ -875,7 +871,6 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           if %i[files packages].include?(command)
             default_flag = ' (default)' if options.get_option(:workspace).eql?(:default)
-            aoc_api.context = command
             formatter.display_status("Workspace: #{aoc_api.workspace[:name].to_s.red}#{default_flag}")
             if !aoc_api.private_link.nil?
               folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']
@@ -907,7 +902,6 @@ module Aspera
               when :list
                 return result_list('workspaces', fields: %w[id name])
               when :current
-                aoc_api.context = :files
                 return Main.result_single_object(aoc_api.workspace)
               end
             when :profile
@@ -1151,7 +1145,6 @@ module Aspera
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
             Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
-            aoc_api.context = :files
             server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace[:id])
             server.start
             return Main.result_status('Gateway terminated')

@@ -4,6 +4,7 @@
 
   * Issues Fixed:
     * `faspex5`: Fix public link auth for Faspex 5.0.13.
+    * `aoc`: Fix some admin operations requiring a user's home for Files.
 
 * 4.24.1
 
