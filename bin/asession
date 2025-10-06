@@ -7,16 +7,16 @@ require 'aspera/cli/extended_value'
 require 'aspera/products/transferd'
 require 'aspera/log'
 require 'json'
-# extended transfer spec parameter (only used in asession)
+# Extended transfer spec parameter (only used in asession)
 PARAM_SPEC = 'spec'
-# log level
+# Log level
 PARAM_LOG_LEVEL = 'loglevel'
-# transfer agent options
+# Transfer agent options
 PARAM_AGENT = 'agent'
-# by default go to /tmp/username.filelist
+# By default go to /tmp/username.filelist
 PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
 PARAM_SDK = 'sdk'
-# place transfer spec in that
+# Place transfer spec in that
 SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
 SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
 def assert_usage(assertion, error_message)
@@ -52,27 +52,27 @@ def assert_usage(assertion, error_message)
   Process.exit(0)
 end
 parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
-# by default assume JSON input on stdin if no argument
+# By default assume JSON input on stdin if no argument
 if ARGV.empty?
   ARGV.push('@json:@stdin')
   parameter_source_err_msg = ' (JSON on stdin)'
 end
-# anyway expect only one argument: session information
+# Anyway expect only one argument: session information
 assert_usage(ARGV.length.eql?(1), 'exactly one argument is expected')
 assert_usage(!['-h', '--help'].include?(ARGV.first), nil)
-# parse transfer spec
+# Parse transfer spec
 begin
   session_argument = ARGV.pop
   session_spec = Aspera::Cli::ExtendedValue.instance.evaluate(session_argument)
 rescue
   assert_usage(false, "Cannot parse argument: #{session_argument}")
 end
-# ensure right type
+# Ensure right type for parameter
 assert_usage(session_spec.is_a?(Hash), "The value must be a Hash#{parameter_source_err_msg}")
 assert_usage(session_spec[PARAM_SPEC].is_a?(Hash), "The value must contain key #{PARAM_SPEC} with Hash value")
-# additional debug capability
-Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL] if session_spec.key?(PARAM_LOG_LEVEL)
-# possibly override temp folder
+# Additional debug capability
+Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL].to_sym if session_spec.key?(PARAM_LOG_LEVEL)
+# Possibly override temp folder
 Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER] if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
 session_spec[PARAM_SDK] = File.join(Dir.home, '.aspera', 'sdk') unless session_spec.key?(PARAM_SDK)
 Aspera::Products::Transferd.sdk_directory = session_spec[PARAM_SDK]
@@ -82,13 +82,13 @@ agent_params['quiet'] = true
 agent_params['management_cb'] = ->(event) do
   puts JSON.generate(Aspera::Ascp::Management.enhanced_event_format(event))
 end
-# get local agent (ascp), disable ascp output on stdout to not mix with JSON events
+# Get local agent (ascp), disable ascp output on stdout to not mix with JSON events
 client = Aspera::Agent::Direct.new(**agent_params.symbolize_keys)
-# start transfer (asynchronous)
+# Start transfer (asynchronous)
 job_id = client.start_transfer(session_spec[PARAM_SPEC])
-# async commands
+# commands to ascp on mgt port
 Thread.new do
-  # we assume here a single session
+  # We assume here a single session
   session_id = client.sessions_by_job(job_id).first
   begin
     loop do
@@ -99,6 +99,6 @@ Thread.new do
     Process.exit(1)
   end
 end
-# no exit code: status is success (0)
+# No exit code: status is success (0)
 client.wait_for_transfers_completion
 client.shutdown
