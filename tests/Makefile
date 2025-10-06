@@ -160,8 +160,8 @@ restart_noded:
 	-ps -ef|grep aspera|grep -v grep
 endif
 
-START_TEST=$(DIR_TOP)tests/mark begin
-STOP_TEST=$(DIR_TOP)tests/mark end
+START_TEST=$(DIR_TST)mark begin
+STOP_TEST=$(DIR_TST)mark end
 
 ###########
 # Coverage
@@ -178,11 +178,12 @@ $(TMP_EXISTS):
 	echo 'This is a small test file' > $(TST_ASC_LCL_PATH)
 	echo 'This is a small test file' > "$(TST_UTF_LCL_PATH)"
 	cp $(ASPERA_CLI_TEST_CONF_FILE) $(TEST_CONFIG)
+	touch $(TMP_EXISTS)
 clean::
+	rm -fr $(F) $(STATE)
 	rm -f $(TST_ASC_LCL_PATH) "$(TST_UTF_LCL_PATH)"
-	rm -fr $(F)
-	rm -f $(DIR_TOP).rspec_status
 	rm -f $(TEST_CONFIG)
+	rm -f $(DIR_TOP).rspec_status
 #######################################################################################################################
 $(F)unit: $(TMP_EXISTS)
 	@$(START_TEST) $@
