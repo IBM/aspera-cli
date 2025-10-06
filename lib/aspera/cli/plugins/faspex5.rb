@@ -5,6 +5,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
+require 'aspera/cli/wizard'
 require 'aspera/api/faspex'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
@@ -52,13 +53,13 @@ module Aspera
             return
           end
 
-          # @param object [Plugin] An instance of this class
+          # @param plugin [Plugin] An instance of this class
           # @param private_key_path [String] path to private key
           # @param pub_key_pem [String] PEM of public key
           # @return [Hash] :preset_value, :test_args
-          def wizard(object:, private_key_path:, pub_key_pem:)
-            options = object.options
-            formatter = object.formatter
+          def wizard(plugin:, private_key_path:, pub_key_pem:)
+            options = plugin.options
+            formatter = plugin.formatter
             instance_url = options.get_option(:url, mandatory: true)
             wiz_username = options.get_option(:username, mandatory: true)
             raise "Username shall be an email in Faspex: #{wiz_username}" if !(wiz_username =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
@@ -75,15 +76,14 @@ module Aspera
               formatter.display_status(pub_key_pem)
               formatter.display_status('Once set, fill in the parameters:')
             end
-            return {preset_value: {}, test_args: ''} if options.get_option(:test_mode)
             return {
               preset_value: {
                 url:           instance_url,
                 username:      wiz_username,
                 auth:          :jwt.to_s,
                 private_key:   "@file:#{private_key_path}",
-                client_id:     options.get_option(:client_id, mandatory: true),
-                client_secret: options.get_option(:client_secret, mandatory: true)
+                client_id:     options.get_option(:client_id, mandatory: Wizard.required),
+                client_secret: options.get_option(:client_secret, mandatory: Wizard.required)
               },
               test_args:    'user profile show'
             }

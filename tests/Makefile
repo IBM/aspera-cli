@@ -80,8 +80,6 @@ only_progress: $(F)serv_upload1 $(F)serv_upload3
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
 # package title for faspex and aoc
 PACKAGE_TITLE_BASE=$(CLI_NAME) test $(shell LANG=C date)
-# skip private key check step in wizard, for testing only
-WIZ_TEST=--test-mode=yes
 # override $HOME/.aspera/ascli
 CLI_HOME=$(DIR_TMP)$(CLI_NAME)_home/
 # give waring and stop on first warning in this gem code
@@ -94,6 +92,11 @@ CLI_TEST=$(CLI_NOCONF) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
 ifneq (,$(findstring jruby,$(shell ruby -v)))
 CLI_TEST+= -Pjns
 endif
+# temp configuration file that is modified, to avoid changing the main configuration file
+TEST_CONFIG=$(DIR_TMP)sample.conf
+# "CLI_TMP_CONF" is used for commands that modify the config file
+CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
+CLI_WIZ_TEST=ASCLI_WIZ_TEST=yes $(CLI_TMP_CONF)
 # "INCMAN" is a tag used to generate sample commands in documentation (see in docs/Makefile)
 INCMAN=
 # exec begin error: enclose tests that shall result in error
@@ -174,11 +177,12 @@ $(TMP_EXISTS):
 	mkdir -p $(STATE)
 	echo 'This is a small test file' > $(TST_ASC_LCL_PATH)
 	echo 'This is a small test file' > "$(TST_UTF_LCL_PATH)"
-	@$(STOP_TEST) $@
+	cp $(ASPERA_CLI_TEST_CONF_FILE) $(TEST_CONFIG)
 clean::
 	rm -f $(TST_ASC_LCL_PATH) "$(TST_UTF_LCL_PATH)"
 	rm -fr $(F)
 	rm -f $(DIR_TOP).rspec_status
+	rm -f $(TEST_CONFIG)
 #######################################################################################################################
 $(F)unit: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -199,7 +203,7 @@ $(F)shares_detect: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:shares_admin.url shares --username=test --password=test
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:shares_admin.url shares --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)shares_admin_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -465,7 +469,7 @@ $(F)f4_detect: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f4_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex4_user.url faspex --username=test --password=test
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex4_user.url faspex --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)f4_pack_list: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -549,7 +553,7 @@ $(F)cons_health: $(TMP_EXISTS)
 $(F)cons_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) config detect @preset:console_admin.url
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:console_admin.url console --preset=console_admin
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:console_admin.url console --preset=console_admin
 	@$(STOP_TEST) $@
 $(F)cons_cur_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -587,7 +591,7 @@ $(F)nd_health: $(TMP_EXISTS)
 $(F)nd_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:node_user.url node --username=test --password=test
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:node_user.url node --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)nd_info: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1285,7 +1289,7 @@ clean_taoc: clean_taocgen clean_taocf clean_taocp clean_taocadm clean_taocts cle
 $(F)orch_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) config detect @preset:orch_user.url
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:orch_user.url orchestrator --username=test --password=test
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:orch_user.url orchestrator --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)orch_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1470,11 +1474,6 @@ $(F)sync_other: $(F)sync_create
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsyncs,$(F)sync_create $(F)sync_other))
 #######################################################################################################################
-# temp configuration file that is modified, to avoid the test configuration file
-TEST_CONFIG=$(DIR_TMP)sample.conf
-CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
-clean::
-	rm -f $(TEST_CONFIG)
 $(F)conf_ascp_show: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp show
@@ -1647,17 +1646,17 @@ $(F)conf_plugins: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config plugins create my_command $(DIR_TMP)
 	$(CLI_TEST) my_command --plugin-folder=$(DIR_TMP)
 	@$(STOP_TEST) $@
-$(F)conf_wizard_org: $(TMP_EXISTS)
+$(F)conf_wizard_aoc_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
 	$(INCMAN)$(CLI_TEST) config tokens list
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
-$(F)conf_wizard_gen: $(TMP_EXISTS)
+$(F)conf_wizard_aoc_2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
 	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(F)conf_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1756,7 +1755,7 @@ $(F)conf_logger: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log-format=@ruby:'->(s, d, p, m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}'
 	$(CLI_TEST) config echo @ruby:'%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"' --log-level=trace2
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(F)conf_ascp_show $(F)conf_ascp_spec $(F)conf_ascp_schema $(F)conf_ascp_errors $(F)conf_ascp_2 $(F)conf_ascp_3 $(F)conf_ascp_4 $(F)conf_ascp_5 $(F)conf_ascp_6 $(F)conf_ascp_install $(F)conf_ascp_8 $(F)conf_pset_1 $(F)conf_pset_2 $(F)conf_pset_3 $(F)conf_pset_4 $(F)conf_pset_5 $(F)conf_pset_6 $(F)conf_open $(F)conf_list $(F)conf_over $(F)conf_vers_check $(F)conf_gem $(F)conf_help_1 $(F)conf_help_2 $(F)conf_coffee_1 $(F)conf_coffee_2 $(F)conf_plugins $(F)conf_wizard_org $(F)conf_wizard_gen $(F)conf_detect $(F)conf_genkey $(F)conf_cert $(F)conf_smtp $(F)conf_pac $(F)conf_check_gem $(F)conf_doc $(F)conf_echo $(F)conf_extended $(F)conf_hint $(F)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(F)conf_ascp_show $(F)conf_ascp_spec $(F)conf_ascp_schema $(F)conf_ascp_errors $(F)conf_ascp_2 $(F)conf_ascp_3 $(F)conf_ascp_4 $(F)conf_ascp_5 $(F)conf_ascp_6 $(F)conf_ascp_install $(F)conf_ascp_8 $(F)conf_pset_1 $(F)conf_pset_2 $(F)conf_pset_3 $(F)conf_pset_4 $(F)conf_pset_5 $(F)conf_pset_6 $(F)conf_open $(F)conf_list $(F)conf_over $(F)conf_vers_check $(F)conf_gem $(F)conf_help_1 $(F)conf_help_2 $(F)conf_coffee_1 $(F)conf_coffee_2 $(F)conf_plugins $(F)conf_wizard_aoc_1 $(F)conf_wizard_aoc_2 $(F)conf_detect $(F)conf_genkey $(F)conf_cert $(F)conf_smtp $(F)conf_pac $(F)conf_check_gem $(F)conf_doc $(F)conf_echo $(F)conf_extended $(F)conf_hint $(F)conf_logger))
 #######################################################################################################################
 $(F)prev_check: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2059,9 +2058,9 @@ $(F)f5_webauth: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f5_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
-	$(CLI_TEST) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
-	$(CLI_TMP_CONF) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
+	$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
+	$(CLI_WIZ_TEST) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
 	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
 	$(CLI_TEST) config detect @preset:faspex5_user.url

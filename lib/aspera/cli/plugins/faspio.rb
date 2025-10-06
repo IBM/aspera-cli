@@ -25,10 +25,10 @@ module Aspera
             }
           end
 
-          # @param object [Plugin] An instance of this class
+          # @param plugin [Plugin] An instance of this class
           # @return [Hash] :preset_value, :test_args
-          def wizard(object:)
-            options = object.options
+          def wizard(plugin:)
+            options = plugin.options
             return {
               preset_value: {
                 url: options.get_option(:url, mandatory: true)

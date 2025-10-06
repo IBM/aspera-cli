@@ -62,8 +62,8 @@ module Aspera
             return
           end
 
-          def wizard(object:, _private_key_path: nil, _pub_key_pem: nil)
-            options = object.options
+          def wizard(plugin:, _private_key_path: nil, _pub_key_pem: nil)
+            options = plugin.options
             return {
               preset_value: {
                 url:      options.get_option(:url, mandatory: true),

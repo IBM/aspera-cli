@@ -10,13 +10,18 @@ module Aspera
       private_constant :WIZARD_RESULT_KEYS,
         :DEFAULT_PRIV_KEY_FILENAME
 
+      class << self
+        def required
+          !ENV['ASCLI_WIZ_TEST']
+        end
+      end
+
       def initialize(parent, main_folder)
         @parent = parent
         @main_folder = main_folder
         # wizard options
         options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
         options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
-        options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
         options.declare(:key_path, 'Wizard: path to private key for JWT')
       end
 
@@ -98,7 +103,7 @@ module Aspera
         # instantiate plugin: command line options will be known, e.g. private_key
         plugin_instance = wiz_plugin_class.new(context: @parent.context)
         wiz_params = {
-          object: plugin_instance
+          plugin: plugin_instance
         }
         # is private key needed ?
         if options.known_options.key?(:private_key) &&
@@ -139,8 +144,6 @@ module Aspera
           elements.push(options.get_option(:username, mandatory: true)) unless wizard_result[:preset_value].key?(:link) rescue nil
           wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
         end
-        # test mode does not change conf file
-        return Main.result_single_object(wizard_result) if options.get_option(:test_mode)
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")
         # init defaults if necessary

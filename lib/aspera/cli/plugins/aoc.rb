@@ -5,6 +5,7 @@ require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/special_values'
+require 'aspera/cli/wizard'
 require 'aspera/agent/node'
 require 'aspera/transfer/spec'
 require 'aspera/api/aoc'
@@ -89,14 +90,14 @@ module Aspera
             return Api::AoC.link_info(url)[:token].nil?
           end
 
-          # @param object [Plugin] An instance of this class
+          # @param plugin [Plugin] An instance of this class
           # @param private_key_path [String] path to private key
           # @param pub_key_pem [String] PEM of public key
           # @return [Hash] :preset_value, :test_args
-          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+          def wizard(plugin:, private_key_path: nil, pub_key_pem: nil)
             # set vars to look like object
-            options = object.options
-            formatter = object.formatter
+            options = plugin.options
+            formatter = plugin.formatter
             instance_url = options.get_option(:url, mandatory: true)
             pub_link_info = Api::AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
@@ -127,11 +128,9 @@ module Aspera
               formatter.display_status('Navigate to: 👤 → Account Settings → Profile → Public Key')
               formatter.display_status('Check or update the value to:'.red.blink)
               formatter.display_status(pub_key_pem, hide_secrets: false)
-              if !options.get_option(:test_mode)
-                formatter.display_status('Once updated or validated, press enter.')
-                Environment.instance.open_uri(instance_url)
-                $stdin.gets
-              end
+              formatter.display_status('Once updated or validated, press enter.')
+              Environment.instance.open_uri(instance_url)
+              $stdin.gets if Wizard.required
             else
               formatter.display_status('Using organization specific client_id.')
               if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
@@ -157,7 +156,7 @@ module Aspera
               # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
               # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
             end
-            myself = object.aoc_api.read('self')
+            myself = plugin.aoc_api.read('self')
             if auto_set_pub_key
               Aspera.assert(myself['public_key'].empty?, type: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
               formatter.display_status('Updating profile with the public key.')

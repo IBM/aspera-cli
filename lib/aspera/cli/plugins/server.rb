@@ -68,8 +68,8 @@ module Aspera
             return
           end
 
-          def wizard(object:)
-            options = object.options
+          def wizard(plugin:)
+            options = plugin.options
             return {
               preset_value: {
                 url:      options.get_option(:url, mandatory: true),
