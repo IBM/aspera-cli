@@ -22,14 +22,13 @@ Hootput lives in the terminal, watching over every command with wide, unblinking
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
 It doesn’t chatter; it hoots—clear, precise, and always on time.
 
-Like ascli, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
+Like `ascli`, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
 When you hear Hootput’s call, you know your data is already in flight.
 
 ---
 
-
-"Hey, I’m ascli — your data’s personal courier.
+"Hey, I’m `ascli` — your data’s personal courier.
 I don’t do flashy dashboards; I’m happiest in a terminal window.
 Hand me a command, and I’ll zip your files across the network faster than you thought possible.
 
@@ -4441,7 +4440,6 @@ OPTIONS: global
         --plugin-folder=VALUE        Folder where to find additional plugins
         --override=ENUM              Wizard: override existing value: [no], yes
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
-        --test-mode=ENUM             Wizard: skip private key check step: [no], yes
         --key-path=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            Ascp: Path to ascp
         --use-product=VALUE          Ascp: Use ascp from specified product
@@ -7090,7 +7088,7 @@ IBM Aspera's newer self-managed application.
 | `boot`        | Use authentication token copied from browser (experimental)         |
 
 > [!TIP]
-> If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
+> If you have a Faspex 5 public link, provide it, as-is, through the option `url`.
 
 For a quick start, one can use the wizard, which will help to create an [Option Preset](#option-preset):
 
@@ -7137,9 +7135,15 @@ Saving configuration file.
 ```
 
 > [!NOTE]
-> Paste the entire public key, including the BEGIN and END lines, into the user profile.
+> Paste the entire public key, including the BEGIN and END lines, into the user's profile.
 
 For more information on the JWT method, refer to the section below.
+
+If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
+
+```shell
+ascli faspex5 --show-config --show-secrets=yes --fields=private_key | ascli conf pubkey @stdin: --show-secrets=yes
+```
 
 ### Faspex 5 JWT authentication
 
@@ -7161,14 +7165,14 @@ Activation is in two steps:
 
 - The user will authenticate with a private key and set the public key in his Faspex 5 profile.
 
-  > [!TIP]
-  > If you don’t have a private key, see [Private Key](#private-key) to generate one.
-  
   This operation is done by each user using the CLI.
 
   - As a user, click the user logo located to the left of the app switcher in the top-right corner.
   - Select `Account Settings`.
   - At the bottom, in the `Public key in PEM format` field, paste the **public key** that corresponds to the private key assigned to your account.
+
+> [!TIP]
+> If you don’t have a private key, see [Private Key](#private-key) to generate one.
 
 Then use these options:
 
