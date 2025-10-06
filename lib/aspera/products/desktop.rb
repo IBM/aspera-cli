@@ -8,6 +8,7 @@ module Aspera
     class Desktop
       APP_NAME = 'IBM Aspera for Desktop'
       APP_IDENTIFIER = 'com.ibm.software.aspera.desktop'
+      LOG_FILENAME = 'ibm-aspera-desktop.log'
       class << self
         # standard folder locations
         def locations
@@ -19,10 +20,6 @@ module Aspera
           }]
           else []
           end.map{ |i| i.merge({expected: APP_NAME})}
-        end
-
-        def log_file
-          File.join(Dir.home, 'Library', 'Logs', APP_IDENTIFIER, 'ibm-aspera-desktop.log')
         end
       end
     end

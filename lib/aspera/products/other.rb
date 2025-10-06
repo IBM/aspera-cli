@@ -54,8 +54,14 @@ module Aspera
       }]
       end
       class << self
+        # Find installed products and provide paths for it.
+        # @param scan_locations [Array] Array of Hash with keys: expected, app_root, sub_bin, ascp_path, name, version
+        # @return [Array] of products found, with filled missing fields
+        # @raise Exception if no installed product found
         def find(scan_locations)
-          scan_locations.select do |item|
+          product_names = []
+          found = scan_locations.select do |item|
+            product_names.push(item[:expected]) unless product_names.include?(item[:expected])
             # skip if not main folder
             Log.log.trace1{"Checking #{item[:app_root]}"}
             next false unless Dir.exist?(item[:app_root])
@@ -75,6 +81,8 @@ module Aspera
             end
             true # select this version
           end
+          raise "Product: #{product_names.join(', ')} not found, please install." if found.empty?
+          found
         end
       end
     end

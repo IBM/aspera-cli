@@ -48,11 +48,12 @@ module Aspera
         end
       end
 
+      # Base URL for CDN of Connect
       def cdn_api
         Rest.new(base_url: CDN_BASE_URL)
       end
 
-      # retrieve structure from cloud (CDN) with all versions available
+      # Retrieve structure from cloud (CDN) with all versions available
       def versions
         if @connect_versions.nil?
           javascript = cdn_api.call(operation: 'GET', subpath: VERSION_INFO_FILE)
@@ -74,10 +75,10 @@ module Aspera
         @connect_versions = nil
       end
 
-      VERSION_INFO_FILE = 'connectversions.js' # cspell: disable-line
       CDN_BASE_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
+      VERSION_INFO_FILE = 'connectversions.js' # cspell: disable-line
 
-      private_constant :VERSION_INFO_FILE, :CDN_BASE_URL
+      private_constant :CDN_BASE_URL, :VERSION_INFO_FILE
     end
   end
 end

@@ -23,8 +23,8 @@ module Aspera
         }
         raise Error, 'Using connect requires a graphical environment' unless Environment.instance.graphical?
         method_index = 0
+        connect_url = connect_api_url
         begin
-          connect_url = connect_api_url
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
@@ -135,9 +135,7 @@ module Aspera
 
       # @return the file path of local connect where API's URI can be read
       def connect_api_url
-        connect_locations = Products::Other.find(Products::Connect.locations).first
-        raise "Product: #{name} not found, please install." if connect_locations.nil?
-        folder = File.join(connect_locations[:run_root], 'var', 'run')
+        folder = File.join(Products::Other.find(Products::Connect.locations).first[:run_root], 'var', 'run')
         ['', 's'].each do |ext|
           uri_file = File.join(folder, "http#{ext}.uri")
           Log.log.debug{"checking connect port file: #{uri_file}"}

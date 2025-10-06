@@ -102,7 +102,7 @@ module Aspera
 
       # @return [String] the url where transferd is listening
       def aspera_client_api_url
-        log_file = Products::Desktop.log_file
+        log_file = File.join(Products::Other.find(Products::Desktop.locations).first[:log_root], Products::Desktop::LOG_FILENAME)
         url = 'http://127.0.0.1:33024'
         File.open(log_file, 'r') do |file|
           file.each_line do |line|
@@ -111,7 +111,7 @@ module Aspera
               url = "http://#{m[1]}"
             end
           end
-        end
+        end if File.exist?(log_file)
         # raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
         return url
       end
