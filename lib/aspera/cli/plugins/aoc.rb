@@ -247,7 +247,7 @@ module Aspera
           create_values[:scope] = Api::AoC::SCOPE_FILES_USER if create_values[:scope].nil?
           # create an API object with the same options, but with a different subpath
           return Api::AoC.new(**create_values)
-        rescue ArgumentError => e
+        rescue ::ArgumentError => e
           if (m = e.message.match(/missing keyword: :(.*)$/))
             raise Cli::Error, "Missing option: #{m[1]}"
           end

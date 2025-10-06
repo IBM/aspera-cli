@@ -147,8 +147,8 @@ module Aspera
       def initialize(url:, auth:, subpath: API_V1, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
         password: nil, workspace: nil, secret_finder: nil)
         # test here because link may set url
-        raise ArgumentError, 'Missing mandatory option: url' if url.nil?
-        raise ArgumentError, 'Missing mandatory option: scope' if scope.nil?
+        raise ParameterError, 'Missing mandatory option: url' if url.nil?
+        raise ParameterError, 'Missing mandatory option: scope' if scope.nil?
         # default values for client id
         client_id, client_secret = self.class.get_client_info if client_id.nil?
         # access key secrets are provided out of band to get node api access
@@ -173,7 +173,7 @@ module Aspera
         auth_params[:grant_method] = if url_info.key?(:token)
           :url_json
         else
-          raise ArgumentError, 'Missing mandatory option: auth' if auth.nil?
+          raise ParameterError, 'Missing mandatory option: auth' if auth.nil?
           auth
         end
         # this is the base API url
@@ -184,11 +184,11 @@ module Aspera
         # fill other auth parameters based on OAuth method
         case auth_params[:grant_method]
         when :web
-          raise ArgumentError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
+          raise ParameterError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
           auth_params[:redirect_uri] = redirect_uri
         when :jwt
-          raise ArgumentError, 'Missing mandatory option: private_key' if private_key.nil?
-          raise ArgumentError, 'Missing mandatory option: username' if username.nil?
+          raise ParameterError, 'Missing mandatory option: private_key' if private_key.nil?
+          raise ParameterError, 'Missing mandatory option: username' if username.nil?
           auth_params[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
           auth_params[:payload] = {
             iss: auth_params[:client_id], # issuer

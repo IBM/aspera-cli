@@ -5,7 +5,7 @@ module Aspera
   class Error < StandardError
   end
 
-  class ArgumentError < Error
+  class ParameterError < Error
   end
 
   # Error that shall not happen, else it's a bug

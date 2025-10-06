@@ -139,7 +139,7 @@ module Aspera
             Log.dump(:redir_url, redir_url, level: :trace1)
             # get context from query
             encoded_context = Rest.query_to_h(URI.parse(redir_url).query)['context']
-            raise ArgumentError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
+            raise ParameterError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (contains passcode and allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.dump(:pub_link_context, @pub_link_context, level: :trace1)
@@ -162,15 +162,15 @@ module Aspera
             }
           # old: headers:  {'Passcode' => @pub_link_context['passcode']}
           when :boot
-            Aspera.assert(password, type: ArgumentError){'Missing password'}
+            Aspera.assert(password, type: ParameterError){'Missing password'}
             # the password here is the token copied directly from browser in developer mode
             {
               base_url: "#{url}/#{PATH_API_V5}",
               headers:  {'Authorization' => password}
             }
           when :web
-            Aspera.assert(client_id, type: ArgumentError){'Missing client_id'}
-            Aspera.assert(redirect_uri, type: ArgumentError){'Missing redirect_uri'}
+            Aspera.assert(client_id, type: ParameterError){'Missing client_id'}
+            Aspera.assert(redirect_uri, type: ParameterError){'Missing redirect_uri'}
             # opens a browser and ask user to auth using web
             {
               base_url: "#{url}/#{PATH_API_V5}",
@@ -183,8 +183,8 @@ module Aspera
               }
             }
           when :jwt
-            Aspera.assert(client_id, type: ArgumentError){'Missing client_id'}
-            Aspera.assert(private_key, type: ArgumentError){'Missing private_key'}
+            Aspera.assert(client_id, type: ParameterError){'Missing client_id'}
+            Aspera.assert(private_key, type: ParameterError){'Missing private_key'}
             {
               base_url: "#{url}/#{PATH_API_V5}",
               auth:     {
@@ -201,7 +201,7 @@ module Aspera
                 headers:         {typ: 'JWT'}
               }
             }
-          else Aspera.error_unexpected_value(auth, type: ArgumentError){'auth'}
+          else Aspera.error_unexpected_value(auth, type: ParameterError){'auth'}
           end
         )
       end

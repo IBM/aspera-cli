@@ -536,10 +536,10 @@ module Aspera
         return true  if value == 'true'
         return false if value == 'false'
         Integer(value)
-      rescue ArgumentError
+      rescue ::ArgumentError
         begin
           Float(value)
-        rescue ArgumentError
+        rescue ::ArgumentError
           evaluate_extended_value(value, nil)
         end
       end
