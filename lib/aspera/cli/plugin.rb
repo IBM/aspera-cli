@@ -190,7 +190,7 @@ module Aspera
           return Main.result_single_object(api.read(one_res_path), fields: display_fields)
         when :list
           if tclo
-            data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: list_query)
+            data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: query_read_delete(default: list_query))
             return Main.result_object_list(data, total: total, fields: display_fields)
           end
           resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
