@@ -256,19 +256,6 @@ It is planned to provide `ascli` as a single platform-dependent executable.
 Installation of `ascp` is still required separately.
 Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
-### Beta release of gem
-
-Beta version of gem can be found here: <https://ibm.biz/aspera-cli-beta>
-
-On Linux/macOS, install in a terminal:
-
-```shell
-curl -sLo aspera-cli-beta.gem https://ibm.biz/aspera-cli-beta
-gem install aspera-cli-beta.gem
-```
-
-On Windows, download the link, that saves the file: `aspera-cli-beta.gem`, then install with `gem install aspera-cli-beta.gem`.
-
 #### Linux: GLIBC version
 
 > [!CAUTION]
@@ -653,15 +640,30 @@ The user installs the gem with `HighSecurity` or `MediumSecurity`: this will suc
 gem install -P MediumSecurity aspera-cli
 ```
 
+#### Beta release of gem
+
+Beta version of gem can be found here: <https://ibm.biz/aspera-cli-beta>
+
+On Linux/macOS, install in a terminal:
+
+```shell
+curl -sLo aspera-cli-beta.gem https://ibm.biz/aspera-cli-beta
+gem install aspera-cli-beta.gem
+```
+
+On Windows, download the link, that saves the file: `aspera-cli-beta.gem`, then install with `gem install aspera-cli-beta.gem`.
+
 ### FASP Protocol: `ascp`
 
-Most file transfers will be executed using the **FASP** protocol, using `ascp`.
-Only two additional files are required to perform an Aspera Transfer, which are part of Aspera Transfer Daemon:
+File transfers are primarily performed using the **FASP** protocol via the `ascp` utility.
 
-- `ascp`
-- `aspera-license` (in same folder, or `../etc`)
+To execute an Aspera transfer, only two additional files are required, both included with the Aspera Transfer Daemon:
 
-This can be installed either be installing an Aspera transfer software or using an `ascli` command.
+- `ascp` - the transfer executable
+
+- `aspera-license` - the license file (located in the same directory as `ascp` or in `../etc`)
+
+These components can be installed either by installing the Aspera transfer software or by executing the `ascli` command.
 
 #### Installation of `ascp` through `transferd`
 
@@ -1691,6 +1693,7 @@ The value for **any** options can come from the following locations (in this ord
 Environment variable starting with prefix: ASCLI_ are taken as option values, e.g. `ASCLI_OPTION_NAME` is for `--option-name`.
 
 Option `show_config` dry runs the configuration, and then returns currently set values for options.
+
 `ascli --show-config` outputs global options only, and `ascli [plugin] --show-config` outputs global and plugin default options.
 In addition, option `--show-config` can be added at the end of any full command line, this displays the options that would be used for the command.
 
@@ -3399,14 +3402,26 @@ Sleep between iterations is given by the following formula where `iter_index` is
 max( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
-To display the native progress bar of `ascp`, use `--progress-bar=no --transfer-info=@json:'{"quiet":false}'`.
+To display the native progress bar of `ascp`, use:
+
+```shell
+--progress-bar=no --transfer-info=@json:'{"quiet":false}'`
+```
 
 To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
-In that, use the native progress bar: `--transfer-info=@json:'{"monitor":false,"quiet":false}'`
+In that, use the native progress bar:
+
+```shell
+--transfer-info=@json:'{"monitor":false,"quiet":false}'`
+```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
 In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer_info`.
-To use `ascp`'s default, use option: `--transfer-info=@json:'{"trusted_certs":null}'`.
+To use `ascp`'s default, use option:
+
+```shell
+--transfer-info=@json:'{"trusted_certs":null}'`.
+```
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
 The list of known protocol errors and retry level can be listed:
@@ -3691,7 +3706,7 @@ On Windows the compilation may fail for various reasons (3.1.1):
 
 - `cannot find -lx64-ucrt-ruby310`
 
-   &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to `[Ruby main dir]\lib\libx64-ucrt-ruby310.a` (remove the `dll` extension)
+   &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to (remove the `dll` extension) `[Ruby main dir]\lib\libx64-ucrt-ruby310.a`
   
 - `conflicting types for 'gettimeofday'`
 
@@ -4772,7 +4787,13 @@ It is recommended to use the wizard to set it up, although manual configuration 
 
 The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
 
-The first optional argument is the URL of your Aspera on Cloud instance, e.g. `https://_your_instance_.ibmaspera.com` or simply the organization name, and a second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
+The first optional argument is the URL of your Aspera on Cloud instance or simply the organization name, e.g. :
+
+```text
+https://_your_instance_.ibmaspera.com
+```
+
+The second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
 If optional arguments are not provided, the wizard will ask interactively and try to detect the application.
 
 Here is a sample invocation :
