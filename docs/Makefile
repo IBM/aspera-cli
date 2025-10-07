@@ -47,6 +47,7 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 		--standalone \
 		--embed-resources \
 		--resource-path=$(DIR_DOC)pandoc \
+		--resource-path=$(DIR_TOP). \
 		--lua-filter=$(DIR_DOC)pandoc/find_admonition.lua \
 		--lua-filter=$(DIR_DOC)pandoc/gfm_admonition.lua \
 		--css=$(DIR_DOC)pandoc/gfm_admonition.css \

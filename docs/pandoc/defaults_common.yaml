@@ -2,26 +2,12 @@
 #verbosity: INFO
 #we do not use `gfm` because it does not format tables well in pdf output
 from: markdown_mmd
-#to: pdf
-pdf-engine: lualatex
 toc: true
 number-sections: true
 shift-heading-level-by: -1
-variables:
-  documentclass: report
-  mainfont: "IBM Plex Sans"
-  monofont: "IBM Plex Mono"
-  urlcolor: blue
-  geometry: margin=12mm
-  include-before:
-    - '\newpage'
 resource-path:
   - ${.}
   - ..
-include-in-header:
-  - manual_include_in_header.tex
-include-after-body:
-  - manual_include_after_body.tex
 filters:
   - ${.}/find_admonition.lua
   - ${.}/gfm_admonition.lua

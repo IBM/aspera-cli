@@ -1,0 +1,15 @@
+# Pandoc options : see https://pandoc.org/MANUAL.html
+to: pdf
+pdf-engine: lualatex
+variables:
+  documentclass: report
+  mainfont: "IBM Plex Sans"
+  monofont: "IBM Plex Mono"
+  urlcolor: blue
+  geometry: margin=12mm
+  include-before:
+    - '\newpage'
+include-in-header:
+  - pdf_in_header.tex
+include-after-body:
+  - pdf_after_body.tex
