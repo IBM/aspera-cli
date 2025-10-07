@@ -1,0 +1,6 @@
+# Pandoc options : see https://pandoc.org/MANUAL.html
+to: html5
+standalone: true
+embed-resources: true
+css:
+  - gfm_admonition.css

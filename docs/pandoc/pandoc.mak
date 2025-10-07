@@ -1,14 +1,16 @@
 # See README.md for more information
 DIR_PANDOC := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 DEF_COMMON=$(DIR_PANDOC)defaults_common.yaml
+DEF_PDF=$(DIR_PANDOC)defaults_pdf.yaml
 PANDOC_DEPS=\
 $(DIR_PANDOC)break_replace.lua \
+$(DEF_COMMON) \
+$(DEF_PDF) \
 $(DIR_PANDOC)find_admonition.lua \
 $(DIR_PANDOC)gfm_admonition.css \
 $(DIR_PANDOC)gfm_admonition.lua \
-$(DIR_PANDOC)after_body.tex \
-$(DIR_PANDOC)in_header.tex \
-$(DEF_COMMON) \
+$(DIR_PANDOC)pdf_after_body.tex \
+$(DIR_PANDOC)pdf_in_header.tex \
 $(DIR_PANDOC)pandoc.mak
 define markdown_to_pdf
 $(2): $(1) $$(PANDOC_DEPS)
@@ -18,6 +20,7 @@ $(2): $(1) $$(PANDOC_DEPS)
 	  ref="-r $$$$(git log -1 --pretty="format:%cd" --date=unix $$<)";fi &&\
 	GFX_DIR=$$(DIR_PANDOC) pandoc \
 		--defaults=$(DEF_COMMON) \
+		--defaults=$(DEF_PDF) \
 		--variable=date:"$$$$(date $$$$ref '+%Y/%m/%d')" \
 	    --metadata-file=$$<.pandoc_meta \
 		--output=$$@ \
