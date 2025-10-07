@@ -1657,7 +1657,7 @@ $(F)conf_wizard_aoc_2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
 	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
-	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc test2 --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(F)conf_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
