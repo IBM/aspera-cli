@@ -20,6 +20,7 @@ end
 
 # Used only for development
 group :development do
+  gem 'debug', '~> 1.11'
   gem 'grpc-tools', '~> 1.67'
   gem 'rake', '~> 13.0'
   gem 'reek', '~> 6.5.0'

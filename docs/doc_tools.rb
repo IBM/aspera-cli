@@ -23,7 +23,7 @@ Aspera::Log.instance.level = :info
 Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
-HTML_BREAK='<br/>'
+HTML_BREAK = '<br/>'
 
 # Format special values to markdown
 class MarkdownFormatter
@@ -215,13 +215,12 @@ class DocHelper
     end
   end
 
-
   # Generate markdown from the provided 2D table
   def markdown_table(table)
     headings = table.shift
     # get max width of each columns
     col_widths = table.transpose.map do |col|
-      [col.flat_map { |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size) }.max, 80].min
+      [col.flat_map{ |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size)}.max, 80].min
     end
     table.unshift(col_widths.map{ |col_width| '-' * col_width})
     table.unshift(headings)
