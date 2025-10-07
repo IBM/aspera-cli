@@ -14,6 +14,7 @@ $(DIR_PANDOC)gfm_admonition.lua \
 $(DIR_PANDOC)pdf_after_body.tex \
 $(DIR_PANDOC)pdf_in_header.tex \
 $(DIR_PANDOC)pandoc.mak
+
 define markdown_to_pdf
 $(2): $(1) $$(PANDOC_DEPS)
 	-sed -n '/PANDOC_META_BEGIN/,/PANDOC_META_END/p' $$< | grep -v PANDOC_META > $$<.pandoc_meta
@@ -29,4 +30,14 @@ $(2): $(1) $$(PANDOC_DEPS)
 		$$<
 	rm -f $$<.pandoc_meta
 endef
+
+define markdown_to_html
+$(2): $(1) $$(PANDOC_DEPS)
+	pandoc \
+		--defaults=$$(DEF_COMMON) \
+		--defaults=$$(DEF_HTML) \
+		--output=$$@ \
+		$$<
+endef
+
 $(eval $(call markdown_to_pdf,%.md,%.pdf))

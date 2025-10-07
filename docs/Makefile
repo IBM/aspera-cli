@@ -26,23 +26,13 @@ $(TMPL_CONF_FILE_PATH): $(DIR_DOC)doc_tools.rb
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
 
-#wkhtmltopdf toc $(MANUAL_HTML) $@
-# +pipe_tables
-# Date in PDF header is either the last checked in date or today if file has been modified
-# sudo tlmgr install fvextra
 $(eval $(call markdown_to_pdf,$(DIR_TOP)README.md,$(MANUAL_PDF)))
+$(eval $(call markdown_to_html,$(DIR_TOP)README.md,$(MANUAL_HTML)))
 
 $(TSPEC_JSON_SCHEMA): $(DIR_LIB)aspera/transfer/spec.schema.yaml
 	$(CLI_PATH) config ascp schema --format=jsonpp --output=$@
 clean_doc::
 	rm -f $(TSPEC_JSON_SCHEMA)
-
-$(MANUAL_HTML): $(DIR_TOP)README.md $(PANDOC_DEPS)
-	pandoc \
-		--defaults=$(DEF_COMMON) \
-		--defaults=$(DEF_HTML) \
-		--output=$@ \
-		$(DIR_TOP)README.md
 
 # regenerate always, as it depends on sources (when a new option is added for example). instead do: make clean_doc doc
 #.PHONY: $(DIR_TOP)README.md
