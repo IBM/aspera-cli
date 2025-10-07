@@ -17,18 +17,6 @@ local box_styles = {
       backtitle = "blue!75!black",
     },
   },
-  info = {
-    -- gfm : ? not exists
-    html  = {
-      icon = "ℹ️",
-    },
-    latex = {
-      icon      = "InfoCircle",
-      back      = "gray!5",
-      title     = "black",
-      backtitle = "gray!60!black",
-    },
-  },
   tip = {
     -- gfm : green lightbulb
     html  = {
@@ -44,10 +32,10 @@ local box_styles = {
   important = {
     -- gfm : purple speech bubble exclamation
     html  = {
-      icon = "❗",
+      icon = "❕",
     },
     latex = {
-      icon      = "ExclamationTriangle",
+      icon      = "Bullhorn",
       back      = "orange!5",
       title     = "white",
       backtitle = "orange!70!black",
@@ -68,10 +56,10 @@ local box_styles = {
   caution = {
     -- gfm : red circled exclamation mark
     html  = {
-      icon = "⚡",
+      icon = "❗",
     },
     latex = {
-      icon      = "ExclamationTriangle",
+      icon      = "Exclamation",
       back      = "yellow!5",
       title     = "black",
       backtitle = "yellow!70!black",
@@ -95,19 +83,18 @@ function Div(el)
   if FORMAT:match("latex") then
     style = style.latex
     local opts = string.format(
-      "enhanced, breakable, colback=%s, colframe=%s, coltitle=%s, colbacktitle=%s, title={%s}",
-      style.back, style.backtitle, style.title, style.backtitle, "\\fa" .. style.icon .. "\\ " .. title
+      "enhanced, breakable, colback=%s, colframe=%s, coltitle=%s, colbacktitle=%s, title={\\fa%s\\ %s}",
+      style.back, style.backtitle, style.title, style.backtitle, style.icon, title
     )
     local body = pandoc.write(pandoc.Pandoc(body_parts), "latex")
     return pandoc.RawBlock("latex",
       "\\begin{tcolorbox}[" .. opts .. "]\n" ..
       body .. "\n\\end{tcolorbox}")
   elseif FORMAT:match("html") then
-    style = style.html
     local body = pandoc.write(pandoc.Pandoc(body_parts), "html")
     local html = string.format(
       '<div class="admonition %s">\n<div class="admonition-title">%s %s</div>\n<div class="admonition-body">%s</div>\n</div>',
-      admon_type, style.icon, title, body
+      admon_type, style.html.icon, title, body
     )
     return pandoc.RawBlock("html", html)
   end

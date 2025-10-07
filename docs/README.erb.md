@@ -7894,14 +7894,14 @@ Top level parameters supported by `asession`:
 
 ### Comparison of interfaces
 
-| feature/tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
+| Feature/Tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
 |------------|-------------|-------------|-------------|-------------|
-| status     | Supported    | Deprecated | Supported | Deprecated |
-| language integration  | Many         | C/C++<%=br%>C#/.net<%=br%>Go<%=br%>Python<%=br%>java<%=br%> | Any    | Any        |
-| required additional components to `ascp` | Daemon       | Library<%=br%>(+headers) | - | Ruby<%=br%>Aspera gem |
-| startup    | Daemon       | API | Command line arguments | JSON on stdin<%=br%>(standard APIs:<%=br%>JSON.generate<%=br%>Process.spawn) |
-| events     | Poll         | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
-| platforms  | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
+| status | Supported | Deprecated | Supported | Deprecated |
+| language integration | Many | C/C++<%=br%>C#/.net<%=br%>Go<%=br%>Python<%=br%>java<%=br%> | Any | Any |
+| required additional components to `ascp` | Daemon | Library<%=br%>(+headers) | - | Ruby<%=br%>Aspera gem |
+| startup | Daemon | API | Command line arguments | JSON on stdin<%=br%>(standard APIs:<%=br%>JSON.generate<%=br%>Process.spawn) |
+| events | Poll | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
+| platforms | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
 ### Simple session
 

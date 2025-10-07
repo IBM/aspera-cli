@@ -8809,11 +8809,11 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 | `tls`        | `true`             | `true`           | Enable `STARTTLS` (port 587)     |
 | `ssl`        | `false`            | `false`          | Enable `TLS` (port 465)          |
 | `port`       | `587`<br/>`465`<br/>`25` | `587`  | Port for service                 |
-| `domain`     | _domain of_ `server` | gmail.com        | Email domain of user             |
+| `domain`     | _domain of_ `server` | gmail.com      | Email domain of user             |
 | `username`   | -                  | john@example.com | User to authenticate on SMTP server<br/>Leave empty for open auth. |
 | `password`   | -                  | my_password_here | Password for above username      |
-| `from_email` | username if defined | johnny@example.com| Address used if receiver replies |
-| `from_name`  | same as email       | John Wayne      | Display name of sender           |
+| `from_email` | username if defined|johnny@example.com| Address used if receiver replies |
+| `from_name`  | same as email      | John Wayne       | Display name of sender           |
 <!-- markdownlint-enable MD034 -->
 
 ### Example of configuration
@@ -8928,14 +8928,14 @@ Top level parameters supported by `asession`:
 
 ### Comparison of interfaces
 
-| feature/tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
+| Feature/Tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
 |------------|-------------|-------------|-------------|-------------|
-| status     | Supported    | Deprecated | Supported | Deprecated |
-| language integration  | Many         | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | Any    | Any        |
-| required additional components to `ascp` | Daemon       | Library<br/>(+headers) | - | Ruby<br/>Aspera gem |
-| startup    | Daemon       | API | Command line arguments | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) |
-| events     | Poll         | Callback | Possibility to open management port<br/>and proprietary text syntax | JSON on stdout |
-| platforms  | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
+| status | Supported | Deprecated | Supported | Deprecated |
+| language integration | Many | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | Any | Any |
+| required additional components to `ascp` | Daemon | Library<br/>(+headers) | - | Ruby<br/>Aspera gem |
+| startup | Daemon | API | Command line arguments | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) |
+| events | Poll | Callback | Possibility to open management port<br/>and proprietary text syntax | JSON on stdout |
+| platforms | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
 ### Simple session
 

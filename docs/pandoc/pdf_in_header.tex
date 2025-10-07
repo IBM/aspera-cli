@@ -51,3 +51,12 @@
 \usepackage{tcolorbox}
 \tcbuselibrary{skins, breakable}
 \usepackage{fontawesome5}
+\usepackage{fancyhdr}
+\usepackage[table]{xcolor}
+\definecolor{table_row_color}{gray}{0.96}
+% alternate rowcolors in longtable
+\let\oldlongtable\longtable
+\let\endoldlongtable\endlongtable
+\renewenvironment{longtable}
+  {\rowcolors{2}{table_row_color}{white}\oldlongtable}
+  {\endoldlongtable}
