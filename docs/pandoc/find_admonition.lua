@@ -17,7 +17,7 @@ function BlockQuote(el)
         { pandoc.Para({ pandoc.Str(title_text) }) },
         { id = "", class = "title" }
     ) }
-    for i, block in ipairs(el.content) do
+    for _, block in ipairs(el.content) do
         table.insert(final_content, block)
     end
     return pandoc.Div(

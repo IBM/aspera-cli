@@ -666,8 +666,8 @@ The installation of the transfer binaries follows those steps:
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
   - The destination folder can be changed by setting the `sdk_folder` option.
 
-| Option          | Default | Description |
-|-----------------|---------|-------------|
+| Option          | Default | Description                                            |
+|-----------------|---------|--------------------------------------------------------|
 | `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive.<%=br%>`DEF` means: select from available archives. |
 | `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
 | `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
@@ -1700,8 +1700,8 @@ To redirect results to a file, use option `output`.
 
 Depending on action, the output will contain:
 
-| Result Type     | Description |
-|-----------------|-------------------|
+| Result Type     | Description                                                                       |
+|-----------------|-----------------------------------------------------------------------------------|
 | `single_object` | Displayed as a 2 dimensional table: one line per field, first column is field name, and second is field value. Nested hashes are collapsed. |
 | `object_list`   | Displayed as a 2 dimensional table: one line per item, one column per field. |
 | `value_list`    | A table with one column. |
@@ -1713,17 +1713,17 @@ Depending on action, the output will contain:
 
 The style of output can be set using the `format` option:
 
-| `format` | Output formatting    |
-|----------|----------------------|
-| `table`  | Text table (default) |
-| `text`   | Value as `String`    |
-| `ruby`   | Ruby code            |
-| `json`   | JSON code            |
-| `jsonpp` | JSON pretty printed  |
-| `yaml`   | YAML                 |
-| `csv`    | Comma Separated Values |
-| `image`  | Image URL or data    |
-| `nagios` | Suitable for Nagios  |
+| `format` | Output formatting       |
+|----------|-------------------------|
+| `table`  | Text table (default)    |
+| `text`   | Value as `String`       |
+| `ruby`   | Ruby code               |
+| `json`   | JSON code               |
+| `jsonpp` | JSON pretty printed     |
+| `yaml`   | YAML                    |
+| `csv`    | Comma Separated Values  |
+| `image`  | Image URL or data       |
+| `nagios` | Suitable for Nagios     |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
@@ -1831,23 +1831,23 @@ This option controls how result fields are displayed as columns or lines, when o
 Default is `no`.
 There are two types of results that are affected by this option:
 
-| Result          | Description |
-|-----------------|-------------|
-| `single_object` | A single item with multiple fields. |
+| Result          | Description                                 |
+|-----------------|---------------------------------------------|
+| `single_object` | A single item with multiple fields.         |
 | `object_list`   | A list of items, each with multiple fields. |
 
 An item (object) is displayed in one of those 2 ways:
 
-| Display    | rows   | columns |
-|------------|--------|---------|
+| Display    | rows   | columns             |
+|------------|--------|---------------------|
 | Simple     | Fields | `field` and `value` |
-| Transposed | Items  | Fields  |
+| Transposed | Items  | Fields              |
 
 The display of result is as follows:
 
-| Result          | `no`       | `yes`      | `single` |
-|-----------------|------------|------------|----------|
-| `single_object` | Simple     | Simple     | Simple   |
+| Result          | `no`       | `yes`       | `single`                            |
+|-----------------|------------|-------------|-------------------------------------|
+| `single_object` | Simple     | Simple      | Simple                              |
 | `object_list`   | Transposed | Simple<%=br%>(Multiple objects) | Simple if 1 object,<%=br%>transposed if 2+ objects |
 
 This parameter can be set as a global default with:
@@ -2039,8 +2039,8 @@ Decoders act like a function with its parameter on right-hand side and are recog
 
 The following decoders are supported:
 
-| Decoder  | Parameter| Returns  | Description |
-|----------|----------|----------|-------------|
+| Decoder  | Parameter| Returns  | Description                                                                              |
+|----------|----------|----------|------------------------------------------------------------------------------------------|
 | `base64` | `String` | `String` | Decode a base64 encoded string |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value |
 | `env`    | `String` | `String` | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
@@ -2485,9 +2485,9 @@ It takes three optional arguments:
 
 Special options are also available to the wizard:
 
-| Option      | Value    | Description |
-|-------------|----------|-------------|
-| `default`   | [yes]/no | Set as default configuration for specified plugin. |
+| Option      | Value    | Description                                                         |
+|-------------|----------|---------------------------------------------------------------------|
+| `default`   | [yes]/no | Set as default configuration for specified plugin.                  |
 | `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
 | `key-path`  | path     | Path to private key for JWT.    |
 | `test-mode` | yes/[no] | Skip private key check step.    |
@@ -2607,8 +2607,8 @@ brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=dev-only-token
 ```
 
-| Parameter | Example  | Description |
-|-----------|----------|-------------|
+| Parameter | Example                 | Description                                                         |
+|-----------|-------------------------|---------------------------------------------------------------------|
 | `type`    | `vault`                 | The type of the vault |
 | `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
 | `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
@@ -2624,10 +2624,10 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
-| Parameter | Example  | Description |
-|-----------|----------|-------------|
-| `type`    | `system` | The type of the vault |
-| `name`    | `<%=tool%>`  | The name of the keychain to use |
+| Parameter | Example     | Description                        |
+|-----------|-------------|------------------------------------|
+| `type`    | `system`    | The type of the vault.             |
+| `name`    | `<%=tool%>` | The name of the keychain to use.   |
 
 ```shell
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
@@ -2641,10 +2641,10 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 {"type":"file","name":"vault.bin"}
 ```
 
-| Parameter | Example      | Description |
-|-----------|--------------|-------------|
-| `type`    | `file`       | The type of the vault |
-| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env(%Q`home`)%>` |
+| Parameter | Example      | Description                                                        |
+|-----------|--------------|--------------------------------------------------------------------|
+| `type`    | `file`       | The type of the vault.                                             |
+| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env(%Q`home`)%>`. |
 
 #### Vault: Operations
 
@@ -2782,12 +2782,12 @@ This server can server HTTP or HTTPS (with certificate):
 
 The following parameters are supported:
 
-| Parameter         | Type     | Default | Description                                         |
-|-------------------|----------|---------|-----------------------------------------------------|
-| `url`             | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.           | <!-- markdownlint-disable-line -->
-| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. `.pfx` or `.p12` for PKCS12) |
-| `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for PKCS12           |
-| `chain`           | `String` | -       | (HTTPS) Path to certificate chain (PEM only)                         |
+| Parameter         | Type     | Default                 | Description                                                      |
+|-------------------|----------|-------------------------|------------------------------------------------------------------|
+| `url`             | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided. | <!-- markdownlint-disable-line -->
+| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. `.pfx` or `.p12` for PKCS12).        |
+| `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for PKCS12.                |
+| `chain`           | `String` | -       | (HTTPS) Path to certificate chain (PEM only).                                    |
 
 Parameter `url` (base URL) defines:
 
@@ -2807,12 +2807,12 @@ This is available:
 
 The following options can be specified in the option `image`:
 
-| Option     | Type    | Description |
-|------------|---------|-------------|
-| reserve    | `Integer` | Lines reserved to display a status |
-| text       | `Bool`    | Display text instead of image|
-| double     | `Bool`    | Display double text resolution (half characters) |
-| font_ratio | `Float`   | Font height/width ratio in terminal |
+| Option     | Type      | Description                                       |
+|------------|-----------|---------------------------------------------------|
+| reserve    | `Integer` | Lines reserved to display a status.               |
+| text       | `Bool`    | Display text instead of image.                    |
+| double     | `Bool`    | Display double text resolution (half characters). |
+| font_ratio | `Float`   | Font height/width ratio in terminal.              |
 
 ```shell
 <%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
@@ -2851,8 +2851,8 @@ To increase debug level, use option `log_level` (e.g. using command line `--log-
 By default, passwords and secrets are redacted from logs.
 Set option `log_secrets` to `yes` to include secrets in logs.
 
-| Option        | Values | Description |
-|---------------|--------|-------------|
+| Option        | Values | Description                                                             |
+|---------------|--------|-------------------------------------------------------------------------|
 | `logger`      | `stdout`<%=br%>`stderr`<%=br%>`syslog` | Type of output.<%=br%>Default: `stderr` |
 | `log_level`   | `trace2`<%=br%>`trace1`<%=br%>`debug`<%=br%>`info`<%=br%>`warn`<%=br%>`error` | Minimum level displayed.<%=br%>Default: `warn` |
 | `log_secrets` | `yes`<%=br%>`no` | Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
@@ -2868,10 +2868,10 @@ The default formatter is:
 
 Availaible formatters for `log_format`:
 
-| Name      | Description                             |
-|-----------|-----------------------------------------|
-| `default` | Default formatter.                      |
-| `standard`| Standard Ruby formatter.                |
+| Name      | Description              |
+|-----------|--------------------------|
+| `default` | Default formatter.       |
+| `standard`| Standard Ruby formatter. |
 
 Examples:
 
@@ -3220,8 +3220,8 @@ Transfers will be executed by a transfer client, here called **Transfer Agent**.
 
 The following agents are supported and selected with option `transfer`:
 
-| `transfer`                         | location | Description of agent          |
-|------------------------------------|----------|-------------------------------|
+| `transfer` | location | Description of agent          |
+|----------|----------|-------------------------------|
 | [`direct`](#agent-direct)          | local    | direct execution of `ascp`    |
 | [`transferd`](#agent-transfer-daemon) | local    | Aspera Transfer Daemon        |
 | [`connect`](#agent-connect-client) | local    | Aspera Connect Client         |
@@ -3250,12 +3250,12 @@ Refer to section [FASP](#fasp-configuration).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-| Name                   | Type    | Description |
-|------------------------|---------|-------------|
+| Name                   | Type      | Description                                                                 |
+|------------------------|-----------|-----------------------------------------------------------------------------|
 | `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: `true` |
 | `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false` |
 | `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
-| `client_ssh_key`       | `String` | SSH Keys to use for token-based transfers.<%=br%>One of: `dsa_rsa`, `rsa`, `per_client`.<%=br%>Default: `rsa` |
+| `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers.<%=br%>One of: `dsa_rsa`, `rsa`, `per_client`.<%=br%>Default: `rsa` |
 | `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<%=br%>Default: `[]` |
 | `spawn_timeout_sec`    | `Float`   | Multi session<%=br%>Verification time that `ascp` is running<%=br%>Default: `3` |
 | `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2` |
@@ -3516,11 +3516,11 @@ By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using 
 
 Parameters provided in option `transfer_info` are:
 
-| Name                | Type      | Description                           |
-|---------------------|-----------|---------------------------------------|
-| `url`               | `String`  | URL of the HTTP GW<%=br%>Mandatory |
+| Name                | Type      | Description                                               |
+|---------------------|-----------|-----------------------------------------------------------|
+| `url`               | `String`  | URL of the HTTP GW<%=br%>Mandatory                        |
 | `upload_chunk_size` | `Integer` | Size in bytes of chunks for upload<%=br%>Default: `64000` |
-| `api_version`       | `String`  | Force use of version (`v1`, `v2`)<%=br%>Default: `v2` |
+| `api_version`       | `String`  | Force use of version (`v1`, `v2`)<%=br%>Default: `v2`     |
 | `synchronous`       | `Bool`    | Wait for each message acknowledgment<%=br%>Default: `false` |
 
 Example:
@@ -3541,8 +3541,8 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer_info` are:
 
-| Name     | Type     | Description |
-|----------|----------|-------------|
+| Name     | Type     | Description                                  |
+|----------|----------|----------------------------------------------|
 | `url`    | `String` | IP address and port listened by the daemon<%=br%>Mandatory<%=br%>Default: `:0` |
 | `start`  | `Bool`   | Start a new daemon.<%=br%>Default: `true` |
 | `stop`   | `Bool`   | Stop daemon when exiting <%=tool%><%=br%>Default: `true` |
@@ -3787,18 +3787,18 @@ A leading `/` on destination is ignored (relative to docroot) unless docroot is 
 
 In the following table source folder `d3` contains 2 files: `f1` and `d4/f2`.
 
-| Source files | Destination | Folders on Dest.  | `create_dir` | Destination Files           |
-|--------------|-------------|-------------------|--------------|-----------------------------|
-| `f1`         | `d/f`       | -                 | false        | Error: `d` does not exist.  |
-| `f1`         | `d/f`       | `d`               | false        | `d/f` (renamed)          |
-| `f1`         | `d/f/.`     | `d`               | false        | `d/f` (renamed)          |
-| `f1`         | `d/f`       | `d/f`             | false        | `d/f/f1`                    |
-| `f1` `f2`    | `d`         | `d`               | false        | `d/f1` `d/f2`               |
-| `d3`         | `d`         | -                 | false        | `d/f1` `d/f2` (renamed)    |
-| `f1`         | `d`         | -                 | true         | `d/f1`                      |
-| `f1` `f2`    | `d`         | -                 | true         | `d/f1` `d/f2`               |
-| `d1/f1` `d2/f2` | `d`      | -                 | true         | `d/f1` `d/f2`               |
-| `d3`         | `d`         | -                 | true         | `d/d3/f1` `d/d3/d4/f2`      |
+| Source files    | Destination | Folders on Dest.  | `create_dir` | Destination Files           |
+|-----------------|-----|-----|------|-----------------------------------|
+| `f1`            | `d/f`       | -                 | false        | Error: `d` does not exist.  |
+| `f1`            | `d/f`       | `d`               | false        | `d/f` (renamed)             |
+| `f1`            | `d/f/.`     | `d`               | false        | `d/f` (renamed)             |
+| `f1`            | `d/f`       | `d/f`             | false        | `d/f/f1`                    |
+| `f1` `f2`       | `d`         | `d`               | false        | `d/f1` `d/f2`               |
+| `d3`            | `d`         | -                 | false        | `d/f1` `d/f2` (renamed)     |
+| `f1`            | `d`         | -                 | true         | `d/f1`                      |
+| `f1` `f2`       | `d`         | -                 | true         | `d/f1` `d/f2`               |
+| `d1/f1` `d2/f2` | `d`         | -                 | true         | `d/f1` `d/f2`               |
+| `d3`            | `d`         | -                 | true         | `d/d3/f1` `d/d3/d4/f2`      |
 
 If a file par list is provided then it is possible to rename or specify a different destination folder for each source (relative to the destination).
 
@@ -4112,14 +4112,14 @@ where:
 - `dirname` is the folder name and can contain `/` to specify a subfolder.
 - Supported arguments are:
 
-| Name     | Type  | Description |
-|----------|-------|-------------|
-| count    | int   | Number of files<%=br%>Mandatory |
-| file     | string| Basename for files<%=br%>Default: `file` |
-| size     | int   | Size of first file.<%=br%>Default: 0 |
-| inc      | int   | Increment applied to determine next file size<%=br%>Default: 0 |
-| seq      | enum  | Sequence in determining next file size<%=br%>Values: `random`, `sequential`<%=br%>Default: `sequential` |
-| buf_init | enum  | How source data is initialized<%=br%>Option `none` is not allowed for downloads.<%=br%>Values:`none`, `zero`, `random`<%=br%>Default:`zero` |
+| Name     | Type   | Description                                                    |
+|----------|--------|----------------------------------------------------------------|
+| count    | int    | Number of files<%=br%>Mandatory |
+| file     | string | Basename for files<%=br%>Default: `file` |
+| size     | int    | Size of first file.<%=br%>Default: 0 |
+| inc      | int    | Increment applied to determine next file size<%=br%>Default: 0 |
+| seq      | enum   | Sequence in determining next file size<%=br%>Values: `random`, `sequential`<%=br%>Default: `sequential` |
+| buf_init | enum   | How source data is initialized<%=br%>Option `none` is not allowed for downloads.<%=br%>Values:`none`, `zero`, `random`<%=br%>Default:`zero` |
 
 The sequence parameter is applied as follows:
 
@@ -5215,12 +5215,12 @@ By default, all files in the package are downloaded, i.e. `.` is used as the fil
 Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
 The following syntax is supported
 
-| Syntax | Description |
-|--------|-------------|
-| `@none:` | No subfolder is created, files are downloaded directly into the specified `to_folder`. |
-| `<field>` | A subfolder named after the package's specified field is created inside `to_folder`. |
-| `<field1>+<field2>` | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
-| `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists. Else it falls back to the combination of both fields with `.`. |
+| Syntax               | Description                                                                            |
+|----------------------|----------------------------------------------------------------------------------------|
+| `@none:`             | No subfolder is created, files are downloaded directly into the specified `to_folder`. |
+| `<field>`            | A subfolder named after the package's specified field is created inside `to_folder`.   |
+| `<field1>+<field2>`  | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
+| `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists.<%=br%>Else it falls back to the combination of both fields with `.`. |
 
 The special value `seq` for `<field2>` will append an incrementing number to the folder name starting at `1`.
 If `?` is used, then the sequence number is used only if the folder already exists.
@@ -5290,15 +5290,15 @@ For advanced users, it's also possible to pipe node information for the package 
 
 By default, when using `aoc packages list` or `aoc packages receive ALL`, the following `query` is performed:
 
-| Query parameter            | Value   |
-|----------------------------|---------|
+| Query parameter            | Value                                         |
+|----------------------------|-----------------------------------------------|
 | `archived`                 | `false` |
 | `has_content`              | `true`  |
 | `received`                 | `true`  |
 | `completed`                | `true`  |
-| `workspace_id`             | Set based on current workspace. |
+| `workspace_id`             | Set based on current workspace.               |
 | `dropbox_id`               | Set according to `dropbox_name`, if provided. |
-| `exclude_dropbox_packages` | `true` unless `dropbox_id` is provided. |
+| `exclude_dropbox_packages` | `true` unless `dropbox_id` is provided.       |
 
 Parameters provided using option `query` override this query.
 To remove a parameter, set it to `null`.
@@ -5388,14 +5388,14 @@ The basic payload to create a permission, i.e. a Shared Folder (last argument at
 <%=tool%> expects the same payload for creation.
 <%=tool%> automatically populates some payload fields and provides convenient additional fields that generate native fields:
 
-| Field           | Type     | Description |
-|-----------------|----------|-------------|
+| Field           | Type     | Description                                                          |
+|-----------------|----------|----------------------------------------------------------------------|
 | `file_id`       | Native<%=br%>Auto     | ID of the folder to share, as specified in the command line by path. |
-| `access_levels` | Native<%=br%>Optional | List of access levels to set for the shared folder. Defaults to full access. |
+| `access_levels` | Native<%=br%>Optional | List of access levels to set for the shared folder.<%=br%>Defaults to full access. |
 | `tags`          | Native<%=br%>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
-| `access_type`   | Native<%=br%>Required | Type of access, such as `user`, `group`, or `workspace`. Can be set with parameter `with`. |
+| `access_type`   | Native<%=br%>Required | Type of access, such as `user`, `group`, or `workspace`.<%=br%>Can be set with parameter `with`. |
 | `access_id`     | Native<%=br%>Required | ID of the user, group, or workspace (see `with`) |
-| `with`          | <%=tool%>           | Recipient of shared folder. Can be a username, a group name, or a workspace name. <%=tool%> will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
+| `with`          | <%=tool%>           | Recipient of shared folder. Can be a username, a group name, or a workspace name.<%=br%><%=tool%> will resolve the name to the proper type and ID in fields `access_type` and `access_id`.<%=br%>If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
 | `link_name`     |  <%=tool%>          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  <%=tool%>          | Name of the link file created in the user's home folder for admin shared folders. |
 
@@ -5877,11 +5877,11 @@ Native API parameters can be placed in option `query`.
 
 Special parameters can be placed in option `query` for "gen3" browse:
 
-| Parameter   | Description |
-|-------------|-------------|
-| `recursive` | Recursively list files |
-| `max`       | Maximum number of files to list |
-| `self`      | Offset in the list |
+| Parameter   | Description                      |
+|-------------|----------------------------------|
+| `recursive` | Recursively list files.          |
+| `max`       | Maximum number of files to list. |
+| `self`      | Offset in the list.              |
 
 Option `node_cache` can be set to `no` to avoid use of folder cache (Redis) and force actual read of file system.
 
@@ -6002,10 +6002,10 @@ By providing the `validator` option, offline transfer validation can be done.
 There are three commands related to file synchronisation:
 
 | Command | `node` | `shares` | `aoc` | `server` | Description |
-|---------|--------|----------|-------|----------|-------------|
-| `sync`  | Yes    | Yes      | Yes   | Yes      | Perform a local sync, by executing `async` locally. |
-| `async` | Yes    |          |       |          | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
-| `ssync` | Yes    |          |       |          | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
+|-----|-----|-----|-----|-----|-----------------------------------------------|
+| `sync`    | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
+| `async`   | Yes |     |     |     | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
+| `ssync`   | Yes |     |     |     | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
 
 For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
@@ -6150,16 +6150,16 @@ Bearer tokens can be generated using <%=tool%> command `bearer_token`: it takes 
 - The private key used to sign the token.
 - The token information, which is a `Hash` containing the following elements:
 
-| Parameter          | Default           | Type      | Description                      |
-|--------------------|-------------------|-----------|----------------------------------|
-| `_scope`           | `user:all`        | Special   | Either `user:all` or `admin:all` |
-| `_validity`        | 86400             | Special   | Validity in seconds from now.    |
-| `user_id`          | -                 | Mandatory | Identifier of user               |
-| `scope` | `node.<access_key>:<_scope>` | Mandatory | API scope, e.g. `node.<access_key>:<node scope>`         |
-| `expires_at`       | `now+<_validity>` | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ` e.g. `2021-12-31T23:59:59Z` |
-| `auth_type`        | `access_key`      | Optional  | `access_key`, `node_user`        |
-| `group_ids`        | -                 | Optional  | List of group IDs                |
-| `organization_id`  | -                 | Optional  | Organization ID                  |
+| Parameter              | Default           | Type      | Description                                     |
+|----------------------|---------------------------|---------|---------------------------------------|
+| `_scope`               | `user:all`        | Special   | Either `user:all` or `admin:all`    |
+| `_validity`            | 86400             | Special   | Validity in seconds from now.       |
+| `user_id`              | -                 | Mandatory | Identifier of user                  |
+| `scope`     | `node.<access_key>:<_scope>` | Mandatory | API scope<%=br%>e.g. `node.<access_key>:<node scope>`         |
+| `expires_at`           | `now+<_validity>` | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<%=br%>e.g. `2021-12-31T23:59:59Z` |
+| `auth_type`            | `access_key`      | Optional  | `access_key`, `node_user`           |
+| `group_ids`            | -                 | Optional  | List of group IDs                   |
+| `organization_id`      | -                 | Optional  | Organization ID                     |
 | `watermarking_json_base64` | -         | Optional  | Watermarking information (not used) |
 
 > [!NOTE]
@@ -6286,10 +6286,10 @@ The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default | Description                                      |
-|-------------|----------|---------|---------------------------------------------------|
-| `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.        |
-| `key`       | `String` | -       | Agent key for the backend.                        |
+| Parameter   | Type     | Default | Description                                  |
+|-------------|----------|---------|----------------------------------------------|
+| `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.   |
+| `key`       | `String` | -       | Agent key for the backend.                   |
 | `interval`  | `Float`  | 10      | Polling interval in seconds.<%=br%>`0` for single shot. |
 
 To retrieve OTel backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
@@ -6489,7 +6489,7 @@ By default, package operations (`send`, `receive`, `list`) are performed on the 
 To select another inbox, use option `box` with one of the following values:
 
 | `box`               | Comment |
-|---------------------|---------|
+|---------------------|----------------------------------------------------------------------|
 | `inbox`             | Default |
 | `inbox_history`     | |
 | `inbox_all`         | |
@@ -6499,8 +6499,8 @@ To select another inbox, use option `box` with one of the following values:
 | `pending`           | |
 | `pending_history`   | |
 | `all`               | |
-| `ALL`               | **admin only**, all inboxes of all users |
-| Open value          | Name of a shared inbox if `group_type` is `shared_inboxes` (default)<%=br%>or workgroup if `group_type` is `workgroups` |
+| `ALL`               | All inboxes of all users. **admin only**. |
+| Open value          | If `group_type` is `shared_inboxes`: name of a shared inbox (default)<%=br%>If `group_type` is `workgroups`: workgroup name |
 
 > [!NOTE]
 > In case the name of the `box` is an open value, use option `group_type` set to either `shared_inboxes` or `workgroups`.
@@ -6573,14 +6573,14 @@ Option `box` can be used to list packages from a specific box (see [Inbox Select
 
 Option `query` can be used to filter the list of packages, based on native API parameters, directly sent to [Faspex 5 API `GET /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#getAllPackages).
 
-| Parameter | Type    | Description |
-|-----------|---------|-------------|
-| `offset`  | Native  | Managed by <%=tool%>: Offset of first package. Default: 0 |
-| `limit`   | Native  | Managed by <%=tool%>: # of packages per API call. Default: 100 |
-| `q`       | Native  | General search string (case-insensitive, matches if value is contained in several fields) |
-| ...       | Native  | Other native parameters are supported (Refer to API documentation) |
-| `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
-| `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
+| Parameter | Type  | Description |
+|---------|---------|-----------------------------------------------------------------------|
+| `offset`| Native  | Managed by <%=tool%>: Offset of first package. Default: 0 |
+| `limit` | Native  | Managed by <%=tool%>: # of packages per API call. Default: 100 |
+| `q`     | Native  | General search string<%=br%>case-insensitive, matches if value is contained in several fields |
+| ...     | Native  | Other native parameters are supported (Refer to API documentation) |
+| `max`   | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
+| `pmax`  | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
 
 A **Command Parameter** in last position, of type `Proc`, can be used to filter the list of packages.
 This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
@@ -6608,15 +6608,15 @@ By default, paging is used.
 
 Option `query` is available with parameters supported by the API and <%=tool%> :
 
-| Parameter    | Evaluation   | Description |
-|--------------|--------------|-------------|
-| `paging`     | <%=tool%>    | Use paging API. Default: `true` |
-| `recursive`  | <%=tool%>    | List inside folders. Default: `false` |
-| `max`        | <%=tool%>    | Maximum number of items. |
-| `filter`     | API          | Refer to API doc. Default: `{"basenames":[]}` |
-| `offset`     | API (legacy) | Index of first item. Default: `0` |
-| `limit`      | API (legacy) | Number of items in one API call result. Default: `500` |
-| `per_page`   | API (paging) | Number of items in one API call result. Default: `500` |
+| Parameter | Evaluation   | Default           | Description                             |
+|-----------|--------------|-------------------| ----------------------------------------|
+| `paging`  | <%=tool%>    | `true`            | Use paging API.                         |
+| `recursive`| <%=tool%>   | `false`           | List inside folders.                    |
+| `max`     | <%=tool%>    | -                 | Maximum number of items.                |
+| `filter`  | API          | `{"basenames":[]}`| Refer to API doc.                       |
+| `offset`  | API (legacy) | `0`               | Index of first item.                    |
+| `limit`   | API (legacy) | `500`             | Number of items in one API call result. |
+| `per_page`| API (paging) | `500`             | Number of items in one API call result. |
 
 ### Faspex 5: Content of a received Package
 
@@ -6913,8 +6913,8 @@ A user can receive a package because the recipient is:
 
 As inboxes may be large, it is possible to use the following query parameters:
 
-| Parameter    | Evaluation | Description |
-|--------------|------------|-------------|
+| Parameter    | Evaluation | Description                                                          |
+|--------------|------------|----------------------------------------------------------------------|
 | `count`      | API        | Number of items in one API call result (default=0, equivalent to 10) |
 | `page`       | API        | ID of page in call (default=0) |
 | `startIndex` | API        | Index of item to start (default=0) |
@@ -7064,17 +7064,17 @@ The payload for creation is the same as for the API, parameters are provided as 
 
 Example: Create a Node: Attributes are like API:
 
-| Attribute | Required | Default |
-|-----------|----------|---------|
-| `name`    | Yes      |         |
-| `host`    | Yes      |         |
-| `api_username` | Yes |         |
-| `api_password` | Yes |         |
-| `port`    |          | `9092`  |
-| `ssl`     |          | `true`  |
-| `verify_ssl` |       | `false` |
-| `timeout`    |       | `30s`   |
-| `open_timeout` |     | `10s`   |
+| Attribute    | Required | Default |
+|--------------|----------|---------|
+| `name`       | Yes      |         |
+| `host`       | Yes      |         |
+| `api_username` | Yes    |         |
+| `api_password` | Yes    |         |
+| `port`       |          | `9092`  |
+| `ssl`        |          | `true`  |
+| `verify_ssl` |          | `false` |
+| `timeout`    |          | `30s`   |
+| `open_timeout` |        | `10s`   |
 
 Example: Create a share and add a user to it.
 
@@ -7122,12 +7122,12 @@ If you don't have credentials but have access to the IBM Cloud console, then use
 
 If you have those parameters already, then following options shall be provided:
 
-| Option     | Description |
-|------------|-------------|
-| `bucket`   | Bucket name |
+| Option     | Description                                       |
+|------------|---------------------------------------------------|
+| `bucket`   | Bucket name                                       |
 | `endpoint` | Storage endpoint URL<%=br%>e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud` |
-| `apikey`   | API Key     |
-| `crn`      | Resource instance ID |
+| `apikey`   | API Key                                           |
+| `crn`      | Resource instance ID                              |
 
 For example, let us create a default configuration:
 
@@ -7191,7 +7191,7 @@ The field `apikey` is for option `apikey`
 The required options for this method are:
 
 | Option                | Description |
-|-----------------------|-------------|
+|-----------------------|------------------------------------------------|
 | `bucket`              | Bucket name |
 | `region`              | Bucket region<%=br%>e.g. `eu-de` |
 | `service_credentials` | JSON information saved from IBM Cloud console. |
@@ -7769,17 +7769,17 @@ This is done with option `smtp`.
 The `smtp` option is a `Hash` (extended value) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
-| Field        | Default             | Example                    | Description                      |
-|--------------|---------------------|----------------------------|----------------------------------|
-| `server`     | -                   | `smtp.gmail.com`           | SMTP server address              |
-| `tls`        | `true`              | `true`                     | Enable `STARTTLS` (port 587)     |
-| `ssl`        | `false`             | `false`                    | Enable `TLS` (port 465)          |
-| `port`       | `587` or `465` or `25` | `587`                   | Port for service                 |
-| `domain`     | _domain of server_  | gmail.com                  | Email domain of user             |
-| `username`   | -                   | john@example.com           | User to authenticate on SMTP server, leave empty for open auth. |
-| `password`   | -                   | my_password_here           | Password for above username      |
-| `from_email` | username if defined | johnny@example.com         | Address used if receiver replies |
-| `from_name`  | same as email       | John Wayne                 | Display name of sender           |
+| Field        | Default            | Example          | Description                      |
+|--------------|--------------------|------------------|----------------------------------|
+| `server`     | -                  | `smtp.gmail.com` | SMTP server address              |
+| `tls`        | `true`             | `true`           | Enable `STARTTLS` (port 587)     |
+| `ssl`        | `false`            | `false`          | Enable `TLS` (port 465)          |
+| `port`       | `587`<%=br%>`465`<%=br%>`25` | `587`  | Port for service                 |
+| `domain`     | _domain of_ `server` | gmail.com      | Email domain of user             |
+| `username`   | -                  | john@example.com | User to authenticate on SMTP server<%=br%>Leave empty for open auth. |
+| `password`   | -                  | my_password_here | Password for above username      |
+| `from_email` | username if defined|johnny@example.com| Address used if receiver replies |
+| `from_name`  | same as email      | John Wayne       | Display name of sender           |
 <!-- markdownlint-enable MD034 -->
 
 ### Example of configuration
@@ -7885,22 +7885,23 @@ During execution, it generates all low level events, one per line, in JSON forma
 
 Top level parameters supported by `asession`:
 
-| Parameter  | Description |
-|------------|-------------|
-| `spec`     | The [**transfer-spec**](#transfer-specification)    |
-| `agent`    | Same parameters as transfer-info for agent `direct` |
-| `loglevel` | Log level of `asession`                             |
-| `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<%=br%>By default, it is `[system tmp folder]/[username]_asession_filelists` |
+| Parameter          | Description                                                            |
+|--------------------|------------------------------------------------------------------------|
+| `spec`             | The [**transfer-spec**](#transfer-specification)                       |
+| `agent`            | Same parameters as transfer-info for agent `direct`                    |
+| `loglevel`         | Log level of `asession`                                                |
+| `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<%=br%>Default: `[system tmp folder]/[username]_asession_filelists` |
 
 ### Comparison of interfaces
 
-| feature/tool          | Transfer Daemon | FASPManager                      | `ascp` | `asession` |
-|-----------------------|--------------|---------------------------------|--------|------------|
+| feature/tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
+|------------|-------------|-------------|-------------|-------------|
+| status     | Supported    | Deprecated | Supported | Deprecated |
 | language integration  | Many         | C/C++<%=br%>C#/.net<%=br%>Go<%=br%>Python<%=br%>java<%=br%> | Any    | Any        |
 | required additional components to `ascp` | Daemon       | Library<%=br%>(+headers) | - | Ruby<%=br%>Aspera gem |
-| startup               | Daemon       | API | Command line arguments | JSON on stdin<%=br%>(standard APIs:<%=br%>JSON.generate<%=br%>Process.spawn) |
-| events                | Poll     | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
-| platforms             | Any with `ascp` and transfer daemon | Any with `ascp` (and SDK if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
+| startup    | Daemon       | API | Command line arguments | JSON on stdin<%=br%>(standard APIs:<%=br%>JSON.generate<%=br%>Process.spawn) |
+| events     | Poll         | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
+| platforms  | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
 ### Simple session
 

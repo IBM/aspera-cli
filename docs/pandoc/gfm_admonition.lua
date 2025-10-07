@@ -89,7 +89,7 @@ function Div(el)
   if #title_div_content ~= 1 or title_div_content[1].t ~= "Para" then return el end
   local title = pandoc.utils.stringify(table.remove(title_div_content, 1))
   local body_parts = {}
-  for i, block in ipairs(el.content) do
+  for _, block in ipairs(el.content) do
     table.insert(body_parts, block)
   end
   if FORMAT:match("latex") then
