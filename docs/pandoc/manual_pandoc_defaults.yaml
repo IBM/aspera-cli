@@ -1,7 +1,6 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 #verbosity: INFO
 #we do not use `gfm` because it does not format tables well in pdf output
-#from: gfm
 from: markdown_mmd
 #to: pdf
 pdf-engine: lualatex
