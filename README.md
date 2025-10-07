@@ -10,6 +10,8 @@ PANDOC_META_END
 
 <!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
+<!-- markdownlint-disable MD028 -->
+
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
@@ -253,6 +255,19 @@ It is planned to provide `ascli` as a single platform-dependent executable.
 
 Installation of `ascp` is still required separately.
 Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+
+### Beta release of gem
+
+Beta version of gem can be found here: <https://ibm.biz/aspera-cli-beta>
+
+On Linux/macOS, install in a terminal:
+
+```shell
+curl -sLo aspera-cli-beta.gem https://ibm.biz/aspera-cli-beta
+gem install aspera-cli-beta.gem
+```
+
+On Windows, download the link, that saves the file: `aspera-cli-beta.gem`, then install with `gem install aspera-cli-beta.gem`.
 
 #### Linux: GLIBC version
 
