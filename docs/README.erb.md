@@ -243,11 +243,21 @@ If you don't have internet for the installation, refer to section [Installation 
 > [!CAUTION]
 > This is a Beta feature.
 
-It is planned to provide <%=tool%> as a single platform-dependent executable.
+<%=tool%> is available as a single **platform-dependent executable**.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-Installation of `ascp` is still required separately.
-Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+Installation:
+
+```shell
+curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.24.1.osx-arm64
+chmod a+x ascli
+./ascli conf transferd install
+```
+
+> [!NOTE]
+> Replace the URL with the one for your platform.
+> Installation of `ascp` is still required separately.
+> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 #### Linux: GLIBC version
 

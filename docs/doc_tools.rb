@@ -219,10 +219,10 @@ class DocHelper
   # Generate markdown from the provided 2D table
   def markdown_table(table)
     headings = table.shift
+    # get max width of each columns
     col_widths = table.transpose.map do |col|
-      [80, col.map { |cell| cell.to_s.delete('`').split(HTML_BREAK).map(&:size).max }.max].min
+      [col.flat_map { |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size) }.max, 80].min
     end
-    puts(">>#{col_widths}")
     table.unshift(col_widths.map{ |col_width| '-' * col_width})
     table.unshift(headings)
     return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
