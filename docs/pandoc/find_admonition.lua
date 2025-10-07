@@ -1,3 +1,6 @@
+-- Transform block quotes starting with [!TAG] (e.g. [!NOTE], [!WARNING]) into
+-- styled <div> blocks with a class matching the tag and a title header inside.
+-- Used to create admonition-style boxes in Pandoc output.
 function BlockQuote(el)
     local first = el.content[1]
     if not (first and first.t == "Para") then return el end

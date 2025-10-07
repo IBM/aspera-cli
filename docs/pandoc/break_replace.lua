@@ -1,4 +1,7 @@
+-- Replace raw HTML line breaks (<br/>) inside table cells with proper Pandoc
+-- LineBreak elements, ensuring clean cross-format rendering of tables.
 function Table(tbl)
+    -- Convert the table to and from a simple Pandoc table for easy traversal.
     tbl = pandoc.utils.to_simple_table(tbl)
     for _, row in ipairs(tbl.rows) do
         for _, cell in ipairs(row) do
