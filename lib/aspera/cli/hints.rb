@@ -100,6 +100,14 @@ module Aspera
           remediation: [
             'home not created in Windows?'
           ]
+        },
+        {
+          exception:   Aspera::RestCallError,
+          match:       /Server is not configured for this request/,
+          remediation: [
+            'Transfer user shall have those parameters in aspera.conf set to: token',
+            'authorization_transfer_in_value authorization_transfer_out_value'
+          ]
         }
       ]
       private_constant :ERROR_HINTS
