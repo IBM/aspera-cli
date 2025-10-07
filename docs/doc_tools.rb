@@ -104,7 +104,7 @@ class DocHelper
               end
               if uri.query.is_a?(String)
                 SECRET_QUERIES.each do |key|
-                  uri.query = uri.query.gsub(/&?#{key}=[^&]*/, "#{key}=some_#{key}")
+                  uri.query = uri.query.gsub(/(&?)#{key}=[^&]*/){"#{::Regexp.last_match(1)}#{key}=some_#{key}"}
                 end
               end
               preset_hash[param_name] = uri.to_s
