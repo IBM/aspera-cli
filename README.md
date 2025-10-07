@@ -2475,8 +2475,8 @@ wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
 wizard https://shares.example.com/path shares --username=test --password=test
-wizard my_org aoc --key-path=my_private_key --username=my_user_email
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
+wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
 ```
 
 #### Format of file
