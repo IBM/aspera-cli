@@ -1,6 +1,7 @@
 -- Convert styled admonition Div blocks (e.g. note, warning, tip) into
 -- corresponding HTML or LaTeX representations with icons, colors, and titles.
 -- Uses predefined visual styles from `box_styles` for consistent formatting.
+-- luacheck: globals FORMAT pandoc
 local box_styles = {
   note = {
     colback      = "blue!5",
