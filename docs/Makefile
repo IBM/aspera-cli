@@ -37,20 +37,10 @@ $(TSPEC_JSON_SCHEMA): $(DIR_LIB)aspera/transfer/spec.schema.yaml
 clean_doc::
 	rm -f $(TSPEC_JSON_SCHEMA)
 
-$(MANUAL_HTML): $(DIR_TOP)README.md
+$(MANUAL_HTML): $(DIR_TOP)README.md $(PANDOC_DEPS)
 	pandoc \
-		--from=markdown_mmd \
-		--to=html5 \
-		--toc \
-		--number-sections \
-		--shift-heading-level-by=-1 \
-		--standalone \
-		--embed-resources \
-		--resource-path=$(DIR_DOC)pandoc \
-		--resource-path=$(DIR_TOP). \
-		--lua-filter=$(DIR_DOC)pandoc/find_admonition.lua \
-		--lua-filter=$(DIR_DOC)pandoc/gfm_admonition.lua \
-		--css=$(DIR_DOC)pandoc/gfm_admonition.css \
+		--defaults=$(DEF_COMMON) \
+		--defaults=$(DEF_HTML) \
 		--output=$@ \
 		$(DIR_TOP)README.md
 

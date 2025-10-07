@@ -2,10 +2,12 @@
 DIR_PANDOC := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 DEF_COMMON=$(DIR_PANDOC)defaults_common.yaml
 DEF_PDF=$(DIR_PANDOC)defaults_pdf.yaml
+DEF_HTML=$(DIR_PANDOC)defaults_html.yaml
 PANDOC_DEPS=\
 $(DIR_PANDOC)break_replace.lua \
 $(DEF_COMMON) \
 $(DEF_PDF) \
+$(DEF_HTML) \
 $(DIR_PANDOC)find_admonition.lua \
 $(DIR_PANDOC)gfm_admonition.css \
 $(DIR_PANDOC)gfm_admonition.lua \
@@ -19,8 +21,8 @@ $(2): $(1) $$(PANDOC_DEPS)
 	if git status --porcelain $$< > /dev/null 2>&1 && test -z "$$$$(git status --porcelain $$<)";then \
 	  ref="-r $$$$(git log -1 --pretty="format:%cd" --date=unix $$<)";fi &&\
 	GFX_DIR=$$(DIR_PANDOC) pandoc \
-		--defaults=$(DEF_COMMON) \
-		--defaults=$(DEF_PDF) \
+		--defaults=$$(DEF_COMMON) \
+		--defaults=$$(DEF_PDF) \
 		--variable=date:"$$$$(date $$$$ref '+%Y/%m/%d')" \
 	    --metadata-file=$$<.pandoc_meta \
 		--output=$$@ \
