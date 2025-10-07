@@ -575,7 +575,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](Gemfile):
 
 | name | version | comment |
-| ---- | ------- | ------- |
+| -------------------- | ------- | --------------------------------------------------- |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | mimemagic | ~> 0.4 | for preview |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
@@ -3782,7 +3782,7 @@ ascli config ascp schema transferd --format=jsonpp
 `ascp` argument or environment variable is provided in description.
 
 | ID | Name |
-| -- | ---- |
+| - | --------- |
 | A | Direct |
 | C | Connect |
 | D | Desktop |
@@ -3791,7 +3791,7 @@ ascli config ascp schema transferd --format=jsonpp
 | T | Transferd |
 
 | Field | Type | Description |
-| ----- | ---- | ----------- |
+| ------------------------------ | ------- | -------------------------------------------------------------------------------- |
 | apply_local_docroot | boolean | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | authentication | string | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
 | cipher | string | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`<br/>(`-c (conversion){enum}`) |

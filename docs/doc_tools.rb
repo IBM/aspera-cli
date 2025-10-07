@@ -23,6 +23,8 @@ Aspera::Log.instance.level = :info
 Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
+HTML_BREAK='<br/>'
+
 # Format special values to markdown
 class MarkdownFormatter
   class << self
@@ -32,7 +34,7 @@ class MarkdownFormatter
 
     def check_row(row)
       row.each_key do |k|
-        row[k] = row[k].join('<br/>') if row[k].is_a?(Array)
+        row[k] = row[k].join(HTML_BREAK) if row[k].is_a?(Array)
         row[k] = '&nbsp;' if row[k].to_s.strip.empty?
       end
     end
@@ -134,7 +136,7 @@ class DocHelper
   end
 
   # Line break in tables
-  def br; '<br/>'; end
+  def br; HTML_BREAK; end
 
   # To the power of
   def pow(value); "<sup>#{value}</sup>"; end
@@ -213,10 +215,15 @@ class DocHelper
     end
   end
 
+
   # Generate markdown from the provided 2D table
   def markdown_table(table)
     headings = table.shift
-    table.unshift(headings.map{ |col_name| '-' * col_name.length})
+    col_widths = table.transpose.map do |col|
+      [80, col.map { |cell| cell.to_s.delete('`').split(HTML_BREAK).map(&:size).max }.max].min
+    end
+    puts(">>#{col_widths}")
+    table.unshift(col_widths.map{ |col_width| '-' * col_width})
     table.unshift(headings)
     return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
   end
