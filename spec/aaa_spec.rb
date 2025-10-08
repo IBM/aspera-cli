@@ -3,12 +3,13 @@
 require 'spec_helper'
 
 require 'aspera/assert'
+require 'aspera/rest'
 require 'aspera/uri_reader'
 require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/ascp/management'
 
-describe 'Assert' do
+RSpec.describe(Aspera::AssertError) do
   it 'works for list' do
     Aspera.assert_values(:bad, [:good])
     raise 'Shall not reach here'
@@ -17,7 +18,7 @@ describe 'Assert' do
   end
 end
 
-describe 'UriReader' do
+RSpec.describe(Aspera::UriReader) do
   it 'fails on bad uri' do
     Aspera::UriReader.read('unknown:///foo.bar')
     raise 'Shall not reach here'
@@ -32,7 +33,7 @@ describe 'UriReader' do
   end
 end
 
-describe 'Environment' do
+RSpec.describe(Aspera::Environment) do
   it 'works for OSes' do
     RbConfig::CONFIG['host_os'] = 'mswin'
     Aspera::Environment.instance.initialize_fields
@@ -81,5 +82,15 @@ describe 'Environment' do
       'encryption'          => true,
       'extra_create_policy' => 'none'
     }))
+  end
+end
+
+RSpec.describe(Aspera::Rest) do
+  it 'build URI' do
+    expect(Aspera::Rest.build_uri('https://locahost', 'q=e&p=1').to_s).to(eq('https://locahost?q=e&p=1'))
+  end
+  it 'parses php query' do
+    expect(Aspera::Rest.query_to_h('q[]=1&q[]=2')).to(eq({'q'=>%w[1 2]}))
+    expect(Aspera::Rest.query_to_h('q=1&q=2')).to(eq({'q'=>%w[1 2]}))
   end
 end

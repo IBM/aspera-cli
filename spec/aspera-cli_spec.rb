@@ -19,7 +19,9 @@ require 'openssl'
 
 class LocalExecutor
   def execute(cmd, input:)
+    # :nocov:
     %Q(echo "#{input}"|#{cmd})
+    # :nocov:
   end
 end
 
@@ -32,11 +34,13 @@ ssh_options = {
   use_agent: false
 }
 if defined?(JRUBY_VERSION)
+  # :nocov:
   ssh_options.merge!({
     host_key:   %w[rsa-sha2-512 rsa-sha2-256],
     kex:        %w[curve25519-sha256 diffie-hellman-group14-sha256],
     encryption: %w[aes256-ctr aes192-ctr aes128-ctr]
   })
+  # :nocov:
 end
 demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, **ssh_options)
 
