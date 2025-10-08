@@ -83,106 +83,6 @@ module Aspera
             }
           end
 
-          # @param url [String] url to check
-          # @return [Bool] true if private key is required for the url (i.e. no passcode)
-          def private_key_required?(url)
-            # pub link do not need private key
-            return Api::AoC.link_info(url)[:token].nil?
-          end
-
-          # @param plugin [Plugin] An instance of this class
-          # @param private_key_path [String] path to private key
-          # @param pub_key_pem [String] PEM of public key
-          # @return [Hash] :preset_value, :test_args
-          def wizard(plugin:, private_key_path: nil, pub_key_pem: nil)
-            # set vars to look like object
-            options = plugin.options
-            formatter = plugin.formatter
-            instance_url = options.get_option(:url, mandatory: true)
-            pub_link_info = Api::AoC.link_info(instance_url)
-            if !pub_link_info[:token].nil?
-              pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
-              pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})
-              preset_value = {
-                link: instance_url
-              }
-              preset_value[:password] = options.get_option(:password, mandatory: true) if pub_info['password_protected']
-              return {
-                preset_value: preset_value,
-                test_args:    'organization'
-              }
-            end
-            options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: Api::AoC.saas_url?(instance_url))
-            options.parse_options!
-            # make username mandatory for jwt, this triggers interactive input
-            wiz_username = options.get_option(:username, mandatory: true)
-            raise "Username shall be an email in AoC: #{wiz_username}" if !(wiz_username =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
-            # Set the pub key and jwt tag in the user's profile automatically
-            auto_set_pub_key = false
-            auto_set_jwt = false
-            # use browser authentication to bootstrap
-            use_browser_authentication = false
-            if options.get_option(:use_generic_client)
-              formatter.display_status('Using global client_id.')
-              formatter.display_status('Please Login to your Aspera on Cloud instance.')
-              formatter.display_status('Navigate to: 👤 → Account Settings → Profile → Public Key')
-              formatter.display_status('Check or update the value to:'.red.blink)
-              formatter.display_status(pub_key_pem, hide_secrets: false)
-              formatter.display_status('Once updated or validated, press enter.')
-              Environment.instance.open_uri(instance_url)
-              $stdin.gets if Wizard.required
-            else
-              formatter.display_status('Using organization specific client_id.')
-              if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
-                formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
-                formatter.display_status('Navigate to: 𓃑  → Admin → Integrations → API Clients')
-                formatter.display_status('Check or create in integration:')
-                formatter.display_status('- name: cli')
-                formatter.display_status("- redirect uri: #{REDIRECT_LOCALHOST}")
-                formatter.display_status('- origin: localhost')
-                formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
-              end
-              Environment.instance.open_uri("#{instance_url}/admin/integrations/api-clients")
-              options.get_option(:client_id, mandatory: true)
-              options.get_option(:client_secret, mandatory: true)
-              # use_browser_authentication = true
-            end
-            if use_browser_authentication
-              formatter.display_status('We will use web authentication to bootstrap.')
-              auto_set_pub_key = true
-              auto_set_jwt = true
-              Aspera.error_not_implemented
-              # aoc_api.oauth.grant_method = :web
-              # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
-              # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
-            end
-            myself = plugin.aoc_api.read('self')
-            if auto_set_pub_key
-              Aspera.assert(myself['public_key'].empty?, type: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
-              formatter.display_status('Updating profile with the public key.')
-              aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
-            end
-            if auto_set_jwt
-              formatter.display_status('Enabling JWT for client')
-              aoc_api.update("clients/#{options.get_option(:client_id)}", {'jwt_grant_enabled' => true, 'explicit_authorization_required' => false})
-            end
-            preset_result = {
-              url:         instance_url,
-              username:    myself['email'],
-              auth:        :jwt.to_s,
-              private_key: "@file:#{private_key_path}"
-            }
-            # set only if non nil
-            %i[client_id client_secret].each do |s|
-              o = options.get_option(s)
-              preset_result[s.to_s] = o unless o.nil?
-            end
-            return {
-              preset_value: preset_result,
-              test_args:    'user profile show'
-            }
-          end
-
           # @param base [String] Base folder path
           # @return [String] Folder path that does jot exist, with possible .<number> extension
           def next_available_folder(base, always: false)
@@ -214,6 +114,92 @@ module Aspera
               end
             end
           end
+        end
+
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          pub_link_info = Api::AoC.link_info(app_url)
+          # public link case
+          if pub_link_info.key?(:token)
+            pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
+            pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})
+            preset_value = {
+              link: app_url
+            }
+            preset_value[:password] = options.get_option(:password, mandatory: true) if pub_info['password_protected']
+            return {
+              preset_value: preset_value,
+              test_args:    'organization'
+            }
+          end
+          options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: Api::AoC.saas_url?(app_url))
+          options.parse_options!
+          # make username mandatory for jwt, this triggers interactive input
+          wiz_username = options.get_option(:username, mandatory: true)
+          wizard.check_email(wiz_username)
+          # Set the pub key and jwt tag in the user's profile automatically
+          auto_set_pub_key = false
+          auto_set_jwt = false
+          # use browser authentication to bootstrap
+          use_browser_authentication = false
+          private_key_path = wizard.ask_private_key(
+            user: wiz_username,
+            url: app_url,
+            page: '👤 → Account Settings → Profile → Public Key'
+          )
+          client_id = options.get_option(:client_id)
+          client_secret = options.get_option(:client_secret)
+          if client_id.nil? || client_secret.nil?
+            if options.get_option(:use_generic_client)
+              client_id = client_secret = nil
+              formatter.display_status('Using global client_id.')
+            else
+              formatter.display_status('Using organization specific client_id.')
+              formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
+              formatter.display_status('Navigate to: 𓃑  → Admin → Integrations → API Clients')
+              formatter.display_status('Check or create in integration:')
+              formatter.display_status('- name: cli')
+              formatter.display_status("- redirect uri: #{REDIRECT_LOCALHOST}")
+              formatter.display_status('- origin: localhost')
+              formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
+              Environment.instance.open_uri("#{app_url}/admin/integrations/api-clients")
+              client_id = options.get_option(:client_id, mandatory: true)
+              client_secret = options.get_option(:client_secret, mandatory: true)
+              # use_browser_authentication = true
+            end
+          end
+          if use_browser_authentication
+            formatter.display_status('We will use web authentication to bootstrap.')
+            auto_set_pub_key = true
+            auto_set_jwt = true
+            Aspera.error_not_implemented
+            # aoc_api.oauth.grant_method = :web
+            # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
+            # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
+          end
+          myself = aoc_api.read('self')
+          if auto_set_pub_key
+            Aspera.assert(myself['public_key'].empty?, type: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
+            formatter.display_status('Updating profile with the public key.')
+            aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
+          end
+          if auto_set_jwt
+            formatter.display_status('Enabling JWT for client')
+            aoc_api.update("clients/#{options.get_option(:client_id)}", {'jwt_grant_enabled' => true, 'explicit_authorization_required' => false})
+          end
+          return {
+            preset_value: {
+              url:           app_url,
+              username:      myself['email'],
+              auth:          :jwt.to_s,
+              private_key:   "@file:#{private_key_path}",
+              client_id:     client_id,
+              client_secret: client_secret
+            }.compact,
+            test_args:    'user profile show'
+          }
         end
 
         def initialize(**_)

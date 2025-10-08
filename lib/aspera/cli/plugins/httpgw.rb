@@ -22,18 +22,18 @@ module Aspera
             } if api_info.is_a?(Hash) && api_info.key?('download_endpoint')
             return
           end
+        end
 
-          # @param plugin [Plugin] An instance of this class
-          # @return [Hash] :preset_value, :test_args
-          def wizard(plugin:)
-            options = plugin.options
-            return {
-              preset_value: {
-                url: options.get_option(:url, mandatory: true)
-              },
-              test_args:    'info'
-            }
-          end
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          return {
+            preset_value: {
+              url: app_url
+            },
+            test_args:    'info'
+          }
         end
         ACTIONS = %i[health info].freeze
 

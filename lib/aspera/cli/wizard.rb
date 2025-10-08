@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/oauth/jwt'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -10,19 +11,18 @@ module Aspera
       private_constant :WIZARD_RESULT_KEYS,
         :DEFAULT_PRIV_KEY_FILENAME
 
-      class << self
-        def required
-          !ENV['ASCLI_WIZ_TEST']
-        end
-      end
-
       def initialize(parent, main_folder)
         @parent = parent
         @main_folder = main_folder
-        # wizard options
+        # Wizard options
         options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
         options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
         options.declare(:key_path, 'Wizard: path to private key for JWT')
+      end
+
+      # @return false if in test mode to avoid interactive input
+      def required
+        !ENV['ASCLI_WIZ_TEST']
       end
 
       def options
@@ -35,6 +35,10 @@ module Aspera
 
       def config
         @parent.config
+      end
+
+      def check_email(email)
+        Aspera.assert(email =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i, type: ParameterError){"Username shall be an email: #{email}"}
       end
 
       # Find a plugin, and issue the "require"
@@ -50,14 +54,14 @@ module Aspera
           next if plugin_name_sym.eql?(my_self_plugin_sym)
           next if check_only && !check_only.eql?(plugin_name_sym)
           # load plugin class
-          detect_plugin_class = PluginFactory.instance.plugin_class(plugin_name_sym)
+          plugin_klass = PluginFactory.instance.plugin_class(plugin_name_sym)
           # requires detection method
-          next unless detect_plugin_class.respond_to?(:detect)
+          next unless plugin_klass.respond_to?(:detect)
           detection_info = nil
           begin
             Log.log.debug{"detecting #{plugin_name_sym} at #{app_url}"}
             formatter.long_operation_running("#{plugin_name_sym}\r")
-            detection_info = detect_plugin_class.detect(app_url)
+            detection_info = plugin_klass.detect(app_url)
           rescue OpenSSL::SSL::SSLError => e
             Log.log.warn(e.message)
             Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
@@ -68,13 +72,46 @@ module Aspera
           next if detection_info.nil?
           Aspera.assert_type(detection_info, Hash)
           Aspera.assert_type(detection_info[:url], String) if detection_info.key?(:url)
-          app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
+          app_name = plugin_klass.respond_to?(:application_name) ? plugin_klass.application_name : plugin_klass.name.split('::').last
           # if there is a redirect, then the detector can override the url.
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
         raise "No known application found at #{app_url}" if found_apps.empty?
         Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)})
         return found_apps
+      end
+
+      # To be called in public wizard method to get private key
+      # @return [Array] Private key path, pub key PEM
+      def ask_private_key(user:, url:, page:)
+        # lets see if path to priv key is provided
+        private_key_path = options.get_option(:key_path)
+        # give a chance to provide
+        if private_key_path.nil?
+          formatter.display_status('Path to private RSA key (leave empty to generate):')
+          private_key_path = options.get_option(:key_path, mandatory: true).to_s
+        end
+        # else generate path
+        private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
+        if File.exist?(private_key_path)
+          formatter.display_status('Using existing key:')
+        else
+          formatter.display_status("Generating #{OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
+          OAuth::Jwt.generate_rsa_private_key(path: private_key_path)
+          formatter.display_status('Created key:')
+        end
+        formatter.display_status(private_key_path)
+        private_key_pem = File.read(private_key_path)
+        pub_key_pem = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
+        options.set_option(:private_key, private_key_pem)
+        formatter.display_status("Please Log in as user #{user.red} at: #{url.red}")
+        formatter.display_status("Navigate to: #{page}")
+        formatter.display_status("Check or update the value to (#{'including BEGIN/END lines'.red}):".blink)
+        formatter.display_status(pub_key_pem, hide_secrets: false)
+        formatter.display_status('Once updated or validated, press [Enter].')
+        Environment.instance.open_uri(url)
+        $stdin.gets if required
+        private_key_path
       end
 
       # Wizard function, creates configuration
@@ -93,46 +130,15 @@ module Aspera
         Log.dump(:identification, identification)
         wiz_url = identification[:url]
         formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
-        # set url for instantiation of plugin
+        # Set url for instantiation of plugin
         options.add_option_preset({url: wiz_url}, 'wizard')
-        # instantiate plugin: command line options will be known and wizard can be called
-        wiz_plugin_class = PluginFactory.instance.plugin_class(identification[:product])
-        Aspera.assert(wiz_plugin_class.respond_to?(:wizard), type: Cli::BadArgument) do
+        # Instantiate plugin: command line options will be known, e.g. private_key, and wizard can be called
+        plugin_instance = PluginFactory.instance.plugin_class(identification[:product]).new(context: @parent.context)
+        Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument) do
           "Detected: #{identification[:product]}, but this application has no wizard"
         end
-        # instantiate plugin: command line options will be known, e.g. private_key
-        plugin_instance = wiz_plugin_class.new(context: @parent.context)
-        wiz_params = {
-          plugin: plugin_instance
-        }
-        # is private key needed ?
-        if options.known_options.key?(:private_key) &&
-            (!wiz_plugin_class.respond_to?(:private_key_required?) || wiz_plugin_class.private_key_required?(wiz_url))
-          # lets see if path to priv key is provided
-          private_key_path = options.get_option(:key_path)
-          # give a chance to provide
-          if private_key_path.nil?
-            formatter.display_status('Path to private RSA key (leave empty to generate):')
-            private_key_path = options.get_option(:key_path, mandatory: true).to_s
-          end
-          # else generate path
-          private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
-          if File.exist?(private_key_path)
-            formatter.display_status('Using existing key:')
-          else
-            formatter.display_status("Generating #{OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
-            OAuth::Jwt.generate_rsa_private_key(path: private_key_path)
-            formatter.display_status('Created key:')
-          end
-          formatter.display_status(private_key_path)
-          private_key_pem = File.read(private_key_path)
-          options.set_option(:private_key, private_key_pem)
-          wiz_params[:private_key_path] = private_key_path
-          wiz_params[:pub_key_pem] = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
-        end
-        Log.dump(:wiz_params, wiz_params)
-        # finally, call the wizard
-        wizard_result = wiz_plugin_class.wizard(**wiz_params)
+        # Call the wizard
+        wizard_result = plugin_instance.wizard(self, wiz_url)
         Log.log.debug{"wizard result: #{wizard_result}"}
         Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
         # get preset name from user or default
@@ -153,7 +159,8 @@ module Aspera
         test_args = wizard_result[:test_args]
         test_args = "-P#{wiz_preset_name} #{test_args}" unless option_default
         # TODO: actually test the command
-        return Main.result_status("You can test with:\n#{Info::CMD_NAME} #{identification[:product]} #{test_args}")
+        test_cmd = "#{Info::CMD_NAME} #{identification[:product]} #{test_args}"
+        return Main.result_status("You can test with:\n#{test_cmd.red}")
       end
     end
   end

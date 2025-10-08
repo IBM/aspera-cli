@@ -62,18 +62,6 @@ module Aspera
             return
           end
 
-          def wizard(plugin:, _private_key_path: nil, _pub_key_pem: nil)
-            options = plugin.options
-            return {
-              preset_value: {
-                url:      options.get_option(:url, mandatory: true),
-                username: options.get_option(:username, mandatory: true),
-                password: options.get_option(:password, mandatory: true)
-              },
-              test_args:    'info'
-            }
-          end
-
           def declare_options(options)
             return if @options_declared
             @options_declared = true
@@ -98,6 +86,20 @@ module Aspera
           def gen3_entry_folder?(entry)
             FOLDER_TYPES.include?(entry['type'])
           end
+        end
+
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          return {
+            preset_value: {
+              url:      app_url,
+              username: options.get_option(:username, mandatory: true),
+              password: options.get_option(:password, mandatory: true)
+            },
+            test_args:    'info'
+          }
         end
 
         # spellchecker: disable

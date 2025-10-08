@@ -141,6 +141,7 @@ module Aspera
         @ask_missing_mandatory = false # STDIN.isatty
         # ask optional options if not provided and in interactive
         @ask_missing_optional = false
+        # get_option fails if a mandatory parameter is asked
         @fail_on_missing_mandatory = true
         # Array of [key(sym), value]
         # those must be set before parse
@@ -254,7 +255,7 @@ module Aspera
         Log.log.trace1{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
         result = default if result.nil?
         # do not fail for manual generation if option mandatory but not set
-        result = '' if result.nil? && mandatory && !@fail_on_missing_mandatory
+        result = :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
         # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory

@@ -52,42 +52,44 @@ module Aspera
             raise error if error
             return
           end
+        end
 
-          # @param plugin [Plugin] An instance of this class
-          # @param private_key_path [String] path to private key
-          # @param pub_key_pem [String] PEM of public key
-          # @return [Hash] :preset_value, :test_args
-          def wizard(plugin:, private_key_path:, pub_key_pem:)
-            options = plugin.options
-            formatter = plugin.formatter
-            instance_url = options.get_option(:url, mandatory: true)
-            wiz_username = options.get_option(:username, mandatory: true)
-            raise "Username shall be an email in Faspex: #{wiz_username}" if !(wiz_username =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
-            if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
-              formatter.display_status('Ask the ascli client id and secret to your Administrator.'.red)
-              formatter.display_status("Log in as an admin user at: #{instance_url}")
-              Environment.instance.open_uri(instance_url)
-              formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
-              formatter.display_status('Create an API client with:')
-              formatter.display_status('- name: ascli')
-              formatter.display_status('- JWT: enabled')
-              formatter.display_status("Log in as user #{wiz_username.red}. Navigate to your profile:")
-              formatter.display_status('👤 → Account Settings → Preferences → Public Key in PEM:')
-              formatter.display_status(pub_key_pem)
-              formatter.display_status('Once set, fill in the parameters:')
-            end
-            return {
-              preset_value: {
-                url:           instance_url,
-                username:      wiz_username,
-                auth:          :jwt.to_s,
-                private_key:   "@file:#{private_key_path}",
-                client_id:     options.get_option(:client_id, mandatory: Wizard.required),
-                client_secret: options.get_option(:client_secret, mandatory: Wizard.required)
-              },
-              test_args:    'user profile show'
-            }
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          client_id = options.get_option(:client_id)
+          client_secret = options.get_option(:client_secret)
+          if client_id.nil? || client_secret.nil?
+            formatter.display_status('Ask the ascli client id and secret to your Administrator.'.red)
+            formatter.display_status("Log in as an admin user at: #{app_url}")
+            Environment.instance.open_uri(app_url)
+            formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
+            formatter.display_status('Create an API client with:')
+            formatter.display_status('- name: ascli')
+            formatter.display_status('- JWT: enabled')
+            formatter.display_status('Upon creation, the admin shall get those parameters:')
+            client_id = options.get_option(:client_id, mandatory: wizard.required)
+            client_secret = options.get_option(:client_secret, mandatory: wizard.required)
           end
+          wiz_username = options.get_option(:username, mandatory: true)
+          wizard.check_email(wiz_username)
+          private_key_path = wizard.ask_private_key(
+            user: wiz_username,
+            url: app_url,
+            page: '👤 → Account Settings → Preferences → Public Key in PEM'
+          )
+          return {
+            preset_value: {
+              url:           app_url,
+              username:      wiz_username,
+              auth:          :jwt.to_s,
+              private_key:   "@file:#{private_key_path}",
+              client_id:     client_id,
+              client_secret: client_secret
+            },
+            test_args:    'user profile show'
+          }
         end
 
         def initialize(**_)

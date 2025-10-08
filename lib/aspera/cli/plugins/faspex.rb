@@ -74,20 +74,6 @@ module Aspera
             return
           end
 
-          # @param plugin [Plugin] An instance of this class
-          # @return [Hash] :preset_value, :test_args
-          def wizard(plugin:)
-            options = plugin.options
-            return {
-              preset_value: {
-                url:      options.get_option(:url, mandatory: true),
-                username: options.get_option(:username, mandatory: true),
-                password: options.get_option(:password, mandatory: true)
-              },
-              test_args:    'me'
-            }
-          end
-
           # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
@@ -120,6 +106,20 @@ module Aspera
             return match_source['id'] unless match_source.nil?
             raise Cli::Error, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{ |i| %Q("#{i['name']}")}.join(', ')}])
           end
+        end
+
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          return {
+            preset_value: {
+              url:      app_url,
+              username: options.get_option(:username, mandatory: true),
+              password: options.get_option(:password, mandatory: true)
+            },
+            test_args:    'me'
+          }
         end
 
         def initialize(**_)

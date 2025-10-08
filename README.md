@@ -2617,20 +2617,21 @@ The wizard is a command that asks the user for information and creates an [Optio
 
 It takes three optional arguments:
 
-- The URL of the application, else it will ask for it;
-- The plugin name: it limits detection to a given plugin, else it will try to detect known plugins from the URL
-- The preset name: it will create a new [Option Preset](#option-preset) with this name, else it will use specific information to generate a unique preset name.
+|#| Parameter description                      | If not provided, `ascli`                 |
+|-|--------------------------------------------|--------------------------------------------|
+|1| **URL** or hostname of the application     | ask for it.                                |
+|2| The **plugin name** to limit search to     | tries to detect known plugins from the URL |
+|3| The **preset name** to save in config file | generates a unique preset name             |
 
-Special options are also available to the wizard:
+Options are also available for the wizard:
 
 | Option      | Value    | Description                                                         |
 |-------------|----------|---------------------------------------------------------------------|
 | `default`   | [yes]/no | Set as default configuration for specified plugin.                  |
 | `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
-| `key-path`  | path     | Path to private key for JWT.    |
-| `test-mode` | yes/[no] | Skip private key check step.    |
+| `key_path`  | path     | Path to private key for JWT.                                        |
 
-Other options can be provided to the wizard, such as `--username`, etc...
+Other plugin-specific options can be provided to the wizard, such as `--username`, etc...
 They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
@@ -2638,6 +2639,9 @@ The simplest invocation is:
 ```shell
 ascli config wizard
 ```
+
+If the application requires a private key, the user can either provide the path to it with option `key_path`.
+The user is told where to place the associated public pey PEM in the application.
 
 #### Example of configuration for a plugin
 
@@ -4791,45 +4795,50 @@ Aspera on Cloud API requires the use of OAuth v2 mechanism for authentication (H
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
-### Configuration: Using Wizard
+### AoC configuration: Using Wizard
 
 `ascli` provides a configuration [wizard](#wizard).
 
 The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
 
-The first optional argument is the URL of your Aspera on Cloud instance or simply the organization name, e.g. :
+The first optional argument is the URL of your Aspera on Cloud instance or simply the organization name, i.e. one of those :
 
-```text
-https://_your_instance_.ibmaspera.com
-```
+- `_your_organization_`
+- `_your_organization_.ibmaspera.com`
+- `https://_your_organization_.ibmaspera.com`
 
 The second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
 If optional arguments are not provided, the wizard will ask interactively and try to detect the application.
 
 Here is a sample invocation :
 
-```text
-ascli config wizard
-option: url> https://_your_instance_.ibmaspera.com
-Detected: Aspera on Cloud
-Preparing preset: aoc_myorg
-Please provide path to your private RSA key, or empty to generate one:
+```console
+$ ascli config wizard
+Using: Aspera on Cloud at https://_my_org_.ibmaspera.com
+Path to private RSA key (leave empty to generate):
 option: key_path>
-using existing key:
-/Users/myself/.aspera/ascli/aspera_aoc_key
+Using existing key:
+/home/john/.aspera/ascli/my_private_key.pem
+Please Log in as user laurent.martin.aspera@fr.ibm.com at: https://_my_org_.ibmaspera.com
+Navigate to: (User) → Account Settings → Profile → Public Key
+Check or update the value to (including BEGIN/END lines):
+-----BEGIN PUBLIC KEY-----
+MIICIjANBg....
+....
+....kCAwEAAQ==
+-----END PUBLIC KEY-----
+Once updated or validated, press [Enter].
+
 Using global client_id.
-option: username> john@example.com
-Updating profile with new key
-creating new config preset: aoc_myorg
-Setting config preset as default for aspera
-saving configuration file
-Done.
+Preparing preset: aoc_my_org_ibmaspera_com_john_example_com
+Setting config preset as default for aoc
 You can test with:
 ascli aoc user profile show
+Saving config file.
 ```
 
 > [!NOTE]
-> In above example, replace `https://_your_instance_.ibmaspera.com` with your actual AoC URL.
+> In above example, replace `https://_my_org_.ibmaspera.com` with your actual AoC URL.
 
 Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
@@ -4837,11 +4846,11 @@ For this, specify the option: `--use-generic-client=no`.
 If you already know the application, and want to limit the detection to it, provide URL and plugin name:
 
 ```shell
-ascli config wizard _your_instance_ aoc
+ascli config wizard _my_org_ aoc
 ```
 
 > [!NOTE]
-> In above example, replace `_your_instance_` with the first part of your actual AoC URL: `https://_your_instance_.ibmaspera.com`.
+> In above example, replace `_my_org_` with the first part of your actual AoC URL: `https://_my_org_.ibmaspera.com`.
 
 After successful completion of the wizard, a new configuration preset is created, and set as default for the `aoc` plugin.
 This can be verified with command:
@@ -4850,12 +4859,12 @@ This can be verified with command:
 ascli config preset over
 ```
 
-### Configuration: Using manual setup
+### AoC configuration: Using manual setup
 
 > [!NOTE]
 > If you used the wizard (recommended): skip this section.
 
-#### Configuration details
+#### AoC manual configuration: Details
 
 Several types of OAuth authentication are supported:
 
@@ -4885,7 +4894,7 @@ Else you can use a specific OAuth API `client_id`, the first step is to declare 
 
 Let's start by a registration with web based authentication (auth=web):
 
-- Open a web browser, log to your instance: e.g. `https://_your_instance_.ibmaspera.com/`
+- Open a web browser, log to your instance: e.g. `https://_my_org_.ibmaspera.com/`
   (use your actual AoC instance URL)
 - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click **Create New**
@@ -4910,14 +4919,14 @@ Let's create an [Option Preset](#option-preset) called: `my_aoc_org` using `ask`
 
 ```shell
 ascli config preset ask my_aoc_org url client_id client_secret
-option: url> https://_your_instance_.ibmaspera.com/
+option: url> https://_my_org_.ibmaspera.com/
 option: client_id> my_client_id_here
 option: client_secret> my_client_secret_here
 updated: my_aoc_org
 ```
 
 > [!NOTE]
-> In above example, replace `https://_your_instance_.ibmaspera.com` with your actual AoC URL.
+> In above example, replace `https://_my_org_.ibmaspera.com` with your actual AoC URL.
 
 (This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
@@ -4945,7 +4954,7 @@ This can be done in two manners:
 
 - Graphically
 
-  - Open a web browser, log to your instance: `https://_your_instance_.ibmaspera.com/`
+  - Open a web browser, log to your instance: `https://_my_org_.ibmaspera.com/`
     (Use your actual AoC instance URL)
   - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
   - Click on the previously created application
@@ -4988,7 +4997,7 @@ This can be done in two manners:
 
 Open the previously generated public key located here: `$HOME/.aspera/ascli/my_private_key.pub`
 
-- Open a web browser, log to your instance: `https://_your_instance_.ibmaspera.com/`
+- Open a web browser, log to your instance: `https://_my_org_.ibmaspera.com/`
   (Use your actual AoC instance URL)
 - Click on the user's icon (top right)
 - Select **Account Settings**
@@ -6870,17 +6879,17 @@ Bearer tokens can be generated using `ascli` command `bearer_token`: it takes tw
 - The private key used to sign the token.
 - The token information, which is a `Hash` containing the following elements:
 
-| Parameter              | Default           | Type      | Description                                     |
+| Parameter              | Default                 | Type    | Description                           |
 |----------------------|---------------------------|---------|---------------------------------------|
-| `_scope`               | `user:all`        | Special   | Either `user:all` or `admin:all`    |
-| `_validity`            | 86400             | Special   | Validity in seconds from now.       |
-| `user_id`              | -                 | Mandatory | Identifier of user                  |
-| `scope`     | `node.<access_key>:<_scope>` | Mandatory | API scope<br/>e.g. `node.<access_key>:<node scope>`         |
-| `expires_at`           | `now+<_validity>` | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<br/>e.g. `2021-12-31T23:59:59Z` |
-| `auth_type`            | `access_key`      | Optional  | `access_key`, `node_user`           |
-| `group_ids`            | -                 | Optional  | List of group IDs                   |
-| `organization_id`      | -                 | Optional  | Organization ID                     |
-| `watermarking_json_base64` | -         | Optional  | Watermarking information (not used) |
+| `_scope`               | `user:all`              | Special | Either `user:all` or `admin:all`      |
+| `_validity`            | 86400                   | Special | Validity in seconds from now.         |
+| `user_id`              | -                     | Mandatory | Identifier of user                    |
+| `scope`     | `node.<access_key>:<_scope>`     | Mandatory | API scope<br/>e.g. `node.<access_key>:<node scope>`         |
+| `expires_at`           | `now+<_validity>`     | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<br/>e.g. `2021-12-31T23:59:59Z` |
+| `auth_type`            | `access_key`          | Optional  | `access_key`, `node_user`             |
+| `group_ids`            | -                     | Optional  | List of group IDs                     |
+| `organization_id`      | -                     | Optional  | Organization ID                       |
+| `watermarking_json_base64` | -                 | Optional  | Watermarking information (not used)   |
 
 > [!NOTE]
 > For convenience, `ascli` provides additional parameters `_scope` and `_validity`.
@@ -7136,14 +7145,23 @@ IBM Aspera's newer self-managed application.
 > [!TIP]
 > If you have a Faspex 5 public link, provide it, as-is, through the option `url`.
 
+### Faspex 5 quick start with wizard
+
 For a quick start, one can use the wizard, which will help to create an [Option Preset](#option-preset):
 
 ```shell
 ascli config wizard
 ```
 
+Then, answer questions interactively:
+
 ```text
 argument: url> faspex5.example.com
+```
+
+Potentially, multiple applications may be detected, or if only Faspex is detected, it would skip this step:
+
+```text
 Multiple applications detected:
 +---------+-------------------------------------------+-------------+
 | product | url                                       | version     |
@@ -7152,12 +7170,28 @@ Multiple applications detected:
 | server  | ssh://faspex5.example.com:22              | OpenSSH_8.3 |
 +---------+-------------------------------------------+-------------+
 product> faspex5
+```
+
+When Faspex is detected, it would ask for the path to a private key.
+If you don't have a private key, then leave that field blank, and it will generate one or use one that was previously generated.
+
+```test
 Using: Faspex at https://faspex5.example.com/aspera/faspex
 Please provide the path to your private RSA key, or nothing to generate one:
 option: key_path>
 Using existing key:
 /Users/someuser/.aspera/ascli/my_key
+```
+
+Then, the email of the user shall be provided:
+
+```text
 option: username> someuser@example.com
+```
+
+The administrator of Faspex shall provide you with a `client_id`, as specified below.
+
+```text
 Ask the ascli client ID and secret to your Administrator.
 Admin should login to: https://faspex5.example.com/aspera/faspex
 Navigate to: ::  → Admin → Configurations → API clients
@@ -7263,6 +7297,16 @@ The user will use the following options:
 --client-id=_client_id_here_
 --client-secret=my_secret_here
 --redirect-uri=https://127.0.0.1:8888
+```
+
+### Faspex 5 public link authentication
+
+If all you have is a public link received by email or other, you can still do authorized actins with it.
+
+For example, for a public link to post a package:
+
+```shell
+ascli faspex5 packages send --url='https://faspex5.example.com/?context=_some_long_string_here_'
 ```
 
 ### Faspex 5 bootstrap authentication

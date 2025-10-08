@@ -37,18 +37,20 @@ module Aspera
             raise error if error
             return
           end
+        end
 
-          def wizard(plugin:)
-            options = plugin.options
-            return {
-              preset_value: {
-                url:      options.get_option(:url, mandatory: true),
-                username: options.get_option(:username, mandatory: true),
-                password: options.get_option(:password, mandatory: true)
-              },
-              test_args:    'workflow list'
-            }
-          end
+        # @param wizard  [Wizard] The wizard object
+        # @param app_url [Wizard] The wizard object
+        # @return [Hash] :preset_value, :test_args
+        def wizard(wizard, app_url)
+          return {
+            preset_value: {
+              url:      app_url,
+              username: options.get_option(:username, mandatory: true),
+              password: options.get_option(:password, mandatory: true)
+            },
+            test_args:    'workflow list'
+          }
         end
 
         def initialize(**_)
