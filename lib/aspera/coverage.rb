@@ -5,7 +5,7 @@ if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
   require 'securerandom'
   # compute development top folder based on this source location
-  development_root = 3.times.inject(File.realpath(__FILE__)){ |p, _| File.dirname(p)}
+  development_root = File.dirname(File.realpath(__FILE__), 3)
   SimpleCov.root(development_root)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
   # keep cache data for 1 day (must be longer that time to run the whole test suite)
