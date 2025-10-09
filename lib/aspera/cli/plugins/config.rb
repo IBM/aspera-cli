@@ -11,7 +11,6 @@ require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
 require 'aspera/ascp/installation'
 require 'aspera/products/transferd'
-require 'aspera/transfer/error_info'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
 require 'aspera/transfer/spec_doc'
@@ -711,7 +710,7 @@ module Aspera
             return Main.result_single_object(schema)
           when :errors
             error_data = []
-            Transfer::ERROR_INFO.each_pair do |code, prop|
+            Ascp::Management::ERRORS.each_pair do |code, prop|
               error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
             return Main.result_object_list(error_data)

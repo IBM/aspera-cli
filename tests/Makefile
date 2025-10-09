@@ -196,6 +196,9 @@ $(eval $(call test_suite_all,tunit,$(F)unit))
 $(F)shares_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) shares health
+	@$(STOP_TEST) $@
+$(F)shares_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(CLI_TEST) shares health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(F)shares_detect: $(TMP_EXISTS)
@@ -309,8 +312,24 @@ $(F)shares_sync: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst @json:'{"reset":true}'
 	$(INCMAN)$(CLI_TEST) shares files sync push $(TMP_SYNCS)shares_sync --to-folder=@extend:@preset:shares.share_folder@/synctst
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tshares,$(F)shares_health $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
+$(eval $(call test_suite_all,tshares,$(F)shares_health $(F)shares_health_bad $(F)shares_detect $(F)shares_wizard $(F)shares_admin_1 $(F)shares_admin_2 $(F)shares_admin_3 $(F)shares_admin_4 $(F)shares_admin_5 $(F)shares_admin_6 $(F)shares_admin_7 $(F)shares_admin_8 $(F)shares_admin_9 $(F)shares_admin_10 $(F)shares_admin_11 $(F)shares_admin_12 $(F)shares_1 $(F)shares_2 $(F)shares_3 $(F)shares_4 $(F)shares_5 $(F)shares_6 $(F)shares_6bis $(F)shares_7 $(F)shares_8 $(F)shares_9 $(F)shares_10 $(F)shares_sync))
 #######################################################################################################################
+$(F)serv_health: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) server health transfer --to-folder=@preset:server.upload_folder
+	@$(STOP_TEST) $@
+$(F)serv_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) server health transfer --url=ssh://wrong.example.com
+	@$(STOP_TEST) $@
+$(F)serv_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config detect @preset:server_user.url server
+	@$(STOP_TEST) $@
+$(F)serv_wizard: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:server_user.url server --username=@preset:server_user.username --password=@preset:server_user.password
+	@$(STOP_TEST) $@
 $(F)serv_browse: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server browse /
@@ -454,7 +473,7 @@ $(F)serv_pr2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tserver,$(F)serv_error $(F)serv_browse $(F)serv_mkdir $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)serv_upload5 $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)serv_upload_ex $(F)serv_md5 $(F)serv_down_lcl $(F)serv_down_from_node $(F)serv_down_from_node_fail $(F)serv_cp $(F)serv_mv $(F)serv_delete $(F)serv_cleanup1 $(F)serv_info $(F)serv_du $(F)serv_df $(F)asession $(F)serv_health_xfer_nagios $(F)serv_key))
+$(eval $(call test_suite_all,tserver,$(F)serv_health $(F)serv_health_bad $(F)serv_detect $(F)serv_wizard $(F)serv_error $(F)serv_browse $(F)serv_mkdir $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)serv_upload5 $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)serv_upload_ex $(F)serv_md5 $(F)serv_down_lcl $(F)serv_down_from_node $(F)serv_down_from_node_fail $(F)serv_cp $(F)serv_mv $(F)serv_delete $(F)serv_cleanup1 $(F)serv_info $(F)serv_du $(F)serv_df $(F)asession $(F)serv_health_xfer_nagios $(F)serv_key))
 #######################################################################################################################
 $(F)f4_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -549,11 +568,17 @@ $(eval $(call test_suite_all,tfaspex4,$(NOT_TESTED)))
 $(F)cons_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) console health
+	@$(STOP_TEST) $@
+$(F)cons_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(CLI_TEST) console health --url=https://wrong.example.com
+	@$(STOP_TEST) $@
+$(F)cons_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) config detect @preset:console_admin.url
 	@$(STOP_TEST) $@
 $(F)cons_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) config detect @preset:console_admin.url
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:console_admin.url console --preset=console_admin
 	@$(STOP_TEST) $@
 $(F)cons_cur_lst: $(TMP_EXISTS)
@@ -582,16 +607,22 @@ $(F)cons_sma_sta: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(BEG_FAI)$(CLI_TEST) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(END_FAI_SHOW)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconsole,$(F)cons_health $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_cur_show_one $(F)cons_sma_lst $(F)cons_sma_sta))
+$(eval $(call test_suite_all,tconsole,$(F)cons_health $(F)cons_health_bad $(F)cons_detect $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_cur_show_one $(F)cons_sma_lst $(F)cons_sma_sta))
 #######################################################################################################################
 $(F)nd_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node health
+	@$(STOP_TEST) $@
+$(F)nd_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(CLI_TEST) node health --url=https://wrong.example.com
+	@$(STOP_TEST) $@
+$(F)nd_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
 	@$(STOP_TEST) $@
 $(F)nd_wizard: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:node_user.url node --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)nd_info: $(TMP_EXISTS)
@@ -704,7 +735,7 @@ $(F)nd_stream_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node stream list --preset=node_ak_adm
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(F)nd_wizard $(F)nd_health $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
+$(eval $(call test_suite_all,tnodegen3,$(F)nd_health $(F)nd_health_bad $(F)nd_detect $(F)nd_wizard $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################
@@ -780,6 +811,22 @@ $(F)nd_ak_bearer: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tndak,$(F)nd_ak $(F)nd_ak1 $(F)nd_ak_mkdir $(F)nd_ak_mkfile $(F)nd_ak_mklink $(F)nd_ak_mvdir $(F)nd_ak_deldir $(F)nd_ak3 $(F)nd_ak4 $(F)nd_ak_bearer))
 #######################################################################################################################
+$(F)aoc_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config detect @preset:aoc.org aoc
+	@$(STOP_TEST) $@
+$(F)aoc_wizard: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config tokens flush
+	$(INCMAN)$(CLI_TEST) config tokens list
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
+	@$(STOP_TEST) $@
+$(F)aoc_wizard_2: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config tokens flush
+	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc mypreset --key-path=@preset:file.private_key --username=@preset:aoc.user_email
+	@$(STOP_TEST) $@
 $(F)aocfxgw: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(DIR_TMP)pid_aocfxgw
@@ -842,7 +889,7 @@ $(F)aoc_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) aoc --preset=aoc_web user profile show
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocgen,$(F)aocg1 $(F)aocg2 $(F)aocg3 $(F)aocg4 $(F)aocg5 $(F)aocg6 $(F)aocuprefshow $(F)aocuprefmod $(F)aocucontactlist $(F)aocg7 $(F)aocg8))
+$(eval $(call test_suite_all,taocgen,$(F)aoc_detect $(F)aoc_wizard $(F)aoc_wizard_2 $(F)aocg1 $(F)aocg2 $(F)aocg3 $(F)aocg4 $(F)aocg5 $(F)aocg6 $(F)aocuprefshow $(F)aocuprefmod $(F)aocucontactlist $(F)aocg7 $(F)aocg8))
 #######################################################################################################################
 $(F)aocfbr: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1287,15 +1334,21 @@ $(eval $(call test_suite_all,taocauto,$(F)aocauto1 $(F)aocauto2 $(F)aocauto3 $(F
 taoc: taocgen taocf taocp taocadm taocts taocauto
 clean_taoc: clean_taocgen clean_taocf clean_taocp clean_taocadm clean_taocts clean_taocauto
 #######################################################################################################################
-$(F)orch_wizard: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(CLI_TEST) config detect @preset:orch_user.url
-	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:orch_user.url orchestrator --username=test --password=test
-	@$(STOP_TEST) $@
-$(F)orch_nagios: $(TMP_EXISTS)
+$(F)orch_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) orchestrator health
+	@$(STOP_TEST) $@
+$(F)orch_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(BEG_ERR)$(CLI_TEST) orchestrator health --url=https://wrong.url --format=nagios$(END_ERR_HIDE)
+	@$(STOP_TEST) $@
+$(F)orch_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) config detect @preset:orch_user.url
+	@$(STOP_TEST) $@
+$(F)orch_wizard: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:orch_user.url orchestrator --username=test --password=test
 	@$(STOP_TEST) $@
 $(F)orch_info: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1338,7 +1391,7 @@ $(F)orch_wf_details: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) orchestrator workflow details @preset:orch.workflow_id
 	$(INCMAN)$(CLI_TEST) orchestrator workflow export @preset:orch.workflow_id
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,torc,$(F)orch_wizard $(F)orch_nagios $(F)orch_info $(F)orch_wf_list $(F)orch_wf_sta $(F)orch_wf_inp $(F)orch_wf_sti $(F)orch_wf_str1 $(F)orch_wf_str2 $(F)orch_plugins $(F)orch_processes $(F)orch_wf_details))
+$(eval $(call test_suite_all,torc,$(F)orch_health $(F)orch_health_bad $(F)orch_detect $(F)orch_wizard $(F)orch_info $(F)orch_wf_list $(F)orch_wf_sta $(F)orch_wf_inp $(F)orch_wf_sti $(F)orch_wf_str1 $(F)orch_wf_str2 $(F)orch_plugins $(F)orch_processes $(F)orch_wf_details))
 #######################################################################################################################
 $(F)at4: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1475,6 +1528,11 @@ $(F)sync_other: $(F)sync_create
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsyncs,$(F)sync_create $(F)sync_other))
 #######################################################################################################################
+$(F)conf_detect: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
+	$(BEG_ERR)$(CLI_TEST) config detect https://www.ibm.com$(END_ERR_HIDE)
+	@$(STOP_TEST) $@
 $(F)conf_ascp_show: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp show
@@ -1647,24 +1705,6 @@ $(F)conf_plugins: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config plugins create my_command $(DIR_TMP)
 	$(CLI_TEST) my_command --plugin-folder=$(DIR_TMP)
 	@$(STOP_TEST) $@
-$(F)conf_wizard_aoc_1: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config tokens flush
-	$(INCMAN)$(CLI_TEST) config tokens list
-	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
-	@$(STOP_TEST) $@
-$(F)conf_wizard_aoc_2: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config tokens flush
-	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
-	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc mypreset --key-path=@preset:file.private_key --username=@preset:aoc.user_email
-	@$(STOP_TEST) $@
-$(F)conf_detect: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config detect @preset:aoc.org aoc
-	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
-	$(BEG_ERR)$(CLI_TEST) config detect https://www.ibm.com$(END_ERR_HIDE)
-	@$(STOP_TEST) $@
 $(F)conf_genkey: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(DIR_TMP)my_key $(DIR_TMP)my_key.pub
@@ -1756,7 +1796,7 @@ $(F)conf_logger: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log-format=@ruby:'->(s, d, p, m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}'
 	$(CLI_TEST) config echo @ruby:'%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"' --log-level=trace2
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(F)conf_ascp_show $(F)conf_ascp_spec $(F)conf_ascp_schema $(F)conf_ascp_errors $(F)conf_ascp_2 $(F)conf_ascp_3 $(F)conf_ascp_4 $(F)conf_ascp_5 $(F)conf_ascp_6 $(F)conf_ascp_install $(F)conf_ascp_8 $(F)conf_pset_1 $(F)conf_pset_2 $(F)conf_pset_3 $(F)conf_pset_4 $(F)conf_pset_5 $(F)conf_pset_6 $(F)conf_open $(F)conf_list $(F)conf_over $(F)conf_vers_check $(F)conf_gem $(F)conf_help_1 $(F)conf_help_2 $(F)conf_coffee_1 $(F)conf_coffee_2 $(F)conf_plugins $(F)conf_wizard_aoc_1 $(F)conf_wizard_aoc_2 $(F)conf_detect $(F)conf_genkey $(F)conf_cert $(F)conf_smtp $(F)conf_pac $(F)conf_check_gem $(F)conf_doc $(F)conf_echo $(F)conf_extended $(F)conf_hint $(F)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(F)conf_detect $(F)conf_ascp_show $(F)conf_ascp_spec $(F)conf_ascp_schema $(F)conf_ascp_errors $(F)conf_ascp_2 $(F)conf_ascp_3 $(F)conf_ascp_4 $(F)conf_ascp_5 $(F)conf_ascp_6 $(F)conf_ascp_install $(F)conf_ascp_8 $(F)conf_pset_1 $(F)conf_pset_2 $(F)conf_pset_3 $(F)conf_pset_4 $(F)conf_pset_5 $(F)conf_pset_6 $(F)conf_open $(F)conf_list $(F)conf_over $(F)conf_vers_check $(F)conf_gem $(F)conf_help_1 $(F)conf_help_2 $(F)conf_coffee_1 $(F)conf_coffee_2 $(F)conf_plugins $(F)conf_genkey $(F)conf_cert $(F)conf_smtp $(F)conf_pac $(F)conf_check_gem $(F)conf_doc $(F)conf_echo $(F)conf_extended $(F)conf_hint $(F)conf_logger))
 #######################################################################################################################
 $(F)prev_check: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1871,21 +1911,34 @@ $(F)tcos_download: $(F)tcos_upload
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tcos,$(F)tcos_info1 $(F)tcos_info2 $(F)tcos_info3 $(F)tcos_show $(F)tcos_upload $(F)tcos_download))
 #######################################################################################################################
-$(F)f5_version: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) faspex5 version
-	@$(STOP_TEST) $@
 $(F)f5_health: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 health -N --url=@preset:faspex5_user.url
+	@$(STOP_TEST) $@
+$(F)f5_health_bad: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) faspex5 health --url=https://www.ibm.com
 	@$(STOP_TEST) $@
 $(F)f5_health_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(BEG_ERR)$(CLI_TEST) faspex5 health -N --url=https://www.ibm.com --format=nagios$(END_ERR_SHOW)
 	@$(STOP_TEST) $@
-$(F)f5_health_bad: $(TMP_EXISTS)
+$(F)f5_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) faspex5 health --url=https://www.ibm.com
+	$(INCMAN)$(CLI_TEST) config detect @preset:faspex5_user.url faspex5
+	@$(STOP_TEST) $@
+$(F)f5_wizard: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
+	$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
+	$(CLI_WIZ_TEST) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
+	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
+	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
+	$(CLI_TEST) config detect @preset:faspex5_user.url
+	@$(STOP_TEST) $@
+$(F)f5_version: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) faspex5 version
 	@$(STOP_TEST) $@
 $(F)f5_pack_rcv_init: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2057,15 +2110,6 @@ $(F)f5_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) --preset=f5_web faspex5 version
 	@$(STOP_TEST) $@
-$(F)f5_wizard: $(TMP_EXISTS)
-	@$(START_TEST) $@
-	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
-	$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
-	$(CLI_WIZ_TEST) config wizard https://eudemo.asperademo.com faspex5 --username=admin@ibm.com --key-path= --show-secrets=yes --client-id=abc --client-secret=abc
-	$(BEG_ERR)$(CLI_TEST) config detect https://eudemo.asperademo.com:22 faspex5$(END_ERR_HIDE)
-	$(INCMAN)$(CLI_TEST) -N config detect @preset:faspex5_user.url
-	$(CLI_TEST) config detect @preset:faspex5_user.url
-	@$(STOP_TEST) $@
 $(F)f5_fxgw: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(DIR_TMP)pid_f5_fxgw
@@ -2116,7 +2160,7 @@ $(F)f5_cert_test: $(TMP_EXISTS)
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(F)f5_version $(F)f5_health $(F)f5_health_nagios $(F)f5_pack_rcv_init $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_health_bad $(F)f5_wizard $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
+$(eval $(call test_suite_all,tf5,$(F)f5_health $(F)f5_health_bad $(F)f5_health_nagios $(F)f5_detect $(F)f5_wizard $$(F)f5_version $(F)f5_pack_rcv_init $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite (F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
 #######################################################################################################################
 $(F)httpgw_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@

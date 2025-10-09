@@ -140,7 +140,7 @@ Once the gem is installed, <%=tool%> shall be accessible:
 
 Once installation is completed, you can proceed to the first use with a demo server:
 
-If you want to test with Aspera on Cloud, jump to section: [Wizard](#configuration-using-wizard).
+If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
 
 To test with Aspera demo transfer server, set up the environment and then test:
 
@@ -5571,7 +5571,7 @@ Although optional, the creation of [Option Preset](#option-preset) is recommende
 
 Procedure to send a file from org1 to org2:
 
-- Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#configuration-using-wizard)
+- Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#wizard)
 - Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
 - Get access to Organization 2 and create an [Option Preset](#option-preset): e.g. `org2`
 - Check that access works and locate the destination folder `mydestfolder`

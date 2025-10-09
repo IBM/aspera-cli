@@ -6,7 +6,7 @@ require 'aspera/ascp/management'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
-require 'aspera/resumer'
+require 'aspera/transfer/resumer'
 require 'aspera/log'
 require 'aspera/assert'
 require 'socket'
@@ -69,7 +69,7 @@ module Aspera
         @multi_incr_udp = multi_incr_udp.nil? ? Environment.instance.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
         @monitor = monitor
         @management_cb = management_cb
-        @resume_policy = Resumer.new(resume.nil? ? {} : resume.symbolize_keys)
+        @resume_policy = Transfer::Resumer.new(resume.nil? ? {} : resume.symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
         # mutex protects global data accessed by threads
@@ -317,7 +317,7 @@ module Aspera
               Log.log.warn('Regenerating token for transfer')
               env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
-            raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
+            raise Transfer::Error.new(last_event['Description'], code: last_event['Code'].to_i)
           else Aspera.error_unexpected_value(last_event['Type'], :error){'last event type'}
           end
         rescue SystemCallError => e
@@ -347,7 +347,7 @@ module Aspera
             # status is nil if an exception occurred before starting command
             if !status&.success?
               message = "#{name} failed (#{status})"
-              # raise error only if there was not already an exception (ERROR_INFO)
+              # raise error only if there was not already an exception (`$ERROR_INFO`)
               raise Transfer::Error, message unless $ERROR_INFO
               # else display this message also, as main exception is already here
               Log.log.error(message)

@@ -144,7 +144,7 @@ ascli --version
 
 Once installation is completed, you can proceed to the first use with a demo server:
 
-If you want to test with Aspera on Cloud, jump to section: [Wizard](#configuration-using-wizard).
+If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
 
 To test with Aspera demo transfer server, set up the environment and then test:
 
@@ -2430,7 +2430,9 @@ coffee --ui=text
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
 coffee --ui=text --image=@json:'{"text":true}'
 detect https://faspex5.example.com/path
+detect https://faspex5.example.com/path faspex5
 detect https://node.example.com/path
+detect https://server.example.com/path server
 detect https://shares.example.com/path shares
 detect https://tst.example.com/path faspio
 detect https://tst.example.com/path httpgw
@@ -2502,6 +2504,7 @@ wizard https://faspex4.example.com/path faspex --username=test --password=test
 wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
+wizard https://server.example.com/path server --username=my_username --password=my_password
 wizard https://shares.example.com/path shares --username=test --password=test
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
@@ -6088,7 +6091,7 @@ Although optional, the creation of [Option Preset](#option-preset) is recommende
 
 Procedure to send a file from org1 to org2:
 
-- Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#configuration-using-wizard)
+- Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#wizard)
 - Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
 - Get access to Organization 2 and create an [Option Preset](#option-preset): e.g. `org2`
 - Check that access works and locate the destination folder `mydestfolder`
@@ -6447,6 +6450,7 @@ df
 download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 download my_large_file --to-folder=my_upload_folder --transfer=node --ts.resume_policy=none
 du /
+health transfer --to-folder=my_upload_folder
 health transfer --to-folder=my_upload_folder --format=nagios
 info
 md5sum my_inside_folder/test_file.bin
