@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require 'singleton'
+require 'aspera/assert'
+require 'aspera/cli/error'
+
 module Aspera
   module Cli
     # Instantiate plugin from well-known locations
@@ -24,11 +27,6 @@ module Aspera
         @plugins.keys
       end
 
-      # @return path to source file of plugin
-      def plugin_source(plugin_name_sym)
-        @plugins[plugin_name_sym][:source]
-      end
-
       # add a folder to the list of folders to look for plugins
       def add_lookup_folder(folder)
         @lookup_folders.unshift(folder)
@@ -46,9 +44,15 @@ module Aspera
         end
       end
 
+      # @return path to source file of plugin
+      def plugin_source(plugin_name_sym)
+        Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement){"plugin not found: #{plugin_name_sym}"}
+        @plugins[plugin_name_sym][:source]
+      end
+
       # @return Class object for plugin
       def plugin_class(plugin_name_sym)
-        raise NoSuchElement, "plugin not found: #{plugin_name_sym}" unless @plugins.key?(plugin_name_sym)
+        Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement){"plugin not found: #{plugin_name_sym}"}
         require @plugins[plugin_name_sym][:require_stanza]
         # Module.nesting[1] is Aspera::Cli
         return Object.const_get("#{Module.nesting[1]}::#{PLUGINS_MODULE}::#{plugin_name_sym.to_s.capitalize}")
@@ -70,10 +74,7 @@ module Aspera
         raise Error, "plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
         plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
         req = path.sub(/#{RUBY_FILE_EXT}$/o, '')
-        if @plugins.key?(plugin_symbol)
-          Log.log.warn{"skipping plugin already registered: #{plugin_symbol}"}
-          return
-        end
+        Aspera.assert(!@plugins.key?(plugin_symbol), type: :warn){"Plugin already registered: #{plugin_symbol}"}
         @plugins[plugin_symbol] = {source: path, require_stanza: req}
       end
     end

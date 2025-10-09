@@ -94,6 +94,7 @@ CLI_TEST+= -Pjns
 endif
 # temp configuration file that is modified, to avoid changing the main configuration file
 TEST_CONFIG=$(DIR_TMP)sample.conf
+WIZ_DEPS=$(TEST_CONFIG)
 # "CLI_TMP_CONF" is used for commands that modify the config file
 CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
 CLI_WIZ_TEST=ASCLI_WIZ_TEST=yes $(CLI_TMP_CONF)
@@ -179,6 +180,8 @@ $(TMP_EXISTS):
 	echo 'This is a small test file' > "$(TST_UTF_LCL_PATH)"
 	cp $(ASPERA_CLI_TEST_CONF_FILE) $(TEST_CONFIG)
 	touch $(TMP_EXISTS)
+$(TEST_CONFIG): $(TMP_EXISTS)
+	cp $(ASPERA_CLI_TEST_CONF_FILE) $(TEST_CONFIG)
 clean::
 	rm -fr $(F) $(STATE)
 	rm -f $(TST_ASC_LCL_PATH) "$(TST_UTF_LCL_PATH)"
@@ -205,7 +208,7 @@ $(F)shares_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:shares_admin.url shares
 	@$(STOP_TEST) $@
-$(F)shares_wizard: $(TMP_EXISTS)
+$(F)shares_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:shares_admin.url shares --username=test --password=test
 	@$(STOP_TEST) $@
@@ -326,7 +329,7 @@ $(F)serv_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:server_user.url server
 	@$(STOP_TEST) $@
-$(F)serv_wizard: $(TMP_EXISTS)
+$(F)serv_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:server_user.url server --username=@preset:server_user.username --password=@preset:server_user.password
 	@$(STOP_TEST) $@
@@ -487,7 +490,7 @@ $(F)f4_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) config detect @preset:faspex4_user.url
 	@$(STOP_TEST) $@
-$(F)f4_wizard: $(TMP_EXISTS)
+$(F)f4_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex4_user.url faspex --username=test --password=test
 	@$(STOP_TEST) $@
@@ -577,7 +580,7 @@ $(F)cons_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) config detect @preset:console_admin.url
 	@$(STOP_TEST) $@
-$(F)cons_wizard: $(TMP_EXISTS)
+$(F)cons_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:console_admin.url console --preset=console_admin
 	@$(STOP_TEST) $@
@@ -621,7 +624,7 @@ $(F)nd_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:node_user.url
 	@$(STOP_TEST) $@
-$(F)nd_wizard: $(TMP_EXISTS)
+$(F)nd_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:node_user.url node --username=test --password=test
 	@$(STOP_TEST) $@
@@ -815,7 +818,7 @@ $(F)aoc_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:aoc.org aoc
 	@$(STOP_TEST) $@
-$(F)aoc_wizard: $(TMP_EXISTS)
+$(F)aoc_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config tokens flush
 	$(INCMAN)$(CLI_TEST) config tokens list
@@ -1346,7 +1349,7 @@ $(F)orch_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) config detect @preset:orch_user.url
 	@$(STOP_TEST) $@
-$(F)orch_wizard: $(TMP_EXISTS)
+$(F)orch_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:orch_user.url orchestrator --username=test --password=test
 	@$(STOP_TEST) $@
@@ -1927,7 +1930,7 @@ $(F)f5_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:faspex5_user.url faspex5
 	@$(STOP_TEST) $@
-$(F)f5_wizard: $(TMP_EXISTS)
+$(F)f5_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
 	$(CLI_WIZ_TEST) config wizard @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --url= --username=a@b.c
@@ -2160,7 +2163,7 @@ $(F)f5_cert_test: $(TMP_EXISTS)
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(F)f5_health $(F)f5_health_bad $(F)f5_health_nagios $(F)f5_detect $(F)f5_wizard $$(F)f5_version $(F)f5_pack_rcv_init $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite (F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
+$(eval $(call test_suite_all,tf5,$(F)f5_health $(F)f5_health_bad $(F)f5_health_nagios $(F)f5_detect $(F)f5_wizard $$(F)f5_version $(F)f5_pack_rcv_init $(F)f5_p1 $(F)f5_pack_list $(F)f5_p3 $(F)f5_sh_folder_list $(F)f5_sh_folder_br $(F)f5_sh_folder_send $(F)f5_pack_shbox $(F)f5_pack_shbox_public $(F)f5_pack_user_public $(F)f5_pack_wrkgrp $(F)f5_user_res $(F)f5_dist_list $(F)f5_adm_acc_lst $(F)f5_adm_job_lst $(F)f5_adm_nod_lst $(F)f5_adm_api_lst $(F)f5_adm_reg_lst $(F)f5_adm_sbx_lst $(F)f5_adm_sbx_mem $(F)f5_adm_sbx_cr $(F)f5_adm_sbx_del $(F)f5_adm_evt_app $(F)f5_adm_evt_web $(F)f5_clean_del $(F)f5_smtp $(F)f5_user $(F)f5_invite $(F)f5_fxgw $(F)f5_sh_fold $(F)f5_postproc $(F)f5_cert_test))
 #######################################################################################################################
 $(F)httpgw_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2176,13 +2179,17 @@ $(F)httpgw_detect: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,thgw,$(F)httpgw_nagios $(F)httpgw_info $(F)httpgw_detect))
 #######################################################################################################################
+$(F)faspio_health: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) faspio health
+	@$(STOP_TEST) $@
 $(F)faspio_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config detect @preset:tst_faspio.url faspio
 	@$(STOP_TEST) $@
-$(F)faspio_nagios: $(TMP_EXISTS)
+$(F)faspio_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) faspio health
+	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:tst_faspio.url faspio  --username=@preset:tst_faspio.username --password=@preset:tst_faspio.password
 	@$(STOP_TEST) $@
 $(F)faspio_blist: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -2196,7 +2203,7 @@ $(F)faspio_bclean: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspio bridges list --fields=id --format=json | $(INCMAN)$(CLI_TEST) faspio bridges delete --bulk=yes @json:@stdin:
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tfio,$(F)faspio_detect $(F)faspio_nagios $(F)faspio_blist $(F)faspio_bcreate $(F)faspio_bclean))
+$(eval $(call test_suite_all,tfio,$(F)faspio_health $(F)faspio_detect $(F)faspio_wizard $(F)faspio_blist $(F)faspio_bcreate $(F)faspio_bclean))
 #######################################################################################################################
 $(F)alee_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
