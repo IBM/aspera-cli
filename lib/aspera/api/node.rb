@@ -55,6 +55,14 @@ module Aspera
         attr_accessor :use_node_cache
         attr_reader :use_dynamic_key
 
+        # Adds cache control header, as globally specified to read request
+        # Use like this: read(...,**cache_control)
+        def cache_control
+          headers = {'Accept' => Rest::MIME_JSON}
+          headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
+          {headers: headers}
+        end
+
         # set private key to be used
         # @param pem_content [String] PEM encoded private key
         def use_dynamic_key=(pem_content)
@@ -190,18 +198,6 @@ module Aspera
         end
       end
 
-      # Call node API, possibly adding cache control header, as globally specified
-      def read_with_cache(subpath, query = nil)
-        headers = {'Accept' => Rest::MIME_JSON}
-        headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless self.class.use_node_cache
-        return call(
-          operation: 'GET',
-          subpath:   subpath,
-          headers:   headers,
-          query:     query
-        )[:data]
-      end
-
       # update transfer spec with special additional tags
       def add_tspec_info(tspec)
         tspec.deep_merge!(@add_tspec) unless @add_tspec.nil?
@@ -244,7 +240,7 @@ module Aspera
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
-      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/')
+      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # start at top folder
@@ -258,7 +254,7 @@ module Aspera
           folder_contents =
             begin
               # TODO: use header
-              read_with_cache("files/#{current_item[:id]}/files")
+              read("files/#{current_item[:id]}/files", query, **self.class.cache_control)
             rescue StandardError => e
               Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
               []
@@ -361,9 +357,9 @@ module Aspera
         return find_state[:found]
       end
 
-      def list_files(top_file_id)
+      def list_files(top_file_id, query: nil)
         find_state = {found: []}
-        process_folder_tree(method_sym: :process_list_files, state: find_state, top_file_id: top_file_id)
+        process_folder_tree(method_sym: :process_list_files, state: find_state, top_file_id: top_file_id, query: query)
         return find_state[:found]
       end
 

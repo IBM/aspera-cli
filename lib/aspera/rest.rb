@@ -302,7 +302,9 @@ module Aspera
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
       Log.log.debug{"call #{operation} [#{subpath}]".red.bold.bg_green}
-      Log.dump(:body, body)
+      Log.dump(:body, body, level: :trace1)
+      Log.dump(:query, query, level: :trace1)
+      Log.dump(:headers, headers, level: :trace1)
       Aspera.assert_type(subpath, String)
       if headers.nil?
         headers = @headers.clone
@@ -493,7 +495,7 @@ module Aspera
     end
 
     def read(subpath, query = nil, **kwargs)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query)[:data]
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query, **kwargs)[:data]
     end
 
     def update(subpath, params, **kwargs)

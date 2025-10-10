@@ -519,12 +519,12 @@ module Aspera
             return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
-            file_info = apifid[:api].read_with_cache("files/#{apifid[:file_id]}")
+            file_info = apifid[:api].read("files/#{apifid[:file_id]}", **Api::Node.cache_control)
             unless file_info['type'].eql?('folder')
               # a single file
               return Main.result_object_list([file_info], fields: GEN4_LS_FIELDS)
             end
-            return Main.result_object_list(apifid[:api].list_files(apifid[:file_id]), fields: GEN4_LS_FIELDS)
+            return Main.result_object_list(apifid[:api].list_files(apifid[:file_id], query: query_read_delete), fields: GEN4_LS_FIELDS)
           when :find
             apifid = apifid_from_next_arg(top_file_id)
             find_lambda = Api::Node.file_matcher_from_argument(options)
