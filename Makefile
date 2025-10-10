@@ -63,14 +63,14 @@ clean_optional_gems:
 	bundle config set without optional
 	bundle install
 	bundle clean --force
-# install dep gems and 
+# install dev gems and 
 # remove ascli and asession from ruby gem bin folder, so that the one from dev is used
+# rm -f $$(gem env gemdir)/bin/as{cli,ession}
 install_dev_gems:
 	gem install bundler
 	bundle config set with development
 	bundle install
-	rm -f $$(gem env gemdir)/bin/as{cli,ession}
-# grpc is installed on the side , if needed
+# install optional gems and 
 install_optional_gems: install_dev_gems
 	bundle config set with optional
 	bundle install

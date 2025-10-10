@@ -1619,7 +1619,7 @@ If wrong, or no command is provided when expected, an error message is displayed
 Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional commands.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do 1234 browse /`: `browse` is a sub-command of `node`.
+For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do _my_node_id_ browse /`: `browse` is a sub-command of `node`.
 
 **Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
@@ -2043,10 +2043,10 @@ The percent selector allows identification of an entity by another unique identi
 Syntax: `%<field>:<value>`
 
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
-For example, in the following command, `1234` is the user's identifier:
+For example, in the following command, `_my_user_id_` is the user's identifier:
 
 ```shell
-ascli aoc admin user show 1234
+ascli aoc admin user show _my_user_id_
 ```
 
 Some commands provide the following capability:
@@ -2506,6 +2506,7 @@ wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
 wizard https://server.example.com/path server --username=my_username --password=my_password
 wizard https://shares.example.com/path shares --username=test --password=test
+wizard https://tst.example.com/path faspio --username=my_username --password=my_password
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
 ```
@@ -3155,7 +3156,7 @@ ascli config proxy_check --fpac='function FindProxyForURL(url, host) {return "PR
 ```
 
 ```text
-PROXY proxy.example.com:1234;DIRECT
+PROXY proxy.example.com:8080;DIRECT
 ```
 
 ```shell
@@ -3838,12 +3839,12 @@ ascli config ascp schema transferd --format=jsonpp
 | lock_min_rate_kbps | boolean | If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(C, T) |
 | lock_rate_policy | boolean | If `true`, lock the rate policy to the default value.<br/>(C, T) |
 | lock_target_rate | boolean | TODO: remove ?<br/>(C) |
-| lock_target_rate_kbps | boolean | If `true`, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(C, T) |
+| lock_target_rate_kbps | boolean | If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.<br/>If `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.<br/>(C, T) |
 | min_rate_cap_kbps | integer | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(C, T) |
 | min_rate_kbps | integer | Set the minimum transfer rate in kilobits per second.<br/>(`-m {integer}`) |
-| move_after_transfer | string | Move source files to the specified `archive-dir` directory after they are transferred correctly.<br/>Available as of 3.8.0. Details in ascp manual.<br/>Requires write permissions on the source.<br/>If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.<br/>`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.<br/>`archive-dir` is subject to the same docroot restrictions as source files.<br/>`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.<br/>After files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.<br/>(A, N, T)<br/>(`--move-after-transfer={string}`) |
+| move_after_transfer | string | Move source files to the specified `archive-dir` directory after they are transferred correctly.<br/>Available as of 3.8.0. Details in `ascp` manual.<br/>Requires write permissions on the source.<br/>If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.<br/>`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.<br/>`archive-dir` is subject to the same docroot restrictions as source files.<br/>`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.<br/>After files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.<br/>(A, N, T)<br/>(`--move-after-transfer={string}`) |
 | multi_session | integer | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with `resume_policy`=`none`. |
-| multi_session_threshold | integer | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(A, N, T)<br/>(`--multi-session-threshold={integer}`) |
+| multi_session_threshold | integer | Split files across multiple `ascp` sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(A, N, T)<br/>(`--multi-session-threshold={integer}`) |
 | obfuscate_file_names | boolean | HTTP Gateway obfuscates file names when set to `true`.<br/>(H) |
 | overwrite | string | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- `always` : Always overwrite the file.<br/>- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.<br/>- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.<br/>- `older` : Overwrite the file if its timestamp is older than the source timestamp.<br/>If you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:<br/>`none` : The source and destination files are always considered different and  the destination file is always overwritten<br/>`attributes` : The source and destination files are compared based on file attributes <br/>`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)<br/>`full_checksum` : The source and destination files are compared based on full checksums<br/>Allowed values: `never`, `always`, `diff`, `older`, `diff+older`<br/>(`--overwrite={enum}`) |
 | password | string | Password for local Windows user when transfer user associated with node API user is not the same as the one running `asperanoded`.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node API only.<br/>(N) |
@@ -3894,10 +3895,10 @@ ascli config ascp schema transferd --format=jsonpp
 | target_rate_kbps | integer | Specifies desired speed for the transfer.<br/>(`-l {integer}`) |
 | title | string | Title of the transfer.<br/>(C, N, T) |
 | token | string | Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)<br/>(env:`ASPERA_SCP_TOKEN`) |
-| use_ascp4 | boolean | Specify version of protocol. Do not use ascp4.<br/>(A, N, T) |
+| use_ascp4 | boolean | Specify version of protocol. Do not use `ascp4`.<br/>(A, N, T) |
 | use_system_ssh | string | TODO, comment...<br/>(A, T)<br/>(`-SSH {string}`) |
 | wss_enabled | boolean | Server has Web Socket service enabled. |
-| wss_port | integer | TCP port used for websocket service feed. |
+| wss_port | integer | TCP port used for Web Socket service feed. |
 | xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(N) |
 
 #### Destination folder for transfers
@@ -5100,7 +5101,7 @@ ascli aoc files bearer_token_node /
 ```
 
 ```shell
-ascli aoc admin node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
+ascli aoc admin node v4 _my_node_id_ --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -5684,7 +5685,7 @@ ascli aoc packages shared_inboxes list
 
 Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
 
-- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
+- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"_my_shibox_id_"}]`
 - or just names: `"recipients":[{"The Dest"}]`.
 
 ascli will resolve the list of email addresses and dropbox names to the expected type/ID list, based on case-insensitive partial match.
@@ -5952,7 +5953,7 @@ ascli aoc files permission --workspace=<workspace name> <path to folder> ...
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-> To use an identifier instead, one can use the percent selector, like `%id:1234`
+> To use an identifier instead, one can use the percent selector, like `%id:_my_ws_id_`.
 
 ##### Admin Shared Folders
 
@@ -5964,7 +5965,9 @@ ascli aoc admin node do <node ID> permission --workspace=<workspace name> <path 
 
 > [!TIP]
 > The node is identified by identifier.
-> To use an name instead, one can use the percent selector, like `%name:"my node"`
+> To use an name instead, one can use the percent selector, like `%name:"my node"`.
+> The path is identifier by a path, one can specify a file id, with `%id:123`.
+> If the id is left blank: `%id:`, then if means `*`, i.e. all.
 
 ##### Example: List permissions on a shared folder
 
@@ -6041,7 +6044,7 @@ ascli aoc admin node list --fields=id,name
 
 In the following commands, replace:
 
-- `1234` with the node ID
+- `_my_node_id_` with the node ID
 - `my ws` with the workspace name
 - `/folder_on_node` with the name of the folder on the node: it can also be a folder deeper than level 1.
 
@@ -6050,7 +6053,7 @@ The node can also be conveniently identified using the **percent selector** inst
 If the shared folder does not exist, then create it:
 
 ```shell
-ascli aoc admin node do 1234 mkdir /folder_on_node
+ascli aoc admin node do _my_node_id_ mkdir /folder_on_node
 ```
 
 Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
@@ -6058,7 +6061,7 @@ Optionally use `as` to set the name of the shared folder if different from the f
 For other options, refer to the previous section on shared folders.
 
 ```shell
-ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+ascli aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
 ```
 
 > [!NOTE]
@@ -6069,19 +6072,43 @@ The `"with"` parameter will perform a lookup, and set fields `access_type` and `
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
 ```shell
-ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
+ascli aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
 ```
 
 ```shell
-ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
+ascli aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
 ```
 
 ```shell
-ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+ascli aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
 ```
 
 > [!NOTE]
 > In the previous commands, field `as` is optional.
+
+##### Example: List all workspace admin shared folder on a node
+
+First get the workspace identifier:
+
+```shell
+ascli aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=id
+```
+
+```text
+111111
+```
+
+Then, identify the node id on which to list, see previous section.
+
+Finally, list all shared folders, as permissions:
+
+```shell
+ascli aoc admin node do _my_node_id_ perm %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_111111"}'
+```
+
+> [!NOTE]
+> Refer to Node API: `GET /permissions` for all `query` options.
+> The folder identifier is left empty `%id:`, to apply to all folders.
 
 #### Cross Organization transfers
 
