@@ -1593,7 +1593,7 @@ If wrong, or no command is provided when expected, an error message is displayed
 Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional commands.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do 1234 browse /`: `browse` is a sub-command of `node`.
+For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do _my_node_id_ browse /`: `browse` is a sub-command of `node`.
 
 **Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
@@ -2017,10 +2017,10 @@ The percent selector allows identification of an entity by another unique identi
 Syntax: `%<field>:<value>`
 
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
-For example, in the following command, `1234` is the user's identifier:
+For example, in the following command, `_my_user_id_` is the user's identifier:
 
 ```shell
-<%=cmd%> aoc admin user show 1234
+<%=cmd%> aoc admin user show _my_user_id_
 ```
 
 Some commands provide the following capability:
@@ -3024,7 +3024,7 @@ Example, using command line option:
 ```
 
 ```text
-PROXY proxy.example.com:1234;DIRECT
+PROXY proxy.example.com:8080;DIRECT
 ```
 
 ```shell
@@ -4580,7 +4580,7 @@ It is also possible to get the bearer token for node, as user or as admin using:
 ```
 
 ```shell
-<%=cmd%> aoc admin node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
+<%=cmd%> aoc admin node v4 _my_node_id_ --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -5164,7 +5164,7 @@ List allowed shared inbox destinations with:
 
 Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
 
-- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
+- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"_my_shibox_id_"}]`
 - or just names: `"recipients":[{"The Dest"}]`.
 
 <%=cmd%> will resolve the list of email addresses and dropbox names to the expected type/ID list, based on case-insensitive partial match.
@@ -5432,7 +5432,7 @@ Personal shared folders, created by users in a workspace follow the syntax:
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-> To use an identifier instead, one can use the percent selector, like `%id:1234`
+> To use an identifier instead, one can use the percent selector, like `%id:_my_ws_id_`.
 
 ##### Admin Shared Folders
 
@@ -5444,7 +5444,9 @@ Admin shared folders, created by administrators in a workspace follow the syntax
 
 > [!TIP]
 > The node is identified by identifier.
-> To use an name instead, one can use the percent selector, like `%name:"my node"`
+> To use an name instead, one can use the percent selector, like `%name:"my node"`.
+> The path is identifier by a path, one can specify a file id, with `%id:123`.
+> If the id is left blank: `%id:`, then if means `*`, i.e. all.
 
 ##### Example: List permissions on a shared folder
 
@@ -5521,7 +5523,7 @@ Or select a node identifier manually from the list of nodes:
 
 In the following commands, replace:
 
-- `1234` with the node ID
+- `_my_node_id_` with the node ID
 - `my ws` with the workspace name
 - `/folder_on_node` with the name of the folder on the node: it can also be a folder deeper than level 1.
 
@@ -5530,7 +5532,7 @@ The node can also be conveniently identified using the **percent selector** inst
 If the shared folder does not exist, then create it:
 
 ```shell
-<%=cmd%> aoc admin node do 1234 mkdir /folder_on_node
+<%=cmd%> aoc admin node do _my_node_id_ mkdir /folder_on_node
 ```
 
 Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
@@ -5538,7 +5540,7 @@ Optionally use `as` to set the name of the shared folder if different from the f
 For other options, refer to the previous section on shared folders.
 
 ```shell
-<%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
 ```
 
 > [!NOTE]
@@ -5549,19 +5551,43 @@ The `"with"` parameter will perform a lookup, and set fields `access_type` and `
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
 ```shell
-<%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
+<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
+<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
 ```
 
 > [!NOTE]
 > In the previous commands, field `as` is optional.
+
+##### Example: List all workspace admin shared folder on a node
+
+First get the workspace identifier:
+
+```shell
+<%=cmd%> aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=id
+```
+
+```text
+111111
+```
+
+Then, identify the node id on which to list, see previous section.
+
+Finally, list all shared folders, as permissions:
+
+```shell
+<%=cmd%> aoc admin node do _my_node_id_ perm %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_111111"}'
+```
+
+> [!NOTE]
+> Refer to Node API: `GET /permissions` for all `query` options.
+> The folder identifier is left empty `%id:`, to apply to all folders.
 
 #### Cross Organization transfers
 

@@ -477,7 +477,7 @@ module Aspera
         # Allows to specify a file by its path or by its id on the node in command line
         # @return [Hash] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
-          file_path = instance_identifier(description: 'path or %id:<id>') do |attribute, value|
+          file_path = instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
             # directly return result for method
             return {api: @api_node, file_id: value}
