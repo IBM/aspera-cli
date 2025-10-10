@@ -190,8 +190,6 @@ clean::
 #######################################################################################################################
 $(F)unit: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	set -x&&\
-	RSPEC_CONFIG=$$($(CLI_TEST) config preset show server_user --format=json --show-secrets=yes) \
 	bundle exec rake spec
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tunit,$(F)unit))
