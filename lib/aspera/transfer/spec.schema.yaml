@@ -189,9 +189,9 @@ properties:
       - connect
   lock_target_rate_kbps:
     description: >-
-      If `true`, lock the target transfer rate to the default value set for target_rate_kbps.
+      If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.
 
-      If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+      If `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.
     type: boolean
     x-agents:
       - transferd
@@ -212,7 +212,7 @@ properties:
       Move source files to the specified `archive-dir` directory after they are transferred correctly.
 
       Available as of 3.8.0.
-      Details in ascp manual.
+      Details in `ascp` manual.
 
       Requires write permissions on the source.
 
@@ -228,7 +228,8 @@ properties:
       Empty directories are not saved to `archive-dir`.
       To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`.
       When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories.
-      If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.
+      If no `srcbase` is used and a file path (as opposed to a directory path) is specified,
+      then only the immediate parent directory is examined and removed if it is empty following the move of the source file.
     type: string
     x-agents:
       - direct
@@ -246,7 +247,7 @@ properties:
     x-cli-special: true
   multi_session_threshold:
     description: >-
-      Split files across multiple ascp sessions if their size in bytes is greater than
+      Split files across multiple `ascp` sessions if their size in bytes is greater than
       or equal to the specified value.
 
       (0=no file is split)
@@ -685,7 +686,7 @@ properties:
     description: "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)"
     x-cli-envvar: ASPERA_SCP_TOKEN
   use_ascp4:
-    description: Specify version of protocol. Do not use ascp4.
+    description: Specify version of protocol. Do not use `ascp4`.
     type: boolean
     default: false
     x-agents:
@@ -752,7 +753,7 @@ properties:
     type: boolean
     x-cli-special: true
   wss_port:
-    description: TCP port used for websocket service feed.
+    description: TCP port used for Web Socket service feed.
     type: integer
     x-cli-special: true
   compression:
