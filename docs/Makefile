@@ -11,7 +11,6 @@ include $(DIR_DOC)pandoc/pandoc.mak
 MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
-DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
 TMPL_CONF_FILE_PATH=$(DIR_DOC)test_env.conf
 TSPEC_JSON_SCHEMA=$(DIR_DOC)spec.schema.json
 

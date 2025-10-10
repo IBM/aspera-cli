@@ -7,7 +7,7 @@ include $(DIR_TOP)common.mak
 CLI_EXEC_NAME=$(CLI_NAME).$(GEM_VERSION).$(CLI_ARCH)
 CLI_EXECUTABLE=$(DIR_TMP)$(CLI_EXEC_NAME)
 EXE_BUILDER=./build_exec
-OPT_GEMS=$(shell $(DIR_DOC)get_group.rb $(DIR_TOP)Gemfile optional)
+OPT_GEMS=$(shell $(DOC_TOOL) gems_in_group $(DIR_TOP)Gemfile optional)
 all:: $(CLI_EXECUTABLE)
 .PHONY: single
 $(CLI_EXECUTABLE):

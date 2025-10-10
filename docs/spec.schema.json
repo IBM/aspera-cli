@@ -261,7 +261,7 @@
       ]
     },
     "lock_target_rate_kbps": {
-      "description": "If `true`, lock the target transfer rate to the default value set for target_rate_kbps.\nIf `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "description": "If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.\nIf `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.",
       "type": "boolean",
       "x-agents": [
         "transferd",
@@ -283,7 +283,7 @@
       "x-cli-option": "-m"
     },
     "move_after_transfer": {
-      "description": "Move source files to the specified `archive-dir` directory after they are transferred correctly.\nAvailable as of 3.8.0. Details in ascp manual.\nRequires write permissions on the source.\nIf `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.\n`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.\n`archive-dir` is subject to the same docroot restrictions as source files.\n`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.\nAfter files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.",
+      "description": "Move source files to the specified `archive-dir` directory after they are transferred correctly.\nAvailable as of 3.8.0. Details in `ascp` manual.\nRequires write permissions on the source.\nIf `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.\n`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.\n`archive-dir` is subject to the same docroot restrictions as source files.\n`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.\nAfter files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.",
       "type": "string",
       "x-agents": [
         "direct",
@@ -299,7 +299,7 @@
       "x-cli-special": true
     },
     "multi_session_threshold": {
-      "description": "Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.\n(0=no file is split)",
+      "description": "Split files across multiple `ascp` sessions if their size in bytes is greater than or equal to the specified value.\n(0=no file is split)",
       "type": "integer",
       "x-agents": [
         "direct",
@@ -773,7 +773,7 @@
       "type": "string"
     },
     "use_ascp4": {
-      "description": "Specify version of protocol. Do not use ascp4.",
+      "description": "Specify version of protocol. Do not use `ascp4`.",
       "type": "boolean",
       "default": false,
       "x-agents": [
@@ -805,7 +805,7 @@
       "x-cli-option": "--wss-enabled"
     },
     "wss_port": {
-      "description": "TCP port used for websocket service feed.",
+      "description": "TCP port used for Web Socket service feed.",
       "type": "integer",
       "x-cli-special": true,
       "x-cli-option": "--wss-port"

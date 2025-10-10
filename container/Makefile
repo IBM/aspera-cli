@@ -10,7 +10,7 @@ TAG_VERSION=$(DCK_REPO):$(GEM_VERSION)
 TAG_LATEST=$(DCK_REPO):latest
 PROCESS_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
 TOOL=podman
-OPT_GEMS=$(shell $(DIR_DOC)get_group.rb $(DIR_TOP)Gemfile optional)
+OPT_GEMS=$(shell $(DOC_TOOL) gems_in_group $(DIR_TOP)Gemfile optional)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 # TODO: get optional gems from 
