@@ -25,7 +25,6 @@ module Aspera
           options.declare(:instance, 'ATS instance in ibm cloud')
           options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
           options.declare(:ats_secret, 'ATS key secret')
-          options.declare(:params, 'Parameters access key creation (@json:)')
           options.declare(:cloud, 'Cloud provider')
           options.declare(:region, 'Cloud region')
           options.parse_options!
@@ -59,7 +58,7 @@ module Aspera
           access_key_id = instance_identifier unless %i[create list].include?(command)
           case command
           when :create
-            params = options.get_option(:params) || {}
+            params = value_create_modify(command: command, default: {})
             server_data = nil
             # if transfer_server_id not provided, get it from command line options
             if !params.key?('transfer_server_id')
@@ -92,7 +91,7 @@ module Aspera
             return Main.result_single_object(res)
             # TODO : action : modify, with "PUT"
           when :list
-            params = options.get_option(:params) || {'offset' => 0, 'max_results' => 1000}
+            params = query_read_delete(default: {'offset' => 0, 'max_results' => 1000})
             res = ats_api_pub_v1.read('access_keys', params)
             return Main.result_object_list(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
           when :show

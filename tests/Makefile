@@ -1287,11 +1287,11 @@ $(F)aocat7: $(TMP_EXISTS)
 $(F)aocat8: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(BEG_IGN)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(END_IGN)
-	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region @json:@extend:'{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	@$(STOP_TEST) $@
 $(F)aocat9: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.region @json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)aocat10: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1426,14 +1426,14 @@ $(F)at8: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(BEG_IGN)$(CLI_TEST) ats access_key delete ak2ibmcloud$(END_IGN)
 	$(TEMPORIZE_CREATE)
-	$(INCMAN)$(CLI_TEST) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+	$(INCMAN)$(CLI_TEST) ats access_key create --cloud=softlayer --region=@preset:icos.region @json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	$(TEMPORIZE_CREATE)
 	$(INCMAN)$(CLI_TEST) ats access_key show ak2ibmcloud
 	$(INCMAN)$(CLI_TEST) ats access_key entitlement ak2ibmcloud
 	@$(STOP_TEST) $@
 $(F)at9: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key create --cloud=aws --region=@preset:aws.region @json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(END_FAI_HIDE)
 	@$(STOP_TEST) $@
 $(F)at10: $(TMP_EXISTS)
 	@$(START_TEST) $@
