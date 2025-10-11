@@ -5,19 +5,19 @@ require 'aspera/assert'
 
 module Aspera
   module Cli
-    # Base class for plugins
+    # Base class for command plugins
     class Plugin
-      # operations without id
+      # Operations without id
       GLOBAL_OPS = %i[create list].freeze
-      # operations with id
+      # Operations with id
       INSTANCE_OPS = %i[modify delete show].freeze
-      # all standard operations
+      # All standard operations
       ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
-      # special query parameter: max number of items for list command
+      # Special query parameter: max number of items for list command
       MAX_ITEMS = 'max'
-      # special query parameter: max number of pages for list command
+      # Special query parameter: max number of pages for list command
       MAX_PAGES = 'pmax'
-      # special identifier format: look for this name to find where supported
+      # Special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
       PER_PAGE_DEFAULT = 1000
       private_constant :PER_PAGE_DEFAULT
@@ -32,7 +32,7 @@ module Aspera
       end
 
       def initialize(context:)
-        # check presence in descendant of mandatory method and constant
+        # Check presence in descendant of mandatory method and constant
         Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
         Aspera.assert(self.class.constants.include?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
         @context = context
@@ -49,7 +49,7 @@ module Aspera
       def persistency; @context.persistency; end
 
       def add_manual_header(has_options = true)
-        # manual header for all plugins
+        # Manual header for all plugins
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
@@ -69,7 +69,7 @@ module Aspera
         else
           res_id = options.get_option(as_option)
         end
-        # can be an Array
+        # Can be an Array
         if res_id.is_a?(String) && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
           if block
             res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
@@ -80,7 +80,7 @@ module Aspera
         return res_id
       end
 
-      # For create and delete operations: execute one actin or multiple if bulk is yes
+      # For create and delete operations: execute one action or multiple if bulk is yes
       # @param command   [Symbol] operation: :create, :delete, ...
       # @param descr     [String] description of the value
       # @param values    [Object] the value(s), or the type of value to get from user
@@ -96,22 +96,22 @@ module Aspera
         when Class
           values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk)
         end
-        # if not bulk, there is a single value
+        # If not bulk, there is a single value
         params = is_bulk ? values : [values]
         Log.log.warn('Empty list given for bulk operation') if params.empty?
         Log.dump(:bulk_operation, params)
         result_list = []
         params.each do |param|
-          # init for delete
+          # Init for delete
           result = {id_result => param}
           begin
-            # execute custom code
+            # Execute custom code
             res = yield(param)
-            # if block returns a hash, let's use this (create)
+            # If block returns a hash, let's use this (create)
             result = res if res.is_a?(Hash)
             # TODO: remove when faspio gw api fixes this
             result = res.first if res.is_a?(Array) && res.first.is_a?(Hash)
-            # create -> created
+            # Create -> created
             result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
           rescue StandardError => e
             raise e if options.get_option(:bfail)
@@ -225,11 +225,11 @@ module Aspera
       # Query parameters in URL suitable for REST: list/GET and delete/DELETE
       def query_read_delete(default: nil)
         query = options.get_option(:query)
-        # dup default, as it could be frozen
+        # Dup default, as it could be frozen
         query = default.dup if query.nil?
         Log.log.debug{"query_read_delete=#{query}".bg_red}
         begin
-          # check it is suitable
+          # Check it is suitable
           URI.encode_www_form(query) unless query.nil?
         rescue StandardError => e
           raise Cli::BadArgument, "Query must be an extended value (Hash, Array) which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
@@ -238,10 +238,10 @@ module Aspera
       end
 
       # Retrieves an extended value from command line, used for creation or modification of entities
-      # @param command [Symbol] command name for error message
-      # @param type [Class] expected type of value, either a Class, an Array of Class
-      # @param bulk [Boolean] if true, value must be an Array of <type>
-      # @param default [Object] default value if not provided
+      # @param command [Symbol]  command name for error message
+      # @param type    [Class]   expected type of value, either a Class, an Array of Class
+      # @param bulk    [Boolean] if true, value must be an Array of <type>
+      # @param default [Object]  default value if not provided
       def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
         value = options.get_next_argument(
           "parameters for #{command}#{" (#{description})" unless description.nil?}", mandatory: default.nil?,
@@ -286,7 +286,7 @@ module Aspera
         offset = 0
         max_items = query.delete(MAX_ITEMS)
         remain_pages = query.delete(MAX_PAGES)
-        # merge default parameters, by default 100 per page
+        # Merge default parameters, by default 100 per page
         query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
         total_count = nil
         loop do
@@ -294,7 +294,7 @@ module Aspera
           page_result = api.read(entity, query)
           Aspera.assert_type(page_result[items_key], Array)
           result.concat(page_result[items_key])
-          # reach the limit set by user ?
+          # Reach the limit set by user ?
           if !max_items.nil? && (result.length >= max_items)
             result = result.slice(0, max_items)
             break
