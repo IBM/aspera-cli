@@ -4579,7 +4579,6 @@ OPTIONS:
         --instance=VALUE             ATS instance in ibm cloud
         --ats-key=VALUE              ATS key identifier (ats_xxx)
         --ats-secret=VALUE           ATS key secret
-        --params=VALUE               Parameters access key creation (@json:)
         --cloud=VALUE                Cloud provider
         --region=VALUE               Cloud region
 
@@ -6164,8 +6163,8 @@ admin analytics transfers nodes
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application list
-admin ats access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-admin ats access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+admin ats access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+admin ats access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key delete ak1ibmcloud
 admin ats access_key list --fields=name,id
 admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
@@ -6424,8 +6423,8 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ```bash
 access_key cluster ak2ibmcloud --secret=my_secret_here
-access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 access_key delete ak2ibmcloud
 access_key delete ak_aws
 access_key entitlement ak2ibmcloud
