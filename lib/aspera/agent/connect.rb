@@ -23,8 +23,9 @@ module Aspera
         }
         raise Error, 'Using connect requires a graphical environment' unless Environment.instance.graphical?
         method_index = 0
-        connect_url = connect_api_url
         begin
+          # raise exception if connect not started and file does not exist
+          connect_url = connect_api_url
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
