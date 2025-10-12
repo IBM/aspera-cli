@@ -180,7 +180,6 @@ module Aspera
         api_url_base = self.class.api_base_url(api_domain: url_info[:instance_domain])
         # auth URL
         auth_params[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}"
-
         # fill other auth parameters based on OAuth method
         case auth_params[:grant_method]
         when :web

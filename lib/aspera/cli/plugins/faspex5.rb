@@ -2,7 +2,7 @@
 
 # spellchecker: ignore workgroups mypackages passcode
 
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/oauth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
@@ -17,10 +17,7 @@ require 'securerandom'
 module Aspera
   module Cli
     module Plugins
-      class Faspex5 < Cli::BasicAuthPlugin
-        # options and parameters for Api::Faspex.new
-        OPTIONS_NEW = %i[url auth client_id client_secret redirect_uri private_key passphrase username password].freeze
-        private_constant :OPTIONS_NEW
+      class Faspex5 < OauthPlugin
         class << self
           def application_name
             'Faspex'
@@ -94,12 +91,6 @@ module Aspera
 
         def initialize(**_)
           super
-          options.declare(:client_id, 'OAuth client identifier')
-          options.declare(:client_secret, 'OAuth client secret')
-          options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.declare(:auth, 'OAuth type of authentication', values: Api::Faspex::STD_AUTH_TYPES, default: :jwt)
-          options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
           options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
@@ -107,12 +98,8 @@ module Aspera
         end
 
         def set_api
-          create_values = OPTIONS_NEW.each_with_object({}) do |i, m|
-            v = options.get_option(i)
-            m[i] = v unless v.nil?
-          end
           # create an API object with the same options, but with a different subpath
-          @api_v5 = Api::Faspex.new(**create_values)
+          @api_v5 = new_with_options(Api::Faspex)
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
         end

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/oauth_plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
-require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
@@ -19,11 +19,9 @@ require 'date'
 module Aspera
   module Cli
     module Plugins
-      class Aoc < Cli::BasicAuthPlugin
+      class Aoc < OauthPlugin
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
-        # OAuth methods supported
-        STD_AUTH_TYPES = %i[web jwt].freeze
         # admin objects that can be manipulated
         ADMIN_OBJECTS = %i[
           self
@@ -58,7 +56,7 @@ module Aspera
         # options and parameters for Api::AoC.new
         OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
 
-        private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
+        private_constant :REDIRECT_LOCALHOST, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
         class << self
           def application_name
             'Aspera on Cloud'
@@ -207,13 +205,6 @@ module Aspera
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
-          options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
-          options.declare(:client_id, 'OAuth API client identifier')
-          options.declare(:client_secret, 'OAuth API client secret')
-          options.declare(:scope, 'OAuth scope for AoC API calls')
-          options.declare(:redirect_uri, 'OAuth API client redirect URI')
-          options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'RSA private key passphrase', types: String)
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
@@ -224,20 +215,18 @@ module Aspera
         end
 
         def api_from_options(aoc_base_path)
-          create_values = OPTIONS_NEW.each_with_object({
-            subpath:       aoc_base_path,
-            secret_finder: config
-          }) do |i, m|
-            m[i] = options.get_option(i) unless options.get_option(i).nil?
-          end
-          create_values[:scope] = Api::AoC::SCOPE_FILES_USER if create_values[:scope].nil?
           # create an API object with the same options, but with a different subpath
-          return Api::AoC.new(**create_values)
-        rescue ::ArgumentError => e
-          if (m = e.message.match(/missing keyword: :(.*)$/))
-            raise Cli::Error, "Missing option: #{m[1]}"
-          end
-          raise
+          return new_with_options(
+            Api::AoC,
+            base: {
+              subpath:       aoc_base_path,
+              secret_finder: config
+            },
+            add: {
+              scope:     Api::AoC::SCOPE_FILES_USER,
+              workspace: nil
+            }
+          )
         end
 
         def aoc_api

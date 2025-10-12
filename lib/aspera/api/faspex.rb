@@ -77,8 +77,6 @@ module Aspera
       JOB_RUNNING = %w[queued working].freeze
       PATH_STANDARD_ROOT = '/aspera/faspex'
       PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
-      # OAuth methods supported
-      STD_AUTH_TYPES = %i[web jwt boot].freeze
       HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
       HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
       EMAIL_NOTIF_LIST = %w[
