@@ -94,7 +94,7 @@ CLI_TEST+= -Pjns
 endif
 # temp configuration file that is modified, to avoid changing the main configuration file
 TEST_CONFIG=$(DIR_TMP)sample.conf
-WIZ_DEPS=$(TEST_CONFIG)
+WIZ_DEPS=
 # "CLI_TMP_CONF" is used for commands that modify the config file
 CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
 CLI_WIZ_TEST=ASCLI_WIZ_TEST=yes $(CLI_TMP_CONF)
