@@ -13,3 +13,4 @@
 container/Dockerfile
 .bundle
 *.pandoc_meta
+dev.*
