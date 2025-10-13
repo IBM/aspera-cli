@@ -5,6 +5,7 @@ module Aspera
   class Error < StandardError
   end
 
+  # Any problem with parameter values
   class ParameterError < Error
   end
 
@@ -15,8 +16,10 @@ module Aspera
   # An expected condition was not met
   class AssertError < Error
   end
+
   class << self
-    # Replace `raise`, allows sending exception, or just error log, when type is `:error`
+    # Replaces `raise` in assertion
+    # Allows sending exception, or just error log, when type is `:error`
     # @param type [Exception,Symbol] Send to log if symbol, else raise exception
     # @param message [String] Message for error.
     def report_error(type, message)
@@ -44,19 +47,19 @@ module Aspera
     end
 
     # Assert that value has the given type
-    # @param value   [Object]       The value to check
-    # @param classes [Class, Array] The expected type(s)
+    # @param value   [Object]           The value to check
+    # @param classes [Class, Array]     The expected type(s)
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block   [Proc]         Additional description in front of message
+    # @param block   [Proc]             Additional description in front of message
     def assert_type(value, *classes, type: AssertError)
       assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have #{value.inspect}"}
     end
 
     # Assert that value is one of the given values
-    # @param value  [any]   value to check
-    # @param values [Array] accepted values
+    # @param value  [any]              Value to check
+    # @param values [Array]            Accepted values
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block  [Proc]         Additional description in front of message
+    # @param block  [Proc]             Additional description in front of message
     def assert_values(value, values, type: AssertError)
       assert(values.include?(value), type: type) do
         val_list = values.inspect
