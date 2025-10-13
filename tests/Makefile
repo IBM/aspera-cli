@@ -1755,7 +1755,9 @@ $(F)conf_echo: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=single
 	$(INCMAN)$(CLI_TEST) config echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
 	$(BEG_ERR)$(CLI_TEST) config echo @file:no_such_file$(END_ERR_HIDE)
+	$(BEG_ERR)$(CLI_TEST) config echo @json:'{"ok":1,"bad":mauvais}'$(END_ERR_SHOW)
 	echo $$'1\n2\n3'|$(INCMAN)$(CLI_TEST) config echo @lines:@stdin:
+	echo $$'1\n2\n3'|$(INCMAN)$(CLI_TEST) config echo @stdbin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(INCMAN)$(CLI_TEST) config echo @csvt:@stdin:
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(INCMAN)$(CLI_TEST) config echo @zlib:@stdin:
 	set -xe&&\
