@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/error'
 require 'aspera/transfer/spec'
 require 'aspera/rest'
 require 'aspera/oauth'
@@ -107,7 +106,7 @@ module Aspera
           when String
             return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
           when NilClass then return ->(_){true}
-          else Aspera.error_unexpected_value(match_expression.class.name, type: Cli::BadArgument)
+          else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
           end
         end
 
@@ -248,12 +247,13 @@ module Aspera
       end
 
       # Recursively browse in a folder (with non-recursive method)
-      # Sub folders are processed if the processing method returns true
+      # Entries of folders are processed if the processing method returns true
       # Links are processed on the respective node
       # @param method_sym [Symbol] processing method, arguments: entry, path, state
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
+      # @para query [Hash, nil] optional query for `read`
       def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
@@ -313,9 +313,9 @@ module Aspera
         process_last_link ||= path.end_with?(PATH_SEPARATOR)
         path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
         return {api: self, file_id: top_file_id} if path_elements.empty?
-        resolve_state = {path: path_elements, result: nil, process_last_link: process_last_link}
+        resolve_state = {path: path_elements, consumed: [], result: nil, process_last_link: process_last_link}
         process_folder_tree(method_sym: :process_api_fid, state: resolve_state, top_file_id: top_file_id)
-        raise "entry not found: #{resolve_state[:path]}" if resolve_state[:result].nil?
+        raise ParameterError, "Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}" if resolve_state[:result].nil?
         Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result][:api].base_url} #{resolve_state[:result][:file_id]}"}
         return resolve_state[:result]
       end
@@ -470,18 +470,19 @@ module Aspera
       private
 
       # Method called in loop for each entry for `resolve_api_fid`
+      # @return `true` to continue digging, `false` to stop processing: set state[:result] if found
       def process_api_fid(entry, path, state)
         # Stop digging here if not in right path
         return false unless entry['name'].eql?(state[:path].first)
         # Ok it matches, so we remove the match, and continue digging
-        state[:path].shift
+        state[:consumed].push(state[:path].shift)
         path_fully_consumed = state[:path].empty?
         case entry['type']
         when 'file'
           # File must be terminal
           raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless path_fully_consumed
           # It's terminal, we found it
-          Log.log.debug{"resolve_api_fid: found #{path} -> #{entry['id']}"}
+          Log.log.debug{"process_api_fid: found #{path} -> #{entry['id']}"}
           state[:result] = {api: self, file_id: entry['id']}
           return false
         when 'folder'
