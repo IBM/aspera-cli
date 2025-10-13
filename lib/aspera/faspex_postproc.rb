@@ -8,7 +8,7 @@ require 'aspera/log'
 require 'aspera/assert'
 
 module Aspera
-  # this class answers the Faspex /send API and creates a package on Aspera on Cloud
+  # Start a Faspex-4 style post-processing script using Faspex-5 webhook
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
     ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds].freeze
     def initialize(server, parameters)
