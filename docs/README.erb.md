@@ -345,27 +345,12 @@ This installs a recent Ruby suitable for <%=tool%>.
 To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
 
 ```shell
-use_ruby(){
-    local version=$1
-    case $version in list) for r in $(brew list -1 | grep '^ruby'); do
-      echo "$(brew info --json=v1 $r | jq -r '.[0].installed[0].version') : use_ruby $r"
-    done|gsort -k1,1V;return;;; esac
-    local prefix=$(brew --prefix ruby${version:+@}$version)
-    if ! test -d "$prefix";then
-        echo "No such ruby version: $version"
-        brew list|grep ruby
-        return 1
-    fi
-    PATH="$prefix/bin:$(echo "$PATH" | tr ':' '\n' | grep -v '/ruby' | paste -sd ':' -)"
-    PATH="$(gem env gemdir)/bin:$PATH"
-    export LDFLAGS="-L$prefix/lib"
-    export CPPFLAGS="-I$prefix/include"
-    export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
-    echo "Using: $prefix"
-    ruby -v
-}
-use_ruby
+export PATH="$(brew --prefix ruby)/bin:$PATH"
+export PATH="$(gem env gemdir)/bin:$PATH"
 ```
+
+> [!NOTE]
+> Two separate lines are needed because the second one depends on the first one.
 
 #### Linux: Package
 
