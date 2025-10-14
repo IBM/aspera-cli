@@ -274,51 +274,6 @@ module Aspera
           return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
         end
 
-        # Call block with same query using paging and response information
-        # block must return a hash with :data and :http keys
-        # @return [Hash] {items: , total: }
-        def api_call_paging(base_query = {})
-          Aspera.assert_type(base_query, Hash){'query'}
-          Aspera.assert(block_given?)
-          # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
-          base_query['per_page'] = 1000 unless base_query.key?('per_page')
-          max_items = base_query.delete(MAX_ITEMS)
-          max_pages = base_query.delete(MAX_PAGES)
-          item_list = []
-          total_count = nil
-          current_page = base_query['page']
-          current_page = 1 if current_page.nil?
-          page_count = 0
-          loop do
-            query = base_query.clone
-            query['page'] = current_page
-            result = yield(query)
-            Aspera.assert(result[:data])
-            Aspera.assert(result[:http])
-            total_count = result[:http]['X-Total-Count']
-            page_count += 1
-            current_page += 1
-            add_items = result[:data]
-            break if add_items.empty?
-            # append new items to full list
-            item_list += add_items
-            break if !max_items.nil? && item_list.count >= max_items
-            break if !max_pages.nil? && page_count >= max_pages
-            formatter.long_operation_running("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
-          end
-          formatter.long_operation_terminated
-          item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
-          return {items: item_list, total: total_count}
-        end
-
-        # read using the query and paging
-        # @return [Hash] {data: , total: }
-        def api_read_all(resource_class_path, base_query = {})
-          return api_call_paging(base_query) do |query|
-            aoc_api.call(operation: 'GET', subpath: resource_class_path, headers: {'Accept' => Rest::MIME_JSON}, query: query)
-          end
-        end
-
         # List all entities, given additional, default and user's queries
         # @param resource_class_path path to query on API
         # @param fields fields to display
@@ -331,7 +286,7 @@ module Aspera
           query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
-          result = api_read_all(resource_class_path, base_query.merge(query).compact)
+          result = aoc_api.read_with_paging(resource_class_path, query: base_query.merge(query).compact, formatter: formatter)
           return Main.result_object_list(result[:items], fields: fields, total: result[:total])
         end
 
@@ -356,7 +311,7 @@ module Aspera
           Aspera.assert_type(query, Hash){'query'}
           PACKAGE_RECEIVED_BASE_QUERY.each{ |k, v| query[k] = v unless query.key?(k)}
           resolve_dropbox_name_default_ws_id(query)
-          return api_read_all('packages', query.compact)
+          return aoc_api.read_with_paging('packages', query: query.compact, formatter: formatter)
         end
 
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
@@ -779,7 +734,7 @@ module Aspera
             }
             return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params) if command.eql?(:list)
             one_id = instance_identifier
-            found = api_read_all('short_links', list_params)[:items].find{ |item| item['id'].eql?(one_id)}
+            found = aoc_api.read_with_paging('short_links', query: list_params, formatter: formatter)[:items].find{ |item| item['id'].eql?(one_id)}
             raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
             return Main.result_single_object(found, fields: Formatter.all_but('data'))
           when :modify

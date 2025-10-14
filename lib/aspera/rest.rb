@@ -66,6 +66,11 @@ module Aspera
 
     UNAVAILABLE_CODES = ['503']
 
+    # Special query parameter: max number of items for list command
+    MAX_ITEMS = 'max'
+    # Special query parameter: max number of pages for list command
+    MAX_PAGES = 'pmax'
+
     class << self
       # @return [String] Basic auth token
       def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end

@@ -12,7 +12,7 @@ require 'cgi'
 
 module Aspera
   module Api
-    class AoC < Aspera::Rest
+    class AoC < Rest
       PRODUCT_NAME = 'Aspera on Cloud'
       # use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
@@ -140,6 +140,43 @@ module Aspera
             organization:    org_domain[:organization]
           }
         end
+
+        # Call block with same query using paging and response information.
+        # Block must return a hash with :data and :http keys
+        # @return [Hash] {items: , total: }
+        def call_paging(query: {}, formatter: nil)
+          Aspera.assert_type(query, Hash){'query'}
+          Aspera.assert(block_given?)
+          # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
+          query['per_page'] = 1000 unless query.key?('per_page')
+          max_items = query.delete(Rest::MAX_ITEMS)
+          max_pages = query.delete(Rest::MAX_PAGES)
+          item_list = []
+          total_count = nil
+          current_page = query['page']
+          current_page = 1 if current_page.nil?
+          page_count = 0
+          loop do
+            new_query = query.clone
+            new_query['page'] = current_page
+            result = yield(new_query)
+            Aspera.assert(result[:data])
+            Aspera.assert(result[:http])
+            total_count = result[:http]['X-Total-Count']
+            page_count += 1
+            current_page += 1
+            add_items = result[:data]
+            break if add_items.empty?
+            # append new items to full list
+            item_list += add_items
+            break if !max_items.nil? && item_list.count >= max_items
+            break if !max_pages.nil? && page_count >= max_pages
+            formatter&.long_operation_running("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
+          end
+          formatter&.long_operation_terminated
+          item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
+          return {items: item_list, total: total_count}
+        end
       end
 
       attr_reader :private_link
@@ -204,12 +241,21 @@ module Aspera
           auth_params[:json][:password] = password unless password.nil?
           # basic auth required for /token
           auth_params[:auth] = {type: :basic, username: auth_params[:client_id], password: auth_params[:client_secret]}
-        else Aspera.error_unexpected_value(auth_params[:grant_method])
+        else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: :web, :jwt'}
         end
         super(
           base_url: "#{api_url_base}/#{subpath}",
           auth: auth_params
           )
+      end
+
+      # read using the query and paging
+      # @return [Hash] {items: , total: }
+      def read_with_paging(subpath, query: {}, formatter: nil)
+        return self.class.call_paging(query: query, formatter: formatter) do |paged_query|
+          # Use `call` instead of `read` to get headers
+          call(operation: 'GET', subpath: subpath, headers: {'Accept' => Rest::MIME_JSON}, query: paged_query)
+        end
       end
 
       def assert_public_link_types(expected)
