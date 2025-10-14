@@ -229,6 +229,8 @@ module Aspera
           )
         end
 
+        # AoC Rest object
+        # @return [Rest]
         def aoc_api
           if @cache_api_aoc.nil?
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
