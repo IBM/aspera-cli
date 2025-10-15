@@ -5,6 +5,7 @@ require 'aspera/assert'
 
 module Aspera
   module Cli
+    # The wizard detects applications and generates a config
     class Wizard
       WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
@@ -50,12 +51,12 @@ module Aspera
         found_apps = []
         my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
         PluginFactory.instance.plugin_list.each do |plugin_name_sym|
-          # no detection for internal plugin
+          # No detection for internal plugin
           next if plugin_name_sym.eql?(my_self_plugin_sym)
           next if check_only && !check_only.eql?(plugin_name_sym)
-          # load plugin class
+          # Load plugin class
           plugin_klass = PluginFactory.instance.plugin_class(plugin_name_sym)
-          # requires detection method
+          # Requires detection method
           next unless plugin_klass.respond_to?(:detect)
           detection_info = nil
           begin
@@ -73,7 +74,7 @@ module Aspera
           Aspera.assert_type(detection_info, Hash)
           Aspera.assert_type(detection_info[:url], String) if detection_info.key?(:url)
           app_name = plugin_klass.respond_to?(:application_name) ? plugin_klass.application_name : plugin_klass.name.split('::').last
-          # if there is a redirect, then the detector can override the url.
+          # If there is a redirect, then the detector can override the url.
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
         raise "No known application found at #{app_url}" if found_apps.empty?
@@ -84,14 +85,14 @@ module Aspera
       # To be called in public wizard method to get private key
       # @return [Array] Private key path, pub key PEM
       def ask_private_key(user:, url:, page:)
-        # lets see if path to priv key is provided
+        # Lets see if path to priv key is provided
         private_key_path = options.get_option(:key_path)
-        # give a chance to provide
+        # Give a chance to provide
         if private_key_path.nil?
           formatter.display_status('Path to private RSA key (leave empty to generate):')
           private_key_path = options.get_option(:key_path, mandatory: true).to_s
         end
-        # else generate path
+        # Else generate path
         private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
         if File.exist?(private_key_path)
           formatter.display_status('Using existing key:')
@@ -141,7 +142,7 @@ module Aspera
         wizard_result = plugin_instance.wizard(self, wiz_url)
         Log.log.debug{"wizard result: #{wizard_result}"}
         Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
-        # get preset name from user or default
+        # Get preset name from user or default
         if wiz_preset_name.empty?
           elements = [
             identification[:product],
@@ -152,7 +153,7 @@ module Aspera
         end
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")
-        # init defaults if necessary
+        # Init defaults if necessary
         option_override = options.get_option(:override, mandatory: true)
         option_default = options.get_option(:default, mandatory: true)
         config.defaults_set(identification[:product], wiz_preset_name, wizard_result[:preset_value].stringify_keys, option_default, option_override)

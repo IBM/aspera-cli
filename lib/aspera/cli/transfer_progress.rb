@@ -13,7 +13,7 @@ module Aspera
     class TransferProgress
       def initialize
         @progress_bar = nil
-        # key is session id
+        # Key is session id
         @sessions = {}
         @completed = false
         @title = nil
@@ -42,21 +42,21 @@ module Aspera
         progress_provided = false
         case type
         when :sessions_init
-          # give opportunity to show progress of initialization with multiple status
+          # Give opportunity to show progress of initialization with multiple status
           Aspera.assert(session_id.nil?)
           Aspera.assert_type(info, String)
-          # initialization of progress bar
+          # Initialization of progress bar
           @title = info
         when :session_start
           Aspera.assert_type(session_id, String)
           Aspera.assert(info.nil?)
           raise "Session #{session_id} already started" if @sessions[session_id]
           @sessions[session_id] = {
-            job_size: 0, # total size of transfer (pre-calc)
+            job_size: 0, # Total size of transfer (pre-calc)
             current:  0,
             running:  true
           }
-          # remove last pre-start message if any
+          # Remove last pre-start message if any
           @title = nil
         when :session_size
           Aspera.assert_type(session_id, String)
@@ -77,7 +77,7 @@ module Aspera
         when :session_end
           Aspera.assert_type(session_id, String)
           Aspera.assert(info.nil?)
-          # a session may be too short and finish before it has been started
+          # A session may be too short and finish before it has been started
           @sessions[session_id][:running] = false if @sessions[session_id].is_a?(Hash)
         when :end
           Aspera.assert(session_id.nil?)
