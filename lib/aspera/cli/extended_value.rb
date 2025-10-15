@@ -13,7 +13,7 @@ require 'singleton'
 
 module Aspera
   module Cli
-    # command line extended values
+    # Command line extended values
     class ExtendedValue
       include Singleton
 
@@ -21,15 +21,15 @@ module Aspera
       MARKER_END = ':'
       MARKER_IN_END = '@'
 
-      # special handlers stop processing of handlers on right
-      # extend includes processing of other handlers in itself
-      # val keeps the value intact
+      # Special handlers stop processing of handlers on right
+      # :extend includes processing of other handlers in itself
+      # :val keeps the value intact
       SPECIAL_HANDLERS = %i[extend val].freeze
 
       private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS
 
       class << self
-        # decode comma separated table text
+        # Decode comma separated table text
         def decode_csvt(value)
           col_titles = nil
           hash_array = []
@@ -53,8 +53,8 @@ module Aspera
       private
 
       def initialize
-        # base handlers
-        # other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
+        # Base handlers
+        # Other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
         @handlers = {
           val:    lambda{ |i| i},
           base64: lambda{ |i| Base64.decode64(i)},
@@ -114,21 +114,21 @@ module Aspera
 
       def modifiers; @handlers.keys; end
 
-      # add a new handler
+      # Add a new handler
       def set_handler(name, method)
         Log.log.debug{"setting handler for #{name}"}
         Aspera.assert_type(name, Symbol){'name'}
         @handlers[name] = method
       end
 
-      # parse an string value to extended value, if it is a String using supported extended value modifiers
-      # other value types are returned as is
+      # Parse an string value to extended value, if it is a String using supported extended value modifiers
+      # Other value types are returned as is
       # @param value [String] the value to parse
       # @param expect [Class,Array] one or a list of expected types
       def evaluate(value)
         return value unless value.is_a?(String)
         regex = Regexp.new("^#{handler_regex_string}(.*)$", Regexp::MULTILINE)
-        # first determine decoders, in reversed order
+        # First determine decoders, in reversed order
         handlers_reversed = []
         while (m = value.match(regex))
           handler = m[1].to_sym
@@ -143,14 +143,14 @@ module Aspera
         return value
       end
 
-      # parse string value as extended value
-      # use default decoder if none is specified
+      # Parse string value as extended value
+      # Use default decoder if none is specified
       def evaluate_with_default(value)
         value = [MARKER_START, @default_decoder, MARKER_END, value].join if value.is_a?(String) && value.match(/^#{handler_regex_string}.*$/).nil? && !@default_decoder.nil?
         return evaluate(value)
       end
 
-      # find inner extended values
+      # Find inner extended values
       def evaluate_all(value)
         regex = Regexp.new("^(.*)#{handler_regex_string}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
         while (m = value.match(regex))

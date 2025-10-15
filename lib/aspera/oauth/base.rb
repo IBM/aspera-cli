@@ -110,6 +110,7 @@ module Aspera
           # `direct` agent is equipped with refresh code
           # an API was already called, but failed, we need to regenerate or refresh
           if refresh || token_info[:expired]
+            Log.log.trace1{"refresh: #{refresh} expired: #{token_info[:expired]}"}
             refresh_token = nil
             if token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
               # save possible refresh token, before deleting the cache
