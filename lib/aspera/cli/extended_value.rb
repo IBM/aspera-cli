@@ -107,7 +107,7 @@ module Aspera
       public
 
       def default_decoder=(value)
-        Log.log.debug{"setting default decoder to #{value} (#{value.class})"}
+        Log.log.debug{"Setting default decoder to (#{value.class}) #{value}"}
         Aspera.assert(value.nil? || @handlers.key?(value))
         @default_decoder = value
       end
