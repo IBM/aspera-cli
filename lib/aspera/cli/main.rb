@@ -53,22 +53,6 @@ module Aspera
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
-        # Early debug for parser
-        # Note: does not accept shortcuts
-        def early_debug_setup(argv)
-          Log.instance.program_name = Info::CMD_NAME
-          argv.each do |arg|
-            case arg
-            when '--' then break
-            when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
-            when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
-            end
-          rescue => e
-            $stderr.puts("Error: #{e}") # rubocop:disable Style/StderrPuts
-            Process.exit(1)
-          end
-        end
-
         def result_special(how); {type: :special, data: how}; end
 
         # Expect some list, but nothing to display
