@@ -102,9 +102,10 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 
 ### Notations, Shell, Examples
 
-Command line operations examples are shown using a shell such as: `bash` or `zsh`.
+Command line operations examples are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
+Using [Windows Powershell or cmd](#shell-parsing-for-windows) is also possible.
 
-Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value and not fixed value commands.
+Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value, and not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
 
@@ -113,7 +114,7 @@ The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses one
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
-> It can be local or remote.
+> It can be local, or remote.
 > For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
 > i.e. using option `--transfer=node`
 

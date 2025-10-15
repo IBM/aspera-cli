@@ -384,7 +384,7 @@ module Aspera
                   ssl_options = opt
                 when String
                   name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
-                  raise Cli::BadArgument, "No such ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}" if !OpenSSL::SSL.const_defined?(name)
+                  raise Cli::BadArgument, "Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}" if !OpenSSL::SSL.const_defined?(name)
                   if opt.start_with?('-')
                     ssl_options &= ~OpenSSL::SSL.const_get(name)
                   else
@@ -396,8 +396,10 @@ module Aspera
               end
               # http_session.instance_variable_set(:@options, ssl_options)
               OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options] = ssl_options
+            elsif k.eql?('oauth')
+              OAuth::Factory.instance.parameters.merge!(v)
             else
-              Log.log.error{"no such HTTP session attribute: #{k}"}
+              Log.log.error{"Unknown HTTP session attribute: #{k}"}
             end
           end
         end
@@ -490,7 +492,7 @@ module Aspera
           param_name = param_name.to_s
           selected_preset = @config_presets[preset]
           if selected_preset.nil?
-            Log.log.debug{"No such preset name: #{preset}, initializing"}
+            Log.log.debug{"Unknown preset name: #{preset}, initializing"}
             selected_preset = @config_presets[preset] = {}
           end
           Aspera.assert_type(selected_preset, Hash){"#{preset}.#{param_name}"}
@@ -528,7 +530,7 @@ module Aspera
             Aspera.assert_type(current, Hash, type: Cli::Error){"sub key: #{include_path}"}
             include_path.push(name)
             current = current[name]
-            raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
+            raise Cli::Error, "Unknown config preset: #{include_path}" if current.nil?
           end
           current = self.class.deep_clone(current) unless current.is_a?(String)
           return ExtendedValue.instance.evaluate(current)
@@ -928,7 +930,7 @@ module Aspera
               return Main.result_object_list(OAuth::Factory.instance.persisted_tokens)
             when :show
               data = OAuth::Factory.instance.get_token_info(instance_identifier)
-              raise Cli::Error, 'No such identifier' if data.nil?
+              raise Cli::Error, 'Unknown identifier' if data.nil?
               return Main.result_single_object(data)
             end
           when :plugins

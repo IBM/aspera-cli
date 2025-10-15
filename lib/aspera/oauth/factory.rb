@@ -108,7 +108,7 @@ module Aspera
         end
       end
 
-      # get token information from cache
+      # Get token information from cache
       # @param id [String] identifier of token
       # @return [Hash] token internal information , including Date object for `expiration_date`
       def get_token_info(id)

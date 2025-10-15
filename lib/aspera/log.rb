@@ -109,6 +109,31 @@ module Aspera
       ensure
         $stderr = real_stderr
       end
+
+      # Returns the last 2 containers (module/class) and method caller
+      def caller_method
+        stack = caller
+        i = stack.rindex{ |line| line.include?('Logger')}
+        frame = stack[i + 1] if i && stack[i + 1]
+        return '???' unless frame
+        # Extract the "Class::Module::Method" or "Class#method" part
+        full = frame[/'([^']+)'/, 1]
+        return '???' unless full
+        # Split into class/module and method parts
+        parts = full.split(/(::|#)/)
+        # Reconstruct keeping only last two class/module names + separator + method
+        if parts.include?('#')
+          sep_index = parts.index('#')
+          classes = parts[0...sep_index].join
+          method = parts[sep_index + 1]
+        else
+          classes = parts[0..-2].join
+          method = parts.last
+        end
+        class_parts = classes.split('::')
+        selected_classes = class_parts.last(2).join('::')
+        "#{selected_classes}.#{method}"
+      end
     end
 
     attr_reader :logger_type, :logger
@@ -209,7 +234,8 @@ module Aspera
     # pre-defined formatters
     FORMATTERS = {
       standard: Logger::Formatter.new,
-      default:  DEFAULT_FORMATTER
+      default:  DEFAULT_FORMATTER,
+      caller:   ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{Log.caller_method}\n#{m}\n"}
     }.freeze
 
     private_constant :LVL_DECO, :LVL_COLOR, :DEFAULT_FORMATTER, :FORMATTERS
