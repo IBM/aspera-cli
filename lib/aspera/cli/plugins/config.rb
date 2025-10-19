@@ -945,7 +945,7 @@ module Aspera
                 result.push({
                   plugin: name,
                   detect: Formatter.tick(plugin_class.respond_to?(:detect)),
-                  wizard: Formatter.tick(plugin_class.respond_to?(:wizard)),
+                  wizard: Formatter.tick(plugin_class.instance_methods.include?(:wizard)),
                   path:   PluginFactory.instance.plugin_source(name)
                 })
               end
