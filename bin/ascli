@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# This is the main script to execute the Aspera CLI
+
 old_verbose = $VERBOSE
 $VERBOSE = nil
 # internal representation of strings (ruby) is UTF-8
@@ -13,13 +15,13 @@ require 'aspera/log'
 require 'aspera/cli/info'
 
 # Early debug for parser
-# Note: does not accept shortcuts
+# Note: does not accept short option names, nor extended values
 Aspera::Log.instance.program_name = Aspera::Cli::Info::CMD_NAME
 ARGV.each do |arg|
   case arg
   when '--' then break
   when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
-  when /^--log-format=(.*)/ then Aspera::Log.instance.formatter = Regexp.last_match(1)
+  when /^--log-format=(.*)/ then Aspera::Log.instance.formatter = Regexp.last_match(1) unless Regexp.last_match(1).start_with?('@ruby:')
   when /^--logger=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
   end
 rescue => e

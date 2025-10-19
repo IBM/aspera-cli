@@ -18,11 +18,8 @@ require 'openssl'
 
 module Aspera
   module Transfer
-    # translate transfer specification to ascp parameter list
+    # Translate transfer specification to `ascp` parameter list
     class Parameters
-      # `ascp` options to provide a file list
-      FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      private_constant :FILE_LIST_OPTIONS
       HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
 
       class << self
@@ -30,7 +27,6 @@ module Aspera
         def file_list_folder=(value)
           @file_list_folder = value
           return if @file_list_folder.nil?
-
           FileUtils.mkdir_p(@file_list_folder)
           TempFileManager.instance.cleanup_expired(@file_list_folder)
         end
@@ -42,14 +38,19 @@ module Aspera
           @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
         end
 
-        # file list is provided directly with ascp arguments
+        # File list is provided directly with ascp arguments
         # @columns ascp_args [Array,NilClass] ascp arguments
         def ascp_args_file_list?(ascp_args)
           ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end
       end
 
-      # @columns options [Hash] key: :wss: bool, :ascp_args: array of strings
+      # @param job_spec        [Hash]   Transfer spec
+      # @param ascp_args       [Array]  Other ascp args
+      # @param quiet           [Bool]   Remove ascp output
+      # @param trusted_certs   [Array]  Trusted certificates
+      # @param client_ssh_key  [Symbol] :rsa or :dsa
+      # @param check_ignore_cb [Proc]   Callback
       def initialize(
         job_spec,
         ascp_args:       nil,
@@ -60,17 +61,17 @@ module Aspera
         check_ignore_cb: nil
       )
         @job_spec = job_spec
+        Aspera.assert_type(@job_spec, Hash)
         @ascp_args = ascp_args.nil? ? [] : ascp_args
+        Aspera.assert_type(@ascp_args, Array){'ascp_args'}
+        Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
         @wss = wss
         @quiet = quiet
         @trusted_certs = trusted_certs.nil? ? [] : trusted_certs
-        @client_ssh_key = client_ssh_key.nil? ? :rsa : client_ssh_key.to_sym
-        @check_ignore_cb = check_ignore_cb
-        Aspera.assert_type(@job_spec, Hash)
-        Aspera.assert_type(@ascp_args, Array){'ascp_args'}
-        Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
         Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
+        @client_ssh_key = client_ssh_key.nil? ? :rsa : client_ssh_key.to_sym
         Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
+        @check_ignore_cb = check_ignore_cb
         @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, CommandLineConverter)
       end
 
@@ -148,7 +149,7 @@ module Aspera
         return certificates_to_use
       end
 
-      # translate transfer spec to env vars and command line arguments for ascp
+      # Translate transfer spec to env vars and command line arguments for `ascp`
       def ascp_args
         env_args = {
           args: [],
@@ -156,16 +157,25 @@ module Aspera
           name: :ascp
         }
 
-        # special cases
+        # Special cases
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
-        # notify multi-session was already used, anyway it was deleted by agent direct
+        # Notify multi-session was already used, anyway it was deleted by agent direct
         Aspera.assert(!@builder.read_param('multi_session'))
 
-        # add ssh or wss certificates
+        # Add ssh or wss certificates
         # (reverse, to keep order, as we unshift)
         remote_certificates&.reverse_each do |cert|
           env_args[:args].unshift('-i', cert)
+        end
+
+        case (delete_source = @builder.read_param('delete_source'))
+        when true
+          DELETE_EQUIV.each{ |i| @job_spec[i] = true}
+        when false
+          DELETE_EQUIV.each{ |i| @job_spec.delete(i)}
+        when nil
+        else Aspera.error_unexpected_value(delete_source){'delete_source'}
         end
 
         # process parameters as specified in table
@@ -203,6 +213,10 @@ module Aspera
         Log.log.debug{"ascp args: #{env_args}"}
         return env_args
       end
+      DELETE_EQUIV = %w[remove_after_transfer remove_empty_directories remove_empty_source_directory]
+      # `ascp` options to provide a file list
+      FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
+      private_constant :DELETE_EQUIV, :FILE_LIST_OPTIONS
     end
   end
 end

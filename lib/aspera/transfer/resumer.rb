@@ -7,37 +7,37 @@ require 'aspera/transfer/error'
 
 module Aspera
   module Transfer
-    # implements a simple resume policy
+    # Implements a simple resume policy
     class Resumer
-      # list of supported parameters and default values
-      DEFAULTS = {
-        iter_max:      7,
+      # @param iter_max      [Integer] Maximum number of executions
+      # @param sleep_initial [Integer] Initial wait to re-execute
+      # @param sleep_factor  [Integer] Multiplier
+      # @param sleep_max.    [Integer] Max iterations
+      def initialize(
+        iter_max: 7,
         sleep_initial: 2,
         sleep_factor:  2,
         sleep_max:     60
-      }.freeze
-
-      # @param params see DEFAULTS
-      def initialize(params = nil)
-        @parameters = DEFAULTS.dup
-        if !params.nil?
-          Aspera.assert_type(params, Hash)
-          params.each do |k, v|
-            Aspera.assert_values(k, DEFAULTS.keys){'resume parameter'}
-            Aspera.assert_type(v, Integer){k}
-            @parameters[k] = v
-          end
-        end
-        Log.log.debug{"resume params=#{@parameters}"}
+      )
+        Aspera.assert_type(iter_max, Integer){k}
+        @iter_max = iter_max
+        Aspera.assert_type(sleep_initial, Integer){k}
+        @sleep_initial = sleep_initial
+        Aspera.assert_type(sleep_factor, Integer){k}
+        @sleep_factor = sleep_factor
+        Aspera.assert_type(sleep_max, Integer){k}
+        @sleep_max = sleep_max
       end
 
-      # calls block a number of times (resumes) until success or limit reached
-      # this is re-entrant, one resumer can handle multiple transfers in //
+      # Calls block a number of times (resumes) until success or limit reached
+      # This is re-entrant, one resumer can handle multiple transfers in //
+      #
+      # @param block [Proc]
       def execute_with_resume
         Aspera.assert(block_given?)
         # maximum of retry
-        remaining_resumes = @parameters[:iter_max]
-        sleep_seconds = @parameters[:sleep_initial]
+        remaining_resumes = @iter_max
+        sleep_seconds = @sleep_initial
         Log.log.debug{"retries=#{remaining_resumes}"}
         # try to send the file until ascp is successful
         loop do
@@ -52,11 +52,11 @@ module Aspera
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
-              raise Error, "Maximum number of retry reached (#{@parameters[:iter_max]})" if remaining_resumes <= 0
+              raise Error, "Maximum number of retry reached (#{@iter_max})" if remaining_resumes <= 0
               Log.log.info("Retryable error: #{e.message}")
             else
               # give one chance only to non retryable errors
-              unless remaining_resumes.eql?(@parameters[:iter_max])
+              unless remaining_resumes.eql?(@iter_max)
                 Log.log.error("Non-retryable error: #{e.message}".red.blink)
                 raise e
               end
@@ -71,9 +71,9 @@ module Aspera
           sleep(sleep_seconds)
 
           # increase retry period
-          sleep_seconds *= @parameters[:sleep_factor]
+          sleep_seconds *= @sleep_factor
           # cap value
-          sleep_seconds = @parameters[:sleep_max] if sleep_seconds > @parameters[:sleep_max]
+          sleep_seconds = @sleep_max if sleep_seconds > @sleep_max
         end
       end
     end

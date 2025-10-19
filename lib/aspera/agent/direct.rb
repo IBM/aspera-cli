@@ -24,18 +24,18 @@ module Aspera
       SELECT_AVAILABLE_PORT = 0
       private_constant :LISTEN_LOCAL_ADDRESS, :SELECT_AVAILABLE_PORT
 
-      # options for initialize (same as values in option transfer_info)
-      # @param ascp_args         [Array]   additional arguments to ascp
-      # @param wss               [Boolean] true: if both SSH and wss in ts: prefer wss
-      # @param quiet             [Boolean] by default no native ascp progress bar
-      # @param monitor           [Boolean] set to false to eliminate management port
-      # @param trusted_certs     [Array,NilClass] list of files with trusted certificates (stores)
-      # @param client_ssh_key    [String]  client ssh key option (from CLIENT_SSH_KEY_OPTIONS)
-      # @param check_ignore_cb   [Proc]    callback with host,port
-      # @param spawn_timeout_sec [Integer] timeout for ascp spawn
-      # @param spawn_delay_sec   [Integer] optional delay to start between sessions
-      # @param multi_incr_udp    [Boolean,NilClass] true: increment udp port for each session
-      # @param resume            [Hash,NilClass] resume policy
+      # Options: same as values in option `transfer_info`
+      # @param ascp_args         [Array]   (Params) Additional arguments to ascp
+      # @param wss               [Boolean] (Params) `true`: if both SSH and wss in ts: prefer wss
+      # @param quiet             [Boolean] (Params) By default no native `ascp` progress bar
+      # @param monitor           [Boolean] (Params) Set to `false` to eliminate management port
+      # @param trusted_certs     [Array]   (Params) Optional list of files with trusted certificates (stores)
+      # @param client_ssh_key    [String]  (Params) Client SSH key option (from CLIENT_SSH_KEY_OPTIONS)
+      # @param check_ignore_cb   [Proc]    (Params) Callback with host,port
+      # @param spawn_timeout_sec [Integer] Timeout for ascp spawn
+      # @param spawn_delay_sec   [Integer] Optional delay to start between sessions
+      # @param multi_incr_udp    [Boolean] Optional `true`: increment UDP port for each session
+      # @param resume            [Hash]    Optional Resume policy
       # @param management_cb     [Proc]    callback for management events
       # @param base_options      [Hash]    other options for base class
       def initialize(
@@ -54,7 +54,7 @@ module Aspera
         **base_options
       )
         super(**base_options)
-        # special transfer parameters
+        # Special transfer parameters provided
         @tr_opts = {
           ascp_args:       ascp_args,
           wss:             wss,
@@ -69,7 +69,9 @@ module Aspera
         @multi_incr_udp = multi_incr_udp.nil? ? Environment.instance.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
         @monitor = monitor
         @management_cb = management_cb
-        @resume_policy = Transfer::Resumer.new(resume.nil? ? {} : resume.symbolize_keys)
+        resume = {} if resume.nil?
+        Aspera.assert_type(resume, Hash){'resume'}
+        @resume_policy = Transfer::Resumer.new(**resume.symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
         # mutex protects global data accessed by threads
@@ -78,10 +80,10 @@ module Aspera
         @pre_calc_last_size = nil
       end
 
-      # start ascp transfer(s) (non blocking), single or multi-session
-      # session information added to @sessions
-      # @param transfer_spec [Hash] aspera transfer specification
-      # @param token_regenerator [Object] object with method refreshed_transfer_token
+      # Start `ascp` transfer(s) (non blocking), single or multi-session
+      # Session information added to @sessions
+      # @param transfer_spec     [Hash]   Aspera transfer specification
+      # @param token_regenerator [Object] Object with method refreshed_transfer_token
       def start_transfer(transfer_spec, token_regenerator: nil)
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone

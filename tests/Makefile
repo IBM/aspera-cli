@@ -103,7 +103,7 @@ INCMAN=
 # exec begin error: enclose tests that shall result in error
 BEG_ERR=if 
 # expect error, show error
-END_ERR_SHOW=;then echo "No error: problem";exit 1;else echo "Test ok";fi
+END_ERR_SHOW=;then echo "No error: problem";exit 1;else echo "Test ok (Error is expected)";fi
 END_ERR_HIDE=>/dev/null 2>&1$(END_ERR_SHOW)
 # enclose tests that fail, but should not
 BEG_FAI=if 
@@ -616,7 +616,7 @@ $(F)nd_health: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)nd_health_bad: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) node health --url=https://wrong.example.com
+	$(BEG_ERR)$(CLI_TEST) node health --url=https://wrong.example.com$(END_ERR_SHOW)
 	@$(STOP_TEST) $@
 $(F)nd_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@

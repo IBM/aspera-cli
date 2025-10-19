@@ -1,11 +1,11 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/sync_instance.schema.yaml
+title: Aspera Sync job description (args)
+description: Instance (global) and Session (per-sync) parameters for async, specific to `ascli`.
 $comment: >-
-  `x-` fields documented in `command_line_builder.rb`
   This spec is specific to `ascli`.
   The native async `conf` format is now preferred.
-title: SyncInstanceSpec
-description: Instance (global) and Session (per-sync) parameters for async.
+  `x-` fields are documented in `command_line_builder.rb`
 type: object
 properties:
   alt_logdir:
@@ -13,10 +13,13 @@ properties:
   watchd:
     type: string
   apply_local_docroot:
+    type: boolean
     x-cli-switch: true
   quiet:
+    type: boolean
     x-cli-switch: true
   ws_connect:
+    type: boolean
     x-cli-switch: true
   sessions:
     type: array
@@ -72,31 +75,42 @@ properties:
         transfer_threads:
           type: integer
         preserve_time:
+          type: boolean
           x-cli-switch: true
           x-ts-name: preserve_times
         preserve_access_time:
+          type: boolean
           x-cli-switch: true
         preserve_modification_time:
+          type: boolean
           x-cli-switch: true
         preserve_uid:
+          type: boolean
           x-cli-switch: true
           x-ts-name: preserve_file_owner_uid
         preserve_gid:
+          type: boolean
           x-cli-switch: true
           x-ts-name: preserve_file_owner_gid
         create_dir:
+          type: boolean
           x-cli-switch: true
           x-ts-name: create_dir
         reset:
+          type: boolean
           x-cli-switch: true
         remote_password:
+          type: string
           x-cli-envvar: ASPERA_SCP_PASS
           x-ts-name: remote_password
         cookie:
+          type: string
           x-cli-envvar: ASPERA_SCP_COOKIE
           x-ts-name: cookie
         token:
+          type: string
           x-cli-envvar: ASPERA_SCP_TOKEN
           x-ts-name: token
         license:
+          type: string
           x-cli-envvar: ASPERA_SCP_LICENSE

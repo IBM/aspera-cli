@@ -18,16 +18,16 @@ module Aspera
   module Sync
     # builds command line arg for async and execute it
     module Operations
-      # sync direction
+      # Sync direction
       DIRECTIONS = %i[push pull bidi].freeze
-      # default direction for sync
-      DEFAULT_DIRECTION = :push
+      # Default direction for sync
+      DEFAULT_DIRECTION = DIRECTIONS.first
 
       class << self
         # Set `remote_dir` in sync parameters based on transfer spec
-        # @param params [Hash] Sync parameters, old or new format
-        # @param remote_dir_key [String] key to update in above hash
-        # @param transfer_spec [Hash] transfer spec
+        # @param params         [Hash]   Sync parameters, in `conf` or `args` format.
+        # @param remote_dir_key [String] Key to update in above hash
+        # @param transfer_spec  [Hash]   Transfer spec
         def update_remote_dir(params, remote_dir_key, transfer_spec)
           if transfer_spec.dig(*%w[tags aspera node file_id])
             # in AoC, use gen4
@@ -126,21 +126,21 @@ module Aspera
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
                 Log.dump(:auth_ts, transfer_spec)
                 transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
-                tspec_to_sync_info(transfer_spec, session, SESSION_SCHEMA)
+                tspec_to_sync_info(transfer_spec, session, ARGS_SESSION_SCHEMA)
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
               end
             end
             if params.key?('instance')
               Aspera.assert_type(params['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(params['instance'], INSTANCE_SCHEMA, CommandLineConverter)
+              instance_builder = CommandLineBuilder.new(params['instance'], ARGS_INSTANCE_SCHEMA, CommandLineConverter)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
             params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least: name'}
-              session_builder = CommandLineBuilder.new(session_params, SESSION_SCHEMA, CommandLineConverter)
+              session_builder = CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, CommandLineConverter)
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end
@@ -277,20 +277,20 @@ module Aspera
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options
-      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
-      SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
-      INSTANCE_SCHEMA['properties'].delete('sessions')
+      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
+      ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA['properties']['sessions']['items']
+      ARGS_INSTANCE_SCHEMA['properties'].delete('sessions')
       CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
-      CommandLineBuilder.adjust_properties_defaults(INSTANCE_SCHEMA['properties'])
-      CommandLineBuilder.adjust_properties_defaults(SESSION_SCHEMA['properties'])
-      CommandLineBuilder.adjust_properties_defaults(CONF_SCHEMA['properties'])
+      CommandLineBuilder.adjust_properties_fields(ARGS_INSTANCE_SCHEMA)
+      CommandLineBuilder.adjust_properties_fields(ARGS_SESSION_SCHEMA)
+      CommandLineBuilder.adjust_properties_fields(CONF_SCHEMA)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = '.private-asp'
       ASYNC_DB = 'snap.db'
       PARAM_KEYS = %w[local sessions].freeze
 
-      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CONF_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
+      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CONF_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
     end
   end
 end

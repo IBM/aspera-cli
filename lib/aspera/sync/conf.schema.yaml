@@ -1,6 +1,12 @@
 $schema: http://json-schema.org/draft-04/schema#
+title: Aspera Sync job description (conf)
+description: Async session description, identical to `asyncs` Node API.
 $comment: >-
   This is a YAML version of the original JSON schema from asyncs API.
+  It is modified with special `x-` fields.
+  x-ts-name      [Bool,String]  `true` if same name in transfer spec, else real name in transfer spec
+  x-ts-convert   [String]       Name of methods to convert value from transfer spec to `conf`
+  `x-` fields are also documented in `command_line_builder.rb`
 type: object
 required:
   - name
@@ -8,15 +14,16 @@ required:
   - remote
 properties:
   ascp_dir:
-    description: Directory containing ascp executable to use
+    description: Directory containing ascp executable to use.
     type: string
     default: ""
   assume_no_mods:
-    description: Assume that the directory structure has not been modified
+    description: Assume that the directory structure has not been modified.
     type: boolean
     default: false
   checksum:
-    description: Use the specified checksum type. Default is none on cloud storage
+    description: Use the specified checksum type. Default is none on cloud storage.
+    type: string
     enum:
       - sha1
       - md5
@@ -31,11 +38,11 @@ properties:
     type: boolean
     default: false
   store_metadata_records:
-    description: Store the acls or xattrs in the snapshot database
+    description: Store the acls or xattrs in the snapshot database.
     type: boolean
     default: false
   cookie:
-    description: User-defined identification string
+    description: User-defined identification string.
     type: string
     default: ""
   cooloff_max_seconds:
@@ -50,23 +57,24 @@ properties:
     type: integer
     default: 3
   create_dir:
-    description: Create the source directory, target directory, or both, if they do not exist
+    description: Create the source directory, target directory, or both, if they do not exist.
     type: boolean
     default: false
   db_cache_size:
-    description: Specify DB cache size
+    description: Specify DB cache size.
     type: integer
     default: 16000
   db_journal_off:
-    description: Turn off DB journal
+    description: Turn off DB journal.
     type: boolean
     default: false
   db_sync_on:
-    description: Enable synchronous write in DB
+    description: Enable synchronous write in DB.
     type: boolean
     default: false
   dedup:
-    description: Take the specified action when async detects duplicate files on the source
+    description: Take the specified action when async detects duplicate files on the source.
+    type: string
     enum:
       - copy
       - inode
@@ -74,15 +82,16 @@ properties:
       - none
     default: none
   delete_before:
-    description: Schedule deletes before transfers
+    description: Schedule deletes before transfers.
     type: boolean
     default: false
   delete_delay:
-    description: Delay actual deletes until the end of the synchronization
+    description: Delay actual deletes until the end of the synchronization.
     type: boolean
     default: false
   direction:
-    description: The direction of replication relative to the local
+    description: The direction of replication relative to the local.
+    type: string
     enum:
       - bidi
       - pull
@@ -101,7 +110,7 @@ properties:
         - value
       properties:
         rule:
-          description: The rule for the filter
+          description: The rule for the filter.
           enum:
             - include
             - exclude
@@ -119,24 +128,24 @@ properties:
     type: object
     properties:
       absolute:
-        description: UTC timestamp. Empty value for disabled
+        description: UTC timestamp. Empty value for disabled.
         type: string
         default: ""
       relative_seconds:
-        description: Relative to async start time. -1 for disabled
+        description: Relative to async start time. `-1` for disabled.
         type: integer
         default: -1
   ignore_delete:
-    description: Do not copy removals to the peer
+    description: Do not copy removals to the peer.
     type: boolean
     default: false
   ignore_mode:
-    description: Source files that have had their mode changed after the initial
+    description: Source files that have had their mode changed after the initial.
       transfer will not update the destination file mode.
     type: boolean
     default: false
   ignore_remote_host_sync_name:
-    description: Do not check that the remote host being used for the current
+    description: Do not check that the remote host being used for the current.
       transfer matches the host used when the local database was created
     type: boolean
     default: false
@@ -146,14 +155,14 @@ properties:
       - path
     properties:
       pass:
-        description: Authenticate the local async with the specified password
+        description: Authenticate the local async with the specified password.
         type: string
         default: ""
       path:
-        description: The directory to be synchronized on the local host
+        description: The directory to be synchronized on the local host.
         type: string
   local_apply_docroot:
-    description: Prepend the docroot to the directory on the local host
+    description: Prepend the docroot to the directory on the local host.
     type: boolean
     default: false
   local_db_dir:
@@ -163,8 +172,8 @@ properties:
     default: ""
   local_checksum_threads:
     description:
-      Maximum number of threads to do checksum on the local host. Value
-      must be between 1 and 99
+      Maximum number of threads to do checksum on the local host.
+      Value must be between 1 and 99.
     type: integer
     default: 4
   local_db_store_dir:
@@ -173,8 +182,7 @@ properties:
     type: string
     default: ""
   local_force_stat:
-    description: Forces the local async to retrieve file information even when
-      no changes are detected by the scanner or monitor.
+    description: Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor.
     type: boolean
     default: false
   local_fs_threads:
@@ -183,7 +191,7 @@ properties:
     type: integer
     default: 1
   local_keep_dir:
-    description: Move deleted files into the specified directory on the local host
+    description: Move deleted files into the specified directory on the local host.
     type: string
     default: ""
   local_mount_signature:
@@ -192,18 +200,20 @@ properties:
     default: ""
   local_move_cache_timeout_seconds:
     description: Delay in seconds before aborting moving a file from local cache to final destination.
-      -1 for disabled.
+      `-1` for disabled.
     type: integer
     default: -1
   local_preserve_acls:
-    description: Preserve access control lists on the local host
+    description: Preserve access control lists on the local host.
+    type: string
     enum:
       - native
       - metafile
       - none
     default: none
   local_preserve_xattrs:
-    description: Preserve extended attributes on the local
+    description: Preserve extended attributes on the local.
+    type: string
     enum:
       - native
       - metafile
@@ -212,7 +222,7 @@ properties:
   local_scan_interval_milliseconds:
     description:
       Enable periodic scans on the local host during a continuous sync.
-      -1 for disabled
+      `-1` for disabled
     type: integer
     default: -1
   local_scan_threads:
@@ -221,25 +231,25 @@ properties:
     type: integer
     default: 1
   local_stat_cache_size:
-    description: Set stat cache size on the local host. 0 for disabled
+    description: Set stat cache size on the local host. 0 for disabled.
     type: integer
     default: 0
   log:
     type: object
     properties:
       level:
-        description: Use the specified log level
+        description: Use the specified log level.
         enum:
           - log
           - dbg1
           - dbg2
         default: log
       local_dir:
-        description: Use the specified logging directory on the local host
+        description: Use the specified logging directory on the local host.
         type: string
         default: ""
       remote_dir:
-        description: Use the specified logging directory on the remote host
+        description: Use the specified logging directory on the remote host.
         type: string
         default: ""
   manifest_path:
@@ -260,6 +270,7 @@ properties:
     description:
       Specify whether async runs continuously or not. In one_time mode,
       async stops after the first full synchronization
+    type: string
     enum:
       - one_time
       - continuous
@@ -267,11 +278,11 @@ properties:
   monitor_buffer_size:
     description: Bytes to allocate for the change monitor buffer.
       Applies to any Windows machine on either side.
-      -1 to use the computed value.
+      `-1` to use the computed value.
     type: integer
     default: -1
   name:
-    description: Name of the synchronization pair
+    description: Name of the synchronization pair.
     type: string
   no_log:
     description: Suppress log messages for ITEM.
@@ -279,11 +290,11 @@ properties:
     type: string
     default: ""
   no_preserve_root_attrs:
-    description: Disable the preservation of attributes on the Sync root
+    description: Disable the preservation of attributes on the Sync root.
     type: boolean
     default: false
   no_scan:
-    description: Skip initial scanning
+    description: Skip initial scanning.
     type: boolean
     default: false
   notifications_sharing_retry_max:
@@ -295,49 +306,49 @@ properties:
     description: >-
       Overwrite files according to the specified policy.
       Default is determined by the direction: conflict for bidi, otherwise always.
+    type: string
     enum:
       - always
       - older
       - conflict
   pending_max:
-    description: Allow the maximum number of files that are pending transfer to
-      be no more than the specified number
+    description: Allow the maximum number of files that are pending transfer to be no more than the specified number.
     type: integer
     default: 2000
   preserve_access_time:
-    description: Preserve file access time from the source to the destination
+    description: Preserve file access time from the source to the destination.
     type: boolean
     default: false
   preserve_creation_time:
-    description: Preserve file creation time from the source to the destination
+    description: Preserve file creation time from the source to the destination.
     type: boolean
     default: false
   preserve_gid:
-    description: Preserve the file owner's GID
+    description: Preserve the file owner's GID.
     type: boolean
     default: false
   preserve_modification_time:
-    description: Preserve file modification time from the source to the destination
+    description: Preserve file modification time from the source to the destination.
     type: boolean
     default: false
   preserve_object_lock_legal_hold:
-    description: Preserve object lock legal hold status from the source to the destination
+    description: Preserve object lock legal hold status from the source to the destination.
     type: boolean
     default: false
   preserve_object_lock_retention:
-    description: Preserve object lock retention from the source to the destination
+    description: Preserve object lock retention from the source to the destination.
     type: boolean
     default: false
   preserve_object_metadata:
-    description: Preserve object metadata from the source to the destination
+    description: Preserve object metadata from the source to the destination.
     type: boolean
     default: false
   preserve_uid:
-    description: Preserve the file owner's UID
+    description: Preserve the file owner's UID.
     type: boolean
     default: false
   quiet:
-    description: Disable progress display
+    description: Disable progress display.
     type: boolean
     default: true
   remote:
@@ -348,21 +359,21 @@ properties:
       - path
     properties:
       fingerprint:
-        description: Check it against server SSH host key fingerprint
+        description: Check it against server SSH host key fingerprint.
         type: string
         default: ""
         x-ts-name: sshfp
       host:
-        description: Use the specified host name or address of the remote host
+        description: Use the specified host name or address of the remote host.
         type: string
         x-ts-name: remote_host
       pass:
-        description: Authenticate the transfer with the specified password
+        description: Authenticate the transfer with the specified password.
         type: string
         default: ""
         x-ts-name: remote_password
       path:
-        description: Synchronize the specified directory on the remote host
+        description: Synchronize the specified directory on the remote host.
         type: string
       port:
         description: Use the specified TCP port for SSH.
@@ -378,46 +389,46 @@ properties:
         default: 9093
         x-ts-name: wss_port
       connect_mode:
-        description: Define how to connect to the remote
+        description: Define how to connect to the remote.
         enum:
           - ssh
           - ws
         default: ssh
       private_key_paths:
-        description: Authenticate with the specified SSH private key file
+        description: Authenticate with the specified SSH private key file.
         type: array
         items:
           type: string
       proxy:
-        description: Specify the address of the Aspera high-speed proxy server
+        description: Specify the address of the Aspera high-speed proxy server.
         type: object
         #x-ts-name: proxy : TODO: conversion
         properties:
           host:
-            description: Use the specified host name or address of the proxy
+            description: Use the specified host name or address of the proxy.
             type: string
             default: ""
           pass:
-            description: Authenticate to the proxy with the specified password
+            description: Authenticate to the proxy with the specified password.
             type: string
             default: ""
           port:
-            description: Use the specified port, default is 9091 for dnat, 9092
+            description: Use the specified port, default is 9091 for dnat, 9092.
               for dnats
             type: integer
           protocol:
-            description: The protocol to be used
+            description: The protocol to be used.
             enum:
               - none
               - dnat
               - dnats
             default: none
           user:
-            description: Authenticate to the proxy with the specified username
+            description: Authenticate to the proxy with the specified username.
             type: string
             default: ""
       token:
-        description: Token string passed to server's authentication service
+        description: Token string passed to server's authentication service.
         type: string
         default: ""
         x-ts-name: token
@@ -427,7 +438,7 @@ properties:
         type: string
         default: ""
       user:
-        description: Authenticate the transfer with the specified username
+        description: Authenticate the transfer with the specified username.
         type: string
         x-ts-name: remote_user
   remote_checksum_threads:
@@ -447,8 +458,7 @@ properties:
     type: string
     default: ""
   remote_force_stat:
-    description: Forces the remote async to retrieve file information even when
-      no changes are detected by the scanner or monitor.
+    description: Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor.
     type: boolean
     default: false
   remote_fs_threads:
@@ -468,13 +478,14 @@ properties:
     description:
       Delay in seconds before aborting moving a file from remote cache
       to final destination.
-      -1 for disabled.
+      `-1` for disabled.
     type: integer
     default: -1
   remote_preserve_acls:
     description:
       Preserve access control lists on the remote host.
       If not specified, the default behavior is to use the same storage mode as specified by `preserve_acls`.
+    type: string
     enum:
       - native
       - metafile
@@ -483,13 +494,14 @@ properties:
     description:
       Preserve extended attributes on the remote host.
       If not specified, the default behavior is to use the same storage mode as specified by `preserve_xattrs`.
+    type: string
     enum:
       - native
       - metafile
       - none
   remote_scan_interval_milliseconds:
     description: Enable periodic scans on the remote host.
-      -1 for disabled.
+      `-1` for disabled.
     type: integer
     default: -1
   remote_scan_threads:
@@ -503,7 +515,7 @@ properties:
     type: integer
     default: 0
   remove_after_transfer:
-    description: Remove source files after they are successfully synchronized
+    description: Remove source files after they are successfully synchronized.
     type: boolean
     default: false
   reset:
@@ -513,8 +525,8 @@ properties:
     type: boolean
     default: false
   resume:
-    description: Partial transfers may exist if communication disruptions caused
-      the underlying ascp processes to terminate early.
+    description: >-
+      Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early.
       Note that transfer resumption can only happen if the `reset` option is disabled.
       If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that
       session will be resumeable, but only if async is then restarted with 'reset' disabled.
@@ -530,24 +542,24 @@ properties:
         type: integer
         default: "1048576"
       max_age:
-        description: Sets the age limit in days for temporary files that will
-          be preserved on cleanup (usually at async's start and stop) for potential
-          transfer resume. Temp files older than the given value will be removed
+        description: >-
+          Sets the age limit in days for temporary files that will be preserved
+          on cleanup (usually at async's start and stop) for potential transfer resume.
+          Temp files older than the given value will be removed
           regardless of whether they might be resumeable.
         type: integer
         default: "5"
   resume_scan:
-    description: Resume the scan from where the previous execution left off
+    description: Resume the scan from where the previous execution left off.
     type: boolean
     default: false
   scan_dir_rename:
-    description: Enable the detection of renamed directories and files compared
+    description: Enable the detection of renamed directories and files compared.
       to the previous scan, based on matching inodes
     type: boolean
     default: false
   scan_file_rename:
-    description: Enable the detection of renamed files compared to the previous
-      scan, based on matching inodes
+    description: Enable the detection of renamed files compared to the previous scan, based on matching inodes.
     type: boolean
     default: false
   scan_intensity:
@@ -555,6 +567,7 @@ properties:
       Scan at the set intensity.
       `vlow` minimizes system activity.
       `vhigh` maximizes system activity by continuously scanning files without rest.
+    type: string
     enum:
       - vlow
       - low
@@ -570,12 +583,13 @@ properties:
     description:
       Handle symbolic links with the specified method.
       Default is `skip` on windows, `copy` otherwise.
+    type: string
     enum:
       - copy
       - skip
       - follow
   tags:
-    description: User-defined metadata tags
+    description: User-defined metadata tags.
     type: object
     properties: {}
     x-ts-name: tags
@@ -591,17 +605,17 @@ properties:
       properties:
         size:
           description: Upper limit.
-            -1 for infinity.
+            `-1` for infinity.
           type: integer
           default: -1
         threads:
-          description: The number of threads
+          description: The number of threads.
           type: integer
   transport:
     type: object
     properties:
       cipher:
-        description: Specify encryption algorithm for file data
+        description: Specify encryption algorithm for file data.
         enum:
           - none
           - aes128
@@ -615,7 +629,7 @@ properties:
           - aes256gcm
         default: aes128
       compression:
-        description: Compress a file before transfer using the specified MODE
+        description: Compress a file before transfer using the specified MODE.
         enum:
           - none
           - zlib
@@ -653,7 +667,7 @@ properties:
           Default is determined by `aspera.conf`.
         type: integer
       target_rate:
-        description: Transfer no faster than the specified rate (in bps)
+        description: Transfer no faster than the specified rate (in bps).
         type: integer
         default: 10000000
         x-ts-name: target_rate_kbps
@@ -668,8 +682,7 @@ properties:
         type: integer
         default: 33001
   watchd:
-    description: When connection is configured, `asperawatchd` is used to detect
-      the changes on the source directory
+    description: When connection is configured, `asperawatchd` is used to detect the changes on the source directory.
     type: object
     properties:
       datastore:
@@ -684,18 +697,18 @@ properties:
           Default is the current username.
         type: string
       host:
-        description: Use the specified host name or address to connect to the datastore
+        description: Use the specified host name or address to connect to the datastore.
         type: string
         default: ""
       port:
-        description: Use the specified port
+        description: Use the specified port.
         type: integer
         default: 31415
   write_gid:
-    description: Try to write files as the specified group
+    description: Try to write files as the specified group.
     type: string
     default: ""
   write_uid:
-    description: Try to write files as the specified user
+    description: Try to write files as the specified user.
     type: string
     default: ""

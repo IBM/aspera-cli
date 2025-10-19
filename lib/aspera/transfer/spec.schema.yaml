@@ -1,10 +1,18 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml
-$comment: >-
-  The original file is the YAML file.
-  `x-` fields documented in command_line_builder.rb
 title: Aspera Transfer Specification
 description: Information defining an Aspera transfer.
+$comment: >-
+  The original file is the YAML file.
+  The following extensions are used for mapping to ascp arguments.
+  x-cli-envvar   [String]       Name of env var
+  x-cli-option   [String]       Command line option (starts with "-")
+  x-cli-switch   [Bool]         true if option has no arg, else by default option has a value
+  x-cli-special  [Bool]         true if special handling (defered)
+  x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
+  x-agents       [Array]        Supported agents (for doc only), if not specified: all
+  x-deprecation  [String]       Deprecation message for doc
+  `x-` fields are also documented in `command_line_builder.rb`
 type: object
 required:
   - destination_root
@@ -15,12 +23,14 @@ required:
 properties:
   apply_local_docroot:
     description: Apply local docroot to source paths.
+    type: boolean
     x-agents:
       - direct
       - transferd
     x-cli-switch: true
   cipher:
     description: In transit encryption algorithms.
+    type: string
     enum:
       - none
       - aes-128
@@ -37,14 +47,13 @@ properties:
     x-cli-convert: remove_hyphen
   content_protection:
     description: Enable client-side encryption at rest (CSEAR).
-      (content protection)
+    type: string
     enum:
       - encrypt
       - decrypt
     x-cli-option: --file-crypt
   content_protection_password:
     description: Specifies CSEAR password.
-      (content protection)
     type: string
     x-cli-envvar: ASPERA_SCP_FILEPASS
   cookie:
@@ -64,19 +73,23 @@ properties:
 
       Objects on the destination that have the same name but different type or size as objects
       on the source are not deleted.
+    type: boolean
     x-cli-switch: true
   delete_source:
-    description: Remove transfered source files after transfer success.
-      TODO equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`
+    $comment: "TODO: implement"
+    description: >-
+      Remove transfered source files after transfer success.
+      Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`.
+      Take precedence over those.
     type: boolean
+    x-cli-special: true
     x-agents:
       - node
       - direct
       - transferd
-    x-cli-option: --remove-after-transfer
-    x-cli-switch: true
   destination_root:
     description: Destination root directory.
+    type: string
     x-cli-special: true
   destination_root_id:
     description: >-
@@ -88,6 +101,7 @@ properties:
       - transferd
   direction:
     description: Direction of transfer (on client side).
+    type: string
     enum:
       - send
       - receive
@@ -128,6 +142,7 @@ properties:
       - transferd
   file_checksum:
     description: Enable checksum reporting for transferred files by specifying the hash to use.
+    type: string
     enum:
       - sha-512
       - sha-384
@@ -163,7 +178,8 @@ properties:
     x-agents:
       - transferd
   lock_min_rate:
-    description: "TODO: remove ?"
+    $comment: "TODO: Remove ?"
+    description: "n/a"
     type: boolean
     x-agents:
       - connect
@@ -183,7 +199,8 @@ properties:
       - transferd
       - connect
   lock_target_rate:
-    description: "TODO: remove ?"
+    $comment: "TODO: Remove ?"
+    description: "n/a"
     type: boolean
     x-agents:
       - connect
@@ -298,6 +315,7 @@ properties:
 
       `full_checksum` : The source and destination files are compared based on full checksums
     default: diff
+    type: string
     enum:
       - never
       - always
@@ -329,9 +347,11 @@ properties:
 
       Because source access times are updated by the transfer operation,
       the timestamp that is preserved is the one just before to the transfer.
+    type: boolean
     x-cli-switch: true
   preserve_acls:
     description: Preserve access control lists.
+    type: string
     enum:
       - none
       - native
@@ -346,9 +366,11 @@ properties:
 
       Only Windows systems retain information about creation time.
       If the destination is not a Windows computer, this option is ignored.
+    type: boolean
     x-cli-switch: true
   preserve_extended_attrs:
     description: Preserve the extended attributes.
+    type: string
     enum:
       - none
       - native
@@ -377,9 +399,11 @@ properties:
       of a transferred file to the modification of the source file or directory.
 
       Preserve source-file modification timestamps at the destination.
+    type: boolean
     x-cli-switch: true
   preserve_remote_acls:
     description: Preserve remote access control lists.
+    type: string
     enum:
       - none
       - native
@@ -391,6 +415,7 @@ properties:
     x-cli-option: --remote-preserve-acls
   preserve_remote_extended_attrs:
     description: Preserve remote extended attributes.
+    type: string
     enum:
       - none
       - native
@@ -430,6 +455,7 @@ properties:
       Do not share bandwidth.
       Aspera recommends that you do not use this setting except under special circumstances, 
       otherwise the destination storage can be damaged.
+    type: string
     enum:
       - low
       - fair
@@ -443,12 +469,15 @@ properties:
       - transferd
   remote_host:
     description: IP or fully qualified domain name (FQDN) of the remote server.
+    type: string
     x-cli-option: --host
   remote_password:
     description: SSH session password.
+    type: string
     x-cli-envvar: ASPERA_SCP_PASS
   remote_user:
     description: Remote user. Default value is `xfer` on node or connect.
+    type: string
     x-cli-option: --user
   remove_after_transfer:
     description: Remove SRC files after transfer success.
@@ -496,6 +525,7 @@ properties:
       Default ports for DNAT and DNATS protocols are 9091 and 9092.
 
       Password, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.
+    type: string
     x-agents:
       - direct
       - noded
@@ -515,6 +545,7 @@ properties:
 
       Note: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.
     default: faspmgr:none;other:sparse_csum
+    type: string
     enum:
       - none
       - attrs
@@ -527,8 +558,8 @@ properties:
       sparse_csum: 2
       full_csum: 3
   retry_duration:
-    description: Specifies how long to wait before retrying transfer (e.g. `5min`).
     $comment: "TODO: check this."
+    description: Specifies how long to wait before retrying transfer (e.g. `5min`).
     type:
       - integer
       - string
@@ -543,6 +574,7 @@ properties:
       before writing the new file.
 
       File attributes are maintained in the renamed file.
+    type: boolean
     x-cli-switch: true
     x-agents:
       - direct
@@ -571,6 +603,7 @@ properties:
       Path to be prepended to each source path.
 
       This is either a conventional path or it can be a URI but only if there is no root defined.
+    type: string
     x-cli-option: --source-prefix64
     x-cli-convert: base64
   source_root_id:
@@ -588,6 +621,7 @@ properties:
       The remaining portion of the source path is kept intact at the destination.
 
       Special care must be taken when used with cloud storage.
+    type: string
     x-agents:
       - direct
       - node
@@ -613,6 +647,7 @@ properties:
       Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...
 
       Note the JSON encoding: &bsol;n for newlines.
+    type: string
     x-agents:
       - direct
       - transferd
@@ -632,13 +667,18 @@ properties:
       - direct
     x-cli-option: -i
   ssh_args:
-    description: Array of arguments to pass to SSH. Use with caution.
+    $comment: "TODO: Generate multiple options and place as in comment (after -i , before user/host)"
+    description: >-
+      Add arguments to the command-line arguments passed to the external ssh program (implies -SSH).
+      The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.
     type: array
+    x-cli-special: true
     x-agents:
       - transferd
-    x-cli-option: --ssh-args
+    x-cli-option: --ssh-arg
   symlink_policy:
     description: Handle source side symbolic links.
+    type: string
     enum:
       - follow
       - copy
@@ -684,6 +724,8 @@ properties:
       - transferd
   token:
     description: "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)"
+    $comment: 
+    type: string
     x-cli-envvar: ASPERA_SCP_TOKEN
   use_ascp4:
     description: Specify version of protocol. Do not use `ascp4`.
@@ -695,7 +737,12 @@ properties:
       - transferd
     x-cli-special: true
   use_system_ssh:
-    description: TODO, comment...
+    description: >-
+      Use an external ssh program instead of the built-in libssh2 implementation to establish
+      the connection to the remote host.
+      The desired ssh program must be in the environment's PATH.
+
+      To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.
     type: string
     x-agents:
       - transferd
@@ -703,6 +750,7 @@ properties:
     x-cli-option: -SSH
   keepalive:
     description: The session is running in persistent session mode.
+    type: boolean
     x-agents:
       - transferd
       - direct
@@ -718,13 +766,17 @@ properties:
     x-cli-option: -m
   sshfp:
     description: Check it against server SSH host key fingerprint.
+    type: string
     x-cli-option: --check-sshfp
   target_rate_percentage:
-    description: "TODO: remove ?"
+    $comment: "TODO: Remove ?"
+    description: "n/a"
+    type: string
     x-agents: []
   rate_policy_allowed:
     description: Specifies most aggressive rate policy that is allowed.
       Returned by node API.
+    type: string
     enum:
       - low
       - fair
@@ -734,13 +786,27 @@ properties:
       - connect
   fasp_url:
     description: Only used in Faspex.
+    type: string
     x-agents: []
   authentication:
     description: Set to `token` for SSH bypass keys, else password asked if not provided.
+    type: string
     x-agents:
       - connect
   cipher_allowed:
     description: Returned by node API. Valid literals include `aes-128` and `none`.
+    type: string
+    enum:
+      - none
+      - aes-128
+      - aes-192
+      - aes-256
+      - aes-128-cfb
+      - aes-192-cfb
+      - aes-256-cfb
+      - aes-128-gcm
+      - aes-192-gcm
+      - aes-256-gcm
     x-agents:
       - connect
   obfuscate_file_names:
@@ -757,15 +823,16 @@ properties:
     type: integer
     x-cli-special: true
   compression:
-    description: ascp4 only, 0 / 1?
+    description: ascp4 only.
+    $comment: "0 / 1?"
     type: integer
     x-agents: []
   read_threads:
-    description: ascp4 only
+    description: ascp4 only.
     type: integer
     x-agents: []
   write_threads:
-    description: ascp4 only
+    description: ascp4 only.
     type: integer
     x-agents: []
   xfer_max_retries:

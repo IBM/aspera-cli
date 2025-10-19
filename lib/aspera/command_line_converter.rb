@@ -23,8 +23,9 @@ module Aspera
         end
       end
 
+      # Kbps to bps
       def kbps_to_bps(value)
-        1000 * value
+        1000 * value.to_i
       end
     end
   end

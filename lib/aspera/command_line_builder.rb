@@ -4,43 +4,30 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'yaml'
 module Aspera
-  # helper class to build command line from a parameter list (key-value hash)
-  # constructor takes hash: { 'param1':'value1', ...}
-  # process_param is called repeatedly with all known parameters
-  # add_env_args is called to get resulting param list and env var (also checks that all params were used)
+  # Helper class to build command line from a parameter list (key-value hash)
+  # Constructor takes hash: `{ 'param1':'value1', ...}`
+  # `process_param` is called repeatedly with all known parameters
+  # `add_env_args` is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # description    [String]       Description
-    # type           [String,Array] Accepted type(s) for non-enum
-    # default        [String]       Default value if not specified
-    # enum           [Array]        Set with list of values for enum types accepted in transfer spec
-    # items          [Array]
-    # properties     [Array]
-    # x-cli-envvar   [String]       Name of env var
-    # x-cli-option   [String]       Command line option (starts with "-")
-    # x-cli-switch   [Bool]         true if option has no arg, else by default option has a value
-    # x-cli-special  [Bool]         true if special handling (defered)
-    # x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
-    # x-agents       [Array]        Supported agents (for doc only), if not specified: all
-    # x-ts-name      [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
-    # x-ts-convert   [String]       (async) Method name for Convert object
-    # x-deprecation  [String]       Deprecation message for doc
-    PROPERTY_KEYS = %w[
-      description
-      type
-      default
-      enum
-      items
-      properties
-      required
-      $comment
-      x-cli-envvar
-      x-cli-option
-      x-cli-switch
-      x-cli-special
-      x-cli-convert
-      x-agents
-      x-ts-name
-      x-deprecation
+    # Supported keys in JSON schema
+    PROPERTY_KEYS = [
+      'description',    # [String]       Description
+      'type',           # [String,Array] Accepted type(s) for non-enum
+      'default',        # [String]       Default value if not specified
+      'enum',           # [Array]        Set with list of values for enum types accepted in transfer spec
+      'items',          # [Array]
+      'properties',     # [Array]
+      'required',       # [Array]
+      '$comment',       # [String]
+      'x-cli-envvar',   # [String]       Name of env var
+      'x-cli-option',   # [String]       Command line option (starts with "-")
+      'x-cli-switch',   # [Bool]         `true` if option has no arg, else by default option has a value
+      'x-cli-special',  # [Bool]         `true` if special handling (defered)
+      'x-cli-convert',  # [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
+      'x-agents',       # [Array]        Supported agents (for doc only), if not specified: all
+      'x-ts-name',      # [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
+      'x-ts-convert',   # [String]       (async) Name of methods to convert value from transfer spec to `conf` API.
+      'x-deprecation'   # [String]       Deprecation message for doc
     ].freeze
 
     CLI_AGENT = 'direct'
@@ -53,15 +40,18 @@ module Aspera
         !properties.key?('x-agents') || properties['x-agents'].include?(agent)
       end
 
-      # fill default values
-      def adjust_properties_defaults(properties)
-        properties.each do |name, info|
+      # Fill default values for some fields in the schema
+      # @param schema [Hash] The JSON schema
+      def adjust_properties_fields(schema)
+        schema['properties'].each do |name, info|
           Aspera.assert_type(info, Hash){"#{info.class} for #{name}"}
           unsupported_keys = info.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          # by default : string, unless it's without arg
-          info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
-          # add default cli option name if not present, and if supported in "direct".
+          # By default : string, unless it's without arg (switch)
+          # info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
+          Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema['description']}"}
+          Aspera.assert(info['type'].eql?('boolean')) if info['x-cli-switch']
+          # Add default cli option name if not present, and if supported in "direct".
           info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
           info.freeze
         end
@@ -98,10 +88,10 @@ module Aspera
     # Add processed parameters to env and args, warns about unused parameters
     # @param [Hash] env_args with :env and :args
     def add_env_args(env_args)
-      Log.log.debug{"add_env_args: ENV=#{@result[:env]}, ARGS=#{@result[:args]}"}
+      Log.dump(:env_args, @result)
       # warn about non translated arguments
       @object.each_pair do |name, value|
-        Log.log.warn{raise "Unknown transfer spec parameter: #{name} = \"#{value}\""} unless @processed_parameters.include?(name)
+        Log.log.warn{"Unknown transfer spec parameter: #{name} = \"#{value}\""} unless @processed_parameters.include?(name)
       end
       # set result
       env_args[:env].merge!(@result[:env])
