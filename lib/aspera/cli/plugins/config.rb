@@ -960,13 +960,15 @@ module Aspera
                 module Aspera
                   module Cli
                     module Plugins
-                      class #{plugin_name.capitalize} < Base
+                      class #{plugin_name.snake_to_capital} < Base
                         ACTIONS=[]
-                        def execute_action; return Main.result_status('You called plugin #{plugin_name}'); end
-                      end # #{plugin_name.capitalize}
-                    end # Plugins
-                  end # Cli
-                end # Aspera
+                        def execute_action
+                          return Main.result_status('You called plugin #{plugin_name}')
+                        end
+                      end
+                    end
+                  end
+                end
               END_OF_PLUGIN_CODE
               File.write(plugin_file, content)
               return Main.result_status("Created #{plugin_file}")
