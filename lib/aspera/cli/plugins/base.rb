@@ -8,15 +8,15 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
-        # Operations without id
+        # Operations without id (create list)
         GLOBAL_OPS = %i[create list].freeze
-        # Operations with id
+        # Operations with id (modify delete show)
         INSTANCE_OPS = %i[modify delete show].freeze
-        # All standard operations
+        # All standard operations (create list modify delete show)
         ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
-        # Special query parameter: max number of items for list command
+        # Special query parameter: `max`: max number of items for list command
         MAX_ITEMS = 'max'
-        # Special query parameter: max number of pages for list command
+        # Special query parameter: `pmax`: max number of pages for list command
         MAX_PAGES = 'pmax'
         # Special identifier format: look for this name to find where supported
         REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/

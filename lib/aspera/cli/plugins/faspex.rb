@@ -16,7 +16,6 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'xmlsimple'
 require 'json'
-require 'cgi'
 
 module Aspera
   module Cli
@@ -226,8 +225,7 @@ module Aspera
             # no next link
             break if link.nil?
             # replace parameters with the ones from next link
-            params = CGI.parse(URI.parse(link['href']).query)
-            mailbox_query = params.keys.each_with_object({}){ |i, m| m[i] = params[i].first}
+            mailbox_query = Rest.query_to_h(URI.parse(link['href']).query)
             Log.log.debug{"query: #{mailbox_query}"}
             break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end

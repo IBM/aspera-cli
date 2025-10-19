@@ -126,21 +126,23 @@ module Aspera
       end
 
       # Decode query string as Hash
+      # if parameter is only once, then it's a scalar
+      # if a parameter is several, then it's array
+      # if parameter has [] then it's an array, and [] is removed
       # Support arrays in query string, e.g. PHP's way is p[]=1&p[]=2
       # @param query [String] query string as in URI.query
       # @return [Hash] decoded query
       def query_to_h(query)
-        URI.decode_www_form(query).each_with_object({}) do |pair, h|
-          key = pair.first
+        URI.decode_www_form(query).each_with_object({}) do |(key, value), h|
           if key.end_with?('[]')
             key = key[..-3]
             h[key] = [] unless h.key?(key)
           end
           if h.key?(key)
             h[key] = [h[key]] if !h[key].is_a?(Array)
-            h[key].push(pair.last)
+            h[key].push(value)
           else
-            h[key] = pair.last
+            h[key] = value
           end
         end
       end

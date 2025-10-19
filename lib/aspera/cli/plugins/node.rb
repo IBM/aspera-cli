@@ -396,9 +396,9 @@ module Aspera
           when *COMMANDS_GEN3
             execute_command_gen3(command)
           when :access_keys
-            ak_command = options.get_next_command(%i[do set_bearer_key].concat(Plugin::ALL_OPS))
+            ak_command = options.get_next_command(%i[do set_bearer_key].concat(ALL_OPS))
             case ak_command
-            when *Plugin::ALL_OPS
+            when *ALL_OPS
               return entity_execute(
                 api: @api_node,
                 entity: 'access_keys',
@@ -821,9 +821,9 @@ module Aspera
           when :async then return execute_async # former API
           when :ssync
             # Node API: /asyncs (newer)
-            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + Plugin::ALL_OPS - %i[modify])
+            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + ALL_OPS - %i[modify])
             case sync_command
-            when *Plugin::ALL_OPS
+            when *ALL_OPS
               return entity_execute(
                 api: @api_node,
                 entity: :asyncs,
@@ -1149,7 +1149,7 @@ module Aspera
             unless link_info.nil?
               m = link_info.match(/<([^>]+)>/)
               Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
-              next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
+              next_iteration_token = Rest.query_to_h(URI.parse(m[1]).query)['iteration_token']
             end
             # same as last iteration: stop
             break if next_iteration_token&.eql?(query_token[:iteration_token])

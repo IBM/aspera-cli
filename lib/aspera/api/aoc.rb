@@ -8,7 +8,6 @@ require 'aspera/data_repository'
 require 'aspera/transfer/spec'
 require 'aspera/api/node'
 require 'base64'
-require 'cgi'
 
 module Aspera
   module Api
