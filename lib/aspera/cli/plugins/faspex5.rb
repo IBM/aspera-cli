@@ -420,7 +420,7 @@ module Aspera
             tclo:   true
           }
           res_id_query = :default
-          available_commands = Plugin::ALL_OPS
+          available_commands = ALL_OPS
           case res_sym
           when :metadata_profiles
             exec_args[:entity] = 'configuration/metadata_profiles'
@@ -449,7 +449,7 @@ module Aspera
           res_command = options.get_next_command(available_commands)
           return Main.result_value_list(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
           case res_command
-          when *Plugin::ALL_OPS
+          when *ALL_OPS
             return entity_execute(command: res_command, **exec_args) do |field, value|
                      lookup_entity_by_field(api: @api_v5, entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
                    end
@@ -459,9 +459,9 @@ module Aspera
               lookup_entity_by_field(api: @api_v5, entity: 'nodes', field: field, value: value)['id']
             end
             shfld_entity = "nodes/#{node_id}/shared_folders"
-            sh_command = options.get_next_command(Plugin::ALL_OPS + [:user])
+            sh_command = options.get_next_command(ALL_OPS + [:user])
             case sh_command
-            when *Plugin::ALL_OPS
+            when *ALL_OPS
               return entity_execute(
                 api: @api_v5,
                 entity: shfld_entity,
@@ -677,7 +677,7 @@ module Aspera
             return execute_admin
           when :invitations
             invitation_endpoint = 'invitations'
-            invitation_command = options.get_next_command(%i[resend].concat(Plugin::ALL_OPS))
+            invitation_command = options.get_next_command(%i[resend].concat(ALL_OPS))
             case invitation_command
             when :create
               return do_bulk_operation(command: invitation_command, descr: 'data') do |params|

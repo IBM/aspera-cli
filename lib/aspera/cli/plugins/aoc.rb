@@ -1044,9 +1044,9 @@ module Aspera
             when :instances
               return entity_execute(api: aoc_api, entity: 'workflow_instances')
             when :workflows
-              wf_command = options.get_next_command(%i[action launch].concat(Plugin::ALL_OPS))
+              wf_command = options.get_next_command(%i[action launch].concat(ALL_OPS))
               case wf_command
-              when *Plugin::ALL_OPS
+              when *ALL_OPS
                 return entity_execute(
                   api: automation_api,
                   entity: 'workflows',

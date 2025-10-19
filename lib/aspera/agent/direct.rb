@@ -25,7 +25,7 @@ module Aspera
       private_constant :LISTEN_LOCAL_ADDRESS, :SELECT_AVAILABLE_PORT
 
       # Options: same as values in option `transfer_info`
-      # @param ascp_args         [Array]   (Params) Additional arguments to ascp
+      # @param ascp_args         [Array]   (Params) Optional Additional arguments to ascp
       # @param wss               [Boolean] (Params) `true`: if both SSH and wss in ts: prefer wss
       # @param quiet             [Boolean] (Params) By default no native `ascp` progress bar
       # @param monitor           [Boolean] (Params) Set to `false` to eliminate management port

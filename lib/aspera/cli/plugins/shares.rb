@@ -93,9 +93,9 @@ module Aspera
             when :node
               return entity_execute(api: api_shares_admin, entity: 'data/nodes')
             when :share
-              share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
+              share_command = options.get_next_command(%i[user_permissions group_permissions].concat(ALL_OPS))
               case share_command
-              when *Plugin::ALL_OPS
+              when *ALL_OPS
                 return entity_execute(
                   api: api_shares_admin,
                   entity: 'data/shares',
@@ -137,7 +137,7 @@ module Aspera
               end
               entity_verb = options.get_next_command(entity_commands)
               case entity_verb
-              when *Plugin::ALL_OPS # list, show, delete, create, modify
+              when *ALL_OPS # list, show, delete, create, modify
                 display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:all)
                 return entity_execute(
