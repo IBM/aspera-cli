@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/environment'
 module Aspera
   module Agent
     # Base class for transfer agents
@@ -10,8 +11,6 @@ module Aspera
     # - `wait_for_transfers_completion` : waits for all transfer sessions to finish
     # - `notify_progress` : called back by transfer agent to notify transfer progress
     class Base
-      RUBY_EXT = '.rb'
-      private_constant :RUBY_EXT
       class << self
         def factory_create(agent, options)
           # Aspera.assert_values(agent, agent_list)
@@ -24,8 +23,8 @@ module Aspera
         def agent_list
           base_class = File.basename(__FILE__)
           Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|
-            file.end_with?(RUBY_EXT) && !file.eql?(base_class)
-          end.map{ |file| file[0..(-1 - RUBY_EXT.length)].to_sym}
+            file.end_with?(Environment::RB_EXT) && !file.eql?(base_class)
+          end.map{ |file| file[0..(-1 - Environment::RB_EXT.length)].to_sym}
         end
       end
 
@@ -48,8 +47,15 @@ module Aspera
         nil
       end
 
-      def initialize(progress: nil)
+      # Base transfer agent object
+      # @param progress   [Object] Progress bar
+      # @param config_dir [String] Config folder
+      def initialize(
+        progress: nil,
+        config_dir: nil
+      )
         @progress = progress
+        @config_dir = config_dir
       end
 
       def notify_progress(*pos_args, **kw_args)

@@ -3,16 +3,13 @@
 require 'singleton'
 require 'aspera/assert'
 require 'aspera/cli/error'
+require 'aspera/environment'
 
 module Aspera
   module Cli
     # Instantiate plugin from well-known locations
     class PluginFactory
       include Singleton
-
-      RUBY_FILE_EXT = '.rb'
-      PLUGINS_MODULE = 'Plugins'
-      private_constant :RUBY_FILE_EXT, :PLUGINS_MODULE
 
       attr_reader :lookup_folders
 
@@ -38,7 +35,7 @@ module Aspera
           next unless File.directory?(folder)
           # TODO: add gem root to load path ? and require short folder ?
           # $LOAD_PATH.push(folder) if i[:add_path]
-          Dir.entries(folder).select{ |file| file.end_with?(RUBY_FILE_EXT)}.each do |source|
+          Dir.entries(folder).select{ |file| file.end_with?(Environment::RB_EXT)}.each do |source|
             add_plugin_info(File.join(folder, source))
           end
         end
@@ -71,12 +68,14 @@ module Aspera
       # add plugin information to list
       # @param path [String] path to plugin source file
       def add_plugin_info(path)
-        raise Error, "plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
-        plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
-        req = path.sub(/#{RUBY_FILE_EXT}$/o, '')
+        raise Error, "plugin path must end with #{Environment::RB_EXT}" if !path.end_with?(Environment::RB_EXT)
+        plugin_symbol = File.basename(path, Environment::RB_EXT).to_sym
+        req = path.sub(/#{Environment::RB_EXT}$/o, '')
         Aspera.assert(!@plugins.key?(plugin_symbol), type: :warn){"Plugin already registered: #{plugin_symbol}"}
         @plugins[plugin_symbol] = {source: path, require_stanza: req}
       end
+      PLUGINS_MODULE = 'Plugins'
+      private_constant :PLUGINS_MODULE
     end
   end
 end

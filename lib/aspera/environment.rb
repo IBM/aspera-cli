@@ -38,6 +38,8 @@ module Aspera
     WINDOWS_FILENAME_INVALID_CHARACTERS = '<>:"/\\|?*'
     REPLACE_CHARACTER = '_'
 
+    RB_EXT = '.rb'
+
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
