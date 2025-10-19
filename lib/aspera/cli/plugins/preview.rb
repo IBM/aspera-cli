@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore trevents
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/preview/generator'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
@@ -20,7 +20,7 @@ require 'securerandom'
 module Aspera
   module Cli
     module Plugins
-      class Preview < Cli::BasicAuthPlugin
+      class Preview < BasicAuth
         # special tag to identify transfers related to generator
         PREV_GEN_TAG = 'preview_generator'
         # defined by node API: suffix for folder containing previews

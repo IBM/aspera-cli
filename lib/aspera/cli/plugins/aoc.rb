@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/oauth_plugin'
+require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/transfer_agent'
@@ -19,7 +19,7 @@ require 'date'
 module Aspera
   module Cli
     module Plugins
-      class Aoc < OauthPlugin
+      class Aoc < Oauth
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated

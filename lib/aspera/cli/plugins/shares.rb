@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/node'
 require 'aspera/assert'
 module Aspera
   module Cli
     module Plugins
       # Plugin for Aspera Shares v1
-      class Shares < Cli::BasicAuthPlugin
+      class Shares < BasicAuth
         # path for node API after base url
         NODE_API_PATH = 'node_api'
         # path for node admin after base url

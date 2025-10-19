@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/special_values'
 require 'aspera/transfer/spec'
@@ -9,7 +9,6 @@ require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
 require 'aspera/api/node'
-require 'aspera/api/aoc'
 require 'aspera/oauth'
 require 'aspera/node_simulator'
 require 'aspera/assert'
@@ -19,7 +18,7 @@ require 'zlib'
 module Aspera
   module Cli
     module Plugins
-      class Node < Cli::BasicAuthPlugin
+      class Node < BasicAuth
         include SyncActions
 
         class << self

@@ -2,12 +2,12 @@
 
 require 'aspera/rest'
 require 'aspera/nagios'
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 
 module Aspera
   module Cli
     module Plugins
-      class Faspio < BasicAuthPlugin
+      class Faspio < BasicAuth
         class << self
           def application_name
             'faspio Gateway'

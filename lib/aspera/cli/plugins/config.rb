@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 # cspell:ignore initdemo genkey pubkey asperasoft filelists
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
+require 'aspera/cli/plugins/factory'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/version'
@@ -36,7 +37,7 @@ module Aspera
   module Cli
     module Plugins
       # Manage the CLI config file
-      class Config < Cli::Plugin
+      class Config < Base
         # Folder in $HOME for application files (config, cache)
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # Default config file
@@ -163,8 +164,8 @@ module Aspera
           # Data persistency manager, created by config plugin, set for global object
           context.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # Set folders for plugin lookup
-          PluginFactory.instance.add_lookup_folder(self.class.gem_plugins_folder)
-          PluginFactory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
+          Plugins::Factory.instance.add_lookup_folder(self.class.gem_plugins_folder)
+          Plugins::Factory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
           # Option to set config file
           options.declare(
             :config_file, 'Path to YAML file with preset configuration',
@@ -185,7 +186,7 @@ module Aspera
           options.declare(:vault_password, 'Vault password')
           options.parse_options!
           # Declare generic plugin options only after handlers are declared
-          Plugin.declare_generic_options(options)
+          Base.declare_options(options)
           # Configuration options
           options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N'){@use_plugin_defaults = false}
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
@@ -551,11 +552,11 @@ module Aspera
           Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
           value = [value] if value.is_a?(String)
           Aspera.assert(value.all?(String)){'plugin folder'}
-          value.each{ |f| PluginFactory.instance.add_lookup_folder(f)}
+          value.each{ |f| Plugins::Factory.instance.add_lookup_folder(f)}
         end
 
         def option_plugin_folder
-          return PluginFactory.instance.lookup_folders
+          return Plugins::Factory.instance.lookup_folders
         end
 
         def option_preset; 'write-only option'; end
@@ -816,7 +817,7 @@ module Aspera
             end
             return Main.result_status("Updated: #{name}")
           when :lookup
-            BasicAuthPlugin.declare_options(options)
+            BasicAuth.declare_options(options)
             url = options.get_option(:url, mandatory: true)
             user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)
@@ -940,13 +941,13 @@ module Aspera
             case options.get_next_command(%i[list create])
             when :list
               result = []
-              PluginFactory.instance.plugin_list.each do |name|
-                plugin_class = PluginFactory.instance.plugin_class(name)
+              Plugins::Factory.instance.plugin_list.each do |name|
+                plugin_class = Plugins::Factory.instance.plugin_class(name)
                 result.push({
                   plugin: name,
                   detect: Formatter.tick(plugin_class.respond_to?(:detect)),
                   wizard: Formatter.tick(plugin_class.instance_methods.include?(:wizard)),
-                  path:   PluginFactory.instance.plugin_source(name)
+                  path:   Plugins::Factory.instance.plugin_source(name)
                 })
               end
               return Main.result_object_list(result, fields: %w[plugin detect wizard path])
@@ -955,11 +956,11 @@ module Aspera
               destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
               plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
               content = <<~END_OF_PLUGIN_CODE
-                require 'aspera/cli/plugin'
+                require 'aspera/cli/plugins/base'
                 module Aspera
                   module Cli
                     module Plugins
-                      class #{plugin_name.capitalize} < Plugin
+                      class #{plugin_name.capitalize} < Base
                         ACTIONS=[]
                         def execute_action; return Main.result_status('You called plugin #{plugin_name}'); end
                       end # #{plugin_name.capitalize}

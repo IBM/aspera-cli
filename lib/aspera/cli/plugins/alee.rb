@@ -2,11 +2,12 @@
 
 require 'aspera/api/alee'
 require 'aspera/nagios'
+require 'aspera/cli/plugins/basic_auth'
 
 module Aspera
   module Cli
     module Plugins
-      class Alee < Cli::BasicAuthPlugin
+      class Alee < BasicAuth
         ACTIONS = %i[health entitlement].freeze
 
         def execute_action

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/nagios'
 
 module Aspera
   module Cli
     module Plugins
-      class Console < Cli::BasicAuthPlugin
+      class Console < BasicAuth
         STANDARD_PATH = '/aspera/console'
         DEFAULT_FILTER_AGE_SECONDS = 24 * 3600
         EXPR_RE = /\A(\S+) (\S+) (.*)\z/

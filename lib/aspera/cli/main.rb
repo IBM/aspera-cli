@@ -4,7 +4,7 @@ require 'aspera/cli/manager'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
-require 'aspera/cli/plugin_factory'
+require 'aspera/cli/plugins/factory'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
@@ -164,7 +164,7 @@ module Aspera
             if @option_show_config && @context.options.command_or_arg_empty?
               COMMAND_CONFIG
             else
-              @context.options.get_next_command(PluginFactory.instance.plugin_list.unshift(COMMAND_HELP))
+              @context.options.get_next_command(Plugins::Factory.instance.plugin_list.unshift(COMMAND_HELP))
             end
           # Command will not be executed, but we need manual
           @context.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
@@ -254,7 +254,7 @@ module Aspera
       def init_agents_options_plugins
         init_agents_and_options
         # Find plugins, shall be after parse! ?
-        PluginFactory.instance.add_plugins_from_lookup_folders
+        Plugins::Factory.instance.add_plugins_from_lookup_folders
       end
 
       def show_usage(all: true, exit: true)
@@ -263,7 +263,7 @@ module Aspera
         if all
           @context.only_manual
           # List plugins that have a "require" field, i.e. all but main plugin
-          PluginFactory.instance.plugin_list.each do |plugin_name_sym|
+          Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
             # Config was already included in the global options
             next if plugin_name_sym.eql?(COMMAND_CONFIG)
             # Override main option parser with a brand new, to avoid having global options
@@ -381,13 +381,13 @@ module Aspera
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         # Load default params only if no param already loaded before plugin instantiation
         @context.config.add_plugin_default_preset(plugin_name_sym)
-        command_plugin = PluginFactory.instance.create(plugin_name_sym, context: @context)
+        command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
       end
 
       def generate_bash_completion
         if @context.options.get_next_argument('', multiple: true, mandatory: false).nil?
-          PluginFactory.instance.plugin_list.each{ |p| puts p}
+          Plugins::Factory.instance.plugin_list.each{ |p| puts p}
         else
           Log.log.warn('only first level completion so far')
         end

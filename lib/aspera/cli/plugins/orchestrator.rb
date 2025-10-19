@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/special_values'
 require 'aspera/nagios'
 require 'aspera/log'
@@ -10,7 +10,7 @@ require 'xmlsimple'
 module Aspera
   module Cli
     module Plugins
-      class Orchestrator < Cli::BasicAuthPlugin
+      class Orchestrator < BasicAuth
         STANDARD_PATH = '/aspera/orchestrator'
         TEST_ENDPOINT = 'api/remote_node_ping'
         private_constant :STANDARD_PATH, :TEST_ENDPOINT

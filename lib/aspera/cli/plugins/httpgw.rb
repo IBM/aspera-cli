@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/plugins/base'
 require 'aspera/rest'
 require 'aspera/api/httpgw'
 require 'aspera/nagios'
@@ -7,7 +8,7 @@ require 'aspera/nagios'
 module Aspera
   module Cli
     module Plugins
-      class Httpgw < Plugin
+      class Httpgw < Base
         class << self
           def application_name
             'HTTP Gateway'

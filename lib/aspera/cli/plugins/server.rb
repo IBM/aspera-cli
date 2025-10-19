@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore ascmd zmode zuid zgid fasping
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'
 require 'aspera/transfer/spec'
 require 'aspera/ascmd'
@@ -14,7 +14,7 @@ module Aspera
   module Cli
     module Plugins
       # Operations on HSTS with SSH/FASP (ascmd/ascp)
-      class Server < Cli::BasicAuthPlugin
+      class Server < BasicAuth
         include SyncActions
 
         SSH_SCHEME = 'ssh'

@@ -2,6 +2,7 @@
 
 # cspell:ignore trustpolicy
 
+require 'aspera/cli/plugins/base'
 require 'aspera/cli/plugins/node'
 require 'aspera/api/ats'
 require 'aspera/api/aoc'
@@ -13,7 +14,7 @@ module Aspera
     module Plugins
       # Access Aspera Transfer Service
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
-      class Ats < Cli::Plugin
+      class Ats < Base
         # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE

@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 # cspell:ignore passcode xrds workgroups dmembership wmembership
-require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/node'
-require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/transfer_agent'
@@ -22,7 +21,7 @@ require 'cgi'
 module Aspera
   module Cli
     module Plugins
-      class Faspex < Cli::BasicAuthPlugin
+      class Faspex < BasicAuth
         # required hash key for source in config
         KEY_NODE = 'node' # value must be hash with url, username, password
         KEY_PATH = 'path' # value must be same sub-path as in Faspex's node

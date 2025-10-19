@@ -2,6 +2,7 @@
 
 require 'aspera/oauth/jwt'
 require 'aspera/assert'
+require 'aspera/cli/plugins/factory'
 
 module Aspera
   module Cli
@@ -50,12 +51,12 @@ module Aspera
         check_only = check_only.to_sym unless check_only.nil?
         found_apps = []
         my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
-        PluginFactory.instance.plugin_list.each do |plugin_name_sym|
+        Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
           # No detection for internal plugin
           next if plugin_name_sym.eql?(my_self_plugin_sym)
           next if check_only && !check_only.eql?(plugin_name_sym)
           # Load plugin class
-          plugin_klass = PluginFactory.instance.plugin_class(plugin_name_sym)
+          plugin_klass = Plugins::Factory.instance.plugin_class(plugin_name_sym)
           # Requires detection method
           next unless plugin_klass.respond_to?(:detect)
           detection_info = nil
@@ -134,7 +135,7 @@ module Aspera
         # Set url for instantiation of plugin
         options.add_option_preset({url: wiz_url}, 'wizard')
         # Instantiate plugin: command line options will be known, e.g. private_key, and wizard can be called
-        plugin_instance = PluginFactory.instance.plugin_class(identification[:product]).new(context: @parent.context)
+        plugin_instance = Plugins::Factory.instance.plugin_class(identification[:product]).new(context: @parent.context)
         Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument) do
           "Detected: #{identification[:product]}, but this application has no wizard"
         end

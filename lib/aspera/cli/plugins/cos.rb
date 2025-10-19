@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugin'
+require 'aspera/cli/plugins/base'
 require 'aspera/cli/plugins/node'
 require 'aspera/api/cos_node'
 require 'aspera/assert'
@@ -8,7 +8,7 @@ require 'aspera/assert'
 module Aspera
   module Cli
     module Plugins
-      class Cos < Cli::Plugin
+      class Cos < Base
         def initialize(**_)
           super
           options.declare(:bucket, 'Bucket name')

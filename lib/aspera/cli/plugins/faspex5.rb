@@ -2,7 +2,7 @@
 
 # spellchecker: ignore workgroups mypackages passcode
 
-require 'aspera/cli/oauth_plugin'
+require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
@@ -17,7 +17,7 @@ require 'securerandom'
 module Aspera
   module Cli
     module Plugins
-      class Faspex5 < OauthPlugin
+      class Faspex5 < Oauth
         class << self
           def application_name
             'Faspex'
