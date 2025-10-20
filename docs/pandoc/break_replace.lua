@@ -4,11 +4,10 @@
 
 -- https://pandoc.org/lua-filters.html#pandoc.Table
 function Table(tbl)
-    -- Convert the table to and from a simple Pandoc table for easy traversal.
-    tbl = pandoc.utils.to_simple_table(tbl)
-    for _, row in ipairs(tbl.rows) do
-        for _, cell in ipairs(row) do
-            for _, block in ipairs(cell) do
+    for _, body in ipairs(tbl.bodies) do
+    for _, row in ipairs(body.body) do
+        for _, cell in ipairs(row.cells) do
+                for _, block in ipairs(cell.content) do
                 if block.t == "Plain" or block.t == "Para" then
                     for i, el in ipairs(block.content) do
                         if el.t == "RawInline" and el.format == "html" and el.text == "<br/>" then
@@ -19,5 +18,6 @@ function Table(tbl)
             end
         end
     end
-    return pandoc.utils.from_simple_table(tbl)
+    end
+    return tbl
 end
