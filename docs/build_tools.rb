@@ -8,7 +8,7 @@
 # get transfer spec parameter description
 require 'aspera/environment'
 require 'aspera/cli/info'
-require 'aspera/cli/plugin_factory'
+require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/main'
 require 'aspera/transfer/spec_doc'
@@ -416,7 +416,7 @@ class DocHelper
   def generate
     check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
     # get current plugins
-    plugin_manager = Aspera::Cli::PluginFactory.instance
+    plugin_manager = Aspera::Cli::Plugins::Factory.instance
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
     plugin_manager.add_plugins_from_lookup_folders
     @undocumented_plugins = plugin_manager.plugin_list
