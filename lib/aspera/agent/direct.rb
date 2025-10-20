@@ -78,6 +78,7 @@ module Aspera
         @mutex = Mutex.new
         @pre_calc_sent = false
         @pre_calc_last_size = nil
+        @command_file = File.join(config_dir, "send_#{$PROCESS_ID}")
       end
 
       # Start `ascp` transfer(s) (non blocking), single or multi-session
@@ -190,16 +191,23 @@ module Aspera
         @sessions.select{ |session| session[:job_id].eql?(job_id)}
       end
 
-      # send command to management port of command (used in `asession)
-      # @param job_id identified transfer process
-      # @param session_index index of session (for multi session)
-      # @param data command on mgt port, examples:
+      # Send command to management port of command (used in `asession).
+      # Examples:
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
-      def send_command(job_id, data)
-        session = @sessions.find{ |session| session[:job_id].eql?(job_id)}
-        Log.log.debug{"command: #{data}"}
-        session[:io].puts(Ascp::Management.command_to_stream(data))
+      # @param data [Hash]   Command on mgt port
+      # @param id   [String] Optional identifier or transfer session
+      def send_command(data, id: nil)
+        Log.dump(:command, data)
+        sessions = id ? @sessions.select{ |session| session[:job_id].eql?(id)} : @sessions
+        if sessions.empty?
+          Log.log.warn('No transfer session')
+          return
+        end
+        message = Ascp::Management.command_to_stream(data)
+        sessions.each do |session|
+          session[:io].puts(message)
+        end
       end
 
       private
@@ -303,6 +311,14 @@ module Aspera
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
             process_progress(event)
+            next unless File.exist?(@command_file)
+            begin
+              commands = JSON.parse(File.read(@command_file))
+              send_command(commands)
+            rescue => e
+              Log.log.error{"#{e}"}
+            end
+            File.delete(@command_file)
           end
           Log.log.debug('management io closed')
           # check that last status was received before process exit

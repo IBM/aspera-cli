@@ -271,7 +271,8 @@ module Aspera
         ExtraCreatePolicy
       ]
       # Management port start message
-      MGT_HEADER = 'FASPMGR 2'
+      PROT_VERSION = '2'
+      MGT_HEADER = "FASPMGR #{PROT_VERSION}"
       # empty line is separator to end event information
       MGT_FRAME_SEPARATOR = ''
       # fields description for JSON generation
@@ -288,33 +289,44 @@ module Aspera
       # cspell: enable
 
       class << self
-        # translates mgt port event into (enhanced) typed event
-        def enhanced_event_format(event)
-          return event.keys.each_with_object({}) do |e, h|
-                   new_name =
-                     case e
-                     when 'Elapsedusec' then 'elapsed_usec'
-                     when 'Bytescont' then 'bytes_cont'
-                     else e.capital_to_snake
-                     end
-                   h[new_name] =
-                     if INTEGER_FIELDS.include?(e) then event[e].to_i
-                     elsif BOOLEAN_FIELDS.include?(e) then event[e].eql?(BOOLEAN_TRUE)
-                     else
-                       event[e]
-                     end
-                 end
+        # translate native event name to snake case
+        def field_native_to_snake(name)
+          case name
+          when 'Elapsedusec' then 'elapsed_usec'
+          when 'Bytescont' then 'bytes_cont'
+          else name.capital_to_snake
+          end
         end
 
-        # build command to send on management port
-        # @param data [Hash] {'type'=>'START','source'=>_path_,'destination'=>_path_}
+        # translate snake case event name to native
+        # @param name [String] Field name
+        def field_snake_to_native(name)
+          field = name.delete('_')
+          result = PARAMETERS.find{ |w| w.casecmp?(field)}
+          raise "No such field: #{name}" if result.nil?
+          result
+        end
+
+        # Translates mgt port event into (enhanced) typed event
+        def event_native_to_snake(event)
+          event.each_with_object({}) do |(key, value), h|
+            h[field_native_to_snake(key)] =
+              if INTEGER_FIELDS.include?(key) then value.to_i
+              elsif BOOLEAN_FIELDS.include?(key) then value.eql?(BOOLEAN_TRUE)
+              else
+                value
+              end
+          end
+        end
+
+        # Build command to send on management port
+        # @param data [Hash] e.g. {'type'=>'START','source'=>_path_,'destination'=>_path_}
+        # @return [String] frame to send on management port
         def command_to_stream(data)
-          # TODO: translate enhanced to capitalized ?
           data
-            .keys
-            .map{ |k| "#{k.capitalize}: #{data[k]}"}
+            .map{ |key, value| "#{field_snake_to_native(key)}: #{value}"}
             .unshift(MGT_HEADER)
-            .push('', '')
+            .push(MGT_FRAME_SEPARATOR, '')
             .join("\n")
         end
       end

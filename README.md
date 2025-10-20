@@ -106,9 +106,10 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 
 ### Notations, Shell, Examples
 
-Command line operations examples are shown using a shell such as: `bash` or `zsh`.
+Command line operations examples are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
+Using [Windows Powershell or cmd](#shell-parsing-for-windows) is also possible.
 
-Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value and not fixed value commands.
+Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value, and not fixed value commands.
 
 `ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
 
@@ -117,7 +118,7 @@ The transfer is not directly implemented in `ascli`, rather `ascli` uses one of 
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
-> It can be local or remote.
+> It can be local, or remote.
 > For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
 > i.e. using option `--transfer=node`
 
@@ -355,27 +356,12 @@ This installs a recent Ruby suitable for `ascli`.
 To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
 
 ```shell
-use_ruby(){
-    local version=$1
-    case $version in list) for r in $(brew list -1 | grep '^ruby'); do
-      echo "$(brew info --json=v1 $r | jq -r '.[0].installed[0].version') : use_ruby $r"
-    done|gsort -k1,1V;return;;; esac
-    local prefix=$(brew --prefix ruby${version:+@}$version)
-    if ! test -d "$prefix";then
-        echo "No such ruby version: $version"
-        brew list|grep ruby
-        return 1
-    fi
-    PATH="$prefix/bin:$(echo "$PATH" | tr ':' '\n' | grep -v '/ruby' | paste -sd ':' -)"
-    PATH="$(gem env gemdir)/bin:$PATH"
-    export LDFLAGS="-L$prefix/lib"
-    export CPPFLAGS="-I$prefix/include"
-    export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
-    echo "Using: $prefix"
-    ruby -v
-}
-use_ruby
+export PATH="$(brew --prefix ruby)/bin:$PATH"
+export PATH="$(gem env gemdir)/bin:$PATH"
 ```
+
+> [!NOTE]
+> Two separate lines are needed because the second one depends on the first one.
 
 #### Linux: Package
 
@@ -2449,6 +2435,7 @@ echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
 echo @secret:
+echo @stdbin:
 echo @uri:/etc/hosts
 echo @uri:file:/etc/hosts
 echo @uri:http://ifconfig.me
@@ -3394,6 +3381,8 @@ This is the default agent for `ascli` (option `--transfer=direct`).
 `ascli` will locally search installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#fasp-configuration).
 
+##### Agent: Direct: `transfer_info`
+
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Name                   | Type      | Description                                                                 |
@@ -3485,6 +3474,30 @@ In addition to standard methods described in section [File List](#list-of-files-
 
 > [!NOTE]
 > Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+
+##### Agent: Direct: Management messages
+
+By default, `ascli` gets notification from `ascp` on its management port.
+This can be de-activated with parameter: `monitor=false` of `transfer_info`.
+
+It is also possible to send local messages to this management port.
+A typical use is to change the target rate of a running transfer.
+
+The communication is done thhrough a flat JSON file that shall be created in `ascli` config folder as displayed with:
+
+```shell
+ascli config folder
+```
+
+The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
+
+Example to change the target rate:
+
+```shell
+echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
+```
+
+When `ascli` detects this file, it uses it and then deletes it.
 
 ##### Agent: Direct: `aspera.conf`: Virtual Links
 
@@ -3813,13 +3826,13 @@ ascli config ascp schema transferd --format=jsonpp
 | apply_local_docroot | boolean | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | authentication | string | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
 | cipher | string | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`<br/>(`-c (conversion){enum}`) |
-| cipher_allowed | string | Returned by node API. Valid literals include `aes-128` and `none`.<br/>(C) |
-| content_protection | string | Enable client-side encryption at rest (CSEAR). (content protection)<br/>Allowed values: `encrypt`, `decrypt`<br/>(`--file-crypt={enum}`) |
-| content_protection_password | string | Specifies CSEAR password. (content protection)<br/>(env:`ASPERA_SCP_FILEPASS`) |
+| cipher_allowed | string | Returned by node API. Valid literals include `aes-128` and `none`.<br/>(C)<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm` |
+| content_protection | string | Enable client-side encryption at rest (CSEAR).<br/>Allowed values: `encrypt`, `decrypt`<br/>(`--file-crypt={enum}`) |
+| content_protection_password | string | Specifies CSEAR password.<br/>(env:`ASPERA_SCP_FILEPASS`) |
 | cookie | string | Metadata for transfer specified by application.<br/>(env:`ASPERA_SCP_COOKIE`) |
 | create_dir | boolean | Specifies whether to create new directories.<br/>(`-d`) |
 | delete_before_transfer | boolean | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
-| delete_source | boolean | Remove transfered source files after transfer success. TODO equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`<br/>(A, N, T)<br/>(`--remove-after-transfer`) |
+| delete_source | boolean | Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
 | destination_root | string | Destination root directory. |
 | destination_root_id | string | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(T) |
 | dgram_size | integer | UDP datagram size in bytes.<br/>(`-Z {integer}`) |
@@ -3835,10 +3848,10 @@ ascli config ascp schema transferd --format=jsonpp
 | https_fallback_port | integer | Specifies HTTPS port when cipher is used.<br/>(`-t {integer}`) |
 | icos | object | Configuration parameters for IBM Cloud Object Storage (ICOS).<br/>(T) |
 | keepalive | boolean | The session is running in persistent session mode.<br/>(A, T)<br/>(`--keepalive`) |
-| lock_min_rate | boolean | TODO: remove ?<br/>(C) |
+| lock_min_rate | boolean | n/a<br/>(C) |
 | lock_min_rate_kbps | boolean | If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(C, T) |
 | lock_rate_policy | boolean | If `true`, lock the rate policy to the default value.<br/>(C, T) |
-| lock_target_rate | boolean | TODO: remove ?<br/>(C) |
+| lock_target_rate | boolean | n/a<br/>(C) |
 | lock_target_rate_kbps | boolean | If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.<br/>If `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.<br/>(C, T) |
 | min_rate_cap_kbps | integer | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(C, T) |
 | min_rate_kbps | integer | Set the minimum transfer rate in kilobits per second.<br/>(`-m {integer}`) |
@@ -3882,7 +3895,7 @@ ascli config ascp schema transferd --format=jsonpp
 | source_root_id | string | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(N, T) |
 | src_base | string | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(A, N, T)<br/>(`--src-base64=(conversion){string}`) |
 | src_base64 | string | The folder name below which the directory structure is preserved (base64 encoded).<br/>(A, T)<br/>(`--src-base64={string}`) |
-| ssh_args | array | Array of arguments to pass to SSH. Use with caution.<br/>(T, A)<br/>(`--ssh-args={array}`) |
+| ssh_args | array | Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.<br/>(T, A) |
 | ssh_port | integer | Specifies SSH (TCP) port.<br/>(`-P {integer}`) |
 | ssh_private_key | string | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | ssh_private_key_passphrase | string | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(A, T)<br/>(env:`ASPERA_SCP_PASS`) |
@@ -3896,7 +3909,7 @@ ascli config ascp schema transferd --format=jsonpp
 | title | string | Title of the transfer.<br/>(C, N, T) |
 | token | string | Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)<br/>(env:`ASPERA_SCP_TOKEN`) |
 | use_ascp4 | boolean | Specify version of protocol. Do not use `ascp4`.<br/>(A, N, T) |
-| use_system_ssh | string | TODO, comment...<br/>(A, T)<br/>(`-SSH {string}`) |
+| use_system_ssh | string | Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.<br/>To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH {string}`) |
 | wss_enabled | boolean | Server has Web Socket service enabled. |
 | wss_port | integer | TCP port used for Web Socket service feed. |
 | xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(N) |
@@ -4589,12 +4602,13 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
+        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
+        --scope=VALUE                OAuth scope for API calls
         --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
@@ -4674,13 +4688,13 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: web, [jwt]
-        --client-id=VALUE            OAuth API client identifier
-        --client-secret=VALUE        OAuth API client secret
-        --scope=VALUE                OAuth scope for AoC API calls
-        --redirect-uri=VALUE         OAuth API client redirect URI
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           RSA private key passphrase (String)
+        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
+        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
+        --scope=VALUE                OAuth scope for API calls
         --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]

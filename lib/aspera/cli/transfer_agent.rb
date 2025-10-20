@@ -44,7 +44,8 @@ module Aspera
         end
       end
 
-      # @param env external objects: option manager, config file manager
+      # @param opt_mgr       [Manager] Option manager
+      # @param config_plugin [Config]  Config plugin
       def initialize(opt_mgr, config_plugin)
         @opt_mgr = opt_mgr
         @config = config_plugin
@@ -82,7 +83,8 @@ module Aspera
 
       def option_transfer_spec; @transfer_spec_command_line; end
 
-      # multiple option are merged
+      # Multiple option are merged
+      # @param value [Hash] Transfer spec
       def option_transfer_spec=(value)
         Aspera.assert_type(value, Hash){'ts'}
         @transfer_spec_command_line.deep_merge!(value)
@@ -94,6 +96,7 @@ module Aspera
       attr_reader :transfer_info
 
       # multiple option are merged
+      # @param value [Hash]
       def transfer_info=(value)
         @transfer_info.deep_merge!(value)
       end
@@ -109,6 +112,8 @@ module Aspera
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
         # set keys as symbols
         agent_options = @opt_mgr.get_option(:transfer_info).symbolize_keys
+        agent_options[:progress] = @config.progress_bar
+        agent_options[:config_dir] = @config.main_folder
         # special cases
         case agent_type
         when :node
@@ -129,7 +134,6 @@ module Aspera
             agent_options[:url] = @httpgw_url_lambda.call
           end
         end
-        agent_options[:progress] = @config.progress_bar
         # get agent instance
         self.agent_instance = Agent::Base.factory_create(agent_type, agent_options)
         Log.log.debug{"transfer agent is a #{@agent.class}"}
@@ -161,12 +165,14 @@ module Aspera
         end
       end
 
+      # @param httpgw_url_proc [Proc]
       def httpgw_url_cb=(httpgw_url_proc)
         Aspera.assert_type(httpgw_url_proc, Proc){'httpgw_url_cb'}
         @httpgw_url_lambda = httpgw_url_proc
       end
 
       # transform the list of paths to a list of hash with source/dest
+      # @param file_list [Array]
       def list_to_paths(file_list)
         source_type = @opt_mgr.get_option(:src_type, mandatory: true)
         case source_type
@@ -222,7 +228,7 @@ module Aspera
 
       # start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec [Hash]
-      # @param rest_token [Rest] if oauth token regeneration supported
+      # @param rest_token    [Rest] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
         Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}

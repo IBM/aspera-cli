@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml",
-  "$comment": "DO NOT EDIT, this file was generated from the YAML.",
   "title": "Aspera Transfer Specification",
   "description": "Information defining an Aspera transfer.",
+  "$comment": "DO NOT EDIT, this file was generated from the YAML.",
   "type": "object",
   "required": [
     "destination_root",
@@ -15,23 +15,24 @@
   "properties": {
     "apply_local_docroot": {
       "description": "Apply local docroot to source paths.",
+      "type": "boolean",
       "x-agents": [
         "direct",
         "transferd"
       ],
       "x-cli-switch": true,
-      "type": "boolean",
       "x-cli-option": "--apply-local-docroot"
     },
     "authentication": {
       "description": "Set to `token` for SSH bypass keys, else password asked if not provided.",
+      "type": "string",
       "x-agents": [
         "connect"
-      ],
-      "type": "string"
+      ]
     },
     "cipher": {
       "description": "In transit encryption algorithms.",
+      "type": "string",
       "enum": [
         "none",
         "aes-128",
@@ -46,32 +47,44 @@
       ],
       "default": "none",
       "x-cli-option": "-c",
-      "x-cli-convert": "remove_hyphen",
-      "type": "string"
+      "x-cli-convert": "remove_hyphen"
     },
     "cipher_allowed": {
       "description": "Returned by node API. Valid literals include `aes-128` and `none`.",
+      "type": "string",
+      "enum": [
+        "none",
+        "aes-128",
+        "aes-192",
+        "aes-256",
+        "aes-128-cfb",
+        "aes-192-cfb",
+        "aes-256-cfb",
+        "aes-128-gcm",
+        "aes-192-gcm",
+        "aes-256-gcm"
+      ],
       "x-agents": [
         "connect"
-      ],
-      "type": "string"
+      ]
     },
     "compression": {
-      "description": "ascp4 only, 0 / 1?",
+      "description": "ascp4 only.",
+      "$comment": "0 / 1?",
       "type": "integer",
       "x-agents": []
     },
     "content_protection": {
-      "description": "Enable client-side encryption at rest (CSEAR). (content protection)",
+      "description": "Enable client-side encryption at rest (CSEAR).",
+      "type": "string",
       "enum": [
         "encrypt",
         "decrypt"
       ],
-      "x-cli-option": "--file-crypt",
-      "type": "string"
+      "x-cli-option": "--file-crypt"
     },
     "content_protection_password": {
-      "description": "Specifies CSEAR password. (content protection)",
+      "description": "Specifies CSEAR password.",
       "type": "string",
       "x-cli-envvar": "ASPERA_SCP_FILEPASS"
     },
@@ -88,25 +101,26 @@
     },
     "delete_before_transfer": {
       "description": "Before transfer, delete files that exist at the destination but not at the source.\nThe source and destination arguments must be directories that have matching names.\nObjects on the destination that have the same name but different type or size as objects on the source are not deleted.",
-      "x-cli-switch": true,
       "type": "boolean",
+      "x-cli-switch": true,
       "x-cli-option": "--delete-before-transfer"
     },
     "delete_source": {
-      "description": "Remove transfered source files after transfer success. TODO equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`",
+      "$comment": "TODO: implement",
+      "description": "Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.",
       "type": "boolean",
+      "x-cli-special": true,
       "x-agents": [
         "node",
         "direct",
         "transferd"
       ],
-      "x-cli-option": "--remove-after-transfer",
-      "x-cli-switch": true
+      "x-cli-option": "--delete-source"
     },
     "destination_root": {
       "description": "Destination root directory.",
-      "x-cli-special": true,
       "type": "string",
+      "x-cli-special": true,
       "x-cli-option": "--destination-root"
     },
     "destination_root_id": {
@@ -123,6 +137,7 @@
     },
     "direction": {
       "description": "Direction of transfer (on client side).",
+      "type": "string",
       "enum": [
         "send",
         "receive"
@@ -131,8 +146,7 @@
       "x-cli-convert": {
         "receive": "recv",
         "send": "send"
-      },
-      "type": "string"
+      }
     },
     "exclude_newer_than": {
       "description": "Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.\ne.g. `-86400` for newer than a day back.",
@@ -169,11 +183,12 @@
     },
     "fasp_url": {
       "description": "Only used in Faspex.",
-      "x-agents": [],
-      "type": "string"
+      "type": "string",
+      "x-agents": []
     },
     "file_checksum": {
       "description": "Enable checksum reporting for transferred files by specifying the hash to use.",
+      "type": "string",
       "enum": [
         "sha-512",
         "sha-384",
@@ -187,7 +202,6 @@
         "node",
         "direct"
       ],
-      "type": "string",
       "x-cli-option": "--file-checksum"
     },
     "http_fallback": {
@@ -222,16 +236,17 @@
     },
     "keepalive": {
       "description": "The session is running in persistent session mode.",
+      "type": "boolean",
       "x-agents": [
         "transferd",
         "direct"
       ],
       "x-cli-switch": true,
-      "type": "boolean",
       "x-cli-option": "--keepalive"
     },
     "lock_min_rate": {
-      "description": "TODO: remove ?",
+      "$comment": "TODO: Remove ?",
+      "description": "n/a",
       "type": "boolean",
       "x-agents": [
         "connect"
@@ -254,7 +269,8 @@
       ]
     },
     "lock_target_rate": {
-      "description": "TODO: remove ?",
+      "$comment": "TODO: Remove ?",
+      "description": "n/a",
       "type": "boolean",
       "x-agents": [
         "connect"
@@ -318,6 +334,7 @@
     "overwrite": {
       "description": "Overwrite files at the destination with source files of the same name based  on the policy:\n- `always` : Always overwrite the file.\n- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.\n- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.\n- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.\n- `older` : Overwrite the file if its timestamp is older than the source timestamp.\nIf you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:\n`none` : The source and destination files are always considered different and  the destination file is always overwritten\n`attributes` : The source and destination files are compared based on file attributes \n`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)\n`full_checksum` : The source and destination files are compared based on full checksums",
       "default": "diff",
+      "type": "string",
       "enum": [
         "never",
         "always",
@@ -325,7 +342,6 @@
         "older",
         "diff+older"
       ],
-      "type": "string",
       "x-cli-option": "--overwrite"
     },
     "password": {
@@ -349,12 +365,13 @@
     },
     "preserve_access_time": {
       "description": "Preserve the source-file access timestamps at the destination.\nBecause source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.",
-      "x-cli-switch": true,
       "type": "boolean",
+      "x-cli-switch": true,
       "x-cli-option": "--preserve-access-time"
     },
     "preserve_acls": {
       "description": "Preserve access control lists.",
+      "type": "string",
       "enum": [
         "none",
         "native",
@@ -365,17 +382,17 @@
         "direct",
         "transferd"
       ],
-      "type": "string",
       "x-cli-option": "--preserve-acls"
     },
     "preserve_creation_time": {
       "description": "Preserve source-file creation timestamps at the destination.\nOnly Windows systems retain information about creation time. If the destination is not a Windows computer, this option is ignored.",
-      "x-cli-switch": true,
       "type": "boolean",
+      "x-cli-switch": true,
       "x-cli-option": "--preserve-creation-time"
     },
     "preserve_extended_attrs": {
       "description": "Preserve the extended attributes.",
+      "type": "string",
       "enum": [
         "none",
         "native",
@@ -385,8 +402,7 @@
       "x-agents": [
         "transferd"
       ],
-      "x-cli-option": "--preserve-xattrs",
-      "type": "string"
+      "x-cli-option": "--preserve-xattrs"
     },
     "preserve_file_owner_gid": {
       "description": "Preserve the group ID for a file owner.",
@@ -410,12 +426,13 @@
     },
     "preserve_modification_time": {
       "description": "Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.\nPreserve source-file modification timestamps at the destination.",
-      "x-cli-switch": true,
       "type": "boolean",
+      "x-cli-switch": true,
       "x-cli-option": "--preserve-modification-time"
     },
     "preserve_remote_acls": {
       "description": "Preserve remote access control lists.",
+      "type": "string",
       "enum": [
         "none",
         "native",
@@ -426,11 +443,11 @@
         "transferd",
         "direct"
       ],
-      "x-cli-option": "--remote-preserve-acls",
-      "type": "string"
+      "x-cli-option": "--remote-preserve-acls"
     },
     "preserve_remote_extended_attrs": {
       "description": "Preserve remote extended attributes.",
+      "type": "string",
       "enum": [
         "none",
         "native",
@@ -441,8 +458,7 @@
         "transferd",
         "direct"
       ],
-      "x-cli-option": "--remote-preserve-xattrs",
-      "type": "string"
+      "x-cli-option": "--remote-preserve-xattrs"
     },
     "preserve_source_access_time": {
       "description": "Preserve the time logged for when the source file was accessed.",
@@ -466,26 +482,27 @@
     },
     "proxy": {
       "description": "Specify the address of the Aspera high-speed proxy server.\n`dnat(s)://[user[:password]@]server:port`\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.",
+      "type": "string",
       "x-agents": [
         "direct",
         "noded"
       ],
-      "type": "string",
       "x-cli-option": "--proxy"
     },
     "rate_policy": {
       "description": "The transfer rate policy to use when sharing bandwidth. Allowable values:\n- `high` : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.\n- `fair` : (Default) Share bandwidth equally with other traffic.\n- `low` : Use only unused bandwidth.\n- `fixed` : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged.",
+      "type": "string",
       "enum": [
         "low",
         "fair",
         "high",
         "fixed"
       ],
-      "x-cli-option": "--policy",
-      "type": "string"
+      "x-cli-option": "--policy"
     },
     "rate_policy_allowed": {
       "description": "Specifies most aggressive rate policy that is allowed. Returned by node API.",
+      "type": "string",
       "enum": [
         "low",
         "fair",
@@ -494,11 +511,10 @@
       ],
       "x-agents": [
         "connect"
-      ],
-      "type": "string"
+      ]
     },
     "read_threads": {
-      "description": "ascp4 only",
+      "description": "ascp4 only.",
       "type": "integer",
       "x-agents": []
     },
@@ -511,18 +527,18 @@
     },
     "remote_host": {
       "description": "IP or fully qualified domain name (FQDN) of the remote server.",
-      "x-cli-option": "--host",
-      "type": "string"
+      "type": "string",
+      "x-cli-option": "--host"
     },
     "remote_password": {
       "description": "SSH session password.",
-      "x-cli-envvar": "ASPERA_SCP_PASS",
-      "type": "string"
+      "type": "string",
+      "x-cli-envvar": "ASPERA_SCP_PASS"
     },
     "remote_user": {
       "description": "Remote user. Default value is `xfer` on node or connect.",
-      "x-cli-option": "--user",
-      "type": "string"
+      "type": "string",
+      "x-cli-option": "--user"
     },
     "remove_after_transfer": {
       "description": "Remove SRC files after transfer success.",
@@ -576,6 +592,7 @@
     "resume_policy": {
       "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- `none` : Always re-transfer the entire file.\n- `attrs` : Compare file attributes and resume if they match, and re-transfer if they do not.\n- `sparse_csum` : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not.\n- `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.\nNote: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.",
       "default": "faspmgr:none;other:sparse_csum",
+      "type": "string",
       "enum": [
         "none",
         "attrs",
@@ -588,12 +605,11 @@
         "attrs": 1,
         "sparse_csum": 2,
         "full_csum": 3
-      },
-      "type": "string"
+      }
     },
     "retry_duration": {
-      "description": "Specifies how long to wait before retrying transfer (e.g. `5min`).",
       "$comment": "TODO: check this.",
+      "description": "Specifies how long to wait before retrying transfer (e.g. `5min`).",
       "type": [
         "integer",
         "string"
@@ -604,13 +620,13 @@
     },
     "save_before_overwrite": {
       "description": "If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.\nFile attributes are maintained in the renamed file.",
+      "type": "boolean",
       "x-cli-switch": true,
       "x-agents": [
         "direct",
         "node",
         "transferd"
       ],
-      "type": "boolean",
       "x-cli-option": "--save-before-overwrite"
     },
     "skip_duplicate_check": {
@@ -635,9 +651,9 @@
     },
     "source_root": {
       "description": "Path to be prepended to each source path.\nThis is either a conventional path or it can be a URI but only if there is no root defined.",
+      "type": "string",
       "x-cli-option": "--source-prefix64",
-      "x-cli-convert": "base64",
-      "type": "string"
+      "x-cli-convert": "base64"
     },
     "source_root_id": {
       "description": "The file ID of the source root directory. Required when using Bearer token auth for the source node.",
@@ -649,14 +665,14 @@
     },
     "src_base": {
       "description": "Specify the prefix to be stripped off from each source object.\nThe remaining portion of the source path is kept intact at the destination.\nSpecial care must be taken when used with cloud storage.",
+      "type": "string",
       "x-agents": [
         "direct",
         "node",
         "transferd"
       ],
       "x-cli-option": "--src-base64",
-      "x-cli-convert": "base64",
-      "type": "string"
+      "x-cli-convert": "base64"
     },
     "src_base64": {
       "description": "The folder name below which the directory structure is preserved (base64 encoded).",
@@ -668,12 +684,14 @@
       "x-cli-option": "--src-base64"
     },
     "ssh_args": {
-      "description": "Array of arguments to pass to SSH. Use with caution.",
+      "$comment": "TODO: Generate multiple options and place as in comment (after -i , before user/host)",
+      "description": "Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.",
       "type": "array",
+      "x-cli-special": true,
       "x-agents": [
         "transferd"
       ],
-      "x-cli-option": "--ssh-args"
+      "x-cli-option": "--ssh-arg"
     },
     "ssh_port": {
       "description": "Specifies SSH (TCP) port.",
@@ -683,12 +701,12 @@
     },
     "ssh_private_key": {
       "description": "Private key used for SSH authentication.\nShall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...\nNote the JSON encoding: &bsol;n for newlines.",
+      "type": "string",
       "x-agents": [
         "direct",
         "transferd"
       ],
-      "x-cli-envvar": "ASPERA_SCP_KEY",
-      "type": "string"
+      "x-cli-envvar": "ASPERA_SCP_KEY"
     },
     "ssh_private_key_passphrase": {
       "description": "The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.",
@@ -710,11 +728,12 @@
     },
     "sshfp": {
       "description": "Check it against server SSH host key fingerprint.",
-      "x-cli-option": "--check-sshfp",
-      "type": "string"
+      "type": "string",
+      "x-cli-option": "--check-sshfp"
     },
     "symlink_policy": {
       "description": "Handle source side symbolic links.",
+      "type": "string",
       "enum": [
         "follow",
         "copy",
@@ -722,8 +741,7 @@
         "skip"
       ],
       "default": "follow",
-      "x-cli-option": "--symbolic-links",
-      "type": "string"
+      "x-cli-option": "--symbolic-links"
     },
     "tags": {
       "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
@@ -754,9 +772,10 @@
       "x-cli-option": "-l"
     },
     "target_rate_percentage": {
-      "description": "TODO: remove ?",
-      "x-agents": [],
-      "type": "string"
+      "$comment": "TODO: Remove ?",
+      "description": "n/a",
+      "type": "string",
+      "x-agents": []
     },
     "title": {
       "description": "Title of the transfer.",
@@ -769,8 +788,9 @@
     },
     "token": {
       "description": "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)",
-      "x-cli-envvar": "ASPERA_SCP_TOKEN",
-      "type": "string"
+      "$comment": null,
+      "type": "string",
+      "x-cli-envvar": "ASPERA_SCP_TOKEN"
     },
     "use_ascp4": {
       "description": "Specify version of protocol. Do not use `ascp4`.",
@@ -785,7 +805,7 @@
       "x-cli-option": "--use-ascp4"
     },
     "use_system_ssh": {
-      "description": "TODO, comment...",
+      "description": "Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.\nTo enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.",
       "type": "string",
       "x-agents": [
         "transferd",
@@ -794,7 +814,7 @@
       "x-cli-option": "-SSH"
     },
     "write_threads": {
-      "description": "ascp4 only",
+      "description": "ascp4 only.",
       "type": "integer",
       "x-agents": []
     },

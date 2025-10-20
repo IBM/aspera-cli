@@ -47,6 +47,8 @@ module Aspera
         nil
       end
 
+      attr_reader :config_dir
+
       # Base transfer agent object
       # @param progress   [Object] Progress bar
       # @param config_dir [String] Config folder

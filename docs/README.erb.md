@@ -3248,6 +3248,8 @@ This is the default agent for <%=tool%> (option `--transfer=direct`).
 <%=tool%> will locally search installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#fasp-configuration).
 
+##### Agent: Direct: `transfer_info`
+
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Name                   | Type      | Description                                                                 |
@@ -3339,6 +3341,30 @@ In addition to standard methods described in section [File List](#list-of-files-
 
 > [!NOTE]
 > Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+
+##### Agent: Direct: Management messages
+
+By default, <%=tool%> gets notification from `ascp` on its management port.
+This can be de-activated with parameter: `monitor=false` of `transfer_info`.
+
+It is also possible to send local messages to this management port.
+A typical use is to change the target rate of a running transfer.
+
+The communication is done thhrough a flat JSON file that shall be created in <%=tool%> config folder as displayed with:
+
+```shell
+<%=cmd%> config folder
+```
+
+The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
+
+Example to change the target rate:
+
+```shell
+echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
+```
+
+When <%=tool%> detects this file, it uses it and then deletes it.
 
 ##### Agent: Direct: `aspera.conf`: Virtual Links
 
