@@ -901,14 +901,14 @@ module Aspera
               end
               return Main.result_object_list(sessions, fields: %w[id status start_time end_time target_rate_kbps])
             when :cancel
-              resp = @api_node.cancel("ops/transfers/#{instance_identifier}")
-              return Main.result_single_object(resp)
+              @api_node.cancel("ops/transfers/#{instance_identifier}")
+              return Main.result_status('Cancelled')
             when :show
               resp = @api_node.read("ops/transfers/#{instance_identifier}")
               return Main.result_single_object(resp)
             when :modify
-              resp = @api_node.update("ops/transfers/#{instance_identifier}", options.get_next_argument('update value', validation: Hash))
-              return Main.result_single_object(resp)
+              @api_node.update("ops/transfers/#{instance_identifier}", options.get_next_argument('update value', validation: Hash))
+              return Main.result_status('Modified')
             when :bandwidth_average
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
               # collect all key dates

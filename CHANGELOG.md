@@ -5,12 +5,14 @@
   * Issues Fixed:
     * `faspex5`: Fix public link auth for Faspex 5.0.13.
     * `aoc`: Fix some admin operations requiring a user's home for Files.
+    * `node`: Fix `transfer` operations: `modify` and `cancel`.
   * Breaking Changes:
-    * `ats`: Removed option `params`. Use positinal parameter for creation, and `query` for list.
+    * `ats`: Removed option `params`. Use positional parameter for creation, and `query` for list.
+
 * 4.24.1
 
   * Issues Fixed:
-    * `wizard`: Fixed wizard.
+    * `wizard`: Our wizard was missing its wand; we’ve returned it. Magic restored.
 
 * 4.24.0
 
@@ -77,7 +79,7 @@
     * **container**: Updated Ruby to 3.4.2
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
-    * **global**: #186 Removed dependency on OpenSSL 3.3 gem to avoid MSYS2 dep on Windows.
+    * **global**: #186 Removed dependency on OpenSSL 3.3 gem to avoid `MSYS2` dep on Windows.
     * `echo`: Display of list (Array) was showing only first element of it.
     * `transferd`: Support for version 1.1.5+
   * Breaking Changes:
