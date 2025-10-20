@@ -82,11 +82,11 @@ properties:
       Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`.
       Take precedence over those.
     type: boolean
-    x-cli-special: true
     x-agents:
-      - node
       - direct
       - transferd
+      - node
+    x-cli-special: true
   destination_root:
     description: Destination root directory.
     type: string
@@ -152,8 +152,8 @@ properties:
       - none
     default: none
     x-agents:
-      - node
       - direct
+      - node
   http_fallback:
     description: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
     type:
@@ -250,8 +250,8 @@ properties:
     type: string
     x-agents:
       - direct
-      - node
       - transferd
+      - node
   multi_session:
     description: >-
       Use multi-session transfer. max 128.
@@ -271,8 +271,8 @@ properties:
     type: integer
     x-agents:
       - direct
-      - node
       - transferd
+      - node
   overwrite:
     description: >-
       Overwrite files at the destination with source files of the same name based 
@@ -377,21 +377,22 @@ properties:
       - metafile
     default: none
     x-agents:
+      - direct
       - transferd
     x-cli-option: --preserve-xattrs
   preserve_file_owner_gid:
     description: Preserve the group ID for a file owner.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-switch: true
   preserve_file_owner_uid:
     description: Preserve the user ID for a file owner.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-switch: true
   preserve_modification_time:
     description: >-
@@ -410,8 +411,8 @@ properties:
       - metafile
     default: none
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: --remote-preserve-acls
   preserve_remote_extended_attrs:
     description: Preserve remote extended attributes.
@@ -422,23 +423,23 @@ properties:
       - metafile
     default: none
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: --remote-preserve-xattrs
   preserve_source_access_time:
     description: Preserve the time logged for when the source file was accessed.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-switch: true
   preserve_times:
     description: Preserve file timestamps.
     type: boolean
     x-agents:
+      - direct
       - transferd
       - node
-      - direct
     x-cli-option: -p
   rate_policy:
     description: >-
@@ -484,16 +485,16 @@ properties:
     type: boolean
     x-agents:
       - direct
-      - node
       - transferd
+      - node
     x-cli-switch: true
   remove_empty_directories:
     description: Specifies whether to remove empty directories.
     type: boolean
     x-agents:
       - direct
-      - node
       - transferd
+      - node
     x-cli-switch: true
   remove_empty_source_dir:
     description: Remove empty source subdirectories and remove the source directory itself, if empty.
@@ -513,8 +514,8 @@ properties:
     type: boolean
     x-agents:
       - direct
-      - connect
       - node
+      - connect
     x-cli-switch: true
   proxy:
     description: >-
@@ -578,14 +579,14 @@ properties:
     x-cli-switch: true
     x-agents:
       - direct
-      - node
       - transferd
+      - node
   skip_duplicate_check:
     description: Don't check for duplicate files at the destination.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: --skip-dir-traversal-dupes
     x-cli-switch: true
   skip_special_files:
@@ -595,8 +596,8 @@ properties:
       If `true`, `ascp` skips special assets and proceeds with the transfer of all other assets.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-switch: true
   source_root:
     description: >-
@@ -624,16 +625,16 @@ properties:
     type: string
     x-agents:
       - direct
-      - node
       - transferd
+      - node
     x-cli-option: --src-base64
     x-cli-convert: base64
   src_base64:
     description: The folder name below which the directory structure is preserved (base64 encoded).
     type: string
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: --src-base64
   ssh_port:
     description: Specifies SSH (TCP) port.
@@ -656,15 +657,15 @@ properties:
     description: The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.
     type: string
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-envvar: ASPERA_SCP_PASS
   ssh_private_key_path:
     description: Path to private key for SSH.
     type: string
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: -i
   ssh_args:
     $comment: "TODO: Generate multiple options and place as in comment (after -i , before user/host)"
@@ -672,10 +673,11 @@ properties:
       Add arguments to the command-line arguments passed to the external ssh program (implies -SSH).
       The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.
     type: array
-    x-cli-special: true
     x-agents:
+      - direct
       - transferd
     x-cli-option: --ssh-arg
+    x-cli-special: true
   symlink_policy:
     description: Handle source side symbolic links.
     type: string
@@ -701,16 +703,16 @@ properties:
       Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
     type: string
     x-agents:
-      - transferd
       - direct
+      - transferd
   target_rate_cap_kbps:
     description: >-
       Maximum target rate for incoming transfers, in kilobits per second.
       Returned by upload/download_setup node API.
     type: integer
     x-agents:
-      - connect
       - transferd
+      - connect
   target_rate_kbps:
     description: Specifies desired speed for the transfer.
     type: integer
@@ -733,8 +735,8 @@ properties:
     default: false
     x-agents:
       - direct
-      - node
       - transferd
+      - node
     x-cli-special: true
   use_system_ssh:
     description: >-
@@ -745,15 +747,15 @@ properties:
       To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.
     type: string
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-option: -SSH
   keepalive:
     description: The session is running in persistent session mode.
     type: boolean
     x-agents:
-      - transferd
       - direct
+      - transferd
     x-cli-switch: true
   dgram_size:
     description: UDP datagram size in bytes.
