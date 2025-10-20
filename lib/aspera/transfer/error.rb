@@ -4,8 +4,9 @@ require 'aspera/ascp/management'
 
 module Aspera
   module Transfer
-    # error raised if transfer fails
+    # Error raised if transfer fails
     class Error < StandardError
+      # Error code like on management port
       attr_reader :err_code
 
       # @param description [String] `Description` on management port
@@ -15,11 +16,13 @@ module Aspera
         @err_code = code.to_i
       end
 
+      # @return [Hash] Information on that error
       def info
         r = Ascp::Management::ERRORS[@err_code] || Ascp::Management::ERRORS[0]
         return r.merge({i: @err_code})
       end
 
+      # Is that transfer error retryable ?
       # @param message [String, nil] Optional actual message on management port
       def retryable?
         return false if @err_code.eql?(14) && message.eql?('Target address not available')

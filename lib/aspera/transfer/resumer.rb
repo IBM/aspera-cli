@@ -41,26 +41,19 @@ module Aspera
         Log.log.debug{"retries=#{remaining_resumes}"}
         # try to send the file until ascp is successful
         loop do
-          Log.log.debug('transfer starting')
+          Log.log.debug('Transfer session starting')
           begin
-            # call provided block
+            # Call provided block: execute transfer
             yield
-            # exit retry loop if success
+            # Exit retry loop if success
             break
           rescue Error => e
             Log.log.warn{"A transfer error occurred during transfer: #{e.message}"}
-            # failure in ascp
-            if e.retryable?
-              # exit if we exceed the max number of retry
-              raise Error, "Maximum number of retry reached (#{@iter_max})" if remaining_resumes <= 0
-              Log.log.info("Retryable error: #{e.message}")
-            else
-              # give one chance only to non retryable errors
-              unless remaining_resumes.eql?(@iter_max)
-                Log.log.error("Non-retryable error: #{e.message}".red.blink)
-                raise e
-              end
-            end
+            Log.log.debug{"Retryable ? #{e.retryable?}"}
+            # do not retry non-retryable
+            raise unless e.retryable?
+            # exit if we exceed the max number of retry
+            raise Error, "Maximum number of retry reached: #{@iter_max}" if remaining_resumes <= 0
           end
 
           # take this retry in account
