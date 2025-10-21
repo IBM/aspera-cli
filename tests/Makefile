@@ -713,8 +713,14 @@ $(F)nd_xfer_lst: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)nd_xfer_ops: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) node upload --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}' 'faux:///bigfile?1G' --progress=no & sleep 5
-	$(INCMAN)$(CLI_TEST) node transfer list --query=@json:'{"active_only":true}'
+	$(CLI_TEST) node upload --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_kbps":1000,"resume_policy":"none"}' 'faux:///bigfile?10G' --progress=no & sleep 2
+	$(INCMAN)$(CLI_TEST) node transfer list --query=@json:'{"active_only":true,"count":1}' --fields=id --output=$(STATE)nd_xfer_id
+	$(INCMAN)$(CLI_TEST) node transfer show $$(cat $(STATE)nd_xfer_id)
+	$(INCMAN)$(CLI_TEST) node transfer modify $$(cat $(STATE)nd_xfer_id) @json:'{"target_rate_kbps":10000}'
+	$(INCMAN)$(CLI_TEST) node transfer show $$(cat $(STATE)nd_xfer_id)
+	$(INCMAN)$(CLI_TEST) node transfer cancel $$(cat $(STATE)nd_xfer_id)
+	$(INCMAN)$(CLI_TEST) node transfer bandwidth_average
+	$(INCMAN)$(CLI_TEST) node transfer sessions
 	@$(STOP_TEST) $@
 $(F)node_basic_token: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -815,6 +821,7 @@ $(F)nd_ak_bearer: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) node -N --preset=tst_node_preview --preset=ak_creds access_key do self permission / show 1
 	$(INCMAN)$(CLI_TEST) node -N --preset=tst_node_preview --preset=ak_creds bearer_token @file:@preset:file.private_key @json:'{"user_id":"666"}' --output=$(STATE)bearer_666
 	$(INCMAN)$(CLI_TEST) node -N --url=@preset:tst_node_preview.url --password="Bearer $$(cat $(STATE)bearer_666)" --root-id=$$(cat $(STATE)root_id) access_key do self br /
+	$(INCMAN)$(CLI_TEST) node -N --preset=tst_node_preview --preset=ak_creds access_key do self permission / delete 1
 	$(INCMAN)$(CLI_TEST) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tndak,$(F)nd_ak $(F)nd_ak1 $(F)nd_ak_mkdir $(F)nd_ak_mkfile $(F)nd_ak_mklink $(F)nd_ak_mvdir $(F)nd_ak_deldir $(F)nd_ak3 $(F)nd_ak4 $(F)nd_ak_bearer))
