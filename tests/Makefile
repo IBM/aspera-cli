@@ -94,6 +94,7 @@ CLI_TEST+= -Pjns
 endif
 # temp configuration file that is modified, to avoid changing the main configuration file
 TEST_CONFIG=$(DIR_TMP)sample.conf
+# Do not include TEST_CONFIG, because it's changing and would trigger re-test
 WIZ_DEPS=
 # "CLI_TMP_CONF" is used for commands that modify the config file
 CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
@@ -330,6 +331,7 @@ $(F)serv_detect: $(TMP_EXISTS)
 $(F)serv_wizard: $(WIZ_DEPS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:server_user.url server --username=@preset:server_user.username --password=@preset:server_user.password
+	$(CLI_WIZ_TEST) config wizard @preset:server.address server srv2 --username=@preset:server_user.username --password=@preset:server_user.password
 	@$(STOP_TEST) $@
 $(F)serv_browse: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -709,7 +711,12 @@ $(F)nd_xfer_lst: $(TMP_EXISTS)
 	$(CLI_TEST) node transfer list --once-only=yes
 	$(INCMAN)$(CLI_TEST) node transfer sessions
 	@$(STOP_TEST) $@
-$(F)nd7: $(TMP_EXISTS)
+$(F)nd_xfer_ops: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) node upload --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}' 'faux:///bigfile?1G' --progress=no & sleep 5
+	$(INCMAN)$(CLI_TEST) node transfer list --query=@json:'{"active_only":true}'
+	@$(STOP_TEST) $@
+$(F)node_basic_token: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node basic_token
 	@$(STOP_TEST) $@
@@ -736,7 +743,7 @@ $(F)nd_stream_1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node stream list --preset=node_ak_adm
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(F)nd_health $(F)nd_health_bad $(F)nd_detect $(F)nd_wizard $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd7 $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
+$(eval $(call test_suite_all,tnodegen3,$(F)nd_health $(F)nd_health_bad $(F)nd_detect $(F)nd_wizard $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd_xfer_ops $(F)node_basic_token $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################

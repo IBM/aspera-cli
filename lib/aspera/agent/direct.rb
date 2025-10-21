@@ -316,7 +316,7 @@ module Aspera
               commands = JSON.parse(File.read(@command_file))
               send_command(commands)
             rescue => e
-              Log.log.error{"#{e}"}
+              Log.log.error{e.to_s}
             end
             File.delete(@command_file)
           end

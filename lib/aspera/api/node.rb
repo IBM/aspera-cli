@@ -462,8 +462,7 @@ module Aspera
         else
           transfer_spec.merge!(transport_params)
         end
-        Log.log.warn{"Expected transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
-          unless transfer_spec['remote_user'].eql?(Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
+        Aspera.assert_values(transfer_spec['remote_user'], Transfer::Spec::ACCESS_KEY_TRANSFER_USER, type: :warn){'transfer user'}
         return transfer_spec
       end
 
@@ -505,8 +504,7 @@ module Aspera
             end
             return false
           end
-        else
-          Log.log.warn{"Unknown element type: #{entry['type']}"}
+        else Aspera.error_unexpected_value(entry['type'], type: :warn){'folder entry type'}
         end
         # Continue to dig folder
         return true

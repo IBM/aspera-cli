@@ -54,17 +54,12 @@ module Aspera
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    # error message when entity not found (TODO: use specific exception)
+    # Error message when entity not found (TODO: use specific exception)
     ENTITY_NOT_FOUND = 'No such'
 
     MIME_JSON = 'application/json'
     MIME_WWW = 'application/x-www-form-urlencoded'
     MIME_TEXT = 'text/plain'
-
-    # Content-Type that are JSON
-    JSON_DECODE = [MIME_JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
-
-    UNAVAILABLE_CODES = ['503']
 
     # Special query parameter: max number of items for list command
     MAX_ITEMS = 'max'
@@ -191,19 +186,31 @@ module Aspera
         return result
       end
 
-      # Parse a header string as returned by HTTP
-      # @param header [String] header string, e.g. "application/json; charset=utf-8"
-      # @return [Hash] parsed header with type and parameters
-      #   {type: 'application/json', parameters: {charset: 'utf-8'}}
+      # Parses an HTTP Content-Type header string into its media type and parameters
+      # according to RFC 9110 and RFC 6838.
+      # TODO: use gem: content_type
+      #
+      # @param header [String] The Content-Type header string, e.g., "application/json; charset=utf-8"
+      # @return [Hash] A hash with :type and :parameters keys.
+      #   Example:
+      #     {
+      #       type: "application/json",
+      #       parameters: {
+      #         charset: "utf-8",
+      #         version: "1.0"
+      #       }
+      #     }
       def parse_header(header)
-        type, *params = header.split(/;\s*/)
-        parameters = params.map do |param|
-          one = param.split(/=\s*/)
-          one[0] = one[0].to_sym
-          one[1] = one[1].gsub(/\A"|"\z/, '')
-          one
+        parts = header.split(';').map(&:strip)
+        media_type = parts.shift.downcase
+        parameters = parts.filter_map do |param|
+          key, value = param.split('=', 2)
+          next unless key && value
+          key = key.strip.downcase.to_sym
+          value = value.strip.gsub(/\A"|"\z/, '')
+          [key, value]
         end.to_h
-        {type: type.downcase, parameters: parameters}
+        {type: media_type, parameters: parameters}
       end
     end
 
@@ -217,8 +224,13 @@ module Aspera
 
     public
 
-    attr_reader :base_url
+    # All original constructor parameters
     attr_reader :auth_params
+
+    # The root URL for the API
+    attr_reader :base_url
+
+    # Base common headers of API
     attr_reader :headers
 
     # @return creation parameters
@@ -497,31 +509,36 @@ module Aspera
     # If specific elements are needed, then use the full `call` method
     #
 
+    # Create: `POST`
     def create(subpath, params, **kwargs)
       return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
     end
 
+    # Read: `GET`
     def read(subpath, query = nil, **kwargs)
       return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query, **kwargs)[:data]
     end
 
+    # Update: `PUT`
     def update(subpath, params, **kwargs)
       return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
     end
 
+    # Delete: `DELETE`
     def delete(subpath, params = nil, **kwargs)
       return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params, **kwargs)[:data]
     end
 
+    # Cancel: `CANCEL`
     def cancel(subpath, **kwargs)
       return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON}, **kwargs)[:data]
     end
 
     # Query entity by general search (read with parameter `q`)
     # TODO: not generic enough ? move somewhere ? inheritance ?
-    # @param subpath path of entity in API
-    # @param search_name name of searched entity
-    # @param query additional search query parameters
+    # @param subpath     [String] Path of entity in API
+    # @param search_name [String] Name of searched entity
+    # @param query       [Hash]   Additional search query parameters
     # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
     def lookup_by_name(subpath, search_name, query: nil)
       query = {} if query.nil?
@@ -539,10 +556,17 @@ module Aspera
         name_matches = matching_items.select{ |i| i['name'].casecmp?(search_name)}
         case name_matches.length
         when 1 then return name_matches.first
-        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
+        when 0 then raise %Q(#{subpath}: Multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
         else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{ |i| i['name']}}"
         end
       end
     end
+
+    # Content-Type that are JSON
+    JSON_DECODE = [MIME_JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
+
+    UNAVAILABLE_CODES = ['503']
+
+    private_constant :JSON_DECODE, :UNAVAILABLE_CODES
   end
 end
