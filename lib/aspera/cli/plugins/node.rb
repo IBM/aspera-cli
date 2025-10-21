@@ -894,10 +894,11 @@ module Aspera
               return Main.result_object_list(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
             when :sessions
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
-              sessions = transfers_data.map{ |t| t['sessions']}.flatten
+              sessions = transfers_data.flat_map{ |t| t['sessions']}
               sessions.each do |session|
-                session['start_time'] = Time.at(session['start_time_usec'] / 1_000_000.0).utc.iso8601(0)
-                session['end_time'] = Time.at(session['end_time_usec'] / 1_000_000.0).utc.iso8601(0)
+                %i[start end].each do |what|
+                  session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
+                end
               end
               return Main.result_object_list(sessions, fields: %w[id status start_time end_time target_rate_kbps])
             when :cancel
