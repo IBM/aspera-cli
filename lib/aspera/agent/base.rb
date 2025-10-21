@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/environment'
 module Aspera
   module Agent
     # Base class for transfer agents
@@ -11,24 +9,6 @@ module Aspera
     # - `wait_for_transfers_completion` : waits for all transfer sessions to finish
     # - `notify_progress` : called back by transfer agent to notify transfer progress
     class Base
-      class << self
-        def factory_create(agent, options)
-          Log.dump(:options, options)
-          # Aspera.assert_values(agent, agent_list)
-          require "aspera/agent/#{agent}"
-          Aspera::Agent.const_get(agent.to_s.capitalize).new(**options)
-        end
-
-        # discover available agents
-        # @return [Array] list of symbols of agents
-        def agent_list
-          base_class = File.basename(__FILE__)
-          Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|
-            file.end_with?(Environment::RB_EXT) && !file.eql?(base_class)
-          end.map{ |file| file[0..(-1 - Environment::RB_EXT.length)].to_sym}
-        end
-      end
-
       # Wait for all sessions to terminate and return the status of each session
       def wait_for_completion
         # list of: :success or "error message string"

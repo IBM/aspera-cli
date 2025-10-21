@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
+require 'aspera/agent/factory'
 require 'aspera/transfer/spec'
 require 'aspera/cli/info'
 require 'aspera/log'
@@ -31,7 +31,7 @@ module Aspera
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
-      TRANSFER_AGENTS = Agent::Base.agent_list.freeze
+      TRANSFER_AGENTS = Agent::Factory.instance.list.freeze
 
       class << self
         # @return :success if all sessions statuses returned by "start" are success
@@ -133,7 +133,7 @@ module Aspera
           end
         end
         # get agent instance
-        self.agent_instance = Agent::Base.factory_create(agent_type, agent_options)
+        self.agent_instance = Agent::Factory.instance.create(agent_type, agent_options)
         Log.log.debug{"transfer agent is a #{@agent.class}"}
         return @agent
       end

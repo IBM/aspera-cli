@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
+require 'aspera/agent/factory'
 
 module Aspera
   module Transfer
@@ -74,7 +74,7 @@ module Aspera
         end
       end
       # Agents shown in manual for parameters (sub list)
-      AGENT_LIST = Agent::Base.agent_list.map do |agent_sym|
+      AGENT_LIST = Agent::Factory.instance.list.map do |agent_sym|
         [agent_sym, agent_sym.to_s.capitalize, agent_to_short(agent_sym)]
       end.sort_by(&:last).freeze
     end
