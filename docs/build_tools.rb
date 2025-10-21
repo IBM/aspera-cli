@@ -12,6 +12,7 @@ require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/main'
 require 'aspera/transfer/spec_doc'
+require 'aspera/sync/operations'
 require 'aspera/log'
 require 'aspera/rest'
 require 'yaml'
@@ -242,6 +243,15 @@ class DocHelper
     props.unshift(fields.map(&:capitalize))
     props.first[0] = 'Field'
     [markdown_table(agents), markdown_table(props)].join("\n\n")
+  end
+
+  def sync_conf_table
+    fields, data = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true, agent_columns: false, schema: Aspera::Sync::Operations::CONF_SCHEMA)
+    props = data.map{ |param| param.values_at(*fields)}
+    # Column titles
+    props.unshift(fields.map(&:capitalize))
+    props.first[0] = 'Field'
+    markdown_table(props)
   end
 
   # @return the minimum ruby version from gemspec

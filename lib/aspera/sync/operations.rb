@@ -281,16 +281,16 @@ module Aspera
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA['properties']['sessions']['items']
       ARGS_INSTANCE_SCHEMA['properties'].delete('sessions')
       CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
-      CommandLineBuilder.adjust_properties_fields(ARGS_INSTANCE_SCHEMA)
-      CommandLineBuilder.adjust_properties_fields(ARGS_SESSION_SCHEMA)
-      CommandLineBuilder.adjust_properties_fields(CONF_SCHEMA)
+      CommandLineBuilder.validate_schema(ARGS_INSTANCE_SCHEMA)
+      CommandLineBuilder.validate_schema(ARGS_SESSION_SCHEMA)
+      CommandLineBuilder.validate_schema(CONF_SCHEMA)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = '.private-asp'
       ASYNC_DB = 'snap.db'
       PARAM_KEYS = %w[local sessions].freeze
 
-      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CONF_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
+      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
     end
   end
 end

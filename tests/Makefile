@@ -1541,6 +1541,7 @@ $(F)conf_ascp_show: $(TMP_EXISTS)
 $(F)conf_ascp_spec: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp spec
+	$(INCMAN)$(CLI_TEST) config sync spec
 	@$(STOP_TEST) $@
 $(F)conf_ascp_schema: $(TMP_EXISTS)
 	@$(START_TEST) $@

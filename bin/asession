@@ -80,7 +80,7 @@ session_spec[PARAM_AGENT] = {} unless session_spec.key?(PARAM_AGENT)
 agent_params = session_spec[PARAM_AGENT]
 agent_params['quiet'] = true
 agent_params['management_cb'] = ->(event) do
-  puts JSON.generate(Aspera::Ascp::Management.enhanced_event_format(event))
+  puts JSON.generate(Aspera::Ascp::Management.event_native_to_snake(event))
 end
 # Get local agent (ascp), disable ascp output on stdout to not mix with JSON events
 client = Aspera::Agent::Direct.new(**agent_params.symbolize_keys)

@@ -78,7 +78,7 @@ module Aspera
         @mutex = Mutex.new
         @pre_calc_sent = false
         @pre_calc_last_size = nil
-        @command_file = File.join(config_dir, "send_#{$PROCESS_ID}")
+        @command_file = File.join(config_dir || '.', "send_#{$PROCESS_ID}")
       end
 
       # Start `ascp` transfer(s) (non blocking), single or multi-session

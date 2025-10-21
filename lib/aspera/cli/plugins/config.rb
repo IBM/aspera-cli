@@ -11,6 +11,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
 require 'aspera/ascp/installation'
+require 'aspera/sync/operations'
 require 'aspera/products/transferd'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
@@ -706,7 +707,7 @@ module Aspera
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
-            fields, data = Transfer::SpecDoc.man_table(Formatter)
+            fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true)
             return Main.result_object_list(data, fields: fields.map(&:to_s))
           when :schema
             schema = Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
@@ -868,6 +869,7 @@ module Aspera
           coffee
           image
           ascp
+          sync
           transferd
           email_test
           smtp_settings
@@ -986,6 +988,13 @@ module Aspera
             return Main.result_image(options.get_next_argument('image URI or blob'))
           when :ascp
             execute_action_ascp
+          when :sync
+            case options.get_next_command(%i[spec])
+            when :spec
+              fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true, agent_columns: false, schema: Sync::Operations::CONF_SCHEMA)
+              return Main.result_object_list(data, fields: fields.map(&:to_s))
+            else Aspera.error_unreachable_line
+            end
           when :transferd
             execute_action_transferd
           when :gem
@@ -993,6 +1002,7 @@ module Aspera
             when :path then return Main.result_text(self.class.gem_src_root)
             when :version then return Main.result_text(Cli::VERSION)
             when :name then return Main.result_text(Info::GEM_NAME)
+            else Aspera.error_unreachable_line
             end
           when :folder
             return Main.result_text(@main_folder)

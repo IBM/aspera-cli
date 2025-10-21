@@ -50,7 +50,7 @@ module Aspera
         end
       end
       SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'spec')
-      CommandLineBuilder.adjust_properties_fields(SCHEMA)
+      CommandLineBuilder.validate_schema(SCHEMA, ascp: true)
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
       SCHEMA['properties'].each do |name, description|
         next unless description['enum'].is_a?(Array)

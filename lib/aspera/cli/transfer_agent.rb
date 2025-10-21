@@ -9,8 +9,8 @@ require 'aspera/assert'
 module Aspera
   module Cli
     # The Transfer agent is a common interface to start a transfer using
-    # one of the supported transfer agents
-    # provides CLI options to select one of the transfer agents (FASP/ascp client)
+    # one of the supported transfer agents.
+    # Provide CLI options to select one of the transfer agents (FASP/ascp client)
     class TransferAgent
       # @args special value for --sources : read file list from arguments
       FILE_LIST_FROM_ARGS = '@args'
@@ -27,7 +27,6 @@ module Aspera
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
       CP4I_REMOTE_HOST_LB = 'N/A'
-      # % (formatting bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
@@ -90,12 +89,12 @@ module Aspera
         @transfer_spec_command_line.deep_merge!(value)
       end
 
-      # add other transfer spec parameters
+      # Add other transfer spec parameters
       def option_transfer_spec_deep_merge(value); @transfer_spec_command_line.deep_merge!(value); end
 
       attr_reader :transfer_info
 
-      # multiple option are merged
+      # Multiple option are merged
       # @param value [Hash]
       def transfer_info=(value)
         @transfer_info.deep_merge!(value)
@@ -106,7 +105,6 @@ module Aspera
       end
 
       # analyze options and create new agent if not already created or set
-      # TODO: make a Factory pattern
       def agent_instance
         return @agent unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
@@ -117,10 +115,10 @@ module Aspera
         # special cases
         case agent_type
         when :node
-          if agent_options.empty?
+          if !agent_options.key?(:url)
             param_set_name = @config.get_plugin_default_config_name(:node)
             raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
-            agent_options = @config.preset_by_name(param_set_name).symbolize_keys
+            agent_options.merge!(@config.preset_by_name(param_set_name).symbolize_keys)
           end
         when :direct
           # by default do not display ascp native progress bar
@@ -140,9 +138,9 @@ module Aspera
         return @agent
       end
 
-      # return destination folder for transfers
-      # sets default if needed
-      # param: 'send' or 'receive'
+      # Get destination folder
+      # @param direction [String] `send`` or `receive``
+      # @return [String] Destination folder for transfers (with default based on direction)
       def destination_folder(direction)
         dest_folder = @opt_mgr.get_option(:to_folder)
         # do not expand path, if user wants to expand path: user @path:
@@ -171,7 +169,7 @@ module Aspera
         @httpgw_url_lambda = httpgw_url_proc
       end
 
-      # transform the list of paths to a list of hash with source/dest
+      # Transform the list of paths to a list of hash with source/dest
       # @param file_list [Array]
       def list_to_paths(file_list)
         source_type = @opt_mgr.get_option(:src_type, mandatory: true)
@@ -226,7 +224,7 @@ module Aspera
         return @transfer_paths
       end
 
-      # start a transfer and wait for completion, plugins shall use this method
+      # Start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec [Hash]
       # @param rest_token    [Rest] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)

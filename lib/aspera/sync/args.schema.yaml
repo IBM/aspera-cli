@@ -10,16 +10,21 @@ type: object
 properties:
   alt_logdir:
     type: string
+    x-cli-option: true
   watchd:
     type: string
+    x-cli-option: true
   apply_local_docroot:
     type: boolean
+    x-cli-option: true
     x-cli-switch: true
   quiet:
     type: boolean
+    x-cli-option: true
     x-cli-switch: true
   ws_connect:
     type: boolean
+    x-cli-option: true
     x-cli-switch: true
   sessions:
     type: array
@@ -29,27 +34,36 @@ properties:
       properties:
         name:
           type: string
+          x-cli-option: true
         local_dir:
           type: string
+          x-cli-option: true
         remote_dir:
           type: string
+          x-cli-option: true
         local_db_dir:
           type: string
+          x-cli-option: true
         remote_db_dir:
           type: string
+          x-cli-option: true
         host:
           type: string
+          x-cli-option: true
           x-ts-name: remote_host
         user:
           type: string
+          x-cli-option: true
           x-ts-name: remote_user
         private_key_paths:
           type: array
           x-cli-option: "--private-key-path"
         direction:
           type: string
+          x-cli-option: true
         checksum:
           type: string
+          x-cli-option: true
         tags:
           type: object
           x-cli-option: "--tags64"
@@ -57,47 +71,62 @@ properties:
           x-ts-name: tags
         tcp_port:
           type: integer
+          x-cli-option: true
           x-ts-name: ssh_port
         rate_policy:
           type: string
+          x-cli-option: true
         target_rate:
           type: string
+          x-cli-option: true
         cooloff:
           type: integer
+          x-cli-option: true
         pending_max:
           type: integer
+          x-cli-option: true
         scan_intensity:
           type: string
+          x-cli-option: true
         cipher:
           type: string
+          x-cli-option: true
           x-cli-convert: remove_hyphen
           x-ts-name: cipher
         transfer_threads:
           type: integer
+          x-cli-option: true
         preserve_time:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
           x-ts-name: preserve_times
         preserve_access_time:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
         preserve_modification_time:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
         preserve_uid:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
           x-ts-name: preserve_file_owner_uid
         preserve_gid:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
           x-ts-name: preserve_file_owner_gid
         create_dir:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
           x-ts-name: create_dir
         reset:
           type: boolean
+          x-cli-option: true
           x-cli-switch: true
         remote_password:
           type: string

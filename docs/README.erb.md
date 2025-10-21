@@ -103,7 +103,7 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 ### Notations, Shell, Examples
 
 Command line operations examples are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
-Using [Windows Powershell or cmd](#shell-parsing-for-windows) is also possible.
+Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
 Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value, and not fixed value commands.
 
@@ -1303,12 +1303,12 @@ Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple co
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
-#### Shell parsing for Windows: Powershell
+#### Shell parsing for Windows: PowerShell
 
-For Powershell, it actually depends on the version of it (7.3+).
+For PowerShell, it actually depends on the version of it (5.1, 7.3+).
 
-A difficulty is that Powershell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
-Since we usually do not use powershell features, it is advised to use the "stop-parsing" token `--%`.
+A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
+If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
 
 Details can be found here:
 
@@ -1316,7 +1316,7 @@ Details can be found here:
 
 - [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
-The following examples give the same result on Windows using Powershell:
+The following examples give the same result on Windows using PowerShell:
 
 ```powershell
 PS C:\> echo $psversiontable.psversion
@@ -1331,7 +1331,15 @@ PS C:\> <%=cmd%> config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 ```
 
 > [!NOTE]
-> The special Powershell argument `--%` places Powershell in "stop-parsing" mode.
+> The special PowerShell argument `--%` places PowerShell in "stop-parsing" mode.
+> Triple double quotes 
+
+To insert variables in the JSON string, one can do:
+
+```powershell
+$email="john@example.com"
+ascli conf echo  $('@json:{"""address""":"""' + $email + '""","""vip""":true}')
+```
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -1705,6 +1713,34 @@ Depending on action, the output will contain:
 | `status`        | A message. |
 | `other_struct`  | A complex structure that cannot be displayed as an array. |
 
+#### Enhanced display of special values
+
+Special values are highlighted as follows in `format=table`:
+
+| Value          | Display          |
+|----------------|------------------|
+| `nil`          | `<null>`         |
+| empty `String` | `<empty string>` |
+| empty `Array`  | `<empty list>`   |
+| empty `Hash`   | `<empty dict>`   |
+
+Example:
+
+```shell
+<%=cmd%> config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
+```
+
+```text
+╭───────┬────────────────╮
+│ field │ value          │
+╞═══════╪════════════════╡
+│ ni    │ <null>         │
+│ es    │ <empty string> │
+│ ea    │ <empty list>   │
+│ eh    │ <empty dict>   │
+╰───────┴────────────────╯
+```
+
 #### Option: `format`
 
 The style of output can be set using the `format` option:
@@ -1725,11 +1761,9 @@ By default, result of type `single_object` and `object_list` are displayed using
 
 #### Option: `table_style`
 
-The table style can be customized with option: `table_style` which expects a `Hash`.
+The way `format`: `table` and `csv` are generated can be customized with option: `table_style` which expects a `Hash`.
 
 For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
-
-For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a table with thick Unicode borders:
 
@@ -1737,14 +1771,16 @@ For example, to display a table with thick Unicode borders:
 <%=cmd%> config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 ```
 
+> [!NOTE]
+> Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
+
+For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
+
 For example, to display a CSV with headers and quotes:
 
 ```shell
 <%=cmd%> config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 ```
-
-> [!NOTE]
-> Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
 #### Option: `flat_hash`: Single level `Hash`
 
@@ -1791,34 +1827,6 @@ Example: Result of command is a list of objects with a single object:
 │ C     │ [{"C1" => "c1"}, {"C2" => "c2"}]                                       │
 │ D     │ {"D1" => "d1", "D2" => "d2"}                                           │
 ╰───────┴────────────────────────────────────────────────────────────────────────╯
-```
-
-#### Enhanced display of special values
-
-Special values are highlighted as follows::
-
-| Value          | Display          |
-|----------------|------------------|
-| `nil`          | `<null>`         |
-| empty `String` | `<empty string>` |
-| empty `Array`  | `<empty list>`   |
-| empty `Hash`   | `<empty dict>`   |
-
-Example:
-
-```shell
-<%=cmd%> config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
-```
-
-```text
-╭───────┬────────────────╮
-│ field │ value          │
-╞═══════╪════════════════╡
-│ ni    │ <null>         │
-│ es    │ <empty string> │
-│ ea    │ <empty list>   │
-│ eh    │ <empty dict>   │
-╰───────┴────────────────╯
 ```
 
 #### Option: `multi_single`
@@ -1996,7 +2004,7 @@ In above example, the same result is obtained with option:
 
 Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
 
-#### Percent selector
+### Percent selector
 
 The percent selector allows identification of an entity by another unique identifier other than the native identifier.
 
@@ -3934,7 +3942,7 @@ It can be configured:
 
 - Using utility [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
 
-- Using Powershell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
+- Using PowerShell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
 
 - Using `taskschd.msc` (UI)
 
@@ -6056,13 +6064,13 @@ By providing the `validator` option, offline transfer validation can be done.
 
 ### Sync
 
-There are three commands related to file synchronisation:
+There are three commands related to file synchronisation in `node`:
 
 | Command | `node` | `shares` | `aoc` | `server` | Description |
 |-----|-----|-----|-----|-----|-----------------------------------------------|
-| `sync`    | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
-| `async`   | Yes |     |     |     | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
-| `ssync`   | Yes |     |     |     | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
+| `sync`  | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
+| `async` | Yes |     |     |     | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
+| `ssync` | Yes |     |     |     | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
 
 For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
@@ -7665,8 +7673,8 @@ An interface for the `async` utility is provided in the following plugins:
 The `sync` command, available in above plugins, performs the following actions:
 
 - Start a local Sync session by executing the `async` command with the appropriate parameters.
-- Get local Sync session information using the `asyncadmin` command, if available.
 - Get local Sync session information accessing directly the Async snap database.
+- Get local Sync session information using the `asyncadmin` command, if available.
 
 One advantage of using <%=tool%> over the `async` command line is the possibility to use a configuration file, using standard options of <%=tool%>.
 Moreover, <%=tool%> supports sync with application requiring token-based authorization.
@@ -7701,6 +7709,8 @@ Documentation on Async Node API can be found on [IBM Developer Portal](https://d
 
 Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
+<%=sync_conf_table%>
+
 #### `sync_info`: `args` format
 
 This is the **legacy** syntax.
@@ -7712,17 +7722,24 @@ This is the mode selection if there are either keys `sessions` or `instance` in 
 
 Parameters `local_dir` and `remote_dir` are not allowed since they are provided on command line.
 
-### Sync management and monitoring
+### Sync management and monitoring: `admin`
 
-The `admin` command provides several sub commands:
+The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
+(With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
 
-- `status`: Uses the utility `asyncadmin`, available only on server products.
-- Other commands access directly the Async snap database (`snap.db`).
+To use the `admin` command, the gem `sqlite3` shall be installed:
 
-For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
-By default it is the local synchronized folder.
-If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-Else, the user must specify a session name in the optional `Hash`, in `name`.
+```shell
+gem install sqlite3
+```
+
+In order to use the `admin` commands, the user must provide the path to the database folder:
+
+- i.e. a folder containing a subfolder named `.private-asp`.
+- By default it is the local synchronized folder.
+- If an alternate folder is specified for the database, then specify it.
+- If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
+- Else, the user must specify a session name in the optional `Hash`, in the `name` key.
 
 ## Hot folder
 

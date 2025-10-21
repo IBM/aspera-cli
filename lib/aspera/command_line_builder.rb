@@ -21,6 +21,7 @@ module Aspera
       '$comment',       # [String]
       'x-cli-envvar',   # [String]       Name of env var
       'x-cli-option',   # [String]       Command line option (starts with "-")
+      'x-cli-short',    # [String]       Command line option (starts with "-")
       'x-cli-switch',   # [Bool]         `true` if option has no arg, else by default option has a value
       'x-cli-special',  # [Bool]         `true` if special handling (defered)
       'x-cli-convert',  # [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
@@ -42,7 +43,7 @@ module Aspera
 
       # Fill default values for some fields in the schema
       # @param schema [Hash] The JSON schema
-      def adjust_properties_fields(schema)
+      def validate_schema(schema, ascp: false)
         schema['properties'].each do |name, info|
           Aspera.assert_type(info, Hash){"#{info.class} for #{name}"}
           unsupported_keys = info.keys - PROPERTY_KEYS
@@ -50,9 +51,11 @@ module Aspera
           # By default : string, unless it's without arg (switch)
           # info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
           Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema['description']}"}
-          Aspera.assert(info['type'].eql?('boolean')) if info['x-cli-switch']
+          Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch']
           # Add default cli option name if not present, and if supported in "direct".
-          info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
+          info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if info['x-cli-option'].eql?(true) || (info['x-cli-switch'].eql?(true) && !info.key?('x-cli-option'))
+          Aspera.assert(%w[x-cli-option x-cli-envvar x-cli-special].any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(CLI_AGENT, info)
+          # info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if ascp && !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
           info.freeze
         end
       end
@@ -99,9 +102,10 @@ module Aspera
       return
     end
 
-    # add options directly to command line
-    def add_command_line_options(options)
-      return if options.nil?
+    # Add options directly to command line
+    def add_command_line_options(*options)
+      options = options.first if options.first.is_a?(Array) && options.length.eql?(1)
+      Aspera.assert_type(options, Array)
       options.each{ |o| @result[:args].push(o.to_s)}
     end
 
@@ -188,13 +192,13 @@ module Aspera
         else Aspera.error_unexpected_value(parameter_value){name}
         end
         # add_param = !add_param if properties[:add_on_false]
-        add_command_line_options([properties['x-cli-option']]) if add_param
+        add_command_line_options(properties['x-cli-option']) if add_param
       else
         # transform into command line option with value
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{ |v| add_command_line_options([properties['x-cli-option'], v])}
+        parameter_value.each{ |v| add_command_line_options(properties['x-cli-option'], v)}
       end
     end
   end

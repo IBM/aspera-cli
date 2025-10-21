@@ -110,7 +110,7 @@ module Aspera
             Log.log.debug{"#{file_list_option}=\n#{File.read(file_list_file)}".red}
           end
         end
-        @builder.add_command_line_options(["#{file_list_option}=#{file_list_file}"]) unless file_list_option.nil?
+        @builder.add_command_line_options("#{file_list_option}=#{file_list_file}") unless file_list_option.nil?
       end
 
       # @return the list of certificates (option `-i`) to use when token/ssh or wss are used
@@ -119,7 +119,7 @@ module Aspera
         # use web socket secure for session ?
         if @builder.read_param('wss_enabled') && (@wss || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
-          @builder.add_command_line_options(['--ws-connect'])
+          @builder.add_command_line_options('--ws-connect')
           # TODO: option to give order ssh,ws (legacy http is implied by ssh)
           # This will need to be cleaned up in aspera core
           @job_spec['ssh_port'] = @builder.read_param('wss_port')
@@ -190,7 +190,7 @@ module Aspera
           base64_destination = true
         end
         # destination will be base64 encoded, put this before source path arguments
-        @builder.add_command_line_options(['--dest64']) if base64_destination
+        @builder.add_command_line_options('--dest64') if base64_destination
         # optional arguments, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@ascp_args)
         # get list of source files to transfer and build arg for ascp
@@ -200,7 +200,7 @@ module Aspera
         # ascp4 does not support base64 encoding of destination
         destination_folder = Base64.strict_encode64(destination_folder) if base64_destination
         # destination MUST be last command line argument to ascp
-        @builder.add_command_line_options([destination_folder])
+        @builder.add_command_line_options(destination_folder)
         @builder.add_env_args(env_args)
         env_args[:args].unshift('-q') if @quiet
         # add fallback cert and key as arguments if needed

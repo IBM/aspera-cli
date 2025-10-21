@@ -9,7 +9,7 @@ module Aspera
   module Cli
     # Manage command line arguments to provide to Sync::Run, Sync::Database and Sync::Operations
     module SyncActions
-      # translate state id (int) to string
+      # Translate state id (int) to string
       STATE_STR = (['Nil'] +
         (1..18).map{ |i| "P(#{i})"} +
         %w[Syncd Error Confl Pconf] +

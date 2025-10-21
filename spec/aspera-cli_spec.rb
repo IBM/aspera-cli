@@ -303,7 +303,7 @@ RSpec.describe(Aspera::Environment) do
       'Encryption'        => 'Yes',
       'ExtraCreatePolicy' => 'none'
     }
-    newevent = Aspera::Ascp::Management.enhanced_event_format(event)
+    newevent = Aspera::Ascp::Management.event_native_to_snake(event)
     expect(newevent).to(eq({
       'bytes_cont'          => 1,
       'elapsed_usec'        => 10,

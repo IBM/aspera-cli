@@ -13,6 +13,7 @@ module Aspera
     class Base
       class << self
         def factory_create(agent, options)
+          Log.dump(:options, options)
           # Aspera.assert_values(agent, agent_list)
           require "aspera/agent/#{agent}"
           Aspera::Agent.const_get(agent.to_s.capitalize).new(**options)

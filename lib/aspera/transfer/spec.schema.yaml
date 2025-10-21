@@ -6,10 +6,10 @@ $comment: >-
   The original file is the YAML file.
   The following extensions are used for mapping to ascp arguments.
   x-cli-envvar   [String]       Name of env var
-  x-cli-option   [String]       Command line option (starts with "-")
-  x-cli-switch   [Bool]         true if option has no arg, else by default option has a value
-  x-cli-special  [Bool]         true if special handling (defered)
-  x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
+  x-cli-option   [String]       Command line option (starts with "-"), or `true`: same as ts, or `false`: not an option
+  x-cli-switch   [Bool]         `true` if option has no arg, else by default option has a value
+  x-cli-special  [Bool]         `true` if not anaged by command line generator (special handling: option or argument)
+  x-cli-convert  [String,Hash]  Method name for Convert object or Conversion Hash for enum: ts to arg
   x-agents       [Array]        Supported agents (for doc only), if not specified: all
   x-deprecation  [String]       Deprecation message for doc
   `x-` fields are also documented in `command_line_builder.rb`
@@ -116,6 +116,7 @@ properties:
 
       e.g. `-86400` for newer than a day back.
     type: string
+    x-cli-option: true
   exclude_older_than:
     description: >-
       Exclude files, but not directories, from the transfer if they are older
@@ -123,10 +124,12 @@ properties:
 
       e.g. `-86400` for older than a day back.
     type: string
+    x-cli-option: true
   fail_bad_filepass:
     description: Fail on bad file decryption passphrase.
     type: boolean
     x-cli-switch: true
+    x-cli-option: true
     x-agents:
       - direct
       - transferd
@@ -154,6 +157,7 @@ properties:
     x-agents:
       - direct
       - node
+    x-cli-option: true
   http_fallback:
     description: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
     type:
@@ -252,6 +256,7 @@ properties:
       - direct
       - transferd
       - node
+    x-cli-option: true
   multi_session:
     description: >-
       Use multi-session transfer. max 128.
@@ -273,6 +278,7 @@ properties:
       - direct
       - transferd
       - node
+    x-cli-option: true
   overwrite:
     description: >-
       Overwrite files at the destination with source files of the same name based 
@@ -322,6 +328,7 @@ properties:
       - diff
       - older
       - diff+older
+    x-cli-option: true
   password:
     description: >-
       Password for local Windows user when transfer user associated with node API user is not
@@ -360,6 +367,7 @@ properties:
     x-agents:
       - direct
       - transferd
+    x-cli-option: true
   preserve_creation_time:
     description: >-
       Preserve source-file creation timestamps at the destination.
@@ -530,6 +538,7 @@ properties:
     x-agents:
       - direct
       - noded
+    x-cli-option: true
   resume_policy:
     description: >-
       If a transfer is interrupted or fails to finish,
@@ -705,6 +714,7 @@ properties:
     x-agents:
       - direct
       - transferd
+    x-cli-option: true
   target_rate_cap_kbps:
     description: >-
       Maximum target rate for incoming transfers, in kilobits per second.
@@ -726,7 +736,6 @@ properties:
       - transferd
   token:
     description: "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)"
-    $comment: 
     type: string
     x-cli-envvar: ASPERA_SCP_TOKEN
   use_ascp4:
@@ -819,6 +828,8 @@ properties:
   wss_enabled:
     description: Server has Web Socket service enabled.
     type: boolean
+    x-cli-option: --ws-connect
+    x-cli-switch: true
     x-cli-special: true
   wss_port:
     description: TCP port used for Web Socket service feed.

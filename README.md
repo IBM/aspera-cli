@@ -107,7 +107,7 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 ### Notations, Shell, Examples
 
 Command line operations examples are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
-Using [Windows Powershell or cmd](#shell-parsing-for-windows) is also possible.
+Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
 Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value, and not fixed value commands.
 
@@ -1329,12 +1329,12 @@ Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple co
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
-#### Shell parsing for Windows: Powershell
+#### Shell parsing for Windows: PowerShell
 
-For Powershell, it actually depends on the version of it (7.3+).
+For PowerShell, it actually depends on the version of it (5.1, 7.3+).
 
-A difficulty is that Powershell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
-Since we usually do not use powershell features, it is advised to use the "stop-parsing" token `--%`.
+A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
+If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
 
 Details can be found here:
 
@@ -1342,7 +1342,7 @@ Details can be found here:
 
 - [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
-The following examples give the same result on Windows using Powershell:
+The following examples give the same result on Windows using PowerShell:
 
 ```powershell
 PS C:\> echo $psversiontable.psversion
@@ -1357,7 +1357,15 @@ PS C:\> ascli config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 ```
 
 > [!NOTE]
-> The special Powershell argument `--%` places Powershell in "stop-parsing" mode.
+> The special PowerShell argument `--%` places PowerShell in "stop-parsing" mode.
+> Triple double quotes 
+
+To insert variables in the JSON string, one can do:
+
+```powershell
+$email="john@example.com"
+ascli conf echo  $('@json:{"""address""":"""' + $email + '""","""vip""":true}')
+```
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -1731,6 +1739,34 @@ Depending on action, the output will contain:
 | `status`        | A message. |
 | `other_struct`  | A complex structure that cannot be displayed as an array. |
 
+#### Enhanced display of special values
+
+Special values are highlighted as follows in `format=table`:
+
+| Value          | Display          |
+|----------------|------------------|
+| `nil`          | `<null>`         |
+| empty `String` | `<empty string>` |
+| empty `Array`  | `<empty list>`   |
+| empty `Hash`   | `<empty dict>`   |
+
+Example:
+
+```shell
+ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
+```
+
+```text
+╭───────┬────────────────╮
+│ field │ value          │
+╞═══════╪════════════════╡
+│ ni    │ <null>         │
+│ es    │ <empty string> │
+│ ea    │ <empty list>   │
+│ eh    │ <empty dict>   │
+╰───────┴────────────────╯
+```
+
 #### Option: `format`
 
 The style of output can be set using the `format` option:
@@ -1751,11 +1787,9 @@ By default, result of type `single_object` and `object_list` are displayed using
 
 #### Option: `table_style`
 
-The table style can be customized with option: `table_style` which expects a `Hash`.
+The way `format`: `table` and `csv` are generated can be customized with option: `table_style` which expects a `Hash`.
 
 For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
-
-For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a table with thick Unicode borders:
 
@@ -1763,14 +1797,16 @@ For example, to display a table with thick Unicode borders:
 ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 ```
 
+> [!NOTE]
+> Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
+
+For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
+
 For example, to display a CSV with headers and quotes:
 
 ```shell
 ascli config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
 ```
-
-> [!NOTE]
-> Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
 #### Option: `flat_hash`: Single level `Hash`
 
@@ -1817,34 +1853,6 @@ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","
 │ C     │ [{"C1" => "c1"}, {"C2" => "c2"}]                                       │
 │ D     │ {"D1" => "d1", "D2" => "d2"}                                           │
 ╰───────┴────────────────────────────────────────────────────────────────────────╯
-```
-
-#### Enhanced display of special values
-
-Special values are highlighted as follows::
-
-| Value          | Display          |
-|----------------|------------------|
-| `nil`          | `<null>`         |
-| empty `String` | `<empty string>` |
-| empty `Array`  | `<empty list>`   |
-| empty `Hash`   | `<empty dict>`   |
-
-Example:
-
-```shell
-ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
-```
-
-```text
-╭───────┬────────────────╮
-│ field │ value          │
-╞═══════╪════════════════╡
-│ ni    │ <null>         │
-│ es    │ <empty string> │
-│ ea    │ <empty list>   │
-│ eh    │ <empty dict>   │
-╰───────┴────────────────╯
 ```
 
 #### Option: `multi_single`
@@ -2022,7 +2030,7 @@ In above example, the same result is obtained with option:
 
 Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
 
-#### Percent selector
+### Percent selector
 
 The percent selector allows identification of an entity by another unique identifier other than the native identifier.
 
@@ -2476,6 +2484,7 @@ remote_certificate chain https://node.example.com/path
 remote_certificate name https://node.example.com/path
 remote_certificate only https://node.example.com/path
 smtp_settings
+sync spec
 tokens flush
 tokens list
 tokens show foobar
@@ -3856,7 +3865,7 @@ ascli config ascp schema transferd --format=jsonpp
 | min_rate_cap_kbps | integer | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(C, T) |
 | min_rate_kbps | integer | Set the minimum transfer rate in kilobits per second.<br/>(`-m {integer}`) |
 | move_after_transfer | string | Move source files to the specified `archive-dir` directory after they are transferred correctly.<br/>Available as of 3.8.0. Details in `ascp` manual.<br/>Requires write permissions on the source.<br/>If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.<br/>`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.<br/>`archive-dir` is subject to the same docroot restrictions as source files.<br/>`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.<br/>After files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.<br/>(A, N, T)<br/>(`--move-after-transfer={string}`) |
-| multi_session | integer | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with `resume_policy`=`none`. |
+| multi_session | integer | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with `resume_policy`=`none`.<br/>(special:`-C {integer}`) |
 | multi_session_threshold | integer | Split files across multiple `ascp` sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(A, N, T)<br/>(`--multi-session-threshold={integer}`) |
 | obfuscate_file_names | boolean | HTTP Gateway obfuscates file names when set to `true`.<br/>(H) |
 | overwrite | string | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- `always` : Always overwrite the file.<br/>- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.<br/>- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.<br/>- `older` : Overwrite the file if its timestamp is older than the source timestamp.<br/>If you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:<br/>`none` : The source and destination files are always considered different and  the destination file is always overwritten<br/>`attributes` : The source and destination files are compared based on file attributes <br/>`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)<br/>`full_checksum` : The source and destination files are compared based on full checksums<br/>Allowed values: `never`, `always`, `diff`, `older`, `diff+older`<br/>(`--overwrite={enum}`) |
@@ -3866,7 +3875,7 @@ ascli config ascp schema transferd --format=jsonpp
 | preserve_access_time | boolean | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.<br/>(`--preserve-access-time`) |
 | preserve_acls | string | Preserve access control lists.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`<br/>(`--preserve-acls={enum}`) |
 | preserve_creation_time | boolean | Preserve source-file creation timestamps at the destination.<br/>Only Windows systems retain information about creation time. If the destination is not a Windows computer, this option is ignored.<br/>(`--preserve-creation-time`) |
-| preserve_extended_attrs | string | Preserve the extended attributes.<br/>(T, A)<br/>Allowed values: `none`, `native`, `metafile`<br/>(`--preserve-xattrs={enum}`) |
+| preserve_extended_attrs | string | Preserve the extended attributes.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`<br/>(`--preserve-xattrs={enum}`) |
 | preserve_file_owner_gid | boolean | Preserve the group ID for a file owner.<br/>(A, T)<br/>(`--preserve-file-owner-gid`) |
 | preserve_file_owner_uid | boolean | Preserve the user ID for a file owner.<br/>(A, T)<br/>(`--preserve-file-owner-uid`) |
 | preserve_modification_time | boolean | Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.<br/>Preserve source-file modification timestamps at the destination.<br/>(`--preserve-modification-time`) |
@@ -3895,7 +3904,7 @@ ascli config ascp schema transferd --format=jsonpp
 | source_root_id | string | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(N, T) |
 | src_base | string | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(A, N, T)<br/>(`--src-base64=(conversion){string}`) |
 | src_base64 | string | The folder name below which the directory structure is preserved (base64 encoded).<br/>(A, T)<br/>(`--src-base64={string}`) |
-| ssh_args | array | Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.<br/>(T, A) |
+| ssh_args | array | Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.<br/>(A, T)<br/>(special:`--ssh-arg={array}`) |
 | ssh_port | integer | Specifies SSH (TCP) port.<br/>(`-P {integer}`) |
 | ssh_private_key | string | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | ssh_private_key_passphrase | string | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(A, T)<br/>(env:`ASPERA_SCP_PASS`) |
@@ -3910,7 +3919,7 @@ ascli config ascp schema transferd --format=jsonpp
 | token | string | Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)<br/>(env:`ASPERA_SCP_TOKEN`) |
 | use_ascp4 | boolean | Specify version of protocol. Do not use `ascp4`.<br/>(A, N, T) |
 | use_system_ssh | string | Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.<br/>To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH {string}`) |
-| wss_enabled | boolean | Server has Web Socket service enabled. |
+| wss_enabled | boolean | Server has Web Socket service enabled.<br/>(special:`--ws-connect`) |
 | wss_port | integer | TCP port used for Web Socket service feed. |
 | xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(N) |
 
@@ -4167,7 +4176,7 @@ It can be configured:
 
 - Using utility [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
 
-- Using Powershell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
+- Using PowerShell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
 
 - Using `taskschd.msc` (UI)
 
@@ -4528,7 +4537,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test tokens transferd vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
 
 
 COMMAND: shares
@@ -6772,13 +6781,13 @@ By providing the `validator` option, offline transfer validation can be done.
 
 ### Sync
 
-There are three commands related to file synchronisation:
+There are three commands related to file synchronisation in `node`:
 
 | Command | `node` | `shares` | `aoc` | `server` | Description |
 |-----|-----|-----|-----|-----|-----------------------------------------------|
-| `sync`    | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
-| `async`   | Yes |     |     |     | Uses API `/async`.<br/>Get status on sync operation on server side, like Aspera Console. |
-| `ssync`   | Yes |     |     |     | Uses API `/asyncs`.<br/>It can start a sync operation on the server side, and monitor only those. |
+| `sync`  | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
+| `async` | Yes |     |     |     | Uses API `/async`.<br/>Get status on sync operation on server side, like Aspera Console. |
+| `ssync` | Yes |     |     |     | Uses API `/asyncs`.<br/>It can start a sync operation on the server side, and monitor only those. |
 
 For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
@@ -8705,8 +8714,8 @@ An interface for the `async` utility is provided in the following plugins:
 The `sync` command, available in above plugins, performs the following actions:
 
 - Start a local Sync session by executing the `async` command with the appropriate parameters.
-- Get local Sync session information using the `asyncadmin` command, if available.
 - Get local Sync session information accessing directly the Async snap database.
+- Get local Sync session information using the `asyncadmin` command, if available.
 
 One advantage of using `ascli` over the `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
 Moreover, `ascli` supports sync with application requiring token-based authorization.
@@ -8741,6 +8750,95 @@ Documentation on Async Node API can be found on [IBM Developer Portal](https://d
 
 Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
+| Field | Type | Description |
+| --------------------------------- | ------- | -------------------------------------------------------------------------------- |
+| ascp_dir | string | Directory containing ascp executable to use. |
+| assume_no_mods | boolean | Assume that the directory structure has not been modified.<br/>(`--assume-no-mods={boolean}`) |
+| checksum | string | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none` |
+| clean_excluded | boolean | Removes any existing entries in the snapshot database for excluded paths |
+| cookie | string | User-defined identification string. |
+| cooloff_max_seconds | integer | Wait up to the specified time for a file to stop changing before skipping synchronization of the file. 0 for disabled<br/>(`--cooloff-max={integer}`) |
+| cooloff_seconds | integer | Delay the start of the transfer to confirm that the content is not changing. Value must be between 0 and 60<br/>(`--cooloff={integer}`) |
+| create_dir | boolean | Create the source directory, target directory, or both, if they do not exist. |
+| db_cache_size | integer | Specify DB cache size. |
+| db_journal_off | boolean | Turn off DB journal. |
+| db_sync_on | boolean | Enable synchronous write in DB. |
+| dedup | string | Take the specified action when async detects duplicate files on the source.<br/>Allowed values: `copy`, `inode`, `hardlink`, `none` |
+| delete_before | boolean | Schedule deletes before transfers. |
+| delete_delay | boolean | Delay actual deletes until the end of the synchronization. |
+| direction | string | The direction of replication relative to the local.<br/>Allowed values: `bidi`, `pull`, `push` |
+| exclude_dirs_older_than | object | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
+| filters | array | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
+| ignore_delete | boolean | Do not copy removals to the peer. |
+| ignore_mode | boolean | Source files that have had their mode changed after the initial. transfer will not update the destination file mode. |
+| ignore_remote_host_sync_name | boolean | Do not check that the remote host being used for the current. transfer matches the host used when the local database was created |
+| local | object | &nbsp; |
+| local_apply_docroot | boolean | Prepend the docroot to the directory on the local host.<br/>(`--apply-local-docroot={boolean}`) |
+| local_checksum_threads | integer | Maximum number of threads to do checksum on the local host. Value must be between 1 and 99. |
+| local_db_dir | string | Use the specified database directory on the local host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--local-db-dir={string}`) |
+| local_db_store_dir | string | Store/Restore the database to/from the specified directory on the local host. The value can be an absolute path, an URI or - (use the local sync dir) |
+| local_force_stat | boolean | Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor. |
+| local_fs_threads | integer | Maximum number of threads to do file system operations on the local host. Value must be between 1 and 99. |
+| local_keep_dir | string | Move deleted files into the specified directory on the local host. |
+| local_mount_signature | string | Verify that the file system is mounted by the existence of this file on the local host. |
+| local_move_cache_timeout_seconds | integer | Delay in seconds before aborting moving a file from local cache to final destination. `-1` for disabled. |
+| local_preserve_acls | string | Preserve access control lists on the local host.<br/>Allowed values: `native`, `metafile`, `none` |
+| local_preserve_xattrs | string | Preserve extended attributes on the local.<br/>Allowed values: `native`, `metafile`, `none` |
+| local_scan_interval_milliseconds | integer | Enable periodic scans on the local host during a continuous sync. `-1` for disabled |
+| local_scan_threads | integer | Number of directory scanning threads on the local host. Value must be between 1 and 99 |
+| local_stat_cache_size | integer | Set stat cache size on the local host. 0 for disabled. |
+| log | object | &nbsp; |
+| manifest_path | string | A directory path where ascp will create manifest TEXT files (passed to ascp as --file-manifest-path) |
+| mirror | boolean | Force the pulling side to be exactly like the pushing side, removing files on the destination that don't exist on the source and resending source files that don't have an exact match on the destination. Cannot be used in bi-directional mode.<br/>(`--mirror`) |
+| mode | string | Specify whether async runs continuously or not. In one_time mode, async stops after the first full synchronization.<br/>Allowed values: `one_time`, `continuous`<br/>(special:`--continuous={enum}`) |
+| monitor_buffer_size | integer | Bytes to allocate for the change monitor buffer. Applies to any Windows machine on either side. `-1` to use the computed value. |
+| name | string | Name of the synchronization pair.<br/>(`--name={string}`) |
+| no_log | string | Suppress log messages for ITEM. The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages. |
+| no_preserve_root_attrs | boolean | Disable the preservation of attributes on the Sync root. |
+| no_scan | boolean | Skip initial scanning. |
+| notifications_sharing_retry_max | integer | Retry processing filesystem notifications up to the specified maximum number after a sharing violation. |
+| overwrite | string | Overwrite files according to the specified policy. Default is determined by the direction: conflict for bidi, otherwise always.<br/>Allowed values: `always`, `older`, `conflict` |
+| pending_max | integer | Allow the maximum number of files that are pending transfer to be no more than the specified number. |
+| preserve_access_time | boolean | Preserve file access time from the source to the destination. |
+| preserve_creation_time | boolean | Preserve file creation time from the source to the destination. |
+| preserve_gid | boolean | Preserve the file owner's GID. |
+| preserve_modification_time | boolean | Preserve file modification time from the source to the destination. |
+| preserve_object_lock_legal_hold | boolean | Preserve object lock legal hold status from the source to the destination. |
+| preserve_object_lock_retention | boolean | Preserve object lock retention from the source to the destination. |
+| preserve_object_metadata | boolean | Preserve object metadata from the source to the destination. |
+| preserve_uid | boolean | Preserve the file owner's UID. |
+| quiet | boolean | Disable progress display. |
+| remote | object | &nbsp; |
+| remote_checksum_threads | integer | Maximum number of threads to do checksum on the remote host. Value must be between 1 and 99 |
+| remote_db_dir | string | Use the specified database directory on the remote host. Default is `.private-asp` at the root level of the synchronized directory. |
+| remote_db_store_dir | string | Store/Restore the database to/from the specified directory on the remote host. The value can be an absolute path, an URI or - (use the remote sync dir). |
+| remote_force_stat | boolean | Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor. |
+| remote_fs_threads | integer | Maximum number of threads to do file system operations on the remote host. Value must be between 1 and 99. |
+| remote_keep_dir | string | Move deleted files into the specified directory on the remote host. |
+| remote_mount_signature | string | Verify that the file system is mounted by the existence of this file on the remote host. |
+| remote_move_cache_timeout_seconds | integer | Delay in seconds before aborting moving a file from remote cache to final destination. `-1` for disabled. |
+| remote_preserve_acls | string | Preserve access control lists on the remote host. If not specified, the default behavior is to use the same storage mode as specified by `preserve_acls`.<br/>Allowed values: `native`, `metafile`, `none` |
+| remote_preserve_xattrs | string | Preserve extended attributes on the remote host. If not specified, the default behavior is to use the same storage mode as specified by `preserve_xattrs`.<br/>Allowed values: `native`, `metafile`, `none` |
+| remote_scan_interval_milliseconds | integer | Enable periodic scans on the remote host. `-1` for disabled. |
+| remote_scan_threads | integer | Number of directory scanning threads on the remote host. Value must be between 1 and 99. |
+| remote_stat_cache_size | integer | Set stat cache size on the remote host. 0 for disabled. |
+| remove_after_transfer | boolean | Remove source files after they are successfully synchronized. |
+| reset | boolean | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot |
+| resume | object | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumeable, but only if async is then restarted with 'reset' disabled. |
+| resume_scan | boolean | Resume the scan from where the previous execution left off. |
+| scan_dir_rename | boolean | Enable the detection of renamed directories and files compared. to the previous scan, based on matching inodes |
+| scan_file_rename | boolean | Enable the detection of renamed files compared to the previous scan, based on matching inodes. |
+| scan_intensity | string | Scan at the set intensity. `vlow` minimizes system activity. `vhigh` maximizes system activity by continuously scanning files without rest.<br/>Allowed values: `vlow`, `low`, `medium`, `high`, `vhigh` |
+| sharing_retry_max | integer | Retry synchronizations up to the specified maximum number after a sharing violation. |
+| store_metadata_records | boolean | Store the acls or xattrs in the snapshot database. |
+| symbolic_links | string | Handle symbolic links with the specified method. Default is `skip` on windows, `copy` otherwise.<br/>Allowed values: `copy`, `skip`, `follow`<br/>(`--symbolic-links={enum}`) |
+| tags | object | User-defined metadata tags. |
+| transfer_threads | array | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size |
+| transport | object | &nbsp; |
+| watchd | object | When connection is configured, `asperawatchd` is used to detect the changes on the source directory.<br/>(special:`--watchd={object}`) |
+| write_gid | string | Try to write files as the specified group. |
+| write_uid | string | Try to write files as the specified user. |
+
 #### `sync_info`: `args` format
 
 This is the **legacy** syntax.
@@ -8752,17 +8850,24 @@ This is the mode selection if there are either keys `sessions` or `instance` in 
 
 Parameters `local_dir` and `remote_dir` are not allowed since they are provided on command line.
 
-### Sync management and monitoring
+### Sync management and monitoring: `admin`
 
-The `admin` command provides several sub commands:
+The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
+(With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
 
-- `status`: Uses the utility `asyncadmin`, available only on server products.
-- Other commands access directly the Async snap database (`snap.db`).
+To use the `admin` command, the gem `sqlite3` shall be installed:
 
-For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
-By default it is the local synchronized folder.
-If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-Else, the user must specify a session name in the optional `Hash`, in `name`.
+```shell
+gem install sqlite3
+```
+
+In order to use the `admin` commands, the user must provide the path to the database folder:
+
+- i.e. a folder containing a subfolder named `.private-asp`.
+- By default it is the local synchronized folder.
+- If an alternate folder is specified for the database, then specify it.
+- If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
+- Else, the user must specify a session name in the optional `Hash`, in the `name` key.
 
 ## Hot folder
 

@@ -21,6 +21,7 @@ properties:
     description: Assume that the directory structure has not been modified.
     type: boolean
     default: false
+    x-cli-option: true
   checksum:
     description: Use the specified checksum type. Default is none on cloud storage.
     type: string
@@ -51,11 +52,13 @@ properties:
       skipping synchronization of the file. 0 for disabled
     type: integer
     default: 0
+    x-cli-option: --cooloff-max
   cooloff_seconds:
     description: Delay the start of the transfer to confirm that the content is not changing.
       Value must be between 0 and 60
     type: integer
     default: 3
+    x-cli-option: --cooloff
   create_dir:
     description: Create the source directory, target directory, or both, if they do not exist.
     type: boolean
@@ -161,15 +164,20 @@ properties:
       path:
         description: The directory to be synchronized on the local host.
         type: string
+        x-cli-option: --local-dir
+        x-cli-short: -d
   local_apply_docroot:
     description: Prepend the docroot to the directory on the local host.
     type: boolean
     default: false
+    x-cli-option: --apply-local-docroot
   local_db_dir:
     description: Use the specified database directory on the local host.
       Default is `.private-asp` at the root level of the synchronized directory.
     type: string
     default: ""
+    x-cli-option: true
+    x-cli-short: -b
   local_checksum_threads:
     description:
       Maximum number of threads to do checksum on the local host.
@@ -248,6 +256,7 @@ properties:
         description: Use the specified logging directory on the local host.
         type: string
         default: ""
+        x-cli-option: --alt-logdir
       remote_dir:
         description: Use the specified logging directory on the remote host.
         type: string
@@ -262,19 +271,25 @@ properties:
     description:
       Force the pulling side to be exactly like the pushing side, removing
       files on the destination that don't exist on the source and resending source
-      files that don't have an exact match on the destination. Cannot be used
-      in bi-directional mode
+      files that don't have an exact match on the destination.
+      Cannot be used in bi-directional mode.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   mode:
     description:
-      Specify whether async runs continuously or not. In one_time mode,
-      async stops after the first full synchronization
+      Specify whether async runs continuously or not.
+      In one_time mode, async stops after the first full synchronization.
     type: string
     enum:
       - one_time
       - continuous
     default: one_time
+    x-cli-option: --continuous
+    x-cli-short: -C
+    x-cli-special: true
+    #x-cli-switch: true
   monitor_buffer_size:
     description: Bytes to allocate for the change monitor buffer.
       Applies to any Windows machine on either side.
@@ -284,6 +299,8 @@ properties:
   name:
     description: Name of the synchronization pair.
     type: string
+    x-cli-option: true
+    x-cli-short: -N
   no_log:
     description: Suppress log messages for ITEM.
       The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.
@@ -588,6 +605,8 @@ properties:
       - copy
       - skip
       - follow
+    x-cli-option: true
+    x-cli-short: -n
   tags:
     description: User-defined metadata tags.
     type: object
@@ -628,12 +647,14 @@ properties:
           - aes192gcm
           - aes256gcm
         default: aes128
+        x-cli-option: true
       compression:
         description: Compress a file before transfer using the specified MODE.
         enum:
           - none
           - zlib
         default: none
+        x-cli-option: true
       datagram_size:
         description:
           Specify the datagram size (MTU) for FASP.
@@ -684,6 +705,8 @@ properties:
   watchd:
     description: When connection is configured, `asperawatchd` is used to detect the changes on the source directory.
     type: object
+    x-cli-option: --watchd
+    x-cli-special: true
     properties:
       datastore:
         description: Specify the type of datastore, `none` for disabled.

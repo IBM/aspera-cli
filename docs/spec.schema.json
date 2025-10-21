@@ -109,19 +109,17 @@
       "$comment": "TODO: implement",
       "description": "Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.",
       "type": "boolean",
-      "x-cli-special": true,
       "x-agents": [
-        "node",
         "direct",
-        "transferd"
+        "transferd",
+        "node"
       ],
-      "x-cli-option": "--delete-source"
+      "x-cli-special": true
     },
     "destination_root": {
       "description": "Destination root directory.",
       "type": "string",
-      "x-cli-special": true,
-      "x-cli-option": "--destination-root"
+      "x-cli-special": true
     },
     "destination_root_id": {
       "description": "The file ID of the destination root directory.\nRequired when using Bearer token auth for the destination node.",
@@ -162,11 +160,11 @@
       "description": "Fail on bad file decryption passphrase.",
       "type": "boolean",
       "x-cli-switch": true,
+      "x-cli-option": "--fail-bad-filepass",
       "x-agents": [
         "direct",
         "transferd"
-      ],
-      "x-cli-option": "--fail-bad-filepass"
+      ]
     },
     "fasp_port": {
       "description": "Specifies fasp (UDP) port.",
@@ -199,8 +197,8 @@
       ],
       "default": "none",
       "x-agents": [
-        "node",
-        "direct"
+        "direct",
+        "node"
       ],
       "x-cli-option": "--file-checksum"
     },
@@ -238,8 +236,8 @@
       "description": "The session is running in persistent session mode.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--keepalive"
@@ -303,8 +301,8 @@
       "type": "string",
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-option": "--move-after-transfer"
     },
@@ -319,8 +317,8 @@
       "type": "integer",
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-option": "--multi-session-threshold"
     },
@@ -354,8 +352,7 @@
     "paths": {
       "description": "Array of path to the source (required) and a path to the destination (optional).",
       "type": "array",
-      "x-cli-special": true,
-      "x-cli-option": "--paths"
+      "x-cli-special": true
     },
     "precalculate_job_size": {
       "description": "Specifies whether to precalculate the job size.",
@@ -400,6 +397,7 @@
       ],
       "default": "none",
       "x-agents": [
+        "direct",
         "transferd"
       ],
       "x-cli-option": "--preserve-xattrs"
@@ -408,8 +406,8 @@
       "description": "Preserve the group ID for a file owner.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--preserve-file-owner-gid"
@@ -418,8 +416,8 @@
       "description": "Preserve the user ID for a file owner.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--preserve-file-owner-uid"
@@ -440,8 +438,8 @@
       ],
       "default": "none",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--remote-preserve-acls"
     },
@@ -455,8 +453,8 @@
       ],
       "default": "none",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--remote-preserve-xattrs"
     },
@@ -464,8 +462,8 @@
       "description": "Preserve the time logged for when the source file was accessed.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--preserve-source-access-time"
@@ -474,9 +472,9 @@
       "description": "Preserve file timestamps.",
       "type": "boolean",
       "x-agents": [
+        "direct",
         "transferd",
-        "node",
-        "direct"
+        "node"
       ],
       "x-cli-option": "-p"
     },
@@ -545,8 +543,8 @@
       "type": "boolean",
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-after-transfer"
@@ -556,8 +554,8 @@
       "type": "boolean",
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-empty-directories"
@@ -583,8 +581,8 @@
       "type": "boolean",
       "x-agents": [
         "direct",
-        "connect",
-        "node"
+        "node",
+        "connect"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-skipped"
@@ -624,8 +622,8 @@
       "x-cli-switch": true,
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-option": "--save-before-overwrite"
     },
@@ -633,8 +631,8 @@
       "description": "Don't check for duplicate files at the destination.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--skip-dir-traversal-dupes",
       "x-cli-switch": true
@@ -643,8 +641,8 @@
       "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If `true`, `ascp` skips special assets and proceeds with the transfer of all other assets.",
       "type": "boolean",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--skip-special-files"
@@ -668,8 +666,8 @@
       "type": "string",
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
       "x-cli-option": "--src-base64",
       "x-cli-convert": "base64"
@@ -678,8 +676,8 @@
       "description": "The folder name below which the directory structure is preserved (base64 encoded).",
       "type": "string",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--src-base64"
     },
@@ -687,11 +685,12 @@
       "$comment": "TODO: Generate multiple options and place as in comment (after -i , before user/host)",
       "description": "Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.",
       "type": "array",
-      "x-cli-special": true,
       "x-agents": [
+        "direct",
         "transferd"
       ],
-      "x-cli-option": "--ssh-arg"
+      "x-cli-option": "--ssh-arg",
+      "x-cli-special": true
     },
     "ssh_port": {
       "description": "Specifies SSH (TCP) port.",
@@ -712,8 +711,8 @@
       "description": "The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.",
       "type": "string",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-envvar": "ASPERA_SCP_PASS"
     },
@@ -721,8 +720,8 @@
       "description": "Path to private key for SSH.",
       "type": "string",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "-i"
     },
@@ -753,8 +752,8 @@
       "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
       "type": "string",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--tags64"
     },
@@ -762,8 +761,8 @@
       "description": "Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.",
       "type": "integer",
       "x-agents": [
-        "connect",
-        "transferd"
+        "transferd",
+        "connect"
       ]
     },
     "target_rate_kbps": {
@@ -788,7 +787,6 @@
     },
     "token": {
       "description": "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)",
-      "$comment": null,
       "type": "string",
       "x-cli-envvar": "ASPERA_SCP_TOKEN"
     },
@@ -798,18 +796,17 @@
       "default": false,
       "x-agents": [
         "direct",
-        "node",
-        "transferd"
+        "transferd",
+        "node"
       ],
-      "x-cli-special": true,
-      "x-cli-option": "--use-ascp4"
+      "x-cli-special": true
     },
     "use_system_ssh": {
       "description": "Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.\nTo enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.",
       "type": "string",
       "x-agents": [
-        "transferd",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "-SSH"
     },
@@ -821,14 +818,14 @@
     "wss_enabled": {
       "description": "Server has Web Socket service enabled.",
       "type": "boolean",
-      "x-cli-special": true,
-      "x-cli-option": "--wss-enabled"
+      "x-cli-option": "--ws-connect",
+      "x-cli-switch": true,
+      "x-cli-special": true
     },
     "wss_port": {
       "description": "TCP port used for Web Socket service feed.",
       "type": "integer",
-      "x-cli-special": true,
-      "x-cli-option": "--wss-port"
+      "x-cli-special": true
     },
     "xfer_max_retries": {
       "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).",
