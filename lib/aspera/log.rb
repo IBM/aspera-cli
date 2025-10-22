@@ -15,7 +15,7 @@ $VERBOSE = nil
 
 # Extend Ruby logger with trace levels
 class Logger
-  # Two additionnal trace levels
+  # Two additional trace levels
   TRACE_MAX = 2
 
   # Add custom level to logger severity, below debug level
@@ -25,7 +25,7 @@ class Logger
 
   # Hash
   # key   [Integer] Log level (e.g. 0 for DEBUG)
-  # value [Symbol]  Lppercase log level label (e.g. :DEBUG)
+  # value [Symbol]  Uppercase log level label (e.g. :DEBUG)
   SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
 
   # Override

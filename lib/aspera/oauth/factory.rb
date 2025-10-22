@@ -63,10 +63,10 @@ module Aspera
         @decoders = []
         # default parameters, others can be added by handlers
         @parameters = {
-          # tokens older than 30 minutes will be discarded from cache
-          token_cache_expiry_sec:     1800,
-          # tokens valid for less than this duration will be regenerated
-          token_expiration_guard_sec: 120
+          # tokens older than this duration in sec. will be discarded from cache
+          token_cache_max_age:     1800,
+          # tokens valid for less than this duration in sec. will be regenerated
+          token_refresh_threshold: 120
         }
       end
 
@@ -77,7 +77,7 @@ module Aspera
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
-        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @parameters[:token_cache_expiry_sec])
+        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @parameters[:token_cache_max_age])
       end
 
       def persist_mgr
@@ -128,7 +128,7 @@ module Aspera
           unless expiration_date.nil?
             info[:expiration] = expiration_date
             info[:ttl_sec] = expiration_date - Time.now
-            info[:expired] = info[:ttl_sec] < @parameters[:token_expiration_guard_sec]
+            info[:expired] = info[:ttl_sec] < @parameters[:token_refresh_threshold]
           end
         end
         Log.dump(:token_info, info)

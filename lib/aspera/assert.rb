@@ -34,7 +34,7 @@ module Aspera
     # @param assertion [Bool]       Must be true
     # @param info      [String,nil] Fixed message in case assert fails, else use `block`
     # @param type      [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block     [Proc]       Produces a string that desribes the problem for complex messages
+    # @param block     [Proc]       Produces a string that describes the problem for complex messages
     # The block is executed in the context of the Aspera module
     def assert(assertion, info = nil, type: AssertError)
       raise InternalError, 'bad assert: both info and block given' unless info.nil? || !block_given?

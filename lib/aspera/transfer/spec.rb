@@ -45,7 +45,7 @@ module Aspera
         end
 
         def fix_transferd_resume_policy(transfer_spec)
-          # Fix discrepency in transfer spec
+          # Fix discrepancy in transfer spec
           transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']] if transfer_spec.key?('resume_policy')
         end
       end

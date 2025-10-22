@@ -9,7 +9,7 @@ module Aspera
     # Authentication using Web browser
     class Web < Base
       class << self
-        attr_accessor :additionnal_info
+        attr_accessor :additional_info
       end
       # @param redirect_uri    url to receive the code after auth (to be exchanged for token)
       # @param path_authorize  path to login page on web app
@@ -37,7 +37,7 @@ module Aspera
         # here, we need a human to authorize on a web page
         Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
         # start a web server to receive request code
-        web_server = WebAuth.new(@redirect_uri, self.class.additionnal_info)
+        web_server = WebAuth.new(@redirect_uri, self.class.additional_info)
         # start browser on login page
         Environment.instance.open_uri(login_page_url)
         # wait for code in request

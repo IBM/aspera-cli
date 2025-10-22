@@ -37,7 +37,7 @@ module Aspera
           return File.expand_path(url[SCHEME_FILE_PFX2.length..-1])
         else
           # download to temp file
-          # autodelete on exit
+          # auto-delete on exit
           sdk_archive_path = TempFileManager.instance.new_file_path_global(suffix: File.basename(url))
           Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_archive_path)
           return sdk_archive_path

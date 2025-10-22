@@ -61,3 +61,5 @@ inet
 sockaddr
 bigdecimal
 unmarshal
+kwargs
+hexdigest

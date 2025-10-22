@@ -280,7 +280,7 @@ module Aspera
         # @param resource_class_path path to query on API
         # @param fields fields to display
         # @param base_query a query applied always
-        # @param default_query default query unless overriden by user
+        # @param default_query default query unless overridden by user
         # @param &block (Optional) calls block with user's or default query
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)

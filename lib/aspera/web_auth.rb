@@ -17,7 +17,7 @@ module Aspera
     def service(request, response)
       Log.log.debug{"received request from browser #{request.request_method} #{request.path}"}
       Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed){'HTTP verb'}
-      additionnal_info = @web_auth.signal_request(request)
+      additional_info = @web_auth.signal_request(request)
       response.status = 200
       response.content_type = 'text/html'
       response.body = <<~HTML
@@ -91,7 +91,7 @@ module Aspera
         <body>
         <h1>Thank You!</h1>
         <p>You can close this window.</p>
-        <p>#{additionnal_info}</p>
+        <p>#{additional_info}</p>
 
         <!-- JavaScript to generate IBM logos -->
         <script>
@@ -170,15 +170,15 @@ module Aspera
   # store the final query
   class WebAuth < WebServerSimple
     # @param endpoint_url     [String] e.g. 'https://127.0.0.1:12345'
-    # @param additionnal_info [String] Information in web page
-    def initialize(endpoint_url, additionnal_info = nil)
+    # @param additional_info [String] Information in web page
+    def initialize(endpoint_url, additional_info = nil)
       uri = URI.parse(endpoint_url)
       super(uri)
       @mutex = Mutex.new
       @cond = ConditionVariable.new
       @expected_path = uri.path.empty? ? '/' : uri.path
       @query = nil
-      @additionnal_info = additionnal_info
+      @additional_info = additional_info
       # last argument (self) is provided to constructor of servlet
       mount(@expected_path, WebAuthServlet, self)
       # server runs in thread
@@ -194,7 +194,7 @@ module Aspera
         @query = request.query
         @cond.signal
       end
-      return @additionnal_info
+      return @additional_info
     end
 
     # wait for request on web server (main thread)

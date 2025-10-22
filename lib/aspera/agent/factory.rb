@@ -9,7 +9,7 @@ module Aspera
     class Factory
       include Singleton
 
-      # Instanciate agent
+      # Create new agent
       def create(agent, options)
         Log.dump(:options, options)
         require "aspera/agent/#{agent}"

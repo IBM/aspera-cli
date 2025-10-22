@@ -1266,7 +1266,7 @@ It's up to the program to split arguments:
 - [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
 - [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
 
-<%tool%> is a Ruby program, so Ruby parses the command line (receibed with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
+<%tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 (See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
 
@@ -2793,8 +2793,8 @@ The following parameters are supported:
 | Parameter         | Type     | Default                 | Description                                                      |
 |-------------------|----------|-------------------------|------------------------------------------------------------------|
 | `url`             | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided. | <!-- markdownlint-disable-line -->
-| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. `.pfx` or `.p12` for PKCS12).        |
-| `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for PKCS12.                |
+| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. `.pfx` or `.p12` for `PKCS12`).        |
+| `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for `PKCS12`.                |
 | `chain`           | `String` | -       | (HTTPS) Path to certificate chain (PEM only).                                    |
 
 Parameter `url` (base URL) defines:
@@ -2874,7 +2874,7 @@ The default formatter is:
 ->(s, _d, _p, m){"#{s[0..2]} #{m}\n"}
 ```
 
-Availaible formatters for `log_format`:
+Available formatters for `log_format`:
 
 | Name      | Description              |
 |-----------|--------------------------|
@@ -2922,20 +2922,22 @@ To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type      | Default         | Handler   |
-|---------------------------|-----------|-----------------|-----------|
-| `read_timeout`            | `Integer` | `60`            | Ruby      |
-| `write_timeout`           | `Integer` | `60`            | Ruby      |
-| `open_timeout`            | `Integer` | `60`            | Ruby      |
-| `keep_alive_timeout`      | `Integer` | `2`             | Ruby      |
-| `ssl_options`             | `Array`   | See below       | Ruby      |
-| `user_agent`              | `Integer` | <%=tool%>       | <%=tool%> |
-| `download_partial_suffix` | `Integer` | `.http_partial` | <%=tool%> |
-| `retry_on_error`          | `Bool`    | `false`         | <%=tool%> |
-| `retry_on_timeout`        | `Bool`    | `true`          | <%=tool%> |
-| `retry_on_unavailable`    | `Bool`    | `true`          | <%=tool%> |
-| `retry_max`               | `Integer` | `1`             | <%=tool%> |
-| `retry_sleep`             | `Integer` | `4`             | <%=tool%> |
+| Parameter                 | Type      | Default         | Handler         |
+|-------------------------|---------|---------------|---------------|
+| `read_timeout`            | `Integer` | `60`            | Ruby            |
+| `write_timeout`           | `Integer` | `60`            | Ruby            |
+| `open_timeout`            | `Integer` | `60`            | Ruby            |
+| `keep_alive_timeout`      | `Integer` | `2`             | Ruby            |
+| `ssl_options`             | `Array`   | See below       | Ruby            |
+| `user_agent`              | `Integer` | <%=tool%>       | <%=tool%> Rest  |
+| `download_partial_suffix` | `Integer` | `.http_partial` | <%=tool%> Rest  |
+| `retry_on_error`          | `Bool`    | `false`         | <%=tool%> Rest  |
+| `retry_on_timeout`        | `Bool`    | `true`          | <%=tool%> Rest  |
+| `retry_on_unavailable`    | `Bool`    | `true`          | <%=tool%> Rest  |
+| `retry_max`               | `Integer` | `1`             | <%=tool%> Rest  |
+| `retry_sleep`             | `Integer` | `4`             | <%=tool%> Rest  |
+| `token_cache_max_age`     | `Integer` | `1800`          | <%=tool%> OAuth |
+| `token_refresh_threshold` | `Integer` | `120`           | <%=tool%> OAuth |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -2949,11 +2951,11 @@ Example:
 <%=cmd%> aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
-`ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
+The option `ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
 The default initial value is the default of Ruby as specified in `openssl/ssl.rb`.
 Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`, or an `Integer` (e.g. `0` resets to no option).
 If the name appears in the list, the option is set.
-If the name appears in the list prefixed with a hyphen (`-`), the option is unset.
+If the name appears in the list prefixed with a hyphen (`-`), the option is cleared.
 For example to enable option `SSL_OP_CIPHER_SERVER_PREFERENCE`, add it to the list as `CIPHER_SERVER_PREFERENCE`.
 To disable option `SSL_OP_SAFARI_ECDHE_ECDSA_BUG`, add it as `-SAFARI_ECDHE_ECDSA_BUG`.
 
@@ -3358,7 +3360,7 @@ This can be de-activated with parameter: `monitor=false` of `transfer_info`.
 It is also possible to send local messages to this management port.
 A typical use is to change the target rate of a running transfer.
 
-The communication is done thhrough a flat JSON file that shall be created in <%=tool%> config folder as displayed with:
+The communication is done through a flat JSON file that shall be created in <%=tool%> config folder as displayed with:
 
 ```shell
 <%=cmd%> config folder
@@ -6064,7 +6066,7 @@ By providing the `validator` option, offline transfer validation can be done.
 
 ### Sync
 
-There are three commands related to file synchronisation in `node`:
+There are three commands related to file synchronization in `node`:
 
 | Command | `node` | `shares` | `aoc` | `server` | Description |
 |-----|-----|-----|-----|-----|-----------------------------------------------|
@@ -7687,7 +7689,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 ### Starting a sync session
 
-To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path elsewise).
+To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path otherwise).
 The path on the other side is specified using option: `to_folder`.
 
 | Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
@@ -8123,10 +8125,19 @@ If Ruby was installed as a Linux Packages, then also install Ruby development pa
 
 ### ED25519 key not supported
 
-ED25519 keys are deactivated since <%=tool%> version 0.9.24 as it requires additional gems that require native compilation and thus caused problems.
-This type of key will just be ignored.
+There are a few aspects concerning ED25519 keys.
 
-To re-activate, set env var `<%=opt_env(%Q`enable_ed`)%>25519` to `true`.
+By default, the `aspera-cli` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of <%=tool%>, especially when using JRuby.
+Refer to [this](https://github.com/net-ssh/net-ssh/issues/565).
+If you want to use `ed25519` keys, then install the required gems:
+
+```shell
+gem install ed25519 bcrypt_pbkdf
+```
+
+Use of ED25519 default SSH keys (`~/.ssh/ed25519`) are deactivated since <%=tool%> version 0.9.24 as it requires additional gems that require native compilation and thus caused problems.
+This type of key will just be ignored.
+To re-activate the use of those default keys, set env var `<%=opt_env(%Q`enable_ed`)%>25519` to `true`.
 
 Without this deactivation, if such key was present in user's `.ssh` folder then the following error was generated:
 
@@ -8165,7 +8176,7 @@ To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
 
-### Error: `ascp`: /lib64/libc.so.6: version `GLIBC_2.28' not found
+### Error: `ascp`: `/lib64/libc.so.6`: version `GLIBC_2.28` not found
 
 This happens on Linux x86 if you try to install `transferd` on a Linux version too old to support a newer `ascp` executable.
 

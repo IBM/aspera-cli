@@ -24,11 +24,11 @@ module Aspera
 
         # Get all options specified by AUTH_OPTIONS and add.keys
         # Adds those not nil to the `base`.
-        # Instanciate the provided `klass` with those kwargs.
+        # Instantiate the provided `klass` with those kwargs.
         # `add` can specify a default value (not `nil`)
         # @param klass [Class] API object to create
         # @param base  [Hash] The base options for creation
-        # @param add   [Hash] Additionnal options, key=symbol, value:default value or nil
+        # @param add   [Hash] Additional options, key=symbol, value:default value or nil
         def new_with_options(klass, base: {}, add: {})
           klass.new(**
             (AUTH_OPTIONS + add.keys).each_with_object(base) do |i, m|

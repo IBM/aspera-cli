@@ -183,7 +183,7 @@ module Aspera
         declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
         declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
         declare(:struct_parser, 'Default parser when expected value is a struct', values: %i[json ruby])
-        # do not parse options yet, let's wait for option `-h` to be overriden
+        # do not parse options yet, let's wait for option `-h` to be overridden
       end
 
       # @param descr [String] description for help

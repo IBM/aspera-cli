@@ -227,8 +227,8 @@ module Aspera
         end
       end
 
-      def display_status(status, **kwopt)
-        display_message(:info, status, **kwopt)
+      def display_status(status, **kwargs)
+        display_message(:info, status, **kwargs)
       end
 
       def display_item_count(number, total)
@@ -316,7 +316,7 @@ module Aspera
         when :table, :csv
           case type
           when :single_object
-            # :single_object is a Hash, where key=colum name
+            # :single_object is a Hash, where key=column name
             Aspera.assert_type(data, Hash)
             if data.empty?
               display_message(:data, self.class.special_format('empty dict'))
@@ -325,7 +325,7 @@ module Aspera
               display_table([data], compute_fields([data], fields), single: true)
             end
           when :object_list
-            # :object_list is an Array of Hash, where key=colum name
+            # :object_list is an Array of Hash, where key=column name
             Aspera.assert_type(data, Array)
             Aspera.assert(data.all?(Hash)){"expecting Array of Hash: #{data.inspect}"}
             data = data.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]

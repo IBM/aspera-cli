@@ -753,7 +753,8 @@ Unsupported algorithm</a></li>
 <li><a href="#error-ssl_read-unexpected-eof-while-reading" id="toc-error-ssl_read-unexpected-eof-while-reading"><span class="toc-section-number">26.5</span> Error: &quot;SSL_read: unexpected eof
 while reading&quot;</a></li>
 <li><a href="#error-ascp-lib64libc.so.6-version-glibc_2.28-not-found" id="toc-error-ascp-lib64libc.so.6-version-glibc_2.28-not-found"><span class="toc-section-number">26.6</span> Error: <code>ascp</code>:
-/lib64/libc.so.6: version `GLIBC_2.28&#39; not found</a></li>
+<code>/lib64/libc.so.6</code>: version <code>GLIBC_2.28</code> not
+found</a></li>
 <li><a href="#error-cannot-rename-partial-file" id="toc-error-cannot-rename-partial-file"><span class="toc-section-number">26.7</span> Error: Cannot rename partial
 file</a></li>
 </ul></li>
@@ -1975,7 +1976,7 @@ How Command Line Parameters Are Parsed</a></li>
 <li><a href="https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/">Understand
 Quoting and Escaping of Windows Command Line Arguments</a></li>
 </ul>
-<p>is a Ruby program, so Ruby parses the command line (receibed with
+<p>is a Ruby program, so Ruby parses the command line (received with
 <code>GetCommandLineW</code>) into arguments and provides them to the
 Ruby code (<code>$0</code> and <code>ARGV</code>). Ruby vaguely follows
 the Microsoft C/C++ parameter parsing rules. (See
@@ -3848,14 +3849,14 @@ provided.</td>
 <td><code>String</code></td>
 <td>-</td>
 <td>(HTTPS) Path to certificate file (with ext. <code>.pfx</code> or
-<code>.p12</code> for PKCS12).</td>
+<code>.p12</code> for <code>PKCS12</code>).</td>
 </tr>
 <tr>
 <td><code>key</code></td>
 <td><code>String</code></td>
 <td>-</td>
 <td>(HTTPS) Path to private key file (PEM), or passphrase for
-PKCS12.</td>
+<code>PKCS12</code>.</td>
 </tr>
 <tr>
 <td><code>chain</code></td>
@@ -4019,7 +4020,7 @@ Alternative: <code>standard</code></td>
 Formatter</a> : <code>severity</code>, <code>time</code>,
 <code>progname</code>, <code>msg</code>. The default formatter is:</p>
 <div class="sourceCode" id="cb227"><pre class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(s, _d, _p, m)<span class="op">{</span><span class="st">&quot;</span><span class="sc">#{</span>s<span class="kw">[</span><span class="dv">0</span><span class="op">..</span><span class="dv">2</span><span class="kw">]</span><span class="sc">}</span><span class="st"> </span><span class="sc">#{</span>m<span class="sc">}\n</span><span class="st">&quot;</span><span class="op">}</span></span></code></pre></div>
-<p>Availaible formatters for <code>log_format</code>:</p>
+<p>Available formatters for <code>log_format</code>:</p>
 <table>
 <thead>
 <tr>
@@ -4087,6 +4088,12 @@ set the option <code>warn_insecure</code> to <code>no</code>.</p>
 <p>HTTP connection parameters (not <code>ascp</code> WSS) can be
 adjusted using option <code>http_options</code>:</p>
 <table>
+<colgroup>
+<col style="width: 39%" />
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+</colgroup>
 <thead>
 <tr>
 <th>Parameter</th>
@@ -4130,43 +4137,55 @@ adjusted using option <code>http_options</code>:</p>
 <td><code>user_agent</code></td>
 <td><code>Integer</code></td>
 <td><code>ascli</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>download_partial_suffix</code></td>
 <td><code>Integer</code></td>
 <td><code>.http_partial</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>retry_on_error</code></td>
 <td><code>Bool</code></td>
 <td><code>false</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>retry_on_timeout</code></td>
 <td><code>Bool</code></td>
 <td><code>true</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>retry_on_unavailable</code></td>
 <td><code>Bool</code></td>
 <td><code>true</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>retry_max</code></td>
 <td><code>Integer</code></td>
 <td><code>1</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
 </tr>
 <tr>
 <td><code>retry_sleep</code></td>
 <td><code>Integer</code></td>
 <td><code>4</code></td>
-<td><code>ascli</code></td>
+<td><code>ascli</code> Rest</td>
+</tr>
+<tr>
+<td><code>token_cache_max_age</code></td>
+<td><code>Integer</code></td>
+<td><code>1800</code></td>
+<td><code>ascli</code> OAuth</td>
+</tr>
+<tr>
+<td><code>token_refresh_threshold</code></td>
+<td><code>Integer</code></td>
+<td><code>120</code></td>
+<td><code>ascli</code> OAuth</td>
 </tr>
 </tbody>
 </table>
@@ -4178,17 +4197,17 @@ configuration file, either in a global preset or server-specific
 one.</p>
 <p>Example:</p>
 <pre class="shell"><code>ascli aoc admin package list --http-options=@json:&#39;{&quot;read_timeout&quot;:10.0}&#39;</code></pre>
-<p><code>ssl_options</code> corresponds to a list of options as listed
-in <code>man SSL_CTX_set_options</code>. The default initial value is
-the default of Ruby as specified in <code>openssl/ssl.rb</code>. Each
-option can be specified as a <code>String</code> with the same name as
-in the OpenSSL library by removing the prefix: <code>SSL_OP_</code>, or
-an <code>Integer</code> (e.g. <code>0</code> resets to no option). If
-the name appears in the list, the option is set. If the name appears in
-the list prefixed with a hyphen (<code>-</code>), the option is unset.
-For example to enable option
-<code>SSL_OP_CIPHER_SERVER_PREFERENCE</code>, add it to the list as
-<code>CIPHER_SERVER_PREFERENCE</code>. To disable option
+<p>The option <code>ssl_options</code> corresponds to a list of options
+as listed in <code>man SSL_CTX_set_options</code>. The default initial
+value is the default of Ruby as specified in
+<code>openssl/ssl.rb</code>. Each option can be specified as a
+<code>String</code> with the same name as in the OpenSSL library by
+removing the prefix: <code>SSL_OP_</code>, or an <code>Integer</code>
+(e.g. <code>0</code> resets to no option). If the name appears in the
+list, the option is set. If the name appears in the list prefixed with a
+hyphen (<code>-</code>), the option is cleared. For example to enable
+option <code>SSL_OP_CIPHER_SERVER_PREFERENCE</code>, add it to the list
+as <code>CIPHER_SERVER_PREFERENCE</code>. To disable option
 <code>SSL_OP_SAFARI_ECDHE_ECDSA_BUG</code>, add it as
 <code>-SAFARI_ECDHE_ECDSA_BUG</code>.</p>
 <p>Example:</p>
@@ -4655,7 +4674,7 @@ messages</h4>
 parameter: <code>monitor=false</code> of <code>transfer_info</code>.</p>
 <p>It is also possible to send local messages to this management port. A
 typical use is to change the target rate of a running transfer.</p>
-<p>The communication is done thhrough a flat JSON file that shall be
+<p>The communication is done through a flat JSON file that shall be
 created in <code>ascli</code> config folder as displayed with:</p>
 <pre class="shell"><code>ascli config folder</code></pre>
 <p>The name of the file shall be: <code>send_&lt;PID&gt;</code>, where
@@ -8303,7 +8322,7 @@ command:</p>
 <span id="cb446-96"><a href="#cb446-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc test_file.bin test_file.bin</span>
 <span id="cb446-97"><a href="#cb446-97" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
 <span id="cb446-98"><a href="#cb446-98" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> v3 info</span>
-<span id="cb446-99"><a href="#cb446-99" aria-hidden="true" tabindex="-1"></a><span class="ex">gateway</span> <span class="at">--pid-file</span><span class="op">=</span>pid_aocfxgw @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:12345/aspera/faspex&quot;}&#39;</span> <span class="kw">&amp;</span></span>
+<span id="cb446-99"><a href="#cb446-99" aria-hidden="true" tabindex="-1"></a><span class="ex">gateway</span> <span class="at">--pid-file</span><span class="op">=</span>pid_aoc_faspex_gateway @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:12345/aspera/faspex&quot;}&#39;</span> <span class="kw">&amp;</span></span>
 <span id="cb446-100"><a href="#cb446-100" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span></span>
 <span id="cb446-101"><a href="#cb446-101" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span> <span class="at">--format</span><span class="op">=</span>image <span class="at">--fields</span><span class="op">=</span>background_image_url <span class="at">--ui</span><span class="op">=</span>text</span>
 <span id="cb446-102"><a href="#cb446-102" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span> <span class="at">--url</span><span class="op">=</span>my_public_link_recv_from_aoc_user</span>
@@ -8771,7 +8790,7 @@ validation can be done.</p>
 <p>See later in this doc, refer to HSTS doc.</p></div>
 </div>
 <h2 data-number="8.5" id="sync"><span class="header-section-number">8.5</span> Sync</h2>
-<p>There are three commands related to file synchronisation in
+<p>There are three commands related to file synchronization in
 <code>node</code>:</p>
 <table>
 <colgroup>
@@ -9180,68 +9199,74 @@ are:</p>
 <span id="cb504-17"><a href="#cb504-17" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name show /test_nd_ak3</span>
 <span id="cb504-18"><a href="#cb504-18" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do my_ak_name upload <span class="st">&#39;faux:///test_nd_ak3?100k&#39;</span> <span class="at">--default-ports</span><span class="op">=</span>no</span>
 <span id="cb504-19"><a href="#cb504-19" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission %id:root_id create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;666&quot;}&#39;</span></span>
-<span id="cb504-20"><a href="#cb504-20" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission / show 1</span>
-<span id="cb504-21"><a href="#cb504-21" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self show / <span class="at">--fields</span><span class="op">=</span>id <span class="at">--output</span><span class="op">=</span>root_id</span>
-<span id="cb504-22"><a href="#cb504-22" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> list</span>
-<span id="cb504-23"><a href="#cb504-23" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> set_bearer_key self @file:my_private_key</span>
-<span id="cb504-24"><a href="#cb504-24" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> show %id:self</span>
-<span id="cb504-25"><a href="#cb504-25" aria-hidden="true" tabindex="-1"></a><span class="ex">api_details</span></span>
-<span id="cb504-26"><a href="#cb504-26" aria-hidden="true" tabindex="-1"></a><span class="ex">asperabrowser</span></span>
-<span id="cb504-27"><a href="#cb504-27" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> bandwidth %name:SYNC_NAME</span>
-<span id="cb504-28"><a href="#cb504-28" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> counters %name:SYNC_NAME</span>
-<span id="cb504-29"><a href="#cb504-29" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> delete ALL</span>
-<span id="cb504-30"><a href="#cb504-30" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:SYNC_NAME</span>
-<span id="cb504-31"><a href="#cb504-31" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:SYNC_NAME <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb504-32"><a href="#cb504-32" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> list</span>
-<span id="cb504-33"><a href="#cb504-33" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show %name:SYNC_NAME</span>
-<span id="cb504-34"><a href="#cb504-34" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show ALL</span>
-<span id="cb504-35"><a href="#cb504-35" aria-hidden="true" tabindex="-1"></a><span class="ex">basic_token</span></span>
-<span id="cb504-36"><a href="#cb504-36" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
-<span id="cb504-37"><a href="#cb504-37" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
-<span id="cb504-38"><a href="#cb504-38" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> my_upload_folder/test_file.bin</span>
-<span id="cb504-39"><a href="#cb504-39" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
-<span id="cb504-40"><a href="#cb504-40" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
-<span id="cb504-41"><a href="#cb504-41" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
-<span id="cb504-42"><a href="#cb504-42" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
-<span id="cb504-43"><a href="#cb504-43" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
-<span id="cb504-44"><a href="#cb504-44" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb504-45"><a href="#cb504-45" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
-<span id="cb504-46"><a href="#cb504-46" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url,host){return &quot;DIRECT&quot;}&#39;</span></span>
-<span id="cb504-47"><a href="#cb504-47" aria-hidden="true" tabindex="-1"></a><span class="ex">license</span></span>
-<span id="cb504-48"><a href="#cb504-48" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/a_folder</span>
-<span id="cb504-49"><a href="#cb504-49" aria-hidden="true" tabindex="-1"></a><span class="ex">mkfile</span> my_upload_folder/a_file1 <span class="st">&quot;hello world&quot;</span></span>
-<span id="cb504-50"><a href="#cb504-50" aria-hidden="true" tabindex="-1"></a><span class="ex">mklink</span> my_upload_folder/a_folder my_upload_folder/tdlink</span>
-<span id="cb504-51"><a href="#cb504-51" aria-hidden="true" tabindex="-1"></a><span class="ex">rename</span> my_upload_folder a_file1 a_file</span>
-<span id="cb504-52"><a href="#cb504-52" aria-hidden="true" tabindex="-1"></a><span class="ex">search</span> / <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;mtime&quot;}&#39;</span></span>
-<span id="cb504-53"><a href="#cb504-53" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> create @json:<span class="st">&#39;{&quot;id&quot;:&quot;service1&quot;,&quot;type&quot;:&quot;WATCHD&quot;,&quot;run_as&quot;:{&quot;user&quot;:&quot;user1&quot;}}&#39;</span></span>
-<span id="cb504-54"><a href="#cb504-54" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> delete service1</span>
-<span id="cb504-55"><a href="#cb504-55" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> list</span>
-<span id="cb504-56"><a href="#cb504-56" aria-hidden="true" tabindex="-1"></a><span class="ex">slash</span></span>
-<span id="cb504-57"><a href="#cb504-57" aria-hidden="true" tabindex="-1"></a><span class="ex">space</span> /</span>
-<span id="cb504-58"><a href="#cb504-58" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> bandwidth %name:my_node_sync</span>
-<span id="cb504-59"><a href="#cb504-59" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> counters %name:my_node_sync</span>
-<span id="cb504-60"><a href="#cb504-60" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> create @json:<span class="st">&#39;{&quot;configuration&quot;:{&quot;name&quot;:&quot;my_node_sync&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_path_real&quot;},&quot;remote&quot;:{&quot;host&quot;:&quot;my_host&quot;,&quot;port&quot;:my_port,&quot;user&quot;:&quot;my_username&quot;,&quot;pass&quot;:&quot;my_password_here&quot;,&quot;path&quot;:&quot;my_remote_path&quot;}}}&#39;</span></span>
-<span id="cb504-61"><a href="#cb504-61" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> delete %name:my_node_sync</span>
-<span id="cb504-62"><a href="#cb504-62" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> files %name:my_node_sync</span>
-<span id="cb504-63"><a href="#cb504-63" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> list</span>
-<span id="cb504-64"><a href="#cb504-64" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> show %name:my_node_sync</span>
-<span id="cb504-65"><a href="#cb504-65" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> start %name:my_node_sync</span>
-<span id="cb504-66"><a href="#cb504-66" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> state %name:my_node_sync</span>
-<span id="cb504-67"><a href="#cb504-67" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> stop %name:my_node_sync</span>
-<span id="cb504-68"><a href="#cb504-68" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> summary %name:my_node_sync</span>
-<span id="cb504-69"><a href="#cb504-69" aria-hidden="true" tabindex="-1"></a><span class="ex">stream</span> list</span>
-<span id="cb504-70"><a href="#cb504-70" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status /data/local_sync</span>
-<span id="cb504-71"><a href="#cb504-71" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;name&quot;:&quot;SYNC_NAME&quot;,&quot;reset&quot;:true}&#39;</span></span>
-<span id="cb504-72"><a href="#cb504-72" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
-<span id="cb504-73"><a href="#cb504-73" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb504-74"><a href="#cb504-74" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
-<span id="cb504-75"><a href="#cb504-75" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span> <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb504-76"><a href="#cb504-76" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> sessions</span>
-<span id="cb504-77"><a href="#cb504-77" aria-hidden="true" tabindex="-1"></a><span class="ex">transport</span></span>
-<span id="cb504-78"><a href="#cb504-78" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span>
-<span id="cb504-79"><a href="#cb504-79" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret test_file.bin</span>
-<span id="cb504-80"><a href="#cb504-80" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
-<span id="cb504-81"><a href="#cb504-81" aria-hidden="true" tabindex="-1"></a><span class="ex">watch_folder</span> list</span></code></pre></div>
+<span id="cb504-20"><a href="#cb504-20" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission / delete 1</span>
+<span id="cb504-21"><a href="#cb504-21" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self permission / show 1</span>
+<span id="cb504-22"><a href="#cb504-22" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> do self show / <span class="at">--fields</span><span class="op">=</span>id <span class="at">--output</span><span class="op">=</span>root_id</span>
+<span id="cb504-23"><a href="#cb504-23" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> list</span>
+<span id="cb504-24"><a href="#cb504-24" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> set_bearer_key self @file:my_private_key</span>
+<span id="cb504-25"><a href="#cb504-25" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> show %id:self</span>
+<span id="cb504-26"><a href="#cb504-26" aria-hidden="true" tabindex="-1"></a><span class="ex">api_details</span></span>
+<span id="cb504-27"><a href="#cb504-27" aria-hidden="true" tabindex="-1"></a><span class="ex">asperabrowser</span></span>
+<span id="cb504-28"><a href="#cb504-28" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> bandwidth %name:SYNC_NAME</span>
+<span id="cb504-29"><a href="#cb504-29" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> counters %name:SYNC_NAME</span>
+<span id="cb504-30"><a href="#cb504-30" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> delete ALL</span>
+<span id="cb504-31"><a href="#cb504-31" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:SYNC_NAME</span>
+<span id="cb504-32"><a href="#cb504-32" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> files %name:SYNC_NAME <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb504-33"><a href="#cb504-33" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> list</span>
+<span id="cb504-34"><a href="#cb504-34" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show %name:SYNC_NAME</span>
+<span id="cb504-35"><a href="#cb504-35" aria-hidden="true" tabindex="-1"></a><span class="ex">async</span> show ALL</span>
+<span id="cb504-36"><a href="#cb504-36" aria-hidden="true" tabindex="-1"></a><span class="ex">basic_token</span></span>
+<span id="cb504-37"><a href="#cb504-37" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
+<span id="cb504-38"><a href="#cb504-38" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
+<span id="cb504-39"><a href="#cb504-39" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> my_upload_folder/test_file.bin</span>
+<span id="cb504-40"><a href="#cb504-40" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
+<span id="cb504-41"><a href="#cb504-41" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
+<span id="cb504-42"><a href="#cb504-42" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
+<span id="cb504-43"><a href="#cb504-43" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
+<span id="cb504-44"><a href="#cb504-44" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
+<span id="cb504-45"><a href="#cb504-45" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb504-46"><a href="#cb504-46" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
+<span id="cb504-47"><a href="#cb504-47" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url,host){return &quot;DIRECT&quot;}&#39;</span></span>
+<span id="cb504-48"><a href="#cb504-48" aria-hidden="true" tabindex="-1"></a><span class="ex">license</span></span>
+<span id="cb504-49"><a href="#cb504-49" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/a_folder</span>
+<span id="cb504-50"><a href="#cb504-50" aria-hidden="true" tabindex="-1"></a><span class="ex">mkfile</span> my_upload_folder/a_file1 <span class="st">&quot;hello world&quot;</span></span>
+<span id="cb504-51"><a href="#cb504-51" aria-hidden="true" tabindex="-1"></a><span class="ex">mklink</span> my_upload_folder/a_folder my_upload_folder/tdlink</span>
+<span id="cb504-52"><a href="#cb504-52" aria-hidden="true" tabindex="-1"></a><span class="ex">rename</span> my_upload_folder a_file1 a_file</span>
+<span id="cb504-53"><a href="#cb504-53" aria-hidden="true" tabindex="-1"></a><span class="ex">search</span> / <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;mtime&quot;}&#39;</span></span>
+<span id="cb504-54"><a href="#cb504-54" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> create @json:<span class="st">&#39;{&quot;id&quot;:&quot;service1&quot;,&quot;type&quot;:&quot;WATCHD&quot;,&quot;run_as&quot;:{&quot;user&quot;:&quot;user1&quot;}}&#39;</span></span>
+<span id="cb504-55"><a href="#cb504-55" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> delete service1</span>
+<span id="cb504-56"><a href="#cb504-56" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> list</span>
+<span id="cb504-57"><a href="#cb504-57" aria-hidden="true" tabindex="-1"></a><span class="ex">slash</span></span>
+<span id="cb504-58"><a href="#cb504-58" aria-hidden="true" tabindex="-1"></a><span class="ex">space</span> /</span>
+<span id="cb504-59"><a href="#cb504-59" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> bandwidth %name:my_node_sync</span>
+<span id="cb504-60"><a href="#cb504-60" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> counters %name:my_node_sync</span>
+<span id="cb504-61"><a href="#cb504-61" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> create @json:<span class="st">&#39;{&quot;configuration&quot;:{&quot;name&quot;:&quot;my_node_sync&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_path_real&quot;},&quot;remote&quot;:{&quot;host&quot;:&quot;my_host&quot;,&quot;port&quot;:my_port,&quot;user&quot;:&quot;my_username&quot;,&quot;pass&quot;:&quot;my_password_here&quot;,&quot;path&quot;:&quot;my_remote_path&quot;}}}&#39;</span></span>
+<span id="cb504-62"><a href="#cb504-62" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> delete %name:my_node_sync</span>
+<span id="cb504-63"><a href="#cb504-63" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> files %name:my_node_sync</span>
+<span id="cb504-64"><a href="#cb504-64" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> list</span>
+<span id="cb504-65"><a href="#cb504-65" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> show %name:my_node_sync</span>
+<span id="cb504-66"><a href="#cb504-66" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> start %name:my_node_sync</span>
+<span id="cb504-67"><a href="#cb504-67" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> state %name:my_node_sync</span>
+<span id="cb504-68"><a href="#cb504-68" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> stop %name:my_node_sync</span>
+<span id="cb504-69"><a href="#cb504-69" aria-hidden="true" tabindex="-1"></a><span class="ex">ssync</span> summary %name:my_node_sync</span>
+<span id="cb504-70"><a href="#cb504-70" aria-hidden="true" tabindex="-1"></a><span class="ex">stream</span> list</span>
+<span id="cb504-71"><a href="#cb504-71" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status /data/local_sync</span>
+<span id="cb504-72"><a href="#cb504-72" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;name&quot;:&quot;SYNC_NAME&quot;,&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb504-73"><a href="#cb504-73" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> pull /aspera-test-dir-tiny <span class="at">--to-folder</span><span class="op">=</span>/data/local_sync @json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb504-74"><a href="#cb504-74" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> bandwidth_average</span>
+<span id="cb504-75"><a href="#cb504-75" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> cancel nd_xfer_id</span>
+<span id="cb504-76"><a href="#cb504-76" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb504-77"><a href="#cb504-77" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true,&quot;count&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id <span class="at">--output</span><span class="op">=</span>nd_xfer_id</span>
+<span id="cb504-78"><a href="#cb504-78" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
+<span id="cb504-79"><a href="#cb504-79" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span> <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb504-80"><a href="#cb504-80" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> modify nd_xfer_id @json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:10000}&#39;</span></span>
+<span id="cb504-81"><a href="#cb504-81" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> sessions</span>
+<span id="cb504-82"><a href="#cb504-82" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> show nd_xfer_id</span>
+<span id="cb504-83"><a href="#cb504-83" aria-hidden="true" tabindex="-1"></a><span class="ex">transport</span></span>
+<span id="cb504-84"><a href="#cb504-84" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span>
+<span id="cb504-85"><a href="#cb504-85" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret test_file.bin</span>
+<span id="cb504-86"><a href="#cb504-86" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
+<span id="cb504-87"><a href="#cb504-87" aria-hidden="true" tabindex="-1"></a><span class="ex">watch_folder</span> list</span></code></pre></div>
 <h2 data-number="8.14" id="open-telemetry"><span class="header-section-number">8.14</span> Open Telemetry</h2>
 <p>The <code>node</code> plugin supports Open Telemetry (OTel) for
 monitoring and tracing.</p>
@@ -11119,7 +11144,7 @@ this.</p></div>
 <h2 data-number="19.1" id="starting-a-sync-session"><span class="header-section-number">19.1</span> Starting a sync session</h2>
 <p>To start a sync session, use one of the three sync directions
 followed by a folder path (remote path for <code>pull</code>, local path
-elsewise). The path on the other side is specified using option:
+otherwise). The path on the other side is specified using option:
 <code>to_folder</code>.</p>
 <table>
 <colgroup>
@@ -12316,10 +12341,19 @@ Packages, then also install Ruby development package:
 <code>ruby-dev</code> or <code>ruby-devel</code>, depending on
 distribution.</p>
 <h2 data-number="26.3" id="ed25519-key-not-supported"><span class="header-section-number">26.3</span> ED25519 key not supported</h2>
-<p>ED25519 keys are deactivated since <code>ascli</code> version 0.9.24
-as it requires additional gems that require native compilation and thus
-caused problems. This type of key will just be ignored.</p>
-<p>To re-activate, set env var <code>ASCLI_ENABLE_ED25519</code> to
+<p>There are a few aspects concerning ED25519 keys.</p>
+<p>By default, the <code>aspera-cli</code> gem does not depend on the
+<code>ed25519</code> gem because it requires compilation of native code
+which can cause problems and prevent the installation of
+<code>ascli</code>, especially when using JRuby. Refer to <a href="https://github.com/net-ssh/net-ssh/issues/565">this</a>. If you
+want to use <code>ed25519</code> keys, then install the required
+gems:</p>
+<pre class="shell"><code>gem install ed25519 bcrypt_pbkdf</code></pre>
+<p>Use of ED25519 default SSH keys (<code>~/.ssh/ed25519</code>) are
+deactivated since <code>ascli</code> version 0.9.24 as it requires
+additional gems that require native compilation and thus caused
+problems. This type of key will just be ignored. To re-activate the use
+of those default keys, set env var <code>ASCLI_ENABLE_ED25519</code> to
 <code>true</code>.</p>
 <p>Without this deactivation, if such key was present in user&#39;s
 <code>.ssh</code> folder then the following error was generated:</p>
@@ -12334,7 +12368,7 @@ set env var <code>ASCLI_ENABLE_ECDSHA2</code> to <code>true</code>.</p>
 Unsupported algorithm</h2>
 <p>JRuby may not implement all the algorithms supported by OpenSSH.</p>
 <p>Add the following to option <code>ssh_options</code>:</p>
-<div class="sourceCode" id="cb618"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb618-1"><a href="#cb618-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;host_key&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;rsa-sha2-512&quot;</span><span class="ot">,</span><span class="st">&quot;rsa-sha2-256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;kex&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;curve25519-sha256&quot;</span><span class="ot">,</span><span class="st">&quot;diffie-hellman-group14-sha256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;encryption&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;aes256-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes192-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes128-ctr&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb619"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb619-1"><a href="#cb619-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;host_key&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;rsa-sha2-512&quot;</span><span class="ot">,</span><span class="st">&quot;rsa-sha2-256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;kex&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;curve25519-sha256&quot;</span><span class="ot">,</span><span class="st">&quot;diffie-hellman-group14-sha256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;encryption&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;aes256-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes192-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes128-ctr&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <p>e.g.</p>
 <pre class="shell"><code>--ssh-options=@json:&#39;{&quot;host_key&quot;:[&quot;rsa-sha2-512&quot;,&quot;rsa-sha2-256&quot;],&quot;kex&quot;:[&quot;curve25519-sha256&quot;,&quot;diffie-hellman-group14-sha256&quot;],&quot;encryption&quot;: [&quot;aes256-ctr&quot;, &quot;aes192-ctr&quot;, &quot;aes128-ctr&quot;]}&#39;</code></pre>
 <h2 data-number="26.5" id="error-ssl_read-unexpected-eof-while-reading"><span class="header-section-number">26.5</span> Error: &quot;SSL_read: unexpected
@@ -12344,7 +12378,8 @@ error, enable option <code>IGNORE_UNEXPECTED_EOF</code> for
 <code>ssl_options</code> in option <code>http_options</code>.</p>
 <pre class="shell"><code>--http-options=@json:&#39;{&quot;ssl_options&quot;:[&quot;IGNORE_UNEXPECTED_EOF&quot;]}&#39;</code></pre>
 <h2 data-number="26.6" id="error-ascp-lib64libc.so.6-version-glibc_2.28-not-found"><span class="header-section-number">26.6</span> Error: <code>ascp</code>:
-/lib64/libc.so.6: version `GLIBC_2.28&#39; not found</h2>
+<code>/lib64/libc.so.6</code>: version <code>GLIBC_2.28</code> not
+found</h2>
 <p>This happens on Linux x86 if you try to install
 <code>transferd</code> on a Linux version too old to support a newer
 <code>ascp</code> executable.</p>
@@ -12369,15 +12404,15 @@ it fails as it does not exist anymore...</li>
 </ul>
 <p>By default, <code>ascli</code> creates a config
 file:<code>~/.aspera/sdk/aspera.conf</code> like this:</p>
-<div class="sourceCode" id="cb622"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb622-1"><a href="#cb622-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&#39;1.0&#39;</span> <span class="ot">encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
-<span id="cb622-2"><a href="#cb622-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span> <span class="ot">version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
-<span id="cb622-3"><a href="#cb622-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">default</span>&gt;</span>
-<span id="cb622-4"><a href="#cb622-4" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">file_system</span>&gt;</span>
-<span id="cb622-5"><a href="#cb622-5" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">resume_suffix</span>&gt;.aspera-ckpt&lt;/<span class="kw">resume_suffix</span>&gt;</span>
-<span id="cb622-6"><a href="#cb622-6" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">partial_file_suffix</span>&gt;.partial&lt;/<span class="kw">partial_file_suffix</span>&gt;</span>
-<span id="cb622-7"><a href="#cb622-7" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">file_system</span>&gt;</span>
-<span id="cb622-8"><a href="#cb622-8" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">default</span>&gt;</span>
-<span id="cb622-9"><a href="#cb622-9" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb623"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb623-1"><a href="#cb623-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&#39;1.0&#39;</span> <span class="ot">encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb623-2"><a href="#cb623-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span> <span class="ot">version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+<span id="cb623-3"><a href="#cb623-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">default</span>&gt;</span>
+<span id="cb623-4"><a href="#cb623-4" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">file_system</span>&gt;</span>
+<span id="cb623-5"><a href="#cb623-5" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">resume_suffix</span>&gt;.aspera-ckpt&lt;/<span class="kw">resume_suffix</span>&gt;</span>
+<span id="cb623-6"><a href="#cb623-6" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">partial_file_suffix</span>&gt;.partial&lt;/<span class="kw">partial_file_suffix</span>&gt;</span>
+<span id="cb623-7"><a href="#cb623-7" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">file_system</span>&gt;</span>
+<span id="cb623-8"><a href="#cb623-8" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">default</span>&gt;</span>
+<span id="cb623-9"><a href="#cb623-9" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
 <p>In container, this is located in <code>/ibm_aspera</code>.</p>
 <p>One possibility to avoid that error is to disable partial filename
 suffix... But that only hides the problem.</p>

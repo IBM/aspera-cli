@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# cspell:ignore geminstadd transferspec passcode emea
+# cspell:ignore INCMAN geminstadd transferspec passcode emea
 
 # Tools used in README.erb.md
 
@@ -120,7 +120,7 @@ class DocHelper
           when 'username'
             preset_hash[param_name] = param_value.include?('@') ? SAMPLE_EMAIL : 'my_user'
             next
-          when /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
+          when /address/, /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
             preset_hash[param_name] = 'your value here'
             next
           end
@@ -158,7 +158,7 @@ class DocHelper
   def container_image; Aspera::Cli::Info::CONTAINER; end
 
   def gemspec
-    @gem_spec = Gem::Specification.load(@paths[:gemspecfile]) || raise("error loading #{@paths[:gemspecfile]}") if !@gem_spec
+    @gem_spec = Gem::Specification.load(@paths[:gem_spec_file]) || raise("error loading #{@paths[:gem_spec_file]}") if !@gem_spec
     @gem_spec
   end
 
@@ -416,7 +416,7 @@ class DocHelper
     @gem_spec = nil
     @undocumented_plugins = nil
     @paths = {}
-    %i[outfile template ascli asession makefile gemspecfile gemfile].each do |name|
+    %i[outfile template ascli asession makefile gem_spec_file gemfile].each do |name|
       @paths[name] = args.shift
       raise "Missing arg: #{name}" if @paths[name].nil?
     end
@@ -458,12 +458,12 @@ end
 def gems_in_group
   require 'bundler'
   gemfile = ARGV.shift or raise 'Missing argument: Gemfile'
-  groupname = ARGV.shift or raise 'Missing argument: group name'
+  group_name = ARGV.shift or raise 'Missing argument: group name'
   # Load the definition from the Gemfile and Gemfile.lock
   definition = Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil)
   # Gem names and version requirements in the selected group
   line = definition.dependencies.filter_map do |dep|
-    next unless dep.groups.include?(groupname.to_sym)
+    next unless dep.groups.include?(group_name.to_sym)
     "'#{dep.name}:#{dep.requirement.to_s.delete(' ')}'"
   end.join(' ')
   print(line)

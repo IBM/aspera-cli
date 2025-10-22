@@ -287,7 +287,7 @@ module Aspera
           end
           keys_to_delete.each{ |k| @option_http_options.delete(k)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          OAuth::Web.additionnal_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
+          OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # Register aspera REST call error handlers
@@ -1078,7 +1078,7 @@ module Aspera
         end
 
         # Send email using ERB template
-        # @param email_template_default [String] default template, can be overriden by option
+        # @param email_template_default [String] default template, can be overridden by option
         # @param values [Hash] values to be used in template, keys with default: to, from_name, from_email
         def send_email_template(email_template_default: nil, values: {})
           values[:to] ||= options.get_option(:notify_to, mandatory: true)
@@ -1201,7 +1201,7 @@ module Aspera
           )
         end
 
-        # Artifically raise an exception for tests
+        # Artificially raise an exception for tests
         def execute_test
           case options.get_next_command(%i[throw web])
           when :throw

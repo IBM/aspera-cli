@@ -1,6 +1,8 @@
 ##################################
 # Integration tests
 
+# cspell:ignore INCMAN Pjns Ptst noded
+
 # root folder is one level up
 DIR_TOP=../
 
@@ -37,7 +39,7 @@ endef
 F=$(DIR_TMP)t/
 # Store state values, like identifiers
 STATE=$(DIR_TMP)state/
-# flasg to check if tmp folder exists
+# flag to check if tmp folder exists
 TMP_EXISTS=$(F).exists
 
 skip:
@@ -842,15 +844,15 @@ $(F)aoc_wizard_2: $(TMP_EXISTS)
 	$(BEG_ERR)$(INCMAN)$(CLI_TEST) config tokens show foobar$(END_ERR_HIDE)
 	$(INCMAN)$(CLI_WIZ_TEST) config wizard @preset:aoc.org aoc mypreset --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
-$(F)aocfxgw: $(TMP_EXISTS)
+$(F)aoc_faspex_gateway: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -f $(DIR_TMP)pid_aocfxgw
-	$(INCMAN)$(CLI_TEST) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
-	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
-	kill -0 $$(cat $(DIR_TMP)pid_aocfxgw)
+	rm -f $(DIR_TMP)pid_aoc_faspex_gateway
+	$(INCMAN)$(CLI_TEST) aoc gateway --pid-file=$(DIR_TMP)pid_aoc_faspex_gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aoc_faspex_gateway;do sleep 1;let --i;done
+	kill -0 $$(cat $(DIR_TMP)pid_aoc_faspex_gateway)
 	$(CLI_TEST) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --warn-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	kill -TERM $$(cat $(DIR_TMP)pid_aocfxgw)
-	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
+	kill -TERM $$(cat $(DIR_TMP)pid_aoc_faspex_gateway)
+	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_aoc_faspex_gateway;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(F)aocg1: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -871,9 +873,10 @@ $(F)aocg4: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc user workspaces list
 	@$(STOP_TEST) $@
-$(F)aocg5: $(TMP_EXISTS)
+$(F)aoc_user_profile: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc user profile show
+	$(CLI_TEST) aoc user profile show --http-options=@json:'{"token_refresh_threshold":10000000000}'
 	@$(STOP_TEST) $@
 $(F)aocg6: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -904,7 +907,7 @@ $(F)aoc_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) aoc --preset=aoc_web user profile show
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocgen,$(F)aoc_detect $(F)aoc_wizard $(F)aoc_wizard_2 $(F)aocg1 $(F)aocg2 $(F)aocg3 $(F)aocg4 $(F)aocg5 $(F)aocg6 $(F)aocuprefshow $(F)aocuprefmod $(F)aocucontactlist $(F)aocg7 $(F)aocg8))
+$(eval $(call test_suite_all,taocgen,$(F)aoc_detect $(F)aoc_wizard $(F)aoc_wizard_2 $(F)aocg1 $(F)aocg2 $(F)aocg3 $(F)aocg4 $(F)aoc_user_profile $(F)aocg6 $(F)aocuprefshow $(F)aocuprefmod $(F)aocucontactlist $(F)aocg7 $(F)aocg8))
 #######################################################################################################################
 $(F)aocfbr: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1082,7 +1085,7 @@ $(F)aocshlk1: $(F)aocshlk2 $(F)aocshlk3
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files short_link /testdst private list
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownd $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownd $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aoc_faspex_gateway))
 #######################################################################################################################
 $(F)aoc_pack_send1: $(TMP_EXISTS)
 	@$(START_TEST) $@

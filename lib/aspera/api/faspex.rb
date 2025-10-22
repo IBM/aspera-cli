@@ -5,10 +5,10 @@ require 'aspera/oauth/base'
 require 'digest'
 
 module Aspera
-  # Implement OAuth eschange for Faspex public link
+  # Implement OAuth for Faspex public link
   class FaspexPubLink < OAuth::Base
     class << self
-      attr_accessor :additionnal_info
+      attr_accessor :additional_info
     end
     # @param context         The `context` query parameter in public link
     # @param redirect_uri    URI of web UI login

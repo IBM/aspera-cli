@@ -379,9 +379,8 @@ module Aspera
 
       attr_reader :sessions
 
-      # notify progress to callback
-      # @param event management port event
-      # @param session sessin object
+      # Notify progress to callback
+      # @param event [Hash] management port event
       def process_progress(event)
         session_id = event['SessionId']
         case event['Type']

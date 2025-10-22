@@ -170,7 +170,7 @@ module Aspera
           return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)
         end
 
-        # @return [Hash] Headers to call node API with accesskey and auth
+        # @return [Hash] Headers to call node API with access key and auth
         def bearer_headers(bearer_auth, access_key: nil)
           # If username is not provided, use the access key from the token
           if access_key.nil?
@@ -210,7 +210,7 @@ module Aspera
       end
 
       # Update transfer spec with special additional tags
-      # @param tspec [Hash] Transfer spec to odified
+      # @param tspec [Hash] Transfer spec to be modified
       # @return [Hash] initial modified tspec
       def add_tspec_info(tspec)
         tspec.deep_merge!(@add_tspec) unless @add_tspec.nil?
@@ -364,7 +364,7 @@ module Aspera
         [apifid, source_paths]
       end
 
-      # Recursively find files matching labda
+      # Recursively find files matching lambda
       # @param top_file_id [String] Search root
       # @param test_lambda [Proc] Test function
       def find_files(top_file_id, test_lambda)
