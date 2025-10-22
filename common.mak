@@ -28,7 +28,7 @@ $(DIR_TMP).exists:
 	@touch $@
 clean::
 	rm -fr $(DIR_TMP)
-.PHONY: ensure_gems_installed gem_check_signing_key clean_gems_installed
+.PHONY: ensure_gems_installed clean_gems_installed gem_check_signing_key
 # Ensure required ruby gems are installed
 ensure_gems_installed: $(DIR_TOP).gems_checked
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile

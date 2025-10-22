@@ -17,7 +17,7 @@ module Aspera
         $VERBOSE = nil
         Net::SSH::Authentication::Session.class_eval do
           define_method(:default_keys) do
-            %w[~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa].freeze
+            %w[.ssh .ssh2].product(%w[rsa dsa ecdsa]).map{"~/#{_1}/id_#{_2}"}.freeze
           end
           private(:default_keys)
         end rescue nil
@@ -81,6 +81,6 @@ module Aspera
   end
 end
 
-# HACK: deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
-Aspera::Ssh.disable_ed25519_keys if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
+# Deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
+Aspera::Ssh.disable_ed25519_keys if Gem::Specification.find_all_by_name('ed25519').none?
 Aspera::Ssh.disable_ecd_sha2_algorithms if defined?(JRUBY_VERSION) && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')

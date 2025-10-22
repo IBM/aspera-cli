@@ -310,13 +310,13 @@ Required Ruby version: >= 3.1.
 
 **In priority**, refer to the official Ruby documentation:
 
-- [Download Ruby](https://www.ruby-lang.org/en/downloads/)
-- [Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
+- [Official Ruby Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
 Latest version of `ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If only an older Ruby version is available due to system constraints, then use an older version of `ascli` that supports it.
+If only an older Ruby version must be used due to system constraints, then use an older version of `ascli` that supports it.
 
 #### Windows: Installer
 
@@ -340,20 +340,22 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 
 #### macOS: `brew`
 
-**macOS** comes with Ruby 2.6.
-It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes).
-It will be removed from macOS in the future.
-Do not use it.
-
 The recommended way is to use [Homebrew](https://brew.sh/).
 
 ```shell
 brew install ruby
 ```
 
+> [!WARNING]
+> **macOS** comes with Ruby 2.6.
+> It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes).
+> It will be removed from macOS in the future.
+> Do not use it.
+> Use the required version of Ruby.
+
 This installs a recent Ruby suitable for `ascli`.
 
-To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
+To add PATH to Ruby on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
 export PATH="$(brew --prefix ruby)/bin:$PATH"
@@ -362,6 +364,8 @@ export PATH="$(gem env gemdir)/bin:$PATH"
 
 > [!NOTE]
 > Two separate lines are needed because the second one depends on the first one.
+> This is what is displayed at the end of the installation of the ruby tap, same as message from:
+> `brew info ruby`
 
 #### Linux: Package
 
@@ -580,6 +584,8 @@ See [Gemfile](Gemfile):
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
 | sequel | ~> 5.96 | (jruby) for async DB |
+| ed25519 | ~> 1.4 | (no jruby) for ed25519 |
+| bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 |
 
 Install like this:
 
@@ -592,6 +598,8 @@ gem install bigdecimal -v '~> 3.1'
 gem install sqlite3 -v '~> 2.7'
 gem install jdbc-sqlite3 -v '~> 3.46'
 gem install sequel -v '~> 5.96'
+gem install ed25519 -v '~> 1.4'
+gem install bcrypt_pbkdf -v '~> 1.1'
 ```
 
 ### Ruby Gem: `aspera-cli`
@@ -1344,23 +1352,29 @@ Details can be found here:
 
 The following examples give the same result on Windows using PowerShell:
 
+- Check your powershell version:
+
 ```powershell
 PS C:\> echo $psversiontable.psversion
 
 Major  Minor  Build  Revision
 -----  -----  -----  --------
 5      1      19041  4046
+```
 
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
 PS C:\> ascli config echo  --% @json:'{"k":"v","x":"y"}'
+```
 
+- Triple double quotes are replaced with a single double quote in normal mode:
+
+```powershell
 PS C:\> ascli config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 ```
 
-> [!NOTE]
-> The special PowerShell argument `--%` places PowerShell in "stop-parsing" mode.
-> Triple double quotes 
-
-To insert variables in the JSON string, one can do:
+- To insert PowerShell variables in the JSON string, one can do:
 
 ```powershell
 $email="john@example.com"
@@ -1391,7 +1405,7 @@ ascli config echo 1 2 3
 ERROR: Argument: unprocessed values: ["2", "3"]
 ```
 
-`config echo` displays the value of the **first** argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
+`config echo` displays the value of the **first** argument using the current output `format`.
 
 > [!NOTE]
 > It gets its value after shell command line parsing and `ascli` extended value parsing.
@@ -1404,7 +1418,7 @@ Depending on the case, a different `format` option is used to display the actual
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
 
 Double quotes are processed by the shell to create a single string argument.
-For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
+For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
 
 ```shell
 ascli config echo "Hello World" --format=text
@@ -1423,7 +1437,7 @@ Even if the variable contains spaces it results only in one argument for `ascli`
 
 > [!NOTE]
 > We use a simple shell variable in this example.
-> Note that it does not need to be exported as an environment variable.
+> It does not need to be exported as an environment variable.
 
 ```shell
 MYVAR="Hello World"
@@ -9282,7 +9296,7 @@ This also requires Ruby header files.
 If Ruby was installed as a Linux Packages, then also install Ruby development package:
 `ruby-dev` or `ruby-devel`, depending on distribution.
 
-### ED25519 key not supported
+### Private key type: `ed25519` not supported by default
 
 There are a few aspects concerning ED25519 keys.
 
@@ -9294,21 +9308,8 @@ If you want to use `ed25519` keys, then install the required gems:
 gem install ed25519 bcrypt_pbkdf
 ```
 
-Use of ED25519 default SSH keys (`~/.ssh/ed25519`) are deactivated since `ascli` version 0.9.24 as it requires additional gems that require native compilation and thus caused problems.
-This type of key will just be ignored.
-To re-activate the use of those default keys, set env var `ASCLI_ENABLE_ED25519` to `true`.
-
-Without this deactivation, if such key was present in user's `.ssh` folder then the following error was generated:
-
-```text
-OpenSSH keys only supported if ED25519 is available
-```
-
-Which meant that you do not have Ruby support for ED25519 SSH keys.
-You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
-
-In addition, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
-To re-activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.
+In addition, if **JRuby** is used, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
+To activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.
 
 ### JRuby: `net-ssh`: Unsupported algorithm
 
@@ -9339,7 +9340,7 @@ To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options
 
 This happens on Linux x86 if you try to install `transferd` on a Linux version too old to support a newer `ascp` executable.
 
-Workaround: Install an older version:
+Workaround: Install an older version of `transferd`:
 
 ```shell
 ascli config transferd install 1.1.2

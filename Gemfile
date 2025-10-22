@@ -16,6 +16,8 @@ group :optional do
   gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
   gem('jdbc-sqlite3', '~> 3.46') if defined?(JRUBY_VERSION) # for async DB
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB
+  gem('ed25519', '~> 1.4') unless defined?(JRUBY_VERSION) # for ed25519
+  gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for ed25519
 end
 
 # Used only for development
