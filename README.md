@@ -8773,7 +8773,7 @@ Documentation on Async Node API can be found on [IBM Developer Portal](https://d
 Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
 | Field | Type | Description |
-| --------------------------------- | ------- | -------------------------------------------------------------------------------- |
+| ---------------------------------------- | ------- | -------------------------------------------------------------------------------- |
 | ascp_dir | string | Directory containing ascp executable to use. |
 | assume_no_mods | boolean | Assume that the directory structure has not been modified.<br/>(`--assume-no-mods={boolean}`) |
 | checksum | string | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none` |
@@ -8790,11 +8790,15 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 | delete_delay | boolean | Delay actual deletes until the end of the synchronization. |
 | direction | string | The direction of replication relative to the local.<br/>Allowed values: `bidi`, `pull`, `push` |
 | exclude_dirs_older_than | object | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
+| exclude_dirs_older_than.absolute | string | UTC timestamp. Empty value for disabled. |
+| exclude_dirs_older_than.relative_seconds | integer | Relative to async start time. `-1` for disabled. |
 | filters | array | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | ignore_delete | boolean | Do not copy removals to the peer. |
 | ignore_mode | boolean | Source files that have had their mode changed after the initial. transfer will not update the destination file mode. |
 | ignore_remote_host_sync_name | boolean | Do not check that the remote host being used for the current. transfer matches the host used when the local database was created |
 | local | object | &nbsp; |
+| local.pass | string | Authenticate the local async with the specified password. |
+| local.path | string | The directory to be synchronized on the local host.<br/>(`--local-dir={string}`) |
 | local_apply_docroot | boolean | Prepend the docroot to the directory on the local host.<br/>(`--apply-local-docroot={boolean}`) |
 | local_checksum_threads | integer | Maximum number of threads to do checksum on the local host. Value must be between 1 and 99. |
 | local_db_dir | string | Use the specified database directory on the local host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--local-db-dir={string}`) |
@@ -8810,6 +8814,9 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 | local_scan_threads | integer | Number of directory scanning threads on the local host. Value must be between 1 and 99 |
 | local_stat_cache_size | integer | Set stat cache size on the local host. 0 for disabled. |
 | log | object | &nbsp; |
+| log.level | &nbsp; | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2` |
+| log.local_dir | string | Use the specified logging directory on the local host.<br/>(`--alt-logdir={string}`) |
+| log.remote_dir | string | Use the specified logging directory on the remote host. |
 | manifest_path | string | A directory path where ascp will create manifest TEXT files (passed to ascp as --file-manifest-path) |
 | mirror | boolean | Force the pulling side to be exactly like the pushing side, removing files on the destination that don't exist on the source and resending source files that don't have an exact match on the destination. Cannot be used in bi-directional mode.<br/>(`--mirror`) |
 | mode | string | Specify whether async runs continuously or not. In one_time mode, async stops after the first full synchronization.<br/>Allowed values: `one_time`, `continuous`<br/>(special:`--continuous={enum}`) |
@@ -8831,6 +8838,23 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 | preserve_uid | boolean | Preserve the file owner's UID. |
 | quiet | boolean | Disable progress display. |
 | remote | object | &nbsp; |
+| remote.connect_mode | &nbsp; | Define how to connect to the remote.<br/>Allowed values: `ssh`, `ws` |
+| remote.fingerprint | string | Check it against server SSH host key fingerprint. |
+| remote.host | string | Use the specified host name or address of the remote host. |
+| remote.pass | string | Authenticate the transfer with the specified password. |
+| remote.path | string | Synchronize the specified directory on the remote host. |
+| remote.port | integer | Use the specified TCP port for SSH. Used when connect_mode is `ssh` |
+| remote.private_key_paths | array | Authenticate with the specified SSH private key file. |
+| remote.proxy | object | Specify the address of the Aspera high-speed proxy server. |
+| remote.proxy.host | string | Use the specified host name or address of the proxy. |
+| remote.proxy.pass | string | Authenticate to the proxy with the specified password. |
+| remote.proxy.port | integer | Use the specified port, default is 9091 for dnat, 9092. for dnats |
+| remote.proxy.protocol | &nbsp; | The protocol to be used.<br/>Allowed values: `none`, `dnat`, `dnats` |
+| remote.proxy.user | string | Authenticate to the proxy with the specified username. |
+| remote.token | string | Token string passed to server's authentication service. |
+| remote.token_node_user | string | Node API user identity associated with the token. Required for node user bearer tokens |
+| remote.user | string | Authenticate the transfer with the specified username. |
+| remote.ws_port | integer | Use the specified port for Websocket. Used when connect_mode is `ws`. |
 | remote_checksum_threads | integer | Maximum number of threads to do checksum on the remote host. Value must be between 1 and 99 |
 | remote_db_dir | string | Use the specified database directory on the remote host. Default is `.private-asp` at the root level of the synchronized directory. |
 | remote_db_store_dir | string | Store/Restore the database to/from the specified directory on the remote host. The value can be an absolute path, an URI or - (use the remote sync dir). |
@@ -8847,6 +8871,9 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 | remove_after_transfer | boolean | Remove source files after they are successfully synchronized. |
 | reset | boolean | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot |
 | resume | object | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumeable, but only if async is then restarted with 'reset' disabled. |
+| resume.enabled | boolean | Enable the possibility of resuming individual file transfers between async sessions. |
+| resume.max_age | integer | Sets the age limit in days for temporary files that will be preserved on cleanup (usually at async's start and stop) for potential transfer resume. Temp files older than the given value will be removed regardless of whether they might be resumeable. |
+| resume.min_size | integer | This field specifies the minimum size of files that will be allowed to resume. |
 | resume_scan | boolean | Resume the scan from where the previous execution left off. |
 | scan_dir_rename | boolean | Enable the detection of renamed directories and files compared. to the previous scan, based on matching inodes |
 | scan_file_rename | boolean | Enable the detection of renamed files compared to the previous scan, based on matching inodes. |
@@ -8857,7 +8884,22 @@ Parameters `local.path` and `remote.path` are not allowed since they are provide
 | tags | object | User-defined metadata tags. |
 | transfer_threads | array | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size |
 | transport | object | &nbsp; |
+| transport.cipher | &nbsp; | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`<br/>(`--cipher={enum}`) |
+| transport.compression | &nbsp; | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`<br/>(`--compression={enum}`) |
+| transport.datagram_size | integer | Specify the datagram size (MTU) for FASP. By default it uses the detected path MTU. |
+| transport.min_rate | integer | Attempt to transfer no slower than the specified rate (in bps). |
+| transport.rate_policy | &nbsp; | Defines how `ascp` will manage the bandwidth.<br/>Allowed values: `fair`, `fixed`, `high`, `low` |
+| transport.raw_options | array | Pass arbitrary arguments to `ascp`. |
+| transport.read_block_size | integer | Use the specified block size (in bytes) for reading. Default is determined by `aspera.conf`. |
+| transport.rexmsg_size | integer | Use the specified size (in bytes) for a retransmission request. Default is determined by `aspera.conf`. |
+| transport.target_rate | integer | Transfer no faster than the specified rate (in bps). |
+| transport.udp_port | integer | Use the specified UDP port for FASP data transfer. |
+| transport.write_block_size | integer | Use the specified block size (in bytes) for writing. Default is determined by `aspera.conf`. |
 | watchd | object | When connection is configured, `asperawatchd` is used to detect the changes on the source directory.<br/>(special:`--watchd={object}`) |
+| watchd.datastore | &nbsp; | Specify the type of datastore, `none` for disabled.<br/>Allowed values: `none`, `redis`, `scalekv` |
+| watchd.domain | string | Specify the domain. Default is the current username. |
+| watchd.host | string | Use the specified host name or address to connect to the datastore. |
+| watchd.port | integer | Use the specified port. |
 | write_gid | string | Try to write files as the specified group. |
 | write_uid | string | Try to write files as the specified user. |
 

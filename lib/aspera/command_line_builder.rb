@@ -57,6 +57,7 @@ module Aspera
           Aspera.assert(%w[x-cli-option x-cli-envvar x-cli-special].any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(CLI_AGENT, info)
           # info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if ascp && !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
           info.freeze
+          validate_schema(info, ascp: ascp) if info['type'].eql?('object') && info['properties']
         end
       end
 

@@ -11214,9 +11214,9 @@ Developer Portal</a>.</p>
 not allowed since they are provided on command line.</p>
 <table>
 <colgroup>
-<col style="width: 27%" />
+<col style="width: 31%" />
 <col style="width: 5%" />
-<col style="width: 66%" />
+<col style="width: 62%" />
 </colgroup>
 <thead>
 <tr>
@@ -11324,6 +11324,16 @@ Allowed values: <code>bidi</code>, <code>pull</code>,
 absolute or async start time - relative_seconds</td>
 </tr>
 <tr>
+<td>exclude_dirs_older_than.absolute</td>
+<td>string</td>
+<td>UTC timestamp. Empty value for disabled.</td>
+</tr>
+<tr>
+<td>exclude_dirs_older_than.relative_seconds</td>
+<td>integer</td>
+<td>Relative to async start time. <code>-1</code> for disabled.</td>
+</tr>
+<tr>
 <td>filters</td>
 <td>array</td>
 <td>The filters allow to further specify which files have to be excluded
@@ -11351,6 +11361,17 @@ transfer matches the host used when the local database was created</td>
 <td>local</td>
 <td>object</td>
 <td> </td>
+</tr>
+<tr>
+<td>local.pass</td>
+<td>string</td>
+<td>Authenticate the local async with the specified password.</td>
+</tr>
+<tr>
+<td>local.path</td>
+<td>string</td>
+<td>The directory to be synchronized on the local host.<br />
+(<code>--local-dir={string}</code>)</td>
 </tr>
 <tr>
 <td>local_apply_docroot</td>
@@ -11444,6 +11465,24 @@ be between 1 and 99</td>
 <td>log</td>
 <td>object</td>
 <td> </td>
+</tr>
+<tr>
+<td>log.level</td>
+<td> </td>
+<td>Use the specified log level.<br />
+Allowed values: <code>log</code>, <code>dbg1</code>,
+<code>dbg2</code></td>
+</tr>
+<tr>
+<td>log.local_dir</td>
+<td>string</td>
+<td>Use the specified logging directory on the local host.<br />
+(<code>--alt-logdir={string}</code>)</td>
+</tr>
+<tr>
+<td>log.remote_dir</td>
+<td>string</td>
+<td>Use the specified logging directory on the remote host.</td>
 </tr>
 <tr>
 <td>manifest_path</td>
@@ -11571,6 +11610,98 @@ destination.</td>
 <td> </td>
 </tr>
 <tr>
+<td>remote.connect_mode</td>
+<td> </td>
+<td>Define how to connect to the remote.<br />
+Allowed values: <code>ssh</code>, <code>ws</code></td>
+</tr>
+<tr>
+<td>remote.fingerprint</td>
+<td>string</td>
+<td>Check it against server SSH host key fingerprint.</td>
+</tr>
+<tr>
+<td>remote.host</td>
+<td>string</td>
+<td>Use the specified host name or address of the remote host.</td>
+</tr>
+<tr>
+<td>remote.pass</td>
+<td>string</td>
+<td>Authenticate the transfer with the specified password.</td>
+</tr>
+<tr>
+<td>remote.path</td>
+<td>string</td>
+<td>Synchronize the specified directory on the remote host.</td>
+</tr>
+<tr>
+<td>remote.port</td>
+<td>integer</td>
+<td>Use the specified TCP port for SSH. Used when connect_mode is
+<code>ssh</code></td>
+</tr>
+<tr>
+<td>remote.private_key_paths</td>
+<td>array</td>
+<td>Authenticate with the specified SSH private key file.</td>
+</tr>
+<tr>
+<td>remote.proxy</td>
+<td>object</td>
+<td>Specify the address of the Aspera high-speed proxy server.</td>
+</tr>
+<tr>
+<td>remote.proxy.host</td>
+<td>string</td>
+<td>Use the specified host name or address of the proxy.</td>
+</tr>
+<tr>
+<td>remote.proxy.pass</td>
+<td>string</td>
+<td>Authenticate to the proxy with the specified password.</td>
+</tr>
+<tr>
+<td>remote.proxy.port</td>
+<td>integer</td>
+<td>Use the specified port, default is 9091 for dnat, 9092. for
+dnats</td>
+</tr>
+<tr>
+<td>remote.proxy.protocol</td>
+<td> </td>
+<td>The protocol to be used.<br />
+Allowed values: <code>none</code>, <code>dnat</code>,
+<code>dnats</code></td>
+</tr>
+<tr>
+<td>remote.proxy.user</td>
+<td>string</td>
+<td>Authenticate to the proxy with the specified username.</td>
+</tr>
+<tr>
+<td>remote.token</td>
+<td>string</td>
+<td>Token string passed to server&#39;s authentication service.</td>
+</tr>
+<tr>
+<td>remote.token_node_user</td>
+<td>string</td>
+<td>Node API user identity associated with the token. Required for node
+user bearer tokens</td>
+</tr>
+<tr>
+<td>remote.user</td>
+<td>string</td>
+<td>Authenticate the transfer with the specified username.</td>
+</tr>
+<tr>
+<td>remote.ws_port</td>
+<td>integer</td>
+<td>Use the specified port for Websocket. Used when connect_mode is
+<code>ws</code>.</td>
+</tr>
+<tr>
 <td>remote_checksum_threads</td>
 <td>integer</td>
 <td>Maximum number of threads to do checksum on the remote host. Value
@@ -11677,6 +11808,26 @@ enabled, transfers interrupted during that session will be resumeable,
 but only if async is then restarted with &#39;reset&#39; disabled.</td>
 </tr>
 <tr>
+<td>resume.enabled</td>
+<td>boolean</td>
+<td>Enable the possibility of resuming individual file transfers between
+async sessions.</td>
+</tr>
+<tr>
+<td>resume.max_age</td>
+<td>integer</td>
+<td>Sets the age limit in days for temporary files that will be
+preserved on cleanup (usually at async&#39;s start and stop) for potential
+transfer resume. Temp files older than the given value will be removed
+regardless of whether they might be resumeable.</td>
+</tr>
+<tr>
+<td>resume.min_size</td>
+<td>integer</td>
+<td>This field specifies the minimum size of files that will be allowed
+to resume.</td>
+</tr>
+<tr>
 <td>resume_scan</td>
 <td>boolean</td>
 <td>Resume the scan from where the previous execution left off.</td>
@@ -11739,11 +11890,102 @@ files smaller or equal to the specified size</td>
 <td> </td>
 </tr>
 <tr>
+<td>transport.cipher</td>
+<td> </td>
+<td>Specify encryption algorithm for file data.<br />
+Allowed values: <code>none</code>, <code>aes128</code>,
+<code>aes192</code>, <code>aes256</code>, <code>aes128cfb</code>,
+<code>aes192cfb</code>, <code>aes256cfb</code>, <code>aes128gcm</code>,
+<code>aes192gcm</code>, <code>aes256gcm</code><br />
+(<code>--cipher={enum}</code>)</td>
+</tr>
+<tr>
+<td>transport.compression</td>
+<td> </td>
+<td>Compress a file before transfer using the specified MODE.<br />
+Allowed values: <code>none</code>, <code>zlib</code><br />
+(<code>--compression={enum}</code>)</td>
+</tr>
+<tr>
+<td>transport.datagram_size</td>
+<td>integer</td>
+<td>Specify the datagram size (MTU) for FASP. By default it uses the
+detected path MTU.</td>
+</tr>
+<tr>
+<td>transport.min_rate</td>
+<td>integer</td>
+<td>Attempt to transfer no slower than the specified rate (in bps).</td>
+</tr>
+<tr>
+<td>transport.rate_policy</td>
+<td> </td>
+<td>Defines how <code>ascp</code> will manage the bandwidth.<br />
+Allowed values: <code>fair</code>, <code>fixed</code>,
+<code>high</code>, <code>low</code></td>
+</tr>
+<tr>
+<td>transport.raw_options</td>
+<td>array</td>
+<td>Pass arbitrary arguments to <code>ascp</code>.</td>
+</tr>
+<tr>
+<td>transport.read_block_size</td>
+<td>integer</td>
+<td>Use the specified block size (in bytes) for reading. Default is
+determined by <code>aspera.conf</code>.</td>
+</tr>
+<tr>
+<td>transport.rexmsg_size</td>
+<td>integer</td>
+<td>Use the specified size (in bytes) for a retransmission request.
+Default is determined by <code>aspera.conf</code>.</td>
+</tr>
+<tr>
+<td>transport.target_rate</td>
+<td>integer</td>
+<td>Transfer no faster than the specified rate (in bps).</td>
+</tr>
+<tr>
+<td>transport.udp_port</td>
+<td>integer</td>
+<td>Use the specified UDP port for FASP data transfer.</td>
+</tr>
+<tr>
+<td>transport.write_block_size</td>
+<td>integer</td>
+<td>Use the specified block size (in bytes) for writing. Default is
+determined by <code>aspera.conf</code>.</td>
+</tr>
+<tr>
 <td>watchd</td>
 <td>object</td>
 <td>When connection is configured, <code>asperawatchd</code> is used to
 detect the changes on the source directory.<br />
 (special:<code>--watchd={object}</code>)</td>
+</tr>
+<tr>
+<td>watchd.datastore</td>
+<td> </td>
+<td>Specify the type of datastore, <code>none</code> for disabled.<br />
+Allowed values: <code>none</code>, <code>redis</code>,
+<code>scalekv</code></td>
+</tr>
+<tr>
+<td>watchd.domain</td>
+<td>string</td>
+<td>Specify the domain. Default is the current username.</td>
+</tr>
+<tr>
+<td>watchd.host</td>
+<td>string</td>
+<td>Use the specified host name or address to connect to the
+datastore.</td>
+</tr>
+<tr>
+<td>watchd.port</td>
+<td>integer</td>
+<td>Use the specified port.</td>
 </tr>
 <tr>
 <td>write_gid</td>
