@@ -1134,21 +1134,27 @@ module Aspera
             Log.log.debug('skip default config')
             return
           end
-          if @config_presets.key?(CONF_PRESET_DEFAULTS) &&
-              @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
-            default_config_name = @config_presets[CONF_PRESET_DEFAULTS][plugin_name_sym.to_s]
-            if !@config_presets.key?(default_config_name)
-              Log.log.error do
-                "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
-                  'Please fix the issue: either create preset with one parameter: ' \
-                  "(#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}') " \
-                  "or remove default (#{Info::CMD_NAME} config id default remove #{plugin_name_sym})."
-              end
-            end
-            raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
-            return default_config_name
+          if !@config_presets.key?(CONF_PRESET_DEFAULTS)
+            Log.log.debug('No default section')
+            return
           end
-          return
+          Aspera.assert_type(@config_presets[CONF_PRESET_DEFAULTS], Hash){'default section'}
+          if !@config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
+            Log.log.debug("No default for #{plugin_name_sym}")
+            return
+          end
+          default_config_name = @config_presets[CONF_PRESET_DEFAULTS][plugin_name_sym.to_s]
+          if !@config_presets.key?(default_config_name)
+            Log.log.error do
+              "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
+                "Please fix the issue: either create preset with one parameter:\n" \
+                "#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}'\n" \
+                "or remove default:\n#{Info::CMD_NAME} config id default remove #{plugin_name_sym}"
+            end
+            raise Cli::Error, "No such preset: #{default_config_name}"
+          end
+          Aspera.assert_type(@config_presets[default_config_name], Hash, type: Cli::Error){'preset type'}
+          return default_config_name
         end
 
         # @return [Hash] result of execution of vault command
