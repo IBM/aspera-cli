@@ -13,6 +13,7 @@ module Aspera
     # OAuth 2.0 Authorization Framework: https://tools.ietf.org/html/rfc6749
     # Bearer Token Usage: https://tools.ietf.org/html/rfc6750
     class Base
+      Aspera.require_method!(:create_token)
       # @param **             Parameters for REST
       # @param client_id      [String, nil]
       # @param client_secret  [String, nil]
@@ -31,8 +32,7 @@ module Aspera
         cache_ids: nil,
         **rest_params
       )
-        Aspera.assert(respond_to?(:create_token), 'create_token method must be defined', type: InternalError)
-        # this is the OAuth API
+        # This is the OAuth API
         @api = Rest.new(**rest_params)
         @scope = nil
         @token_cache_id = nil
@@ -43,6 +43,7 @@ module Aspera
         @use_query = use_query
         @base_cache_ids = cache_ids.nil? ? [] : cache_ids.clone
         Aspera.assert_type(@base_cache_ids, Array)
+        # TODO: this shall be done in class, using cache_ids
         @base_cache_ids.push(@api.auth_params[:username]) if @api.auth_params.key?(:username)
         @base_cache_ids.compact!
         @base_cache_ids.freeze
@@ -79,12 +80,13 @@ module Aspera
         )
       end
 
-      # @return Hash with optional general parameters
+      # @param add_secret [Boolean] Add secret in default call parameters
+      # @return [Hash] Optional general parameters
       def optional_scope_client_id(add_secret: false)
         call_params = {}
         call_params[:scope] = @scope unless @scope.nil?
         call_params[:client_id] = @client_id unless @client_id.nil?
-        call_params[:client_secret] = @client_secret if add_secret && !@client_id.nil?
+        call_params[:client_secret] = @client_secret unless !add_secret || @client_id.nil? || @client_secret.nil?
         return call_params
       end
 
@@ -123,7 +125,7 @@ module Aspera
             if !refresh_token.nil?
               Log.log.info{"refresh=[#{refresh_token}]".bg_green}
               # NOTE: AoC admin token has no refresh, and lives by default 1800secs
-              resp = create_token_call(optional_scope_client_id.merge(grant_type: 'refresh_token', refresh_token: refresh_token))
+              resp = create_token_call(optional_scope_client_id(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
               if resp[:http].code.start_with?('2')
                 # save only if success
                 json_data = resp[:http].body

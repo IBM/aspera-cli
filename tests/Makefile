@@ -876,7 +876,6 @@ $(F)aocg4: $(TMP_EXISTS)
 $(F)aoc_user_profile: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc user profile show
-	$(CLI_TEST) aoc user profile show --http-options=@json:'{"token_refresh_threshold":10000000000}'
 	@$(STOP_TEST) $@
 $(F)aocg6: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -906,6 +905,7 @@ $(F)aocg8: $(TMP_EXISTS)
 $(F)aoc_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) aoc --preset=aoc_web user profile show
+	$(CLI_TEST) aoc --preset=aoc_web user profile show --http-options=@json:'{"token_refresh_threshold":10000000000}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocgen,$(F)aoc_detect $(F)aoc_wizard $(F)aoc_wizard_2 $(F)aocg1 $(F)aocg2 $(F)aocg3 $(F)aocg4 $(F)aoc_user_profile $(F)aocg6 $(F)aocuprefshow $(F)aocuprefmod $(F)aocucontactlist $(F)aocg7 $(F)aocg8))
 #######################################################################################################################
