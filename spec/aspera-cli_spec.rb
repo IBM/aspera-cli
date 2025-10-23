@@ -267,6 +267,7 @@ RSpec.describe(Aspera::Environment) do
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_WINDOWS))
     expect(Aspera::Environment.instance.exe_file).to(eq('.exe'))
+    expect(Aspera::Environment.instance.exe_file('ascp')).to(eq('ascp.exe'))
     RbConfig::CONFIG['host_os'] = 'darwin'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_MACOS))
@@ -274,6 +275,7 @@ RSpec.describe(Aspera::Environment) do
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_LINUX))
     expect(Aspera::Environment.instance.exe_file).to(eq(nil))
+    expect(Aspera::Environment.instance.exe_file('ascp')).to(eq('ascp'))
     RbConfig::CONFIG['host_os'] = 'aix'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_AIX))

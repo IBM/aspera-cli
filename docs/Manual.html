@@ -3145,7 +3145,12 @@ only.</p></div>
 <p>Some temporary files may be needed during runtime. The temporary
 folder may be specified with option: <code>temp_folder</code>. Temporary
 files are deleted at the end of execution unless option:
-<code>clean_temp</code> is set to <code>no</code>.</p>
+<code>clean_temp</code> is set to <code>no</code>. By default
+(<code>@sys</code>), the temporary folder is the system&#39;s temporary
+folder for the current user (Ruby <code>Etc.systmpdir</code>). A special
+value of <code>@env</code> will set the folder to Ruby
+<code>Dir.tmpdir</code> which uses regular env var to set the temp
+folder.</p>
 <h2 data-number="4.11" id="configuration-file"><span class="header-section-number">4.11</span> Configuration file</h2>
 <p>On the first execution of <code>ascli</code>, an empty configuration
 file is created in the configuration folder
@@ -6799,7 +6804,6 @@ OPTIONS:
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
         --skip-types=VALUE           Skip types in comma separated list
         --previews-folder=VALUE      Preview folder in storage root
-        --temp-folder=VALUE          Path to temp folder
         --skip-folders=VALUE         List of folder to skip
         --base=VALUE                 Basename of output for for test
         --scan-path=VALUE            Subpath in folder id to start scan in (default=/)

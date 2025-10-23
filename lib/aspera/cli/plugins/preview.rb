@@ -9,6 +9,7 @@ require 'aspera/preview/file_types'
 require 'aspera/preview/terminal'
 require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
+require 'aspera/temp_file_manager'
 require 'aspera/api/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
@@ -74,7 +75,6 @@ module Aspera
           )
           options.declare(:skip_types, 'Skip types in comma separated list', handler: {o: self, m: :option_skip_types})
           options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
-          options.declare(:temp_folder, 'Path to temp folder', default: Dir.tmpdir)
           options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
           options.declare(:base, 'Basename of output for for test')
           options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
@@ -100,7 +100,7 @@ module Aspera
 
           options.parse_options!
           Aspera.assert_type(@option_skip_folders, Array){'skip_folder'}
-          @tmp_folder = File.join(options.get_option(:temp_folder, mandatory: true), "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
+          @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
         end

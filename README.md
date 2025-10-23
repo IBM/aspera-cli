@@ -2250,6 +2250,8 @@ The default value is `_<>:"/\|?*`, corresponding to replacement character `_` an
 Some temporary files may be needed during runtime.
 The temporary folder may be specified with option: `temp_folder`.
 Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
+By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
+A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
 
 ### Configuration file
 
@@ -4679,7 +4681,6 @@ OPTIONS:
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
         --skip-types=VALUE           Skip types in comma separated list
         --previews-folder=VALUE      Preview folder in storage root
-        --temp-folder=VALUE          Path to temp folder
         --skip-folders=VALUE         List of folder to skip
         --base=VALUE                 Basename of output for for test
         --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
