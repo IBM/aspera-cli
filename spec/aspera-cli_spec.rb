@@ -266,7 +266,7 @@ RSpec.describe(Aspera::Environment) do
     RbConfig::CONFIG['host_os'] = 'mswin'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_WINDOWS))
-    expect(Aspera::Environment.instance.exe_file).to(eq('exe'))
+    expect(Aspera::Environment.instance.exe_file).to(eq('.exe'))
     RbConfig::CONFIG['host_os'] = 'darwin'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_MACOS))
