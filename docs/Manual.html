@@ -6028,14 +6028,6 @@ second element is the first destination, and so on.</li>
 <p>Example: Source file <code>200KB.1</code> is renamed
 <code>sample1</code> on destination:</p>
 <pre class="shell"><code>ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1</code></pre>
-<div class="admonition note">
-<div class="admonition-title">ℹ️ Note</div>
-<div class="admonition-body"><div class="title">
-
-</div>
-<p>There are some specific rules to specify a file list when using
-<strong>Aspera on Cloud</strong>, refer to the AoC plugin section.</p></div>
-</div>
 <h3 data-number="4.25.3" id="source-directory-structure-on-destination"><span class="header-section-number">4.25.3</span> Source directory structure
 on destination</h3>
 <p>This section is not specific to <code>ascli</code> it is
@@ -6635,6 +6627,7 @@ OPTIONS: global
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
+        --temp-folder=VALUE          Temporary folder
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration

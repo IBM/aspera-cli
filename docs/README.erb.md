@@ -3807,9 +3807,6 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-> [!NOTE]
-> There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
-
 #### Source directory structure on destination
 
 This section is not specific to <%=tool%> it is `ascp` behavior.

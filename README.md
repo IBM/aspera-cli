@@ -4045,9 +4045,6 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-> [!NOTE]
-> There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
-
 #### Source directory structure on destination
 
 This section is not specific to `ascli` it is `ascp` behavior.
@@ -4510,6 +4507,7 @@ OPTIONS: global
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
+        --temp-folder=VALUE          Temporary folder
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
