@@ -9,6 +9,7 @@
     * `faspex5`: Fix public link auth for Faspex 5.0.13.
     * `aoc`: Fix some admin operations requiring a user's home for Files.
     * `node`: Fix `transfer` operations: `modify` and `cancel`.
+    * `config`: #230 Fix problem when installing and detecting SDK on Windows
   * Breaking Changes:
     * `ats`: Removed option `params`. Use positional parameter for creation, and `query` for list.
 

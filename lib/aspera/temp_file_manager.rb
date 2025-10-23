@@ -16,15 +16,18 @@ module Aspera
     FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
     private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
 
-    attr_accessor :cleanup_on_exit
+    attr_accessor :cleanup_on_exit, :global_temp
 
     def initialize
       @created_files = []
       @cleanup_on_exit = true
+      @global_temp = Etc.systmpdir
     end
 
     def delete_file(filepath)
       File.delete(filepath) if @cleanup_on_exit
+    rescue => e
+      Log.log.error{"Problem deleting file: #{filepath}: #{e.message}"}
     end
 
     # call this on process exit
@@ -53,7 +56,7 @@ module Aspera
           'unknown_user'
         end
       prefix = [prefix, username].compact.join('-')
-      new_file_path_in_folder(Etc.systmpdir, prefix: prefix, suffix: suffix)
+      new_file_path_in_folder(@global_temp, prefix: prefix, suffix: suffix)
     end
 
     def cleanup_expired(temp_folder)

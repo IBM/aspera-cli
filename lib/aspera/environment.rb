@@ -188,7 +188,7 @@ module Aspera
       end
     end
     attr_accessor :url_method, :file_illegal_characters
-    attr_reader :os, :cpu, :executable_extension, :default_gui_mode
+    attr_reader :os, :cpu, :default_gui_mode
 
     def initialize
       initialize_fields
@@ -220,7 +220,7 @@ module Aspera
           CPU_ARM64
         else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']){'host_cpu'}
         end
-      @executable_extension = @os.eql?(OS_WINDOWS) ? 'exe' : nil
+      @executable_extension = @os.eql?(OS_WINDOWS) ? '.exe' : nil
       # :text or :graphical depending on the environment
       @default_gui_mode =
         if [Environment::OS_WINDOWS, Environment::OS_MACOS].include?(os) ||
@@ -241,8 +241,10 @@ module Aspera
       "#{@os}-#{@cpu}"
     end
 
-    # executable file extension for current OS
-    def exe_file(name)
+    # Add executable file extension (e.g. ".exe") for current OS
+    # @param name [String,nil] Path or file name
+    # @return [String] Executable name with extension
+    def exe_file(name = nil)
       return name unless @executable_extension
       return "#{name}#{@executable_extension}"
     end

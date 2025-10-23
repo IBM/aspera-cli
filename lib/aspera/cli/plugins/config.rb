@@ -39,65 +39,6 @@ module Aspera
     module Plugins
       # Manage the CLI config file
       class Config < Base
-        # Folder in $HOME for application files (config, cache)
-        ASPERA_HOME_FOLDER_NAME = '.aspera'
-        # Default config file
-        DEFAULT_CONFIG_FILENAME = 'config.yaml'
-        # Reserved preset names
-        CONF_PRESET_CONFIG = 'config'
-        CONF_PRESET_VERSION = 'version'
-        CONF_PRESET_DEFAULTS = 'default'
-        CONF_PRESET_GLOBAL = 'global_common_defaults'
-        # Special name to identify value of default
-        GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
-        CONF_GLOBAL_SYM = :config
-        # Folder containing custom plugins in user's config folder
-        ASPERA_PLUGINS_FOLDERNAME = 'plugins'
-        PERSISTENCY_FOLDER = 'persist_store'
-        ASPERA = 'aspera'
-        SERVER_COMMAND = 'server'
-        DIR_SDK = 'sdk'
-        DEMO_SERVER = 'demo'
-        DEMO_PRESET = 'demoserver' # cspell: disable-line
-        EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
-          From: <%=from_name%> <<%=from_email%>>
-          To: <<%=to%>>
-          Subject: #{Info::GEM_NAME} email test
-
-          This email was sent to test #{Info::CMD_NAME}.
-        END_OF_TEMPLATE
-        # Special extended values
-        EXTEND_PRESET = :preset
-        EXTEND_VAULT = :vault
-        PRESET_DIG_SEPARATOR = '.'
-        DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
-        GEM_CHECK_DATE_FMT = '%Y/%m/%d'
-        # For testing only
-        SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
-        CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
-        SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
-        private_constant :DEFAULT_CONFIG_FILENAME,
-          :CONF_PRESET_CONFIG,
-          :CONF_PRESET_VERSION,
-          :CONF_PRESET_DEFAULTS,
-          :CONF_PRESET_GLOBAL,
-          :ASPERA_PLUGINS_FOLDERNAME,
-          :ASPERA,
-          :DEMO_SERVER,
-          :DEMO_PRESET,
-          :EMAIL_TEST_TEMPLATE,
-          :EXTEND_PRESET,
-          :EXTEND_VAULT,
-          :DEFAULT_CHECK_NEW_VERSION_DAYS,
-          :SERVER_COMMAND,
-          :PRESET_DIG_SEPARATOR,
-          :COFFEE_IMAGE_URL,
-          :SELF_SIGNED_CERT,
-          :PERSISTENCY_FOLDER,
-          :CONF_OVERVIEW_KEYS,
-          :SMTP_CONF_PARAMS
-
         class << self
           # Folder containing plugins in the gem's main folder
           def gem_plugins_folder
@@ -224,12 +165,12 @@ module Aspera
             @sdk_default_location = true
             Log.log.debug('SDK folder is not set, checking default')
             # New location
-            sdk_dir = self.class.default_app_main_folder(app_name: DIR_SDK)
+            sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
             Log.log.debug{"Checking: #{sdk_dir}"}
             if !Dir.exist?(sdk_dir)
               Log.log.debug{"No such folder: #{sdk_dir}"}
               # Former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), DIR_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
               Log.log.debug{"Checking: #{former_sdk_folder}"}
               sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
@@ -702,7 +643,7 @@ module Aspera
             end
           when :install
             # Reset to default location, if older default was used
-            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
+            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
             version = options.get_next_argument('transferd version', mandatory: false)
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
@@ -731,7 +672,7 @@ module Aspera
           case command
           when :install
             # Reset to default location, if older default was used
-            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
+            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
             version = options.get_next_argument('transferd version', mandatory: false)
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
@@ -1255,6 +1196,71 @@ module Aspera
           end
           return secret
         end
+        # Private
+        # Folder in $HOME for application files (config, cache)
+        ASPERA_HOME_FOLDER_NAME = '.aspera'
+        # Default config file
+        DEFAULT_CONFIG_FILENAME = 'config.yaml'
+        # Reserved preset names
+        CONF_PRESET_CONFIG = 'config'
+        CONF_PRESET_VERSION = 'version'
+        CONF_PRESET_DEFAULTS = 'default'
+        CONF_PRESET_GLOBAL = 'global_common_defaults'
+        # Special name to identify value of default
+        GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
+        CONF_GLOBAL_SYM = :config
+        # Folder containing custom plugins in user's config folder
+        ASPERA_PLUGINS_FOLDERNAME = 'plugins'
+        PERSISTENCY_FOLDER = 'persist_store'
+        ASPERA = 'aspera'
+        SERVER_COMMAND = 'server'
+        TRANSFERD_APP_NAME = 'sdk'
+        DEMO_SERVER = 'demo'
+        DEMO_PRESET = 'demoserver' # cspell: disable-line
+        EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
+          From: <%=from_name%> <<%=from_email%>>
+          To: <<%=to%>>
+          Subject: #{Info::GEM_NAME} email test
+
+          This email was sent to test #{Info::CMD_NAME}.
+        END_OF_TEMPLATE
+        # Special extended values
+        EXTEND_PRESET = :preset
+        EXTEND_VAULT = :vault
+        PRESET_DIG_SEPARATOR = '.'
+        DEFAULT_CHECK_NEW_VERSION_DAYS = 7
+        COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
+        GEM_CHECK_DATE_FMT = '%Y/%m/%d'
+        # For testing only
+        SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
+        CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
+        SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
+
+        private_constant :ASPERA_HOME_FOLDER_NAME,
+          :DEFAULT_CONFIG_FILENAME,
+          :CONF_PRESET_CONFIG,
+          :CONF_PRESET_VERSION,
+          :CONF_PRESET_DEFAULTS,
+          :CONF_PRESET_GLOBAL,
+          :ASPERA_PLUGINS_FOLDERNAME,
+          :ASPERA,
+          :DEMO_SERVER,
+          :DEMO_PRESET,
+          :EMAIL_TEST_TEMPLATE,
+          :EXTEND_PRESET,
+          :EXTEND_VAULT,
+          :DEFAULT_CHECK_NEW_VERSION_DAYS,
+          :SERVER_COMMAND,
+          :PRESET_DIG_SEPARATOR,
+          :COFFEE_IMAGE_URL,
+          :SELF_SIGNED_CERT,
+          :PERSISTENCY_FOLDER,
+          :CONF_OVERVIEW_KEYS,
+          :SMTP_CONF_PARAMS,
+          :TRANSFERD_APP_NAME,
+          :GLOBAL_DEFAULT_KEYWORD,
+          :CONF_GLOBAL_SYM,
+          :GEM_CHECK_DATE_FMT
       end
     end
   end

@@ -88,10 +88,10 @@ module Aspera
       def use_ascp_from_product(product_name)
         if product_name.eql?(FIRST_FOUND)
           pl = installed_products.first
-          raise "no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
+          raise "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install" if pl.nil?
         else
           pl = installed_products.find{ |i| i[:name].eql?(product_name)}
-          raise "no such product installed: #{product_name}" if pl.nil?
+          raise "No such product installed: #{product_name}" if pl.nil?
         end
         self.ascp_path = pl[:ascp_path]
         Log.log.debug{"ascp_path=#{@path_to_ascp}"}
@@ -308,6 +308,7 @@ module Aspera
             Products::Transferd::RUNTIME_FOLDERS.any?{ |i| name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
           end
         end
+        FileUtils.mkdir_p(folder)
         # rename old install
         if backup && !Dir.empty?(folder)
           Log.log.warn('Previous install exists, renaming folder.')
@@ -333,7 +334,7 @@ module Aspera
           end
         end
         return unless with_exe
-        # ensure necessary files are there, or generate them
+        # Ensure necessary files are there, or generate them
         SDK_FILES.each do |file_id_sym|
           file_path = path(file_id_sym)
           if file_path && EXE_FILES.include?(file_id_sym)
@@ -355,6 +356,8 @@ module Aspera
       # policy for product selection
       FIRST_FOUND = 'FIRST'
 
+      private_constant :FIRST_FOUND
+
       def initialize
         @path_to_ascp = nil
         @sdk_dir = nil
@@ -366,22 +369,18 @@ module Aspera
 
       # @return the list of installed products in format of product_locations_on_current_os
       def installed_products
-        if @found_products.nil?
-          # :expected  M app name is taken from the manifest if present, else defaults to this value
-          # :app_root  M main folder for the application
-          # :log_root  O location of log files (Linux uses syslog)
-          # :run_root  O only for Connect Client, location of http port file
-          # :sub_bin   O subfolder with executables, default : bin
-          scan_locations = Products::Transferd.locations.concat(
-            Products::Desktop.locations,
-            Products::Connect.locations,
-            Products::Other::LOCATION_ON_THIS_OS
-          )
-          # .each {|item| item.deep_do {|h, _k, _v, _m|h.freeze}}.freeze
-          # search installed products: with ascp
-          @found_products = Products::Other.find(scan_locations)
-        end
-        return @found_products
+        return @found_products unless @found_products.nil?
+        # :expected  M app name is taken from the manifest if present, else defaults to this value
+        # :app_root  M main folder for the application
+        # :log_root  O location of log files (Linux uses syslog)
+        # :run_root  O only for Connect Client, location of http port file
+        # :sub_bin   O subfolder with executables, default : bin
+        scan_locations = Products::Transferd.locations +
+          Products::Desktop.locations +
+          Products::Connect.locations +
+          Products::Other::LOCATION_ON_THIS_OS
+        # search installed products: with ascp
+        @found_products = Products::Other.find(scan_locations)
       end
     end
   end

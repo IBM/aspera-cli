@@ -369,6 +369,7 @@ module Aspera
         @context.options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
         @context.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
         @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:temp_folder, 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
         @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
         # Parse declared options
         @context.options.parse_options!

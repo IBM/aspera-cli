@@ -437,6 +437,8 @@ module Aspera
         @declared_options.each_key do |option_symbol|
           v = get_option(option_symbol)
           result[option_symbol] = v unless only_defined && v.nil?
+        rescue => e
+          result[option_symbol] = e.to_s
         end
         return result
       end
