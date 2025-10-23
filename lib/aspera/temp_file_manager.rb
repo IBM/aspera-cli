@@ -27,7 +27,7 @@ module Aspera
     def delete_file(filepath)
       File.delete(filepath) if @cleanup_on_exit
     rescue => e
-      Log.log.error{"Problem deleting file: #{filepath}: #{e.message}"}
+      Log.log.warn{"Problem deleting file: #{filepath}: #{e.message}"}
     end
 
     # call this on process exit

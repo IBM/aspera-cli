@@ -271,7 +271,9 @@ module Aspera
           Zip::File.open(sdk_archive_path) do |zip_file|
             zip_file.each do |entry|
               next if entry.name.end_with?('/')
-              yield(entry.name, entry.get_input_stream, nil)
+              entry.get_input_stream do |io|
+                yield(entry.name, io, nil)
+              end
             end
           end
         # Other Unixes use tar.gz
