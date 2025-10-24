@@ -31,20 +31,20 @@ module Aspera
       'x-deprecation'   # [String]       Deprecation message for doc
     ].freeze
 
-    CLI_AGENT = 'direct'
-
-    private_constant :PROPERTY_KEYS, :CLI_AGENT
+    private_constant :PROPERTY_KEYS
 
     class << self
-      # @return true if given agent supports that field
-      def supported_by_agent(agent, properties)
-        !properties.key?('x-agents') || properties['x-agents'].include?(agent)
-      end
-
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
       def read_schema(folder, name, ascp: false)
         schema = YAML.load_file(File.join(folder, "#{name}.schema.yaml"))
         validate_schema(schema, ascp: ascp)
+      end
+
+      # @param agent      [Symbol] Transfer agent name
+      # @param properties [Hash]   Transfer spec parameter information
+      # @return [Boolean] `true` if given agent supports that field
+      def supported_by_agent(agent, properties)
+        !properties.key?('x-agents') || properties['x-agents'].include?(agent.to_s)
       end
 
       private
@@ -61,7 +61,7 @@ module Aspera
           Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema['description']}"}
           Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch']
           info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if info['x-cli-option'].eql?(true) || (info['x-cli-switch'].eql?(true) && !info.key?('x-cli-option'))
-          Aspera.assert(direct_props.any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(CLI_AGENT, info)
+          Aspera.assert(direct_props.any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, info)
           info.freeze
           validate_schema(info, ascp: ascp) if info['type'].eql?('object') && info['properties']
           validate_schema(info['items'], ascp: ascp) if info['type'].eql?('array') && info['items'] && info['items']['properties']
@@ -176,7 +176,7 @@ module Aspera
         parameter_value = converted_value
       end
 
-      return unless self.class.supported_by_agent(CLI_AGENT, properties)
+      return unless self.class.supported_by_agent(:direct, properties)
 
       if read
         # just get value (deferred)
