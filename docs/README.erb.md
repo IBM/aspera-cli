@@ -407,7 +407,7 @@ apt install -y ruby ruby-dev rubygems ruby-json
 One can remove all installed gems, for example to start fresh:
 
 ```shell
-gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs gem uninstall -axI
 ```
 
 #### Unix-like: RVM: Single user installation (not root)
@@ -1320,35 +1320,86 @@ Details can be found here:
 
 - [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
-The following examples give the same result on Windows using PowerShell:
+##### PowserShell 5
 
 - Check your powershell version:
 
 ```powershell
-PS C:\> echo $psversiontable.psversion
+$psversiontable.psversion.Major
+```
 
-Major  Minor  Build  Revision
------  -----  -----  --------
-5      1      19041  4046
+```text
+5
+```
+
+The following examples give the same result on Windows using PowerShell 5:
+
+```text
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ x     │ true  │
+│ k     │ v     │
+╰───────┴───────╯
 ```
 
 - Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
 
 ```powershell
-PS C:\> <%=cmd%> config echo  --% @json:'{"k":"v","x":"y"}'
+<%=cmd%> config echo  --% @json:'{"k":"v","x":true}'
 ```
 
 - Triple double quotes are replaced with a single double quote in normal mode:
 
 ```powershell
-PS C:\> <%=cmd%> config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
+<%=cmd%> config echo @json:'{"""k""":"""v""","""x""":true}'
 ```
 
 - To insert PowerShell variables in the JSON string, one can do:
 
 ```powershell
-$email="john@example.com"
-ascli conf echo  $('@json:{"""address""":"""' + $email + '""","""vip""":true}')
+$var="v"
+<%=cmd%> conf echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
+```
+
+##### PowserShell 7
+
+- Check your powershell version:
+
+```powershell
+$psversiontable.psversion.Major
+```
+
+```text
+7
+```
+
+The following examples give the same result on Windows using PowerShell 7:
+
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
+<%=cmd%> config echo  --% @json:{"k":"v","x":true}
+```
+
+- Single quote protects double quote in normal mode:
+
+```powershell
+<%=cmd%> config echo @json:'{"k":"v","x":true}'
+```
+
+- To insert PowerShell variables in the JSON string, one can do:
+
+```powershell
+$var="v"
+<%=cmd%> conf echo  $('@json:{"k":"' + $var + '","x":true}')
+```
+
+- Use PowerShell structure and then convert to JSON string:
+
+```powershell
+$var="v"
+<%=cmd%> conf echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
 ```
 
 #### Extended Values (JSON, Ruby, ...)
@@ -3380,13 +3431,19 @@ The communication is done through a flat JSON file that shall be created in <%=t
 
 The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
 
+If there is only one <%=tool%> running, one can get the PID like this:
+
+```shell
+ps -axo pid,command|grep ascli|grep -v grep|cut -f1 -d' '
+```
+
 Example to change the target rate:
 
 ```shell
 echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
 ```
 
-When <%=tool%> detects this file, it uses it and then deletes it.
+When <%=tool%> detects this file, it uses it during a transfer and then deletes it.
 
 ##### Agent: Direct: `aspera.conf`: Virtual Links
 
@@ -7701,6 +7758,12 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path otherwise).
 The path on the other side is specified using option: `to_folder`.
 
+The general syntax is:
+
+```shell
+<%=cmd%> ... sync <direction> <path> [<sync_info>] [--to-folder=<path>]
+```
+
 | Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
 |-----------|--------|-------------|
 | `push`    | Local  | Remote      |
@@ -7720,6 +7783,12 @@ Documentation on Async Node API can be found on [IBM Developer Portal](https://d
 
 Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
 
+The documentation is available in the terminal with:
+
+```shell
+<%=cmd%> config sync spec
+```
+
 <%=sync_conf_table%>
 
 #### `sync_info`: `args` format
@@ -7737,6 +7806,13 @@ Parameters `local_dir` and `remote_dir` are not allowed since they are provided 
 
 The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
 (With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
+
+This command does not require any communication to the server and accesses only the local database.
+It can be executed also from the `config` plugin:
+
+```shell
+<%=cmd%> config sync admin
+```
 
 To use the `admin` command, the gem `sqlite3` shall be installed:
 
