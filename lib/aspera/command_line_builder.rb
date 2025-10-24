@@ -41,29 +41,32 @@ module Aspera
         !properties.key?('x-agents') || properties['x-agents'].include?(agent)
       end
 
+      # Called by provider of definition before constructor of this class so that schema has all mandatory fields
+      def read_schema(folder, name, ascp: false)
+        schema = YAML.load_file(File.join(folder, "#{name}.schema.yaml"))
+        validate_schema(schema, ascp: ascp)
+      end
+
+      private
+
       # Fill default values for some fields in the schema
       # @param schema [Hash] The JSON schema
+      # @param ascp [Bool] `true` if ascp
       def validate_schema(schema, ascp: false)
+        direct_props = %w[x-cli-option x-cli-envvar x-cli-special].freeze
         schema['properties'].each do |name, info|
           Aspera.assert_type(info, Hash){"#{info.class} for #{name}"}
           unsupported_keys = info.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          # By default : string, unless it's without arg (switch)
-          # info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
           Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema['description']}"}
           Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch']
-          # Add default cli option name if not present, and if supported in "direct".
           info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if info['x-cli-option'].eql?(true) || (info['x-cli-switch'].eql?(true) && !info.key?('x-cli-option'))
-          Aspera.assert(%w[x-cli-option x-cli-envvar x-cli-special].any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(CLI_AGENT, info)
-          # info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if ascp && !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
+          Aspera.assert(direct_props.any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(CLI_AGENT, info)
           info.freeze
           validate_schema(info, ascp: ascp) if info['type'].eql?('object') && info['properties']
+          validate_schema(info['items'], ascp: ascp) if info['type'].eql?('array') && info['items'] && info['items']['properties']
         end
-      end
-
-      # Called by provider of definition before constructor of this class so that schema has all mandatory fields
-      def read_schema(source_path, name)
-        YAML.load_file(File.join(File.dirname(source_path), "#{name}.schema.yaml"))
+        schema
       end
     end
 

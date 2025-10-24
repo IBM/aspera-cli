@@ -313,13 +313,10 @@ module Aspera
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options
-      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
+      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__dir__, 'args')
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA['properties']['sessions']['items']
       ARGS_INSTANCE_SCHEMA['properties'].delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
-      CommandLineBuilder.validate_schema(ARGS_INSTANCE_SCHEMA)
-      CommandLineBuilder.validate_schema(ARGS_SESSION_SCHEMA)
-      CommandLineBuilder.validate_schema(CONF_SCHEMA)
+      CONF_SCHEMA = CommandLineBuilder.read_schema(__dir__, 'conf')
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = '.private-asp'

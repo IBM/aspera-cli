@@ -895,8 +895,9 @@ module Aspera
             when :sessions
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
               sessions = transfers_data.flat_map{ |t| t['sessions']}
+              start_end = %i[start end].freeze
               sessions.each do |session|
-                %i[start end].each do |what|
+                start_end.each do |what|
                   session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
                 end
               end
