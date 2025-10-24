@@ -281,11 +281,9 @@ module Aspera
             return [path, schema]
           end
           if schema['type'].eql?('object')
-            if schema['properties']
-              schema['properties'].each do |name, props|
-                res = find_option(props, path + [name], option)
-                return res unless res.nil?
-              end
+            schema['properties']&.each do |name, props|
+              res = find_option(props, path + [name], option)
+              return res unless res.nil?
             end
           end
           return

@@ -8843,9 +8843,9 @@ ascli config sync spec
 | Field | Type | Description |
 | ---------------------------------------- | ------- | -------------------------------------------------------------------------------- |
 | ascp_dir | string | Directory containing ascp executable to use. |
-| assume_no_mods | boolean | Assume that the directory structure has not been modified.<br/>(`--assume-no-mods={boolean}`) |
+| assume_no_mods | boolean | Assume that the directory structure has not been modified.<br/>(`--assume-no-mods`) |
 | checksum | string | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none`<br/>(`--checksum={enum}`) |
-| clean_excluded | boolean | Removes any existing entries in the snapshot database for excluded paths<br/>(`--clean-excluded={boolean}`) |
+| clean_excluded | boolean | Removes any existing entries in the snapshot database for excluded paths<br/>(`--clean-excluded`) |
 | cookie | string | User-defined identification string.<br/>(`--cookie={string}`) |
 | cooloff_max_seconds | integer | Wait up to the specified time for a file to stop changing before skipping synchronization of the file. 0 for disabled<br/>(`--cooloff-max={integer}`) |
 | cooloff_seconds | integer | Delay the start of the transfer to confirm that the content is not changing. Value must be between 0 and 60<br/>(`--cooloff={integer}`) |
@@ -8861,6 +8861,8 @@ ascli config sync spec
 | exclude_dirs_older_than.absolute | string | UTC timestamp. Empty value for disabled. |
 | exclude_dirs_older_than.relative_seconds | integer | Relative to async start time. `-1` for disabled. |
 | filters | array | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
+| filters[].rule | string | The rule for the filter.<br/>Allowed values: `include`, `exclude`, `include_from`, `exclude_from` |
+| filters[].value | string | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications |
 | ignore_delete | boolean | Do not copy removals to the peer.<br/>(`--ignore-delete`) |
 | ignore_mode | boolean | Source files that have had their mode changed after the initial. transfer will not update the destination file mode.<br/>(`--ignore-mode`) |
 | ignore_remote_host_sync_name | boolean | Do not check that the remote host being used for the current. transfer matches the host used when the local database was created |
@@ -8871,7 +8873,7 @@ ascli config sync spec
 | local_checksum_threads | integer | Maximum number of threads to do checksum on the local host. Value must be between 1 and 99.<br/>(`--local-checksum-threads={integer}`) |
 | local_db_dir | string | Use the specified database directory on the local host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--local-db-dir={string}`) |
 | local_db_store_dir | string | Store/Restore the database to/from the specified directory on the local host. The value can be an absolute path, an URI or - (use the local sync dir)<br/>(`--local-db-store-dir={string}`) |
-| local_force_stat | boolean | Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor.<br/>(`--local-force-stat={boolean}`) |
+| local_force_stat | boolean | Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor.<br/>(`--local-force-stat`) |
 | local_fs_threads | integer | Maximum number of threads to do file system operations on the local host. Value must be between 1 and 99.<br/>(`--local-fs-threads={integer}`) |
 | local_keep_dir | string | Move deleted files into the specified directory on the local host.<br/>(`--keep-dir-local={string}`) |
 | local_mount_signature | string | Verify that the file system is mounted by the existence of this file on the local host.<br/>(`--local-mount-signature={string}`) |
@@ -8882,7 +8884,7 @@ ascli config sync spec
 | local_scan_threads | integer | Number of directory scanning threads on the local host. Value must be between 1 and 99<br/>(`--scan-threads={integer}`) |
 | local_stat_cache_size | integer | Set stat cache size on the local host. 0 for disabled. |
 | log | object | &nbsp; |
-| log.level | &nbsp; | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2` |
+| log.level | string | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2` |
 | log.local_dir | string | Use the specified logging directory on the local host.<br/>(`--alt-logdir={string}`) |
 | log.remote_dir | string | Use the specified logging directory on the remote host.<br/>(`--remote-logdir={string}`) |
 | manifest_path | string | A directory path where ascp will create manifest TEXT files (passed to ascp as --file-manifest-path) |
@@ -8891,13 +8893,13 @@ ascli config sync spec
 | monitor_buffer_size | integer | Bytes to allocate for the change monitor buffer. Applies to any Windows machine on either side. `-1` to use the computed value. |
 | name | string | Name of the synchronization pair.<br/>(`--name={string}`) |
 | no_log | string | Suppress log messages for ITEM. The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.<br/>(`--no-log={string}`) |
-| no_preserve_root_attrs | boolean | Disable the preservation of attributes on the Sync root.<br/>(`--no-preserve-root-attrs={boolean}`) |
+| no_preserve_root_attrs | boolean | Disable the preservation of attributes on the Sync root.<br/>(`--no-preserve-root-attrs`) |
 | no_scan | boolean | Skip initial scanning.<br/>(`--no-scan`) |
 | notifications_sharing_retry_max | integer | Retry processing filesystem notifications up to the specified maximum number after a sharing violation. |
 | overwrite | string | Overwrite files according to the specified policy. Default is determined by the direction: conflict for bidi, otherwise always.<br/>Allowed values: `always`, `older`, `conflict`<br/>(`--overwrite={enum}`) |
 | pending_max | integer | Allow the maximum number of files that are pending transfer to be no more than the specified number.<br/>(`--pending-max={integer}`) |
-| preserve_access_time | boolean | Preserve file access time from the source to the destination.<br/>(`--preserve-access-time={boolean}`) |
-| preserve_creation_time | boolean | Preserve file creation time from the source to the destination.<br/>(`--preserve-creation-time={boolean}`) |
+| preserve_access_time | boolean | Preserve file access time from the source to the destination.<br/>(`--preserve-access-time`) |
+| preserve_creation_time | boolean | Preserve file creation time from the source to the destination.<br/>(`--preserve-creation-time`) |
 | preserve_gid | boolean | Preserve the file owner's GID.<br/>(`--preserve-gid`) |
 | preserve_modification_time | boolean | Preserve file modification time from the source to the destination.<br/>(`--preserve-modification-time`) |
 | preserve_object_lock_legal_hold | boolean | Preserve object lock legal hold status from the source to the destination.<br/>(`--preserve-object-lock-legal-hold`) |
@@ -8906,7 +8908,7 @@ ascli config sync spec
 | preserve_uid | boolean | Preserve the file owner's UID.<br/>(`--preserve-uid`) |
 | quiet | boolean | Disable progress display.<br/>(`--quiet`) |
 | remote | object | &nbsp; |
-| remote.connect_mode | &nbsp; | Define how to connect to the remote.<br/>Allowed values: `ssh`, `ws`<br/>(special:`--ws-connect={enum}`) |
+| remote.connect_mode | string | Define how to connect to the remote.<br/>Allowed values: `ssh`, `ws`<br/>(special:`--ws-connect={enum}`) |
 | remote.fingerprint | string | Check it against server SSH host key fingerprint. |
 | remote.host | string | Use the specified host name or address of the remote host.<br/>(`--host={string}`) |
 | remote.pass | string | Authenticate the transfer with the specified password.<br/>(`--pass={string}`) |
@@ -8917,7 +8919,7 @@ ascli config sync spec
 | remote.proxy.host | string | Use the specified host name or address of the proxy. |
 | remote.proxy.pass | string | Authenticate to the proxy with the specified password. |
 | remote.proxy.port | integer | Use the specified port, default is 9091 for dnat, 9092. for dnats |
-| remote.proxy.protocol | &nbsp; | The protocol to be used.<br/>Allowed values: `none`, `dnat`, `dnats` |
+| remote.proxy.protocol | string | The protocol to be used.<br/>Allowed values: `none`, `dnat`, `dnats` |
 | remote.proxy.user | string | Authenticate to the proxy with the specified username. |
 | remote.token | string | Token string passed to server's authentication service. |
 | remote.token_node_user | string | Node API user identity associated with the token. Required for node user bearer tokens |
@@ -8926,7 +8928,7 @@ ascli config sync spec
 | remote_checksum_threads | integer | Maximum number of threads to do checksum on the remote host. Value must be between 1 and 99<br/>(`--remote-checksum-threads={integer}`) |
 | remote_db_dir | string | Use the specified database directory on the remote host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--remote-db-dir={string}`) |
 | remote_db_store_dir | string | Store/Restore the database to/from the specified directory on the remote host. The value can be an absolute path, an URI or - (use the remote sync dir).<br/>(`--remote-db-store-dir={string}`) |
-| remote_force_stat | boolean | Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor.<br/>(`--remote-force-stat={boolean}`) |
+| remote_force_stat | boolean | Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor.<br/>(`--remote-force-stat`) |
 | remote_fs_threads | integer | Maximum number of threads to do file system operations on the remote host. Value must be between 1 and 99.<br/>(`--remote-fs-threads={integer}`) |
 | remote_keep_dir | string | Move deleted files into the specified directory on the remote host.<br/>(`--keep-dir-remote={string}`) |
 | remote_mount_signature | string | Verify that the file system is mounted by the existence of this file on the remote host.<br/>(`--remote-mount-signature={string}`) |
@@ -8951,12 +8953,14 @@ ascli config sync spec
 | symbolic_links | string | Handle symbolic links with the specified method. Default is `skip` on windows, `copy` otherwise.<br/>Allowed values: `copy`, `skip`, `follow`<br/>(`--symbolic-links={enum}`) |
 | tags | object | User-defined metadata tags.<br/>(special:`--tags64={object}`) |
 | transfer_threads | array | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
+| transfer_threads[].size | integer | Upper limit. `-1` for infinity. |
+| transfer_threads[].threads | integer | The number of threads. |
 | transport | object | &nbsp; |
-| transport.cipher | &nbsp; | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`<br/>(`--cipher={enum}`) |
-| transport.compression | &nbsp; | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`<br/>(`--compression={enum}`) |
+| transport.cipher | string | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`<br/>(`--cipher={enum}`) |
+| transport.compression | string | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`<br/>(`--compression={enum}`) |
 | transport.datagram_size | integer | Specify the datagram size (MTU) for FASP. By default it uses the detected path MTU.<br/>(`--datagram-size={integer}`) |
 | transport.min_rate | integer | Attempt to transfer no slower than the specified rate (in bps).<br/>(`--min-rate={integer}`) |
-| transport.rate_policy | &nbsp; | Defines how `ascp` will manage the bandwidth.<br/>Allowed values: `fair`, `fixed`, `high`, `low`<br/>(`--rate-policy={enum}`) |
+| transport.rate_policy | string | Defines how `ascp` will manage the bandwidth.<br/>Allowed values: `fair`, `fixed`, `high`, `low`<br/>(`--rate-policy={enum}`) |
 | transport.raw_options | array | Pass arbitrary arguments to `ascp`.<br/>(special:`--raw-options={array}`) |
 | transport.read_block_size | integer | Use the specified block size (in bytes) for reading. Default is determined by `aspera.conf`.<br/>(`--read-block-size={integer}`) |
 | transport.rexmsg_size | integer | Use the specified size (in bytes) for a retransmission request. Default is determined by `aspera.conf`.<br/>(`--rexmsg-size={integer}`) |
@@ -8964,7 +8968,7 @@ ascli config sync spec
 | transport.udp_port | integer | Use the specified UDP port for FASP data transfer.<br/>(`--udp-port={integer}`) |
 | transport.write_block_size | integer | Use the specified block size (in bytes) for writing. Default is determined by `aspera.conf`.<br/>(`--write-block-size={integer}`) |
 | watchd | object | When connection is configured, `asperawatchd` is used to detect the changes on the source directory.<br/>(special:`--watchd={object}`) |
-| watchd.datastore | &nbsp; | Specify the type of datastore, `none` for disabled.<br/>Allowed values: `none`, `redis`, `scalekv` |
+| watchd.datastore | string | Specify the type of datastore, `none` for disabled.<br/>Allowed values: `none`, `redis`, `scalekv` |
 | watchd.domain | string | Specify the domain. Default is the current username. |
 | watchd.host | string | Use the specified host name or address to connect to the datastore. |
 | watchd.port | integer | Use the specified port. |

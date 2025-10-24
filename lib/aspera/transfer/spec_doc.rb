@@ -23,9 +23,8 @@ module Aspera
           cols.insert(-2, *AGENT_LIST.map(&:last)) if agent_columns
           rows = []
           schema['properties'].each do |name, info|
-            if info['type'].eql?('object') && info['properties']
-              rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info).last.map { |h| h.merge(name: "#{name}.#{h[:name]}") })
-            end
+            rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info).last.map{ |h| h.merge(name: "#{name}.#{h[:name]}")}) if info['type'].eql?('object') && info['properties']
+            rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info['items']).last.map{ |h| h.merge(name: "#{name}[].#{h[:name]}")}) if info['type'].eql?('array') && info['items'] && info['items']['properties']
             # manual table
             columns = {
               name:        name,

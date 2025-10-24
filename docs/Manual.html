@@ -11270,7 +11270,7 @@ not allowed since they are provided on command line.</p>
 <td>assume_no_mods</td>
 <td>boolean</td>
 <td>Assume that the directory structure has not been modified.<br />
-(<code>--assume-no-mods={boolean}</code>)</td>
+(<code>--assume-no-mods</code>)</td>
 </tr>
 <tr>
 <td>checksum</td>
@@ -11287,7 +11287,7 @@ Allowed values: <code>sha1</code>, <code>md5</code>,
 <td>boolean</td>
 <td>Removes any existing entries in the snapshot database for excluded
 paths<br />
-(<code>--clean-excluded={boolean}</code>)</td>
+(<code>--clean-excluded</code>)</td>
 </tr>
 <tr>
 <td>cookie</td>
@@ -11384,6 +11384,19 @@ and included from the transfer list. Each filter is defined by a rule
 and a value. Order of filters matters</td>
 </tr>
 <tr>
+<td>filters[].rule</td>
+<td>string</td>
+<td>The rule for the filter.<br />
+Allowed values: <code>include</code>, <code>exclude</code>,
+<code>include_from</code>, <code>exclude_from</code></td>
+</tr>
+<tr>
+<td>filters[].value</td>
+<td>string</td>
+<td>On include or exclude, the filter&#39;s pattern. On include_from or
+exclude_from, the path containing filter specifications</td>
+</tr>
+<tr>
 <td>ignore_delete</td>
 <td>boolean</td>
 <td>Do not copy removals to the peer.<br />
@@ -11452,7 +11465,7 @@ local sync dir)<br />
 <td>boolean</td>
 <td>Forces the local async to retrieve file information even when no
 changes are detected by the scanner or monitor.<br />
-(<code>--local-force-stat={boolean}</code>)</td>
+(<code>--local-force-stat</code>)</td>
 </tr>
 <tr>
 <td>local_fs_threads</td>
@@ -11524,7 +11537,7 @@ be between 1 and 99<br />
 </tr>
 <tr>
 <td>log.level</td>
-<td> </td>
+<td>string</td>
 <td>Use the specified log level.<br />
 Allowed values: <code>log</code>, <code>dbg1</code>,
 <code>dbg2</code></td>
@@ -11588,7 +11601,7 @@ value.</td>
 <td>no_preserve_root_attrs</td>
 <td>boolean</td>
 <td>Disable the preservation of attributes on the Sync root.<br />
-(<code>--no-preserve-root-attrs={boolean}</code>)</td>
+(<code>--no-preserve-root-attrs</code>)</td>
 </tr>
 <tr>
 <td>no_scan</td>
@@ -11622,14 +11635,14 @@ more than the specified number.<br />
 <td>preserve_access_time</td>
 <td>boolean</td>
 <td>Preserve file access time from the source to the destination.<br />
-(<code>--preserve-access-time={boolean}</code>)</td>
+(<code>--preserve-access-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_creation_time</td>
 <td>boolean</td>
 <td>Preserve file creation time from the source to the
 destination.<br />
-(<code>--preserve-creation-time={boolean}</code>)</td>
+(<code>--preserve-creation-time</code>)</td>
 </tr>
 <tr>
 <td>preserve_gid</td>
@@ -11683,7 +11696,7 @@ destination.<br />
 </tr>
 <tr>
 <td>remote.connect_mode</td>
-<td> </td>
+<td>string</td>
 <td>Define how to connect to the remote.<br />
 Allowed values: <code>ssh</code>, <code>ws</code><br />
 (special:<code>--ws-connect={enum}</code>)</td>
@@ -11748,7 +11761,7 @@ dnats</td>
 </tr>
 <tr>
 <td>remote.proxy.protocol</td>
-<td> </td>
+<td>string</td>
 <td>The protocol to be used.<br />
 Allowed values: <code>none</code>, <code>dnat</code>,
 <code>dnats</code></td>
@@ -11809,7 +11822,7 @@ remote sync dir).<br />
 <td>boolean</td>
 <td>Forces the remote async to retrieve file information even when no
 changes are detected by the scanner or monitor.<br />
-(<code>--remote-force-stat={boolean}</code>)</td>
+(<code>--remote-force-stat</code>)</td>
 </tr>
 <tr>
 <td>remote_fs_threads</td>
@@ -11989,13 +12002,23 @@ files smaller or equal to the specified size<br />
 (special:<code>--transfer-threads={array}</code>)</td>
 </tr>
 <tr>
+<td>transfer_threads[].size</td>
+<td>integer</td>
+<td>Upper limit. <code>-1</code> for infinity.</td>
+</tr>
+<tr>
+<td>transfer_threads[].threads</td>
+<td>integer</td>
+<td>The number of threads.</td>
+</tr>
+<tr>
 <td>transport</td>
 <td>object</td>
 <td> </td>
 </tr>
 <tr>
 <td>transport.cipher</td>
-<td> </td>
+<td>string</td>
 <td>Specify encryption algorithm for file data.<br />
 Allowed values: <code>none</code>, <code>aes128</code>,
 <code>aes192</code>, <code>aes256</code>, <code>aes128cfb</code>,
@@ -12005,7 +12028,7 @@ Allowed values: <code>none</code>, <code>aes128</code>,
 </tr>
 <tr>
 <td>transport.compression</td>
-<td> </td>
+<td>string</td>
 <td>Compress a file before transfer using the specified MODE.<br />
 Allowed values: <code>none</code>, <code>zlib</code><br />
 (<code>--compression={enum}</code>)</td>
@@ -12026,7 +12049,7 @@ bps).<br />
 </tr>
 <tr>
 <td>transport.rate_policy</td>
-<td> </td>
+<td>string</td>
 <td>Defines how <code>ascp</code> will manage the bandwidth.<br />
 Allowed values: <code>fair</code>, <code>fixed</code>,
 <code>high</code>, <code>low</code><br />
@@ -12080,7 +12103,7 @@ detect the changes on the source directory.<br />
 </tr>
 <tr>
 <td>watchd.datastore</td>
-<td> </td>
+<td>string</td>
 <td>Specify the type of datastore, <code>none</code> for disabled.<br />
 Allowed values: <code>none</code>, <code>redis</code>,
 <code>scalekv</code></td>

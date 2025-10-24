@@ -22,6 +22,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   checksum:
     description: Use the specified checksum type. Default is none on cloud storage.
     type: string
@@ -41,6 +42,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   store_metadata_records:
     description: Store the acls or xattrs in the snapshot database.
     type: boolean
@@ -130,6 +132,7 @@ properties:
       properties:
         rule:
           description: The rule for the filter.
+          type: string
           enum:
             - include
             - exclude
@@ -218,6 +221,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   local_fs_threads:
     description:
       Maximum number of threads to do file system operations on the local host.
@@ -282,6 +286,7 @@ properties:
     properties:
       level:
         description: Use the specified log level.
+        type: string
         enum:
           - log
           - dbg1
@@ -351,6 +356,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   no_scan:
     description: Skip initial scanning.
     type: boolean
@@ -383,11 +389,13 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   preserve_creation_time:
     description: Preserve file creation time from the source to the destination.
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   preserve_gid:
     description: Preserve the file owner's GID.
     type: boolean
@@ -477,6 +485,7 @@ properties:
         x-ts-name: wss_port
       connect_mode:
         description: Define how to connect to the remote.
+        type: string
         enum:
           - ssh
           - ws
@@ -511,6 +520,7 @@ properties:
             type: integer
           protocol:
             description: The protocol to be used.
+            type: string
             enum:
               - none
               - dnat
@@ -560,6 +570,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: true
+    x-cli-switch: true
   remote_fs_threads:
     description:
       Maximum number of threads to do file system operations on the remote host.
@@ -742,6 +753,7 @@ properties:
     properties:
       cipher:
         description: Specify encryption algorithm for file data.
+        type: string
         enum:
           - none
           - aes128
@@ -758,6 +770,7 @@ properties:
         x-cli-short: -c
       compression:
         description: Compress a file before transfer using the specified MODE.
+        type: string
         enum:
           - none
           - zlib
@@ -777,6 +790,7 @@ properties:
         x-cli-short: -m
       rate_policy:
         description: Defines how `ascp` will manage the bandwidth.
+        type: string
         enum:
           - fair
           - fixed
@@ -833,6 +847,7 @@ properties:
     properties:
       datastore:
         description: Specify the type of datastore, `none` for disabled.
+        type: string
         enum:
           - none
           - redis
