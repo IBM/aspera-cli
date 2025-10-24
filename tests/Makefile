@@ -381,7 +381,7 @@ $(F)serv_sync_pull_args: $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)
 	$(CLI_TEST) server sync pull @preset:server.inside_folder --to-folder=$(TMP_SYNCS)serv_sync_pull_args @json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
 	$(CLI_TEST) server sync admin status $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
 	$(CLI_TEST) server sync admin meta $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
-	$(CLI_TEST) server sync admin counters $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
+	$(CLI_TEST) config sync admin counters $(TMP_SYNCS)serv_sync_pull_args @json:'{"sessions":[{"name":"serv_sync_pull_args"}]}'
 	@$(STOP_TEST) $@
 $(F)serv_sync_pull_conf: $(F)serv_sync_pull_args
 	@$(START_TEST) $@
@@ -1559,6 +1559,24 @@ $(F)conf_ascp_spec: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp spec
 	$(INCMAN)$(CLI_TEST) config sync spec
+	$(CLI_TEST) config sync translate --format=jsonpp --show-secrets=yes -- -L "/optlogs/" \
+ -N "transfer_test" -x \
+ -P 33001 -k md5-sparse \
+ -i "/root/.ssh/id_rsa_eudemo" \
+ -b "/opt/async_db" \
+ -d "/opt/source/" \
+ -C --scan-interval=30 \
+ --transfer-threads=1 \
+ --pending-max=2000 \
+ -r "/tmp/dest/" \
+ --user root \
+ --host 1.2.3.4 \
+ -R "/tmp/logs/" \
+ -B "/opt/async_db" \
+ -l 1000 \
+ --cooloff=5 \
+ --preserve-uid --preserve-gid \
+ -K push
 	@$(STOP_TEST) $@
 $(F)conf_ascp_schema: $(TMP_EXISTS)
 	@$(START_TEST) $@

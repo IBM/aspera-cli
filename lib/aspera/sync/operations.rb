@@ -274,6 +274,44 @@ module Aspera
             end
           end
         end
+
+        def find_option(schema, path, option)
+          if %w[x-cli-option x-cli-short].any?{ |i| schema[i].eql?(option)}
+            Log.log.debug('Special') if schema['x-cli-special']
+            return [path, schema]
+          end
+          if schema['type'].eql?('object')
+            if schema['properties']
+              schema['properties'].each do |name, props|
+                res = find_option(props, path + [name], option)
+                return res unless res.nil?
+              end
+            end
+          end
+          return
+        end
+
+        def args_to_conf(args)
+          result = {}
+          while args.any?
+            option = args.shift
+            if option =~ /^(--[^=]+)=(.*)$/
+              option = ::Regexp.last_match(1) # "--toto"
+              args.unshift(::Regexp.last_match(2))
+            end
+            path, props = find_option(CONF_SCHEMA, [], option)
+            Aspera.assert(path){"No such option: #{option}"}
+            Aspera.assert(props){"No such option: #{option}"}
+            last_key = path.pop
+            current = result
+            path.each do |key|
+              current[key] ||= {}
+              current = current[key]
+            end
+            current[last_key] = props['x-cli-switch'] ? true : args.shift
+          end
+          return result
+        end
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options

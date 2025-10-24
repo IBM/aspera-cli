@@ -32,20 +32,26 @@ properties:
       - md5_sparse
       - none
     default: sha1_sparse
+    x-cli-option: true
+    x-cli-short: -k
   clean_excluded:
     description:
       Removes any existing entries in the snapshot database for excluded
       paths
     type: boolean
     default: false
+    x-cli-option: true
   store_metadata_records:
     description: Store the acls or xattrs in the snapshot database.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   cookie:
     description: User-defined identification string.
     type: string
     default: ""
+    x-cli-option: true
   cooloff_max_seconds:
     description:
       Wait up to the specified time for a file to stop changing before
@@ -54,7 +60,8 @@ properties:
     default: 0
     x-cli-option: --cooloff-max
   cooloff_seconds:
-    description: Delay the start of the transfer to confirm that the content is not changing.
+    description:
+      Delay the start of the transfer to confirm that the content is not changing.
       Value must be between 0 and 60
     type: integer
     default: 3
@@ -63,6 +70,8 @@ properties:
     description: Create the source directory, target directory, or both, if they do not exist.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   db_cache_size:
     description: Specify DB cache size.
     type: integer
@@ -84,14 +93,19 @@ properties:
       - hardlink
       - none
     default: none
+    x-cli-option: true
   delete_before:
     description: Schedule deletes before transfers.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   delete_delay:
     description: Delay actual deletes until the end of the synchronization.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   direction:
     description: The direction of replication relative to the local.
     type: string
@@ -100,6 +114,8 @@ properties:
       - pull
       - push
     default: push
+    x-cli-option: true
+    x-cli-short: -K
   filters:
     description:
       The filters allow to further specify which files have to be excluded
@@ -142,11 +158,16 @@ properties:
     description: Do not copy removals to the peer.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   ignore_mode:
-    description: Source files that have had their mode changed after the initial.
+    description:
+      Source files that have had their mode changed after the initial.
       transfer will not update the destination file mode.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   ignore_remote_host_sync_name:
     description: Do not check that the remote host being used for the current.
       transfer matches the host used when the local database was created
@@ -171,6 +192,7 @@ properties:
     type: boolean
     default: false
     x-cli-option: --apply-local-docroot
+    x-cli-switch: true
   local_db_dir:
     description: Use the specified database directory on the local host.
       Default is `.private-asp` at the root level of the synchronized directory.
@@ -179,38 +201,47 @@ properties:
     x-cli-option: true
     x-cli-short: -b
   local_checksum_threads:
-    description:
-      Maximum number of threads to do checksum on the local host.
+    description: Maximum number of threads to do checksum on the local host.
       Value must be between 1 and 99.
     type: integer
     default: 4
+    x-cli-option: true
   local_db_store_dir:
-    description: Store/Restore the database to/from the specified directory on the local host.
+    description:
+      Store/Restore the database to/from the specified directory on the local host.
       The value can be an absolute path, an URI or - (use the local sync dir)
     type: string
     default: ""
+    x-cli-option: true
   local_force_stat:
     description: Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor.
     type: boolean
     default: false
+    x-cli-option: true
   local_fs_threads:
-    description: Maximum number of threads to do file system operations on the local host.
+    description:
+      Maximum number of threads to do file system operations on the local host.
       Value must be between 1 and 99.
     type: integer
     default: 1
+    x-cli-option: true
   local_keep_dir:
     description: Move deleted files into the specified directory on the local host.
     type: string
     default: ""
+    x-cli-option: --keep-dir-local
   local_mount_signature:
     description: Verify that the file system is mounted by the existence of this file on the local host.
     type: string
     default: ""
+    x-cli-option: true
   local_move_cache_timeout_seconds:
-    description: Delay in seconds before aborting moving a file from local cache to final destination.
+    description:
+      Delay in seconds before aborting moving a file from local cache to final destination.
       `-1` for disabled.
     type: integer
     default: -1
+    x-cli-option: --local-move-cache-timeout
   local_preserve_acls:
     description: Preserve access control lists on the local host.
     type: string
@@ -219,6 +250,7 @@ properties:
       - metafile
       - none
     default: none
+    x-cli-option: --preserve-acls
   local_preserve_xattrs:
     description: Preserve extended attributes on the local.
     type: string
@@ -227,17 +259,20 @@ properties:
       - metafile
       - none
     default: none
+    x-cli-option: --preserve-xattrs
   local_scan_interval_milliseconds:
     description:
       Enable periodic scans on the local host during a continuous sync.
       `-1` for disabled
     type: integer
     default: -1
+    x-cli-option: --scan-interval
   local_scan_threads:
     description: Number of directory scanning threads on the local host.
       Value must be between 1 and 99
     type: integer
     default: 1
+    x-cli-option: --scan-threads
   local_stat_cache_size:
     description: Set stat cache size on the local host. 0 for disabled.
     type: integer
@@ -252,15 +287,20 @@ properties:
           - dbg1
           - dbg2
         default: log
+        x-cli-short: -D
+        x-cli-special: true
       local_dir:
         description: Use the specified logging directory on the local host.
         type: string
         default: ""
         x-cli-option: --alt-logdir
+        x-cli-short: -L
       remote_dir:
         description: Use the specified logging directory on the remote host.
         type: string
         default: ""
+        x-cli-option: --remote-logdir
+        x-cli-short: -R
   manifest_path:
     description:
       A directory path where ascp will create manifest TEXT files (passed
@@ -278,8 +318,7 @@ properties:
     x-cli-option: true
     x-cli-switch: true
   mode:
-    description:
-      Specify whether async runs continuously or not.
+    description: Specify whether async runs continuously or not.
       In one_time mode, async stops after the first full synchronization.
     type: string
     enum:
@@ -306,14 +345,18 @@ properties:
       The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.
     type: string
     default: ""
+    x-cli-option: true
   no_preserve_root_attrs:
     description: Disable the preservation of attributes on the Sync root.
     type: boolean
     default: false
+    x-cli-option: true
   no_scan:
     description: Skip initial scanning.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   notifications_sharing_retry_max:
     description: Retry processing filesystem notifications up to the specified
       maximum number after a sharing violation.
@@ -328,46 +371,67 @@ properties:
       - always
       - older
       - conflict
+    x-cli-option: true
+    x-cli-short: -o
   pending_max:
     description: Allow the maximum number of files that are pending transfer to be no more than the specified number.
     type: integer
     default: 2000
+    x-cli-option: true
   preserve_access_time:
     description: Preserve file access time from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
   preserve_creation_time:
     description: Preserve file creation time from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
   preserve_gid:
     description: Preserve the file owner's GID.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-short: -j
+    x-cli-switch: true
   preserve_modification_time:
     description: Preserve file modification time from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   preserve_object_lock_legal_hold:
     description: Preserve object lock legal hold status from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   preserve_object_lock_retention:
     description: Preserve object lock retention from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   preserve_object_metadata:
     description: Preserve object metadata from the source to the destination.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   preserve_uid:
     description: Preserve the file owner's UID.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-short: -u
+    x-cli-switch: true
   quiet:
     description: Disable progress display.
     type: boolean
     default: true
+    x-cli-option: true
+    x-cli-switch: true
   remote:
     type: object
     required:
@@ -384,23 +448,29 @@ properties:
         description: Use the specified host name or address of the remote host.
         type: string
         x-ts-name: remote_host
+        x-cli-option: true
       pass:
         description: Authenticate the transfer with the specified password.
         type: string
         default: ""
         x-ts-name: remote_password
+        x-cli-option: true
+        x-cli-short: -w
       path:
         description: Synchronize the specified directory on the remote host.
         type: string
+        x-cli-option: --remote-dir
+        x-cli-short: -r
       port:
         description: Use the specified TCP port for SSH.
           Used when connect_mode is `ssh`
         type: integer
         default: 22
         x-ts-name: ssh_port
+        x-cli-option: --tcp-port
+        x-cli-short: -P
       ws_port:
-        description:
-          Use the specified port for Websocket.
+        description: Use the specified port for Websocket.
           Used when connect_mode is `ws`.
         type: integer
         default: 9093
@@ -411,15 +481,21 @@ properties:
           - ssh
           - ws
         default: ssh
+        x-cli-option: --ws-connect
+        x-cli-special: true
       private_key_paths:
         description: Authenticate with the specified SSH private key file.
         type: array
         items:
           type: string
+        x-cli-option: --private-key-path
+        x-cli-short: -i
       proxy:
         description: Specify the address of the Aspera high-speed proxy server.
         type: object
         #x-ts-name: proxy : TODO: conversion
+        x-cli-option: true
+        x-cli-special: true
         properties:
           host:
             description: Use the specified host name or address of the proxy.
@@ -458,39 +534,49 @@ properties:
         description: Authenticate the transfer with the specified username.
         type: string
         x-ts-name: remote_user
+        x-cli-option: true
   remote_checksum_threads:
     description: Maximum number of threads to do checksum on the remote host.
       Value must be between 1 and 99
     type: integer
     default: 4
+    x-cli-option: true
   remote_db_dir:
-    description:
-      Use the specified database directory on the remote host.
+    description: Use the specified database directory on the remote host.
       Default is `.private-asp` at the root level of the synchronized directory.
     type: string
     default: ""
+    x-cli-option: true
+    x-cli-short: -B
   remote_db_store_dir:
-    description: Store/Restore the database to/from the specified directory on the remote host.
+    description:
+      Store/Restore the database to/from the specified directory on the remote host.
       The value can be an absolute path, an URI or - (use the remote sync dir).
     type: string
     default: ""
+    x-cli-option: true
   remote_force_stat:
     description: Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor.
     type: boolean
     default: false
+    x-cli-option: true
   remote_fs_threads:
-    description: Maximum number of threads to do file system operations on the remote host.
+    description:
+      Maximum number of threads to do file system operations on the remote host.
       Value must be between 1 and 99.
     type: integer
     default: 1
+    x-cli-option: true
   remote_keep_dir:
     description: Move deleted files into the specified directory on the remote host.
     type: string
     default: ""
+    x-cli-option: --keep-dir-remote
   remote_mount_signature:
     description: Verify that the file system is mounted by the existence of this file on the remote host.
     type: string
     default: ""
+    x-cli-option: true
   remote_move_cache_timeout_seconds:
     description:
       Delay in seconds before aborting moving a file from remote cache
@@ -498,34 +584,38 @@ properties:
       `-1` for disabled.
     type: integer
     default: -1
+    x-cli-option: --remote-move-cache-timeout
   remote_preserve_acls:
-    description:
-      Preserve access control lists on the remote host.
+    description: Preserve access control lists on the remote host.
       If not specified, the default behavior is to use the same storage mode as specified by `preserve_acls`.
     type: string
     enum:
       - native
       - metafile
       - none
+    x-cli-option: true
   remote_preserve_xattrs:
-    description:
-      Preserve extended attributes on the remote host.
+    description: Preserve extended attributes on the remote host.
       If not specified, the default behavior is to use the same storage mode as specified by `preserve_xattrs`.
     type: string
     enum:
       - native
       - metafile
       - none
+    x-cli-option: true
   remote_scan_interval_milliseconds:
     description: Enable periodic scans on the remote host.
       `-1` for disabled.
     type: integer
     default: -1
+    x-cli-option: --remote-scan-interval
+    x-cli-special: true
   remote_scan_threads:
     description: Number of directory scanning threads on the remote host.
       Value must be between 1 and 99.
     type: integer
     default: 1
+    x-cli-option: true
   remote_stat_cache_size:
     description: Set stat cache size on the remote host.
       0 for disabled.
@@ -535,12 +625,17 @@ properties:
     description: Remove source files after they are successfully synchronized.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   reset:
     description:
       Clear the snapshot database and rescan the synchronized directories
       and files to create a fresh snapshot
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-short: -x
+    x-cli-switch: true
   resume:
     description: >-
       Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early.
@@ -550,14 +645,14 @@ properties:
     type: object
     properties:
       enabled:
-        description:
-          Enable the possibility of resuming individual file transfers between async sessions.
+        description: Enable the possibility of resuming individual file transfers between async sessions.
         type: boolean
         default: false
       min_size:
         description: This field specifies the minimum size of files that will be allowed to resume.
         type: integer
         default: "1048576"
+        x-cli-option: --support-resume
       max_age:
         description: >-
           Sets the age limit in days for temporary files that will be preserved
@@ -566,22 +661,28 @@ properties:
           regardless of whether they might be resumeable.
         type: integer
         default: "5"
+        x-cli-option: --resume-age-days
   resume_scan:
     description: Resume the scan from where the previous execution left off.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   scan_dir_rename:
     description: Enable the detection of renamed directories and files compared.
       to the previous scan, based on matching inodes
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   scan_file_rename:
     description: Enable the detection of renamed files compared to the previous scan, based on matching inodes.
     type: boolean
     default: false
+    x-cli-option: true
+    x-cli-switch: true
   scan_intensity:
-    description:
-      Scan at the set intensity.
+    description: Scan at the set intensity.
       `vlow` minimizes system activity.
       `vhigh` maximizes system activity by continuously scanning files without rest.
     type: string
@@ -592,13 +693,15 @@ properties:
       - high
       - vhigh
     default: medium
+    x-cli-option: true
+    x-cli-short: -H
   sharing_retry_max:
     description: Retry synchronizations up to the specified maximum number after a sharing violation.
     type: integer
     default: 3
+    x-cli-option: true
   symbolic_links:
-    description:
-      Handle symbolic links with the specified method.
+    description: Handle symbolic links with the specified method.
       Default is `skip` on windows, `copy` otherwise.
     type: string
     enum:
@@ -612,11 +715,15 @@ properties:
     type: object
     properties: {}
     x-ts-name: tags
+    x-cli-option: --tags64
+    x-cli-special: true
   transfer_threads:
     description:
       Use the specified number of dedicated transfer threads to process
       files smaller or equal to the specified size
     type: array
+    x-cli-option: true
+    x-cli-special: true
     items:
       type: object
       required:
@@ -648,6 +755,7 @@ properties:
           - aes256gcm
         default: aes128
         x-cli-option: true
+        x-cli-short: -c
       compression:
         description: Compress a file before transfer using the specified MODE.
         enum:
@@ -656,14 +764,17 @@ properties:
         default: none
         x-cli-option: true
       datagram_size:
-        description:
-          Specify the datagram size (MTU) for FASP.
+        description: Specify the datagram size (MTU) for FASP.
           By default it uses the detected path MTU.
         type: integer
+        x-cli-option: true
+        x-cli-short: -Z
       min_rate:
         description: Attempt to transfer no slower than the specified rate (in bps).
         type: integer
         default: 0
+        x-cli-option: true
+        x-cli-short: -m
       rate_policy:
         description: Defines how `ascp` will manage the bandwidth.
         enum:
@@ -672,36 +783,48 @@ properties:
           - high
           - low
         default: fair
+        x-cli-option: true
+        x-cli-short: -a
       raw_options:
         description: Pass arbitrary arguments to `ascp`.
         type: array
         items:
           type: string
+        x-cli-option: true
+        x-cli-special: true
       read_block_size:
-        description:
-          Use the specified block size (in bytes) for reading.
+        description: Use the specified block size (in bytes) for reading.
           Default is determined by `aspera.conf`.
         type: integer
+        x-cli-option: true
+        x-cli-short: -g
       rexmsg_size:
         description:
           Use the specified size (in bytes) for a retransmission request.
           Default is determined by `aspera.conf`.
         type: integer
+        x-cli-option: true
+        x-cli-short: -X
       target_rate:
         description: Transfer no faster than the specified rate (in bps).
         type: integer
         default: 10000000
         x-ts-name: target_rate_kbps
         x-ts-convert: kbps_to_bps
+        x-cli-option: true
+        x-cli-short: -l
       write_block_size:
-        description:
-          Use the specified block size (in bytes) for writing.
+        description: Use the specified block size (in bytes) for writing.
           Default is determined by `aspera.conf`.
         type: integer
+        x-cli-option: true
+        x-cli-short: -G
       udp_port:
         description: Use the specified UDP port for FASP data transfer.
         type: integer
         default: 33001
+        x-cli-option: true
+        x-cli-short: -O
   watchd:
     description: When connection is configured, `asperawatchd` is used to detect the changes on the source directory.
     type: object
@@ -731,7 +854,9 @@ properties:
     description: Try to write files as the specified group.
     type: string
     default: ""
+    x-cli-option: true
   write_uid:
     description: Try to write files as the specified user.
     type: string
     default: ""
+    x-cli-option: true

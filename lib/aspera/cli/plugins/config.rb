@@ -10,6 +10,7 @@ require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
+require 'aspera/cli/sync_actions'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
 require 'aspera/products/transferd'
@@ -39,6 +40,8 @@ module Aspera
     module Plugins
       # Manage the CLI config file
       class Config < Base
+        include SyncActions
+
         class << self
           # Folder containing plugins in the gem's main folder
           def gem_plugins_folder
@@ -930,10 +933,14 @@ module Aspera
           when :ascp
             execute_action_ascp
           when :sync
-            case options.get_next_command(%i[spec])
+            case options.get_next_command(%i[spec admin translate])
             when :spec
               fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true, agent_columns: false, schema: Sync::Operations::CONF_SCHEMA)
               return Main.result_object_list(data, fields: fields.map(&:to_s))
+            when :admin
+              return execute_sync_admin
+            when :translate
+              return Main.result_single_object(Sync::Operations.args_to_conf(options.get_next_argument('async arguments', multiple: true)))
             else Aspera.error_unreachable_line
             end
           when :transferd
