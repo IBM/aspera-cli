@@ -11,6 +11,7 @@ module Aspera
     class Error < Aspera::Error
     end
     class << self
+      # Hack: disable some key type
       def disable_ed25519_keys
         Log.log.debug('Disabling SSH ed25519 user keys')
         old_verbose = $VERBOSE
@@ -24,6 +25,7 @@ module Aspera
         $VERBOSE = old_verbose
       end
 
+      # Hack: disable some algorithms
       def disable_ecd_sha2_algorithms
         Log.log.debug('Disabling SSH ecdsa')
         Net::SSH::Transport::Algorithms::ALGORITHMS.each_value{ |a| a.reject!{ |a| a =~ /^ecd(sa|h)-sha2/}}
@@ -38,6 +40,7 @@ module Aspera
       Aspera.assert_type(host, String)
       Aspera.assert_type(username, String)
       Aspera.assert_type(ssh_options, Hash)
+      ssh_options[:use_agent] = false unless ssh_options.key?(:use_agent)
       @host = host
       @username = username
       @ssh_options = ssh_options

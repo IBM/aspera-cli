@@ -1,7 +1,9 @@
 # Changes (Release notes)
 
 * 4.25.0.pre
-  * 
+
+  * Breaking Changes:
+    * `server`: By default SSH option `use_agent` is `false` now.
 
 * 4.24.2
 

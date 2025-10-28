@@ -2771,7 +2771,16 @@ It consists in using a pair of associated keys: a private key and a public key.
 The same pair can be used for multiple applications.
 The file containing the private key (key pair) can optionally be protected by a passphrase.
 If the key is protected by a passphrase, then it will be prompted when used.
-(some plugins support option `passphrase`)
+Some plugins support option `passphrase`.
+
+By default, `ascli` does not support `ed25519` type, nor OpenSSH encoded keys.
+See section: [Private key type ed25519](#private-key-type-ed25519-not-supported-by-default).
+It requires PEM encoded keys.
+To support `ed25519` and OpenSSH format (default on modern Linux), install those gems:
+
+```shell
+gem install ed25519 bcrypt_pbkdf
+```
 
 The following sample commands use the shell variable `KEY_PAIR_PATH`.
 Set it to the desired safe location of the private key.
@@ -2792,6 +2801,7 @@ If another format is used, such as `DER`, it can be converted to `PEM`, e.g. usi
 
 The generated key is of type `RSA`, by default: **4096** bit.
 For convenience, the public key is also extracted with extension `.pub`.
+Files are PEM encoded.
 The key is not passphrase protected.
 
 ```shell
@@ -2913,14 +2923,7 @@ It is also possible to force the graphical mode with option `--ui` :
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
-
-To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
-
-> [!NOTE]
-> When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
-
-By default, passwords and secrets are redacted from logs.
-Set option `log_secrets` to `yes` to include secrets in logs.
+The following options control logging:
 
 | Option        | Values | Description                                                             |
 |---------------|--------|-------------------------------------------------------------------------|
@@ -2929,22 +2932,38 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 | `log_secrets` | `yes`<%=br%>`no` | Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
 | `log_format`  | `Proc`<%=br%>`String` | The name of a formatter or a lambda function that formats the log (see below).<%=br%>Default: `default`<%=br%>Alternative: `standard` |
 
-Option `log_format` is typically set using `@ruby:`.
-It is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
+Option `logger` defines the destination of logs.
+
+#### `log_level` and `log_secrets`
+
+To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
+
+> [!NOTE]
+> When using the `direct` agent (`ascp`), additional transfer logs from `ascp` can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
+
+By default, passwords and secrets are redacted from logs.
+Set option `log_secrets` to `yes` to include secrets in logs.
+
+#### `log_format`
+
+Option `log_format` support a few pre-defined formatters or a custom one using `@ruby:`.
+A customer formatter is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
 The default formatter is:
 
 ```ruby
-->(s, _d, _p, m){"#{s[0..2]} #{m}\n"}
+->(s, _d, _p, m){"#{s[0..2]}#{s[-1]} #{m}\n"}
 ```
 
 Available formatters for `log_format`:
 
-| Name      | Description              |
-|-----------|--------------------------|
-| `default` | Default formatter.       |
-| `standard`| Standard Ruby formatter. |
+| Name      | Description                                                                      |
+|-----------|----------------------------------------------------------------------------------|
+| `default` | Default formatter: Colorized 4 level level followed by message on the same line. |
+| `standard`| Standard Ruby formatter.                                                         |
+| `caller`  | Colorized 4 level level followed by caller, and then on next line: message.      |
+| `Proc`    | Custom lambda.                                                                   |
 
-Examples:
+#### Logging examples
 
 - Display debugging log on `stdout`:
 
@@ -8218,6 +8237,16 @@ If you want to use `ed25519` keys, then install the required gems:
 
 ```shell
 gem install ed25519 bcrypt_pbkdf
+```
+
+In addition, if those two gems are not installed, and if you are using Private Keys encoded using the OpenSSH format, then you'll get the message:
+
+```text
+OpenSSH keys only supported if ED25519 is available (NotImplementedError)
+net-ssh requires the following gems for ed25519 support:
+ * ed25519 (>= 1.2, < 2.0)
+ * bcrypt_pbkdf (>= 1.0, < 2.0)
+See https://github.com/net-ssh/net-ssh/issues/565 for more information
 ```
 
 In addition, if **JRuby** is used, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
