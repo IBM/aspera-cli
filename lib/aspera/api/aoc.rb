@@ -143,7 +143,8 @@ module Aspera
         # Call block with same query using paging and response information.
         # Block must return a hash with :data and :http keys
         # @return [Hash] {items: , total: }
-        def call_paging(query: {}, formatter: nil)
+        def call_paging(query: nil, formatter: nil)
+          query = {} if query.nil?
           Aspera.assert_type(query, Hash){'query'}
           Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
@@ -159,22 +160,40 @@ module Aspera
             new_query = query.clone
             new_query['page'] = current_page
             result = yield(new_query)
-            Aspera.assert(result[:data])
+            Aspera.assert_type(result, Hash)
+            Aspera.assert(result.keys.sort.eql?(%i[data http])){"wrongs keys: #{result.keys}"}
             Aspera.assert(result[:http])
-            total_count = result[:http]['X-Total-Count']
+            total_count = result[:http]['X-Total-Count']&.to_i
             page_count += 1
             current_page += 1
             add_items = result[:data]
+            break if add_items.nil?
             break if add_items.empty?
             # append new items to full list
             item_list += add_items
             break if !max_items.nil? && item_list.count >= max_items
             break if !max_pages.nil? && page_count >= max_pages
+            break if total_count&.<=(item_list.count)
             formatter&.long_operation_running("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
           end
           formatter&.long_operation_terminated
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
           return {items: item_list, total: total_count}
+        end
+
+        # @param id [String] Identifier or workspace
+        # @return [Hash] suitable for permission filtering
+        def workspace_access(id)
+          {
+            'access_type' => 'user',
+            'access_id'   => "#{ID_AK_ADMIN}_WS_#{id}"
+          }
+        end
+
+        # @param permission [Hash] Shared folder information
+        # @return [Boolean] `true` if internal access
+        def workspace_access?(permission)
+          permission['access_id'].start_with?("#{ID_AK_ADMIN}_WS_")
         end
       end
 
@@ -250,7 +269,7 @@ module Aspera
 
       # read using the query and paging
       # @return [Hash] {items: , total: }
-      def read_with_paging(subpath, query: {}, formatter: nil)
+      def read_with_paging(subpath, query = nil, formatter: nil)
         return self.class.call_paging(query: query, formatter: formatter) do |paged_query|
           # Use `call` instead of `read` to get headers
           call(operation: 'GET', subpath: subpath, headers: {'Accept' => Rest::MIME_JSON}, query: paged_query)
@@ -622,8 +641,7 @@ module Aspera
         when NilClass
         when ''
           # workspace shared folder
-          perm_data['access_type'] = 'user'
-          perm_data['access_id'] = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
+          perm_data.merge!(self.class.workspace_access(app_info[:workspace_id]))
           tag_workspace['shared_with_name'] = perm_data['access_id']
         else
           entity_info = lookup_by_name('contacts', shared_with, query: {'current_workspace_id' => app_info[:workspace_id]})

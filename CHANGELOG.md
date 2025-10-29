@@ -4,6 +4,8 @@
 
   * Breaking Changes:
     * `server`: By default SSH option `use_agent` is `false` now.
+  * Issues Fixed:
+    * `aoc`: Restored command `admin workspace shared_folder :id list` which was since 4.11.0.
 
 * 4.24.2
 

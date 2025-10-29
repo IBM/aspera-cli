@@ -47,6 +47,10 @@ skip:
 	@mkdir -p $(F)
 	@echo "Skipping test: $(T)"
 	@touch $(F)$(T)
+reset:
+	@if test -z "$(T)"; then echo "Usage:\nmake $@ T=<case identifier>\n"; exit 1; fi
+	@echo "Resetting test: $(T)"
+	@rm -f $(F)$(T)
 
 # test group: principal
 all:: $(DIR_TOP).gems_checked
@@ -1163,6 +1167,10 @@ $(F)aoc_adm_authp_lst: $(TMP_EXISTS)
 $(F)aoc_adm_ws_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin workspace list
+	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin workspace dropbox %name:@preset:aoc.other_workspace list
+	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin workspace shared_folder %name:@preset:aoc.other_workspace list
+	$(CLI_TEST) --preset=aoc_admin aoc admin workspace shared_folder %name:@preset:aoc.other_workspace list --query.max=1 --fields=id --output=$(STATE)shared_folder_id
+	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin workspace shared_folder %name:@preset:aoc.other_workspace member $$(cat $(STATE)shared_folder_id) list
 	@$(STOP_TEST) $@
 $(F)aoc_adm_nd_events: $(TMP_EXISTS)
 	@$(START_TEST) $@

@@ -288,7 +288,7 @@ module Aspera
           query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
-          result = aoc_api.read_with_paging(resource_class_path, query: base_query.merge(query).compact, formatter: formatter)
+          result = aoc_api.read_with_paging(resource_class_path, base_query.merge(query).compact, formatter: formatter)
           return Main.result_object_list(result[:items], fields: fields, total: result[:total])
         end
 
@@ -313,7 +313,7 @@ module Aspera
           Aspera.assert_type(query, Hash){'query'}
           PACKAGE_RECEIVED_BASE_QUERY.each{ |k, v| query[k] = v unless query.key?(k)}
           resolve_dropbox_name_default_ws_id(query)
-          return aoc_api.read_with_paging('packages', query: query.compact, formatter: formatter)
+          return aoc_api.read_with_paging('packages', query.compact, formatter: formatter)
         end
 
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
@@ -374,6 +374,7 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
+        # @param resource_type [Symbol] One of ADMIN_OBJECTS
         def execute_resource_action(resource_type)
           # get path on API, resource type is singular, but api is plural
           resource_class_path =
@@ -393,6 +394,7 @@ module Aspera
           supported_operations.push(:delete, *global_operations) unless singleton_object
           supported_operations.push(:do) if resource_type.eql?(:node)
           supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
+          supported_operations.push(:shared_folder, :dropbox) if resource_type.eql?(:workspace)
           command = options.get_next_command(supported_operations)
           # require identifier for non global commands
           if !singleton_object && !global_operations.include?(command)
@@ -454,6 +456,55 @@ module Aspera
           when :do
             command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
             return execute_nodegen4_command(command_repo, res_id)
+          when :dropbox
+            command_shared = options.get_next_command(%i[list])
+            case command_shared
+            when :list
+              query = options.get_option(:query, default: {})
+              res_data = aoc_api.read('dropboxes', query.merge({'workspace_id'=>res_id}))
+              return {type: :object_list, data: res_data, fields: %w[id name description]}
+            end
+          when :shared_folder
+            query = options.get_option(:query)
+            query = Api::AoC.workspace_access(res_id).merge({'admin' => true}) if query.nil?
+            shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
+            # inside a workspace
+            command_shared = options.get_next_command(%i[list member])
+            case command_shared
+            when :list
+              return {type: :object_list, data: shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as]}
+            when :member
+              shared_folder_id = instance_identifier
+              shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+              Aspera.assert(shared_folder)
+              command_shared_member = options.get_next_command(%i[list])
+              case command_shared_member
+              when :list
+                node_api = aoc_api.node_api_from(
+                  node_id: shared_folder['node_id'],
+                  workspace_id: res_id,
+                  workspace_name: nil,
+                  scope: Api::Node::SCOPE_USER
+                )
+                result = node_api.read(
+                  'permissions',
+                  {'file_id' => shared_folder['file_id'], 'tag' => "aspera.files.workspace.id=#{res_id}"}
+                )
+                result.each do |item|
+                  item['member'] = begin
+                    if Api::AoC.workspace_access?(item)
+                      {'name'=>'[Internal permission]'}
+                    else
+                      aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name': 'not found'}
+                    end
+                  rescue => e
+                    {'name'=>e.to_s}
+                  end
+                end
+                # TODO : read users and group name and add, if query "include_members"
+                return {type: :object_list, data: result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group]}
+              end
+            end
           else Aspera.error_unexpected_value(command)
           end
         end
@@ -736,7 +787,7 @@ module Aspera
             }
             return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params) if command.eql?(:list)
             one_id = instance_identifier
-            found = aoc_api.read_with_paging('short_links', query: list_params, formatter: formatter)[:items].find{ |item| item['id'].eql?(one_id)}
+            found = aoc_api.read_with_paging('short_links', list_params, formatter: formatter)[:items].find{ |item| item['id'].eql?(one_id)}
             raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
             return Main.result_single_object(found, fields: Formatter.all_but('data'))
           when :modify

@@ -1648,7 +1648,7 @@ If wrong, or no command is provided when expected, an error message is displayed
 Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional commands.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do _my_node_id_ browse /`: `browse` is a sub-command of `node`.
+For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do <node_id> browse /`: `browse` is a sub-command of `node`.
 
 **Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
@@ -4687,7 +4687,7 @@ It is also possible to get the bearer token for node, as user or as admin using:
 ```
 
 ```shell
-<%=cmd%> aoc admin node v4 _my_node_id_ --secret=_ak_secret_here_ bearer_token_node /
+<%=cmd%> aoc admin node v4 <node_id> --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -5290,13 +5290,13 @@ If a user recipient (email) is not already registered and the workspace allows e
 ##### Example: Send a package to a shared inbox with metadata
 
 ```shell
-<%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<workspace_name>" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```shell
-<%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<workspace_name>" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 ##### Example: Send a package with files from the Files app
@@ -5487,7 +5487,7 @@ If a single file or folder is to be downloaded, then a single argument can be pr
 
 #### Shared folders
 
-Like in AoC web UI, "Shared Folders" can be created and shared with either **Private** or **Public** links.
+Like in AoC web UI, **Shared Folders** can be created and shared with either **Private** or **Public** links.
 **Private** links require the collaborator to log in to access the shared folder.
 **Public** links include a passcode that enables the user to access the shared folder without login-in.
 
@@ -5525,8 +5525,8 @@ The basic payload to create a permission, i.e. a Shared Folder (last argument at
 | `link_name`     |  <%=tool%>          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  <%=tool%>          | Name of the link file created in the user's home folder for admin shared folders. |
 
-In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`.
-This is conveniently set by <%=tool%> using an empty string for field `with`.
+In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]`, with a `access_type` of `user`.
+This is conveniently set by <%=tool%> using an **empty string** for field `with`.
 In order to share a folder with a different, special tags are set, but this is conveniently done by <%=tool%> using the `as` field.
 
 ##### User Shared Folders
@@ -5543,7 +5543,7 @@ Personal shared folders, created by users in a workspace follow the syntax:
 
 ##### Admin Shared Folders
 
-Admin shared folders, created by administrators in a workspace follow the syntax:
+Admin shared folders, created by administrators in a workspace, follow the syntax:
 
 ```shell
 <%=cmd%> aoc admin node do <node ID> permission --workspace=<workspace name> <path to folder>
@@ -5555,7 +5555,7 @@ Admin shared folders, created by administrators in a workspace follow the syntax
 > The path is identifier by a path, one can specify a file id, with `%id:123`.
 > If the id is left blank: `%id:`, then if means `*`, i.e. all.
 
-##### Example: List permissions on a shared folder
+##### Example: List permissions on a user shared folder
 
 ```shell
 <%=cmd%> aoc files permission /shared_folder_test1 list
@@ -5602,7 +5602,7 @@ To remove a password:
 > [!NOTE]
 > Access level cannot be customized in this version.
 
-An expiration date can be set with parameter `expires_at`, using ISO 8601 format.
+An expiration date can be set with parameter `expires_at`, using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
 E.g. `2025-08-29T08:10:31.000Z`.
 If only a date is provided, it will be set to midnight UTC of that date.
 
@@ -5610,16 +5610,16 @@ If only a date is provided, it will be set to midnight UTC of that date.
 
 First, identify the node ID where the shared folder will be created.
 
-To get the node ID of the default node for workspace `my ws`, use the command:
+To get the node ID of the default node for workspace `<workspace_name>`, use the command:
 
 ```shell
-<%=cmd%> aoc admin workspace show %name:'my ws' --fields=node_id
+<%=cmd%> aoc admin workspace show %name:'<workspace_name>' --fields=node_id
 ```
 
 Alternatively (longer):
 
 ```shell
-<%=cmd%> aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
+<%=cmd%> aoc admin workspace list --select=@json:'{"name":"<workspace_name>"}' --fields=node_id
 ```
 
 Or select a node identifier manually from the list of nodes:
@@ -5630,24 +5630,22 @@ Or select a node identifier manually from the list of nodes:
 
 In the following commands, replace:
 
-- `_my_node_id_` with the node ID
-- `my ws` with the workspace name
-- `/folder_on_node` with the name of the folder on the node: it can also be a folder deeper than level 1.
-
-The node can also be conveniently identified using the **percent selector** instead of numerical ID: `%name:"my node"`.
+- `<node_id>` with the node ID, or with `%name:<node_name>`.
+- `<workspace_name>` with the workspace name, or with `%id:<workspace_id>`.
+- `<folder_path>` with the path of the folder to share on the node (e.g. `/my_folder` or simply `my_folder`). It can also be a folder deeper than level 1.
 
 If the shared folder does not exist, then create it:
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ mkdir /folder_on_node
+<%=cmd%> aoc admin node do <node_id> mkdir <folder_path>
 ```
 
-Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
-Optionally use `as` to set the name of the shared folder if different from the folder name on the node.
+Create the shared folder in workspace `<workspace_name>` (set `with` to empty string, or do not specify it).
+**Optionally**, use `as` to set the name of the shared folder if different from the folder name on the node.
 For other options, refer to the previous section on shared folders.
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"","as":"folder_for_users"}' --workspace="<workspace_name>"
 ```
 
 > [!NOTE]
@@ -5658,30 +5656,67 @@ The `"with"` parameter will perform a lookup, and set fields `access_type` and `
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
+<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="<workspace_name>"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
+<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="<workspace_name>"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"<workspace_name>","as":"folder_for_all_workspace"}' --workspace="<workspace_name>"
 ```
 
 > [!NOTE]
 > In the previous commands, field `as` is optional.
+
+##### Example: List all workspace admin shared folder in a workspace
+
+```shell
+<%=cmd%> aoc admin workspace shared_folder %name:'<workspace_name>' list
+```
+
+```text
+╭───────┬───────────┬─────────┬─────────┬───────────┬──────────────────────────────────────╮
+│ id    │ node_name │ node_id │ file_id │ file.path │ tags.aspera.files.workspace.share_as │
+╞═══════╪═══════════╪═════════╪═════════╪═══════════╪══════════════════════════════════════╡
+│ 198   │ eudemo    │ 8666    │ 2465    │ /project1 │                                      │
+│ 785   │ eudemo    │ 8666    │ 9       │ /folder2  │ project2                             │
+│ 4788  │ eudemo    │ 8666    │ 3691    │ /backup   │                                      │
+╰───────┴───────────┴─────────┴─────────┴───────────┴──────────────────────────────────────╯
+```
+
+To list members:
+
+```shell
+<%=cmd%> aoc admin workspace shared_folder %name:'<workspace_name>' member 198 list
+```
+
+```text
+╭─────────────┬──────────────────────────────────┬──────────────┬──────────────────────╮
+│ access_type │ access_id                        │ access_level │ last_updated_at      │
+╞═════════════╪══════════════════════════════════╪══════════════╪══════════════════════╡
+│ user        │ ASPERA_ACCESS_KEY_ADMIN_WS_45071 │ edit         │ 2020-11-29T22:48:49Z │
+│ group       │ 160270                           │ edit         │ 2024-05-13T15:58:02Z │
+╰─────────────┴──────────────────────────────────┴──────────────┴──────────────────────╯
+```
+
+If you have the node id of the shared folder, than it is equivalent to:
+
+```shell
+<%=cmd%> aoc admin node do 8669 perm /project1 list --query=@json:'{"tag":"aspera.files.workspace.id=<workspace_id>"}'
+```
 
 ##### Example: List all workspace admin shared folder on a node
 
 First get the workspace identifier:
 
 ```shell
-<%=cmd%> aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=id
+<%=cmd%> aoc admin workspace list --select=@json:'{"name":"<workspace_name>"}' --fields=id
 ```
 
 ```text
-111111
+<workspace_id>
 ```
 
 Then, identify the node id on which to list, see previous section.
@@ -5689,7 +5724,7 @@ Then, identify the node id on which to list, see previous section.
 Finally, list all shared folders, as permissions:
 
 ```shell
-<%=cmd%> aoc admin node do _my_node_id_ perm %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_111111"}'
+<%=cmd%> aoc admin node do <node_id> perm %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_<workspace_id>"}'
 ```
 
 > [!NOTE]
