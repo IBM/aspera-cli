@@ -392,7 +392,7 @@ module Aspera
           global_operations =  %i[create list]
           supported_operations = %i[show modify]
           supported_operations.push(:delete, *global_operations) unless singleton_object
-          supported_operations.push(:do) if resource_type.eql?(:node)
+          supported_operations.push(:do, :bearer_token) if resource_type.eql?(:node)
           supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
           supported_operations.push(:shared_folder, :dropbox) if resource_type.eql?(:workspace)
           command = options.get_next_command(supported_operations)
@@ -456,13 +456,19 @@ module Aspera
           when :do
             command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
             return execute_nodegen4_command(command_repo, res_id)
+          when :bearer_token
+            node_api = aoc_api.node_api_from(
+              node_id: res_id,
+              scope:   options.get_next_argument('scope')
+            )
+            return Main.result_text(node_api.oauth.authorization)
           when :dropbox
             command_shared = options.get_next_command(%i[list])
             case command_shared
             when :list
               query = options.get_option(:query, default: {})
               res_data = aoc_api.read('dropboxes', query.merge({'workspace_id'=>res_id}))
-              return {type: :object_list, data: res_data, fields: %w[id name description]}
+              return Main.result_object_list(res_data, fields: %w[id name description])
             end
           when :shared_folder
             query = options.get_option(:query)
@@ -472,7 +478,7 @@ module Aspera
             command_shared = options.get_next_command(%i[list member])
             case command_shared
             when :list
-              return {type: :object_list, data: shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as]}
+              return Main.result_object_list(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
             when :member
               shared_folder_id = instance_identifier
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
@@ -502,7 +508,7 @@ module Aspera
                   end
                 end
                 # TODO : read users and group name and add, if query "include_members"
-                return {type: :object_list, data: result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group]}
+                return Main.result_object_list(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
               end
             end
           else Aspera.error_unexpected_value(command)

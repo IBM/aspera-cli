@@ -513,8 +513,8 @@ module Aspera
             else Aspera.error_unreachable_line
             end
             return Main.result_single_object(result) if command_repo.eql?(:node_info)
-            # check format of bearer token
-            OAuth::Factory.bearer_token(result[:password])
+            raise BadArgument, 'Cannot get bearer token if authenticating with secret' unless apifid[:api].auth_params[:type].eql?(:oauth2)
+            Aspera.assert(OAuth::Factory.bearer_auth?(result[:password])){'Not using bearer token auth'}
             return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
