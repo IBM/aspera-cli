@@ -758,6 +758,7 @@ $(F)nd_stream_1: $(TMP_EXISTS)
 $(eval $(call test_suite_all,tnodegen3,$(F)nd_health $(F)nd_health_bad $(F)nd_detect $(F)nd_wizard $(F)nd_info $(F)nd_lic $(F)nd_det $(F)nd_tra $(F)nd_bro $(F)nd_sea $(F)nd_spa $(F)nd_del_err $(F)nd_folder $(F)nd_slash $(F)nd2_http $(F)nd2 $(F)nd_2_nd_xfer $(F)nd_service $(F)nd_xfer_lst $(F)nd_xfer_ops $(F)node_basic_token $(F)nd_browser $(F)nd8 $(F)nd_central_1 $(F)nd_watch_1 $(F)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
+clean_tnode: clean_tnodegen3 clean_tndak
 #######################################################################################################################
 $(F)nd_ak: $(TMP_EXISTS)
 	@$(START_TEST) $@

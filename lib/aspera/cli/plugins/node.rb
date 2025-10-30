@@ -21,6 +21,30 @@ module Aspera
       class Node < BasicAuth
         include SyncActions
 
+        # Processing of paths in arguments and results
+        # Used only by Faspex4 to browse packages
+        class NodePathPrefix
+          def initialize(path)
+            @root = path
+          end
+
+          # get next path argument from command line, and add prefix
+          def add_to_path(path_arg)
+            File.join(@root, path_arg)
+          end
+
+          # get remaining path arguments from command line, and add prefix
+          def add_to_paths!(path_args)
+            path_args.map!{ |p| add_to_path(p)}
+          end
+
+          def remove_in_object_list!(obj_list)
+            obj_list.each do |item|
+              item['path'] = item['path'][@root.length..-1] if item['path'].start_with?(@root)
+            end
+          end
+        end
+
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze
@@ -142,9 +166,9 @@ module Aspera
         GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
 
         # @param api [Rest] an existing API object for the Node API
-        # @param prefix_path [String,nil] for Faspex 4, allows browsing a package
+        # @param prefix_path [String,nil] for Faspex 4, allows browsing a package without full path in node (removes storage prefix)
         def initialize(context:, api: nil, prefix_path: nil)
-          @prefix_path = prefix_path
+          @prefixer = prefix_path ? NodePathPrefix.new(prefix_path) : nil
           super(context: context, basic_options: api.nil?)
           Node.declare_options(options)
           return if context.only_manual?
@@ -171,42 +195,11 @@ module Aspera
             end
         end
 
-        # reduce the path from a result on given named column
-        def c_result_remove_prefix_path(result, column)
-          return result if @prefix_path.nil?
-          case result[:type]
-          when :object_list
-            result[:data].each do |item|
-              item[column] = item[column][@prefix_path.length..-1] if item[column].start_with?(@prefix_path)
-            end
-          when :single_object
-            item = result[:data]
-            item[column] = item[column][@prefix_path.length..-1] if item[column].start_with?(@prefix_path)
-          end
-          return result
-        end
-
-        # translates paths results into CLI result, and removes prefix
-        def c_result_translate_rem_prefix(response, type, success_msg)
-          errors = []
-          final_result = {type: :object_list, data: [], fields: [type, 'result']}
-          response['paths'].each do |p|
-            result = success_msg
-            if p.key?('error')
-              Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
-              result = p['error']['user_message']
-              errors.push([p['path'], p['error']['user_message']])
-            end
-            final_result[:data].push({type => p['path'], 'result' => result})
-          end
-          # one error make all fail
-          raise errors.map{ |i| "#{i.first}: #{i.last}"}.join(', ') unless errors.empty?
-          return c_result_remove_prefix_path(final_result, type)
-        end
-
         # Gen3 API
         def browse_gen3
-          folders_to_process = [get_one_argument_with_prefix('path')]
+          folders_to_process = options.get_next_argument('path', validation: String)
+          folders_to_process = @prefixer.add_to_path(folders_to_process) unless @prefixer.nil?
+          folders_to_process = [folders_to_process]
           query = options.get_option(:query, default: {})
           # special parameter: max number of entries in result
           max_items = query.delete(MAX_ITEMS)
@@ -225,14 +218,13 @@ module Aspera
             query['path'] = path
             offset = 0
             total_count = nil
-            result = nil
             loop do
               # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
               response = @api_node.create('files/browse', query)
               # 'file','symbolic_link'
               if !Node.gen3_entry_folder?(response['self']) || only_path
-                result = {type: :single_object, data: response['self']}
-                break
+                @prefixer&.remove_in_object_list!([response['self']])
+                return Main.result_single_object(response['self'])
               end
               items = response['items']
               total_count ||= response['total_count']
@@ -253,9 +245,10 @@ module Aspera
             end
             query.delete('skip')
           end
-          result ||= {type: :object_list, data: all_items}
+          @prefixer&.remove_in_object_list!(all_items)
+          return Main.result_object_list(all_items)
+        ensure
           formatter.long_operation_terminated
-          return c_result_remove_prefix_path(result, 'path')
         end
 
         # Create async transfer spec request from direction and folders
@@ -294,48 +287,57 @@ module Aspera
           case command
           when :delete
             # TODO: add query for recursive
-            paths_to_delete = get_all_arguments_with_prefix('file list')
+            paths_to_delete = options.get_next_argument('file list', multiple: true)
+            @prefixer&.add_to_paths!(paths_to_delete)
             resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
-            return c_result_translate_rem_prefix(resp, 'file', 'deleted')
+            return cli_result_from_paths_response(resp, 'file deleted')
           when :search
-            search_root = get_one_argument_with_prefix('search root')
+            search_root = options.get_next_argument('search root', validation: String)
+            search_root = @prefixer.add_to_path(search_root) unless @prefixer.nil?
             parameters = {'path' => search_root}
             other_options = options.get_option(:query)
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search', parameters)
-            result = {type: :object_list, data: resp['items']}
-            return Main.result_empty if result[:data].empty?
-            result[:fields] = result[:data].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
+            return Main.result_empty if resp['items'].empty?
+            fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
             formatter.display_item_count(resp['item_count'], resp['total_count'])
             formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
-            return c_result_remove_prefix_path(result, 'path')
+            @prefixer&.remove_in_object_list!(resp['items'])
+            return Main.result_object_list(resp['items'], fields: fields)
           when :space
-            path_list = get_all_arguments_with_prefix('folder path or ext.val. list')
+            path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
+            @prefixer&.add_to_paths!(path_list)
             resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
-            result = {type: :object_list, data: resp['paths']}
-            # return c_result_translate_rem_prefix(resp,'folder','created',@prefix_path)
-            return c_result_remove_prefix_path(result, 'path')
+            @prefixer&.remove_in_object_list!(resp['paths'])
+            return Main.result_object_list(resp['paths'])
           when :mkdir
-            path_list = get_all_arguments_with_prefix('folder path or ext.val. list')
+            path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
+            @prefixer&.add_to_paths!(path_list)
             resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
-            return c_result_translate_rem_prefix(resp, 'folder', 'created')
+            return cli_result_from_paths_response(resp, 'folder created')
           when :mklink
-            target = get_one_argument_with_prefix('target')
-            one_path = get_one_argument_with_prefix('link path')
+            target = options.get_next_argument('target', validation: String)
+            target = @prefixer.add_to_path(target) unless @prefixer.nil?
+            one_path = options.get_next_argument('link path', validation: String)
+            one_path = @prefixer.add_to_path(one_path) unless @prefixer.nil?
             resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
-            return c_result_translate_rem_prefix(resp, 'folder', 'created')
+            return cli_result_from_paths_response(resp, 'link created')
           when :mkfile
-            one_path = get_one_argument_with_prefix('file path')
+            one_path = options.get_next_argument('file path', validation: String)
+            one_path = @prefixer.add_to_path(one_path) unless @prefixer.nil?
             contents64 = Base64.strict_encode64(options.get_next_argument('contents'))
             resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
-            return c_result_translate_rem_prefix(resp, 'folder', 'created')
+            return cli_result_from_paths_response(resp, 'file created')
           when :rename
             # TODO: multiple ?
-            path_base = get_one_argument_with_prefix('path_base')
-            path_src = get_one_argument_with_prefix('path_src')
-            path_dst = get_one_argument_with_prefix('path_dst')
+            path_base = options.get_next_argument('path_base', validation: String)
+            path_base = @prefixer.add_to_path(path_base) unless @prefixer.nil?
+            path_src = options.get_next_argument('path_src', validation: String)
+            path_src = @prefixer.add_to_path(path_src) unless @prefixer.nil?
+            path_dst = options.get_next_argument('path_dst', validation: String)
+            path_dst = @prefixer.add_to_path(path_dst) unless @prefixer.nil?
             resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
-            return c_result_translate_rem_prefix(resp, 'entry', 'moved')
+            return cli_result_from_paths_response(resp, 'entry moved')
           when :browse
             return browse_gen3
           when :sync
@@ -377,7 +379,8 @@ module Aspera
             transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
           when :cat
-            remote_path = get_one_argument_with_prefix('remote path')
+            remote_path = options.get_next_argument('remote path', validation: String)
+            remote_path = @prefixer.add_to_path(remote_path) unless @prefixer.nil?
             File.basename(remote_path)
             result = @api_node.call(
               operation: 'GET',
@@ -1113,18 +1116,31 @@ module Aspera
 
         private
 
-        # get remaining path arguments from command line, and add prefix
-        def get_all_arguments_with_prefix(name)
-          path_args = options.get_next_argument(name, multiple: true)
-          return path_args if @prefix_path.nil?
-          return path_args.map{ |p| File.join(@prefix_path, p)}
+        # Response has key `paths`.
+        # From those, check if there is an error
+        # @return [Array] of Hash with 2 keys: `path` and `result`
+        def response_to_result(response, success_msg)
+          errors = []
+          obj_list = []
+          response['paths'].each do |p|
+            result = success_msg
+            if p.key?('error')
+              Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
+              result = p['error']['user_message']
+              errors.push([p['path'], p['error']['user_message']])
+            end
+            obj_list.push({'path' => p['path'], 'result' => result})
+          end
+          # one error make all fail
+          raise errors.map{ |i| "#{i.first}: #{i.last}"}.join(', ') unless errors.empty?
+          obj_list
         end
 
-        # get next path argument from command line, and add prefix
-        def get_one_argument_with_prefix(name)
-          path_arg = options.get_next_argument(name, validation: String)
-          return path_arg if @prefix_path.nil?
-          return File.join(@prefix_path, path_arg)
+        # Translates paths results into CLI result, and removes prefix
+        def cli_result_from_paths_response(response, success_msg)
+          obj_list = response_to_result(response, success_msg)
+          @prefixer&.remove_in_object_list!(obj_list)
+          return Main.result_object_list(obj_list, fields: %w[path result])
         end
 
         # Executes the provided API call in loop
