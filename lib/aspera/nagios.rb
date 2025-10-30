@@ -21,7 +21,7 @@ module Aspera
     end
 
     class << self
-      # process results of a analysis and display status and exit with code
+      # Process results of a analysis and display status and exit with code
       def process(data)
         Aspera.assert_type(data, Array)
         Aspera.assert(!data.empty?){'data is empty'}
@@ -54,7 +54,7 @@ module Aspera
       @data = []
     end
 
-    # compare remote time with local time
+    # Compare remote time with local time
     def check_time_offset(remote_date, component)
       # check date if specified : 2015-10-13T07:32:01Z
       remote_time = Time.parse(remote_date)
@@ -76,10 +76,11 @@ module Aspera
       # TODO: check on database if latest version
     end
 
-    # translate for display
-    def result
+    # Readable status list
+    # @return [Array] of Hash
+    def status_list
       Aspera.assert(!@data.empty?){'missing result'}
-      {type: :object_list, data: @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}}
+      @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}
     end
   end
 end

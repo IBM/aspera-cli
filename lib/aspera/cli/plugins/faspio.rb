@@ -88,7 +88,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('api', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :bridges
             return entity_execute(api: api, entity: 'bridges')
           end

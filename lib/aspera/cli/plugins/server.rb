@@ -227,7 +227,7 @@ module Aspera
               end
             else Aspera.error_unexpected_value(command_nagios)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when *TRANSFER_COMMANDS
             return execute_transfer(command, server_transfer_spec)
           when *AsCmd::OPERATIONS

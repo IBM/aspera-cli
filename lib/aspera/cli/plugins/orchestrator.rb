@@ -133,7 +133,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('node api', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :info
             result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
             return Main.result_single_object(result)

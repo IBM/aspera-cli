@@ -91,7 +91,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('console api', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :transfer
             command = options.get_next_command(%i[current smart])
             case command

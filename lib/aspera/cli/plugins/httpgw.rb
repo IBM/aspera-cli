@@ -56,7 +56,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('api', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :info
             api_v1 = Api::Httpgw.new(url: base_url)
             return Main.result_single_object(api_v1.info)

@@ -453,7 +453,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('central', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :events
             events = @api_node.read('events', query_read_delete)
             return Main.result_object_list(events, fields: ->(f){!f.start_with?('data')})

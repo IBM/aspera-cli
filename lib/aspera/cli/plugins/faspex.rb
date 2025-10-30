@@ -280,7 +280,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('faspex api', e.to_s)
             end
-            return nagios.result
+            Main.result_object_list(nagios.status_list)
           when :package
             command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
             case command_pkg
