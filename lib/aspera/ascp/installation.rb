@@ -33,25 +33,12 @@ module Aspera
     class Installation
       include Singleton
 
-      DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
-        <?xml version='1.0' encoding='UTF-8'?>
-        <CONF version="2">
-        <default>
-            <file_system>
-                <resume_suffix>.aspera-ckpt</resume_suffix>
-                <partial_file_suffix>.partial</partial_file_suffix>
-            </file_system>
-        </default>
-        </CONF>
-      END_OF_CONFIG_FILE
-      # all executable files from SDK
-      EXE_FILES = %i[ascp ascp4 async transferd].freeze
-      SDK_FILES = %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
-      TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
-      # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
+      # prefix
+      USE_PRODUCT_PREFIX = 'product:'
+      # policy for product selection
+      FIRST_FOUND = 'FIRST'
 
       # Loads YAML from cloud with locations of SDK archives for all platforms
       # @return location structure
@@ -70,8 +57,13 @@ module Aspera
       def ascp_path=(v)
         Aspera.assert_type(v, String)
         Aspera.assert(!v.empty?){'ascp path cannot be empty: check your config file'}
+        if v.start_with?(USE_PRODUCT_PREFIX)
+          use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
+          return
+        end
         Aspera.assert(File.exist?(v)){"No such file: [#{v}]"}
         @path_to_ascp = v
+        return
       end
 
       def ascp_path
@@ -195,7 +187,9 @@ module Aspera
         return exe_version
       end
 
-      def ascp_pvcl_info
+      # Extract some stings from ascp logs
+      # Folder, PVCL, version, license information
+      def ascp_info_from_log
         data = {}
         # read PATHs from ascp directly, and pvcl modules as well
         Open3.popen3(ascp_path, '-DDL-') do |_stdin, _stdout, stderr, thread|
@@ -227,8 +221,9 @@ module Aspera
         return data
       end
 
-      # extract some stings from ascp binary
-      def ascp_ssl_info
+      # Extract some stings from ascp binary
+      # Openssl information
+      def ascp_info_from_file
         data = {}
         File.binread(ascp_path).scan(/[\x20-\x7E]{10,}/) do |bin_string|
           if (m = bin_string.match(/OPENSSLDIR.*"(.*)"/))
@@ -243,8 +238,8 @@ module Aspera
       # information for `ascp info`
       def ascp_info
         ascp_data = file_paths
-        ascp_data.merge!(ascp_pvcl_info)
-        ascp_data.merge!(ascp_ssl_info)
+        ascp_data.merge!(ascp_info_from_log)
+        ascp_data.merge!(ascp_info_from_file)
         return ascp_data
       end
 
@@ -355,10 +350,23 @@ module Aspera
 
       private
 
-      # policy for product selection
-      FIRST_FOUND = 'FIRST'
-
-      private_constant :FIRST_FOUND
+      DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
+        <?xml version='1.0' encoding='UTF-8'?>
+        <CONF version="2">
+        <default>
+            <file_system>
+                <resume_suffix>.aspera-ckpt</resume_suffix>
+                <partial_file_suffix>.partial</partial_file_suffix>
+            </file_system>
+        </default>
+        </CONF>
+      END_OF_CONFIG_FILE
+      # all executable files from SDK
+      EXE_FILES = %i[ascp ascp4 async transferd].freeze
+      SDK_FILES = %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
+      TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
+      # filename for ascp with optional extension (Windows)
+      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
 
       def initialize
         @path_to_ascp = nil

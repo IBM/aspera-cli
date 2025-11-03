@@ -3299,11 +3299,6 @@ This is the reason why it is advised to install the Aspera Transfer Daemon durin
 
 By default, `ascli` uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
 
-The way to specify the location of `ascp` is to use either options:
-
-- `ascp_path`
-- `use_product`
-
 The `config` plugin allows finding and specifying the location of `ascp`.
 It provides the following commands for `ascp` sub-command:
 
@@ -3312,32 +3307,11 @@ It provides the following commands for `ascp` sub-command:
 - `products` : list Aspera transfer products available locally
 - `connect` : list and download connect client versions available on internet
 
-#### Show path of currently used `ascp`
-
-```shell
-ascli config ascp show
-```
-
-```text
-/Users/laurent/.aspera/ascli/sdk/ascp
-```
-
-```shell
-ascli config ascp info
-```
-
-```text
-╭─────────┬──────────────────────────────────────────────────╮
-│ field   │ value                                            │
-╞═════════╪══════════════════════════════════════════════════╡
-│ ascp    │ /Users/john/.aspera/sdk/ascp                     │
-...
-╰─────────┴──────────────────────────────────────────────────╯
-```
-
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
-By default, `ascli` uses any found local product with `ascp`, including Transfer Daemon.
+Option: `ascp_path` is used to specify the location of `ascp`.
+The default value is: `product:FIRST`.
+By default, `ascli` uses the found local product with `ascp`, including Transfer Daemon (SDK).
 
 To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
@@ -3369,10 +3343,9 @@ Saved to default global preset global_common_defaults
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-If option `ascp_path` is not set, then the product identified with option `use_product` is used.
-
-If `use_product` is not set, then the first product found is used,
-this is equivalent to using option: `--use-product=FIRST`.
+A special value `product:<product name>` can be used for option `ascp_path`.
+It specifies to use `ascp` from the given product name.
+A special value for product name is `FIRST`, which means: use the first found.
 
 Locally installed Aspera products can be listed with:
 
@@ -3391,13 +3364,42 @@ ascli config ascp products list
 +---------------------------------------+----------------------------------------+
 ```
 
-Using the option `use_product` finds the `ascp` binary of the selected product.
-
 To permanently use the `ascp` of a product:
 
 ```shell
-ascli config ascp products use 'Aspera Connect'
-saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
+ascli config ascp products use 'IBM Aspera Connect'
+Updated: default: config <- global_common_defaults
+Updated: global_common_defaults: ascp_path <- product:IBM Aspera Connect
+Saving config file.
+```
+
+It is the same as executing:
+
+```shell
+ascli config preset set GLOBAL ascp_path 'product:IBM Aspera Connect'
+```
+
+To show the path of currently used `ascp`:
+
+```shell
+ascli config ascp show
+```
+
+```text
+/Users/laurent/.aspera/ascli/sdk/ascp
+```
+
+```shell
+ascli config ascp info
+```
+
+```text
+╭─────────┬──────────────────────────────────────────────────╮
+│ field   │ value                                            │
+╞═════════╪══════════════════════════════════════════════════╡
+│ ascp    │ /Users/john/.aspera/sdk/ascp                     │
+...
+╰─────────┴──────────────────────────────────────────────────╯
 ```
 
 #### Installation of Connect Client on command line
@@ -4603,11 +4605,10 @@ OPTIONS: global
         --override=ENUM              Wizard: override existing value: [no], yes
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --key-path=VALUE             Wizard: path to private key for JWT
-        --ascp-path=VALUE            Ascp: Path to ascp
-        --use-product=VALUE          Ascp: Use ascp from specified product
         --sdk-url=VALUE              Ascp: URL to get Aspera Transfer Executables
-        --locations-url=VALUE        Ascp: URL to get locations of Aspera Transfer Daemon
-        --sdk-folder=VALUE           Ascp: SDK folder path
+        --ascp-path=VALUE            Ascp: Path to ascp (or product with "product:")
+        --locations-url=VALUE        Ascp: URL to get download locations of Aspera Transfer Daemon
+        --sdk-folder=VALUE           Ascp: SDK installation folder path
         --progress-bar=ENUM          Display progress bar: [no], yes
         --smtp=VALUE                 Email: SMTP configuration (Hash)
         --notify-to=VALUE            Email: Recipient for notification of transfers

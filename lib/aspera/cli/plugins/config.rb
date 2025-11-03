@@ -140,11 +140,12 @@ module Aspera
           # Declare wizard options
           @wizard = Wizard.new(self, @main_folder)
           # Transfer SDK options
-          options.declare(:ascp_path, 'Ascp: Path to ascp', handler: {o: Ascp::Installation.instance, m: :ascp_path})
-          options.declare(:use_product, 'Ascp: Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:sdk_url, 'Ascp: URL to get Aspera Transfer Executables', default: SpecialValues::DEF)
-          options.declare(:locations_url, 'Ascp: URL to get locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
-          options.declare(:sdk_folder, 'Ascp: SDK folder path', handler: {o: Products::Transferd, m: :sdk_directory})
+          options.parse_options!
+          set_sdk_dir
+          options.declare(:ascp_path, 'Ascp: Path to ascp (or product with "product:")', handler: {o: Ascp::Installation.instance, m: :ascp_path}, default: "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{Ascp::Installation::FIRST_FOUND}")
+          options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
+          options.declare(:sdk_folder, 'Ascp: SDK installation folder path', handler: {o: Products::Transferd, m: :sdk_directory})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # Email options
           options.declare(:smtp, 'Email: SMTP configuration', types: Hash)
@@ -162,24 +163,7 @@ module Aspera
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', types: Array)
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
-          # Check SDK folder is set or not, for compatibility, we check in two places
-          sdk_dir = Products::Transferd.sdk_directory rescue nil
-          if sdk_dir.nil?
-            @sdk_default_location = true
-            Log.log.debug('SDK folder is not set, checking default')
-            # New location
-            sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
-            Log.log.debug{"Checking: #{sdk_dir}"}
-            if !Dir.exist?(sdk_dir)
-              Log.log.debug{"No such folder: #{sdk_dir}"}
-              # Former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
-              Log.log.debug{"Checking: #{former_sdk_folder}"}
-              sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
-            end
-            Log.log.debug{"Using: #{sdk_dir}"}
-            Products::Transferd.sdk_directory = sdk_dir
-          end
+          options.get_option(:ascp_path)
           pac_script = options.get_option(:fpac)
           # Create PAC executor
           if !pac_script.nil?
@@ -240,6 +224,27 @@ module Aspera
 
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
         attr_reader :option_ignore_cert_host_port, :progress_bar
+
+        def set_sdk_dir
+          # Check SDK folder is set or not, for compatibility, we check in two places
+          sdk_dir = Products::Transferd.sdk_directory rescue nil
+          if sdk_dir.nil?
+            @sdk_default_location = true
+            Log.log.debug('SDK folder is not set, checking default')
+            # New location
+            sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
+            Log.log.debug{"Checking: #{sdk_dir}"}
+            if !Dir.exist?(sdk_dir)
+              Log.log.debug{"No such folder: #{sdk_dir}"}
+              # Former location
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
+              Log.log.debug{"Checking: #{former_sdk_folder}"}
+              sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
+            end
+            Log.log.debug{"Using: #{sdk_dir}"}
+            Products::Transferd.sdk_directory = sdk_dir
+          end
+        end
 
         # Add files, folders or default locations to the certificate store
         # @param path_list [Array<String>] list of paths to add
@@ -485,14 +490,6 @@ module Aspera
           return ExtendedValue.instance.evaluate(current)
         end
 
-        def option_use_product=(value)
-          Ascp::Installation.instance.use_ascp_from_product(value)
-        end
-
-        def option_use_product
-          'write-only option, see value of ascp_path'
-        end
-
         def option_plugin_folder=(value)
           Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
           value = [value] if value.is_a?(String)
@@ -641,7 +638,7 @@ module Aspera
             when :use
               default_product = options.get_next_argument('product name')
               Ascp::Installation.instance.use_ascp_from_product(default_product)
-              set_global_default(:ascp_path, Ascp::Installation.instance.path(:ascp))
+              set_global_default(:ascp_path, "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{default_product}")
               return Main.result_nothing
             end
           when :install
