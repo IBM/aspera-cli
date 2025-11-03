@@ -84,7 +84,10 @@ module Aspera
       end
 
       # To be called in public wizard method to get private key
-      # @return [Array] Private key path, pub key PEM
+      # @param user [String] User's email
+      # @param url  [String] Instance URL
+      # @param page [String] URL of page to enter pub key
+      # @return [String] Private key path (can contain ~ for home)
       def ask_private_key(user:, url:, page:)
         # Lets see if path to priv key is provided
         private_key_path = options.get_option(:key_path)
@@ -95,7 +98,7 @@ module Aspera
         end
         # Else generate path
         private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
-        if File.exist?(private_key_path)
+        if File.exist?(File.expand_path(private_key_path))
           formatter.display_status('Using existing key:')
         else
           formatter.display_status("Generating #{OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
@@ -103,7 +106,7 @@ module Aspera
           formatter.display_status('Created key:')
         end
         formatter.display_status(private_key_path)
-        private_key_pem = File.read(private_key_path)
+        private_key_pem = File.read(File.expand_path(private_key_path))
         pub_key_pem = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
         options.set_option(:private_key, private_key_pem)
         formatter.display_status("Please Log in as user #{user.red} at: #{url.red}")
