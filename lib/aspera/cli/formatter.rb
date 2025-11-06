@@ -100,30 +100,49 @@ module Aspera
           end
         end
 
+        # Given a list of string, display that list in a single cell
+        def list_to_string(list)
+          list.join(',')
+        end
+
+        # Build new prefix
+        def add_prefix(prefix, key)
+          [prefix, key].compact.join('.')
+        end
+
+        # Add elements of enumerator to the stack, in reverse order
+        def add_elements(stack, prefix, enum)
+          enum.reverse_each do |key, value|
+            stack.push([add_prefix(prefix, key), value])
+          end
+        end
+
         # Flatten a Hash into single level hash
         def flatten_hash(input)
           Aspera.assert_type(input, Hash)
           return input if input.empty?
           flat = {}
+          # tail (pop,push) contains the next element to display
           stack = [[nil, input]]
           until stack.empty?
             prefix, current = stack.pop
+            # empty things will be displayed as such
             if current.respond_to?(:empty?) && current.empty?
               flat[prefix] = current
               next
             end
             case current
             when Hash
-              current.reverse_each{ |k, v| stack.push([[prefix, k].compact.join('.'), v])}
+              add_elements(stack, prefix, current)
             when Array
-              if current.all?(String)
-                flat[prefix] = current.join("\n")
+              if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
+                flat[prefix] = list_to_string(current.map(&:to_s))
               elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
-                flat[prefix] = current.map{ |i| i['name']}.join(', ')
+                flat[prefix] = list_to_string(current.map{ |i| i['name']})
               elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
-                stack.push([prefix, current.each_with_object({}){ |i, h| h[i['name']] = i['value']}])
+                add_elements(stack, prefix, current.each_with_object({}){ |i, h| h[i['name']] = i['value']})
               else
-                current.each_with_index.reverse_each{ |v, k| stack.push([[prefix, k].compact.join('.'), v])}
+                add_elements(stack, prefix, current.each_with_index.map{ |v, i| [i, v]})
               end
             else
               flat[prefix] = current
