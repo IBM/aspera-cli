@@ -10,6 +10,7 @@ require 'xmlsimple'
 module Aspera
   module Cli
     module Plugins
+      # Aspera Orchestrator
       class Orchestrator < BasicAuth
         STANDARD_PATH = '/aspera/orchestrator'
         TEST_ENDPOINT = 'api/remote_node_ping'
@@ -63,8 +64,6 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS = %i[health info workflow plugins processes].freeze
-
         # Call orchestrator API, it's a bit special
         # @param endpoint   [String]  the endpoint to call
         # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)
@@ -95,6 +94,8 @@ module Aspera
           Log.dump(:data, result)
           return result
         end
+
+        ACTIONS = %i[health info workflows workorders workstep plugins processes monitors].freeze
 
         def execute_action
           auth_params =
@@ -134,36 +135,32 @@ module Aspera
               nagios.add_critical('node api', e.to_s)
             end
             Main.result_object_list(nagios.status_list)
+          # 14. Ping the remote Instance
           when :info
             result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
             return Main.result_single_object(result)
+          # 12. Orchestrator Background Process status
           when :processes
             # TODO: Bug ? API has only XML format
             result = call_ao('processes_status', format: 'xml')
             return Main.result_object_list(result['process'])
+          # 13. Orchestrator Monitor
+          when :monitors
+            result = call_ao('monitor_snapshot')
+            return Main.result_single_object(result['monitor'])
           when :plugins
             # TODO: Bug ? only json format on url
             result = call_ao('plugin_version')
             return Main.result_object_list(result['Plugin'])
-          when :workflow
-            command = options.get_next_command(%i[list status inputs details start export])
+          when :workflows
+            command = options.get_next_command(%i[list status inputs details start export workorders outputs])
             case command
-            when :status
-              wf_id = instance_identifier
-              result = call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")
-              return Main.result_object_list(result['workflows']['workflow'])
+            # 1. List all available workflows on the system
             when :list
-              result = call_ao('workflows_list/0')
+              result = call_ao('workflows_list')
               return Main.result_object_list(result['workflows']['workflow'], fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification])
-            when :details
-              result = call_ao("workflow_details/#{instance_identifier}")
-              return Main.result_object_list(result['workflows']['workflow']['statuses'])
-            when :inputs
-              result = call_ao("workflow_inputs_spec/#{instance_identifier}")
-              return Main.result_single_object(result['workflow_inputs_spec'])
-            when :export
-              result = call_ao("export_workflow/#{instance_identifier}", format: nil, http: true)
-              return Main.result_text(result.body)
+            # 2.1 Initiate a workorder - Asynchronous
+            # 2.2 Initiate a workorder - Synchronous
             when :start
               result = {
                 type: :single_object,
@@ -191,6 +188,69 @@ module Aspera
               result[:type] = :text if call_params['synchronous']
               result[:data] = call_ao("initiate/#{wf_id}", args: call_params)
               return result
+            # 3. Fetch input specification for a workflow
+            when :inputs
+              result = call_ao("workflow_inputs_spec/#{instance_identifier}")
+              return Main.result_single_object(result['workflow_inputs_spec'])
+            # 4. Check the running status for all workflows
+            # 5. Check the running status for a particular workflow
+            when :status
+              wf_id = instance_identifier
+              result = call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")
+              return Main.result_object_list(result['workflows']['workflow'])
+            # 6. Check the detailed running status for a particular workflow
+            when :details
+              result = call_ao("workflow_details/#{instance_identifier}")
+              return Main.result_object_list(result['workflows']['workflow']['statuses'])
+            # 15. Fetch output specification for a particular work flow
+            when :outputs
+              result = call_ao("workflow_outputs_spec/#{instance_identifier}")
+              return Main.result_object_list(result['workflow_outputs_spec']['output'])
+            # 19.Fetch all workorders from a workflow
+            when :workorders
+              result = call_ao("work_orders_list/#{instance_identifier}")
+              return Main.result_object_list(result['work_orders'])
+            when :export
+              result = call_ao("export_workflow/#{instance_identifier}", format: nil, http: true)
+              return Main.result_text(result.body)
+            end
+          when :workorders
+            command = options.get_next_command(%i[status cancel reset output])
+            case command
+            # 7. Check the status for a particular work order
+            when :status
+              wo_id = instance_identifier
+              result = call_ao("work_order_status/#{wo_id}")
+              return Main.result_single_object(result['work_order'])
+            # 9. Cancel a Work Order
+            when :cancel
+              wo_id = instance_identifier
+              result = call_ao("work_order_cancel/#{wo_id}")
+              return Main.result_single_object(result['work_order'])
+            # 11. Reset a Work order
+            when :reset
+              wo_id = instance_identifier
+              result = call_ao("work_order_reset/#{wo_id}")
+              return Main.result_single_object(result['work_order'])
+            # 16. Fetch output of a work order
+            when :output
+              wo_id = instance_identifier
+              result = call_ao("work_order_output/#{wo_id}", format: 'xml')
+              return Main.result_object_list(result['variable'])
+            end
+          when :workstep
+            command = options.get_next_command(%i[status cancel])
+            case command
+            # 8. Check the status of a Step
+            when :status
+              ws_id = instance_identifier
+              result = call_ao("work_step_status/#{ws_id}")
+              return Main.result_single_object(result)
+            # 10. Cancel a Work Step
+            when :cancel
+              ws_id = instance_identifier
+              result = call_ao("work_step_cancel/#{ws_id}")
+              return Main.result_single_object(result)
             end
           else Aspera.error_unexpected_value(command)
           end
@@ -200,3 +260,24 @@ module Aspera
     end
   end
 end
+
+# 17.Persist custom data
+# 18.Fetch queued items from queue
+# 20.List Task for a User
+# 21. Fetch Task details
+# 22. Submit Task
+# 23. Control Process
+# engine monitor worker
+# 24. Lookup Queued Item
+# 25. Reorder Queued Items
+# 26. Bulk Reorder Queued Items
+# 27. Queue Item (Add an item to a Queue)
+#
+# Required Input:
+# Optional Input:
+# 28.List all queues
+# 29. Portlet Version
+# 30. Plugin Version
+# 31. Restart Work Order from a Step
+# 32. Delete element from a Managed Queue
+#
