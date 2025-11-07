@@ -11354,7 +11354,7 @@ storage.<br />
 Allowed values: <code>sha1</code>, <code>md5</code>,
 <code>sha1_sparse</code>, <code>md5_sparse</code>,
 <code>none</code><br />
-(<code>--checksum={enum}</code>)</td>
+(<code>--checksum={enum}</code>)(-k)</td>
 </tr>
 <tr>
 <td>clean_excluded</td>
@@ -11432,7 +11432,7 @@ Allowed values: <code>copy</code>, <code>inode</code>,
 <td>The direction of replication relative to the local.<br />
 Allowed values: <code>bidi</code>, <code>pull</code>,
 <code>push</code><br />
-(<code>--direction={enum}</code>)</td>
+(<code>--direction={enum}</code>)(-K)</td>
 </tr>
 <tr>
 <td>exclude_dirs_older_than</td>
@@ -11503,7 +11503,7 @@ transfer matches the host used when the local database was created</td>
 <td>local.path</td>
 <td>string</td>
 <td>The directory to be synchronized on the local host.<br />
-(<code>--local-dir={string}</code>)</td>
+(<code>--local-dir={string}</code>)(-d)</td>
 </tr>
 <tr>
 <td>local_apply_docroot</td>
@@ -11524,7 +11524,7 @@ must be between 1 and 99.<br />
 <td>Use the specified database directory on the local host. Default is
 <code>.private-asp</code> at the root level of the synchronized
 directory.<br />
-(<code>--local-db-dir={string}</code>)</td>
+(<code>--local-db-dir={string}</code>)(-b)</td>
 </tr>
 <tr>
 <td>local_db_store_dir</td>
@@ -11614,19 +11614,20 @@ be between 1 and 99<br />
 <td>string</td>
 <td>Use the specified log level.<br />
 Allowed values: <code>log</code>, <code>dbg1</code>,
-<code>dbg2</code></td>
+<code>dbg2</code><br />
+(special:<code>-D</code>)</td>
 </tr>
 <tr>
 <td>log.local_dir</td>
 <td>string</td>
 <td>Use the specified logging directory on the local host.<br />
-(<code>--alt-logdir={string}</code>)</td>
+(<code>--alt-logdir={string}</code>)(-L)</td>
 </tr>
 <tr>
 <td>log.remote_dir</td>
 <td>string</td>
 <td>Use the specified logging directory on the remote host.<br />
-(<code>--remote-logdir={string}</code>)</td>
+(<code>--remote-logdir={string}</code>)(-R)</td>
 </tr>
 <tr>
 <td>manifest_path</td>
@@ -11646,10 +11647,12 @@ be used in bi-directional mode.<br />
 <tr>
 <td>mode</td>
 <td>string</td>
-<td>Specify whether async runs continuously or not. In one_time mode,
-async stops after the first full synchronization.<br />
+<td>Specify whether async runs continuously or not. In
+<code>one_time</code> mode, async stops after the first full
+synchronization. <code>continuous</code> supported only if the source is
+Windows or Linux.<br />
 Allowed values: <code>one_time</code>, <code>continuous</code><br />
-(special:<code>--continuous={enum}</code>)</td>
+(special:<code>--continuous</code>)(-C)</td>
 </tr>
 <tr>
 <td>monitor_buffer_size</td>
@@ -11662,7 +11665,7 @@ value.</td>
 <td>name</td>
 <td>string</td>
 <td>Name of the synchronization pair.<br />
-(<code>--name={string}</code>)</td>
+(<code>--name={string}</code>)(-N)</td>
 </tr>
 <tr>
 <td>no_log</td>
@@ -11696,7 +11699,7 @@ maximum number after a sharing violation.</td>
 determined by the direction: conflict for bidi, otherwise always.<br />
 Allowed values: <code>always</code>, <code>older</code>,
 <code>conflict</code><br />
-(<code>--overwrite={enum}</code>)</td>
+(<code>--overwrite={enum}</code>)(-o)</td>
 </tr>
 <tr>
 <td>pending_max</td>
@@ -11722,7 +11725,7 @@ destination.<br />
 <td>preserve_gid</td>
 <td>boolean</td>
 <td>Preserve the file owner&#39;s GID.<br />
-(<code>--preserve-gid</code>)</td>
+(<code>--preserve-gid</code>)(-j)</td>
 </tr>
 <tr>
 <td>preserve_modification_time</td>
@@ -11755,7 +11758,7 @@ destination.<br />
 <td>preserve_uid</td>
 <td>boolean</td>
 <td>Preserve the file owner&#39;s UID.<br />
-(<code>--preserve-uid</code>)</td>
+(<code>--preserve-uid</code>)(-u)</td>
 </tr>
 <tr>
 <td>quiet</td>
@@ -11773,7 +11776,7 @@ destination.<br />
 <td>string</td>
 <td>Define how to connect to the remote.<br />
 Allowed values: <code>ssh</code>, <code>ws</code><br />
-(special:<code>--ws-connect={enum}</code>)</td>
+(special:<code>--ws-connect</code>)</td>
 </tr>
 <tr>
 <td>remote.fingerprint</td>
@@ -11790,26 +11793,26 @@ Allowed values: <code>ssh</code>, <code>ws</code><br />
 <td>remote.pass</td>
 <td>string</td>
 <td>Authenticate the transfer with the specified password.<br />
-(<code>--pass={string}</code>)</td>
+(<code>--pass={string}</code>)(-w)</td>
 </tr>
 <tr>
 <td>remote.path</td>
 <td>string</td>
 <td>Synchronize the specified directory on the remote host.<br />
-(<code>--remote-dir={string}</code>)</td>
+(<code>--remote-dir={string}</code>)(-r)</td>
 </tr>
 <tr>
 <td>remote.port</td>
 <td>integer</td>
 <td>Use the specified TCP port for SSH. Used when connect_mode is
 <code>ssh</code><br />
-(<code>--tcp-port={integer}</code>)</td>
+(<code>--tcp-port={integer}</code>)(-P)</td>
 </tr>
 <tr>
 <td>remote.private_key_paths</td>
 <td>array</td>
 <td>Authenticate with the specified SSH private key file.<br />
-(<code>--private-key-path={array}</code>)</td>
+(<code>--private-key-path={array}</code>)(-i)</td>
 </tr>
 <tr>
 <td>remote.proxy</td>
@@ -11881,7 +11884,7 @@ must be between 1 and 99<br />
 <td>Use the specified database directory on the remote host. Default is
 <code>.private-asp</code> at the root level of the synchronized
 directory.<br />
-(<code>--remote-db-dir={string}</code>)</td>
+(<code>--remote-db-dir={string}</code>)(-B)</td>
 </tr>
 <tr>
 <td>remote_db_store_dir</td>
@@ -11976,7 +11979,7 @@ be between 1 and 99.<br />
 <td>boolean</td>
 <td>Clear the snapshot database and rescan the synchronized directories
 and files to create a fresh snapshot<br />
-(<code>--reset</code>)</td>
+(<code>--reset</code>)(-x)</td>
 </tr>
 <tr>
 <td>resume</td>
@@ -12038,7 +12041,7 @@ activity. <code>vhigh</code> maximizes system activity by continuously
 scanning files without rest.<br />
 Allowed values: <code>vlow</code>, <code>low</code>,
 <code>medium</code>, <code>high</code>, <code>vhigh</code><br />
-(<code>--scan-intensity={enum}</code>)</td>
+(<code>--scan-intensity={enum}</code>)(-H)</td>
 </tr>
 <tr>
 <td>sharing_retry_max</td>
@@ -12060,7 +12063,7 @@ sharing violation.<br />
 <code>skip</code> on windows, <code>copy</code> otherwise.<br />
 Allowed values: <code>copy</code>, <code>skip</code>,
 <code>follow</code><br />
-(<code>--symbolic-links={enum}</code>)</td>
+(<code>--symbolic-links={enum}</code>)(-n)</td>
 </tr>
 <tr>
 <td>tags</td>
@@ -12098,7 +12101,7 @@ Allowed values: <code>none</code>, <code>aes128</code>,
 <code>aes192</code>, <code>aes256</code>, <code>aes128cfb</code>,
 <code>aes192cfb</code>, <code>aes256cfb</code>, <code>aes128gcm</code>,
 <code>aes192gcm</code>, <code>aes256gcm</code><br />
-(<code>--cipher={enum}</code>)</td>
+(<code>--cipher={enum}</code>)(-c)</td>
 </tr>
 <tr>
 <td>transport.compression</td>
@@ -12112,14 +12115,14 @@ Allowed values: <code>none</code>, <code>zlib</code><br />
 <td>integer</td>
 <td>Specify the datagram size (MTU) for FASP. By default it uses the
 detected path MTU.<br />
-(<code>--datagram-size={integer}</code>)</td>
+(<code>--datagram-size={integer}</code>)(-Z)</td>
 </tr>
 <tr>
 <td>transport.min_rate</td>
 <td>integer</td>
 <td>Attempt to transfer no slower than the specified rate (in
 bps).<br />
-(<code>--min-rate={integer}</code>)</td>
+(<code>--min-rate={integer}</code>)(-m)</td>
 </tr>
 <tr>
 <td>transport.rate_policy</td>
@@ -12127,7 +12130,7 @@ bps).<br />
 <td>Defines how <code>ascp</code> will manage the bandwidth.<br />
 Allowed values: <code>fair</code>, <code>fixed</code>,
 <code>high</code>, <code>low</code><br />
-(<code>--rate-policy={enum}</code>)</td>
+(<code>--rate-policy={enum}</code>)(-a)</td>
 </tr>
 <tr>
 <td>transport.raw_options</td>
@@ -12140,33 +12143,33 @@ Allowed values: <code>fair</code>, <code>fixed</code>,
 <td>integer</td>
 <td>Use the specified block size (in bytes) for reading. Default is
 determined by <code>aspera.conf</code>.<br />
-(<code>--read-block-size={integer}</code>)</td>
+(<code>--read-block-size={integer}</code>)(-g)</td>
 </tr>
 <tr>
 <td>transport.rexmsg_size</td>
 <td>integer</td>
 <td>Use the specified size (in bytes) for a retransmission request.
 Default is determined by <code>aspera.conf</code>.<br />
-(<code>--rexmsg-size={integer}</code>)</td>
+(<code>--rexmsg-size={integer}</code>)(-X)</td>
 </tr>
 <tr>
 <td>transport.target_rate</td>
 <td>integer</td>
 <td>Transfer no faster than the specified rate (in bps).<br />
-(<code>--target-rate={integer}</code>)</td>
+(<code>--target-rate={integer}</code>)(-l)</td>
 </tr>
 <tr>
 <td>transport.udp_port</td>
 <td>integer</td>
 <td>Use the specified UDP port for FASP data transfer.<br />
-(<code>--udp-port={integer}</code>)</td>
+(<code>--udp-port={integer}</code>)(-O)</td>
 </tr>
 <tr>
 <td>transport.write_block_size</td>
 <td>integer</td>
 <td>Use the specified block size (in bytes) for writing. Default is
 determined by <code>aspera.conf</code>.<br />
-(<code>--write-block-size={integer}</code>)</td>
+(<code>--write-block-size={integer}</code>)(-G)</td>
 </tr>
 <tr>
 <td>watchd</td>

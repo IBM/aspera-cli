@@ -4,10 +4,10 @@ require 'aspera/agent/factory'
 
 module Aspera
   module Transfer
-    # translate transfer specification to ascp parameter list
+    # Generate documentation from Schema, for Transfer Spec, or async Conf spec
     class SpecDoc
       class << self
-        # first letter of agent name symbol
+        # First letter of agent name symbol
         def agent_to_short(agent_sym)
           agent_sym.to_sym.eql?(:direct) ? :a : agent_sym.to_s[0].to_sym
         end
@@ -25,20 +25,20 @@ module Aspera
           schema['properties'].each do |name, info|
             rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info).last.map{ |h| h.merge(name: "#{name}.#{h[:name]}")}) if info['type'].eql?('object') && info['properties']
             rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info['items']).last.map{ |h| h.merge(name: "#{name}[].#{h[:name]}")}) if info['type'].eql?('array') && info['items'] && info['items']['properties']
-            # manual table
+            # Manual table
             columns = {
               name:        name,
               type:        info['type'],
               description: []
             }
-            # replace "back solidus" HTML entity with its text value, highlight keywords, and split lines
+            # Replace "back solidus" HTML entity with its text value, highlight keywords, and split lines
             columns[:description] =
               info['description']
                 .gsub('&bsol;', '\\')
                 .gsub(/`([a-z0-9_.+-]+)`/){formatter.keyword_highlight(Regexp.last_match(1))}
                 .split("\n") if info.key?('description')
             columns[:description].unshift("DEPRECATED: #{info['x-deprecation']}") if info.key?('x-deprecation')
-            # add flags for supported agents in doc
+            # Add flags for supported agents in doc
             agents = []
             AGENT_LIST.each do |agent_info|
               agents.push(agent_info.last) if info['x-agents'].nil? || info['x-agents'].include?(agent_info.first.to_s)
@@ -51,7 +51,7 @@ module Aspera
             else
               columns[:description].push("(#{agents.map(&:upcase).join(', ')})") unless agents.length.eql?(AGENT_LIST.length)
             end
-            # only keep lines that are usable in supported agents
+            # Only keep lines that are usable in supported agents
             next false if agents.empty?
             columns[:description].push("Allowed values: #{info['enum'].map{ |v| formatter.keyword_highlight(v)}.join(', ')}") if info.key?('enum')
             if include_option
@@ -69,7 +69,8 @@ module Aspera
                   sep = info['x-cli-option'].start_with?('--') ? '=' : ' '
                   "#{info['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
                 end
-              columns[:description].push("(#{'special:' if info['x-cli-special']}#{envvar_prefix}#{formatter.keyword_highlight(cli_option)})") if cli_option
+              short = info.key?('x-cli-short') ? "(#{info['x-cli-short']})" : nil
+              columns[:description].push("(#{'special:' if info['x-cli-special']}#{envvar_prefix}#{formatter.keyword_highlight(cli_option)})#{short}") if cli_option
             end
             rows.push(formatter.check_row(columns))
           end

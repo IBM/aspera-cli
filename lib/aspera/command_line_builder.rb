@@ -59,7 +59,7 @@ module Aspera
           unsupported_keys = info.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
           Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema['description']}"}
-          Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch']
+          Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch'] && !info['x-cli-special']
           info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if info['x-cli-option'].eql?(true) || (info['x-cli-switch'].eql?(true) && !info.key?('x-cli-option'))
           Aspera.assert(direct_props.any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, info)
           info.freeze

@@ -292,8 +292,9 @@ properties:
           - dbg1
           - dbg2
         default: log
-        x-cli-short: -D
+        x-cli-option: -D
         x-cli-special: true
+        x-cli-switch: true
       local_dir:
         description: Use the specified logging directory on the local host.
         type: string
@@ -324,7 +325,8 @@ properties:
     x-cli-switch: true
   mode:
     description: Specify whether async runs continuously or not.
-      In one_time mode, async stops after the first full synchronization.
+      In `one_time` mode, async stops after the first full synchronization.
+      `continuous` supported only if the source is Windows or Linux.
     type: string
     enum:
       - one_time
@@ -333,7 +335,7 @@ properties:
     x-cli-option: --continuous
     x-cli-short: -C
     x-cli-special: true
-    #x-cli-switch: true
+    x-cli-switch: true
   monitor_buffer_size:
     description: Bytes to allocate for the change monitor buffer.
       Applies to any Windows machine on either side.
@@ -492,6 +494,7 @@ properties:
         default: ssh
         x-cli-option: --ws-connect
         x-cli-special: true
+        x-cli-switch: true
       private_key_paths:
         description: Authenticate with the specified SSH private key file.
         type: array
