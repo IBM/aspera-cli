@@ -19,8 +19,8 @@ module Aspera
         end
       end
 
-      # Read command line arguments (1 to 3) and converts to sync_info format
-      # @param sync [Bool] Set to `true` for non-admin
+      # Read 1 or 2 command line arguments and converts to `sync_info` format
+      # @param direction [Symbol,NilClass] One of directions, or `nil` if only for admin command
       # @return [Hash] sync info
       def async_info_from_args(direction: nil)
         path = options.get_next_argument('path')
@@ -72,7 +72,7 @@ module Aspera
         sync_info
       end
 
-      # provide database object from command line arguments for admin ops
+      # Provide database object from command line arguments for admin ops
       def db_from_args
         sync_info = async_info_from_args
         session = sync_info.key?('sessions') ? sync_info['sessions'].first : sync_info
