@@ -1731,6 +1731,10 @@ Exceptions and Special Cases:
   If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
   For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
   This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
+- **Cummulative Hashes**:
+  When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
+  Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
+  This can be used to start from an empty value, and not used existing default value.
 
 Example:
 
@@ -3311,7 +3315,7 @@ It provides the following commands for `ascp` sub-command:
 
 Option: `ascp_path` is used to specify the location of `ascp`.
 The default value is: `product:FIRST`.
-By default, `ascli` uses the found local product with `ascp`, including Transfer Daemon (SDK).
+By default, `ascli` uses any found local product with `ascp`, including Transfer Daemon (SDK).
 
 To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
@@ -3345,7 +3349,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 
 A special value `product:<product name>` can be used for option `ascp_path`.
 It specifies to use `ascp` from the given product name.
-A special value for product name is `FIRST`, which means: use the first found.
+A special valuefor product name is `FIRST`, which means: use the first found.
 
 Locally installed Aspera products can be listed with:
 
@@ -4668,7 +4672,7 @@ OPTIONS:
 
 
 COMMAND: orchestrator
-SUBCOMMANDS: health info plugins processes workflow
+SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
@@ -8883,6 +8887,11 @@ An optional positional `Hash` argument (`sync_info`) can be provided in either `
 
 A single session can be specified using either formats.
 
+If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next sectin.
+
+If argument `<sync_info>` is provided, it defines the format to use.
+If parameter `sessions` or `instance` is present, then `args` is used, else `conf` is used.
+
 #### `sync_info`: `conf` format
 
 This is the **preferred** syntax.
@@ -8890,7 +8899,14 @@ It is the same payload as specified on the `async` option `--conf` or in Node AP
 
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-Parameters `local.path` and `remote.path` are not allowed since they are provided on command line.
+The following parameters are automatically filled from mandatory arguments, and are not allowed:
+
+- `direction`
+- `local.path`
+- `remote.path`
+
+Parameter `name` is set to a default value if not provided in `sync_info`.
+Parameter `quiet` is set to `false` if not provided in `sync_info` and a terminal is detected.
 
 The documentation is available in the terminal with:
 
@@ -9042,7 +9058,13 @@ Technically, it allows definition of multiple sync sessions in a single command,
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
-Parameters `local_dir` and `remote_dir` are not allowed since they are provided on command line.
+The following parameters are automatically filled from mandatory arguments, and are not allowed:
+
+- `direction`
+- `local_dir`
+- `remote_dir`
+
+Parameter `name` is set to a default value if not provided in `sync_info`.
 
 ### Sync management and monitoring: `admin`
 

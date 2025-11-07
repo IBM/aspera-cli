@@ -2,6 +2,8 @@
 
 * 4.25.0.pre
 
+  * New Features:
+    * **global**: All `Hash` options are now cumulative (merged). Value `@none:` resets to empty `Hash`.
   * Issues Fixed:
     * `aoc`: Restored command `admin workspace shared_folder :id list` which was since 4.11.0.
   * Breaking Changes:

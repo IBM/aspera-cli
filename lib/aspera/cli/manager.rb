@@ -11,32 +11,56 @@ require 'optparse'
 
 module Aspera
   module Cli
-    # option is retrieved from another object using accessor
-    class AttrAccessor
-      # attr_accessor :object
-      # attr_accessor :method_name
-      def initialize(object, method_name, option_name)
+    # Description of option, how to manage
+    class OptionAttributes
+      attr_reader :types, :deprecation
+      attr_accessor :values
+
+      # @param option [Symbol] Name of option
+      # @param object [Object] Accessor object
+      # @param method [Symbol] Method name
+      def initialize(option:, types: nil, sensitive: false, object: nil, method: nil, deprecation: nil)
+        @option = option
+        @types = types
+        @values = nil
+        if !@types.nil?
+          @types = [@types] unless types.is_a?(Array)
+          Aspera.assert(@types.all?(Class)){"types must be (Array of) Class: #{@types}"}
+        end
+        @sensitive = sensitive
         @object = object
-        @method = method_name
-        @option_name = option_name
-        @has_writer = @object.respond_to?(writer_method)
-        Log.log.trace1{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
-        Aspera.assert(@object.respond_to?(@method)){"#{object} does not respond to #{method_name}"}
+        @read_method = method
+        @write_method = method ? "#{@read_method}=".to_sym : nil
+        @type = if object.nil?
+          :local
+        elsif @object.respond_to?(@write_method)
+          :write
+        else
+          :setter
+        end
+        Log.log.trace1{"declare: #{@option}: #{@type} #{@object.class}.#{@read_method}".green}
+        Aspera.assert(@object.respond_to?(@read_method)){"#{object} does not respond to #{method}"} unless @type.eql?(:local)
       end
 
       def value
-        return @object.send(@method) if @has_writer
-        return @object.send(@method, @option_name, :get)
+        val =
+          case @type
+          when :local then @object
+          when :write then @object.send(@read_method)
+          when :setter then @object.send(@read_method, @option, :get)
+          end
+        Log.log.trace1{"get option: #{@option}=#{val}"}
+        return val
       end
 
       def value=(val)
-        Log.log.trace1{"AttrAccessor: = #{@method} #{@option_name} :set #{val}, writer=#{@has_writer}"}
-        return @object.send(writer_method, val) if @has_writer
-        return @object.send(@method, @option_name, :set, val)
-      end
-
-      def writer_method
-        return "#{@method}="
+        Log.log.trace1{"set option: #{@option}=#{val}"}
+        val = value.deep_merge(val) if val.is_a?(Hash) && value.is_a?(Hash)
+        case @type
+        when :local then @object = val
+        when :write then @object.send(@write_method, val)
+        when :setter then @object.send(@read_method, @option, :set, val)
+        end
       end
     end
 
@@ -50,15 +74,15 @@ module Aspera
       TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
       BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
 
-      # option name separator on command line
+      # Option name separator on command line, e.g. in --option-blah, third "-"
       OPTION_SEP_LINE = '-'
-      # option name separator in code (symbol)
+      # Option name separator in code (symbol), e.g. in :option_blah, the "_"
       OPTION_SEP_SYMBOL = '_'
       OPTION_VALUE_SEPARATOR = '='
       # an option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-      # TODO: all Hash are additive, + way to reset Hash (e.g. --opt=@none:)
+      # TODO: all Hash are additive, + way to reset Hash (e.g. --option-blah=@none:)
       OPTION_HASH_SEPARATOR = '.'
-      # starts an option
+      # Starts an option, e.g. in --option-blah, the two first "--"
       OPTION_PREFIX = '--'
       # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
@@ -107,19 +131,18 @@ module Aspera
           return "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
 
-        # @param what [Symbol] :option or :argument
-        # @param descr [String] description for help
-        # @param to_check [Object] value to check
+        # @param what      [Symbol] :option or :argument
+        # @param descr     [String] description for help
+        # @param to_check  [Object] value to check
         # @param type_list [NilClass, Class, Array[Class]] accepted value type(s)
-        # @param check_array [bool] set to true if it is a list of values to check
+        # @param check_array [Boolean] set to true if it is a list of values to check
         def validate_type(what, descr, to_check, type_list, check_array: false)
           return if type_list.nil?
           Aspera.assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
           value_list = check_array ? to_check : [to_check]
           value_list.each do |value|
             raise Cli::BadArgument,
-              "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{'one of: ' if type_list.length > 1}#{type_list.map(&:name).join(', ')}" unless
-              type_list.any?{ |t| value.is_a?(t)}
+              "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{'one of: ' if type_list.length > 1}#{type_list.map(&:name).join(', ')}" unless type_list.any?{ |t| value.is_a?(t)}
           end
         end
       end
@@ -135,7 +158,7 @@ module Aspera
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
-        # option description: key = option symbol, value=Hash, :read_write, :accessor, :value, :accepted
+        # option description: option_symbol => OptionAttributes
         @declared_options = {}
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
@@ -242,58 +265,42 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false, default: nil)
         Aspera.assert_type(option_symbol, Symbol)
-        attributes = @declared_options[option_symbol]
-        Aspera.assert(attributes){"option not declared: #{option_symbol}"}
-        result = nil
-        case attributes[:read_write]
-        when :accessor
-          result = attributes[:accessor].value
-        when :value
-          result = attributes[:value]
-        else Aspera.error_unexpected_value(attributes[:read_write]){'attribute read/write'}
-        end
-        Log.log.trace1{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
+        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        option_attrs = @declared_options[option_symbol]
+        result = option_attrs.value
         result = default if result.nil?
-        # do not fail for manual generation if option mandatory but not set
+        # Do not fail for manual generation if option mandatory but not set
         result = :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
-        # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory
             raise Cli::BadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
-            accept_list = nil
-            # print "please enter: #{option_symbol.to_s}"
-            accept_list = attributes[:values] if @declared_options.key?(option_symbol) && attributes.key?(:values)
-            result = get_interactive(option_symbol.to_s, option: true, accept_list: accept_list)
+            result = get_interactive(option_symbol.to_s, option: true, accept_list: option_attrs.values)
             set_option(option_symbol, result, where: 'interactive')
           end
         end
-        self.class.validate_type(:option, option_symbol, result, attributes[:types]) unless result.nil? && !mandatory
+        self.class.validate_type(:option, option_symbol, result, option_attrs.types) unless result.nil? && !mandatory
         return result
       end
 
-      # set an option value by name, either store value or call handler
+      # Set an option value by name, either store value or call handler
       # @param option_symbol [Symbol] option name
       # @param value [String] value to set
       # @param where [String] where the value comes from
       # @param expect [Class, Array] expected value type(s)
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
-        raise Cli::BadArgument, "Unknown option: #{option_symbol}" unless @declared_options.key?(option_symbol)
-        attributes = @declared_options[option_symbol]
-        Log.log.warn("#{option_symbol}: Option is deprecated: #{attributes[:deprecation]}") if attributes[:deprecation]
-        value = evaluate_extended_value(value, attributes[:types])
-        value = Manager.enum_to_bool(value) if attributes[:values].eql?(BOOLEAN_VALUES)
-        Log.log.trace1{"(#{attributes[:read_write]}/#{where}) set #{option_symbol}=#{value}"}
-        self.class.validate_type(:option, option_symbol, value, attributes[:types])
-        case attributes[:read_write]
-        when :accessor
-          attributes[:accessor].value = value
-        when :value
-          attributes[:value] = value
-        else Aspera.error_unexpected_value(attributes[:read_write]){'attribute read/write'}
-        end
+        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        option_attrs = @declared_options[option_symbol]
+        Log.log.warn("#{option_symbol}: Option is deprecated: #{option_attrs.deprecation}") if option_attrs.deprecation
+        value = evaluate_extended_value(value, option_attrs.types)
+        value = Manager.enum_to_bool(value) if option_attrs.values.eql?(BOOLEAN_VALUES)
+        Log.log.trace1{"(#{where}) set #{option_symbol}=#{value}"}
+        # Setting a Hash to null set an empty hash
+        value = {} if value.eql?(nil) && option_attrs.types.eql?([Hash])
+        self.class.validate_type(:option, option_symbol, value, option_attrs.types)
+        option_attrs.value = value
       end
 
       # declare an option
@@ -312,28 +319,19 @@ module Aspera
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :types"}
-        opt = @declared_options[option_symbol] = {
-          read_write: handler.nil? ? :value : :accessor,
+        Aspera.assert_type(handler, Hash) if handler
+        Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
+        option_attrs = @declared_options[option_symbol] = OptionAttributes.new(
+          option:      option_symbol,
+          object:      handler&.[](:o),
+          method:      handler&.[](:m),
+          types:       types,
+          deprecation: deprecation,
           # by default passwords and secrets are sensitive, else specify when declaring the option
-          sensitive:  SecretHider.instance.secret?(option_symbol, '')
-        }
-        if !types.nil?
-          types = [types] unless types.is_a?(Array)
-          Aspera.assert(types.all?(Class)){"types must be (Array of) Class: #{types}"}
-          opt[:types] = types
-          description = "#{description} (#{types.map(&:name).join(', ')})"
-        end
-        if deprecation
-          opt[:deprecation] = deprecation
-          description = "#{description} (#{'deprecated'.blue}: #{deprecation})"
-        end
-        Log.log.trace1{"declare: #{option_symbol}: #{opt[:read_write]}".green}
-        if opt[:read_write].eql?(:accessor)
-          Aspera.assert_type(handler, Hash)
-          Aspera.assert(handler.keys.sort.eql?(%i[m o]))
-          Log.log.trace1{"set attr obj: #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
-          opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m], option_symbol)
-        end
+          sensitive:   SecretHider.instance.secret?(option_symbol, '')
+        )
+        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types
+        description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
         set_option(option_symbol, default, where: 'default') unless default.nil?
         on_args = [description]
         case values
@@ -348,7 +346,7 @@ module Aspera
             set_option(option_symbol, Manager.enum_to_bool(default), where: 'default') unless default.nil?
           end
           # this option value must be a symbol
-          opt[:values] = values
+          option_attrs.values = values
           value = get_option(option_symbol)
           help_values = values.map{ |i| i.eql?(value) ? highlight_current(i) : i}.join(', ')
           if values.eql?(BOOLEAN_VALUES)
@@ -462,6 +460,7 @@ module Aspera
             option, path, raw_value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
+              # deeply construct a hash based on path, a.b.c=d gives {"a"=>{"b"=>{"c"=>d}}}
               value = path.split(OPTION_HASH_SEPARATOR).reverse.inject(smart_convert(raw_value)){ |v, k| {k => v}}
               set_option(option_sym, value, where: 'dotted')
               retry
@@ -514,7 +513,7 @@ module Aspera
             self.class.multi_choice_assert(false, message, accept_list)
           end
         end
-        sensitive = option && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
+        sensitive = option && @declared_options[descr.to_sym]&.[](:sensitive)
         default_prompt = "#{what}: #{descr}"
         # ask interactively
         result = []
@@ -564,7 +563,7 @@ module Aspera
         $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
       end
 
-      # try to evaluate options set in batch
+      # Try to evaluate options set in batch
       # @param unprocessed_options [Array] list of options to apply (key_sym,value)
       # @param where [String] where the options come from
       def consume_option_pairs(unprocessed_options, where)
@@ -573,7 +572,7 @@ module Aspera
         unprocessed_options.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
-            v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k][:values]) if @declared_options[k].key?(:values) && v.is_a?(String)
+            v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k].values) if @declared_options[k].values && v.is_a?(String)
             options_to_set[k] = v
           else
             Log.log.trace1{"unprocessed: #{k}: #{v}"}
