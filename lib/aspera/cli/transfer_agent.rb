@@ -48,8 +48,8 @@ module Aspera
       def initialize(opt_mgr, config_plugin)
         @opt_mgr = opt_mgr
         @config = config_plugin
-        # command line can override transfer spec
-        @transfer_spec_command_line = {
+        # Command line can override transfer spec
+        @user_transfer_spec = {
           'create_dir'    => true,
           'resume_policy' => 'sparse_csum'
         }
@@ -61,7 +61,7 @@ module Aspera
         @transfer_paths = nil
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
-        @opt_mgr.declare(:ts, 'Override transfer spec values', types: Hash, handler: {o: self, m: :option_transfer_spec})
+        @opt_mgr.declare(:ts, 'Override transfer spec values', types: Hash, handler: {o: self, m: :user_transfer_spec})
         @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
         @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
@@ -80,25 +80,7 @@ module Aspera
         end
       end
 
-      def option_transfer_spec; @transfer_spec_command_line; end
-
-      # Multiple option are merged
-      # @param value [Hash] Transfer spec
-      def option_transfer_spec=(value)
-        Aspera.assert_type(value, Hash){'ts'}
-        @transfer_spec_command_line.deep_merge!(value)
-      end
-
-      # Add other transfer spec parameters
-      def option_transfer_spec_deep_merge(value); @transfer_spec_command_line.deep_merge!(value); end
-
-      attr_reader :transfer_info
-
-      # Multiple option are merged
-      # @param value [Hash]
-      def transfer_info=(value)
-        @transfer_info.deep_merge!(value)
-      end
+      attr_accessor :user_transfer_spec, :transfer_info
 
       def agent_instance=(instance)
         @agent = instance
@@ -145,7 +127,7 @@ module Aspera
         dest_folder = @opt_mgr.get_option(:to_folder)
         # do not expand path, if user wants to expand path: user @path:
         return dest_folder unless dest_folder.nil?
-        dest_folder = @transfer_spec_command_line['destination_root']
+        dest_folder = @user_transfer_spec['destination_root']
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
@@ -193,7 +175,7 @@ module Aspera
         # return cache if set
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority : get paths from transfer spec on command line
-        @transfer_paths = @transfer_spec_command_line['paths'] if @transfer_spec_command_line.key?('paths')
+        @transfer_paths = @user_transfer_spec['paths'] if @user_transfer_spec.key?('paths')
         # is there a source list option ?
         sources = @opt_mgr.get_option(:sources)
         @transfer_paths =
@@ -235,25 +217,25 @@ module Aspera
         case transfer_spec['direction']
         when Transfer::Spec::DIRECTION_RECEIVE
           # init default if required in any case
-          @transfer_spec_command_line['destination_root'] ||= destination_folder(transfer_spec['direction'])
+          @user_transfer_spec['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Transfer::Spec::DIRECTION_SEND
           if transfer_spec.dig('tags', Transfer::Spec::TAG_RESERVED, 'node', 'access_key')
             # gen4
-            @transfer_spec_command_line.delete('destination_root') if @transfer_spec_command_line.key?('destination_root_id')
+            @user_transfer_spec.delete('destination_root') if @user_transfer_spec.key?('destination_root_id')
           elsif transfer_spec.key?('token')
             # gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call
-            @transfer_spec_command_line.delete('destination_root')
+            @user_transfer_spec.delete('destination_root')
           else
             # init default if required
-            @transfer_spec_command_line['destination_root'] ||= destination_folder(transfer_spec['direction'])
+            @user_transfer_spec['destination_root'] ||= destination_folder(transfer_spec['direction'])
           end
         end
         # update command line paths, unless destination already has one
-        @transfer_spec_command_line['paths'] = transfer_spec['paths'] || ts_source_paths
+        @user_transfer_spec['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
-        transfer_spec.deep_merge!(@transfer_spec_command_line)
+        transfer_spec.deep_merge!(@user_transfer_spec)
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided

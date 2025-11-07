@@ -221,8 +221,8 @@ module Aspera
             'paths' => [{'source' => source_filename}],
             'tags'  => {Transfer::Spec::TAG_RESERVED => {PREV_GEN_TAG => true}}
           })
-          # force destination, need to set this in transfer agent else it gets overwritten, not do: t_spec['destination_root']=destination
-          transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
+          # force destination, need to set this in transfer agent else it gets overwritten, do not do: t_spec['destination_root']=destination
+          transfer.user_transfer_spec['destination_root'] = destination
           Main.result_transfer(transfer.start(t_spec))
         end
 

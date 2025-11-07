@@ -123,7 +123,7 @@ module Aspera
         # try to get 3 arguments as simple arguments
         case command
         when *Sync::Operations::DIRECTIONS
-          Sync::Operations.start(async_info_from_args(direction: command), transfer.option_transfer_spec, &block)
+          Sync::Operations.start(async_info_from_args(direction: command), transfer.user_transfer_spec, &block)
           return Main.result_success
         when :admin
           return execute_sync_admin

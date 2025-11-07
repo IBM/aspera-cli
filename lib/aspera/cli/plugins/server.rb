@@ -121,7 +121,7 @@ module Aspera
             ENV['SSH_CLIENT'] = 'local 0 0'
             @connection_type = :local
             return server_transfer_spec
-          elsif transfer.option_transfer_spec['token'].is_a?(String) && server_uri.scheme.eql?(HTTPS_SCHEME)
+          elsif transfer.user_transfer_spec['token'].is_a?(String) && server_uri.scheme.eql?(HTTPS_SCHEME)
             server_transfer_spec['wss_enabled'] = true
             server_transfer_spec['wss_port'] = server_uri.port
             @connection_type = :wss
@@ -173,7 +173,7 @@ module Aspera
             server_transfer_spec['ssh_private_key_passphrase'] = ssh_passphrase
           end
           # if user provided transfer spec has a token, we will use bypass keys
-          cred_set = true if transfer.option_transfer_spec['token'].is_a?(String)
+          cred_set = true if transfer.user_transfer_spec['token'].is_a?(String)
           Aspera.assert(cred_set, type: BadArgument){'Either password, key , or transfer spec token must be provided'}
           return server_transfer_spec
         end
