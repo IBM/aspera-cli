@@ -160,7 +160,7 @@ restart_noded:
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist
 	sleep 5
-	sudo chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera
+	sudo /bin/chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera
 	-ps -ef|grep aspera|grep -v grep
 	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist
 	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist
