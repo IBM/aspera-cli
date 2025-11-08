@@ -373,7 +373,7 @@ properties:
   overwrite:
     description: >-
       Overwrite files according to the specified policy.
-      Default is determined by the direction: conflict for bidi, otherwise always.
+      Default is determined by the direction: `conflict` for `bidi`, otherwise `always`.
     type: string
     enum:
       - always
