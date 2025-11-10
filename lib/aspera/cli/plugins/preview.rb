@@ -64,12 +64,12 @@ module Aspera
           @filter_block = nil
           # link CLI options to gen_info attributes
           options.declare(
-            :skip_format, 'Skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
+            :skip_format, 'Skip this preview format (multiple possible)', allowed: Aspera::Preview::Generator::PREVIEW_FORMATS,
             handler: {o: self, m: :option_skip_format}, default: []
           )
           options.declare(
             :folder_reset_cache, 'Force detection of generated preview by refresh cache',
-            values: %i[no header read],
+            allowed: %i[no header read],
             handler: {o: self, m: :option_folder_reset_cache},
             default: :no
           )
@@ -79,11 +79,11 @@ module Aspera
           options.declare(:base, 'Basename of output for for test')
           options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
           options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
-          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', values: :bool, default: false)
-          options.declare(:overwrite, 'When to overwrite result file', values: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
+          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: :bool, default: false)
+          options.declare(:overwrite, 'When to overwrite result file', allowed: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
           options.declare(
             :file_access, 'How to read and write files in repository',
-            values: %i[local remote],
+            allowed: %i[local remote],
             handler: {o: self, m: :option_file_access},
             default: :local
           )
@@ -95,7 +95,7 @@ module Aspera
             elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
               :bool
             end
-            options.declare(opt[:name], opt[:description].capitalize, values: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
+            options.declare(opt[:name], opt[:description].capitalize, allowed: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
           end
 
           options.parse_options!

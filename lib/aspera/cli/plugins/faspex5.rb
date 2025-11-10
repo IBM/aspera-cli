@@ -93,7 +93,7 @@ module Aspera
           super
           options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
-          options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
+          options.declare(:group_type, 'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
         end
 

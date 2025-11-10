@@ -90,6 +90,7 @@ module Aspera
           when :admin
             api_shares_admin = basic_auth_api(ADMIN_API_PATH)
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
+            lookup_share = ->(field, value){lookup_entity_generic(entity: 'share', field: field, value: value){api_shares_admin.read('data/shares')}['id']}
             case admin_command
             when :node
               return entity_execute(api: api_shares_admin, entity: 'data/nodes')
@@ -98,13 +99,14 @@ module Aspera
               case share_command
               when *ALL_OPS
                 return entity_execute(
-                  api: api_shares_admin,
-                  entity: 'data/shares',
-                  command: share_command,
-                  display_fields: %w[id name node_id directory percent_free]
+                  api:            api_shares_admin,
+                  entity:         'data/shares',
+                  command:        share_command,
+                  display_fields: %w[id name node_id directory percent_free],
+                  &lookup_share
                 )
               when :user_permissions, :group_permissions
-                share_id = instance_identifier
+                share_id = instance_identifier(&lookup_share)
                 return entity_execute(api: api_shares_admin, entity: "data/shares/#{share_id}/#{share_command}")
               end
             when :transfer_settings
@@ -137,20 +139,22 @@ module Aspera
                 entity_commands = %i[import].freeze
               end
               entity_verb = options.get_next_command(entity_commands)
+              lookup_block = ->(field, value){lookup_entity_generic(entity: entity_type, field: field, value: value){api_shares_admin.read(entities_path)}['id']}
               case entity_verb
               when *ALL_OPS # list, show, delete, create, modify
                 display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:all)
                 return entity_execute(
-                  api: api_shares_admin,
-                  entity: entities_path,
-                  command: entity_verb,
-                  display_fields: display_fields
+                  api:            api_shares_admin,
+                  entity:         entities_path,
+                  command:        entity_verb,
+                  display_fields: display_fields,
+                  &lookup_block
                 )
               when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
-                group_id = instance_identifier
+                group_id = instance_identifier(&lookup_block)
                 entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-                return entity_execute(api: api_shares_admin, entity: entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
+                return entity_execute(api: api_shares_admin, entity: entities_path, is_singleton: !entity_verb.eql?(:share_permissions), &lookup_share)
               when :import # saml
                 return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
                   entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
@@ -166,7 +170,7 @@ module Aspera
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})
                 end
               when :users # group
-                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")
+                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{instance_identifier(&lookup_block)}/#{entities_prefix}users")
               else Aspera.error_unexpected_value(entity_verb)
               end
             end

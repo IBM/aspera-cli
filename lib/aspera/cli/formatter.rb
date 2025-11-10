@@ -185,23 +185,23 @@ module Aspera
         else
           {}
         end
-        options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
-        options.declare(:output, 'Destination for results', types: String, handler: {o: self, m: :option_handler})
-        options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
+        options.declare(:format, 'Output format', allowed: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
+        options.declare(:output, 'Destination for results', allowed: String, handler: {o: self, m: :option_handler})
+        options.declare(:display, 'Output only some information', allowed: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
         options.declare(
           :fields, "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", handler: {o: self, m: :option_handler},
-          types: [String, Array, Regexp, Proc],
+          allowed: [String, Array, Regexp, Proc],
           default: SpecialValues::DEF
         )
-        options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, '(Table) Display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
-        options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:select, 'Select only some items in lists: column, value', allowed: [Hash, Proc], handler: {o: self, m: :option_handler})
+        options.declare(:table_style, '(Table) Display style', allowed: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
+        options.declare(:flat_hash, '(Table) Display deep values as additional keys', allowed: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(
-          :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', values: %i[no yes single],
+          :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', allowed: %i[no yes single],
           handler: {o: self, m: :option_handler}, default: :no
         )
-        options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
-        options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
+        options.declare(:show_secrets, 'Show secrets on command output', allowed: :bool, handler: {o: self, m: :option_handler}, default: false)
+        options.declare(:image, 'Options for image display', allowed: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
 
       # method accessed by option manager

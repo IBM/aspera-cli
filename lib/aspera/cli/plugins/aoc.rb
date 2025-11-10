@@ -132,7 +132,7 @@ module Aspera
               test_args:    'organization'
             }
           end
-          options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: Api::AoC.saas_url?(app_url))
+          options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', allowed: :bool, default: Api::AoC.saas_url?(app_url))
           options.parse_options!
           # make username mandatory for jwt, this triggers interactive input
           wiz_username = options.get_option(:username, mandatory: true)
@@ -205,10 +205,10 @@ module Aspera
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
-          options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
-          options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
-          options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
-          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', types: [String, NilClass])
+          options.declare(:workspace, 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
+          options.declare(:new_user_option, 'New user creation option for unknown package recipients', allowed: Hash)
+          options.declare(:validate_metadata, 'Validate shared inbox metadata', allowed: :bool, default: true)
+          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', allowed: [String, NilClass])
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)

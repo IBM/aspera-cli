@@ -13,7 +13,7 @@ module Aspera
         AUTH_OPTIONS = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
         def initialize(**_)
           super
-          options.declare(:auth, 'OAuth type of authentication', values: AUTH_TYPES, default: :jwt)
+          options.declare(:auth, 'OAuth type of authentication', allowed: AUTH_TYPES, default: :jwt)
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth (Web) redirect URI for web authentication')

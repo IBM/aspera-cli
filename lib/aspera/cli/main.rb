@@ -228,6 +228,7 @@ module Aspera
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          Log.log.debug{exception_info[:e].backtrace.join("\n")} if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
@@ -349,28 +350,28 @@ module Aspera
       # Define header for manual
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, 'Show this message', values: :none, short: 'h'){@option_help = true}
-        @context.options.declare(:bash_comp, 'Generate bash completion for command', values: :none){@bash_completion = true}
-        @context.options.declare(:show_config, 'Display parameters used for the provided action', values: :none){@option_show_config = true}
-        @context.options.declare(:version, 'Display version', values: :none, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(:help, 'Show this message', allowed: :none, short: 'h'){@option_help = true}
+        @context.options.declare(:bash_comp, 'Generate bash completion for command', allowed: :none){@bash_completion = true}
+        @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: :none){@option_show_config = true}
+        @context.options.declare(:version, 'Display version', allowed: :none, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, 'Method to start browser',
-          values: USER_INTERFACES,
+          allowed: USER_INTERFACES,
           handler: {o: Environment.instance, m: :url_method}
         )
         @context.options.declare(
           :invalid_characters, 'Replacement character and invalid filename characters',
           handler: {o: Environment.instance, m: :file_illegal_characters}
         )
-        @context.options.declare(:log_level, 'Log level', values: Log::LEVELS, handler: {o: Log.instance, m: :level})
-        @context.options.declare(:log_format, 'Log formatter', types: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
-        @context.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
-        @context.options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
-        @context.options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
-        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:log_level, 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
+        @context.options.declare(:log_format, 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
+        @context.options.declare(:logger, 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
+        @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: :bool, default: false)
+        @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
+        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', allowed: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         @context.options.declare(:temp_folder, 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
-        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
+        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit', allowed: String)
         # Parse declared options
         @context.options.parse_options!
       end

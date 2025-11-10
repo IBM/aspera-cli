@@ -92,11 +92,11 @@ module Aspera
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(
-              :default_ports, 'Gen4: Use standard FASP ports (true) or get from node API (false)', values: :bool, default: :yes,
+              :default_ports, 'Gen4: Use standard FASP ports (true) or get from node API (false)', allowed: :bool, default: :yes,
               handler: {o: Api::Node, m: :use_standard_ports}
             )
             options.declare(
-              :node_cache, 'Gen4: Set to no to force actual file system read', values: :bool,
+              :node_cache, 'Gen4: Set to no to force actual file system read', allowed: :bool,
               handler: {o: Api::Node, m: :use_node_cache}
             )
             options.declare(:root_id, 'Gen4: File id of top folder when using access key (override AK root id)')
@@ -680,7 +680,7 @@ module Aspera
           async_ids = @api_node.read('async/list')['sync_ids']
           summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
           selected = summaries.find{ |s| s['name'].eql?(value)}
-          raise Cli::BadIdentifier.new('sync', "#{field}=#{value}") if selected.nil?
+          raise Cli::BadIdentifier.new('sync', value, field: field) if selected.nil?
           return selected['snid']
         end
 
@@ -765,7 +765,7 @@ module Aspera
             # name is unique, so we can return
             return id if sync_info[field].eql?(value)
           end
-          raise Cli::BadIdentifier.new('ssync', "#{field}=#{value}")
+          raise Cli::BadIdentifier.new('ssync', value, field: field)
         end
 
         WATCH_FOLDER_MUL = %i[create list].freeze

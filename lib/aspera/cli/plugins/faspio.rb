@@ -42,7 +42,7 @@ module Aspera
 
         def initialize(**_)
           super
-          options.declare(:auth, 'OAuth type of authentication', values: %i[jwt basic])
+          options.declare(:auth, 'OAuth type of authentication', allowed: %i[jwt basic])
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')

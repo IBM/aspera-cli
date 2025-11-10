@@ -11,88 +11,117 @@ require 'optparse'
 
 module Aspera
   module Cli
+    module Allowed
+      TYPES_HASH = [Hash].freeze
+      TYPES_ARRAY = [Array].freeze
+      # This option can be set to a single string or array, multiple times,
+      MULTI_STRING = [String, Array].freeze
+      TYPES_INTEGER = [Integer].freeze
+    end
+
     # Description of option, how to manage
-    class OptionAttributes
-      attr_reader :types, :deprecation
+    class OptionValue
+      # [Array] List of allowed types
+      attr_reader :types
+      # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
 
-      # @param option [Symbol] Name of option
-      # @param object [Object] Accessor object
-      # @param method [Symbol] Method name
-      def initialize(option:, types: nil, sensitive: false, object: nil, method: nil, deprecation: nil)
+      # @param option      [Symbol] Name of option
+      # @param allowed  [see below] Allowed values
+      # @param object      [Object] Accessor object
+      # @param method      [Symbol] Method name
+      # @param deprecation [String] message
+      # `allowed`:
+      # - `nil` No validation, so just a string
+      # - `Class` The single allowed Class
+      # - `Array(Class)` Multiple allowed classes
+      # - `:bool` A boolean value (true / false, yes, no)
+      # - `:date` A date, or special value that defines a date
+      # - `:none` For switch, (then block code executed in option)
+      # - `Array(Symbol)` List of allowed values
+      def initialize(option:, allowed: nil, handler: nil, deprecation: nil)
         @option = option
-        @types = types
-        @values = nil
-        if !@types.nil?
-          @types = [@types] unless types.is_a?(Array)
-          Aspera.assert(@types.all?(Class)){"types must be (Array of) Class: #{@types}"}
-        end
-        @sensitive = sensitive
-        @object = object
-        @read_method = method
-        @write_method = method ? "#{@read_method}=".to_sym : nil
-        @type = if object.nil?
+        # by default passwords and secrets are sensitive, else specify when declaring the option
+        @sensitive = SecretHider.instance.secret?(@option, '')
+        # either the value, or object giving value
+        @object = handler&.[](:o)
+        @read_method = handler&.[](:m)
+        @write_method = @read_method ? "#{@read_method}=".to_sym : nil
+        @deprecation = deprecation
+        @access = if @object.nil?
           :local
         elsif @object.respond_to?(@write_method)
           :write
         else
           :setter
         end
-        Log.log.trace1{"declare: #{@option}: #{@type} #{@object.class}.#{@read_method}".green}
-        Aspera.assert(@object.respond_to?(@read_method)){"#{object} does not respond to #{method}"} unless @type.eql?(:local)
+        Aspera.assert(@object.respond_to?(@read_method)){"#{object} does not respond to #{method}"} unless @access.eql?(:local)
+        @types = nil
+        @values = nil
+        if !allowed.nil?
+          allowed = [allowed] if allowed.is_a?(Class)
+          if allowed.is_a?(Array) && allowed.all?(Class)
+            @types = allowed
+          else
+            @values = allowed
+            if @values.is_a?(Array)
+              Aspera.assert(@values.all?(Symbol))
+              @types = [Symbol]
+            else
+              Aspera.assert_values(@values, ALLOWED_SPECIAL_VALUES)
+            end
+            @values = Manager::BOOLEAN_VALUES if @values.eql?(:bool)
+
+          end
+        end
+        Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
+      end
+
+      def clear
+        @object = nil
       end
 
       def value
-        val =
-          case @type
+        current_value =
+          case @access
           when :local then @object
           when :write then @object.send(@read_method)
           when :setter then @object.send(@read_method, @option, :get)
           end
-        Log.log.trace1{"get option: #{@option}=#{val}"}
-        return val
+        Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"}
+        return current_value
       end
 
-      def value=(val)
-        Log.log.trace1{"set option: #{@option}=#{val}"}
-        val = value.deep_merge(val) if val.is_a?(Hash) && value.is_a?(Hash)
-        case @type
-        when :local then @object = val
-        when :write then @object.send(@write_method, val)
-        when :setter then @object.send(@read_method, @option, :set, val)
+      def value=(new_value)
+        Aspera.assert(!@deprecation, type: warn){"#{@option}: Option is deprecated: #{option_attrs.deprecation}"}
+        Log.log.trace1{"#{@option} <- (#{new_value.class})#{new_value}"}
+        new_value = Manager.enum_to_bool(new_value) if @values.eql?(Manager::BOOLEAN_VALUES)
+        new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
+        # Setting a Hash to null set an empty hash
+        new_value = {} if new_value.eql?(nil) && @types.eql?(Allowed::TYPES_HASH)
+        # Setting a Array to null set an empty hash
+        new_value = [] if new_value.eql?(nil) && @types.eql?(Allowed::TYPES_ARRAY)
+        Aspera.assert_type(new_value, *@types){"Option #{@option}"} if @types
+        current_value = value
+        new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && current_value.empty?
+        new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && current_value.empty?
+        case @access
+        when :local then @object = new_value
+        when :write then @object.send(@write_method, new_value)
+        when :setter then @object.send(@read_method, @option, :set, new_value)
         end
       end
+      ALLOWED_SPECIAL_VALUES = %i[bool date none].freeze
+
+      private_constant :ALLOWED_SPECIAL_VALUES
     end
 
     # parse command line options
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
     class Manager
-      # boolean options are set to true/false from the following values
-      BOOLEAN_SIMPLE = %i[no yes].freeze
-      FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
-      TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
-      BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
-
-      # Option name separator on command line, e.g. in --option-blah, third "-"
-      OPTION_SEP_LINE = '-'
-      # Option name separator in code (symbol), e.g. in :option_blah, the "_"
-      OPTION_SEP_SYMBOL = '_'
-      OPTION_VALUE_SEPARATOR = '='
-      # an option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-      # TODO: all Hash are additive, + way to reset Hash (e.g. --option-blah=@none:)
-      OPTION_HASH_SEPARATOR = '.'
-      # Starts an option, e.g. in --option-blah, the two first "--"
-      OPTION_PREFIX = '--'
-      # when this is alone, this stops option processing
-      OPTIONS_STOP = '--'
-      SOURCE_USER = 'cmdline' # cspell:disable-line
-
-      DEFAULT_PARSER_TYPES = [Array, Hash].freeze
-
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :DEFAULT_PARSER_TYPES
-
       class << self
+        # list of allowed bool value to Ruby bool value
         def enum_to_bool(enum)
           Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
           return TRUE_VALUES.include?(enum)
@@ -102,15 +131,15 @@ module Aspera
           return time.strftime('%Y-%m-%d %H:%M:%S')
         end
 
-        # find shortened string value in allowed symbol list
+        # Find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
           # we accept shortcuts
           matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
-          multi_choice_assert(!matching.empty?, "unknown value for #{descr}: #{short_value}", allowed_values)
-          multi_choice_assert(matching.length.eql?(1), "ambiguous shortcut for #{descr}: #{short_value}", matching)
+          Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values))
+          Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching))
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
@@ -118,8 +147,8 @@ module Aspera
         # Generates error message with list of allowed values
         # @param error_msg [String] error message
         # @param accept_list [Array] list of allowed values
-        def multi_choice_assert(assertion, error_msg, accept_list)
-          raise Cli::BadArgument, [error_msg, 'Use:'].concat(accept_list.map{ |c| "- #{c}"}.sort).join("\n") unless assertion
+        def multi_choice_assert_msg(error_msg, accept_list)
+          [error_msg, 'Use:'].concat(accept_list.map{ |c| "- #{c}"}.sort).join("\n")
         end
 
         # change option name with dash to name with underscore
@@ -158,7 +187,7 @@ module Aspera
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
-        # option description: option_symbol => OptionAttributes
+        # option description: option_symbol => OptionValue
         @declared_options = {}
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
@@ -203,19 +232,86 @@ module Aspera
         Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
         @parser.separator('')
         @parser.separator('OPTIONS: global')
-        declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
-        declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
-        declare(:struct_parser, 'Default parser when expected value is a struct', values: %i[json ruby])
+        declare(:interactive, 'Use interactive input of missing params', allowed: :bool, handler: {o: self, m: :ask_missing_mandatory})
+        declare(:ask_options, 'Ask even optional options', allowed: :bool, handler: {o: self, m: :ask_missing_optional})
+        declare(:struct_parser, 'Default parser when expected value is a struct', allowed: %i[json ruby])
         # do not parse options yet, let's wait for option `-h` to be overridden
       end
 
-      # @param descr [String] description for help
-      # @param mandatory [Boolean] if true, raise error if option not set
-      # @param multiple [Boolean] if true, return remaining arguments (Array)
+      # Declare an option
+      # @param option_symbol [Symbol] option name
+      # @param description   [String] description for help
+      # @param short         [String] short option name
+      # @param allowed       [Object] Allowed values, see `OptionValue`
+      # @param default       [Object] default value
+      # @param handler       [Hash]   handler for option value: keys: o (object) and m (method)
+      # @param deprecation   [String] deprecation
+      # @param block [Proc] block to execute when option is found
+      def declare(option_symbol, description, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, &block)
+        Aspera.assert_type(option_symbol, Symbol)
+        Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
+        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
+        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
+        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :types"}
+        Aspera.assert_type(handler, Hash) if handler
+        Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
+        option_attrs = @declared_options[option_symbol] = OptionValue.new(
+          option:      option_symbol,
+          allowed:     allowed,
+          handler:     handler,
+          deprecation: deprecation
+        )
+        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types
+        description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
+        set_option(option_symbol, default, where: 'default') unless default.nil?
+        on_args = [description]
+        case option_attrs.values
+        when nil
+          on_args.push(symbol_to_option(option_symbol, 'VALUE'))
+          on_args.push("-#{short}VALUE") unless short.nil?
+          # coerce integer
+          on_args.push(Integer) if option_attrs.types.eql?(Allowed::TYPES_INTEGER)
+          @parser.on(*on_args){ |v| set_option(option_symbol, v, where: SOURCE_USER)}
+        when Array, :bool
+          set_option(option_symbol, Manager.enum_to_bool(default), where: 'default') if option_attrs.values.eql?(BOOLEAN_VALUES) && !default.nil?
+          # this option value must be a symbol
+          # option_attrs.values = values
+          value = get_option(option_symbol)
+          help_values = option_attrs.values.map{ |i| i.eql?(value) ? highlight_current(i) : i}.join(', ')
+          if option_attrs.values.eql?(BOOLEAN_VALUES)
+            help_values = BOOLEAN_SIMPLE.map{ |i| (i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
+          end
+          on_args[0] = "#{description}: #{help_values}"
+          on_args.push(symbol_to_option(option_symbol, 'ENUM'))
+          on_args.push(option_attrs.values)
+          @parser.on(*on_args){ |v| set_option(option_symbol, self.class.get_from_list(v.to_s, description, option_attrs.values), where: SOURCE_USER)}
+        when :date
+          on_args.push(symbol_to_option(option_symbol, 'DATE'))
+          @parser.on(*on_args) do |v|
+            time_string = case v
+            when 'now' then Manager.time_to_string(Time.now)
+            when /^-([0-9]+)h/ then Manager.time_to_string(Time.now - (Regexp.last_match(1).to_i * 3600))
+            else v
+            end
+            set_option(option_symbol, time_string, where: SOURCE_USER)
+          end
+        when :none
+          Aspera.assert(!block.nil?){"missing block for #{option_symbol}"}
+          on_args.push(symbol_to_option(option_symbol))
+          on_args.push("-#{short}") if short.is_a?(String)
+          @parser.on(*on_args, &block)
+        else Aspera.error_unexpected_value(values)
+        end
+        Log.log.trace1{"on_args=#{on_args}"}
+      end
+
+      # @param descr       [String] description for help
+      # @param mandatory   [Boolean] if true, raise error if option not set
+      # @param multiple    [Boolean] if true, return remaining arguments (Array)
       # @param accept_list [Array] list of allowed values (Symbol)
-      # @param validation [Class, Array] accepted value type(s) or list of Symbols
-      # @param aliases [Hash] map of aliases: key = alias, value = real value
-      # @param default [Object] default value
+      # @param validation  [Class, Array] accepted value type(s) or list of Symbols
+      # @param aliases     [Hash] map of aliases: key = alias, value = real value
+      # @param default     [Object] default value
       # @return one value, list or nil (if optional and no default)
       def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: String, aliases: nil, default: nil)
         Aspera.assert(accept_list.nil? || (accept_list.is_a?(Array) && accept_list.all?(Symbol)))
@@ -270,13 +366,13 @@ module Aspera
         result = option_attrs.value
         result = default if result.nil?
         # Do not fail for manual generation if option mandatory but not set
-        result = :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
+        return :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
         if result.nil?
           if !@ask_missing_mandatory
-            raise Cli::BadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
+            Aspera.assert(!mandatory, type: Cli::BadArgument){"Missing mandatory option: #{option_symbol}"}
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
-            result = get_interactive(option_symbol.to_s, option: true, accept_list: option_attrs.values)
+            result = get_interactive(option_symbol.to_s, check_option: true, accept_list: option_attrs.values)
             set_option(option_symbol, result, where: 'interactive')
           end
         end
@@ -286,98 +382,25 @@ module Aspera
 
       # Set an option value by name, either store value or call handler
       # @param option_symbol [Symbol] option name
-      # @param value [String] value to set
-      # @param where [String] where the value comes from
-      # @param expect [Class, Array] expected value type(s)
+      # @param value [String] Value to set
+      # @param where [String] Where the value comes from
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
         option_attrs = @declared_options[option_symbol]
-        Log.log.warn("#{option_symbol}: Option is deprecated: #{option_attrs.deprecation}") if option_attrs.deprecation
-        value = evaluate_extended_value(value, option_attrs.types)
-        value = Manager.enum_to_bool(value) if option_attrs.values.eql?(BOOLEAN_VALUES)
-        Log.log.trace1{"(#{where}) set #{option_symbol}=#{value}"}
-        # Setting a Hash to null set an empty hash
-        value = {} if value.eql?(nil) && option_attrs.types.eql?([Hash])
-        self.class.validate_type(:option, option_symbol, value, option_attrs.types)
-        option_attrs.value = value
+        option_attrs.value = evaluate_extended_value(value, option_attrs.types)
       end
 
-      # declare an option
-      # @param option_symbol [Symbol] option name
-      # @param description [String] description for help
-      # @param handler [Hash] handler for option value: keys: o (object) and m (method)
-      # @param default [Object] default value
-      # @param values [nil, Array, :bool, :date, :none] list of allowed values, :bool for true/false, :date for dates, :none for on/off switch
-      # @param short [String] short option name
-      # @param coerce [Class] one of the coerce types accepted by option parser
-      # @param types [Class, Array] accepted value type(s)
-      # @param block [Proc] block to execute when option is found
-      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
+      def clear_option(option_symbol)
         Aspera.assert_type(option_symbol, Symbol)
-        Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
-        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
-        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
-        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :types"}
-        Aspera.assert_type(handler, Hash) if handler
-        Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
-        option_attrs = @declared_options[option_symbol] = OptionAttributes.new(
-          option:      option_symbol,
-          object:      handler&.[](:o),
-          method:      handler&.[](:m),
-          types:       types,
-          deprecation: deprecation,
-          # by default passwords and secrets are sensitive, else specify when declaring the option
-          sensitive:   SecretHider.instance.secret?(option_symbol, '')
-        )
-        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types
-        description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
-        set_option(option_symbol, default, where: 'default') unless default.nil?
-        on_args = [description]
-        case values
-        when nil
-          on_args.push(symbol_to_option(option_symbol, 'VALUE'))
-          on_args.push("-#{short}VALUE") unless short.nil?
-          on_args.push(coerce) unless coerce.nil?
-          @parser.on(*on_args){ |v| set_option(option_symbol, v, where: SOURCE_USER)}
-        when Array, :bool
-          if values.eql?(:bool)
-            values = BOOLEAN_VALUES
-            set_option(option_symbol, Manager.enum_to_bool(default), where: 'default') unless default.nil?
-          end
-          # this option value must be a symbol
-          option_attrs.values = values
-          value = get_option(option_symbol)
-          help_values = values.map{ |i| i.eql?(value) ? highlight_current(i) : i}.join(', ')
-          if values.eql?(BOOLEAN_VALUES)
-            help_values = BOOLEAN_SIMPLE.map{ |i| (i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
-          end
-          on_args[0] = "#{description}: #{help_values}"
-          on_args.push(symbol_to_option(option_symbol, 'ENUM'))
-          on_args.push(values)
-          @parser.on(*on_args){ |v| set_option(option_symbol, self.class.get_from_list(v.to_s, description, values), where: SOURCE_USER)}
-        when :date
-          on_args.push(symbol_to_option(option_symbol, 'DATE'))
-          @parser.on(*on_args) do |v|
-            time_string = case v
-            when 'now' then Manager.time_to_string(Time.now)
-            when /^-([0-9]+)h/ then Manager.time_to_string(Time.now - (Regexp.last_match(1).to_i * 3600))
-            else v
-            end
-            set_option(option_symbol, time_string, where: SOURCE_USER)
-          end
-        when :none
-          Aspera.assert(!block.nil?){"missing block for #{option_symbol}"}
-          on_args.push(symbol_to_option(option_symbol))
-          on_args.push("-#{short}") if short.is_a?(String)
-          @parser.on(*on_args, &block)
-        else Aspera.error_unexpected_value(values)
-        end
-        Log.log.trace1{"on_args=#{on_args}"}
+        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        @declared_options[option_symbol].clear
       end
 
       # Adds each of the keys of specified hash as an option
-      # @param preset_hash [Hash] hash of options to add
+      # @param preset_hash [Hash]    Options to add
+      # @param where       [String]  Where the value comes from
+      # @param override    [Boolean] Override if already present
       def add_option_preset(preset_hash, where, override: true)
         Aspera.assert_type(preset_hash, Hash)
         Log.log.debug{"add_option_preset: #{preset_hash}, #{where}, #{override}"}
@@ -499,18 +522,19 @@ module Aspera
       end
 
       # Prompt user for input in a list of symbols
-      # @param descr [String] description for help
-      # @param option [Boolean] true if command line option
-      # @param multiple [Boolean] true if multiple values expected
-      # @param accept_list [Array] list of expected values
-      def get_interactive(descr, option: false, multiple: false, accept_list: nil)
-        what = option ? 'option' : 'argument'
+      # @param descr        [String] description for help
+      # @param check_option [Boolean] Check attributes of option with name=descr
+      # @param multiple     [Boolean] true if multiple values expected
+      # @param accept_list  [Array] list of expected values
+      def get_interactive(descr, check_option: false, multiple: false, accept_list: nil)
+        option_attrs = @declared_options[descr.to_sym]
+        what = option_attrs ? 'option' : 'argument'
         if !@ask_missing_mandatory
           message = "missing #{what}: #{descr}"
           if accept_list.nil?
             raise Cli::BadArgument, message
           else
-            self.class.multi_choice_assert(false, message, accept_list)
+            Aspera.assert(false, self.class.multi_choice_assert_msg(message, accept_list))
           end
         end
         sensitive = option && @declared_options[descr.to_sym]&.[](:sensitive)
@@ -584,6 +608,29 @@ module Aspera
           unprocessed_options.delete(k)
         end
       end
+      # boolean options are set to true/false from the following values
+      BOOLEAN_SIMPLE = %i[no yes].freeze
+      FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
+      TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
+      BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
+
+      # Option name separator on command line, e.g. in --option-blah, third "-"
+      OPTION_SEP_LINE = '-'
+      # Option name separator in code (symbol), e.g. in :option_blah, the "_"
+      OPTION_SEP_SYMBOL = '_'
+      OPTION_VALUE_SEPARATOR = '='
+      # an option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
+      # TODO: all Hash are additive, + way to reset Hash (e.g. --option-blah=@none:)
+      OPTION_HASH_SEPARATOR = '.'
+      # Starts an option, e.g. in --option-blah, the two first "--"
+      OPTION_PREFIX = '--'
+      # when this is alone, this stops option processing
+      OPTIONS_STOP = '--'
+      SOURCE_USER = 'cmdline' # cspell:disable-line
+
+      DEFAULT_PARSER_TYPES = [Array, Hash].freeze
+
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :DEFAULT_PARSER_TYPES
     end
   end
 end

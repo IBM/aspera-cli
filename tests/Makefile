@@ -235,19 +235,19 @@ $(F)shares_admin_4: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_admin_5: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin user all app_authorizations 1 show
+	$(INCMAN)$(CLI_TEST) shares admin user all app_authorizations %username:@preset:shares_admin.username show
 	@$(STOP_TEST) $@
 $(F)shares_admin_6: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin user all app_authorizations 1 modify @json:'{"app_login":true}'
+	$(INCMAN)$(CLI_TEST) shares admin user all app_authorizations %username:@preset:shares_admin.username modify @json:'{"app_login":true}'
 	@$(STOP_TEST) $@
 $(F)shares_admin_7: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions 1 list
+	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions %username:@preset:shares_admin.username list
 	@$(STOP_TEST) $@
 $(F)shares_admin_8: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions 1 show 1
+	$(INCMAN)$(CLI_TEST) shares admin user all share_permissions %username:@preset:shares_admin.username show %name:@preset:shares.share
 	@$(STOP_TEST) $@
 $(F)shares_admin_9: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -263,7 +263,7 @@ $(F)shares_admin_11: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)shares_admin_12: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) shares admin share user_permissions 1 list
+	$(INCMAN)$(CLI_TEST) shares admin share user_permissions %name:@preset:shares.share list
 	@$(STOP_TEST) $@
 $(F)shares_1: $(TMP_EXISTS)
 	@$(START_TEST) $@

@@ -58,9 +58,9 @@ module Aspera
           super
           @api_orch = nil
           options.declare(:result, "Specify result value as: 'work_step:parameter'")
-          options.declare(:synchronous, 'Wait for completion', values: :bool, default: :no)
-          options.declare(:ret_style, 'How return type is requested in api', values: %i[header arg ext], default: :arg)
-          options.declare(:auth_style, 'Authentication type', values: %i[arg_pass head_basic apikey], default: :head_basic)
+          options.declare(:synchronous, 'Wait for completion', allowed: :bool, default: :no)
+          options.declare(:ret_style, 'How return type is requested in api', allowed: %i[header arg ext], default: :arg)
+          options.declare(:auth_style, 'Authentication type', allowed: %i[arg_pass head_basic apikey], default: :head_basic)
           options.parse_options!
         end
 
