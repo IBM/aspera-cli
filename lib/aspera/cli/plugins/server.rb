@@ -87,7 +87,7 @@ module Aspera
           super
           @ssh_opts = {}
           @connection_type = :ssh
-          options.declare(:ssh_keys, 'SSH key path list (Array or single)')
+          options.declare(:ssh_keys, 'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY)
           options.declare(:passphrase, 'SSH private key passphrase')
           options.declare(:ssh_options, 'SSH options', allowed: Hash, handler: {o: self, m: :option_ssh_opts})
           SyncActions.declare_options(options)
@@ -154,7 +154,6 @@ module Aspera
           end
           ssh_key_list = options.get_option(:ssh_keys)
           if !ssh_key_list.nil?
-            ssh_key_list = [ssh_key_list] if ssh_key_list.is_a?(String)
             Aspera.assert_type(ssh_key_list, Array){'ssh_keys'}
             Aspera.assert(ssh_key_list.all?(String))
             ssh_key_list.map!{ |p| File.expand_path(p)}

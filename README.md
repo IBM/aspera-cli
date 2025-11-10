@@ -4604,7 +4604,7 @@ OPTIONS: global
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
     -P, --presetVALUE                Load the named option preset from current config file
-        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --version-check-days=VALUE   Period in days to check new version (zero to disable) (Integer)
         --plugin-folder=VALUE        Folder where to find additional plugins
         --override=ENUM              Wizard: override existing value: [no], yes
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
@@ -4758,7 +4758,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
+        --skip-format=ENUM           Skip this preview format: png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
         --skip-types=VALUE           Skip types in comma separated list
         --previews-folder=VALUE      Preview folder in storage root
@@ -4812,7 +4812,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --ssh-keys=VALUE             SSH key path list (Array or single)
+        --ssh-keys=VALUE             SSH key path list (Array, String)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
 
@@ -8257,12 +8257,12 @@ ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$u
 admin group all list
 admin node list
 admin share list --fields=DEF,-status,status_message
-admin share user_permissions 1 list
-admin user all app_authorizations 1 modify @json:'{"app_login":true}'
-admin user all app_authorizations 1 show
+admin share user_permissions %name:my_share list
+admin user all app_authorizations %username:my_username modify @json:'{"app_login":true}'
+admin user all app_authorizations %username:my_username show
 admin user all list
-admin user all share_permissions 1 list
-admin user all share_permissions 1 show 1
+admin user all share_permissions %username:my_username list
+admin user all share_permissions %username:my_username show %name:my_share
 admin user ldap add the_name
 admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
@@ -8970,7 +8970,7 @@ ascli config sync spec
 | no_preserve_root_attrs | boolean | Disable the preservation of attributes on the Sync root.<br/>(`--no-preserve-root-attrs`) |
 | no_scan | boolean | Skip initial scanning.<br/>(`--no-scan`) |
 | notifications_sharing_retry_max | integer | Retry processing filesystem notifications up to the specified maximum number after a sharing violation. |
-| overwrite | string | Overwrite files according to the specified policy. Default is determined by the direction: conflict for bidi, otherwise always.<br/>Allowed values: `always`, `older`, `conflict`<br/>(`--overwrite={enum}`)(-o) |
+| overwrite | string | Overwrite files according to the specified policy. Default is determined by the direction: `conflict` for `bidi`, otherwise `always`.<br/>Allowed values: `always`, `older`, `conflict`<br/>(`--overwrite={enum}`)(-o) |
 | pending_max | integer | Allow the maximum number of files that are pending transfer to be no more than the specified number.<br/>(`--pending-max={integer}`) |
 | preserve_access_time | boolean | Preserve file access time from the source to the destination.<br/>(`--preserve-access-time`) |
 | preserve_creation_time | boolean | Preserve file creation time from the source to the destination.<br/>(`--preserve-creation-time`) |

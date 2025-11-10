@@ -12,10 +12,8 @@ require 'optparse'
 module Aspera
   module Cli
     module Allowed
-      TYPES_HASH = [Hash].freeze
-      TYPES_ARRAY = [Array].freeze
-      # This option can be set to a single string or array, multiple times,
-      MULTI_STRING = [String, Array].freeze
+      # This option can be set to a single string or array, multiple times, and gives Array of String
+      TYPES_STRING_ARRAY = [Array, String].freeze
       TYPES_INTEGER = [Integer].freeze
     end
 
@@ -62,16 +60,18 @@ module Aspera
           allowed = [allowed] if allowed.is_a?(Class)
           if allowed.is_a?(Array) && allowed.all?(Class)
             @types = allowed
+            # Default value for array
+            @object ||= [] if @types.first.eql?(Array)
+            @object ||= {} if @types.first.eql?(Hash)
           else
             @values = allowed
             if @values.is_a?(Array)
               Aspera.assert(@values.all?(Symbol))
-              @types = [Symbol]
+              # @types = [Symbol] # no, this adds type to manual
             else
               Aspera.assert_values(@values, ALLOWED_SPECIAL_VALUES)
             end
             @values = Manager::BOOLEAN_VALUES if @values.eql?(:bool)
-
           end
         end
         Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
@@ -81,35 +81,38 @@ module Aspera
         @object = nil
       end
 
-      def value
+      def value(log: true)
         current_value =
           case @access
           when :local then @object
           when :write then @object.send(@read_method)
           when :setter then @object.send(@read_method, @option, :get)
           end
-        Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"}
+        Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"} if log
         return current_value
       end
 
+      # Assign value to option
       def value=(new_value)
         Aspera.assert(!@deprecation, type: warn){"#{@option}: Option is deprecated: #{option_attrs.deprecation}"}
         Log.log.trace1{"#{@option} <- (#{new_value.class})#{new_value}"}
         new_value = Manager.enum_to_bool(new_value) if @values.eql?(Manager::BOOLEAN_VALUES)
         new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
+        new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
         # Setting a Hash to null set an empty hash
-        new_value = {} if new_value.eql?(nil) && @types.eql?(Allowed::TYPES_HASH)
+        new_value = {} if new_value.eql?(nil) && @types&.first.eql?(Hash)
         # Setting a Array to null set an empty hash
-        new_value = [] if new_value.eql?(nil) && @types.eql?(Allowed::TYPES_ARRAY)
+        new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
         Aspera.assert_type(new_value, *@types){"Option #{@option}"} if @types
-        current_value = value
-        new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && current_value.empty?
-        new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && current_value.empty?
+        current_value = value(log: false)
+        new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
+        new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
         case @access
         when :local then @object = new_value
         when :write then @object.send(@write_method, new_value)
         when :setter then @object.send(@read_method, @option, :set, new_value)
         end
+        Log.log.trace1{"#{@option} <- (#{value(log: false).class})#{value(log: false)}"}
       end
       ALLOWED_SPECIAL_VALUES = %i[bool date none].freeze
 

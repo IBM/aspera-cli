@@ -6711,7 +6711,7 @@ OPTIONS: global
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
     -P, --presetVALUE                Load the named option preset from current config file
-        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --version-check-days=VALUE   Period in days to check new version (zero to disable) (Integer)
         --plugin-folder=VALUE        Folder where to find additional plugins
         --override=ENUM              Wizard: override existing value: [no], yes
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
@@ -6865,7 +6865,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User&#39;s identifier
         --password=VALUE             User&#39;s password
-        --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
+        --skip-format=ENUM           Skip this preview format: png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
         --skip-types=VALUE           Skip types in comma separated list
         --previews-folder=VALUE      Preview folder in storage root
@@ -6919,7 +6919,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User&#39;s identifier
         --password=VALUE             User&#39;s password
-        --ssh-keys=VALUE             SSH key path list (Array or single)
+        --ssh-keys=VALUE             SSH key path list (Array, String)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
 
@@ -10621,12 +10621,12 @@ ascli shares admin share user_permissions $share_id create @json:&#39;{&quot;use
 <div class="sourceCode" id="cb580"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb580-1"><a href="#cb580-1" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> group all list</span>
 <span id="cb580-2"><a href="#cb580-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
 <span id="cb580-3"><a href="#cb580-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
-<span id="cb580-4"><a href="#cb580-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions 1 list</span>
-<span id="cb580-5"><a href="#cb580-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
-<span id="cb580-6"><a href="#cb580-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 show</span>
+<span id="cb580-4"><a href="#cb580-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions %name:my_share list</span>
+<span id="cb580-5"><a href="#cb580-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations %username:my_username modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
+<span id="cb580-6"><a href="#cb580-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations %username:my_username show</span>
 <span id="cb580-7"><a href="#cb580-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all list</span>
-<span id="cb580-8"><a href="#cb580-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 list</span>
-<span id="cb580-9"><a href="#cb580-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 show 1</span>
+<span id="cb580-8"><a href="#cb580-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions %username:my_username list</span>
+<span id="cb580-9"><a href="#cb580-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions %username:my_username show %name:my_share</span>
 <span id="cb580-10"><a href="#cb580-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user ldap add the_name</span>
 <span id="cb580-11"><a href="#cb580-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user local list</span>
 <span id="cb580-12"><a href="#cb580-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user saml import @json:<span class="st">&#39;{&quot;id&quot;:&quot;the_id&quot;,&quot;name_id&quot;:&quot;the_name&quot;}&#39;</span></span>
@@ -11696,7 +11696,8 @@ maximum number after a sharing violation.</td>
 <td>overwrite</td>
 <td>string</td>
 <td>Overwrite files according to the specified policy. Default is
-determined by the direction: conflict for bidi, otherwise always.<br />
+determined by the direction: <code>conflict</code> for
+<code>bidi</code>, otherwise <code>always</code>.<br />
 Allowed values: <code>always</code>, <code>older</code>,
 <code>conflict</code><br />
 (<code>--overwrite={enum}</code>)(-o)</td>
