@@ -14,6 +14,7 @@ module Aspera
     module Allowed
       # This option can be set to a single string or array, multiple times, and gives Array of String
       TYPES_STRING_ARRAY = [Array, String].freeze
+      # Value will be coerced to int
       TYPES_INTEGER = [Integer].freeze
     end
 
@@ -61,8 +62,8 @@ module Aspera
           if allowed.is_a?(Array) && allowed.all?(Class)
             @types = allowed
             # Default value for array
-            @object ||= [] if @types.first.eql?(Array)
-            @object ||= {} if @types.first.eql?(Hash)
+            @object ||= [] if @types.first.eql?(Array) && !@types.include?(NilClass)
+            @object ||= {} if @types.first.eql?(Hash) && !@types.include?(NilClass)
           else
             @values = allowed
             if @values.is_a?(Array)
@@ -362,12 +363,11 @@ module Aspera
       # either return value or calls handler, can return nil
       # ask interactively if requested/required
       # @param mandatory [Boolean] if true, raise error if option not set
-      def get_option(option_symbol, mandatory: false, default: nil)
+      def get_option(option_symbol, mandatory: false)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
         option_attrs = @declared_options[option_symbol]
         result = option_attrs.value
-        result = default if result.nil?
         # Do not fail for manual generation if option mandatory but not set
         return :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
         if result.nil?
@@ -379,7 +379,6 @@ module Aspera
             set_option(option_symbol, result, where: 'interactive')
           end
         end
-        self.class.validate_type(:option, option_symbol, result, option_attrs.types) unless result.nil? && !mandatory
         return result
       end
 

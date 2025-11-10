@@ -127,7 +127,7 @@ module Aspera
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           # Vault options
           options.declare(:secret, 'Secret for access keys')
-          options.declare(:vault, 'Vault for secrets', allowed: Hash, default: {})
+          options.declare(:vault, 'Vault for secrets', allowed: Hash)
           options.declare(:vault_password, 'Vault password')
           options.parse_options!
           # Declare generic plugin options only after handlers are declared
@@ -153,14 +153,14 @@ module Aspera
           options.declare(:notify_template, 'Email: ERB template for notification of transfers')
           # HTTP options
           options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: :bool, handler: {o: self, m: :option_insecure}, default: :no)
-          options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: Array, handler: {o: self, m: :option_ignore_cert_host_port})
+          options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :option_ignore_cert_host_port})
           options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
-          options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: [Array, String], handler: {o: self, m: :trusted_cert_locations})
+          options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: Allowed::TYPES_STRING_ARRAY, handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'HTTP/S: Options for HTTP/S socket', allowed: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', allowed: String, handler: {o: self, m: :option_http_proxy})
           options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: :bool, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: Array)
+          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           options.get_option(:ascp_path)

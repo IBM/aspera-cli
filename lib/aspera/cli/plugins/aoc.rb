@@ -466,13 +466,12 @@ module Aspera
             command_shared = options.get_next_command(%i[list])
             case command_shared
             when :list
-              query = options.get_option(:query, default: {})
+              query = options.get_option(:query) || {}
               res_data = aoc_api.read('dropboxes', query.merge({'workspace_id'=>res_id}))
               return Main.result_object_list(res_data, fields: %w[id name description])
             end
           when :shared_folder
-            query = options.get_option(:query)
-            query = Api::AoC.workspace_access(res_id).merge({'admin' => true}) if query.nil?
+            query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
             shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
             # inside a workspace
             command_shared = options.get_next_command(%i[list member])

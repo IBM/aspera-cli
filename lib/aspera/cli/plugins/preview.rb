@@ -484,7 +484,7 @@ module Aspera
             g = Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder, nil)
             g.generate
             if command.eql?(:show)
-              terminal_options = options.get_option(:query, default: {}).symbolize_keys
+              terminal_options = (options.get_option(:query) || {}).symbolize_keys
               Log.log.debug{"preview: #{generated_file_path}"}
               formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
             end

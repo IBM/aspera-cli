@@ -23,7 +23,7 @@ module Aspera
 
         class << self
           def declare_options(options)
-            options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array])
+            options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass])
             options.declare(:property, 'Name of property to set (modify operation)')
             options.declare(:bulk, 'Bulk operation (only some)', allowed: :bool, default: :no)
             options.declare(:bfail, 'Bulk operation error handling', allowed: :bool, default: :yes)
@@ -223,9 +223,8 @@ module Aspera
 
         # Query parameters in URL suitable for REST: list/GET and delete/DELETE
         def query_read_delete(default: nil)
-          query = options.get_option(:query)
           # Dup default, as it could be frozen
-          query = default.dup if query.nil?
+          query = options.get_option(:query) || default.dup
           Log.log.debug{"query_read_delete=#{query}".bg_red}
           begin
             # Check it is suitable

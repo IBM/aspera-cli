@@ -200,7 +200,7 @@ module Aspera
           folders_to_process = options.get_next_argument('path', validation: String)
           folders_to_process = @prefixer.add_to_path(folders_to_process) unless @prefixer.nil?
           folders_to_process = [folders_to_process]
-          query = options.get_option(:query, default: {})
+          query = options.get_option(:query) || {}
           # special parameter: max number of entries in result
           max_items = query.delete(MAX_ITEMS)
           # special parameter: recursive browsing
@@ -534,7 +534,7 @@ module Aspera
           when :mkdir, :mklink, :mkfile
             containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
             apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
-            query = options.get_option(:query, mandatory: false)
+            query = options.get_option(:query)
             check_exists = true
             payload = {name: new_item}
             if query
@@ -792,7 +792,7 @@ module Aspera
           when :show
             return Main.result_single_object(@api_node.read(one_res_path))
           when :modify
-            @api_node.update(one_res_path, options.get_option(:query, mandatory: true))
+            @api_node.update(one_res_path, value_create_modify(command: 'watch_folder'))
             return Main.result_status("#{one_res_id} updated")
           when :delete
             @api_node.delete(one_res_path)
@@ -844,8 +844,7 @@ module Aspera
                 )[:http].body
                 return Main.result_status('Done')
               end
-              parameters = nil
-              parameters = options.get_option(:query, default: {}) if %i[bandwidth counters files].include?(sync_command)
+              parameters = options.get_option(:query) || {} if %i[bandwidth counters files].include?(sync_command)
               return Main.result_single_object(@api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters))
             end
           when :stream
@@ -983,7 +982,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = options.get_option(:query, default: {})
+            request_data = options.get_option(:query) || {}
             case command
             when :session
               command = options.get_next_command([:list])
