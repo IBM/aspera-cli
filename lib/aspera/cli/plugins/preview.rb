@@ -46,7 +46,6 @@ module Aspera
           :AK_MARKER_FILE,
           :LOG_LIMITER_SEC
 
-        # option_skip_format has special accessors
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
 
@@ -54,8 +53,6 @@ module Aspera
           super
           @skip_types = []
           @default_transfer_spec = nil
-          # by default generate all supported formats (clone, as altered by options)
-          @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           # options for generation
           @gen_options = Aspera::Preview::Options.new
           # used to trigger periodic processing
@@ -64,8 +61,8 @@ module Aspera
           @filter_block = nil
           # link CLI options to gen_info attributes
           options.declare(
-            :skip_format, 'Skip this preview format (multiple possible)', allowed: Aspera::Preview::Generator::PREVIEW_FORMATS,
-            handler: {o: self, m: :option_skip_format}, default: []
+            :skip_format, 'Skip this preview format',
+            allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
           )
           options.declare(
             :folder_reset_cache, 'Force detection of generated preview by refresh cache',
@@ -99,6 +96,10 @@ module Aspera
           end
 
           options.parse_options!
+          # by default generate all supported formats (clone, as altered by options)
+          @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
+          skip = options.get_option(:skip_format)
+          @preview_formats_to_generate.delete(skip) if skip
           Aspera.assert_type(@option_skip_folders, Array){'skip_folder'}
           @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
@@ -116,14 +117,6 @@ module Aspera
 
         def option_skip_types
           return @skip_types.map(&:to_s).join(',')
-        end
-
-        def option_skip_format=(value)
-          @preview_formats_to_generate.delete(value)
-        end
-
-        def option_skip_format
-          return @preview_formats_to_generate.map(&:to_s).join(',')
         end
 
         # /files/id/files is normally cached in redis, but we can discard the cache
