@@ -11,6 +11,7 @@ require 'optparse'
 
 module Aspera
   module Cli
+    # Constants to be used as parameter `allowed:` for `OptionValue`
     module Allowed
       # This option can be set to a single string or array, multiple times, and gives Array of String
       TYPES_STRING_ARRAY = [Array, String].freeze
@@ -20,16 +21,15 @@ module Aspera
 
     # Description of option, how to manage
     class OptionValue
-      # [Array] List of allowed types
+      # [Array(Class)] List of allowed types
       attr_reader :types
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
 
       # @param option      [Symbol] Name of option
       # @param allowed  [see below] Allowed values
-      # @param object      [Object] Accessor object
-      # @param method      [Symbol] Method name
-      # @param deprecation [String] message
+      # @param handler       [Hash] Accessor object(:o) and method(:m)
+      # @param deprecation [String] Deprecation message
       # `allowed`:
       # - `nil` No validation, so just a string
       # - `Class` The single allowed Class
@@ -393,6 +393,7 @@ module Aspera
         option_attrs.value = evaluate_extended_value(value, option_attrs.types)
       end
 
+      # Set option to `nil`
       def clear_option(option_symbol)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
@@ -412,17 +413,17 @@ module Aspera
         end
       end
 
-      # allows a plugin to add an argument as next argument to process
+      # Allows a plugin to add an argument as next argument to process
       def unshift_next_argument(argument)
         @unprocessed_cmd_line_arguments.unshift(argument)
       end
 
-      # check if there were unprocessed values to generate error
+      # Check if there were unprocessed values to generate error
       def command_or_arg_empty?
         return @unprocessed_cmd_line_arguments.empty?
       end
 
-      # unprocessed options or arguments ?
+      # Unprocessed options or arguments ?
       def final_errors
         result = []
         result.push("unprocessed options: #{@unprocessed_cmd_line_options}") unless @unprocessed_cmd_line_options.empty?
@@ -430,7 +431,7 @@ module Aspera
         return result
       end
 
-      # get all original options on command line used to generate a config in config file
+      # Get all original options on command line used to generate a config in config file
       # @return [Hash] options as taken from config file and command line just before command execution
       def unprocessed_options_with_value
         result = {}
@@ -466,7 +467,7 @@ module Aspera
         return result
       end
 
-      # removes already known options from the list
+      # Removes already known options from the list
       def parse_options!
         Log.log.trace1('parse_options!'.red)
         # first conf file, then env var
@@ -557,9 +558,12 @@ module Aspera
         return result
       end
 
+      # ======================================================
       private
 
       # Using dotted hash notation, convert value to bool, int, float or extended value
+      # @param value [String] The value to convert to appropriate type
+      # @return the converted value
       def smart_convert(value)
         return true  if value == 'true'
         return false if value == 'false'
