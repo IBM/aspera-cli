@@ -92,7 +92,7 @@ module Aspera
           @option_cache_tokens = true
           @main_folder = nil
           @option_config_file = nil
-          # Store is used for ruby https
+          # Store is used for ruby https (OpenSSL::X509::Store)
           @certificate_store = nil
           # Paths are used for ascp
           @certificate_paths = nil
@@ -247,10 +247,9 @@ module Aspera
         end
 
         # Add files, folders or default locations to the certificate store
-        # @param path_list [Array<String>] list of paths to add
+        # @param path_list [Array<String>] List of paths to add
         # @return the list of paths
         def trusted_cert_locations=(path_list)
-          path_list = [path_list] unless path_list.is_a?(Array)
           Aspera.assert_type(path_list, Array){'cert locations'}
           if @certificate_store.nil?
             Log.log.debug('Creating SSL Cert store')
@@ -281,6 +280,7 @@ module Aspera
                 pp = Dir.entries(p)
                   .map{ |e| File.realpath(File.join(p, e))}
                   .select{ |entry| File.file?(entry)}
+                  .select{ |entry| CERT_EXT.any?{ |ext| entry.end_with?(ext)}}
               end
               @certificate_paths.concat(pp)
             end
@@ -293,7 +293,7 @@ module Aspera
           locations = @certificate_paths
           if locations.nil?
             # Compute default locations
-            self.trusted_cert_locations = SpecialValues::DEF
+            self.trusted_cert_locations = [SpecialValues::DEF]
             locations = @certificate_paths
             # Restore defaults
             @certificate_paths = @certificate_store = nil
@@ -1239,7 +1239,7 @@ module Aspera
         SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
         CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
         SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
-
+        CERT_EXT = %w[crt cer pem der].freeze
         private_constant :ASPERA_HOME_FOLDER_NAME,
           :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
@@ -1264,7 +1264,8 @@ module Aspera
           :TRANSFERD_APP_NAME,
           :GLOBAL_DEFAULT_KEYWORD,
           :CONF_GLOBAL_SYM,
-          :GEM_CHECK_DATE_FMT
+          :GEM_CHECK_DATE_FMT,
+          :CERT_EXT
       end
     end
   end
