@@ -25,8 +25,8 @@ module Aspera
           def declare_options(options)
             options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass])
             options.declare(:property, 'Name of property to set (modify operation)')
-            options.declare(:bulk, 'Bulk operation (only some)', allowed: :bool, default: :no)
-            options.declare(:bfail, 'Bulk operation error handling', allowed: :bool, default: :yes)
+            options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
+            options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
           end
         end
 

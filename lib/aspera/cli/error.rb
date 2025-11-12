@@ -6,6 +6,7 @@ module Aspera
     class Error < StandardError; end
     # Raised when an unexpected argument is provided.
     class BadArgument < Error; end
+    class MissingArgument < Error; end
     class NoSuchElement < Error; end
 
     class BadIdentifier < Error

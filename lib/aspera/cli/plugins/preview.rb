@@ -46,12 +46,11 @@ module Aspera
           :AK_MARKER_FILE,
           :LOG_LIMITER_SEC
 
-        attr_accessor :option_previews_folder
-        attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
+        attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
 
         def initialize(**_)
           super
-          @skip_types = []
+          @option_skip_types = []
           @default_transfer_spec = nil
           # options for generation
           @gen_options = Aspera::Preview::Options.new
@@ -59,6 +58,7 @@ module Aspera
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # Proc
           @filter_block = nil
+          @option_skip_folders = nil
           # link CLI options to gen_info attributes
           options.declare(
             :skip_format, 'Skip this preview format',
@@ -70,13 +70,13 @@ module Aspera
             handler: {o: self, m: :option_folder_reset_cache},
             default: :no
           )
-          options.declare(:skip_types, 'Skip types in comma separated list', handler: {o: self, m: :option_skip_types})
+          options.declare(:skip_types, 'Skip generation for those types of files', handler: {o: self, m: :option_skip_types}, allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES)
           options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
-          options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
+          options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, allowed: Allowed::TYPES_STRING_ARRAY)
           options.declare(:base, 'Basename of output for for test')
           options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
           options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
-          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: :bool, default: false)
+          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: Allowed::TYPES_BOOLEAN, default: false)
           options.declare(:overwrite, 'When to overwrite result file', allowed: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
           options.declare(
             :file_access, 'How to read and write files in repository',
@@ -90,7 +90,7 @@ module Aspera
             values = if opt.key?(:values)
               opt[:values]
             elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
-              :bool
+              Allowed::TYPES_BOOLEAN
             end
             options.declare(opt[:name], opt[:description].capitalize, allowed: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
           end
@@ -100,23 +100,9 @@ module Aspera
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           skip = options.get_option(:skip_format)
           @preview_formats_to_generate.delete(skip) if skip
-          Aspera.assert_type(@option_skip_folders, Array){'skip_folder'}
           @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
-        end
-
-        def option_skip_types=(value)
-          @skip_types = []
-          value.split(',').each do |v|
-            s = v.to_sym
-            Aspera.assert_values(s, Aspera::Preview::FileTypes::CONVERSION_TYPES){'skip_types'}
-            @skip_types.push(s)
-          end
-        end
-
-        def option_skip_types
-          return @skip_types.map(&:to_s).join(',')
         end
 
         # /files/id/files is normally cached in redis, but we can discard the cache
@@ -304,7 +290,7 @@ module Aspera
               next false
             end
             # shall we skip it ?
-            next false if @skip_types.include?(gen_info[:generator].conversion_type)
+            next false if @option_skip_types.include?(gen_info[:generator].conversion_type)
             # ok we need to generate
             true
           end
@@ -437,7 +423,7 @@ module Aspera
           end
           Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, mandatory: true)
           # check tools that are anyway required for all cases
-          Aspera::Preview::Utils.check_tools(@skip_types)
+          Aspera::Preview::Utils.check_tools(@option_skip_types)
           case command
           when :scan
             scan_path = options.get_option(:scan_path)

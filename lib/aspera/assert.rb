@@ -42,7 +42,7 @@ module Aspera
       message = 'assertion failed'
       info = yield if block_given?
       message = "#{message}: #{info}" if info
-      message = "#{message}: #{caller.find{ |call| !call.start_with?(__FILE__)}}"
+      # message = "#{message}: #{caller.find{ |call| !call.start_with?(__FILE__)}}"
       report_error(type, message)
     end
 

@@ -101,7 +101,6 @@ module Aspera
           options.declare(
             :home, 'Home folder for tool',
             handler: {o: self, m: :main_folder},
-            allowed: String,
             default: self.class.default_app_main_folder(app_name: Info::CMD_NAME)
           )
           options.parse_options!
@@ -133,7 +132,7 @@ module Aspera
           # Declare generic plugin options only after handlers are declared
           Base.declare_options(options)
           # Configuration options
-          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: :none, short: 'N'){@use_plugin_defaults = false}
+          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){@use_plugin_defaults = false}
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
@@ -146,19 +145,19 @@ module Aspera
           options.declare(:ascp_path, 'Ascp: Path to ascp (or product with "product:")', handler: {o: Ascp::Installation.instance, m: :ascp_path}, default: "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{Ascp::Installation::FIRST_FOUND}")
           options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
           options.declare(:sdk_folder, 'Ascp: SDK installation folder path', handler: {o: Products::Transferd, m: :sdk_directory})
-          options.declare(:progress_bar, 'Display progress bar', allowed: :bool, default: Environment.terminal?)
+          options.declare(:progress_bar, 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
           # Email options
           options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash)
           options.declare(:notify_to, 'Email: Recipient for notification of transfers')
           options.declare(:notify_template, 'Email: ERB template for notification of transfers')
           # HTTP options
-          options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: :bool, handler: {o: self, m: :option_insecure}, default: :no)
+          options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_insecure}, default: false)
           options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :option_ignore_cert_host_port})
-          options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
+          options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_warn_insecure_cert}, default: true)
           options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: Allowed::TYPES_STRING_ARRAY, handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'HTTP/S: Options for HTTP/S socket', allowed: Hash, handler: {o: self, m: :option_http_options}, default: {})
-          options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', allowed: String, handler: {o: self, m: :option_http_proxy})
-          options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: :bool, handler: {o: self, m: :option_cache_tokens})
+          options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', handler: {o: self, m: :option_http_proxy})
+          options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!

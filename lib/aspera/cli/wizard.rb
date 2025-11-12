@@ -17,8 +17,8 @@ module Aspera
         @parent = parent
         @main_folder = main_folder
         # Wizard options
-        options.declare(:override, 'Wizard: override existing value', allowed: :bool, default: :no)
-        options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', allowed: :bool, default: true)
+        options.declare(:override, 'Wizard: override existing value', allowed: Allowed::TYPES_BOOLEAN, default: false)
+        options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', allowed: Allowed::TYPES_BOOLEAN, default: true)
         options.declare(:key_path, 'Wizard: path to private key for JWT')
       end
 

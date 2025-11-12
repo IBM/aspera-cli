@@ -214,6 +214,7 @@ module Aspera
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
+        rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing', usage: true}
         rescue Cli::BadIdentifier => e;             exception_info = {e: e, t: 'Identifier'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
         rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
@@ -228,7 +229,7 @@ module Aspera
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
-          Log.log.debug{exception_info[:e].backtrace.join("\n")} if exception_info[:debug]
+          Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
@@ -288,7 +289,6 @@ module Aspera
         @context.options = Manager.new(Info::CMD_NAME, @argv)
         # Formatter adds options
         @context.formatter.declare_options(@context.options)
-        ExtendedValue.instance.default_decoder = @context.options.get_option(:struct_parser)
         # Compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
         @context.formatter.display_message(
@@ -297,6 +297,7 @@ module Aspera
         ) unless current_prog_name.eql?(Info::CMD_NAME)
         # Declare and parse global options
         declare_global_options
+        ExtendedValue.instance.default_decoder = @context.options.get_option(:struct_parser)
         # Do not display config commands if help is asked
         @context.man_header = false
         # The Config plugin adds the @preset parser, so declare before TransferAgent which may use it
@@ -350,10 +351,10 @@ module Aspera
       # Define header for manual
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, 'Show this message', allowed: :none, short: 'h'){@option_help = true}
-        @context.options.declare(:bash_comp, 'Generate bash completion for command', allowed: :none){@bash_completion = true}
-        @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: :none){@option_show_config = true}
-        @context.options.declare(:version, 'Display version', allowed: :none, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h'){@option_help = true}
+        @context.options.declare(:bash_comp, 'Generate bash completion for command', allowed: Allowed::TYPES_NONE){@bash_completion = true}
+        @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
+        @context.options.declare(:version, 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, 'Method to start browser',
           allowed: USER_INTERFACES,
@@ -367,11 +368,12 @@ module Aspera
         @context.options.declare(:log_format, 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
         @context.options.declare(:logger, 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
-        @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: :bool, default: false)
-        @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: :bool, handler: {o: SecretHider.instance, m: :log_secrets})
-        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', allowed: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
+        @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
+        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', allowed: Allowed::TYPES_BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         @context.options.declare(:temp_folder, 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
-        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit', allowed: String)
+        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit')
+        @context.options.declare(:struct_parser, 'Default parser when expected value is a struct', allowed: %i[json ruby], default: :json)
         # Parse declared options
         @context.options.parse_options!
       end

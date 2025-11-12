@@ -17,8 +17,11 @@ module Aspera
     class ExtendedValue
       include Singleton
 
+      # marker "@"
       MARKER_START = '@'
+      # marker ":"
       MARKER_END = ':'
+      # marker "@"
       MARKER_IN_END = '@'
 
       # Special handlers stop processing of handlers on right
@@ -76,15 +79,18 @@ module Aspera
           zlib:   lambda{ |i| Zlib::Inflate.inflate(i)},
           extend: lambda{ |i| ExtendedValue.instance.evaluate_all(i)}
         }
-        @default_decoder = nil
+        @handler_regex = nil
+        @default_decoder = :json
+        update_handler_regex
       end
 
       # Regex to match an extended value
-      def handler_regex_string
-        "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
+      def update_handler_regex
+        @handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
       end
 
       # JSON Parser, with more information on error location
+      # extract a context: 10 chars before and after the error on the given line and display a pointer "^"
       # :reek:UncommunicativeMethodName
       def JSON_parse(value) # rubocop:disable Naming/MethodName
         JSON.parse(value)
@@ -108,7 +114,7 @@ module Aspera
 
       def default_decoder=(value)
         Log.log.debug{"Setting default decoder to (#{value.class}) #{value}"}
-        Aspera.assert(value.nil? || @handlers.key?(value))
+        Aspera.assert_values(value, modifiers)
         @default_decoder = value
       end
 
@@ -119,15 +125,22 @@ module Aspera
         Log.log.debug{"setting handler for #{name}"}
         Aspera.assert_type(name, Symbol){'name'}
         @handlers[name] = method
+        update_handler_regex
       end
 
-      # Parse an string value to extended value, if it is a String using supported extended value modifiers
-      # Other value types are returned as is
+      # Parse an string value to extended value.
+      # If it is a String using supported extended value modifiers, then evaluate them.
+      # Other value types are returned as is.
       # @param value [String] the value to parse
-      # @param expect [Class,Array] one or a list of expected types
-      def evaluate(value)
+      # @param allowed [Array<Class>] Expected types
+      # @return [Object] Evaluated value
+      def evaluate(value, allowed: nil)
         return value unless value.is_a?(String)
-        regex = Regexp.new("^#{handler_regex_string}(.*)$", Regexp::MULTILINE)
+        Aspera.assert_type(allowed, NilClass, Array)
+        Aspera.assert(allowed.all?(Class)) if allowed
+        # use default decoder if not an extended value and expect complex types
+        value = [MARKER_START, @default_decoder, MARKER_END, value].join if allowed&.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)} && value.match(/^#{@handler_regex}.*$/).nil? && !@default_decoder.nil?
+        regex = Regexp.new("^#{@handler_regex}(.*)$", Regexp::MULTILINE)
         # First determine decoders, in reversed order
         handlers_reversed = []
         while (m = value.match(regex))
@@ -143,16 +156,9 @@ module Aspera
         return value
       end
 
-      # Parse string value as extended value
-      # Use default decoder if none is specified
-      def evaluate_with_default(value)
-        value = [MARKER_START, @default_decoder, MARKER_END, value].join if value.is_a?(String) && value.match(/^#{handler_regex_string}.*$/).nil? && !@default_decoder.nil?
-        return evaluate(value)
-      end
-
       # Find inner extended values
       def evaluate_all(value)
-        regex = Regexp.new("^(.*)#{handler_regex_string}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
+        regex = Regexp.new("^(.*)#{@handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
         while (m = value.match(regex))
           sub_value = "@#{m[2]}:#{m[3]}"
           Log.log.debug{"evaluating #{sub_value}"}
@@ -160,6 +166,9 @@ module Aspera
         end
         return value
       end
+      # Array and Hash types:
+      DEFAULT_PARSER_TYPES = [Array, Hash].freeze
+      private_constant :DEFAULT_PARSER_TYPES
     end
   end
 end
