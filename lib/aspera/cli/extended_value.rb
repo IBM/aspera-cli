@@ -168,7 +168,7 @@ module Aspera
         while (m = value.match(@regex_extend))
           sub_value = "@#{m[2]}:#{m[3]}"
           Log.log.debug{"evaluating #{sub_value}"}
-          value = "#{m[1]}#{evaluate(sub_value)}#{m[4]}"
+          value = "#{m[1]}#{evaluate(sub_value, context: 'composite extended value')}#{m[4]}"
         end
         return value
       end
