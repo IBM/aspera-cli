@@ -29,7 +29,7 @@ module Aspera
     # Description of option, how to manage
     class OptionValue
       # [Array(Class)] List of allowed types
-      attr_reader :types
+      attr_reader :types, :sensitive
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
 
@@ -534,7 +534,6 @@ module Aspera
             Aspera.assert(false, self.class.multi_choice_assert_msg(message, accept_list), type: Cli::MissingArgument)
           end
         end
-        sensitive = option && @declared_options[descr.to_sym]&.[](:sensitive)
         default_prompt = "#{what}: #{descr}"
         # ask interactively
         result = []
@@ -542,7 +541,7 @@ module Aspera
         loop do
           prompt = default_prompt
           prompt = "#{accept_list.join(' ')}\n#{default_prompt}" if accept_list
-          entry = prompt_user_input(prompt, sensitive: sensitive)
+          entry = prompt_user_input(prompt, sensitive: option_attrs&.sensitive)
           break if entry.empty? && multiple
           entry = ExtendedValue.instance.evaluate(entry)
           entry = self.class.get_from_list(entry, descr, accept_list) if accept_list
