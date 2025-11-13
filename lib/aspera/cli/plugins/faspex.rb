@@ -300,10 +300,11 @@ module Aspera
                 delivery_info['sources'] ||= [{'paths' => []}]
                 first_source = delivery_info['sources'].first
                 first_source['paths'].concat(transfer.source_list)
-                source_id = instance_identifier(as_option: :remote_source) do |field, value|
-                  Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
+                source_id = options.get_option(:remote_source)
+                if (m = eval_percent_selector(source_id))
+                  Aspera.assert(m[:field].eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
                   source_list = api_v3.read('source_shares')['items']
-                  self.class.get_source_id_by_name(value, source_list)
+                  source_id = self.class.get_source_id_by_name(m[:value], source_list)
                 end
                 first_source['id'] = source_id.to_i unless source_id.nil?
                 pkg_created = api_v3.create('send', package_create_params)

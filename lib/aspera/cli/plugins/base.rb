@@ -18,7 +18,7 @@ module Aspera
         MAX_ITEMS = 'max'
         # Special query parameter: `pmax`: max number of pages for list command
         MAX_PAGES = 'pmax'
-        # Special identifier format: look for this name to find where supported
+        # Percent selector: select by this field for this value
         REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
 
         class << self
@@ -55,26 +55,25 @@ module Aspera
           options.parser.separator('OPTIONS:') if has_options
         end
 
-        # Must be called AFTER the instance action:
-        # ... folder browse _call_instance_identifier
+        def eval_percent_selector(res_id)
+          Aspera.assert_type(res_id, String)
+          if (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
+            return {field: m[1], value: ExtendedValue.instance.evaluate(m[2])}
+          end
+          return
+        end
+
+        # Resource identifier as positional parameter
         #
         # @param description [String] description of the identifier
-        # @param as_option   [Symbol] option name to use if identifier is an option
         # @param block       [Proc] block to search for identifier based on attribute value
         # @return   [String, Array] identifier or list of ids
-        def instance_identifier(description: 'identifier', as_option: nil, &block)
-          if as_option.nil?
-            res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
-          else
-            res_id = options.get_option(as_option)
-          end
+        def instance_identifier(description: 'identifier', &block)
+          res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
           # Can be an Array
-          if res_id.is_a?(String) && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
-            if block
-              res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
-            else
-              raise Cli::BadArgument, "Percent syntax for #{description} not supported in this context"
-            end
+          if res_id.is_a?(String) && (m = eval_percent_selector(res_id))
+            Aspera.assert(block, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
+            res_id = yield(m[:field], m[:value])
           end
           return res_id
         end
