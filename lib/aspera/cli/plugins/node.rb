@@ -441,7 +441,7 @@ module Aspera
               nagios.add_ok('node api', 'accessible')
               nagios.check_time_offset(info['current_time'], 'node api')
               nagios.check_product_version('node api', 'entsrv', info['version'])
-            rescue RestCallError => e
+            rescue StandardError => e
               nagios.add_critical('node api', e.to_s)
             end
             begin

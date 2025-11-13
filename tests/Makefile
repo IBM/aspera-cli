@@ -624,7 +624,7 @@ $(F)nd_health: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)nd_health_bad: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(BEG_ERR)$(CLI_TEST) node health --url=https://wrong.example.com$(END_ERR_SHOW)
+	$(CLI_TEST) node health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(F)nd_detect: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1844,6 +1844,7 @@ $(F)conf_logger: $(TMP_EXISTS)
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --logger=syslog
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log-format=standard
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log-format=default
+	$(INCMAN)$(CLI_TEST) config coffee --log-level=trace2 --log-format=caller
 	$(INCMAN)$(CLI_TEST) config file --log-level=debug --log-format=@ruby:'->(s, d, p, m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}'
 	$(CLI_TEST) config echo @ruby:'%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"' --log-level=trace2
 	@$(STOP_TEST) $@

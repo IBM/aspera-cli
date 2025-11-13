@@ -327,3 +327,12 @@ RSpec.describe(Aspera::Rest) do
     expect(Aspera::Rest.parse_header('application/json; charset=utf-8; version="1.0"')).to(eq({type: 'application/json', parameters: {charset: 'utf-8', version: '1.0'}}))
   end
 end
+
+RSpec.describe(String) do
+  it 'converts capilalized to snake' do
+    expect('BonjourLaBelgique'.capital_to_snake).to(eq('bonjour_la_belgique'))
+  end
+  it 'converts snake to capilalized' do
+    expect('bonjour_la_france'.snake_to_capital).to(eq('BonjourLaFrance'))
+  end
+end
