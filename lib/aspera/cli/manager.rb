@@ -42,9 +42,10 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil)
+      def initialize(option:, description:, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil)
         Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
         @option = option
+        @description = description
         # by default passwords and secrets are sensitive, else specify when declaring the option
         @sensitive = SecretHider.instance.secret?(@option, '')
         # either the value, or object giving value
@@ -111,6 +112,12 @@ module Aspera
         new_value = {} if new_value.eql?(nil) && @types&.first.eql?(Hash)
         # Setting a Array to null set an empty hash
         new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
+        if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
+          new_value = [new_value] if new_value.is_a?(String)
+          Aspera.assert_type(new_value, Array)
+          Aspera.assert(new_value.all?(String))
+          new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
+        end
         Aspera.assert_type(new_value, *@types){"Option #{@option}"} if @types
         current_value = value(log: false)
         new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
@@ -135,10 +142,6 @@ module Aspera
           return TRUE_VALUES.include?(enum)
         end
 
-        def time_to_string(time)
-          return time.strftime('%Y-%m-%d %H:%M:%S')
-        end
-
         # Find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
@@ -146,8 +149,8 @@ module Aspera
           matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
-          Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values))
-          Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching))
+          Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values), type: BadArgument)
+          Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching), type: BadArgument)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
@@ -249,6 +252,7 @@ module Aspera
         Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
         option_attrs = @declared_options[option_symbol] = OptionValue.new(
           option:      option_symbol,
+          description: description,
           allowed:     allowed,
           handler:     handler,
           deprecation: deprecation

@@ -44,6 +44,10 @@ module Aspera
             raise error if error
             return
           end
+
+          def time_to_string(time)
+            return time.strftime('%Y-%m-%d %H:%M:%S')
+          end
         end
 
         # @param wizard  [Wizard] The wizard object
@@ -113,8 +117,8 @@ module Aspera
                 query = query_read_delete(default: {})
                 if query['from'].nil? && query['to'].nil?
                   time_now = Time.now
-                  query['from'] = Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
-                  query['to'] = Manager.time_to_string(time_now)
+                  query['from'] = self.class.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
+                  query['to'] = self.class.time_to_string(time_now)
                 end
                 if (filter = query.delete('filter'))
                   parse_extended_filter(filter, query)
