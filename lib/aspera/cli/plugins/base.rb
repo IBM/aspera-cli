@@ -55,12 +55,13 @@ module Aspera
           options.parser.separator('OPTIONS:') if has_options
         end
 
-        def eval_percent_selector(res_id)
-          Aspera.assert_type(res_id, String)
-          if (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
+        # @return [Hash,NilClass] `{field:,value:}` if identifier is a percent selector, else `false`
+        def percent_selector?(identifier)
+          Aspera.assert_type(identifier, String)
+          if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
             return {field: m[1], value: ExtendedValue.instance.evaluate(m[2])}
           end
-          return
+          return false
         end
 
         # Resource identifier as positional parameter
@@ -71,7 +72,7 @@ module Aspera
         def instance_identifier(description: 'identifier', &block)
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
           # Can be an Array
-          if res_id.is_a?(String) && (m = eval_percent_selector(res_id))
+          if res_id.is_a?(String) && (m = percent_selector?(res_id))
             Aspera.assert(block, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
             res_id = yield(m[:field], m[:value])
           end
