@@ -7,6 +7,7 @@
 ### New Features
 
 * **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
+* **global**: Improved error diagnostic during evaluation of extended value.
 
 ### Issues Fixed
 
