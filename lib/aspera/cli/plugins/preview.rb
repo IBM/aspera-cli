@@ -51,14 +51,16 @@ module Aspera
         def initialize(**_)
           super
           @option_skip_types = []
-          @default_transfer_spec = nil
+          @option_skip_folders = []
+          @option_previews_folder = nil
+          @option_overwrite = nil
+          @option_folder_reset_cache = nil
           # options for generation
           @gen_options = Aspera::Preview::Options.new
           # used to trigger periodic processing
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # Proc
           @filter_block = nil
-          @option_skip_folders = nil
           # link CLI options to gen_info attributes
           options.declare(
             :skip_format, 'Skip this preview format',
@@ -77,14 +79,13 @@ module Aspera
           options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
           options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
           options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:overwrite, 'When to overwrite result file', allowed: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
+          options.declare(:overwrite, 'When to overwrite result file', handler: {o: self, m: :option_overwrite}, allowed: %i[always never mtime], default: :mtime)
           options.declare(
             :file_access, 'How to read and write files in repository',
             allowed: %i[local remote],
             handler: {o: self, m: :option_file_access},
             default: :local
           )
-
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             values = if opt.key?(:values)
