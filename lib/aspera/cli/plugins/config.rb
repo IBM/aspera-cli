@@ -486,7 +486,7 @@ module Aspera
             raise Cli::Error, "Unknown config preset: #{include_path}" if current.nil?
           end
           current = self.class.deep_clone(current) unless current.is_a?(String)
-          return ExtendedValue.instance.evaluate(current)
+          return ExtendedValue.instance.evaluate(current, context: 'preset')
         end
 
         def option_plugin_folder=(value)
@@ -724,7 +724,7 @@ module Aspera
             value = @config_presets[name][param_name]
             raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
-            when Numeric, String then return Main.result_text(ExtendedValue.instance.evaluate(value.to_s))
+            when Numeric, String then return Main.result_text(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
             end
             return Main.result_single_object(value)
           when :unset

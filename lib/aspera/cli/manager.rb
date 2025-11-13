@@ -316,7 +316,7 @@ module Aspera
           if !@unprocessed_cmd_line_arguments.empty?
             how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
             values = @unprocessed_cmd_line_arguments.shift(how_many)
-            values = values.map{ |v| ExtendedValue.instance.evaluate(v, allowed: allowed_classes)}
+            values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: allowed_classes)}
             # if expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
@@ -382,7 +382,7 @@ module Aspera
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
         option_attrs = @declared_options[option_symbol]
-        option_attrs.value = ExtendedValue.instance.evaluate(value, allowed: option_attrs.types)
+        option_attrs.value = ExtendedValue.instance.evaluate(value, context: "option: #{option_symbol}", allowed: option_attrs.types)
       end
 
       # Set option to `nil`
@@ -435,7 +435,7 @@ module Aspera
             name = Regexp.last_match(1)
             value = Regexp.last_match(2)
             name.gsub!(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
-            value = ExtendedValue.instance.evaluate(value)
+            value = ExtendedValue.instance.evaluate(value, context: "option: #{name}")
             Log.log.debug{"option #{name}=#{value}"}
             result[name] = value
             @unprocessed_cmd_line_options.delete(option_value)
@@ -543,7 +543,7 @@ module Aspera
           prompt = "#{accept_list.join(' ')}\n#{default_prompt}" if accept_list
           entry = prompt_user_input(prompt, sensitive: option_attrs&.sensitive)
           break if entry.empty? && multiple
-          entry = ExtendedValue.instance.evaluate(entry)
+          entry = ExtendedValue.instance.evaluate(entry, context: 'interactive input')
           entry = self.class.get_from_list(entry, descr, accept_list) if accept_list
           return entry unless multiple
           result.push(entry)
@@ -565,7 +565,7 @@ module Aspera
         begin
           Float(value)
         rescue ::ArgumentError
-          ExtendedValue.instance.evaluate(value)
+          ExtendedValue.instance.evaluate(value, context: 'dotted option')
         end
       end
 

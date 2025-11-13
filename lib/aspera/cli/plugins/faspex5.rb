@@ -389,12 +389,12 @@ module Aspera
               return Main.result_transfer(transfer.start(transfer_spec))
             else
               # send from remote shared folder
-              if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
+              if (m = percent_selector?(shared_folder))
                 shared_folder = lookup_entity_by_field(
                   api: @api_v5,
                   entity: 'shared_folders',
-                  field: m[1],
-                  value: ExtendedValue.instance.evaluate(m[2])
+                  field: m[:field],
+                  value: m[:value]
                 )['id']
               end
               transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
@@ -512,12 +512,12 @@ module Aspera
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
-                if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
+                if (m = percent_selector?(user))
                   lookup_entity_by_field(
                     api: @api_v5,
                     entity: 'accounts',
-                    field: m[1],
-                    value: ExtendedValue.instance.evaluate(m[2]),
+                    field: m[:field],
+                    value: m[:value],
                     query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
                   )['id']
                 else

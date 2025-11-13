@@ -48,6 +48,27 @@ module Aspera
           return hash_array
         end
 
+        # JSON Parser, with more information on error location
+        # extract a context: 10 chars before and after the error on the given line and display a pointer "^"
+        # :reek:UncommunicativeMethodName
+        def JSON_parse(value) # rubocop:disable Naming/MethodName
+          JSON.parse(value)
+        rescue JSON::ParserError => e
+          m = /at line (\d+) column (\d+)/.match(e.message)
+          raise if m.nil?
+          line = m[1].to_i - 1
+          column = m[2].to_i - 1
+          lines = value.lines
+          raise if line >= lines.size
+          error_line = lines[line].chomp
+          context_col_beg = [column - 10, 0].max
+          context_col_end = [column + 10, error_line.length].min
+          context = error_line[context_col_beg...context_col_end]
+          cursor_pos = column - context_col_beg
+          pointer = ' ' * cursor_pos + '^'.blink
+          raise BadArgument, "#{e.message}\n#{context}\n#{pointer}"
+        end
+
         def assert_no_value(value, what)
           raise "no value allowed for extended value type: #{what}" unless value.empty?
         end
@@ -65,7 +86,7 @@ module Aspera
           env:    lambda{ |i| ENV.fetch(i, nil)},
           file:   lambda{ |i| File.read(File.expand_path(i))},
           uri:    lambda{ |i| UriReader.read(i)},
-          json:   lambda{ |i| JSON_parse(i)},
+          json:   lambda{ |i| ExtendedValue.JSON_parse(i)},
           lines:  lambda{ |i| i.split("\n")},
           list:   lambda{ |i| i[1..-1].split(i[0])},
           none:   lambda{ |i| ExtendedValue.assert_no_value(i, :none); nil}, # rubocop:disable Style/Semicolon
@@ -77,37 +98,19 @@ module Aspera
           stdbin: lambda{ |i| ExtendedValue.assert_no_value(i, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
           yaml:   lambda{ |i| YAML.load(i)},
           zlib:   lambda{ |i| Zlib::Inflate.inflate(i)},
-          extend: lambda{ |i| ExtendedValue.instance.evaluate_all(i)}
+          extend: lambda{ |i| ExtendedValue.instance.evaluate_extend(i)}
         }
-        @handler_regex = nil
+        @regex_single = nil
+        @regex_extend = nil
         @default_decoder = :json
-        update_handler_regex
+        update_regex
       end
 
       # Regex to match an extended value
-      def update_handler_regex
-        @handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
-      end
-
-      # JSON Parser, with more information on error location
-      # extract a context: 10 chars before and after the error on the given line and display a pointer "^"
-      # :reek:UncommunicativeMethodName
-      def JSON_parse(value) # rubocop:disable Naming/MethodName
-        JSON.parse(value)
-      rescue JSON::ParserError => e
-        m = /at line (\d+) column (\d+)/.match(e.message)
-        raise if m.nil?
-        line = m[1].to_i - 1
-        column = m[2].to_i - 1
-        lines = value.lines
-        raise if line >= lines.size
-        error_line = lines[line].chomp
-        context_col_beg = [column - 10, 0].max
-        context_col_end = [column + 10, error_line.length].min
-        context = error_line[context_col_beg...context_col_end]
-        cursor_pos = column - context_col_beg
-        pointer = ' ' * cursor_pos + '^'.blink
-        raise BadArgument, "#{e.message}\n#{context}\n#{pointer}"
+      def update_regex
+        handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
+        @regex_single = Regexp.new("^#{handler_regex}(.*)$", Regexp::MULTILINE)
+        @regex_extend = Regexp.new("^(.*)#{handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
       end
 
       public
@@ -125,25 +128,26 @@ module Aspera
         Log.log.debug{"setting handler for #{name}"}
         Aspera.assert_type(name, Symbol){'name'}
         @handlers[name] = method
-        update_handler_regex
+        update_regex
       end
 
-      # Parse an string value to extended value.
+      # Parses a `String` value to extended value.
       # If it is a String using supported extended value modifiers, then evaluate them.
       # Other value types are returned as is.
-      # @param value [String] the value to parse
-      # @param allowed [Array<Class>] Expected types
+      # @param value   [String] the value to parse
+      # @param context [String] Context in which evaluation is done
+      # @param allowed [Array<Class>,NilClass] Expected types
       # @return [Object] Evaluated value
-      def evaluate(value, allowed: nil)
+      def evaluate(value, context:, allowed: nil)
         return value unless value.is_a?(String)
         Aspera.assert_type(allowed, NilClass, Array)
         Aspera.assert(allowed.all?(Class)) if allowed
         # use default decoder if not an extended value and expect complex types
-        value = [MARKER_START, @default_decoder, MARKER_END, value].join if allowed&.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)} && value.match(/^#{@handler_regex}.*$/).nil? && !@default_decoder.nil?
-        regex = Regexp.new("^#{@handler_regex}(.*)$", Regexp::MULTILINE)
+        using_default_decoder = allowed&.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)} && !@regex_single.match?(value) && !@default_decoder.nil?
+        value = [MARKER_START, @default_decoder, MARKER_END, value].join if using_default_decoder
         # First determine decoders, in reversed order
         handlers_reversed = []
-        while (m = value.match(regex))
+        while (m = value.match(@regex_single))
           handler = m[1].to_sym
           handlers_reversed.unshift(handler)
           value = m[2]
@@ -152,14 +156,16 @@ module Aspera
         Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value}"}
         handlers_reversed.each do |handler|
           value = @handlers[handler].call(value)
+        rescue => e
+          raise BadArgument, "Evaluation of #{handler} for #{context}: #{e.message}"
         end
         return value
       end
 
       # Find inner extended values
-      def evaluate_all(value)
-        regex = Regexp.new("^(.*)#{@handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
-        while (m = value.match(regex))
+      # Only used in above lambda
+      def evaluate_extend(value)
+        while (m = value.match(@regex_extend))
           sub_value = "@#{m[2]}:#{m[3]}"
           Log.log.debug{"evaluating #{sub_value}"}
           value = "#{m[1]}#{evaluate(sub_value)}#{m[4]}"

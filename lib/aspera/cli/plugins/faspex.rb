@@ -456,7 +456,7 @@ module Aspera
               when :info
                 return Main.result_single_object(source_info)
               when :node
-                node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
+                node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
                 Log.log.debug{"node=#{node_config}"}
                 Aspera.assert_type(node_config, Hash, type: Cli::Error){source_info[KEY_NODE]}
                 api_node = Rest.new(

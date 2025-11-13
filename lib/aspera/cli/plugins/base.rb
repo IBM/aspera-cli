@@ -18,8 +18,6 @@ module Aspera
         MAX_ITEMS = 'max'
         # Special query parameter: `pmax`: max number of pages for list command
         MAX_PAGES = 'pmax'
-        # Percent selector: select by this field for this value
-        REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
 
         class << self
           def declare_options(options)
@@ -59,7 +57,7 @@ module Aspera
         def percent_selector?(identifier)
           Aspera.assert_type(identifier, String)
           if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
-            return {field: m[1], value: ExtendedValue.instance.evaluate(m[2])}
+            return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
           end
           return false
         end
@@ -333,7 +331,9 @@ module Aspera
           raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)
         end
         PER_PAGE_DEFAULT = 1000
-        private_constant :PER_PAGE_DEFAULT
+        # Percent selector: select by this field for this value
+        REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
+        private_constant :PER_PAGE_DEFAULT, :REGEX_LOOKUP_ID_BY_FIELD
       end
     end
   end
