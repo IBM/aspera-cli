@@ -5991,14 +5991,16 @@ Returned by upload/download_setup node API.<br />
 </tr>
 <tr>
 <td>use_system_ssh</td>
-<td>string</td>
-<td>Use an external ssh program instead of the built-in libssh2
-implementation to establish the connection to the remote host. The
-desired ssh program must be in the environment&#39;s PATH.<br />
-To enable debugging of the ssh process, supply <code>-DD</code> and
-<code>--ssh-arg=-vv</code> arguments to <code>ascp</code>.<br />
+<td>boolean</td>
+<td>Use an external <code>ssh</code> program instead of the built-in
+<code>libssh2</code> implementation to establish the connection to the
+remote host. The desired <code>ssh</code> program must be in the
+environment&#39;s <code>PATH</code>.<br />
+To enable debugging of the <code>ssh</code> process, supply
+<code>-DD</code> and <code>--ssh-arg=-vv</code> arguments to
+<code>ascp</code>.<br />
 (A, T)<br />
-(<code>-SSH {string}</code>)</td>
+(<code>-SSH</code>)</td>
 </tr>
 <tr>
 <td>wss_enabled</td>

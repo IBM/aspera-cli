@@ -4022,7 +4022,7 @@ ascli config ascp schema transferd --format=jsonpp
 | title | string | Title of the transfer.<br/>(C, N, T) |
 | token | string | Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)<br/>(env:`ASPERA_SCP_TOKEN`) |
 | use_ascp4 | boolean | Specify version of protocol. Do not use `ascp4`.<br/>(A, N, T) |
-| use_system_ssh | string | Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.<br/>To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH {string}`) |
+| use_system_ssh | boolean | Use an external `ssh` program instead of the built-in `libssh2` implementation to establish the connection to the remote host. The desired `ssh` program must be in the environment's `PATH`.<br/>To enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH`) |
 | wss_enabled | boolean | Server has Web Socket service enabled.<br/>(special:`--ws-connect`) |
 | wss_port | integer | TCP port used for Web Socket service feed. |
 | xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(N) |

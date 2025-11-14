@@ -803,13 +803,14 @@
       "x-cli-special": true
     },
     "use_system_ssh": {
-      "description": "Use an external ssh program instead of the built-in libssh2 implementation to establish the connection to the remote host. The desired ssh program must be in the environment's PATH.\nTo enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.",
-      "type": "string",
+      "description": "Use an external `ssh` program instead of the built-in `libssh2` implementation to establish the connection to the remote host. The desired `ssh` program must be in the environment's `PATH`.\nTo enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.",
+      "type": "boolean",
       "x-agents": [
         "direct",
         "transferd"
       ],
-      "x-cli-option": "-SSH"
+      "x-cli-option": "-SSH",
+      "x-cli-switch": true
     },
     "write_threads": {
       "description": "ascp4 only.",

@@ -697,17 +697,6 @@ properties:
       - direct
       - transferd
     x-cli-option: -i
-  ssh_args:
-    $comment: "TODO: Generate multiple options and place as in comment (after -i , before user/host)"
-    description: >-
-      Add arguments to the command-line arguments passed to the external ssh program (implies -SSH).
-      The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.
-    type: array
-    x-agents:
-      - direct
-      - transferd
-    x-cli-option: --ssh-arg
-    x-cli-special: true
   symlink_policy:
     description: Handle source side symbolic links.
     type: string
@@ -770,16 +759,28 @@ properties:
     x-cli-special: true
   use_system_ssh:
     description: >-
-      Use an external ssh program instead of the built-in libssh2 implementation to establish
+      Use an external `ssh` program instead of the built-in `libssh2` implementation to establish
       the connection to the remote host.
-      The desired ssh program must be in the environment's PATH.
+      The desired `ssh` program must be in the environment's `PATH`.
 
-      To enable debugging of the ssh process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.
-    type: string
+      To enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.
+    type: boolean
     x-agents:
       - direct
       - transferd
     x-cli-option: -SSH
+    x-cli-switch: true
+  ssh_args:
+    $comment: "TODO: Generate multiple options and place as in comment (after -i , before user/host)"
+    description: >-
+      Add arguments to the command-line arguments passed to the external ssh program (implies -SSH).
+      The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.
+    type: array
+    x-agents:
+      - direct
+      - transferd
+    x-cli-option: --ssh-arg
+    x-cli-special: true
   keepalive:
     description: The session is running in persistent session mode.
     type: boolean
