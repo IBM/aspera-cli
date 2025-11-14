@@ -3069,6 +3069,11 @@ returns the value for key <code>attr</code> of the <code>Hash</code>
 <p>The <code>extend</code> decoder is useful to evaluate embedded
 extended value syntax in a string. It expects a <code>@</code> to close
 the embedded extended value syntax.</p>
+<p>Option <code>parser</code> allows definition of a default parser when
+the positinal parameter or option expects a <code>Hash</code> or
+<code>Array</code>. For example, with <code>--parser=json</code>, the
+parameter <code>{}</code> will be parsed as an empty JSON Hash, even
+without prefix <code>@json:</code>.</p>
 <p>Example: Create a <code>Hash</code> value with the convenient
 <code>@json:</code> decoder:</p>
 <pre class="shell"><code>ascli config echo @json:&#39;{&quot;key1&quot;:&quot;value1&quot;,&quot;key2&quot;:&quot;value2&quot;}&#39;</code></pre>
@@ -3367,91 +3372,92 @@ different name:</p>
 <span id="cb199-15"><a href="#cb199-15" aria-hidden="true" tabindex="-1"></a><span class="ex">ascp</span> spec</span>
 <span id="cb199-16"><a href="#cb199-16" aria-hidden="true" tabindex="-1"></a><span class="ex">check_update</span></span>
 <span id="cb199-17"><a href="#cb199-17" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span></span>
-<span id="cb199-18"><a href="#cb199-18" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text</span>
-<span id="cb199-19"><a href="#cb199-19" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text <span class="at">--image</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:false}&#39;</span></span>
-<span id="cb199-20"><a href="#cb199-20" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text <span class="at">--image</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true}&#39;</span></span>
-<span id="cb199-21"><a href="#cb199-21" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://faspex5.example.com/path</span>
-<span id="cb199-22"><a href="#cb199-22" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://faspex5.example.com/path faspex5</span>
-<span id="cb199-23"><a href="#cb199-23" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://node.example.com/path</span>
-<span id="cb199-24"><a href="#cb199-24" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://server.example.com/path server</span>
-<span id="cb199-25"><a href="#cb199-25" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://shares.example.com/path shares</span>
-<span id="cb199-26"><a href="#cb199-26" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://tst.example.com/path faspio</span>
-<span id="cb199-27"><a href="#cb199-27" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://tst.example.com/path httpgw</span>
-<span id="cb199-28"><a href="#cb199-28" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> my_org aoc</span>
-<span id="cb199-29"><a href="#cb199-29" aria-hidden="true" tabindex="-1"></a><span class="ex">doc</span></span>
-<span id="cb199-30"><a href="#cb199-30" aria-hidden="true" tabindex="-1"></a><span class="ex">doc</span> transfer-parameters</span>
-<span id="cb199-31"><a href="#cb199-31" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&#39;&lt;svg viewBox=&quot;0 0 100 100&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;&lt;circle cx=&quot;50&quot; cy=&quot;50&quot; r=&quot;50&quot; fill=&quot;#006699&quot;/&gt;&lt;/svg&gt;&#39;</span> <span class="at">--format</span><span class="op">=</span>image</span>
-<span id="cb199-32"><a href="#cb199-32" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">--</span> <span class="at">--special-string</span></span>
-<span id="cb199-33"><a href="#cb199-33" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @base64:SGVsbG8gV29ybGQK</span>
-<span id="cb199-34"><a href="#cb199-34" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @csvt:@stdin:</span>
-<span id="cb199-35"><a href="#cb199-35" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @env:USER</span>
-<span id="cb199-36"><a href="#cb199-36" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @json:<span class="st">&#39;[{&quot;user&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;foo&quot;},&quot;project&quot;:&quot;bar&quot;}]&#39;</span> <span class="at">--multi-single</span><span class="op">=</span>single</span>
-<span id="cb199-37"><a href="#cb199-37" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @json:<span class="st">&#39;[{&quot;user&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;foo&quot;},&quot;project&quot;:&quot;bar&quot;}]&#39;</span> <span class="at">--multi-single</span><span class="op">=</span>yes</span>
-<span id="cb199-38"><a href="#cb199-38" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @lines:@stdin:</span>
-<span id="cb199-39"><a href="#cb199-39" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @list:,1,2,3</span>
-<span id="cb199-40"><a href="#cb199-40" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @secret:</span>
-<span id="cb199-41"><a href="#cb199-41" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @stdbin:</span>
-<span id="cb199-42"><a href="#cb199-42" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:/etc/hosts</span>
-<span id="cb199-43"><a href="#cb199-43" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:file:/etc/hosts</span>
-<span id="cb199-44"><a href="#cb199-44" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:http://ifconfig.me</span>
-<span id="cb199-45"><a href="#cb199-45" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:https://ifconfig.me</span>
-<span id="cb199-46"><a href="#cb199-46" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @vault:my_preset.password</span>
-<span id="cb199-47"><a href="#cb199-47" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @zlib:@stdin:</span>
-<span id="cb199-48"><a href="#cb199-48" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> hello</span>
-<span id="cb199-49"><a href="#cb199-49" aria-hidden="true" tabindex="-1"></a><span class="ex">email_test</span> <span class="at">--notify-to</span><span class="op">=</span>my_email_external</span>
-<span id="cb199-50"><a href="#cb199-50" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span></span>
-<span id="cb199-51"><a href="#cb199-51" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>@ruby:<span class="st">&#39;-&gt;(s, d, p, m){&quot;#{d.strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)} - #{p} - #{s} - #{m}\n&quot;}&#39;</span></span>
-<span id="cb199-52"><a href="#cb199-52" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>default</span>
-<span id="cb199-53"><a href="#cb199-53" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>standard</span>
-<span id="cb199-54"><a href="#cb199-54" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--logger</span><span class="op">=</span>syslog</span>
-<span id="cb199-55"><a href="#cb199-55" aria-hidden="true" tabindex="-1"></a><span class="ex">folder</span></span>
-<span id="cb199-56"><a href="#cb199-56" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> name</span>
-<span id="cb199-57"><a href="#cb199-57" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> path</span>
-<span id="cb199-58"><a href="#cb199-58" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> version</span>
-<span id="cb199-59"><a href="#cb199-59" aria-hidden="true" tabindex="-1"></a><span class="ex">genkey</span> my_key</span>
-<span id="cb199-60"><a href="#cb199-60" aria-hidden="true" tabindex="-1"></a><span class="ex">genkey</span> my_key 4096</span>
-<span id="cb199-61"><a href="#cb199-61" aria-hidden="true" tabindex="-1"></a><span class="ex">image</span> https://eudemo.asperademo.com/wallpaper.jpg</span>
-<span id="cb199-62"><a href="#cb199-62" aria-hidden="true" tabindex="-1"></a><span class="ex">initdemo</span></span>
-<span id="cb199-63"><a href="#cb199-63" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span></span>
-<span id="cb199-64"><a href="#cb199-64" aria-hidden="true" tabindex="-1"></a><span class="ex">plugins</span> create my_command</span>
-<span id="cb199-65"><a href="#cb199-65" aria-hidden="true" tabindex="-1"></a><span class="ex">plugins</span> list</span>
-<span id="cb199-66"><a href="#cb199-66" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> delete conf_name</span>
-<span id="cb199-67"><a href="#cb199-67" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> initialize conf_name @json:<span class="st">&#39;{&quot;p1&quot;:&quot;v1&quot;,&quot;p2&quot;:&quot;v2&quot;}&#39;</span></span>
-<span id="cb199-68"><a href="#cb199-68" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> list</span>
-<span id="cb199-69"><a href="#cb199-69" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> overview</span>
-<span id="cb199-70"><a href="#cb199-70" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set GLOBAL version_check_days 0</span>
-<span id="cb199-71"><a href="#cb199-71" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set conf_name param value</span>
-<span id="cb199-72"><a href="#cb199-72" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set default shares conf_name</span>
-<span id="cb199-73"><a href="#cb199-73" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> show conf_name</span>
-<span id="cb199-74"><a href="#cb199-74" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> unset conf_name param</span>
-<span id="cb199-75"><a href="#cb199-75" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> update conf_name <span class="at">--p1</span><span class="op">=</span>v1 <span class="at">--p2</span><span class="op">=</span>v2</span>
-<span id="cb199-76"><a href="#cb199-76" aria-hidden="true" tabindex="-1"></a><span class="ex">proxy_check</span> <span class="at">--fpac</span><span class="op">=</span>@file:proxy.pac https://eudemo.asperademo.com <span class="at">--proxy-credentials</span><span class="op">=</span>@list:,user,pass</span>
-<span id="cb199-77"><a href="#cb199-77" aria-hidden="true" tabindex="-1"></a><span class="ex">pubkey</span> @file:my_key</span>
-<span id="cb199-78"><a href="#cb199-78" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> chain https://node.example.com/path</span>
-<span id="cb199-79"><a href="#cb199-79" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> name https://node.example.com/path</span>
-<span id="cb199-80"><a href="#cb199-80" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> only https://node.example.com/path</span>
-<span id="cb199-81"><a href="#cb199-81" aria-hidden="true" tabindex="-1"></a><span class="ex">smtp_settings</span></span>
-<span id="cb199-82"><a href="#cb199-82" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> spec</span>
-<span id="cb199-83"><a href="#cb199-83" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> flush</span>
-<span id="cb199-84"><a href="#cb199-84" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> list</span>
-<span id="cb199-85"><a href="#cb199-85" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> show foobar</span>
-<span id="cb199-86"><a href="#cb199-86" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> install</span>
-<span id="cb199-87"><a href="#cb199-87" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> list</span>
-<span id="cb199-88"><a href="#cb199-88" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> create @json:<span class="st">&#39;{&quot;label&quot;:&quot;my_label&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;my secret&quot;}&#39;</span></span>
-<span id="cb199-89"><a href="#cb199-89" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> delete my_label</span>
-<span id="cb199-90"><a href="#cb199-90" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> info</span>
-<span id="cb199-91"><a href="#cb199-91" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> list</span>
-<span id="cb199-92"><a href="#cb199-92" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> show my_label</span>
-<span id="cb199-93"><a href="#cb199-93" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://console.example.com/path console</span>
-<span id="cb199-94"><a href="#cb199-94" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb199-95"><a href="#cb199-95" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex5.example.com/path faspex5 <span class="at">--key-path</span><span class="op">=</span>my_private_key</span>
-<span id="cb199-96"><a href="#cb199-96" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb199-97"><a href="#cb199-97" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb199-98"><a href="#cb199-98" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://server.example.com/path server <span class="at">--username</span><span class="op">=</span>my_username <span class="at">--password</span><span class="op">=</span>my_password</span>
-<span id="cb199-99"><a href="#cb199-99" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb199-100"><a href="#cb199-100" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://tst.example.com/path faspio <span class="at">--username</span><span class="op">=</span>my_username <span class="at">--password</span><span class="op">=</span>my_password</span>
-<span id="cb199-101"><a href="#cb199-101" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span>
-<span id="cb199-102"><a href="#cb199-102" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc mypreset <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span></code></pre></div>
+<span id="cb199-18"><a href="#cb199-18" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--log-level</span><span class="op">=</span>trace2 <span class="at">--log-format</span><span class="op">=</span>caller</span>
+<span id="cb199-19"><a href="#cb199-19" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text</span>
+<span id="cb199-20"><a href="#cb199-20" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text <span class="at">--image</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:false}&#39;</span></span>
+<span id="cb199-21"><a href="#cb199-21" aria-hidden="true" tabindex="-1"></a><span class="ex">coffee</span> <span class="at">--ui</span><span class="op">=</span>text <span class="at">--image</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true}&#39;</span></span>
+<span id="cb199-22"><a href="#cb199-22" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://faspex5.example.com/path</span>
+<span id="cb199-23"><a href="#cb199-23" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://faspex5.example.com/path faspex5</span>
+<span id="cb199-24"><a href="#cb199-24" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://node.example.com/path</span>
+<span id="cb199-25"><a href="#cb199-25" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://server.example.com/path server</span>
+<span id="cb199-26"><a href="#cb199-26" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://shares.example.com/path shares</span>
+<span id="cb199-27"><a href="#cb199-27" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://tst.example.com/path faspio</span>
+<span id="cb199-28"><a href="#cb199-28" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> https://tst.example.com/path httpgw</span>
+<span id="cb199-29"><a href="#cb199-29" aria-hidden="true" tabindex="-1"></a><span class="ex">detect</span> my_org aoc</span>
+<span id="cb199-30"><a href="#cb199-30" aria-hidden="true" tabindex="-1"></a><span class="ex">doc</span></span>
+<span id="cb199-31"><a href="#cb199-31" aria-hidden="true" tabindex="-1"></a><span class="ex">doc</span> transfer-parameters</span>
+<span id="cb199-32"><a href="#cb199-32" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&#39;&lt;svg viewBox=&quot;0 0 100 100&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;&lt;circle cx=&quot;50&quot; cy=&quot;50&quot; r=&quot;50&quot; fill=&quot;#006699&quot;/&gt;&lt;/svg&gt;&#39;</span> <span class="at">--format</span><span class="op">=</span>image</span>
+<span id="cb199-33"><a href="#cb199-33" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">--</span> <span class="at">--special-string</span></span>
+<span id="cb199-34"><a href="#cb199-34" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @base64:SGVsbG8gV29ybGQK</span>
+<span id="cb199-35"><a href="#cb199-35" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @csvt:@stdin:</span>
+<span id="cb199-36"><a href="#cb199-36" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @env:USER</span>
+<span id="cb199-37"><a href="#cb199-37" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @json:<span class="st">&#39;[{&quot;user&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;foo&quot;},&quot;project&quot;:&quot;bar&quot;}]&#39;</span> <span class="at">--multi-single</span><span class="op">=</span>single</span>
+<span id="cb199-38"><a href="#cb199-38" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @json:<span class="st">&#39;[{&quot;user&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;foo&quot;},&quot;project&quot;:&quot;bar&quot;}]&#39;</span> <span class="at">--multi-single</span><span class="op">=</span>yes</span>
+<span id="cb199-39"><a href="#cb199-39" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @lines:@stdin:</span>
+<span id="cb199-40"><a href="#cb199-40" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @list:,1,2,3</span>
+<span id="cb199-41"><a href="#cb199-41" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @secret:</span>
+<span id="cb199-42"><a href="#cb199-42" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @stdbin:</span>
+<span id="cb199-43"><a href="#cb199-43" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:/etc/hosts</span>
+<span id="cb199-44"><a href="#cb199-44" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:file:/etc/hosts</span>
+<span id="cb199-45"><a href="#cb199-45" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:http://ifconfig.me</span>
+<span id="cb199-46"><a href="#cb199-46" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @uri:https://ifconfig.me</span>
+<span id="cb199-47"><a href="#cb199-47" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @vault:my_preset.password</span>
+<span id="cb199-48"><a href="#cb199-48" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> @zlib:@stdin:</span>
+<span id="cb199-49"><a href="#cb199-49" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> hello</span>
+<span id="cb199-50"><a href="#cb199-50" aria-hidden="true" tabindex="-1"></a><span class="ex">email_test</span> <span class="at">--notify-to</span><span class="op">=</span>my_email_external</span>
+<span id="cb199-51"><a href="#cb199-51" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span></span>
+<span id="cb199-52"><a href="#cb199-52" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>@ruby:<span class="st">&#39;-&gt;(s, d, p, m){&quot;#{d.strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)} - #{p} - #{s} - #{m}\n&quot;}&#39;</span></span>
+<span id="cb199-53"><a href="#cb199-53" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>default</span>
+<span id="cb199-54"><a href="#cb199-54" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--log-format</span><span class="op">=</span>standard</span>
+<span id="cb199-55"><a href="#cb199-55" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--logger</span><span class="op">=</span>syslog</span>
+<span id="cb199-56"><a href="#cb199-56" aria-hidden="true" tabindex="-1"></a><span class="ex">folder</span></span>
+<span id="cb199-57"><a href="#cb199-57" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> name</span>
+<span id="cb199-58"><a href="#cb199-58" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> path</span>
+<span id="cb199-59"><a href="#cb199-59" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> version</span>
+<span id="cb199-60"><a href="#cb199-60" aria-hidden="true" tabindex="-1"></a><span class="ex">genkey</span> my_key</span>
+<span id="cb199-61"><a href="#cb199-61" aria-hidden="true" tabindex="-1"></a><span class="ex">genkey</span> my_key 4096</span>
+<span id="cb199-62"><a href="#cb199-62" aria-hidden="true" tabindex="-1"></a><span class="ex">image</span> https://eudemo.asperademo.com/wallpaper.jpg</span>
+<span id="cb199-63"><a href="#cb199-63" aria-hidden="true" tabindex="-1"></a><span class="ex">initdemo</span></span>
+<span id="cb199-64"><a href="#cb199-64" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span></span>
+<span id="cb199-65"><a href="#cb199-65" aria-hidden="true" tabindex="-1"></a><span class="ex">plugins</span> create my_command</span>
+<span id="cb199-66"><a href="#cb199-66" aria-hidden="true" tabindex="-1"></a><span class="ex">plugins</span> list</span>
+<span id="cb199-67"><a href="#cb199-67" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> delete conf_name</span>
+<span id="cb199-68"><a href="#cb199-68" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> initialize conf_name @json:<span class="st">&#39;{&quot;p1&quot;:&quot;v1&quot;,&quot;p2&quot;:&quot;v2&quot;}&#39;</span></span>
+<span id="cb199-69"><a href="#cb199-69" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> list</span>
+<span id="cb199-70"><a href="#cb199-70" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> overview</span>
+<span id="cb199-71"><a href="#cb199-71" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set GLOBAL version_check_days 0</span>
+<span id="cb199-72"><a href="#cb199-72" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set conf_name param value</span>
+<span id="cb199-73"><a href="#cb199-73" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> set default shares conf_name</span>
+<span id="cb199-74"><a href="#cb199-74" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> show conf_name</span>
+<span id="cb199-75"><a href="#cb199-75" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> unset conf_name param</span>
+<span id="cb199-76"><a href="#cb199-76" aria-hidden="true" tabindex="-1"></a><span class="ex">preset</span> update conf_name <span class="at">--p1</span><span class="op">=</span>v1 <span class="at">--p2</span><span class="op">=</span>v2</span>
+<span id="cb199-77"><a href="#cb199-77" aria-hidden="true" tabindex="-1"></a><span class="ex">proxy_check</span> <span class="at">--fpac</span><span class="op">=</span>@file:proxy.pac https://eudemo.asperademo.com <span class="at">--proxy-credentials</span><span class="op">=</span>@list:,user,pass</span>
+<span id="cb199-78"><a href="#cb199-78" aria-hidden="true" tabindex="-1"></a><span class="ex">pubkey</span> @file:my_key</span>
+<span id="cb199-79"><a href="#cb199-79" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> chain https://node.example.com/path</span>
+<span id="cb199-80"><a href="#cb199-80" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> name https://node.example.com/path</span>
+<span id="cb199-81"><a href="#cb199-81" aria-hidden="true" tabindex="-1"></a><span class="ex">remote_certificate</span> only https://node.example.com/path</span>
+<span id="cb199-82"><a href="#cb199-82" aria-hidden="true" tabindex="-1"></a><span class="ex">smtp_settings</span></span>
+<span id="cb199-83"><a href="#cb199-83" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> spec</span>
+<span id="cb199-84"><a href="#cb199-84" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> flush</span>
+<span id="cb199-85"><a href="#cb199-85" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> list</span>
+<span id="cb199-86"><a href="#cb199-86" aria-hidden="true" tabindex="-1"></a><span class="ex">tokens</span> show foobar</span>
+<span id="cb199-87"><a href="#cb199-87" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> install</span>
+<span id="cb199-88"><a href="#cb199-88" aria-hidden="true" tabindex="-1"></a><span class="ex">transferd</span> list</span>
+<span id="cb199-89"><a href="#cb199-89" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> create @json:<span class="st">&#39;{&quot;label&quot;:&quot;my_label&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;my secret&quot;}&#39;</span></span>
+<span id="cb199-90"><a href="#cb199-90" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> delete my_label</span>
+<span id="cb199-91"><a href="#cb199-91" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> info</span>
+<span id="cb199-92"><a href="#cb199-92" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> list</span>
+<span id="cb199-93"><a href="#cb199-93" aria-hidden="true" tabindex="-1"></a><span class="ex">vault</span> show my_label</span>
+<span id="cb199-94"><a href="#cb199-94" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://console.example.com/path console</span>
+<span id="cb199-95"><a href="#cb199-95" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb199-96"><a href="#cb199-96" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://faspex5.example.com/path faspex5 <span class="at">--key-path</span><span class="op">=</span>my_private_key</span>
+<span id="cb199-97"><a href="#cb199-97" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb199-98"><a href="#cb199-98" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb199-99"><a href="#cb199-99" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://server.example.com/path server <span class="at">--username</span><span class="op">=</span>my_username <span class="at">--password</span><span class="op">=</span>my_password</span>
+<span id="cb199-100"><a href="#cb199-100" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb199-101"><a href="#cb199-101" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://tst.example.com/path faspio <span class="at">--username</span><span class="op">=</span>my_username <span class="at">--password</span><span class="op">=</span>my_password</span>
+<span id="cb199-102"><a href="#cb199-102" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span>
+<span id="cb199-103"><a href="#cb199-103" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc mypreset <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span></code></pre></div>
 <h3 data-number="4.12.1" id="format-of-file"><span class="header-section-number">4.12.1</span> Format of file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
 Example:</p>
@@ -6674,11 +6680,10 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
-        --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
-        --output=VALUE               Destination for results (String)
+        --output=VALUE               Destination for results
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          (Table) Display style (Hash)
         --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
@@ -6692,15 +6697,16 @@ OPTIONS: global
         --ui=ENUM                    Method to start browser: text, [graphical]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
-        --log-format=VALUE           Log formatter (Proc, Logger::Formatter, String)
+        --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
         --temp-folder=VALUE          Temporary folder
-        --pid-file=VALUE             Write process identifier to file, delete on exit (String)
-        --home=VALUE                 Home folder for tool (String)
+        --pid-file=VALUE             Write process identifier to file, delete on exit
+        --parser=ENUM                Default parser for structured parameters and options: none, json, ruby, yaml
+        --home=VALUE                 Home folder for tool
         --config-file=VALUE          Path to YAML file with preset configuration
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
@@ -6727,9 +6733,9 @@ OPTIONS: global
         --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
         --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
         --warn-insecure=ENUM         HTTP/S: Issue a warning if certificate is ignored: no, [yes]
-        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array, String)
+        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array)
         --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
-        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials (String)
+        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
@@ -6867,9 +6873,9 @@ OPTIONS:
         --password=VALUE             User&#39;s password
         --skip-format=ENUM           Skip this preview format: png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
-        --skip-types=VALUE           Skip types in comma separated list
+        --skip-types=VALUE           Skip generation for those types of files (Array)
         --previews-folder=VALUE      Preview folder in storage root
-        --skip-folders=VALUE         List of folder to skip
+        --skip-folders=VALUE         List of folder to skip (Array)
         --base=VALUE                 Basename of output for for test
         --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
@@ -6907,10 +6913,10 @@ OPTIONS:
         --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
         --scope=VALUE                OAuth scope for API calls
-        --workspace=VALUE            Name of workspace (String, NilClass)
+        --workspace=VALUE            Name of workspace
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --package-folder=VALUE       Field of package to use as folder name, or @none: (String, NilClass)
+        --package-folder=VALUE       Field of package to use as folder name, or @none:
 
 
 COMMAND: server
@@ -6919,7 +6925,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User&#39;s identifier
         --password=VALUE             User&#39;s password
-        --ssh-keys=VALUE             SSH key path list (Array, String)
+        --ssh-keys=VALUE             SSH key path list (Array)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
 
@@ -11202,7 +11208,7 @@ commands:</p></div>
 <div class="sourceCode" id="cb614"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb614-1"><a href="#cb614-1" aria-hidden="true" tabindex="-1"></a><span class="ex">check</span> <span class="at">--skip-types</span><span class="op">=</span>office</span>
 <span id="cb614-2"><a href="#cb614-2" aria-hidden="true" tabindex="-1"></a><span class="ex">events</span> <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
 <span id="cb614-3"><a href="#cb614-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
-<span id="cb614-4"><a href="#cb614-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
+<span id="cb614-4"><a href="#cb614-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--skip-folder</span><span class="op">=</span>/special/folder</span>
 <span id="cb614-5"><a href="#cb614-5" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test /etc/hosts</span>
 <span id="cb614-6"><a href="#cb614-6" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_docx</span>
 <span id="cb614-7"><a href="#cb614-7" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>

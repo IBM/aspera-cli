@@ -2170,6 +2170,9 @@ To display the result of an extended value, use the `config echo` command.
 The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
 It expects a `@` to close the embedded extended value syntax.
 
+Option `parser` allows definition of a default parser when the positinal parameter or option expects a `Hash` or `Array`.
+For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
+
 Example: Create a `Hash` value with the convenient `@json:` decoder:
 
 ```shell
@@ -2491,6 +2494,7 @@ ascp show
 ascp spec
 check_update
 coffee
+coffee --log-level=trace2 --log-format=caller
 coffee --ui=text
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
 coffee --ui=text --image=@json:'{"text":true}'
@@ -4567,11 +4571,10 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
-        --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
-        --output=VALUE               Destination for results (String)
+        --output=VALUE               Destination for results
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          (Table) Display style (Hash)
         --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
@@ -4585,15 +4588,16 @@ OPTIONS: global
         --ui=ENUM                    Method to start browser: text, [graphical]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
-        --log-format=VALUE           Log formatter (Proc, Logger::Formatter, String)
+        --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
         --temp-folder=VALUE          Temporary folder
-        --pid-file=VALUE             Write process identifier to file, delete on exit (String)
-        --home=VALUE                 Home folder for tool (String)
+        --pid-file=VALUE             Write process identifier to file, delete on exit
+        --parser=ENUM                Default parser for structured parameters and options: none, json, ruby, yaml
+        --home=VALUE                 Home folder for tool
         --config-file=VALUE          Path to YAML file with preset configuration
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
@@ -4620,9 +4624,9 @@ OPTIONS: global
         --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
         --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
         --warn-insecure=ENUM         HTTP/S: Issue a warning if certificate is ignored: no, [yes]
-        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array, String)
+        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array)
         --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
-        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials (String)
+        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
@@ -4760,9 +4764,9 @@ OPTIONS:
         --password=VALUE             User's password
         --skip-format=ENUM           Skip this preview format: png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
-        --skip-types=VALUE           Skip types in comma separated list
+        --skip-types=VALUE           Skip generation for those types of files (Array)
         --previews-folder=VALUE      Preview folder in storage root
-        --skip-folders=VALUE         List of folder to skip
+        --skip-folders=VALUE         List of folder to skip (Array)
         --base=VALUE                 Basename of output for for test
         --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
@@ -4800,10 +4804,10 @@ OPTIONS:
         --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
         --scope=VALUE                OAuth scope for API calls
-        --workspace=VALUE            Name of workspace (String, NilClass)
+        --workspace=VALUE            Name of workspace
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --package-folder=VALUE       Field of package to use as folder name, or @none: (String, NilClass)
+        --package-folder=VALUE       Field of package to use as folder name, or @none:
 
 
 COMMAND: server
@@ -4812,7 +4816,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --ssh-keys=VALUE             SSH key path list (Array, String)
+        --ssh-keys=VALUE             SSH key path list (Array)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
 
@@ -8827,7 +8831,7 @@ If the preview generator does not have access to files on the file system (it is
 check --skip-types=office
 events --once-only=yes --skip-types=office --log-level=info
 scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
-scan --skip-types=office --log-level=info
+scan --skip-types=office --log-level=info --skip-folder=/special/folder
 show --base=test /etc/hosts
 show --base=test my_docx
 show --base=test my_mpg --video-png-conv=animated

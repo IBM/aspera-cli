@@ -258,7 +258,8 @@ module Aspera
           handler:     handler,
           deprecation: deprecation
         )
-        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types && !option_attrs.types.empty? && !option_attrs.types.eql?(Allowed::TYPES_ENUM) && !option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
+        real_types = option_attrs.types&.reject{ |i| [NilClass, String, Symbol].include?(i)}
+        description = "#{description} (#{real_types.map(&:name).join(', ')})" if real_types && !real_types.empty? && !real_types.eql?(Allowed::TYPES_ENUM) && !real_types.eql?(Allowed::TYPES_BOOLEAN) && !real_types.eql?(Allowed::TYPES_STRING)
         description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
         set_option(option_symbol, default, where: 'default') unless default.nil?
         on_args = [description]
