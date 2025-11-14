@@ -245,10 +245,10 @@ module Aspera
 
       # @return the url for download of SDK archive for the given platform and version
       def sdk_url_for_platform(platform: nil, version: nil)
-        locations = sdk_locations
+        all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
-        locations = locations.select{ |l| l['platform'].eql?(platform)}
-        raise "No SDK for platform: #{platform}" if locations.empty?
+        locations = all_locations.select{ |l| l['platform'].eql?(platform)}
+        raise "No SDK for platform: #{platform}, available: #{all_locations.map{ |i| i['platform']}.uniq}" if locations.empty?
         version = locations.max_by{ |entry| Gem::Version.new(entry['version'])}['version'] if version.nil?
         info = locations.select{ |entry| entry['version'].eql?(version)}
         raise "No such version: #{version} for #{platform}" if info.empty?
