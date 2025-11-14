@@ -5285,7 +5285,22 @@ Allowed values: <code>encrypt</code>, <code>decrypt</code><br />
 <tr>
 <td>create_dir</td>
 <td>boolean</td>
-<td>Specifies whether to create new directories.<br />
+<td>Create target directory if it doesn&#39;t already exist.<br />
+If <strong>all</strong> the following conditions are met, then the
+<code>destination_root</code> specifies a filename instead of
+destination folder:<br />
+- <code>create_dir</code> is <code>false</code><br />
+- A single source file is given on <strong>command line</strong><br />
+- The target folder specified by <code>destination_root</code> does not
+exist<br />
+In all other cases, <code>destination_root</code> specifies a folder,
+and it is created if it does not already exist. I.e. if
+<strong>any</strong> of those conditions is met:<br />
+- <code>create_dir</code> is <code>true</code><br />
+- Multiple source files are provided<br />
+- List of source files are provided in a file (list or pair), default
+for Node API and <code>ascli</code>.<br />
+- The target folder exists<br />
 (<code>-d</code>)</td>
 </tr>
 <tr>

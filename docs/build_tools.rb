@@ -15,6 +15,7 @@ require 'aspera/transfer/spec_doc'
 require 'aspera/sync/operations'
 require 'aspera/log'
 require 'aspera/rest'
+require 'aspera/markdown'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -23,8 +24,6 @@ require 'English'
 Aspera::Log.instance.level = :info
 Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
-
-HTML_BREAK = '<br/>'
 
 # Format special values to markdown
 class MarkdownFormatter
@@ -35,13 +34,15 @@ class MarkdownFormatter
 
     def check_row(row)
       row.each_key do |k|
-        row[k] = row[k].join(HTML_BREAK) if row[k].is_a?(Array)
+        row[k] = row[k].join(Aspera::Markdown::HTML_BREAK) if row[k].is_a?(Array)
         row[k] = '&nbsp;' if row[k].to_s.strip.empty?
       end
     end
 
-    def keyword_highlight(value)
-      "`#{value}`"
+    # @param match [MatchData]
+    def markdown(match)
+      # keep markdown unchanged
+      match.to_s
     end
 
     def tick(bool)
@@ -137,7 +138,7 @@ class DocHelper
   end
 
   # Line break in tables
-  def br; HTML_BREAK; end
+  def br; Aspera::Markdown::HTML_BREAK; end
 
   # To the power of
   def pow(value); "<sup>#{value}</sup>"; end
@@ -172,7 +173,7 @@ class DocHelper
       columns.map{ |c| g[c]}
     end
     data.unshift(columns)
-    markdown_table(data)
+    Aspera::Markdown.table(data)
   end
 
   # Build installation commands for optional gems
@@ -216,23 +217,6 @@ class DocHelper
     end
   end
 
-  # Generate markdown from the provided 2D table
-  def markdown_table(table)
-    headings = table.shift
-    # get max width of each columns
-    col_widths = table.transpose.map do |col|
-      [col.flat_map{ |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size)}.max, 80].min
-    end
-    table.unshift(col_widths.map{ |col_width| '-' * col_width})
-    table.unshift(headings)
-    return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
-  end
-
-  # Generate markdown list from the provided list
-  def markdown_list(items)
-    items.map{ |i| "- #{i}"}.join("\n")
-  end
-
   # Transfer spec description generation for markdown manual
   def spec_table
     agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
@@ -242,7 +226,7 @@ class DocHelper
     # Column titles
     props.unshift(fields.map(&:capitalize))
     props.first[0] = 'Field'
-    [markdown_table(agents), markdown_table(props)].join("\n\n")
+    [Aspera::Markdown.table(agents), Aspera::Markdown.table(props)].join("\n\n")
   end
 
   def sync_conf_table
@@ -251,7 +235,7 @@ class DocHelper
     # Column titles
     props.unshift(fields.map(&:capitalize))
     props.first[0] = 'Field'
-    markdown_table(props)
+    Aspera::Markdown.table(props)
   end
 
   # @return the minimum ruby version from gemspec

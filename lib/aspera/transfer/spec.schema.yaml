@@ -61,7 +61,27 @@ properties:
     type: string
     x-cli-envvar: ASPERA_SCP_COOKIE
   create_dir:
-    description: Specifies whether to create new directories.
+    description: >-
+      Create target directory if it doesn't already exist.
+
+      If **all** the following conditions are met, then the `destination_root` specifies a filename instead of destination folder:
+
+      - `create_dir` is `false`
+
+      - A single source file is given on **command line**
+
+      - The target folder specified by `destination_root` does not exist
+
+      In all other cases, `destination_root` specifies a folder, and it is created if it does not already exist.
+      I.e. if **any** of those conditions is met:
+
+      - `create_dir` is `true`
+
+      - Multiple source files are provided
+
+      - List of source files are provided in a file (list or pair), default for Node API and `ascli`.
+
+      - The target folder exists
     type: boolean
     x-cli-option: -d
     x-cli-switch: true
@@ -91,6 +111,7 @@ properties:
     description: Destination root directory.
     type: string
     x-cli-special: true
+    $comment: Last argument on ascp command line.
   destination_root_id:
     description: >-
       The file ID of the destination root directory.

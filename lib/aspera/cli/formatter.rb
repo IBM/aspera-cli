@@ -7,6 +7,7 @@ require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/markdown'
 require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
@@ -64,8 +65,23 @@ module Aspera
         end
 
         # used by spec_doc
-        def keyword_highlight(value)
-          value.bold
+        # @param match [MatchData,String]
+        def markdown(match)
+          if match.is_a?(String)
+            match = Markdown::FORMATS.match(match)
+            Aspera.assert(match)
+          end
+          Aspera.assert_type(match, MatchData)
+          if match[:entity]
+            Aspera.assert_values(match[:entity], 'bsol')
+            '\\'
+          elsif match[:bold]
+            match[:bold].to_s.blue
+          elsif match[:code]
+            match[:code].to_s.bold
+          else
+            Aspera.error_unexpected_value(match.to_s)
+          end
         end
 
         # replace empty values with a readable version on terminal

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/factory'
+require 'aspera/markdown'
 
 module Aspera
   module Transfer
@@ -12,7 +13,7 @@ module Aspera
           agent_sym.to_sym.eql?(:direct) ? :a : agent_sym.to_s[0].to_sym
         end
 
-        # @param formatter      [Cli::Formatter] Formatter to use, methods: special_format, check_row
+        # @param formatter      [Cli::Formatter] Formatter to use, methods: markdown, tick, check_row
         # @param include_option [Boolean]        `true` : include CLI options
         # @param agent_columns  [Boolean]        `true` : include agents columns
         # @param schema         [Hash]           The JSON spec
@@ -31,11 +32,10 @@ module Aspera
               type:        info['type'],
               description: []
             }
-            # Replace "back solidus" HTML entity with its text value, highlight keywords, and split lines
+            # Render Markdown formatting and split lines
             columns[:description] =
               info['description']
-                .gsub('&bsol;', '\\')
-                .gsub(/`([a-z0-9_.+-]+)`/){formatter.keyword_highlight(Regexp.last_match(1))}
+                .gsub(Markdown::FORMATS){formatter.markdown(Regexp.last_match)}
                 .split("\n") if info.key?('description')
             columns[:description].unshift("DEPRECATED: #{info['x-deprecation']}") if info.key?('x-deprecation')
             # Add flags for supported agents in doc
@@ -53,7 +53,7 @@ module Aspera
             end
             # Only keep lines that are usable in supported agents
             next false if agents.empty?
-            columns[:description].push("Allowed values: #{info['enum'].map{ |v| formatter.keyword_highlight(v)}.join(', ')}") if info.key?('enum')
+            columns[:description].push("Allowed values: #{info['enum'].map{ |v| formatter.markdown("`#{v}`")}.join(', ')}") if info.key?('enum')
             if include_option
               envvar_prefix = ''
               cli_option =
@@ -70,7 +70,7 @@ module Aspera
                   "#{info['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
                 end
               short = info.key?('x-cli-short') ? "(#{info['x-cli-short']})" : nil
-              columns[:description].push("(#{'special:' if info['x-cli-special']}#{envvar_prefix}#{formatter.keyword_highlight(cli_option)})#{short}") if cli_option
+              columns[:description].push("(#{'special:' if info['x-cli-special']}#{envvar_prefix}#{formatter.markdown("`#{cli_option}`")})#{short}") if cli_option
             end
             rows.push(formatter.check_row(columns))
           end

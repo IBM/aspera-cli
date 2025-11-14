@@ -3943,7 +3943,7 @@ ascli config ascp schema transferd --format=jsonpp
 | content_protection | string | Enable client-side encryption at rest (CSEAR).<br/>Allowed values: `encrypt`, `decrypt`<br/>(`--file-crypt={enum}`) |
 | content_protection_password | string | Specifies CSEAR password.<br/>(env:`ASPERA_SCP_FILEPASS`) |
 | cookie | string | Metadata for transfer specified by application.<br/>(env:`ASPERA_SCP_COOKIE`) |
-| create_dir | boolean | Specifies whether to create new directories.<br/>(`-d`) |
+| create_dir | boolean | Create target directory if it doesn't already exist.<br/>If **all** the following conditions are met, then the `destination_root` specifies a filename instead of destination folder:<br/>- `create_dir` is `false`<br/>- A single source file is given on **command line**<br/>- The target folder specified by `destination_root` does not exist<br/>In all other cases, `destination_root` specifies a folder, and it is created if it does not already exist. I.e. if **any** of those conditions is met:<br/>- `create_dir` is `true`<br/>- Multiple source files are provided<br/>- List of source files are provided in a file (list or pair), default for Node API and `ascli`.<br/>- The target folder exists<br/>(`-d`) |
 | delete_before_transfer | boolean | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
 | delete_source | boolean | Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
 | destination_root | string | Destination root directory. |
@@ -4010,7 +4010,7 @@ ascli config ascp schema transferd --format=jsonpp
 | src_base64 | string | The folder name below which the directory structure is preserved (base64 encoded).<br/>(A, T)<br/>(`--src-base64={string}`) |
 | ssh_args | array | Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.<br/>(A, T)<br/>(special:`--ssh-arg={array}`) |
 | ssh_port | integer | Specifies SSH (TCP) port.<br/>(`-P {integer}`) |
-| ssh_private_key | string | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
+| ssh_private_key | string | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...<br/>Note the JSON encoding: &bsol;n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | ssh_private_key_passphrase | string | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(A, T)<br/>(env:`ASPERA_SCP_PASS`) |
 | ssh_private_key_path | string | Path to private key for SSH.<br/>(A, T)<br/>(`-i {string}`) |
 | sshfp | string | Check it against server SSH host key fingerprint.<br/>(`--check-sshfp={string}`) |
