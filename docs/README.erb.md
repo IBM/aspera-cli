@@ -2140,6 +2140,9 @@ To display the result of an extended value, use the `config echo` command.
 The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
 It expects a `@` to close the embedded extended value syntax.
 
+Option `parser` allows definition of a default parser when the positinal parameter or option expects a `Hash` or `Array`.
+For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
+
 Example: Create a `Hash` value with the convenient `@json:` decoder:
 
 ```shell

@@ -297,7 +297,6 @@ module Aspera
         ) unless current_prog_name.eql?(Info::CMD_NAME)
         # Declare and parse global options
         declare_global_options
-        ExtendedValue.instance.default_decoder = @context.options.get_option(:struct_parser)
         # Do not display config commands if help is asked
         @context.man_header = false
         # The Config plugin adds the @preset parser, so declare before TransferAgent which may use it
@@ -373,7 +372,12 @@ module Aspera
         @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', allowed: Allowed::TYPES_BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         @context.options.declare(:temp_folder, 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
         @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit')
-        @context.options.declare(:struct_parser, 'Default parser when expected value is a struct', allowed: %i[json ruby], default: :json)
+        @context.options.declare(
+          :parser, 'Default parser for structured parameters and options',
+          handler: {o: ExtendedValue.instance, m: :default_decoder},
+          allowed: ExtendedValue::DEFAULT_DECODERS,
+          default: ExtendedValue::DEFAULT_DECODERS.first
+        )
         # Parse declared options
         @context.options.parse_options!
       end

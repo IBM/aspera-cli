@@ -41,7 +41,7 @@ module Aspera
       return if assertion
       message = 'assertion failed'
       info = yield if block_given?
-      message = "#{message}: #{info}" if info
+      message = type.eql?(AssertError) ? "#{message}: #{info}" : info if info
       # message = "#{message}: #{caller.find{ |call| !call.start_with?(__FILE__)}}"
       report_error(type, message)
     end
@@ -52,7 +52,7 @@ module Aspera
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block   [Proc]             Additional description in front of message
     def assert_type(value, *classes, type: AssertError)
-      assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have #{value.inspect}"}
+      assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
 
     # Assert that value is one of the given values

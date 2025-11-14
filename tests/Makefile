@@ -1912,7 +1912,7 @@ $(F)prev_events: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)prev_scan: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) preview scan --skip-types=office --log-level=info --skip-folder=foo 
+	$(INCMAN)$(CLI_TEST) preview scan --skip-types=office --log-level=info --skip-folder=/special/folder
 	$(CLI_TEST) preview scan --skip-folder=foo --skip-folder=bar --skip-folder=@list:,1,2
 	@$(STOP_TEST) $@
 $(F)prev_folder: $(TMP_EXISTS)

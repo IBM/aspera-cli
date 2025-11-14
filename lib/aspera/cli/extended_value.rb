@@ -17,19 +17,8 @@ module Aspera
     class ExtendedValue
       include Singleton
 
-      # marker "@"
-      MARKER_START = '@'
-      # marker ":"
-      MARKER_END = ':'
-      # marker "@"
-      MARKER_IN_END = '@'
-
-      # Special handlers stop processing of handlers on right
-      # :extend includes processing of other handlers in itself
-      # :val keeps the value intact
-      SPECIAL_HANDLERS = %i[extend val].freeze
-
-      private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS
+      # First is default
+      DEFAULT_DECODERS = %i[none json ruby yaml]
 
       class << self
         # Decode comma separated table text
@@ -102,7 +91,7 @@ module Aspera
         }
         @regex_single = nil
         @regex_extend = nil
-        @default_decoder = :json
+        @default_decoder = nil
         update_regex
       end
 
@@ -115,9 +104,12 @@ module Aspera
 
       public
 
+      attr_reader :default_decoder
+
       def default_decoder=(value)
         Log.log.debug{"Setting default decoder to (#{value.class}) #{value}"}
-        Aspera.assert_values(value, modifiers)
+        Aspera.assert_values(value, DEFAULT_DECODERS)
+        value = nil if value.eql?(:none)
         @default_decoder = value
       end
 
@@ -172,9 +164,21 @@ module Aspera
         end
         return value
       end
+      # marker "@"
+      MARKER_START = '@'
+      # marker ":"
+      MARKER_END = ':'
+      # marker "@"
+      MARKER_IN_END = '@'
+
+      # Special handlers stop processing of handlers on right
+      # :extend includes processing of other handlers in itself
+      # :val keeps the value intact
+      SPECIAL_HANDLERS = %i[extend val].freeze
+
       # Array and Hash types:
       DEFAULT_PARSER_TYPES = [Array, Hash].freeze
-      private_constant :DEFAULT_PARSER_TYPES
+      private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS, :DEFAULT_PARSER_TYPES
     end
   end
 end

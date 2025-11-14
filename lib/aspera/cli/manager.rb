@@ -65,17 +65,18 @@ module Aspera
         @values = nil
         if !allowed.nil?
           allowed = [allowed] if allowed.is_a?(Class)
-          if allowed.is_a?(Array) && allowed.take(Allowed::TYPES_SYMBOL_ARRAY.length) == Allowed::TYPES_SYMBOL_ARRAY
+          Aspera.assert_type(allowed, Array)
+          if allowed.take(Allowed::TYPES_SYMBOL_ARRAY.length) == Allowed::TYPES_SYMBOL_ARRAY
             # Special case: array of defined symbol values
             @types = Allowed::TYPES_SYMBOL_ARRAY
             @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..-1]
-          elsif allowed.is_a?(Array) && allowed.all?(Class)
+          elsif allowed.all?(Class)
             @types = allowed
             @values = Manager::BOOLEAN_VALUES if allowed.eql?(Allowed::TYPES_BOOLEAN)
             # Default value for array
             @object ||= [] if @types.first.eql?(Array) && !@types.include?(NilClass)
             @object ||= {} if @types.first.eql?(Hash) && !@types.include?(NilClass)
-          elsif allowed.is_a?(Array) && allowed.all?(Symbol)
+          elsif allowed.all?(Symbol)
             @types = Allowed::TYPES_ENUM
             @values = allowed
           else
@@ -118,7 +119,7 @@ module Aspera
           Aspera.assert(new_value.all?(String))
           new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
         end
-        Aspera.assert_type(new_value, *@types){"Option #{@option}"} if @types
+        Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
         current_value = value(log: false)
         new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
         new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
@@ -257,7 +258,7 @@ module Aspera
           handler:     handler,
           deprecation: deprecation
         )
-        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types && !option_attrs.types.eql?(Allowed::TYPES_ENUM)
+        description = "#{description} (#{option_attrs.types.map(&:name).join(', ')})" if option_attrs.types && !option_attrs.types.empty? && !option_attrs.types.eql?(Allowed::TYPES_ENUM) && !option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
         description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
         set_option(option_symbol, default, where: 'default') unless default.nil?
         on_args = [description]
