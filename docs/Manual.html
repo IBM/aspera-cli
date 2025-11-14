@@ -290,17 +290,18 @@ Characters</a></li>
 <code>config</code></a></li>
 <li><a href="#special-option-preset-default" id="toc-special-option-preset-default"><span class="toc-section-number">4.11.3</span> Special Option Preset:
 <code>default</code></a></li>
-<li><a href="#plugin-config-configuration" id="toc-plugin-config-configuration"><span class="toc-section-number">4.11.4</span> Plugin: <code>config</code>:
-Configuration</a></li>
 </ul></li>
-<li><a href="#tested-commands-for-config" id="toc-tested-commands-for-config"><span class="toc-section-number">4.12</span> Tested commands for
-<code>config</code></a>
+<li><a href="#plugin-config-configuration" id="toc-plugin-config-configuration"><span class="toc-section-number">4.12</span> Plugin: <code>config</code>:
+Configuration</a>
 <ul>
-<li><a href="#format-of-file" id="toc-format-of-file"><span class="toc-section-number">4.12.1</span> Format of file</a></li>
-<li><a href="#evaluation-order-of-options" id="toc-evaluation-order-of-options"><span class="toc-section-number">4.12.2</span> Evaluation order of
+<li><a href="#tested-commands-for-config" id="toc-tested-commands-for-config"><span class="toc-section-number">4.12.1</span> Tested commands for
+<code>config</code></a></li>
+<li><a href="#format-of-configuration-file" id="toc-format-of-configuration-file"><span class="toc-section-number">4.12.2</span> Format of configuration
+file</a></li>
+<li><a href="#evaluation-order-of-options" id="toc-evaluation-order-of-options"><span class="toc-section-number">4.12.3</span> Evaluation order of
 options</a></li>
-<li><a href="#wizard" id="toc-wizard"><span class="toc-section-number">4.12.3</span> Wizard</a></li>
-<li><a href="#example-of-configuration-for-a-plugin" id="toc-example-of-configuration-for-a-plugin"><span class="toc-section-number">4.12.4</span> Example of configuration for a
+<li><a href="#wizard" id="toc-wizard"><span class="toc-section-number">4.12.4</span> Wizard</a></li>
+<li><a href="#example-of-configuration-for-a-plugin" id="toc-example-of-configuration-for-a-plugin"><span class="toc-section-number">4.12.5</span> Example of configuration for a
 plugin</a></li>
 </ul></li>
 <li><a href="#secret-vault" id="toc-secret-vault"><span class="toc-section-number">4.13</span> Secret Vault</a>
@@ -365,38 +366,40 @@ on command line</a></li>
 <li><a href="#agent-http-gateway" id="toc-agent-http-gateway"><span class="toc-section-number">4.23.5</span> Agent: HTTP Gateway</a></li>
 <li><a href="#agent-transfer-daemon" id="toc-agent-transfer-daemon"><span class="toc-section-number">4.23.6</span> Agent: Transfer Daemon</a></li>
 </ul></li>
-<li><a href="#transfer-specification" id="toc-transfer-specification"><span class="toc-section-number">4.24</span> Transfer Specification</a></li>
-<li><a href="#transfer-parameters" id="toc-transfer-parameters"><span class="toc-section-number">4.25</span> Transfer Parameters</a>
+<li><a href="#transfer-specification" id="toc-transfer-specification"><span class="toc-section-number">4.24</span> Transfer Specification</a>
 <ul>
-<li><a href="#destination-folder-for-transfers" id="toc-destination-folder-for-transfers"><span class="toc-section-number">4.25.1</span> Destination folder for
+<li><a href="#transfer-parameters" id="toc-transfer-parameters"><span class="toc-section-number">4.24.1</span> Transfer Parameters</a></li>
+<li><a href="#transfer-specification-reference" id="toc-transfer-specification-reference"><span class="toc-section-number">4.24.2</span> Transfer Specification
+Reference</a></li>
+<li><a href="#destination-folder-for-transfers" id="toc-destination-folder-for-transfers"><span class="toc-section-number">4.24.3</span> Destination folder for
 transfers</a></li>
-<li><a href="#list-of-files-for-transfers" id="toc-list-of-files-for-transfers"><span class="toc-section-number">4.25.2</span> List of files for
+<li><a href="#list-of-files-for-transfers" id="toc-list-of-files-for-transfers"><span class="toc-section-number">4.24.4</span> List of files for
 transfers</a></li>
-<li><a href="#source-directory-structure-on-destination" id="toc-source-directory-structure-on-destination"><span class="toc-section-number">4.25.3</span> Source directory structure on
+<li><a href="#source-directory-structure-on-destination" id="toc-source-directory-structure-on-destination"><span class="toc-section-number">4.24.5</span> Source directory structure on
 destination</a></li>
-<li><a href="#multi-session-transfer" id="toc-multi-session-transfer"><span class="toc-section-number">4.25.4</span> Multi-session transfer</a></li>
-<li><a href="#content-protection" id="toc-content-protection"><span class="toc-section-number">4.25.5</span> Content protection</a></li>
-<li><a href="#transfer-spec-examples" id="toc-transfer-spec-examples"><span class="toc-section-number">4.25.6</span> Transfer Spec Examples</a></li>
+<li><a href="#multi-session-transfer" id="toc-multi-session-transfer"><span class="toc-section-number">4.24.6</span> Multi-session transfer</a></li>
+<li><a href="#content-protection" id="toc-content-protection"><span class="toc-section-number">4.24.7</span> Content protection</a></li>
+<li><a href="#transfer-spec-examples" id="toc-transfer-spec-examples"><span class="toc-section-number">4.24.8</span> Transfer Spec Examples</a></li>
 </ul></li>
-<li><a href="#transfer-progress-bar" id="toc-transfer-progress-bar"><span class="toc-section-number">4.26</span> Transfer progress bar</a></li>
-<li><a href="#scheduler" id="toc-scheduler"><span class="toc-section-number">4.27</span> Scheduler</a>
+<li><a href="#transfer-progress-bar" id="toc-transfer-progress-bar"><span class="toc-section-number">4.25</span> Transfer progress bar</a></li>
+<li><a href="#scheduler" id="toc-scheduler"><span class="toc-section-number">4.26</span> Scheduler</a>
 <ul>
-<li><a href="#windows-scheduler" id="toc-windows-scheduler"><span class="toc-section-number">4.27.1</span> Windows Scheduler</a></li>
-<li><a href="#unix-like-scheduler" id="toc-unix-like-scheduler"><span class="toc-section-number">4.27.2</span> Unix-like Scheduler</a></li>
+<li><a href="#windows-scheduler" id="toc-windows-scheduler"><span class="toc-section-number">4.26.1</span> Windows Scheduler</a></li>
+<li><a href="#unix-like-scheduler" id="toc-unix-like-scheduler"><span class="toc-section-number">4.26.2</span> Unix-like Scheduler</a></li>
 </ul></li>
-<li><a href="#running-as-service" id="toc-running-as-service"><span class="toc-section-number">4.28</span> Running as service</a></li>
-<li><a href="#locking-for-exclusive-execution" id="toc-locking-for-exclusive-execution"><span class="toc-section-number">4.29</span> Locking for exclusive
+<li><a href="#running-as-service" id="toc-running-as-service"><span class="toc-section-number">4.27</span> Running as service</a></li>
+<li><a href="#locking-for-exclusive-execution" id="toc-locking-for-exclusive-execution"><span class="toc-section-number">4.28</span> Locking for exclusive
 execution</a></li>
-<li><a href="#provençal" id="toc-provençal"><span class="toc-section-number">4.30</span> &quot;Provençal&quot;</a></li>
-<li><a href="#faux-for-testing" id="toc-faux-for-testing"><span class="toc-section-number">4.31</span> <code>faux:</code> for
+<li><a href="#provençal" id="toc-provençal"><span class="toc-section-number">4.29</span> &quot;Provençal&quot;</a></li>
+<li><a href="#faux-for-testing" id="toc-faux-for-testing"><span class="toc-section-number">4.30</span> <code>faux:</code> for
 testing</a></li>
-<li><a href="#usage" id="toc-usage"><span class="toc-section-number">4.32</span> Usage</a></li>
-<li><a href="#bulk-creation-and-deletion-of-resources" id="toc-bulk-creation-and-deletion-of-resources"><span class="toc-section-number">4.33</span> Bulk creation and deletion of
+<li><a href="#usage" id="toc-usage"><span class="toc-section-number">4.31</span> Usage</a></li>
+<li><a href="#bulk-creation-and-deletion-of-resources" id="toc-bulk-creation-and-deletion-of-resources"><span class="toc-section-number">4.32</span> Bulk creation and deletion of
 resources</a></li>
-<li><a href="#option-query" id="toc-option-query"><span class="toc-section-number">4.34</span> Option:
+<li><a href="#option-query" id="toc-option-query"><span class="toc-section-number">4.33</span> Option:
 <code>query</code></a></li>
-<li><a href="#plugins" id="toc-plugins"><span class="toc-section-number">4.35</span> Plugins</a></li>
-<li><a href="#plugins-vs-transfer-agents" id="toc-plugins-vs-transfer-agents"><span class="toc-section-number">4.36</span> Plugins vs Transfer
+<li><a href="#plugins" id="toc-plugins"><span class="toc-section-number">4.34</span> Plugins</a></li>
+<li><a href="#plugins-vs-transfer-agents" id="toc-plugins-vs-transfer-agents"><span class="toc-section-number">4.35</span> Plugins vs Transfer
 Agents</a></li>
 </ul></li>
 <li><a href="#plugin-aoc-ibm-aspera-on-cloud" id="toc-plugin-aoc-ibm-aspera-on-cloud"><span class="toc-section-number">5</span> Plugin: <code>aoc</code>: IBM Aspera
@@ -1253,9 +1256,9 @@ compilation of native code but concern less-used features.</p>
 <p>See <a href="Gemfile">Gemfile</a>:</p>
 <table>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 8%" />
-<col style="width: 65%" />
+<col style="width: 26%" />
+<col style="width: 10%" />
+<col style="width: 63%" />
 </colgroup>
 <thead>
 <tr>
@@ -3302,8 +3305,8 @@ operations:</p>
 <pre class="shell"><code>ascli config preset set default _plugin_name_ _default_preset_for_plugin_</code></pre>
 <pre class="shell"><code>ascli config preset get default _plugin_name_</code></pre>
 <div class="sourceCode" id="cb193"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;_default_preset_for_plugin_&quot;</span></span></code></pre></div>
-<h3 data-number="4.11.4" id="plugin-config-configuration"><span class="header-section-number">4.11.4</span> Plugin: <code>config</code>:
-Configuration</h3>
+<h2 data-number="4.12" id="plugin-config-configuration"><span class="header-section-number">4.12</span> Plugin: <code>config</code>:
+Configuration</h2>
 <p>Plugin <code>config</code> provides general commands for
 <code>ascli</code>:</p>
 <ul>
@@ -3346,8 +3349,8 @@ plugin):</p>
 different name:</p>
 <pre class="shell"><code>ascli config preset set GLOBAL version_check_days 0</code></pre>
 <pre class="shell"><code>ascli config preset set default config my_common_defaults</code></pre>
-<h2 data-number="4.12" id="tested-commands-for-config"><span class="header-section-number">4.12</span> Tested commands for
-<code>config</code></h2>
+<h3 data-number="4.12.1" id="tested-commands-for-config"><span class="header-section-number">4.12.1</span> Tested commands for
+<code>config</code></h3>
 <div class="admonition note">
 <div class="admonition-title">ℹ️ Note</div>
 <div class="admonition-body"><div class="title">
@@ -3458,7 +3461,8 @@ different name:</p>
 <span id="cb199-101"><a href="#cb199-101" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://tst.example.com/path faspio <span class="at">--username</span><span class="op">=</span>my_username <span class="at">--password</span><span class="op">=</span>my_password</span>
 <span id="cb199-102"><a href="#cb199-102" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span>
 <span id="cb199-103"><a href="#cb199-103" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc mypreset <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span></code></pre></div>
-<h3 data-number="4.12.1" id="format-of-file"><span class="header-section-number">4.12.1</span> Format of file</h3>
+<h3 data-number="4.12.2" id="format-of-configuration-file"><span class="header-section-number">4.12.2</span> Format of configuration
+file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
 Example:</p>
 <div class="sourceCode" id="cb200"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="fu">config</span><span class="kw">:</span></span>
@@ -3512,7 +3516,7 @@ the user shall use the <code>@val:</code> prefix.</p></div>
 <span id="cb202-2"><a href="#cb202-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">private_key</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@file:/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
 <p>So, the key file will be read only at execution time, but not be
 embedded in the configuration file.</p>
-<h3 data-number="4.12.2" id="evaluation-order-of-options"><span class="header-section-number">4.12.2</span> Evaluation order of
+<h3 data-number="4.12.3" id="evaluation-order-of-options"><span class="header-section-number">4.12.3</span> Evaluation order of
 options</h3>
 <p>Some options are global, some options are available only for some
 plugins. (the plugin is the first level command).</p>
@@ -3548,7 +3552,7 @@ with <code>unset</code>:</p>
 <pre class="shell"><code>ascli -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config</code></pre>
 <p>Example: Define options using a <code>Hash</code>:</p>
 <pre class="shell"><code>ascli -N --preset=@json:&#39;{&quot;url&quot;:&quot;_url_here_&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;username&quot;:&quot;_name_here_&quot;}&#39; node --show-config</code></pre>
-<h3 data-number="4.12.3" id="wizard"><span class="header-section-number">4.12.3</span> Wizard</h3>
+<h3 data-number="4.12.4" id="wizard"><span class="header-section-number">4.12.4</span> Wizard</h3>
 <p>The wizard is a command that asks the user for information and
 creates an <a href="#option-preset">Option Preset</a> with the provided
 information for a given application.</p>
@@ -3625,7 +3629,7 @@ exists.</td>
 provide the path to it with option <code>key_path</code>. The user is
 told where to place the associated public pey PEM in the
 application.</p>
-<h3 data-number="4.12.4" id="example-of-configuration-for-a-plugin"><span class="header-section-number">4.12.4</span> Example of configuration for
+<h3 data-number="4.12.5" id="example-of-configuration-for-a-plugin"><span class="header-section-number">4.12.5</span> Example of configuration for
 a plugin</h3>
 <p>For Faspex, Shares, Node (including ATS, Aspera Transfer Service),
 Console, only username/password and URL are required (either on command
@@ -5153,7 +5157,7 @@ Agent</a></li>
 <li>Not dependent on command line limitations (special
 characters...)</li>
 </ul>
-<h2 data-number="4.25" id="transfer-parameters"><span class="header-section-number">4.25</span> Transfer Parameters</h2>
+<h3 data-number="4.24.1" id="transfer-parameters"><span class="header-section-number">4.24.1</span> Transfer Parameters</h3>
 <p>All standard <a href="#transfer-specification"><strong>transfer-spec</strong></a>
 parameters can be specified. A <a href="#transfer-specification"><strong>transfer-spec</strong></a> can
 also be saved/overridden in the configuration file.</p>
@@ -5178,6 +5182,8 @@ specific transfer agent:</p>
 <pre class="shell"><code>ascli config ascp schema transferd --format=jsonpp</code></pre>
 <p><code>ascp</code> argument or environment variable is provided in
 description.</p>
+<h3 data-number="4.24.2" id="transfer-specification-reference"><span class="header-section-number">4.24.2</span> Transfer Specification
+Reference</h3>
 <table>
 <thead>
 <tr>
@@ -5214,9 +5220,9 @@ description.</p>
 </table>
 <table>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 5%" />
-<col style="width: 68%" />
+<col style="width: 26%" />
+<col style="width: 7%" />
+<col style="width: 66%" />
 </colgroup>
 <thead>
 <tr>
@@ -6023,7 +6029,7 @@ not exceed aspera.conf <code>transfer_manager_max_retries</code>
 </tr>
 </tbody>
 </table>
-<h3 data-number="4.25.1" id="destination-folder-for-transfers"><span class="header-section-number">4.25.1</span> Destination folder for
+<h3 data-number="4.24.3" id="destination-folder-for-transfers"><span class="header-section-number">4.24.3</span> Destination folder for
 transfers</h3>
 <p>The destination folder is set by <code>ascli</code> by default
 to:</p>
@@ -6037,7 +6043,7 @@ with option:
 <code>--ts=@json:&#39;{&quot;destination_root&quot;:&quot;&lt;path&gt;&quot;}&#39;</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code>.</p>
-<h3 data-number="4.25.2" id="list-of-files-for-transfers"><span class="header-section-number">4.25.2</span> List of files for
+<h3 data-number="4.24.4" id="list-of-files-for-transfers"><span class="header-section-number">4.24.4</span> List of files for
 transfers</h3>
 <p>When uploading, downloading or sending files, the user must specify
 the list of files to transfer.</p>
@@ -6122,7 +6128,7 @@ second element is the first destination, and so on.</li>
 <p>Example: Source file <code>200KB.1</code> is renamed
 <code>sample1</code> on destination:</p>
 <pre class="shell"><code>ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1</code></pre>
-<h3 data-number="4.25.3" id="source-directory-structure-on-destination"><span class="header-section-number">4.25.3</span> Source directory structure
+<h3 data-number="4.24.5" id="source-directory-structure-on-destination"><span class="header-section-number">4.24.5</span> Source directory structure
 on destination</h3>
 <p>This section is not specific to <code>ascli</code> it is
 <code>ascp</code> behavior.</p>
@@ -6295,7 +6301,7 @@ the list of files in the <code>paths</code> field of transfer spec with
 both <code>source</code> and <code>destination</code> for each
 file.</p></li>
 </ul>
-<h3 data-number="4.25.4" id="multi-session-transfer"><span class="header-section-number">4.25.4</span> Multi-session transfer</h3>
+<h3 data-number="4.24.6" id="multi-session-transfer"><span class="header-section-number">4.24.6</span> Multi-session transfer</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
 <code>direct</code> and <code>node</code> agents, not yet on
@@ -6322,7 +6328,7 @@ preferred.</p></div>
 Multi-session using <code>direct</code> agent.</p>
 <p>When multi-session is used, one separate UDP port is used per session
 (refer to <code>ascp</code> manual page).</p>
-<h3 data-number="4.25.5" id="content-protection"><span class="header-section-number">4.25.5</span> Content protection</h3>
+<h3 data-number="4.24.7" id="content-protection"><span class="header-section-number">4.24.7</span> Content protection</h3>
 <p>Also known as Client-side encryption at rest (CSEAR), content
 protection allows a client to send files to a server which will store
 them encrypted (upload), and decrypt files as they are being downloaded
@@ -6339,7 +6345,7 @@ used.</li>
 <p>Example: parameter to download a Faspex package and decrypt on the
 fly</p>
 <pre class="shell"><code>--ts=@json:&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</code></pre>
-<h3 data-number="4.25.6" id="transfer-spec-examples"><span class="header-section-number">4.25.6</span> Transfer Spec Examples</h3>
+<h3 data-number="4.24.8" id="transfer-spec-examples"><span class="header-section-number">4.24.8</span> Transfer Spec Examples</h3>
 <ul>
 <li>Change target rate</li>
 </ul>
@@ -6356,18 +6362,18 @@ fly</p>
 <li>Activate progress when not activated by default on server</li>
 </ul>
 <pre class="shell"><code>--ts=@json:&#39;{&quot;precalculate_job_size&quot;:true}&#39;</code></pre>
-<h2 data-number="4.26" id="transfer-progress-bar"><span class="header-section-number">4.26</span> Transfer progress bar</h2>
+<h2 data-number="4.25" id="transfer-progress-bar"><span class="header-section-number">4.25</span> Transfer progress bar</h2>
 <p>File transfer operations are monitored, and a progress bar is
 displayed on the terminal if option <code>progress_bar</code>
 (<code>Bool</code>) is set to <code>yes</code> (default if the output is
 a terminal).</p>
 <p>The same progress bar is used for any type of transfer, using
 <code>ascp</code>, server to server, using HTTPS, etc...</p>
-<h2 data-number="4.27" id="scheduler"><span class="header-section-number">4.27</span> Scheduler</h2>
+<h2 data-number="4.26" id="scheduler"><span class="header-section-number">4.26</span> Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
-<h3 data-number="4.27.1" id="windows-scheduler"><span class="header-section-number">4.27.1</span> Windows Scheduler</h3>
+<h3 data-number="4.26.1" id="windows-scheduler"><span class="header-section-number">4.26.1</span> Windows Scheduler</h3>
 <p>Windows provides the <a href="https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page">Task
 Scheduler</a>. It can be configured:</p>
 <ul>
@@ -6375,7 +6381,7 @@ Scheduler</a>. It can be configured:</p>
 <li><p>Using PowerShell function <a href="https://learn.microsoft.com/en-us/powershell/module/scheduledtasks"><code>scheduletasks</code></a></p></li>
 <li><p>Using <code>taskschd.msc</code> (UI)</p></li>
 </ul>
-<h3 data-number="4.27.2" id="unix-like-scheduler"><span class="header-section-number">4.27.2</span> Unix-like Scheduler</h3>
+<h3 data-number="4.26.2" id="unix-like-scheduler"><span class="header-section-number">4.26.2</span> Unix-like Scheduler</h3>
 <p>Unix-like systems (Linux, ...) provide <code>cron</code>, configured
 using a <a href="https://www.man7.org/linux/man-pages/man5/crontab.5.html"><code>crontab</code></a></p>
 <p>Linux also provides <code>anacron</code>, if tasks are hourly or
@@ -6405,7 +6411,7 @@ EOF</code></pre>
 of configuration file to allow execution on command line with output on
 command line.</p></div>
 </div>
-<h2 data-number="4.28" id="running-as-service"><span class="header-section-number">4.28</span> Running as service</h2>
+<h2 data-number="4.27" id="running-as-service"><span class="header-section-number">4.27</span> Running as service</h2>
 <p>Some commands result in <code>ascli</code> running as a server,
 listening on a port. In this case, it is usually desirable to run
 <code>ascli</code> as a service. On Linux, typically, <a href="https://systemd.io/"><code>systemd</code></a> is used.</p>
@@ -6445,7 +6451,7 @@ exec ascli .....</code></pre>
 sudo systemctl enable --now my_ascli_svc.service
 systemctl status my_ascli_svc.service
 journalctl -u my_ascli_svc.service</code></pre>
-<h2 data-number="4.29" id="locking-for-exclusive-execution"><span class="header-section-number">4.29</span> Locking for exclusive
+<h2 data-number="4.28" id="locking-for-exclusive-execution"><span class="header-section-number">4.28</span> Locking for exclusive
 execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
@@ -6481,7 +6487,7 @@ seconds:</p>
 <p>The first instance will sleep 30 seconds, the second one will
 immediately exit like this:</p>
 <pre class="shell"><code>WARN -- : Another instance is already running (Address already in use - bind(2) for &quot;127.0.0.1&quot; port 12345).</code></pre>
-<h2 data-number="4.30" id="provençal"><span class="header-section-number">4.30</span> &quot;Provençal&quot;</h2>
+<h2 data-number="4.29" id="provençal"><span class="header-section-number">4.29</span> &quot;Provençal&quot;</h2>
 <p><code>ascp</code>, the underlying executable implementing Aspera file
 transfer using FASP, has a capability to not only access the local file
 system (using system&#39;s
@@ -6513,7 +6519,7 @@ drive</strong>.</p>
 <p>One of the adapters, used in this manual, for testing, is
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
-<h2 data-number="4.31" id="faux-for-testing"><span class="header-section-number">4.31</span> <code>faux:</code> for
+<h2 data-number="4.30" id="faux-for-testing"><span class="header-section-number">4.30</span> <code>faux:</code> for
 testing</h2>
 <p>This adapter can be used to simulate a file or a directory. This is a
 feature of <code>ascp</code>, not <code>ascli</code>. The following is
@@ -6663,7 +6669,7 @@ size 1 byte, with the base name of each file being <code>testfile</code>
 to /Upload</li>
 </ul>
 <pre class="shell"><code>ascli server upload &quot;faux:///mydir?file=testfile&amp;count=1000&amp;size=1&quot; --to-folder=/Upload</code></pre>
-<h2 data-number="4.32" id="usage"><span class="header-section-number">4.32</span> Usage</h2>
+<h2 data-number="4.31" id="usage"><span class="header-section-number">4.31</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.25.0.pre)
@@ -6962,7 +6968,7 @@ OPTIONS:
 </div>
 <p>Commands and parameter values can be written in short form.</p></div>
 </div>
-<h2 data-number="4.33" id="bulk-creation-and-deletion-of-resources"><span class="header-section-number">4.33</span> Bulk creation and deletion of
+<h2 data-number="4.32" id="bulk-creation-and-deletion-of-resources"><span class="header-section-number">4.32</span> Bulk creation and deletion of
 resources</h2>
 <p>Bulk creation and deletion of resources are possible using option
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
@@ -6970,7 +6976,7 @@ case, the operation expects an <code>Array</code> of <code>Hash</code>
 instead of a simple <code>Hash</code> using the <a href="#extended-value-syntax">Extended Value Syntax</a>. This option is
 available only for some resources: if you need it: try and see if the
 entities you try to create or delete support this option.</p>
-<h2 data-number="4.34" id="option-query"><span class="header-section-number">4.34</span> Option:
+<h2 data-number="4.33" id="option-query"><span class="header-section-number">4.33</span> Option:
 <code>query</code></h2>
 <p>The <code>query</code> option can generally be used to add URL
 parameters to commands that list resources. It takes either a
@@ -6989,7 +6995,7 @@ same result as previously.</p>
 <li><code>--query=@json:&#39;[[&quot;a[]&quot;,&quot;v1&quot;],[&quot;a[]&quot;,&quot;v2&quot;]]&#39;</code></li>
 </ul>
 <p>Both result in: <code>?a[]=v1&amp;a[]=v2</code>.</p>
-<h2 data-number="4.35" id="plugins"><span class="header-section-number">4.35</span> Plugins</h2>
+<h2 data-number="4.34" id="plugins"><span class="header-section-number">4.34</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
 (just after <code>ascli</code> on the command line) is the name of the
 concerned plugin which will execute the command. Each plugin usually
@@ -7019,7 +7025,7 @@ authentication: HTTP Basic Authentication using options:
 <pre class="shell"><code>ascli config plugin create foo .</code></pre>
 <pre class="text"><code>Created ./foo.rb</code></pre>
 <pre class="shell"><code>ascli --plugin-folder=. foo</code></pre>
-<h2 data-number="4.36" id="plugins-vs-transfer-agents"><span class="header-section-number">4.36</span> Plugins vs Transfer
+<h2 data-number="4.35" id="plugins-vs-transfer-agents"><span class="header-section-number">4.35</span> Plugins vs Transfer
 Agents</h2>
 <p>Plugins typically represent a specific remote application on which
 <code>ascli</code> can operate, while transfer agents are the underlying
@@ -11347,8 +11353,8 @@ terminal is detected.</p>
 <table>
 <colgroup>
 <col style="width: 31%" />
-<col style="width: 5%" />
-<col style="width: 62%" />
+<col style="width: 6%" />
+<col style="width: 61%" />
 </colgroup>
 <thead>
 <tr>

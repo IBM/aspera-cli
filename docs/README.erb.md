@@ -2395,7 +2395,7 @@ Operations on this preset are done using regular `config` operations:
 "_default_preset_for_plugin_"
 ```
 
-#### Plugin: `config`: Configuration
+### Plugin: `config`: Configuration
 
 Plugin `config` provides general commands for <%=tool%>:
 
@@ -2441,9 +2441,9 @@ If the default global Option Preset is not set, and you want to use a different 
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
-<%=include_commands_for_plugin(:config)%>
+<%=include_commands_for_plugin(:config,4)%>
 
-#### Format of file
+#### Format of configuration file
 
 The configuration file is a `Hash` in a YAML file.
 Example:
@@ -3754,7 +3754,7 @@ The use of a [**transfer-spec**](#transfer-specification) instead of `ascp` comm
 - Common to all [Transfer Agent](#transfer-clients-agents)
 - Not dependent on command line limitations (special characters...)
 
-### Transfer Parameters
+#### Transfer Parameters
 
 All standard [**transfer-spec**](#transfer-specification) parameters can be specified.
 A [**transfer-spec**](#transfer-specification) can also be saved/overridden in the configuration file.
@@ -3785,6 +3785,8 @@ An optional parameter can be specified to display the schema for a specific tran
 ```
 
 `ascp` argument or environment variable is provided in description.
+
+#### Transfer Specification Reference
 
 <%=spec_table%>
 

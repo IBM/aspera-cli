@@ -575,7 +575,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](Gemfile):
 
 | name | version | comment |
-| -------------------- | ------- | --------------------------------------------------- |
+|----------------------|---------|-----------------------------------------------------|
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | mimemagic | ~> 0.4 | for preview |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
@@ -2425,7 +2425,7 @@ ascli config preset get default _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
-#### Plugin: `config`: Configuration
+### Plugin: `config`: Configuration
 
 Plugin `config` provides general commands for `ascli`:
 
@@ -2471,7 +2471,7 @@ ascli config preset set GLOBAL version_check_days 0
 ascli config preset set default config my_common_defaults
 ```
 
-### Tested commands for `config`
+#### Tested commands for `config`
 
 > [!NOTE]
 > Add `ascli config` in front of the following commands:
@@ -2582,7 +2582,7 @@ wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-gener
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
 ```
 
-#### Format of file
+#### Format of configuration file
 
 The configuration file is a `Hash` in a YAML file.
 Example:
@@ -3893,7 +3893,7 @@ The use of a [**transfer-spec**](#transfer-specification) instead of `ascp` comm
 - Common to all [Transfer Agent](#transfer-clients-agents)
 - Not dependent on command line limitations (special characters...)
 
-### Transfer Parameters
+#### Transfer Parameters
 
 All standard [**transfer-spec**](#transfer-specification) parameters can be specified.
 A [**transfer-spec**](#transfer-specification) can also be saved/overridden in the configuration file.
@@ -3925,8 +3925,10 @@ ascli config ascp schema transferd --format=jsonpp
 
 `ascp` argument or environment variable is provided in description.
 
+#### Transfer Specification Reference
+
 | ID | Name |
-| - | --------- |
+|----|-----------|
 | A | Direct |
 | C | Connect |
 | D | Desktop |
@@ -3935,7 +3937,7 @@ ascli config ascp schema transferd --format=jsonpp
 | T | Transferd |
 
 | Field | Type | Description |
-| ------------------------------ | ------- | -------------------------------------------------------------------------------- |
+|--------------------------------|---------|----------------------------------------------------------------------------------|
 | apply_local_docroot | boolean | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | authentication | string | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
 | cipher | string | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`<br/>(`-c (conversion){enum}`) |
@@ -8919,7 +8921,7 @@ ascli config sync spec
 ```
 
 | Field | Type | Description |
-| ---------------------------------------- | ------- | -------------------------------------------------------------------------------- |
+|------------------------------------------|---------|----------------------------------------------------------------------------------|
 | ascp_dir | string | Directory containing ascp executable to use. |
 | assume_no_mods | boolean | Assume that the directory structure has not been modified.<br/>(`--assume-no-mods`) |
 | checksum | string | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none`<br/>(`--checksum={enum}`)(-k) |
