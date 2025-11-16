@@ -13,13 +13,15 @@ require 'aspera/cli/transfer_progress'
 require 'aspera/ascp/installation'
 Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
-Aspera::Cli::Info::GEM_NAME = 'aspera-cli'
 GEM_VERSION = ARGV.first || Aspera::Cli::VERSION
 INSTALL_RUBY_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases/download'
 INSTALL_RUBY_VERSION = '3.4.7-1'
 MS_VC_BASE_URL = 'https://aka.ms/vc14'
 TARGET_FOLDER_NAME = "aspera-cli-#{GEM_VERSION}-windows-amd64-installer"
-TEMP_FOLDER = File.join(File.dirname(__FILE__, 2), 'tmp')
+TEMP_FOLDER = File.join(File.dirname(File.realpath(__FILE__), 2), 'tmp')
+ARCHIVE_FOLDER = 'resources'
+BUILD_FOLDER = File.join(TEMP_FOLDER, TARGET_FOLDER_NAME)
+ARCHIVE_PATH = File.join(BUILD_FOLDER, ARCHIVE_FOLDER)
 
 # ZIP the source folder to zip file
 # does not include folder name
@@ -36,41 +38,43 @@ def zip_directory(folder, zip)
 end
 
 puts("Generating Windows package for #{Aspera::Cli::Info::GEM_NAME} v#{GEM_VERSION}")
-build_folder = File.join(TEMP_FOLDER, TARGET_FOLDER_NAME)
-FileUtils.rm_rf(build_folder)
-FileUtils.mkdir_p(build_folder)
-puts("Building in #{build_folder}")
+FileUtils.rm_rf(BUILD_FOLDER)
+FileUtils.mkdir_p(ARCHIVE_PATH)
+puts("Building in #{BUILD_FOLDER}")
+
+puts('Getting gems'.blue)
+tmp_install_ruby = File.join(BUILD_FOLDER, 'tmpruby')
+Aspera::Environment.secure_execute(exec: 'gem', args: ['install', "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}", '--no-document', '--install-dir', tmp_install_ruby])
+File.rename(File.join(tmp_install_ruby, 'cache'), ARCHIVE_PATH)
+FileUtils.rm_rf(tmp_install_ruby)
 
 puts('Getting SDK'.blue)
 sdk_url = Aspera::Ascp::Installation.instance.sdk_url_for_platform(platform: 'windows-x86_64')
-sdk_file = sdk_url.gsub(%r{^.+/}, '')
 sdk_base = sdk_url.gsub(%r{/[^/]+$}, '')
-Aspera::Rest.new(base_url: sdk_base, redirect_max: 5).read(sdk_file, save_to_file: File.join(build_folder, sdk_file))
-
-puts('Getting gems'.blue)
-gem_archive_dir = 'rbgems'
-tmp_install_ruby = File.join(build_folder, 'tmpruby')
-Aspera::Environment.secure_execute(exec: 'gem', args: ['install', "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}", '--no-document', '--install-dir', tmp_install_ruby])
-File.rename(File.join(tmp_install_ruby, 'cache'), File.join(build_folder, gem_archive_dir))
-FileUtils.rm_rf(tmp_install_ruby)
+# var in ERB
+sdk_file = sdk_url.gsub(%r{^.+/}, '')
+Aspera::Rest.new(base_url: sdk_base, redirect_max: 5).read(sdk_file, save_to_file: File.join(ARCHIVE_PATH, sdk_file))
 
 puts('Getting Ruby'.blue)
+# var in ERB
 ruby_installer_exe = "rubyinstaller-devkit-#{INSTALL_RUBY_VERSION}-x64.exe"
 source_file = "RubyInstaller-#{INSTALL_RUBY_VERSION}/#{ruby_installer_exe}"
-Aspera::Rest.new(base_url: INSTALL_RUBY_BASE_URL, redirect_max: 5).read(source_file, save_to_file: File.join(build_folder, ruby_installer_exe))
+Aspera::Rest.new(base_url: INSTALL_RUBY_BASE_URL, redirect_max: 5).read(source_file, save_to_file: File.join(ARCHIVE_PATH, ruby_installer_exe))
 
 puts('Getting VC++ Redistributable'.blue)
+# var in ERB
 vc_redist_exe = 'vc_redist.x64.exe'
-Aspera::Rest.new(base_url: MS_VC_BASE_URL, redirect_max: 5).read(vc_redist_exe, save_to_file: File.join(build_folder, vc_redist_exe))
+Aspera::Rest.new(base_url: MS_VC_BASE_URL, redirect_max: 5).read(vc_redist_exe, save_to_file: File.join(ARCHIVE_PATH, vc_redist_exe))
 
 puts('Generating installer script'.blue)
-File.open(File.join(build_folder, 'install.ps1'), 'w') do |f|
-  f.puts(ERB.new(File.read(File.join(File.dirname(__FILE__), 'install.erb.ps1'))).result(binding))
+File.open(File.join(BUILD_FOLDER, 'process.ps1'), 'w') do |f|
+  f.puts(ERB.new(File.read(File.join(__dir__, 'process.erb.ps1'))).result(binding))
 end
 
-FileUtils.cp(File.join(File.dirname(__FILE__), 'README.md'), File.join(build_folder, 'README.md'))
+FileUtils.cp(File.join(__dir__, 'README.md'), BUILD_FOLDER)
+FileUtils.cp(File.join(__dir__, 'setup.cmd'), BUILD_FOLDER)
 
 zip_target = File.join(TEMP_FOLDER, "#{TARGET_FOLDER_NAME}.zip")
 puts('Generating installer zip'.blue)
-zip_directory(build_folder, zip_target)
-puts "Created: #{zip_target}"
+zip_directory(BUILD_FOLDER, zip_target)
+puts("Created: #{zip_target}")

@@ -7,10 +7,11 @@ Write-Host "=== Aspera CLI Installer for Windows ==="
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Paths to required files (relative to script)
-$rubyInstaller = Join-Path $scriptDir "<%=ruby_installer_exe%>"
-$vcRedist = Join-Path $scriptDir "<%=vc_redist_exe%>"
-$gemArchiveDir = Join-Path $scriptDir "<%=gem_archive_dir%>"
-$asperaSdkZip = Join-Path $scriptDir "<%=sdk_file%>"
+$archiveDir = Join-Path $scriptDir "resources"
+$rubyInstaller = Join-Path $archiveDir "<%=ruby_installer_exe%>"
+$vcRedist = Join-Path $archiveDir "<%=vc_redist_exe%>"
+$asperaSdkZip = Join-Path $archiveDir "<%=sdk_file%>"
+$gemArchiveDir = $archiveDir
 # User or Machine
 $installFor = "User"
 
