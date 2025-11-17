@@ -142,7 +142,7 @@ module Aspera
               lookup_block = ->(field, value){lookup_entity_generic(entity: entity_type, field: field, value: value){api_shares_admin.read(entities_path)}['id']}
               case entity_verb
               when *ALL_OPS # list, show, delete, create, modify
-                display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
+                display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:all)
                 return entity_execute(
                   api:            api_shares_admin,
