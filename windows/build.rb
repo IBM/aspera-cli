@@ -14,7 +14,7 @@ require 'aspera/ascp/installation'
 Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
 GEM_VERSION = ARGV.first || Aspera::Cli::VERSION
-INSTALL_RUBY_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases/download'
+RUBY_RELEASES_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases'
 INSTALL_RUBY_VERSION = '3.4.7-1'
 MS_VC_BASE_URL = 'https://aka.ms/vc14'
 TARGET_FOLDER_NAME = "aspera-cli-#{GEM_VERSION}-windows-amd64-installer"
@@ -58,8 +58,8 @@ Aspera::Rest.new(base_url: sdk_base, redirect_max: 5).read(sdk_file, save_to_fil
 puts('Getting Ruby'.blue)
 # var in ERB
 ruby_installer_exe = "rubyinstaller-devkit-#{INSTALL_RUBY_VERSION}-x64.exe"
-source_file = "RubyInstaller-#{INSTALL_RUBY_VERSION}/#{ruby_installer_exe}"
-Aspera::Rest.new(base_url: INSTALL_RUBY_BASE_URL, redirect_max: 5).read(source_file, save_to_file: File.join(RESOURCES_DIR, ruby_installer_exe))
+ruby_installer_path = "download/RubyInstaller-#{INSTALL_RUBY_VERSION}/#{ruby_installer_exe}"
+Aspera::Rest.new(base_url: RUBY_RELEASES_BASE_URL, redirect_max: 5).read(ruby_installer_path, save_to_file: File.join(RESOURCES_DIR, ruby_installer_exe))
 
 puts('Getting VC++ Redistributable'.blue)
 # var in ERB
