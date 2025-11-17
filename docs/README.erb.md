@@ -7476,7 +7476,7 @@ Several options can be used to tune several aspects:
 - Methods for generation of video preview
 - Parameters for video handling
 
-See also <https://github.com/IBM/aspera-on-cloud-file-previews>
+Using <%=tool%> is an alternative to <https://github.com/IBM/aspera-on-cloud-file-previews>.
 
 ### Aspera Server configuration
 
