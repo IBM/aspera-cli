@@ -122,9 +122,11 @@ module Aspera
           new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
         end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
-        current_value = value(log: false)
-        new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
-        new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
+        if new_value.is_a?(Hash) || new_value.is_a?(Array)
+          current_value = value(log: false)
+          new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
+          new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
+        end
         case @access
         when :local then @object = new_value
         when :write then @object.send(@write_method, new_value)

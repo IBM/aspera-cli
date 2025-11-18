@@ -162,7 +162,6 @@ module Aspera
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
-          options.get_option(:ascp_path)
           pac_script = options.get_option(:fpac)
           # Create PAC executor
           if !pac_script.nil?

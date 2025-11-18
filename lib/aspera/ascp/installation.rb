@@ -53,17 +53,23 @@ module Aspera
         end
       end
 
-      # set ascp executable path
+      # set ascp executable "location"
       def ascp_path=(v)
         Aspera.assert_type(v, String)
-        Aspera.assert(!v.empty?){'ascp path cannot be empty: check your config file'}
-        if v.start_with?(USE_PRODUCT_PREFIX)
-          use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
-          return
-        end
-        Aspera.assert(File.exist?(v)){"No such file: [#{v}]"}
-        @path_to_ascp = v
+        Aspera.assert(!v.empty?){'ascp location cannot be empty: check your config file'}
+        @ascp_location = v
         return
+      end
+
+      # get actual ascp path from location definition, on demand
+      def compute_ascp_path
+        if @ascp_location.start_with?(USE_PRODUCT_PREFIX)
+          use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
+        else
+          @ascp_path = @ascp_location
+        end
+        Aspera.assert(File.exist?(@ascp_path)){"No such file: [#{@ascp_path}]"}
+        Log.log.debug{"ascp_path=#{@ascp_path}"}
       end
 
       def ascp_path
@@ -85,8 +91,7 @@ module Aspera
           pl = installed_products.find{ |i| i[:name].eql?(product_name)}
           raise "No such product installed: #{product_name}" if pl.nil?
         end
-        self.ascp_path = pl[:ascp_path]
-        Log.log.debug{"ascp_path=#{@path_to_ascp}"}
+        @ascp_path = pl[:ascp_path]
       end
 
       # @return [Hash] with key = file name (String), and value = path to file
@@ -120,9 +125,9 @@ module Aspera
             Products::Transferd.transferd_path
           else
             # ensure at least ascp is found
-            use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
+            use_ascp_from_product(FIRST_FOUND) if @ascp_path.nil?
             # NOTE: that there might be a .exe at the end
-            @path_to_ascp.gsub('ascp', k.to_s)
+            @ascp_path.gsub('ascp', k.to_s)
           end
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
@@ -369,7 +374,8 @@ module Aspera
       private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
 
       def initialize
-        @path_to_ascp = nil
+        @ascp_path = nil
+        @ascp_location = nil
         @sdk_dir = nil
         @found_products = nil
         @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URL
@@ -385,10 +391,10 @@ module Aspera
         # :log_root  O location of log files (Linux uses syslog)
         # :run_root  O only for Connect Client, location of http port file
         # :sub_bin   O subfolder with executables, default : bin
-        scan_locations = Products::Transferd.locations +
-          Products::Desktop.locations +
-          Products::Connect.locations +
-          Products::Other::LOCATION_ON_THIS_OS
+        scan_locations = Products::Transferd.locations # +
+        # Products::Desktop.locations +
+        # Products::Connect.locations +
+        # Products::Other::LOCATION_ON_THIS_OS
         # search installed products: with ascp
         @found_products = Products::Other.find(scan_locations)
       end
