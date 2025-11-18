@@ -552,12 +552,8 @@ module Aspera
         end
 
         def execute_admin
-          command = options.get_next_command(%i[configuration smtp resource events clean_deleted].concat(Api::Faspex::ADMIN_RESOURCES).freeze)
+          command = options.get_next_command(%i[configuration smtp events clean_deleted].concat(Api::Faspex::ADMIN_RESOURCES).freeze)
           case command
-          when :resource
-            # resource will be deprecated
-            Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
-            return execute_resource(options.get_next_command(Api::Faspex::ADMIN_RESOURCES))
           when *Api::Faspex::ADMIN_RESOURCES
             return execute_resource(command)
           when :clean_deleted

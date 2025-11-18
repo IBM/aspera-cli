@@ -18,6 +18,7 @@
 
 * `server`: By default, SSH option `use_agent` is now `false`.
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
+* `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
 
 ## 4.24.2
 
