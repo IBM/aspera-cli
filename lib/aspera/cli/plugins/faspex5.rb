@@ -389,7 +389,7 @@ module Aspera
               return Main.result_transfer(transfer.start(transfer_spec))
             else
               # send from remote shared folder
-              if (m = percent_selector?(shared_folder))
+              if (m = Base.percent_selector(shared_folder))
                 shared_folder = lookup_entity_by_field(
                   api: @api_v5,
                   entity: 'shared_folders',
@@ -512,7 +512,7 @@ module Aspera
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
-                if (m = percent_selector?(user))
+                if (m = Base.percent_selector(user))
                   lookup_entity_by_field(
                     api: @api_v5,
                     entity: 'accounts',

@@ -26,6 +26,15 @@ module Aspera
             options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
             options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
           end
+
+          # @return [Hash,NilClass] `{field:,value:}` if identifier is a percent selector, else `nil`
+          def percent_selector(identifier)
+            Aspera.assert_type(identifier, String)
+            if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
+              return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
+            end
+            return
+          end
         end
 
         def initialize(context:)
@@ -53,15 +62,6 @@ module Aspera
           options.parser.separator('OPTIONS:') if has_options
         end
 
-        # @return [Hash,NilClass] `{field:,value:}` if identifier is a percent selector, else `false`
-        def percent_selector?(identifier)
-          Aspera.assert_type(identifier, String)
-          if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
-            return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
-          end
-          return false
-        end
-
         # Resource identifier as positional parameter
         #
         # @param description [String] description of the identifier
@@ -70,7 +70,7 @@ module Aspera
         def instance_identifier(description: 'identifier', &block)
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
           # Can be an Array
-          if res_id.is_a?(String) && (m = percent_selector?(res_id))
+          if res_id.is_a?(String) && (m = Base.percent_selector(res_id))
             Aspera.assert(block, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
             res_id = yield(m[:field], m[:value])
           end
