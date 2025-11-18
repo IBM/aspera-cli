@@ -94,7 +94,7 @@ module Aspera
       arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
       Aspera.assert_type(action_sym, Symbol)
-      Aspera.assert_array_all(arguments, String, 'arguments')
+      Aspera.assert_array_all(arguments, String){'arguments'}
       remote_cmd = 'ascmd'
       # lines of commands (String's)
       command_lines = []
