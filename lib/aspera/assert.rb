@@ -55,6 +55,18 @@ module Aspera
       assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
 
+    # Assert that all value of array are of the same type
+    def assert_array_all(array, klass, type: AssertError)
+      assert_type(array, Array, type: type)
+      assert(array.all?(klass), type: type){"#{"#{yield}: " if block_given?}expecting all as #{klass}, but have #{array.map(&:class).uniq}"}
+    end
+
+    def assert_hash_all(hash, key_class, value_class, type: AssertError)
+      assert_type(hash, Hash, type: type)
+      assert_array_all(hash.keys, key_class, type: AssertError){'keys'}
+      assert_array_all(hash.values, value_class, type: AssertError){'values'}
+    end
+
     # Assert that value is one of the given values
     # @param value  [any]              Value to check
     # @param values [Array]            Accepted values

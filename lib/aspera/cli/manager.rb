@@ -35,7 +35,7 @@ module Aspera
 
       # @param option      [Symbol] Name of option
       # @param allowed  [see below] Allowed values
-      # @param handler       [Hash] Accessor object(:o) and method(:m)
+      # @param handler       [Hash] Accessor: keys: :o(object) and :m(method)
       # @param deprecation [String] Deprecation message
       # `allowed`:
       # - `nil` No validation, so just a string
@@ -60,7 +60,7 @@ module Aspera
         else
           :setter
         end
-        Aspera.assert(@object.respond_to?(@read_method)){"#{object} does not respond to #{method}"} unless @access.eql?(:local)
+        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{method}"} unless @access.eql?(:local)
         @types = nil
         @values = nil
         if !allowed.nil?
@@ -115,8 +115,8 @@ module Aspera
         new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
         if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
           new_value = [new_value] if new_value.is_a?(String)
-          Aspera.assert_type(new_value, Array)
-          Aspera.assert(new_value.all?(String))
+          Aspera.assert_type(new_value, Array, type: BadArgument)
+          Aspera.assert_array_all(new_value, String, type: BadArgument)
           new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
         end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
@@ -240,9 +240,9 @@ module Aspera
       # @param short         [String] short option name
       # @param allowed       [Object] Allowed values, see `OptionValue`
       # @param default       [Object] default value
-      # @param handler       [Hash]   handler for option value: keys: o (object) and m (method)
+      # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method)
       # @param deprecation   [String] deprecation
-      # @param block [Proc] block to execute when option is found
+      # @param block [Proc] Block to execute when option is found
       def declare(option_symbol, description, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
@@ -279,7 +279,7 @@ module Aspera
             set_option(option_symbol, self.class.get_from_list(v.to_s, description, option_attrs.values), where: SOURCE_USER)
           end
         when Allowed::TYPES_NONE
-          Aspera.assert(!block.nil?){"missing block for #{option_symbol}"}
+          Aspera.assert_type(block, Proc){"missing execution block for #{option_symbol}"}
           on_args.push(symbol_to_option(option_symbol))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
@@ -303,22 +303,18 @@ module Aspera
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
       # @return one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: String, aliases: nil, default: nil)
-        Aspera.assert(accept_list.nil? || (accept_list.is_a?(Array) && accept_list.all?(Symbol)))
-        validation = Symbol if accept_list
-        Aspera.assert(validation.nil? || validation.is_a?(Class) || (validation.is_a?(Array) && validation.all?(Class))){'validation must be Class or Array of Class'}
-        Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash:Symbol: Symbol'}
-        allowed_classes = validation
-        unless allowed_classes.nil?
-          allowed_classes = [allowed_classes] unless allowed_classes.is_a?(Array)
-          Aspera.assert(allowed_classes.is_a?(Array) && allowed_classes.all?(Class)){'types must be a Class Array'}
-          descr = "#{descr} (#{allowed_classes.join(', ')})"
-        end
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: nil, aliases: nil, default: nil)
+        Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
+        Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
+        validation = accept_list ? Symbol : String unless validation
+        validation = [validation] unless validation.is_a?(Array)
+        Aspera.assert_array_all(validation, Class){'validation'}
+        descr = "#{descr} (#{validation.join(', ')})" unless validation.nil?
         result =
           if !@unprocessed_cmd_line_arguments.empty?
             how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
             values = @unprocessed_cmd_line_arguments.shift(how_many)
-            values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: allowed_classes)}
+            values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation)}
             # if expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
@@ -331,7 +327,7 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list)
           end
-        if result.is_a?(String) && validation.eql?(Integer)
+        if result.is_a?(String) && validation.eql?(Allowed::TYPES_INTEGER)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
@@ -339,12 +335,12 @@ module Aspera
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
-        result = result.to_s if result.is_a?(Integer) && validation.eql?(String)
-        if !allowed_classes.nil? && (mandatory || !result.nil?)
+        result = result.to_s if result.is_a?(Integer) && validation.eql?(Allowed::TYPES_STRING)
+        if mandatory || !result.nil?
           value_list = multiple ? result : [result]
           value_list.each do |value|
             raise Cli::BadArgument,
-              "Argument #{descr} is a #{value.class} but must be #{'one of: ' if allowed_classes.length > 1}#{allowed_classes.map(&:name).join(', ')}" unless allowed_classes.any?{ |t| value.is_a?(t)}
+              "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" unless validation.any?{ |t| value.is_a?(t)}
           end
         end
         return result
