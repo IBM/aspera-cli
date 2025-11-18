@@ -98,7 +98,9 @@ module Aspera
         end
       end
 
+      # TODO: if using another product than SDK, should use files from there
       def check_or_create_sdk_file(filename, force: false, &block)
+        FileUtils.mkdir_p(Products::Transferd.sdk_directory)
         return Environment.write_file_restricted(File.join(Products::Transferd.sdk_directory, filename), force: force, mode: 0o644, &block)
       end
 
@@ -117,7 +119,7 @@ module Aspera
             # find ascp when needed
             if @ascp_path.nil?
               if @ascp_location.start_with?(USE_PRODUCT_PREFIX)
-                use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
+                use_ascp_from_product(@ascp_location[USE_PRODUCT_PREFIX.length..-1])
               else
                 @ascp_path = @ascp_location
               end
