@@ -246,7 +246,7 @@ module Aspera
           value = default if value.nil?
           unless type.nil?
             type = [type] unless type.is_a?(Array)
-            Aspera.assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
+            Aspera.assert_array_all(type, Class){'check types'}
             if bulk
               Aspera.assert_type(value, Array, type: Cli::BadArgument)
               value.each do |v|
@@ -329,8 +329,7 @@ module Aspera
         def lookup_entity_generic(entity:, value:, field: 'name', &block)
           Aspera.assert(block_given?)
           found = yield
-          Aspera.assert(found.is_a?(Array))
-          Aspera.assert(found.all?(Hash))
+          Aspera.assert_array_all(found, Hash)
           found = found.select{ |i| i[field].eql?(value)}
           return found.first if found.length.eql?(1)
           raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)

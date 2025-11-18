@@ -61,10 +61,11 @@ module Aspera
       assert(array.all?(klass), type: type){"#{"#{yield}: " if block_given?}expecting all as #{klass}, but have #{array.map(&:class).uniq}"}
     end
 
+    # Assert value is Hash, keys have type, and Values have type
     def assert_hash_all(hash, key_class, value_class, type: AssertError)
       assert_type(hash, Hash, type: type)
-      assert_array_all(hash.keys, key_class, type: AssertError){'keys'}
-      assert_array_all(hash.values, value_class, type: AssertError){'values'}
+      assert_array_all(hash.keys, key_class, type: AssertError){'keys'} unless key_class.nil?
+      assert_array_all(hash.values, value_class, type: AssertError){'values'} unless value_class.nil?
     end
 
     # Assert that value is one of the given values

@@ -361,8 +361,7 @@ module Aspera
             end
           when :object_list
             # :object_list is an Array of Hash, where key=column name
-            Aspera.assert_type(data, Array)
-            Aspera.assert(data.all?(Hash)){"expecting Array of Hash: #{data.inspect}"}
+            Aspera.assert_array_all(data, Hash){'result'}
             data = data.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
             display_table(data, compute_fields(data, fields), single: type.eql?(:single_object))
           when :value_list
@@ -441,8 +440,7 @@ module Aspera
       def filter_list_on_fields(data)
         # by default, keep all data intact
         return data if @options[:fields].eql?(SpecialValues::DEF) && @options[:select].nil?
-        Aspera.assert_type(data, Array){'Filtering fields or select requires result is an Array of Hash'}
-        Aspera.assert(data.all?(Hash)){'Filtering fields or select requires result is an Array of Hash'}
+        Aspera.assert_array_all(data, Hash){'filter or select'}
         filter_columns_on_select(data)
         return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])

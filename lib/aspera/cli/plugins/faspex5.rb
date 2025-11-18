@@ -222,8 +222,7 @@ module Aspera
           else
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)
-            Aspera.assert_type(package_ids, Array){'Expecting a single package id or a list of ids'}
-            Aspera.assert(package_ids.all?(String)){'Package id shall be String'}
+            Aspera.assert_array_all(package_ids, String){'Package id(s)'}
             # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map{ |pkg_id| {'id'=>pkg_id}}
           end
@@ -349,8 +348,7 @@ module Aspera
           when :delete
             ids = package_id
             ids = [ids] unless ids.is_a?(Array)
-            Aspera.assert_type(ids, Array){'Package identifier'}
-            Aspera.assert(ids.all?(String)){"Package id(s) shall be String, but have: #{ids.map(&:class).uniq.join(', ')}"}
+            Aspera.assert_array_all(ids, String){'Package id(s)'}
             # API returns 204, empty on success
             @api_v5.call(
               operation:    'DELETE',

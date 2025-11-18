@@ -63,8 +63,7 @@ module Aspera
         @job_spec = job_spec
         Aspera.assert_type(@job_spec, Hash)
         @ascp_args = ascp_args.nil? ? [] : ascp_args
-        Aspera.assert_type(@ascp_args, Array){'ascp_args'}
-        Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
+        Aspera.assert_array_all(@ascp_args, String){'ascp_args'}
         @wss = wss
         @quiet = quiet
         @trusted_certs = trusted_certs.nil? ? [] : trusted_certs

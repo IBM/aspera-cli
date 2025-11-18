@@ -154,8 +154,7 @@ module Aspera
           end
           ssh_key_list = options.get_option(:ssh_keys)
           if !ssh_key_list.nil?
-            Aspera.assert_type(ssh_key_list, Array){'ssh_keys'}
-            Aspera.assert(ssh_key_list.all?(String))
+            Aspera.assert_array_all(ssh_key_list, String){'ssh_keys'}
             ssh_key_list.map!{ |p| File.expand_path(p)}
             Log.log.debug{"SSH keys=#{ssh_key_list}"}
             if !ssh_key_list.empty?

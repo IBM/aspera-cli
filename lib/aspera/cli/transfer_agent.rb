@@ -198,7 +198,7 @@ module Aspera
             @transfer_paths
           when Array
             Log.log.debug('getting file list as extended value')
-            Aspera.assert(sources.all?(String), type: Cli::BadArgument){'sources must be a Array of String'}
+            Aspera.assert_array_all(sources, String, type: Cli::BadArgument){'sources must be a Array of String'}
             list_to_paths(sources)
           else Aspera.error_unexpected_value(sources){'sources'}
           end

@@ -132,8 +132,7 @@ module Aspera
       # @return [Object] Evaluated value
       def evaluate(value, context:, allowed: nil)
         return value unless value.is_a?(String)
-        Aspera.assert_type(allowed, NilClass, Array)
-        Aspera.assert(allowed.all?(Class)) if allowed
+        Aspera.assert_array_all(allowed, Class) unless allowed.nil?
         # use default decoder if not an extended value and expect complex types
         using_default_decoder = allowed&.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)} && !@regex_single.match?(value) && !@default_decoder.nil?
         value = [MARKER_START, @default_decoder, MARKER_END, value].join if using_default_decoder

@@ -490,9 +490,8 @@ module Aspera
         end
 
         def option_plugin_folder=(value)
-          Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
-          value = [value] if value.is_a?(String)
-          Aspera.assert(value.all?(String)){'plugin folder'}
+          value = [value] unless value.is_a?(Array)
+          Aspera.assert_array_all(value, String){'plugin folder(s)'}
           value.each{ |f| Plugins::Factory.instance.add_lookup_folder(f)}
         end
 
