@@ -525,7 +525,7 @@ module Aspera
                   user
                 end
               end
-              access = options.get_next_argument('level', mandatory: false, accept_list: %i[submit_only standard shared_inbox_admin], default: :standard)
+              access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
               options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
             return entity_execute(
@@ -536,7 +536,7 @@ module Aspera
             ) do |field, value|
                      lookup_entity_by_field(
                        api: @api_v5,
-                       entity: 'accounts',
+                       entity: 'contacts',
                        field: field,
                        value: value,
                        query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
@@ -718,6 +718,8 @@ module Aspera
             return Main.result_status('Gateway terminated')
           end
         end
+        SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze
+        private_constant :SHARED_INBOX_MEMBER_LEVELS
       end
     end
   end
