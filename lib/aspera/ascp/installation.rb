@@ -58,18 +58,8 @@ module Aspera
         Aspera.assert_type(v, String)
         Aspera.assert(!v.empty?){'ascp location cannot be empty: check your config file'}
         @ascp_location = v
+        @ascp_path = nil
         return
-      end
-
-      # get actual ascp path from location definition, on demand
-      def compute_ascp_path
-        if @ascp_location.start_with?(USE_PRODUCT_PREFIX)
-          use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
-        else
-          @ascp_path = @ascp_location
-        end
-        Aspera.assert(File.exist?(@ascp_path)){"No such file: [#{@ascp_path}]"}
-        Log.log.debug{"ascp_path=#{@ascp_path}"}
       end
 
       def ascp_path
@@ -124,8 +114,16 @@ module Aspera
           file = if k.eql?(:transferd)
             Products::Transferd.transferd_path
           else
-            # ensure at least ascp is found
-            use_ascp_from_product(FIRST_FOUND) if @ascp_path.nil?
+            # find ascp when needed
+            if @ascp_path.nil?
+              if @ascp_location.start_with?(USE_PRODUCT_PREFIX)
+                use_ascp_from_product(v[USE_PRODUCT_PREFIX.length..-1])
+              else
+                @ascp_path = @ascp_location
+              end
+              Aspera.assert(File.exist?(@ascp_path)){"No such file: [#{@ascp_path}]"}
+              Log.log.debug{"ascp_path=#{@ascp_path}"}
+            end
             # NOTE: that there might be a .exe at the end
             @ascp_path.gsub('ascp', k.to_s)
           end
@@ -391,10 +389,10 @@ module Aspera
         # :log_root  O location of log files (Linux uses syslog)
         # :run_root  O only for Connect Client, location of http port file
         # :sub_bin   O subfolder with executables, default : bin
-        scan_locations = Products::Transferd.locations # +
-        # Products::Desktop.locations +
-        # Products::Connect.locations +
-        # Products::Other::LOCATION_ON_THIS_OS
+        scan_locations = Products::Transferd.locations +
+          Products::Desktop.locations +
+          Products::Connect.locations +
+          Products::Other::LOCATION_ON_THIS_OS
         # search installed products: with ascp
         @found_products = Products::Other.find(scan_locations)
       end
