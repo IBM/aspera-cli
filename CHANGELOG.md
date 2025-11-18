@@ -4,11 +4,13 @@
 
 ## 4.25.0.pre
 
+Released: 2025-10-24
+
 ### New Features
 
 * **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
 * **global**: Improved error diagnostic during evaluation of extended value.
-* `config`: New option: `parser` allows definitin of default parser for extended values when expecting a `Hash` or `Array` type.
+* `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
 
 ### Issues Fixed
 
