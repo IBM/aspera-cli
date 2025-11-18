@@ -101,11 +101,13 @@ module Aspera
         return current_value
       end
 
-      # Assign value to option
-      # @param new_value [Object] Value to assign to option
-      def value=(new_value)
-        Aspera.assert(!@deprecation, type: warn){"#{@option}: Option is deprecated: #{option_attrs.deprecation}"}
-        Log.log.trace1{"#{@option} <- (#{new_value.class})#{new_value}"}
+      # Assign value to option.
+      # Value can be a String, then evaluated with ExtendedValue, or directly a value.
+      # @param value [String, Object] Value to assign to option
+      def assign_value(value, where:)
+        Aspera.assert(!@deprecation, type: warn){"Option #{@option} is deprecated: #{@deprecation}"}
+        new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
+        Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
         new_value = Manager.enum_to_bool(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
         new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
         new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
@@ -128,7 +130,7 @@ module Aspera
         when :write then @object.send(@write_method, new_value)
         when :setter then @object.send(@read_method, @option, :set, new_value)
         end
-        Log.log.trace1{"#{@option} <- (#{value(log: false).class})#{value(log: false)}"}
+        Log.log.trace1{v = value(log: false); "#{@option} <- (#{v.class})#{v}"} # rubocop:disable Style/Semicolon
       end
     end
 
@@ -379,8 +381,7 @@ module Aspera
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
-        option_attrs = @declared_options[option_symbol]
-        option_attrs.value = ExtendedValue.instance.evaluate(value, context: "option: #{option_symbol}", allowed: option_attrs.types)
+        @declared_options[option_symbol].assign_value(value, where: where)
       end
 
       # Set option to `nil`
