@@ -518,7 +518,7 @@ module Aspera
                     entity: 'accounts',
                     field: m[:field],
                     value: m[:value],
-                    query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
+                    query: Rest.php_style({type: ACCOUNT_TYPES})
                   )['id']
                 else
                   # it's the user id (not member id...)
@@ -539,7 +539,7 @@ module Aspera
                        entity: 'contacts',
                        field: field,
                        value: value,
-                       query: Rest.php_style({type: %w{local_user saml_user self_registered_user external_user}})
+                       query: Rest.php_style({type: %w[user]})
                      )['id']
                    end
           when :reset_password
@@ -715,7 +715,9 @@ module Aspera
           end
         end
         SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze
-        private_constant :SHARED_INBOX_MEMBER_LEVELS
+        ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
+        CONTACT_TYPES = %w{workgroup shared_inbox distribution_list user external_user}.freeze
+        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES
       end
     end
   end

@@ -71,7 +71,7 @@ module Aspera
       def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
       # Indicate that the given Hash query uses php style for array parameters
-      # a[]=1&a[]=2
+      # @param query [Hash] A key can have Array value and result will use PHP format: a[]=1&a[]=2
       def php_style(query)
         Aspera.assert_type(query, Hash){'query'}
         query[:x_array_php_style] = true

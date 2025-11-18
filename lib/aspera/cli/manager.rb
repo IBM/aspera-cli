@@ -298,18 +298,18 @@ module Aspera
       # @param descr       [String] description for help
       # @param mandatory   [Boolean] if true, raise error if option not set
       # @param multiple    [Boolean] if true, return remaining arguments (Array)
-      # @param accept_list [Array] list of allowed values (Symbol)
-      # @param validation  [Class, Array] accepted value type(s) or list of Symbols
+      # @param accept_list [Array, NilClass] list of allowed values (Symbol)
+      # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
       # @return one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: nil, aliases: nil, default: nil)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Allowed::TYPES_STRING, aliases: nil, default: nil)
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
-        validation = accept_list ? Symbol : String unless validation
-        validation = [validation] unless validation.is_a?(Array)
-        Aspera.assert_array_all(validation, Class){'validation'}
-        descr = "#{descr} (#{validation.join(', ')})" unless validation.nil?
+        validation = Symbol unless accept_list.nil?
+        validation = [validation] unless validation.is_a?(Array) || validation.nil?
+        Aspera.assert_array_all(validation, Class){'validation'} unless validation.nil?
+        descr = "#{descr} (#{validation.join(', ')})" unless validation.nil? || validation.eql?(Allowed::TYPES_STRING)
         result =
           if !@unprocessed_cmd_line_arguments.empty?
             how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
@@ -327,7 +327,7 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list)
           end
-        if result.is_a?(String) && validation.eql?(Allowed::TYPES_INTEGER)
+        if result.is_a?(String) && validation&.eql?(Allowed::TYPES_INTEGER)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
@@ -335,8 +335,8 @@ module Aspera
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
-        result = result.to_s if result.is_a?(Integer) && validation.eql?(Allowed::TYPES_STRING)
-        if mandatory || !result.nil?
+        result = result.to_s if result.is_a?(Integer) && validation&.eql?(Allowed::TYPES_STRING)
+        if validation && (mandatory || !result.nil?)
           value_list = multiple ? result : [result]
           value_list.each do |value|
             raise Cli::BadArgument,
