@@ -4,7 +4,7 @@
 
 ## 4.25.0.pre
 
-Released: 2025-10-24
+Released: not yet.
 
 ### New Features
 
