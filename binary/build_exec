@@ -1,95 +1,123 @@
-#!/bin/bash
-# Glibc for various OS: https://gist.github.com/wagenet/35adca1a032cec2999d47b6c40aa45b1
-# https://distrowatch.com/table.php?distribution=redhat
-# RHEL 8 : glibc 2.28
-# RHEL 9 : glibc 2.34
-# https://distrowatch.com/table.php?distribution=ubuntu
-# Ubuntu 18.10 cosmic : glibc 2.28
-# Ubuntu 20.04 focal : glibc 2.31
-# Ubuntu 21.10 impish : gblic 2.34
-# https://www.ibm.com/docs/en/ahts/4.4.x?topic=release-notes
-# ascp 4.4.5 : gblic 2.28
-# dwarfs requires boost >= 1.65
-# boost requires cmake >= 3.30
-# https://hub.docker.com/search?q=tebako
-set -ex
+#!/usr/bin/env ruby
+# frozen_string_literal: true
 
-if test $# -lt 3; then
-    echo "Usage: $0 <CLI_EXECUTABLE> <CLI_NAME> <GEM_SPEC...>" 1>&2
-    exit 1
-fi
+require 'fileutils'
+require 'pathname'
+require 'bundler'
+require 'aspera/assert'
+require 'aspera/environment'
+require 'aspera/cli/info'
 
-CLI_EXECUTABLE=$1
-CLI_NAME=$2
-CLI_GEM=$3
-shift 3
-tmp=$(dirname $0)/../tmp/tebako
-mkdir -p $tmp
-export TMPDIR=$(realpath $tmp)
+def run(*args)
+  puts("Executing: #{args.join(' ')}")
+  args = args.map(&:to_s)
+  Aspera::Environment.secure_execute(exec: args.shift, args: args)
+end
 
-echo "Building: $(basename $CLI_EXECUTABLE)"
+def gems_in_group(gemfile, group_name_symn)
+  Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil).dependencies.filter_map do |dep|
+    next unless dep.groups.include?(group_name_symn)
+    "#{dep.name}:#{dep.requirement.to_s.delete(' ')}"
+  end
+end
 
-# https://github.com/tamatebako/tebako-ci-containers
-tebako_container=ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4
+def install_gem(name, into)
+  run('gem', 'install', name, '--no-document', '--install-dir', into)
+end
 
-# tebako compilation
-tebako_env=$TMPDIR/env
-# project files (gem)
-tebako_root=$TMPDIR/root
-# only provide the name, not path
-tebako_entry=$CLI_NAME
-tebako_output=$CLI_EXECUTABLE
-mkdir -p $tebako_env $tebako_root
-# Pull gem and dependencies
-tmp_dir_install=$TMPDIR/install
-# only main gem and its dependencies
-gem install $CLI_GEM --no-document --install-dir $tmp_dir_install
-# including optional gems
-for spec in "$@"; do gem install "$spec" --no-document --install-dir $tmp_dir_install; done
-mv $tmp_dir_install/cache/*.gem $tebako_root
-rm -fr $tmp_dir_install
-case $(uname -s) in
-Darwin)
-    brew update
-    # install tools
-    brew install bash binutils bison flex gnu-sed lz4 pkg-config xz
-    # install libs
-    brew install double-conversion fmt gdbm glog jemalloc libevent libffi libsodium libyaml ncurses openssl@3 zlib
-    brew install boost@1.85
-    brew link --force boost@1.85
-    test -e /opt/homebrew/opt/boost || sudo ln -s boost@1.85 /opt/homebrew/opt/boost
-    #export BOOST_ROOT="$(brew --prefix boost@1.85)"
-    #export CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DCMAKE_PREFIX_PATH=$BOOST_ROOT"
-    # make sure tools are reachable
-    brew_root=$(brew --prefix)
-    export PATH=$brew_root/opt/flex/bin:$brew_root/opt/bison/bin:$PATH
-    # remove binutils from path so that macos `ar` is used
-    export PATH=$(echo $PATH|tr : \\n|grep -v /binutils/|paste -sd: -)
-    gem install tebako
-    ;;
-Linux)
-    local_root=$tebako_root
-    tebako_root=/mnt/w
-    tebako_prefix="podman run --rm -v $local_root:$tebako_root $tebako_container"
-    tebako_opts=--patchelf
-    tebako_output_orig=$tebako_output
-    tebako_output=$tebako_root/$(basename $CLI_EXECUTABLE)
-    ;;
-LinuxLocal)
-    dnf module reset ruby
-    dnf module install ruby:3.3
-    dnf install -y cmake git bash sudo autoconf boost-devel flex bison make clang binutils-devel libevent-devel libacl-devel sed python3 pkgconfig curl lz4-devel openssl-devel zlib-devel xz zip unzip tar xz-devel elfutils-devel libffi-devel gdbm-devel ncurses-devel readline-devel ruby-devel gettext-devel brotli-devel clang libxslt-devel
-    echo TODO
-    exit 1
-    dnf install 
-    ;;
-*)
-    echo "This OS is not supported." >&2
-    exit 1
-    ;;
-esac
-$tebako_prefix tebako press --root=$tebako_root --entry-point=$tebako_entry --output=$tebako_output --prefix=$tebako_env $tebako_opts
-if test -n "$tebako_output_orig";then
-    mv $tebako_output $tebako_output_orig
-    tebako_output=$tebako_output_orig
-fi
+Aspera.assert(ARGV.length <= 1){"Usage: #{$PROGRAM_NAME} [GEM_VERSION]"}
+
+top_dir = Pathname.new(__dir__).parent
+main_tmp = top_dir / 'tmp'
+gem_version = ARGV.first || Aspera::Cli::VERSION
+optional_gems = gems_in_group(top_dir / 'Gemfile', :optional)
+cli_bin_path = main_tmp / "#{Aspera::Cli::Info::CMD_NAME}.#{gem_version}.#{Aspera::Environment.instance.architecture}"
+main_gem_version = "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
+# tebako_version = '0.13.4'
+tebako_version = '0.14.0'
+puts "Building: #{cli_bin_path.basename}"
+
+# ---------------------------------------------------------------------------
+# Paths & temp directories
+# ---------------------------------------------------------------------------
+
+tebako_tmp = main_tmp / 'tebako'
+tebako_env   = tebako_tmp / 'env'
+tebako_root  = tebako_tmp / 'root'
+FileUtils.mkdir_p([tebako_tmp, tebako_env, tebako_root])
+ENV['TMPDIR'] = tebako_tmp.realpath.to_s
+
+# ---------------------------------------------------------------------------
+# Install gem(s) into a staging directory
+# ---------------------------------------------------------------------------
+
+install_tmp = tebako_tmp / 'install'
+FileUtils.mkdir_p(install_tmp)
+install_gem(main_gem_version, install_tmp)
+optional_gems.each{ |spec| install_gem(spec, install_tmp)}
+
+# Move only the .gem files to tebako_root
+Dir.glob(install_tmp / 'cache/*.gem').each do |gem_file|
+  FileUtils.mv(gem_file, tebako_root)
+end
+FileUtils.rm_rf(install_tmp)
+
+# ---------------------------------------------------------------------------
+# Tebako container configuration
+# ---------------------------------------------------------------------------
+
+tebako_container_image = 'ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4'
+tebako_container_root = Pathname.new('/mnt/w')
+
+tebako_out_path = cli_bin_path
+tebako_prefix = []
+tebako_opts   = []
+
+# ---------------------------------------------------------------------------
+# OS handlers
+# ---------------------------------------------------------------------------
+
+case Aspera::Environment.instance.os
+when Aspera::Environment::OS_MACOS
+  # Homebrew environment setup
+  run('brew', 'update')
+  run('brew', 'install', 'bash', 'binutils', 'bison', 'flex', 'gnu-sed', 'lz4', 'pkg-config', 'xz')
+  run('brew', 'install', 'double-conversion', 'fmt', 'gdbm', 'glog', 'jemalloc', 'libevent', 'libffi', 'libsodium', 'libyaml', 'ncurses', 'openssl@3', 'zlib')
+  run('brew', 'install', 'boost@1.85')
+  run('brew', 'link', '--force', 'boost@1.85')
+  # Enforce flex and bison paths, but remove binutils to force macOS ar
+  ENV['PATH'] = [
+    File.join(%x(brew --prefix flex), 'bin'),
+    File.join(%x(brew --prefix bison), 'bin'),
+    ENV['PATH'].split(':').reject{ |p| p.include?('binutils')}
+  ].join(':')
+  run('gem', 'install', "tebako:#{tebako_version}")
+when Aspera::Environment::OS_LINUX
+  # For Podman-based Tebako
+  local_root = tebako_root
+  tebako_prefix = ['podman', 'run', '--rm', '-v', "#{local_root}:#{tebako_container_root}", tebako_container_image]
+  tebako_opts   = ['--patchelf']
+  tebako_out_path = tebako_container_root / cli_bin_path.basename
+else Aspera.error_unexpected_value(Aspera::Environment.instance.os){'OS'}
+end
+
+# ---------------------------------------------------------------------------
+# Tebako build
+# ---------------------------------------------------------------------------
+
+run(*(
+  tebako_prefix +
+  [
+    'tebako', 'press',
+    "--root=#{tebako_root}",
+    "--entry-point=#{Aspera::Cli::Info::CMD_NAME}",
+    "--output=#{tebako_out_path}",
+    "--prefix=#{tebako_env}"
+  ] +
+  tebako_opts
+))
+
+# Move file back if podman path was used
+FileUtils.mv(local_root.join(tebako_out_path.relative_path_from(tebako_container_root)), cli_bin_path) if tebako_out_path.ascend.include?(tebako_container_root)
+
+puts "✔ Build finished: #{cli_bin_path}"
