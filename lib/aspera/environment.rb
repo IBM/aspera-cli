@@ -56,9 +56,9 @@ module Aspera
       end
 
       # Generate log line for external program with arguments
-      # @param env [Hash, nil]   environment variables
-      # @param exec [String]     path to executable
-      # @param args [Array, nil] arguments
+      # @param exec [String]     Path to executable
+      # @param args [Array, nil] Arguments
+      # @param env [Hash, nil]   Environment variables
       # @return [String] log line with environment, program and arguments
       def log_spawn(exec:, args: nil, env: nil)
         [
@@ -71,9 +71,9 @@ module Aspera
 
       # Start process in background
       # caller can call Process.wait on returned value
-      # @param exec    [String]     path to executable
-      # @param args    [Array, nil] arguments for executable
-      # @param env     [Hash, nil]  environment variables
+      # @param exec    [String]     Path to executable
+      # @param args    [Array, nil] Arguments for executable
+      # @param env     [Hash, nil]  Environment variables
       # @param options [Hash, nil]  spawn options
       # @return [String]            PID of process
       # @raise  [Exception]         if problem
@@ -96,9 +96,9 @@ module Aspera
       end
 
       # start process and wait for completion
-      # @param env [Hash, nil]   environment variables
-      # @param exec [String]     path to executable
-      # @param args [Array, nil] arguments
+      # @param exec [String]     Path to executable
+      # @param args [Array, nil] Arguments
+      # @param env  [Hash, nil]  Environment variables
       # @return [String] PID of process
       def secure_execute(exec:, args: nil, env: nil, **system_args)
         Aspera.assert_type(exec, String)
