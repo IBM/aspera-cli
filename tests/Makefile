@@ -2119,7 +2119,7 @@ $(F)f5_adm_sbx_mem: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(F)f5_adm_sbx_cr: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
+	$(INCMAN)$(CLI_TEST) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com submit_only
 	@$(STOP_TEST) $@
 $(F)f5_adm_sbx_del: $(F)f5_adm_sbx_cr
 	@$(START_TEST) $@
