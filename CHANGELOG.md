@@ -10,6 +10,7 @@ Released: not yet.
 
 * **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
 * **global**: Improved error diagnostic during evaluation of extended value.
+* **global**: New Extended value modifier: `p` to evaluate remaining arguments as `Hash` or `Array`.
 * `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
 
 ### Issues Fixed
@@ -347,7 +348,7 @@ Released: 2024-02-15
 
 Released: 2023-11-18
 
-### General: Removed many redundant options, more consistency between plugins, see below in "break"
+General: Removed many redundant options, more consistency between plugins, see below in "break"
 
 ### New Features
 
@@ -777,422 +778,418 @@ Released: 2021-02-03
 
 ## 0.11.8
 
-### Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using `Xvfb`)
+* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using `Xvfb`)
 
 ## 0.11.7
 
-### Rework on rest call error handling
-
-### Use option `display` with value `data` to remove out of extraneous information
-
-### Fixed option `lock_port` not working
-
-### Generate special icon if preview failed
-
-### Possibility to choose transfer progress bar type with option `progress`
-
-### AoC package creation now output package id
+* Rework on rest call error handling
+* Use option `display` with value `data` to remove out of extraneous information
+* Fixed option `lock_port` not working
+* Generate special icon if preview failed
+* Possibility to choose transfer progress bar type with option `progress`
+* AoC package creation now output package id
 
 ## 0.11.6
 
-### `orchestrator`: Added more choice in auth type
-
-### `preview`: Cleanup in generator (removed and renamed parameters)
-
-### `preview`: Better documentation
-
-### `preview`: Animated thumbnails for video (option: `video_png_conv=animated`)
-
-### `preview`: New event trigger: `trevents` (`events` seems broken)
-
-### `preview`: Unique tmp folder to avoid clash of multiple instances
-
-### Repo: Added template for secrets used for testing
+* `orchestrator`: Added more choice in auth type
+* `preview`: Cleanup in generator (removed and renamed parameters)
+* `preview`: Better documentation
+* `preview`: Animated thumbnails for video (option: `video_png_conv=animated`)
+* `preview`: New event trigger: `trevents` (`events` seems broken)
+* `preview`: Unique tmp folder to avoid clash of multiple instances
+* Repo: Added template for secrets used for testing
 
 ## 0.11.5
 
-### Added option `default_ports` for AoC (see manual)
-
-### Allow bulk delete in `aspera files` with option `bulk=yes`
-
-### Fix getting connect versions
-
-### Added section for Aix
-
-### Support all ciphers for [`direct`](README.md#agt_direct) agent (including gcm, etc..)
-
-### Added transfer spec param `apply_local_docroot` for [`direct`](README.md#agt_direct)
+* Added option `default_ports` for AoC (see manual)
+* Allow bulk delete in `aspera files` with option `bulk=yes`
+* Fix getting connect versions
+* Added section for Aix
+* Support all ciphers for [`direct`](README.md#agt_direct) agent (including gcm, etc..)
+* Added transfer spec param `apply_local_docroot` for [`direct`](README.md#agt_direct)
 
 ## 0.11.4
 
-### Possibility to give shared inbox name when sending a package (else use id and type)
+* Possibility to give shared inbox name when sending a package (else use id and type)
 
 ## 0.11.3
 
-### Minor fixes on multi-session: Avoid exception on progress bar
+* Minor fixes on multi-session: Avoid exception on progress bar
 
 ## 0.11.2
 
-### Fixes on multi-session: Progress bat and transfer spec param for "direct"
+* Fixes on multi-session: Progress bat and transfer spec param for "direct"
 
 ## 0.11.1
 
-### Enhanced short_link creation commands (see examples)
+* Enhanced short_link creation commands (see examples)
 
 ## 0.11
 
-### Add transfer spec option (agent `direct` only) to provide file list directly to ascp: `EX_file_list`
+* Add transfer spec option (agent `direct` only) to provide file list directly to ascp: `EX_file_list`
 
 ## 0.10.18
 
-### New option in. `server` : `ssh_options`
+* New option in. `server` : `ssh_options`
 
 ## 0.10.17
 
-### Fixed problem on `server` for option `ssh_keys`, now accepts both single value and list
-
-### New modifier: `@list:<separator>val1<separator>...`
+* Fixed problem on `server` for option `ssh_keys`, now accepts both single value and list
+* New modifier: `@list:<separator>val1<separator>...`
 
 ## 0.10.16
 
-### Added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`
+* Added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`
 
 ## 0.10.15
 
-### In case of command line error, display the error cause first, and non-parsed argument second
-
-### AoC : Activity / Analytics
+* In case of command line error, display the error cause first, and non-parsed argument second
+* `aoc`: Activity / Analytics
 
 ## 0.10.14
 
-### Added missing bss plugin
+* Added missing bss plugin
 
 ## 0.10.13
 
-### Added Faspex5 (use option `value` to give API arguments)
+* Added Faspex5 (use option `value` to give API arguments)
 
 ## 0.10.12
 
-### Added support for AoC node registration keys
-
-### Replaced option : `local_resume` with `transfer_info` for agent [`direct`](README.md#agt_direct)
-
-### Transfer agent is no more a Singleton instance, but only one is used in CLI
-
-### `@incps` : New extended value modifier
-
-### ATS: No more provides access keys secrets: now user must provide it
-
-### Begin work on "aoc" transfer agent
+* Added support for AoC node registration keys
+* Replaced option : `local_resume` with `transfer_info` for agent [`direct`](README.md#agt_direct)
+* Transfer agent is no more a Singleton instance, but only one is used in CLI
+* `@incps` : New extended value modifier
+* ATS: No more provides access keys secrets: now user must provide it
+* Begin work on "aoc" transfer agent
 
 ## 0.10.11
 
-### Minor refactor and fixes
+* Minor refactor and fixes
 
 ## 0.10.10
 
-### Fix on documentation
+* Fix on documentation
 
 ## 0.10.9.1
 
-### Add total number of items for AoC resource list
-
-### Better gem version dependency (and fixes to support Ruby 2.0.0)
-
-### Removed aoc search_nodes
+* Add total number of items for AoC resource list
+* Better gem version dependency (and fixes to support Ruby 2.0.0)
+* Removed aoc search_nodes
 
 ## 0.10.8
 
-### Removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
-
-### Removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
-
-### Several other changes
+* Removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
+* Removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
+* Several other changes
 
 ## 0.10.7
 
-### Fix: `ascli` fails when username cannot be computed on Linux
+* Fix: `ascli` fails when username cannot be computed on Linux
 
 ## 0.10.6
 
-### FaspManager: Transfer spec `authentication` no more needed for local transfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided
-
-### Gem version requirements made more open
+* FaspManager: Transfer spec `authentication` no more needed for local transfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided
+* Gem version requirements made more open
 
 ## 0.10.5
 
-### Fix faspex package receive command not working
+* Fix faspex package receive command not working
 
 ## 0.10.4
 
-### New options for AoC : `secrets`
-
-### `ACLI-533` temp file list folder to use file lists is set by default, and used by `asession`
+* New options for AoC : `secrets`
+* `ACLI-533` temp file list folder to use file lists is set by default, and used by `asession`
 
 ## 0.10.3
 
-### Included user name in oauth bearer token cache for AoC when JWT is used
+* Included user name in oauth bearer token cache for AoC when JWT is used
 
 ## 0.10.2
 
-### Updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries
-
-### Added doc for "cargo" like actions
-
-### Added doc for multi-session
+* Updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries
+* Added doc for "cargo" like actions
+* Added doc for multi-session
 
 ## 0.10.1
 
-### AoC and node v4 "browse" works now on non-folder items: file, link
-
-### Initial support for AoC automation (do not use yet)
+* AoC and node v4 "browse" works now on non-folder items: file, link
+* Initial support for AoC automation (do not use yet)
 
 ## 0.10
 
-### Support for transfer using IBM Cloud Object Storage
-
-### Improved `find` action using arbitrary expressions
+* Support for transfer using IBM Cloud Object Storage
+* Improved `find` action using arbitrary expressions
 
 ## 0.9.36
 
-### Added option to specify file pair lists
+* Added option to specify file pair lists
 
 ## 0.9.35
 
-### `preview`: Changed parameter names, added documentation
-
-### `ats`: Fix: instance ID needed in request header
+* `preview`: Changed parameter names, added documentation
+* `ats`: Fix: instance ID needed in request header
 
 ## 0.9.34
 
-### Parser "@preset" can be used again in option "transfer_info"
-
-### Some documentation re-organizing
+* Parser "@preset" can be used again in option "transfer_info"
+* Some documentation re-organizing
 
 ## 0.9.33
 
-### New command to display basic token of node
-
-### New command to display bearer token of node in AoC
-
-### The --fields= option, support +_field_name_ to add a field to default fields
-
-### Many small changes
+* New command to display basic token of node
+* New command to display bearer token of node in AoC
+* The --fields= option, support +_field_name_ to add a field to default fields
+* Many small changes
 
 ## 0.9.32
 
-### All Faspex public links are now supported
+### New Features
 
-### Removed faspex operation `recv_publink`
-
-### Replaced with option `link` (consistent with AoC)
+* All Faspex public links are now supported
+* Removed faspex operation `recv_publink`. Replaced with option `link` (consistent with AoC).
 
 ## 0.9.31
 
-### Added more support for public link: receive and send package, to user or dropbox and files view
+### New Features
 
-### Delete expired file lists
-
-### Changed text table gem from text-table to terminal-table because it supports multiline values
+* Added more support for public link: receive and send package, to user or dropbox and files view
+* Delete expired file lists
+* Changed text table gem from text-table to terminal-table because it supports multiline values
 
 ## 0.9.27
 
-### Basic email support with SMTP
+### New Features
 
-### Basic proxy auto config support
+* Basic email support with SMTP
+* Basic proxy auto config support
 
 ## 0.9.26
 
-### Table display with --fields=ALL now includes all column names from all lines, not only first one
+### New Features
 
-### Unprocessed argument shows error even if there is an error beforehand
+* Table display with `--fields=ALL` now includes all column names from all lines, not only first one
+* Unprocessed argument shows error even if there is an error beforehand
 
 ## 0.9.25
 
-### The option `value` of command `find`, to filter on name, is not optional
+### New Features
 
-### `find` now also reports all types (file, folder, link)
-
-### `find` now is able to report all fields (type, size, etc...)
+* The option `value` of command `find`, to filter on name, is not optional
+* `find` now also reports all types (file, folder, link)
+* `find` now is able to report all fields (type, size, etc...)
 
 ## 0.9.24
 
-### Fix bug where AoC node to node transfer did not work
+### New Features
 
-### Fix bug on error if ED25519 private key is defined in .ssh
+* Fix bug where AoC node to node transfer did not work
+* Fix bug on error if ED25519 private key is defined in .ssh
 
 ## 0.9.23
 
-### Defined REST error handlers, more error conditions detected
+### New Features
 
-### Commands to select specific ascp location
+* Defined REST error handlers, more error conditions detected
+* Commands to select specific ascp location
 
 ## 0.9.21
 
-### Supports simplified wizard using global client
+### New Features
 
-### Only ascp binary is required, other SDK (keys) files are now generated
+* Supports simplified wizard using global client
+* Only `ascp` binary is required, other SDK (keys) files are now generated
 
 ## 0.9.20
 
-### Improved wizard (prepare for AoC global client id)
+### New Features
 
-### Preview generator: Added option : --skip-format=&lt;png,mp4&gt;
-
-### Removed outdated pictures from this doc
+* Improved wizard (prepare for AoC global client id)
+* Preview generator: Added option : --skip-format=&lt;png,mp4&gt;
+* Removed outdated pictures from this doc
 
 ## 0.9.19
 
-### Added command aspera bearer --scope=xx
+### New Features
+
+* Added command `aspera bearer --scope=xx`
 
 ## 0.9.18
 
-### Enhanced aspera admin events to support query
+### New Features
+
+* Enhanced aspera admin events to support query
 
 ## 0.9.16
 
-### AoC transfers are now reported in activity app
+### New Features
 
-### New interface for Rest class authentication (keep backward compatibility)
+* AoC transfers are now reported in activity app
+* New interface for Rest class authentication (keep backward compatibility)
 
 ## 0.9.15
 
-### New feature: "find" command in aspera files
+### New Features
 
-### Sample code for transfer API
+* New feature: "find" command in aspera files
+* Sample code for transfer API
 
 ## 0.9.12
 
-### Add nagios commands
+### New Features
 
-### Support of ATS for IBM Cloud, removed old version based on aspera id
+* Add nagios commands
+* Support of ATS for IBM Cloud, removed old version based on aspera id
 
 ## 0.9.11
 
-### Change(break): @stdin is now @stdin
+* Support of ATS for IBM Cloud, removed old version based on aspera id
 
-### Support of ATS for IBM Cloud, removed old version based on aspera id
+### Breaking Changes
+
+* **global**: @stdin is now @stdin
 
 ## 0.9.10
 
-### Change(break): Parameter transfer-node becomes more generic: `transfer-info`
+* Display SaaS storage usage with command: `aspera admin res node --id=nn info`
+* Cleaner way of specifying source file list for transfers
 
-### Display SaaS storage usage with command: `aspera admin res node --id=nn info`
+### Breaking Changes
 
-### Cleaner way of specifying source file list for transfers
-
-### Change(break): Replaced download_mode option with http_download action
+* **global**: Parameter transfer-node becomes more generic: `transfer-info`
+* **global**: Replaced download_mode option with http_download action
 
 ## 0.9.9
 
-### Change(break): "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example
+### New Features
 
-### Now supports "cargo" for Aspera on Cloud (automatic package download)
+* Now supports "cargo" for Aspera on Cloud (automatic package download)
+
+### Breaking Changes
+
+* **global**: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example
 
 ## 0.9.8
 
-### Faspex: Use option once_only set to yes to enable cargo like function. id=NEW deprecated
+### New Features
 
-### AoC: Share to share transfer with command "transfer"
+* `faspex`: Use option `once_only` set to `yes` to enable cargo like function. id=NEW deprecated
+* `aoc`: Share to share transfer with command `transfer`
 
 ## 0.9.7
 
-### Homogeneous transfer spec for `node` and [`direct`](README.md#agt_direct) transfer agents
+### New Features
 
-### Preview persistency goes to unique file by default
-
-### Catch mxf extension in preview as video
-
-### Faspex: Possibility to download all packages by specifying id=ALL
-
-### Faspex: To come: Cargo-like function to download only new packages with id=NEW
+* Homogeneous transfer spec for `node` and [`direct`](README.md#agt_direct) transfer agents
+* Preview persistency goes to unique file by default
+* Catch mxf extension in preview as video
+* Faspex: Possibility to download all packages by specifying id=ALL
+* Faspex: To come: Cargo-like function to download only new packages with id=NEW
 
 ## 0.9.6
 
-### Change(break): `@param:`is now `@preset:` and is generic
+### New Features
 
-### AoC: Added command to display current workspace information
+* AoC: Added command to display current workspace information
+
+### Breaking Changes
+
+* **global**: `@param:`is now `@preset:` and is generic
 
 ## 0.9.5
 
-### New parameter: `new_user_option` used to choose between public_link and invite of external users
+### New Features
 
-### Fixed bug in wizard, and wizard uses now product detection
+* New parameter: `new_user_option` used to choose between public_link and invite of external users
+* Fixed bug in wizard, and wizard uses now product detection
 
 ## 0.9.4
 
-### Change(break): `oncloud file list` follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names)
+### New Features
 
-### AoC Package send supports external users
+* AoC Package send supports external users
+* New command to export AoC config to Aspera CLI config
 
-### New command to export AoC config to Aspera CLI config
+### Breaking Changes
+
+* `oncloud`: `oncloud file list` follow `--source` convention as well (plus specific case for download when first path is source folder, and other are source file names)
 
 ## 0.9.3
 
-### REST error message show host and code
+### New Features
 
-### Option for quiet display
+* REST error message show host and code
+* Option for quiet display
+* Modified transfer interface and allow token re-generation on error
+* `async` add `admin` command
+* `async` add db parameters
 
-### Modified transfer interface and allow token re-generation on error
+### Breaking Changes
 
-### `async` add `admin` command
-
-### `async` add db parameters
-
-### Change(break): New option "sources" to specify files to transfer
+* **global**: New option `sources` to specify files to transfer
 
 ## 0.9.2
 
-### Change(break): Changed AoC package creation to match API, see AoC section
+### Breaking Changes
+
+* `aoc`: Changed AoC package creation to match API, see AoC section
 
 ## 0.9.1
 
-### Change(break): Changed faspex package creation to match API, see Faspex section
+### Breaking Changes
+
+* `faspex`: Changed faspex package creation to match API, see Faspex section
 
 ## 0.9
 
-### Renamed the CLI from aslmcli to ascli
+### New Features
 
-### Automatic rename and conversion of former config folder from aslmcli to ascli
+* Automatic rename and conversion of former config folder from aslmcli to ascli
+
+### Breaking Changes
+
+* Renamed the CLI from aslmcli to ascli
 
 ## 0.7.6
 
-### Add `sync` plugin
+### New Features
+
+* Add `sync` plugin
 
 ## 0.7
 
-### Change(break): AoC `package recv` take option if for package instead of argument
+### New Features
 
-### Change(break): Rest class and Oauth class changed init parameters
+* AoC: Receive package from public link
+* Select by col value on output
+* Added rename (AoC, node)
 
-### AoC: Receive package from public link
+### Breaking Changes
 
-### Select by col value on output
-
-### Added rename (AoC, node)
+* `aoc`: AoC `package recv` take option if for package instead of argument
+* **global**: Rest class and Oauth class changed init parameters
 
 ## 0.6.19
 
-### Change(break): `ats server list provisioned` &rarr; `ats cluster list`
+### Breaking Changes
 
-### Change(break): `ats server list clouds` &rarr; `ats cluster clouds`
-
-### Change(break): `ats server list instance --cloud=x --region=y` &rarr; `ats cluster show --cloud=x --region=y`
-
-### Change(break): `ats server id xxx` &rarr; `ats cluster show --id=xxx`
-
-### Change(break): `ats subscriptions` &rarr; `ats credential subscriptions`
-
-### Change(break): `ats api_key repository list` &rarr; `ats credential cache list`
-
-### Change(break): `ats api_key list` &rarr; `ats credential list`
-
-### Change(break): `ats access_key id xxx` &rarr; `ats access_key --id=xxx`
+* `ats`: `ats server list provisioned` &rarr; `ats cluster list`
+* `ats`: `ats server list clouds` &rarr; `ats cluster clouds`
+* `ats`: `ats server list instance --cloud=x --region=y` &rarr; `ats cluster show --cloud=x --region=y`
+* `ats`: `ats server id xxx` &rarr; `ats cluster show --id=xxx`
+* `ats`: `ats subscriptions` &rarr; `ats credential subscriptions`
+* `ats`: `ats api_key repository list` &rarr; `ats credential cache list`
+* `ats`: `ats api_key list` &rarr; `ats credential list`
+* `ats`: `ats access_key id xxx` &rarr; `ats access_key --id=xxx`
 
 ## 0.6.18
 
-### Some commands take now `--id` option instead of `id` command
+### New Features
+
+* Some commands take now `--id` option instead of `id` command
 
 ## 0.6.15
 
-### Change(break): `files` application renamed to `aspera` (for "Aspera on Cloud"). `repository` renamed to `files`. Default is automatically reset, e.g. in config files and change key `files` to `aspera` in preset `default`
+### Breaking Changes
+
+* `aspera`: `files` application renamed to `aspera` (for "Aspera on Cloud"). `repository` renamed to `files`. Default is automatically reset, e.g. in config files and change key `files` to `aspera` in preset `default`

@@ -140,11 +140,18 @@ module Aspera
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
     class Manager
+      BOOLEAN_SIMPLE = %i[no yes].freeze
       class << self
-        # list of allowed bool value to Ruby bool value
+        # @return `true` if value is a value for `true` in BOOLEAN_VALUES
         def enum_to_bool(enum)
           Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
           return TRUE_VALUES.include?(enum)
+        end
+
+        # @return :yes ot :no
+        def enum_to_yes_no(enum)
+          Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
+          return TRUE_VALUES.include?(enum) ? BOOL_YES : BOOL_NO
         end
 
         # Find shortened string value in allowed symbol list
@@ -272,10 +279,12 @@ module Aspera
           # This option value must be a symbol (or array of symbols)
           set_option(option_symbol, Manager.enum_to_bool(default), where: 'default') if option_attrs.values.eql?(BOOLEAN_VALUES) && !default.nil?
           value = get_option(option_symbol)
-          help_values = option_attrs.values.map{ |i| i.eql?(value) ? highlight_current(i) : i}.join(', ')
-          if option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
-            help_values = BOOLEAN_SIMPLE.map{ |i| (i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
-          end
+          help_values =
+            if option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
+              highlight_current_in_list(BOOLEAN_SIMPLE, self.class.enum_to_yes_no(value))
+            else
+              highlight_current_in_list(option_attrs.values, value)
+            end
           on_args[0] = "#{description}: #{help_values}"
           on_args.push(symbol_to_option(option_symbol, 'ENUM'))
           # on_args.push(option_attrs.values)
@@ -481,9 +490,7 @@ module Aspera
             option, path, raw_value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
-              # deeply construct a hash based on path, a.b.c=d gives {"a"=>{"b"=>{"c"=>d}}}
-              value = path.split(OPTION_HASH_SEPARATOR).reverse.inject(smart_convert(raw_value)){ |v, k| {k => v}}
-              set_option(option_sym, value, where: 'dotted')
+              set_option(option_sym, dotted_to_extended(path, raw_value), where: 'dotted')
               retry
             end
           end
@@ -552,6 +559,17 @@ module Aspera
         return result
       end
 
+      # Read remaining args and build an Array or Hash
+      def args_as_extended(value)
+        ExtendedValue.assert_no_value(value, :p)
+        result = nil
+        get_next_argument(:args, multiple: true).each do |arg|
+          path, raw = arg.split(OPTION_VALUE_SEPARATOR, 2)
+          result = dotted_to_extended(path, raw, result)
+        end
+        result
+      end
+
       # ======================================================
       private
 
@@ -566,8 +584,24 @@ module Aspera
         begin
           Float(value)
         rescue ::ArgumentError
-          ExtendedValue.instance.evaluate(value, context: 'dotted option')
+          ExtendedValue.instance.evaluate(value, context: 'dotted expression')
         end
+      end
+
+      def int_or_orig(value)
+        v = Integer(value, exception: false)
+        v.nil? ? value : v
+      end
+
+      def dotted_to_extended(path, raw_value, result = nil)
+        keys = path.split(OPTION_HASH_SEPARATOR)
+        result = Integer(keys.first, exception: false).nil? ? {} : [] if result.nil?
+        current = result
+        keys[0...-1].each_with_index do |k, i|
+          current = current[int_or_orig(k)] ||= Integer(keys[i + 1], exception: false).nil? ? {} : []
+        end
+        current[int_or_orig(keys.last)] = smart_convert(raw_value)
+        result
       end
 
       # generate command line option from option symbol
@@ -578,8 +612,15 @@ module Aspera
       end
 
       # TODO: use formatter
-      def highlight_current(value)
-        $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
+      # @return [String] comma separated list of values, with the current value highlighted
+      def highlight_current_in_list(list, current)
+        list.map do |i|
+          if i.eql?(current)
+            $stdout.isatty ? i.to_s.red.bold : "[#{i}]"
+          else
+            i
+          end
+        end.join(', ')
       end
 
       # Try to evaluate options set in batch
@@ -604,9 +645,10 @@ module Aspera
         end
       end
       # boolean options are set to true/false from the following values
-      BOOLEAN_SIMPLE = %i[no yes].freeze
-      FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
-      TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
+      BOOL_YES = BOOLEAN_SIMPLE.last
+      BOOL_NO = BOOLEAN_SIMPLE.first
+      FALSE_VALUES = [BOOL_NO, false].freeze
+      TRUE_VALUES = [BOOL_YES, true].freeze
       BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
 
       # Option name separator on command line, e.g. in --option-blah, third "-"
@@ -623,7 +665,7 @@ module Aspera
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
 
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
+      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
     end
   end
 end

@@ -58,8 +58,11 @@ module Aspera
           raise BadArgument, "#{e.message}\n#{context}\n#{pointer}"
         end
 
-        def assert_no_value(value, what)
-          raise "no value allowed for extended value type: #{what}" unless value.empty?
+        # The value must be empty
+        # @param value [String] The value as parameter
+        # @param ext_type [Symbol] The method of extended value
+        def assert_no_value(value, ext_type)
+          Aspera.assert(value.empty?, type: BadArgument){"no value allowed for extended value type: #{ext_type}"}
         end
       end
 
@@ -67,7 +70,8 @@ module Aspera
 
       def initialize
         # Base handlers
-        # Other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
+        # Other handlers can be set using `on`
+        # e.g. `preset` is reader in config plugin
         @handlers = {
           val:    lambda{ |i| i},
           base64: lambda{ |i| Base64.decode64(i)},
@@ -95,7 +99,7 @@ module Aspera
         update_regex
       end
 
-      # Regex to match an extended value
+      # Update the Regex to match an extended value based on @handlers
       def update_regex
         handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
         @regex_single = Regexp.new("^#{handler_regex}(.*)$", Regexp::MULTILINE)
@@ -113,13 +117,15 @@ module Aspera
         @default_decoder = value
       end
 
+      # List of Extended Value methods
       def modifiers; @handlers.keys; end
 
       # Add a new handler
-      def set_handler(name, method)
-        Log.log.debug{"setting handler for #{name}"}
+      def on(name, &block)
         Aspera.assert_type(name, Symbol){'name'}
-        @handlers[name] = method
+        Aspera.assert(block)
+        Log.log.debug{"Setting handler for #{name}"}
+        @handlers[name] = block
         update_regex
       end
 

@@ -1638,7 +1638,7 @@ The value of **Options** and **Positional Arguments** is evaluated with the [Ext
 - **Commands**, typically at the beginning
 - **Command Parameters**, mandatory arguments, e.g. creation data or entity identifier
 
-When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a pre-defined order.
+When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a significant, pre-defined order.
 
 **Commands** are typically entity types (e.g. `users`) or verbs (e.g. `create`) to act on those entities.
 Its value is a `String` that must belong to a fixed list of values in a given context.
@@ -1655,7 +1655,6 @@ Example:
 - `info` is the third level command: action to be performed
 
 Typically, **Commands** are located at the **beginning** of the command line.
-Order is significant.
 The provided command must match one of the supported commands in the given context.
 If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
@@ -1676,6 +1675,29 @@ For example sub-commands appear after entity selection (identifier), e.g. `<%=cm
 If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
+
+A special Extended Value `@p:` has the following meaning:
+
+- Take all remaining positional arguments
+- Expect each of them to have the format: `<path>=<value>`
+- `<path>` designates a path in a complex structure such as Hash or Array.
+  `.` is the path separator.
+  Each segment separated by a dot represents a key in a nested structure.
+  Integer index denote Array, and other denote Hash index.
+- <%=tool%> tries to convert `<value>` to the simplest type (bool, int, float, string).
+  If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
+  For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
+  This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
+
+Example:
+
+```bash
+<%=cmd%> conf echo @p: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
+```
+
+```json
+{"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
 
 #### Options
 
@@ -1708,7 +1730,7 @@ Exceptions and Special Cases:
 - **Option Terminator**:
   The special option `--` ends option parsing.
   All subsequent arguments, including those starting with `-`, are treated as positional arguments.
-- **Dot Notation for Hashes**:
+- **Dot Notation for Hash and Array**:
   If an option name contains a dot (`.`), it is interpreted as a `Hash`.
   Each segment separated by a dot represents a key in a nested structure.
   <%=tool%> tries to convert the value to the simplest type (bool, int, float, string).
@@ -2124,30 +2146,31 @@ The following decoders are supported:
 
 | Decoder  | Parameter| Returns  | Description                                                                              |
 |----------|----------|----------|------------------------------------------------------------------------------------------|
-| `base64` | `String` | `String` | Decode a base64 encoded string |
-| `csvt`   | `String` | `Array`  | Decode a titled CSV value |
-| `env`    | `String` | `String` | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
-| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| `json`   | `String` | Any      | Decode JSON values (convenient to provide complex structures) |
-| `lines`  | `String` | `Array`  | Split a string in multiple lines and return an array |
-| `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an array |
-| `none`   | None     | Nil      | A null value |
-| `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| `base64` | `String` | `String` | Decode a base64 encoded string. |
+| `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
+| `env`    | `String` | `String` | Read from a named env var name. e.g. `--password=@env:MYPASSVAR` |
+| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the users home folder). e.g. `--key=@file:~/.ssh/mykey` |
+| `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
+| `lines`  | `String` | `Array`  | Split a string in multiple lines and return an `Array`. |
+| `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
+| `none`   | None     | Nil      | A `null` value. |
+| `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). e.g. `--config-file=@path:~/sample_config.yml` |
 | `preset` | `String` | `Hash`   | Get whole option preset value by name. Sub-values can also be used, using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
-| `extend` | `String` | `String` | Evaluates embedded extended value syntax in string |
+| `extend` | `String` | `String` | Evaluates embedded extended value syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
-| `ruby`   | `String` | Any      | Execute specified Ruby code |
-| `secret` | None     | `String` | Ask password interactively (hides input) |
-| `stdin`  | None     | `String` | Read from stdin in text mode (no value on right) |
-| `stdbin` | None     | `String` | Read from stdin in binary mode (no value on right) |
-| `uri`    | `String` | `String` | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| `ruby`   | `String` | Any      | Execute specified Ruby code. |
+| `secret` | None     | `String` | Ask password interactively (hides input). |
+| `stdin`  | None     | `String` | Read from stdin in text mode (no value on right). |
+| `stdbin` | None     | `String` | Read from stdin in binary mode (no value on right). |
+| `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| `yaml`   | `String` | Any      | Decode YAML |
-| `zlib`   | `String` | `String` | Decompress data using zlib |
+| `yaml`   | `String` | Any      | Decode YAML. |
+| `zlib`   | `String` | `String` | Decompress data using zlib. |
+| `p`      | None     | Any      | Parses remaining arguments as `Hash` or `Array`. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
-> For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` `i`.
+> For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` parameter named `i`.
 
 To display the result of an extended value, use the `config echo` command.
 

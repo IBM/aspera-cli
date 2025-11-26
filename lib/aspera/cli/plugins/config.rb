@@ -120,8 +120,9 @@ module Aspera
           # Read config file (set @config_presets)
           read_config_file
           # Add preset handler (needed for smtp)
-          ExtendedValue.instance.set_handler(EXTEND_PRESET, lambda{ |v| preset_by_name(v)})
-          ExtendedValue.instance.set_handler(EXTEND_VAULT, lambda{ |v| vault_value(v)})
+          ExtendedValue.instance.on(EXTEND_PRESET){ |v| preset_by_name(v)}
+          ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
+          ExtendedValue.instance.on(EXTEND_P){ |v| options.args_as_extended(v)}
           # Load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           # Vault options
@@ -1228,6 +1229,7 @@ module Aspera
         # Special extended values
         EXTEND_PRESET = :preset
         EXTEND_VAULT = :vault
+        EXTEND_P = :p
         PRESET_DIG_SEPARATOR = '.'
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
