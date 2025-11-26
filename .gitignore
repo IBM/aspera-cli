@@ -10,7 +10,6 @@
 # to store things not to be in versioning:
 .idea
 .vscode
-container/Dockerfile
 .bundle
 *.pandoc_meta
 dev.*
