@@ -328,13 +328,24 @@ Download the Ruby installer executable from <https://rubyinstaller.org/downloads
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
+#### Windows: Chocolatey
+
+If you use [Chocolatey](https://chocolatey.org/), then install Ruby with:
+
+```powershell
+choco install ruby
+```
+
 #### macOS: `brew`
 
-The recommended way is to use [Homebrew](https://brew.sh/).
+If you use [Homebrew](https://brew.sh/), then install Ruby with:
 
 ```shell
 brew install ruby
 ```
+
+> [!NOTE]
+> This is the recommended method.
 
 > [!WARNING]
 > **macOS** comes with Ruby 2.6.
@@ -354,8 +365,8 @@ export PATH="$(gem env gemdir)/bin:$PATH"
 
 > [!NOTE]
 > Two separate lines are needed because the second one depends on the first one.
-> This is what is displayed at the end of the installation of the ruby tap, same as message from:
-> `brew info ruby`
+> This is what is displayed at the end of the installation of the ruby tap,
+> same as message from: `brew info ruby`
 
 #### Linux: Package
 
@@ -381,10 +392,11 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
   dnf install -y make automake gcc gcc-c++ kernel-devel
   ```
 
-- Enable the Ruby version you want:
+- Enable the Ruby version you selected:
 
   ```shell
-  dnf module -y enable ruby:3.1
+  dnf module -y enable ruby:3.2
+
   dnf install -y ruby-devel
   ```
 
