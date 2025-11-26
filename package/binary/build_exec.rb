@@ -7,19 +7,7 @@ require 'bundler'
 require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/cli/info'
-
-def run(*args)
-  puts("Executing: #{args.join(' ')}")
-  args = args.map(&:to_s)
-  Aspera::Environment.secure_execute(exec: args.shift, args: args)
-end
-
-def gems_in_group(gemfile, group_name_symn)
-  Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil).dependencies.filter_map do |dep|
-    next unless dep.groups.include?(group_name_symn)
-    "#{dep.name}:#{dep.requirement.to_s.delete(' ')}"
-  end
-end
+require_relative '../build_tools'
 
 def install_gem(name, into)
   run('gem', 'install', name, '--no-document', '--install-dir', into)
@@ -27,10 +15,10 @@ end
 
 Aspera.assert(ARGV.length <= 1){"Usage: #{$PROGRAM_NAME} [GEM_VERSION]"}
 
-top_dir = Pathname.new(__dir__).parent
+top_dir = Pathname.new(__dir__).parent.parent
 main_tmp = top_dir / 'tmp'
 gem_version = ARGV.first || Aspera::Cli::VERSION
-optional_gems = gems_in_group(top_dir / 'Gemfile', :optional)
+optional_gems = BuildTools.gems_in_group(top_dir / 'Gemfile', :optional)
 cli_bin_path = main_tmp / "#{Aspera::Cli::Info::CMD_NAME}.#{gem_version}.#{Aspera::Environment.instance.architecture}"
 main_gem_version = "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
 # tebako_version = '0.13.4'
