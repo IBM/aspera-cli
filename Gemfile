@@ -8,7 +8,7 @@ gemspec
 # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
-  gem('mimemagic', '~> 0.4') # for preview
+  gem('marcel', '~> 1.1') # for preview
   gem('rmagick', '~> 6.1') unless defined?(JRUBY_VERSION) # for terminal view
   # gem('rmagick4j', '~> 0.3') if defined?(JRUBY_VERSION) # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets

@@ -10,8 +10,8 @@ include $(DIR_TOP)common.mak
 
 all:: doc signed_gem
 
-clean::
-	cd container && make clean
+#clean::
+#	cd package/container && rake clean
 beta:
 	cd $(ASPERA_CLI_TEST_PRIVATE) && make beta
 ##################################
