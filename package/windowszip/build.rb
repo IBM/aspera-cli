@@ -13,12 +13,12 @@ require 'aspera/cli/transfer_progress'
 require 'aspera/ascp/installation'
 Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
-GEM_VERSION = ARGV.first || Aspera::Cli::VERSION
+GEM_VERSION = ARGV[0] || Aspera::Cli::VERSION
+TEMP_FOLDER = File.join(File.realpath(ARGV[1]), 'tmp')
 RUBY_RELEASES_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases'
 INSTALL_RUBY_VERSION = '3.4.7-1'
 MS_VC_BASE_URL = 'https://aka.ms/vc14'
 TARGET_FOLDER_NAME = "aspera-cli-#{GEM_VERSION}-windows-amd64-installer"
-TEMP_FOLDER = File.join(File.dirname(File.realpath(__FILE__), 2), 'tmp')
 ARCHIVE_FOLDER_NAME = 'resources'
 BUILD_DIR = File.join(TEMP_FOLDER, TARGET_FOLDER_NAME)
 RESOURCES_DIR = File.join(BUILD_DIR, ARCHIVE_FOLDER_NAME)
