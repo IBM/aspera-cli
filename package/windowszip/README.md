@@ -10,6 +10,12 @@ Install all the necessary components for `ascli`:
 - `ascp`
 - add to PATH
 
-## Installation procedure
+## Build
+
+```bash
+rake GEM_VERSION=x.y.z
+```
+
+## Installation procedure on Windows
 
 Execute: `setup.cmd`
