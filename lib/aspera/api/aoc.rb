@@ -73,7 +73,7 @@ module Aspera
         # split host of URL into organization and domain
         def split_org_domain(uri)
           Aspera.assert_type(uri, URI)
-          raise "No host found in URL.Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" if uri.host.nil?
+          Aspera.assert(!uri.host.nil?){"No host found in URL. Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}"}
           parts = uri.host.split('.', 2)
           Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
           parts[0] = nil if parts[0].eql?('api')
@@ -97,7 +97,7 @@ module Aspera
           else
             Log.log.debug{"path=#{final_uri.path} does not end with /login"}
           end
-          raise Error, 'AoC shall redirect to login page with a query' if final_uri.query.nil?
+          Aspera.assert(!final_uri.query.nil?, 'AoC shall redirect to login page with a query', type: Error)
           query = Rest.query_to_h(final_uri.query)
           Log.dump(:query, query, level: :trace1)
           # is that a public link ?
@@ -199,11 +199,24 @@ module Aspera
 
       attr_reader :private_link
 
-      def initialize(url:, auth:, subpath: API_V1, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
-        password: nil, workspace: nil, secret_finder: nil)
-        # test here because link may set url
-        raise ParameterError, 'Missing mandatory option: url' if url.nil?
-        raise ParameterError, 'Missing mandatory option: scope' if scope.nil?
+      def initialize(
+        url:,
+        auth:,
+        subpath: API_V1,
+        client_id: nil,
+        client_secret: nil,
+        scope: nil,
+        redirect_uri: nil,
+        private_key: nil,
+        passphrase: nil,
+        username: nil,
+        password: nil,
+        workspace: nil,
+        secret_finder: nil
+      )
+        # Test here because link may set url
+        Aspera.assert(url, 'Missing mandatory option: url', type: ParameterError)
+        Aspera.assert(scope, 'Missing mandatory option: scope', type: ParameterError)
         # default values for client id
         client_id, client_secret = self.class.get_client_info if client_id.nil?
         # access key secrets are provided out of band to get node api access
@@ -228,7 +241,7 @@ module Aspera
         auth_params[:grant_method] = if url_info.key?(:token)
           :url_json
         else
-          raise ParameterError, 'Missing mandatory option: auth' if auth.nil?
+          Aspera.assert(auth, 'Missing mandatory option: auth', type: ParameterError)
           auth
         end
         # this is the base API url
@@ -238,11 +251,11 @@ module Aspera
         # fill other auth parameters based on OAuth method
         case auth_params[:grant_method]
         when :web
-          raise ParameterError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
+          Aspera.assert(redirect_uri, 'Missing mandatory option: redirect_uri', type: ParameterError)
           auth_params[:redirect_uri] = redirect_uri
         when :jwt
-          raise ParameterError, 'Missing mandatory option: private_key' if private_key.nil?
-          raise ParameterError, 'Missing mandatory option: username' if username.nil?
+          Aspera.assert(private_key, 'Missing mandatory option: private_key', type: ParameterError)
+          Aspera.assert(username, 'Missing mandatory option: username', type: ParameterError)
           auth_params[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
           auth_params[:payload] = {
             iss: auth_params[:client_id], # issuer
@@ -371,7 +384,7 @@ module Aspera
               file_id: user_info['read_only_home_file_id']
             }
           end
-        raise "Cannot get user's home node id, check your default workspace or specify one" if @home_info[:node_id].to_s.empty?
+        Aspera.assert(!@home_info[:node_id].to_s.empty?, "Cannot get user's home node id, check your default workspace or specify one", type: Error)
         Log.dump(:context, @home_info)
         @home_info
       end
@@ -442,37 +455,38 @@ module Aspera
         end
         meta_schema.each do |field|
           provided = pkg_meta.select{ |i| i['name'].eql?(field['name'])}
-          raise "only one field with name #{field['name']} allowed" if provided.count > 1
-          raise "missing mandatory field: #{field['name']}" if field['required'] && provided.empty?
+          Aspera.assert(provided.count <= 1, type: Error){"only one field with name #{field['name']} allowed"}
+          Aspera.assert(!provided.empty?, type: Error){"missing mandatory field: #{field['name']}"} if field['required']
         end
       end
 
       # Normalize package creation recipient lists as expected by AoC API
       # AoC expects {type: , id: }, but ascli allows providing either the native values or just a name
       # in that case, the name is resolved and replaced with {type: , id: }
-      # @param package_data The whole package creation payload
-      # @param recipient_list_field The field in structure, i.e. recipients or bcc_recipients
-      # @return nil package_data is modified
-      def resolve_package_recipients(package_data, ws_id, recipient_list_field, new_user_option)
-        return unless package_data.key?(recipient_list_field)
-        Aspera.assert_type(package_data[recipient_list_field], Array){recipient_list_field}
+      # @param package_data    [Hash]   The whole package creation payload
+      # @param rcpt_lst_field  [String] The field in structure, i.e. recipients or bcc_recipients
+      # @param new_user_option [Hash]   Additionnal fields for contact creation
+      # @return nil, `package_data` is modified
+      def resolve_package_recipients(package_data, rcpt_lst_field, new_user_option)
+        return unless package_data.key?(rcpt_lst_field)
+        Aspera.assert_type(package_data[rcpt_lst_field], Array){rcpt_lst_field}
         new_user_option = {'package_contact' => true} if new_user_option.nil?
         Aspera.assert_type(new_user_option, Hash){'new_user_option'}
+        ws_id = package_data['workspace_id']
         # list with resolved elements
         resolved_list = []
-        package_data[recipient_list_field].each do |short_recipient_info|
+        package_data[rcpt_lst_field].each do |short_recipient_info|
           case short_recipient_info
           when Hash # native API information, check keys
-            Aspera.assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{recipient_list_field} element shall have fields: id and type"}
+            Aspera.assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{rcpt_lst_field} element shall have fields: id and type"}
           when String # CLI helper: need to resolve provided name to type/id
             # email: user, else dropbox
             entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
             begin
               full_recipient_info = lookup_by_name(entity_type, short_recipient_info, query: {'current_workspace_id' => ws_id})
-            rescue RuntimeError => e
-              raise e unless e.message.start_with?(ENTITY_NOT_FOUND)
+            rescue EntityNotFound
               # dropboxes cannot be created on the fly
-              raise "No such shared inbox in workspace #{ws_id}" if entity_type.eql?('dropboxes')
+              Aspera.assert_values(entity_type, 'contacts', type: Error){"No such shared inbox in workspace #{ws_id}"}
               # unknown user: create it as external user
               full_recipient_info = create('contacts', {
                 'current_workspace_id' => ws_id,
@@ -484,14 +498,13 @@ module Aspera
             else
               {'id' => full_recipient_info['source_id'], 'type' => full_recipient_info['source_type']}
             end
-          else # unexpected extended value, must be String or Hash
-            raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
+          else Aspera.error_unexpected_value(short_recipient_info.class.name){"#{rcpt_lst_field} item must be a String (email, shared inbox) or Hash (id,type)"}
           end
           # add original or resolved recipient info
           resolved_list.push(short_recipient_info)
         end
         # replace with resolved elements
-        package_data[recipient_list_field] = resolved_list
+        package_data[rcpt_lst_field] = resolved_list
         return
       end
 
@@ -524,8 +537,8 @@ module Aspera
         # package_data['file_names']||=[..list of filenames to transfer...]
 
         # lookup users
-        resolve_package_recipients(package_data, package_data['workspace_id'], 'recipients', new_user_option)
-        resolve_package_recipients(package_data, package_data['workspace_id'], 'bcc_recipients', new_user_option)
+        resolve_package_recipients(package_data, 'recipients', new_user_option)
+        resolve_package_recipients(package_data, 'bcc_recipients', new_user_option)
 
         validate_metadata(package_data) if validate_meta
 

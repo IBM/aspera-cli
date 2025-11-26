@@ -50,13 +50,13 @@ module Aspera
     end
   end
 
+  class EntityNotFound < Error
+  end
+
   # a simple class to make HTTP calls, equivalent to rest-client
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    # Error message when entity not found (TODO: use specific exception)
-    ENTITY_NOT_FOUND = 'No such'
-
     MIME_JSON = 'application/json'
     MIME_WWW = 'application/x-www-form-urlencoded'
     MIME_TEXT = 'text/plain'
@@ -549,7 +549,7 @@ module Aspera
       Aspera.assert_type(matching_items, Array)
       case matching_items.length
       when 1 then return matching_items.first
-      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{subpath}: "#{search_name}"}
+      when 0 then raise EntityNotFound, %Q{No such #{subpath}: "#{search_name}"}
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
