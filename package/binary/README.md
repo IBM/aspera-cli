@@ -10,10 +10,8 @@ A container version is provided for [`tebako`](https://github.com/tamatebako/teb
 ## Usage: (non-Windows)
 
 ```bash
-cd binary
-v=4.23.0 
-git checkout v$v
-make GEM_VERSION=$v
+cd package/binary
+rake GEM_VERSION=4.23.0
 ```
 
 ## Legacy
