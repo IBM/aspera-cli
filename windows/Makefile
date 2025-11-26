@@ -1,3 +1,6 @@
+DIR_TOP=../
+
+include $(DIR_TOP)common.mak
+
 all::
-	./build.rb 4.24.2
-#	pwsh -NoLogo -NoProfile -Command "Import-Module PS2EXE.Core; Invoke-PS2EXE 'process.ps1' 'process.exe'"
+	./build.rb $(GEM_VERSION)

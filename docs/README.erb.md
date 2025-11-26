@@ -45,7 +45,7 @@ Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
 
-The <%=gem%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
+The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
 It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
 
 Ruby Gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
@@ -637,12 +637,12 @@ To execute an Aspera transfer, only two additional files are required, both incl
 
 - `aspera-license` - the license file (located in the same directory as `ascp` or in `../etc`)
 
-These components can be installed either by installing the Aspera transfer software or by executing the <%=tool%> command.
+These components can be installed either by installing the Aspera transfer software or by running the <%=tool%> command.
 
 #### Installation of `ascp` through `transferd`
 
 The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
-Install using <%=tool%> for the current platform with:
+Install it using <%=tool%> (for the current platform) with:
 
 ```shell
 <%=cmd%> config transferd install
@@ -708,6 +708,7 @@ If the embedded method is not used, the following packages are also suitable:
 
 - IBM Aspera Connect Client (Free)
 - IBM Aspera Desktop Client (Free)
+- IBM Aspera for Desktop (Free)
 - IBM Aspera High Speed Transfer Server (Licensed)
 - IBM Aspera High Speed Transfer Endpoint (Licensed)
 
@@ -728,14 +729,15 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 #### Gem files and dependencies
 
-The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
+Necessary gems can be packed in a `tar.gz` like this:
 
-```shell
-./build_package.sh aspera-cli 4.18.0
-```
-
-```text
-Archive: aspera-cli-4.18.0-gems.tgz
+```bash
+mkdir temp_folder
+gem install <%=gemspec.name%>:<%=gemspec.version%> --no-document --install-dir temp_folder
+find temp_folder
+mv temp_folder/cache <%=gemspec.name%>-<%=gemspec.version%>-gems
+rm -fr temp_folder
+tar zcvf <%=gemspec.name%>-<%=gemspec.version%>-gems <%=gemspec.name%>-<%=gemspec.version%>-gems.tgz
 ```
 
 #### Unix-like
@@ -815,7 +817,7 @@ gem install --force --local *.gem
 ```
 
 > [!NOTE]
-> An example of installation script is provided: [windows/install.bat](windows/install.bat)
+> A beta version of a packaged installed is available.
 
 ### Container
 

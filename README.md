@@ -667,12 +667,12 @@ To execute an Aspera transfer, only two additional files are required, both incl
 
 - `aspera-license` - the license file (located in the same directory as `ascp` or in `../etc`)
 
-These components can be installed either by installing the Aspera transfer software or by executing the `ascli` command.
+These components can be installed either by installing the Aspera transfer software or by running the `ascli` command.
 
 #### Installation of `ascp` through `transferd`
 
 The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
-Install using `ascli` for the current platform with:
+Install it using `ascli` (for the current platform) with:
 
 ```shell
 ascli config transferd install
@@ -738,6 +738,7 @@ If the embedded method is not used, the following packages are also suitable:
 
 - IBM Aspera Connect Client (Free)
 - IBM Aspera Desktop Client (Free)
+- IBM Aspera for Desktop (Free)
 - IBM Aspera High Speed Transfer Server (Licensed)
 - IBM Aspera High Speed Transfer Endpoint (Licensed)
 
@@ -758,14 +759,15 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 #### Gem files and dependencies
 
-The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
+Necessary gems can be packed in a `tar.gz` like this:
 
-```shell
-./build_package.sh aspera-cli 4.18.0
-```
-
-```text
-Archive: aspera-cli-4.18.0-gems.tgz
+```bash
+mkdir temp_folder
+gem install aspera-cli:4.25.0.pre --no-document --install-dir temp_folder
+find temp_folder
+mv temp_folder/cache aspera-cli-4.25.0.pre-gems
+rm -fr temp_folder
+tar zcvf aspera-cli-4.25.0.pre-gems aspera-cli-4.25.0.pre-gems.tgz
 ```
 
 #### Unix-like
@@ -845,7 +847,7 @@ ascli config ascp install --sdk-url=file:///sdk.zip
 ```
 
 > [!NOTE]
-> An example of installation script is provided: [windows/install.bat](windows/install.bat)
+> A beta version of a packaged installed is available.
 
 ### Container
 
@@ -7556,7 +7558,7 @@ admin saml_configs list
 admin shared_inboxes invite %name:my_shared_box_name johnny@example.com
 admin shared_inboxes list
 admin shared_inboxes list --query=@json:'{"all":true}'
-admin shared_inboxes members %name:my_shared_box_name create %name:john@example.com
+admin shared_inboxes members %name:my_shared_box_name create %name:john@example.com submit_only
 admin shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
 admin shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
 admin shared_inboxes members %name:my_shared_box_name list
@@ -8508,7 +8510,7 @@ Several options can be used to tune several aspects:
 - Methods for generation of video preview
 - Parameters for video handling
 
-See also <https://github.com/IBM/aspera-on-cloud-file-previews>
+Using `ascli` is an alternative to <https://github.com/IBM/aspera-on-cloud-file-previews>.
 
 ### Aspera Server configuration
 

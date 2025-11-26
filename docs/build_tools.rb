@@ -146,9 +146,6 @@ class DocHelper
   # Just command name
   def cmd; Aspera::Cli::Info::CMD_NAME; end
 
-  # Just command name
-  def gem; Aspera::Cli::Info::GEM_NAME; end
-
   # (Markdown) used in text with formatting of command
   def tool; "`#{cmd}`"; end
 
