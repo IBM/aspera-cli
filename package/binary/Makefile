@@ -1,6 +1,6 @@
 ##################################
 # Single executable
-DIR_TOP=../
+DIR_TOP=../../
 
 include $(DIR_TOP)common.mak
 

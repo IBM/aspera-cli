@@ -872,7 +872,7 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](container/Dockerfile.tmpl.erb).
+The container image is built from this [Dockerfile](package/container/Dockerfile.tmpl.erb).
 The entry point is <%=tool%> and the default command is `help`.
 
 The container can be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
