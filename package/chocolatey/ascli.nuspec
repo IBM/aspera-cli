@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>ascli</id>
+    <version>0.0.1</version>
+    <title>Aspera CLI</title>
+    <authors>IBM</authors>
+    <owners>IBM</owners>
+    <description>Installs Ruby, VC++ Redistributable, then installs the aspera-cli gem and configures transfer daemon.</description>
+    <tags>ascli aspera cli ascp ibm</tags>
+    <dependencies>
+      <dependency id="ruby" version="[3.2.0,)" />
+      <dependency id="vcredist140" version="[14.0.0,)" />
+    </dependencies>
+  </metadata>
+</package>
