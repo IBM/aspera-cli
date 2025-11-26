@@ -8,6 +8,7 @@ require 'bundler'
 require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/cli/info'
+require 'aspera/cli/version'
 require_relative '../build_tools'
 
 ############################################################
@@ -33,6 +34,7 @@ end
 
 task default: :build
 
+desc 'Build the single executable (default)'
 task build: [CLI_EXEC_PATH]
 
 file CLI_EXEC_PATH do
@@ -158,6 +160,7 @@ end
 # CLEAN
 ############################################################
 
+desc 'Remove built executable and temporary files'
 task :clean do
   FileUtils.rm_f(CLI_EXEC_PATH)
   FileUtils.rm_f('nohup.out')

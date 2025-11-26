@@ -40,6 +40,7 @@ task default: :build
 # BUILD
 ##################################
 
+desc 'Build the container (default)'
 task build: ['Dockerfile.tmpl.erb'] do
   out = process_template(
     'Dockerfile.tmpl.erb',
@@ -50,6 +51,7 @@ task build: ['Dockerfile.tmpl.erb'] do
   run(TOOL, 'build', '--squash', '--tag', TAG_VERSION, '--tag', TAG_LATEST, '.')
 end
 
+desc 'Test the container'
 task :test do
   run(TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, Aspera::Cli::Info::CMD_NAME, '-v')
 end
@@ -58,14 +60,17 @@ end
 # PUSH
 ##################################
 
+desc 'Push only the version tag'
 task :push_version do
   run(TOOL, 'push', TAG_VERSION)
 end
 
+desc 'Push only the latest tag'
 task :push_latest do
   run(TOOL, 'push', TAG_LATEST)
 end
 
+desc 'Push version and latest tags'
 task push: %i[push_version push_latest]
 
 ##################################
