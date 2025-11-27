@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
-require 'bundler/gem_tasks'
-require 'rspec/core/rake_task'
+# Rakefile
+require 'bundler/setup'
 
-RSpec::Core::RakeTask.new(:spec)
+# Load all task files from rakelib
+Dir.glob('rakelib/*.rake').sort.each{ |f| import f}
 
+# Default: run the entire test suite
 task default: :spec
