@@ -9,13 +9,14 @@ DIR_LIB=$(DIR_TOP)lib/
 DIR_TMP=$(DIR_TOP)tmp/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
+DIR_PKG=$(DIR_TOP)package/
 
 GEM_VERSION=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/version";print Aspera::Cli::VERSION')
 GEM_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::GEM_NAME')
 DCK_REPO=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CONTAINER')
 CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CMD_NAME')
 CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";print Aspera::Environment.instance.architecture')
-DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r build_tools -e
+BLD_TOOL=ruby -I $(DIR_PKG). -I $(DIR_LIB).
 
 # path to CLI for execution (not using PATH)
 CLI_PATH=$(DIR_BIN)$(CLI_NAME)

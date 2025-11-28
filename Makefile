@@ -10,6 +10,9 @@ include $(DIR_TOP)common.mak
 
 all:: doc signed_gem
 
+clean::
+	rm -fr $(DIR_TOP).vscode/*.log
+
 #clean::
 #	cd package/container && rake clean
 beta:
@@ -81,7 +84,7 @@ PROTO_PATH=$(DIR_TMP)protos/
 GRPC_DEST=$(DIR_LIB)
 grpc:
 	mkdir -p $(PROTO_PATH)
-	$(DOC_TOOL) download_proto_file $(PROTO_PATH)
+	$(BLD_TOOL) -r build_tools -e BuildTools.download_proto_file $(PROTO_PATH)
 	grpc_tools_ruby_protoc\
 	  --proto_path=$(PROTO_PATH)\
 	  --ruby_out=$(GRPC_DEST)\

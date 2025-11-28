@@ -431,15 +431,3 @@ def generate_doc
   Aspera::Environment.force_terminal_c
   DocHelper.new(ARGV).generate
 end
-
-def generate_generic_conf
-  DocHelper.generate_generic_conf
-end
-
-def download_proto_file
-  require 'aspera/ascp/installation'
-  require 'aspera/cli/transfer_progress'
-  Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
-  # Retrieve `transfer.proto` from the web
-  Aspera::Ascp::Installation.instance.install_sdk(folder: ARGV.first, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
-end

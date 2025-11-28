@@ -16,7 +16,7 @@ TOOL = ENV['TOOL'] || 'podman'
 TAG_VERSION = "#{Aspera::Cli::Info::CONTAINER}:#{GEM_VERSION}"
 TAG_LATEST  = "#{Aspera::Cli::Info::CONTAINER}:latest"
 
-# Extract optional gems (equivalent to $(shell DOC_TOOL gems_in_group ...))
+# Extract optional gems
 def optional_gems
   BuildTools.gems_in_group(File.join(DIR_TOP, 'Gemfile'), :optional).map{ |i| "'#{i}'"}.join(' ')
 end

@@ -22,8 +22,8 @@ all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(TSPEC_JSON_SCHEMA) $(MANU
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_CONF_FILE_PATH): $(DIR_DOC)build_tools.rb
-	$(DOC_TOOL) generate_generic_conf $@
+$(TMPL_CONF_FILE_PATH): $(DIR_PKG)build_tools.rb
+	$(BLD_TOOL) -r doc_helper -e DocHelper.generate_generic_conf $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
 
@@ -38,12 +38,12 @@ clean_doc::
 # regenerate always, as it depends on sources (when a new option is added for example). instead do: make clean_doc doc
 #.PHONY: $(DIR_TOP)README.md
 DOC_FILES=$(DIR_DOC)README.erb.md $(CLI_PATH) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC) $(DIR_TOP)Gemfile
-$(DIR_TOP)README.md: $(DOC_FILES) $(DIR_DOC)build_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(TSPEC_YAML_SCHEMA) $(ASYNC_YAML_SCHEMA) $(GEMSPEC)
+$(DIR_TOP)README.md: $(DOC_FILES) $(DIR_PKG)build_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(TSPEC_YAML_SCHEMA) $(ASYNC_YAML_SCHEMA) $(GEMSPEC)
 	@if grep '^#[^:]*: [a-z]' README.erb.md;then \
 	  echo "Titles must have upper case after colon in line above."; \
 	  exit 1; \
 	fi
-	$(DOC_TOOL) generate_doc $@ $(DOC_FILES)
+	$(BLD_TOOL) -r doc_helper -e generate_doc $@ $(DOC_FILES)
 
 clean_doc::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(DIR_TOP)README.md

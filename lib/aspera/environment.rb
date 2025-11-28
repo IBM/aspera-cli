@@ -95,11 +95,11 @@ module Aspera
         return ascp_pid
       end
 
-      # start process and wait for completion
+      # Start process (not in shell) and wait for completion
       # @param exec [String]     Path to executable
       # @param args [Array, nil] Arguments
       # @param env  [Hash, nil]  Environment variables
-      # @return [String] PID of process
+      # @return `nil`
       def secure_execute(exec:, args: nil, env: nil, **system_args)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array, NilClass)
