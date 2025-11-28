@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
 require 'bundler'
-require 'pathname'
+require_relative '../package/folders'
 
 module BuildTools
-  DIR_TOP = Pathname.new(__dir__).parent
-  DIR_TMP = DIR_TOP / 'tmp'
-
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
   def gems_in_group(gemfile, group_name_sym)
@@ -17,10 +14,10 @@ module BuildTools
   end
 
   # Execute the command line (not in shell)
-  def run(*args)
+  def run(*args, **kwargs)
     args = args.map(&:to_s)
-    puts("Executing: #{args.join(' ')}")
-    Aspera::Environment.secure_execute(exec: args.shift, args: args)
+    puts(args.join(' '))
+    Aspera::Environment.secure_execute(exec: args.shift, args: args, exception: true, **kwargs)
   end
 
   def download_proto_file

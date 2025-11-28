@@ -1,0 +1,263 @@
+# Shares ------------------------------------------------------
+shares_health:
+  command:
+    - shares
+    - health
+  tags:
+    - must_fail
+shares_health_bad:
+  tags:
+    - nodoc
+  command:
+    - shares
+    - health
+    - --url=https://wrong.example.com
+shares_detect:
+  command:
+    - config
+    - detect
+    - "@preset:shares_admin.url"
+    - shares
+shares_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:shares_admin.url"
+    - shares
+    - --username=test
+    - --password=test
+shares_admin_1:
+  command:
+    - shares
+    - admin
+    - node
+    - list
+shares_admin_2:
+  command:
+    - shares
+    - admin
+    - group
+    - all
+    - list
+shares_admin_3:
+  command:
+    - shares
+    - admin
+    - user
+    - all
+    - list
+shares_admin_4:
+  command:
+    - shares
+    - admin
+    - user
+    - local
+    - list
+shares_admin_5:
+  command:
+    - shares
+    - admin
+    - user
+    - all
+    - app_authorizations
+    - "%username:@preset:shares_admin.username"
+    - show
+shares_admin_6:
+  command:
+    - shares
+    - admin
+    - user
+    - all
+    - app_authorizations
+    - "%username:@preset:shares_admin.username"
+    - modify
+    - '@json:{"app_login":true}'
+shares_admin_7:
+  command:
+    - shares
+    - admin
+    - user
+    - all
+    - share_permissions
+    - "%username:@preset:shares_admin.username"
+    - list
+shares_admin_8:
+  command:
+    - shares
+    - admin
+    - user
+    - all
+    - share_permissions
+    - "%username:@preset:shares_admin.username"
+    - show
+    - "%name:@preset:shares.share"
+shares_admin_9:
+  command:
+    - shares
+    - admin
+    - user
+    - saml
+    - import
+    - '@json:{"id":"the_id","name_id":"the_name"}'
+shares_admin_10:
+  tags:
+    - hide_fail
+  command:
+    - shares
+    - admin
+    - user
+    - ldap
+    - add
+    - the_name
+shares_admin_11:
+  command:
+    - shares
+    - admin
+    - share
+    - list
+    - --fields=DEF,-status,status_message
+shares_admin_12:
+  command:
+    - shares
+    - admin
+    - share
+    - user_permissions
+    - "%name:@preset:shares.share"
+    - list
+shares_1:
+  command:
+    - shares
+    - files
+    - browse
+    - /
+shares_2:
+  command:
+    - shares
+    - files
+    - upload
+    - --to-folder=@preset:shares.share_folder
+    - $(TST_ASC_LCL_PATH)
+shares_3:
+  depends_on:
+    - shares_2
+  command:
+    - shares
+    - files
+    - download
+    - --to-folder=$(TMP)
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+shares_4:
+  depends_on:
+    - shares_3
+  command:
+    - shares
+    - files
+    - delete
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+shares_5:
+  depends_on:
+    - shares_4
+  command:
+    - shares
+    - files
+    - upload
+    - --to-folder=@preset:shares.share_folder
+    - $(TST_ASC_LCL_PATH)
+    - --transfer=httpgw
+    - --preset=no_wss
+    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
+shares_6:
+  command:
+    - shares
+    - files
+    - upload
+    - faux:///testfile?1m
+    - --to-folder=@preset:shares.share_folder
+    - --transfer=httpgw
+    - --preset=no_wss
+    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}
+shares_6bis:
+  command:
+    - shares
+    - files
+    - upload
+    - $(TST_LCL_FOLDER)
+    - --to-folder=@preset:shares.share_folder
+    - --transfer=httpgw
+    - --preset=no_wss
+    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}
+shares_7:
+  depends_on:
+    - shares_5
+  command:
+    - shares
+    - files
+    - download
+    - --to-folder=$(TMP)
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - --transfer=httpgw
+    - --preset=no_wss
+    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
+shares_8:
+  depends_on:
+    - shares_7
+  command:
+    - shares
+    - files
+    - delete
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+shares_9_prep:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - shares
+    - files
+    - delete
+    - "@extend:@preset:shares.share_folder@/new_folder"
+shares_9:
+  depends_on:
+    - shares_9_prep
+  command:
+    - shares
+    - files
+    - mkdir
+    - "@extend:@preset:shares.share_folder@/new_folder"
+shares_10:
+  depends_on:
+    - shares_9
+  command:
+    - shares
+    - files
+    - delete
+    - "@extend:@preset:shares.share_folder@/new_folder"
+shares_sync_prepare:
+  tags:
+    - ignore_fail
+  command:
+    - shares
+    - files
+    - mkdir
+    - "@extend:@preset:shares.share_folder@/synctst"
+shares_sync_1:
+  depends_on:
+    - shares_sync_prepare
+  command:
+    - shares
+    - files
+    - sync
+    - push
+    - $(SHARES_SYNC)
+    - --to-folder=@extend:@preset:shares.share_folder@/synctst
+    - '@json:{"reset":true}'
+shares_sync_2:
+  depends_on:
+    - shares_sync_1
+  command:
+    - shares
+    - files
+    - sync
+    - push
+    - $(SHARES_SYNC)
+    - --to-folder=@extend:@preset:shares.share_folder@/synctst

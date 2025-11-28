@@ -1,0 +1,155 @@
+# frozen_string_literal: true
+
+# Rakefile
+require 'yaml'
+require 'rake'
+require 'uri'
+require 'fileutils'
+require 'aspera/environment'
+require_relative '../package/build_tools'
+require_relative '../package/folders'
+
+include Folders
+include BuildTools
+
+TEST_DEFS  = TST / 'tests.yml'
+STATE_FILE = TMP / 'state.yml'
+
+# override $HOME/.aspera/ascli
+CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
+CLI_PATH = BIN / Aspera::Cli::Info::CMD_NAME
+
+GOOD_CONFIG = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
+# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+DIR_CONNECT_DOWNLOAD = Pathname.new(Dir.home) / 'Downloads'
+# package title for faspex and aoc
+PACKAGE_TITLE_BASE = Time.now.to_s
+# give waring and stop on first warning in this gem code
+RUBY_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
+# CLI with default config file
+CLI_NOCONF = RUBY_WARN + [CLI_PATH, "--home=#{CLI_HOME}"]
+# "CLI_TEST" is used to call the tool in the testing environment
+CLI_TEST = CLI_NOCONF + ["--config-file=#{GOOD_CONFIG}"]
+# JRuby does not support some encryptions
+CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
+# temp configuration file that is modified, to avoid changing the main configuration file
+TEST_CONFIG = TMP / 'sample.conf'
+# "CLI_TMP_CONF" is used for commands that modify the config file
+CLI_TMP_CONF = CLI_NOCONF + ["--config-file=#{TEST_CONFIG}"]
+CLI_WIZ_TEST_ENV = {'ASCLI_WIZ_TEST'=>'yes'}
+CLI_WIZ_TEST_CMD = CLI_TMP_CONF
+# testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
+TST_ASC_FILENAME = 'data_file.bin'
+TST_ASC_LCL_PATH = TMP / TST_ASC_FILENAME
+# This file name contains special characters, it must be quoted when used in shell
+# cspell:disable-next-line
+TST_UTF_FILENAME = '𒐫spécial{\#😀تツ'
+TST_UTF_LCL_PATH = TMP / TST_UTF_FILENAME
+# a medium sized file for testing
+TST_MED_FILENAME = TST_UTF_FILENAME
+# needs to be quoted, as there is shell special character: "?"
+TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
+
+# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
+TMP_SYNCS = TMP / 'syncs'
+
+SHARES_SYNC = TMP_SYNCS / 'shares_sync'
+TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
+
+FileUtils.cp(GOOD_CONFIG, TEST_CONFIG) unless TEST_CONFIG.exist?
+TST_ASC_LCL_PATH.write('This is a small test file') unless  TST_ASC_LCL_PATH.exist?
+TST_UTF_LCL_PATH.write('This is a small test file') unless  TST_UTF_LCL_PATH.exist?
+FileUtils.mkdir_p(SHARES_SYNC)
+(SHARES_SYNC / 'sample_file.txt').write('Some sample file')
+FileUtils.mkdir_p(TST_LCL_FOLDER / 'sub')
+%w[1 2 3 sub/1 sub/2].each do |f|
+  (TST_LCL_FOLDER / f).write('Some sample file')
+end
+
+tests      = YAML.load_file(TEST_DEFS)
+state      = STATE_FILE.exist? ? YAML.load_file(STATE_FILE) : {}
+
+def save_state(state)
+  File.write(STATE_FILE, state.to_yaml)
+end
+
+namespace :test do
+  # List tests with metadata
+  desc 'List all tests with tags'
+  task :list do
+    tests.each do |name, info|
+      puts "#{name.ljust(20)} #{info['tags']&.join(', ')}"
+    end
+  end
+
+  # Reset persistent state
+  desc 'Clear all stored test results'
+  task :reset do
+    STATE_FILE.delete if STATE_FILE.exist?
+    TEST_CONFIG.delete if TEST_CONFIG.exist?
+    puts 'State cleared.'
+  end
+
+  # Run tests filtered by tag
+  desc 'Run only tests matching tag'
+  task :tags, [:tag] do |_, args|
+    tag = args[:tag]
+    abort 'Usage: rake test:tags[download]' unless tag
+
+    selected = tests.select{ |_, info| info['tags']&.include?(tag)}
+    Rake::Task['test:run'].invoke if selected.empty?
+
+    selected.each_key do |name|
+      Rake::Task["test:#{name}"].invoke
+    end
+  end
+
+  # Create a Rake task for each test
+  tests.each do |name, info|
+    desc info['description'] if info['description']
+
+    deps = info['depends_on'] || []
+    task name => deps.map{ |d| "test:#{d}"} do
+      if state[name] == 'passed' && !ENV['FORCE']
+        # puts "[SKIP] #{name}"
+        next
+      end
+      must_fail = info['tags']&.include?('must_fail')
+      hide_fail = info['tags']&.include?('hide_fail')
+      ignore_fail = info['tags']&.include?('ignore_fail')
+      begin
+        puts "[RUN]  #{name}: #{info['command'].join(' ')}"
+        full_args = CLI_TEST
+        full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
+        full_args += info['command'].map do |i|
+          i.gsub(/\$\((.*?)\)/) do
+            Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
+          end
+        end
+        run(*full_args, env: info['env'])
+        puts "[OK]   #{name}"
+        state[name] = 'passed'
+        raise 'Must fail' if must_fail
+      rescue RuntimeError
+        puts "[FAIL] #{name}"
+        state[name] = 'failed'
+        if must_fail || hide_fail || ignore_fail
+          state[name] = 'passed'
+        else
+          raise
+        end
+        save_state(state)
+      end
+      save_state(state)
+    end
+  end
+
+  # Run all tests in declared order
+  desc 'Run all tests'
+  task :run do
+    tests.each_key{ |name| Rake::Task["test:#{name}"].invoke}
+  end
+end
+
+# default: run all tests
+task default: 'test:run'

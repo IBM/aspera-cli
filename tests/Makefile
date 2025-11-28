@@ -126,7 +126,7 @@ TST_ASC_FILENAME=data_file.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
 # This file name contains special characters, it must be quoted when used in shell
 # cspell:disable-next-line
-TST_UTF_FILENAME=𒐫spécial{\#😀تツ
+TST_UTF_FILENAME=𒐫spécial{#😀تツ
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 # a medium sized file for testing
 TST_MED_FILENAME=$(TST_UTF_FILENAME)
@@ -137,8 +137,6 @@ TEMPORIZE_FILE=sleep 30
 
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
 TMP_SYNCS=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/syncs/
-
-SYNC_NAME=my_sync_session
 
 ifdef ASPERA_CLI_TEST_MACOS
 all:: $(F).ssh_ok
@@ -1494,7 +1492,7 @@ $(F)nd_sync_v2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)nd_sync_v2
 	mkdir -p $(TMP_SYNCS)nd_sync_v2
-	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)nd_sync_v2 @json:'{"name":"$(SYNC_NAME)","reset":true}'
+	$(INCMAN)$(CLI_TEST) node sync pull /aspera-test-dir-tiny --to-folder=$(TMP_SYNCS)nd_sync_v2 @json:'{"name":"my_sync_session_name","reset":true}'
 	$(INCMAN)$(CLI_TEST) node sync admin status $(TMP_SYNCS)nd_sync_v2
 	@$(STOP_TEST) $@
 $(F)nd_async_list: $(TMP_EXISTS)
@@ -1504,20 +1502,20 @@ $(F)nd_async_list: $(TMP_EXISTS)
 $(F)nd_async_show: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node async show ALL
-	$(INCMAN)$(CLI_TEST) node async show %name:$(SYNC_NAME)
+	$(INCMAN)$(CLI_TEST) node async show %name:my_sync_session_name
 	@$(STOP_TEST) $@
 $(F)nd_async_cntr: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async counters %name:$(SYNC_NAME)
+	$(INCMAN)$(CLI_TEST) node async counters %name:my_sync_session_name
 	@$(STOP_TEST) $@
 $(F)nd_async_bw: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async bandwidth %name:$(SYNC_NAME)
+	$(INCMAN)$(CLI_TEST) node async bandwidth %name:my_sync_session_name
 	@$(STOP_TEST) $@
 $(F)nd_async_files: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) node async files %name:$(SYNC_NAME)
-	$(INCMAN)$(CLI_TEST) node async files %name:$(SYNC_NAME) --once-only=yes
+	$(INCMAN)$(CLI_TEST) node async files %name:my_sync_session_name
+	$(INCMAN)$(CLI_TEST) node async files %name:my_sync_session_name --once-only=yes
 	@$(STOP_TEST) $@
 $(F)nd_async_del: $(TMP_EXISTS)
 	@$(START_TEST) $@
