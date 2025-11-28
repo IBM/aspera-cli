@@ -100,6 +100,7 @@ module Aspera
       # @param args [Array, nil] Arguments
       # @param env  [Hash, nil]  Environment variables
       # @return `nil`
+      # @raise [RuntimeError] if problem
       def secure_execute(exec:, args: nil, env: nil, **system_args)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array, NilClass)
@@ -113,7 +114,7 @@ module Aspera
         spawn_args.concat(args) unless args.nil?
         kwargs = {exception: true}
         kwargs.merge!(system_args)
-        Kernel.system(*spawn_args, **kwargs)
+        Kernel.system(*spawn_args, **kwargs, exception: true)
         nil
       end
 
