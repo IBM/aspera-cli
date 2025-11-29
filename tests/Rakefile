@@ -89,9 +89,11 @@ def save_state(state)
 end
 
 def eval_macro(value)
-  value.gsub(/\$\((.*?)\)/) do
+  # value.gsub(/\$\((.*?)\)/) do
+  value.gsub(/\$\((?<inner>(?:[^()]+|\((?:[^()]+|\g<inner>)*\))*)\)/) do
     Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
   end
+  # puts "Eval: #{value} -> [#{x}]"
 end
 
 def read_value_from(name)
@@ -131,6 +133,7 @@ namespace :test do
 
   # Create a Rake task for each test
   tests.each do |name, info|
+    # puts "-> #{name}"
     desc info['description'] || 'TODO'
 
     deps = info['depends_on'] || []
@@ -155,6 +158,7 @@ namespace :test do
         full_args += ["--output=#{TMP_STATES / info['save_output_to']}"] if info['save_output_to']
         run(*full_args, env: info['env'])
         puts "[OK]   #{name}"
+        sleep(info['post_sleep']) if info['post_sleep']
         state[name] = 'passed'
         raise 'Must fail' if must_fail
       rescue RuntimeError
@@ -180,3 +184,14 @@ end
 
 # default: run all tests
 task default: 'test:run'
+
+# TODO: separately in rake task
+# asession:
+#	set -x&&\
+#	remote_host=$$( config preset get server_user url)&&\
+#	remote_host=$${remote_host#*://}&&\
+#	remote_port=$${remote_host#*:}&&\
+#	remote_host=$${remote_host%:*}&&\
+#	remote_user=$$( config preset get server_user username)&&\
+#	remote_pass=$$( config preset get server_user password)&&\
+#	$(DIR_BIN)asession @json:@extend:{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}
