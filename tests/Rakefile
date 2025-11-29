@@ -56,10 +56,25 @@ TMP_SYNCS = TMP / 'syncs'
 SHARES_SYNC = TMP_SYNCS / 'shares_sync'
 TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
 
+TMP_STATES = TMP / 'states'
+
+VAULT_FILE = TOP / 'tmp/sample_vault.bin'
+NEW_VAULT_PASS = 'my_other_pass_here'
+PKCS_P = 'YourExportPassword'
+
+FILE_LIST = TMP / 'filelist.txt'
+FILE_PAIR = TMP / 'file_pair_list.txt'
+
 FileUtils.cp(GOOD_CONFIG, TEST_CONFIG) unless TEST_CONFIG.exist?
 TST_ASC_LCL_PATH.write('This is a small test file') unless  TST_ASC_LCL_PATH.exist?
 TST_UTF_LCL_PATH.write('This is a small test file') unless  TST_UTF_LCL_PATH.exist?
+
+FILE_LIST.write("#{TST_ASC_LCL_PATH}")
+# @preset:server.inside_folder@/other_name
+FILE_PAIR.write("#{TST_ASC_LCL_PATH}\n/Upload/server_folder/other_name")
+
 FileUtils.mkdir_p(SHARES_SYNC)
+FileUtils.mkdir_p(TMP_STATES)
 (SHARES_SYNC / 'sample_file.txt').write('Some sample file')
 FileUtils.mkdir_p(TST_LCL_FOLDER / 'sub')
 %w[1 2 3 sub/1 sub/2].each do |f|
@@ -71,6 +86,16 @@ state      = STATE_FILE.exist? ? YAML.load_file(STATE_FILE) : {}
 
 def save_state(state)
   File.write(STATE_FILE, state.to_yaml)
+end
+
+def eval_macro(value)
+  value.gsub(/\$\((.*?)\)/) do
+    Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
+  end
+end
+
+def read_value_from(name)
+  (TMP_STATES / name).read.chomp
 end
 
 namespace :test do
@@ -106,7 +131,7 @@ namespace :test do
 
   # Create a Rake task for each test
   tests.each do |name, info|
-    desc info['description'] if info['description']
+    desc info['description'] || 'TODO'
 
     deps = info['depends_on'] || []
     task name => deps.map{ |d| "test:#{d}"} do
@@ -119,13 +144,15 @@ namespace :test do
       ignore_fail = info['tags']&.include?('ignore_fail')
       begin
         puts "[RUN]  #{name}: #{info['command'].join(' ')}"
+        if info['reset_folder']
+          folder = eval_macro(info['reset_folder'])
+          FileUtils.rm_rf(folder)
+          FileUtils.mkdir_p(folder)
+        end
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
-        full_args += info['command'].map do |i|
-          i.gsub(/\$\((.*?)\)/) do
-            Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
-          end
-        end
+        full_args += info['command'].map{ |i| eval_macro(i)}
+        full_args += ["--output=#{TMP_STATES / info['save_output_to']}"] if info['save_output_to']
         run(*full_args, env: info['env'])
         puts "[OK]   #{name}"
         state[name] = 'passed'

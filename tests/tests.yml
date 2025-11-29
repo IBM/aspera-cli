@@ -261,3 +261,453 @@ shares_sync_2:
     - push
     - $(SHARES_SYNC)
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
+# Server ------------------------------------------------------
+serv_health:
+  command:
+    - server
+    - health
+    - transfer
+    - --to-folder=@preset:server.upload_folder
+serv_health_bad:
+  command:
+    - server
+    - health
+    - transfer
+    - --url=ssh://wrong.example.com
+serv_detect:
+  command:
+    - config
+    - detect
+    - "@preset:server_user.url"
+    - server
+serv_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:server_user.url"
+    - server
+    - --username=@preset:server_user.username
+    - --password=@preset:server_user.password
+serv_wizard2:
+  tags:
+    - nodoc
+  command:
+    - config
+    - wizard
+    - "@preset:server.address"
+    - server
+    - srv2
+    - --username=@preset:server_user.username
+    - --password=@preset:server_user.password
+serv_browse:
+  command:
+    - server
+    - browse
+    - /
+serv_mkdir:
+  command:
+    - server
+    - mkdir
+    - "@preset:server.inside_folder"
+    - --logger=stdout
+serv_error1:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - -Pserver2_user
+    - --password=wrong
+    - upload
+    - $(TST_ASC_LCL_PATH)
+    - --transfer-info=@json:{"monitor":false,"resume":{"iter_max":0}}
+serv_error2:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - -Pserver2_user
+    - --password=wrong
+    - browse
+    - /
+    - --ssh-options=@json:{"number_of_password_prompts":0}
+serv_error3:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - -N
+    - --url=foo://
+    - ls
+    - .
+serv_error4:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - -N
+    - --url=@preset:node_user.url
+    - upload
+    - wrong
+    - --ts=@json:{"token":"test"}
+    - --transfer-info=@json:{"resume":{"iter_max":0}}
+serv_error5:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - -N
+    - --url=@preset:node_user.url
+    - upload
+    - wrong
+    - --transfer-info=@json:{"resume":{"iter_max":0}}
+serv_ls_local:
+  command:
+    - server
+    - -N
+    - --url=local://
+    - ls
+    - .
+serv_upload1:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - $(TST_MED_LCL_PATH)
+    - --to-folder=@preset:server.inside_folder
+    - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
+    - --transfer-info=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
+    - --progress-bar=yes
+serv_upload1b:
+  depends_on:
+    - serv_upload1
+  command:
+    - server
+    - browse
+    - "@extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)"
+serv_upload2:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - --src-type=pair
+    - $(TST_MED_LCL_PATH)
+    - "@extend:@preset:server.inside_folder@/other_name_2"
+    - --notify-to=@preset:misc.email_external
+    - --transfer-info=@json:{"ascp_args":["-l","100m"]}
+serv_upload3_prep:
+  tags:
+    - ignore_fail
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - delete
+    - "@extend:@preset:server.inside_folder@/other_name_3"
+serv_upload3:
+  depends_on:
+    - serv_upload3_prep
+  command:
+    - server
+    - upload
+    - --src-type=pair
+    - --sources=@json:@extend:["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]
+    - --transfer-info.quiet=false
+    - --progress=no
+serv_upload4:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - --sources=@ts
+    - --ts=@json:@extend:{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}
+    - --transfer=transferd
+serv_upload5:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - --src-type=pair
+    - $(TST_ASC_LCL_PATH)
+    - "@extend:@preset:server.upload_folder@/other_name_5"
+    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}
+serv_sync_pull_args_reset:
+  description: Sync using args syntax (reset)
+  reset_folder: $(TMP_SYNCS / 'serv_sync_pull_args')
+  tags:
+    - nodoc
+  depends_on:
+    - serv_upload1
+    - serv_upload2
+    - serv_upload3
+    - serv_upload5
+  command:
+    - server
+    - sync
+    - pull
+    - "@preset:server.inside_folder"
+    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:@extend:{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
+serv_sync_pull_args_status1:
+  tags:
+    - nodoc
+  depends_on:
+    - serv_sync_pull_args_reset
+  command:
+    - server
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_args_sync2:
+  tags:
+    - nodoc
+  depends_on:
+    - serv_sync_pull_args_status1
+  command:
+    - server
+    - sync
+    - admin
+    - meta
+    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_args_counters:
+  tags:
+    - nodoc
+  depends_on:
+    - serv_sync_pull_args_sync2
+  command:
+    - config
+    - sync
+    - admin
+    - counters
+    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_conf_reset:
+  reset_folder: $(TMP_SYNCS / 'serv_sync_pull_conf')
+  depends_on:
+    - serv_sync_pull_args_counters
+  command:
+    - server
+    - sync
+    - pull
+    - "@preset:server.inside_folder"
+    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_conf')
+    - '@json:@extend:{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+serv_sync_pull_conf_status_fail:
+  depends_on:
+    - serv_sync_pull_conf_reset
+  tags:
+    - hide_fail
+  command:
+    - server
+    - sync
+    - admin
+    - status
+    - '@json:{"name":"serv_sync_pull_conf"}'
+serv_sync_pull_conf_status:
+  depends_on:
+    - serv_sync_pull_conf_reset
+  command:
+    - server
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+    - '@json:{"name":"serv_sync_pull_conf"}'
+serv_sync_pull_conf_sync:
+  depends_on:
+    - serv_sync_pull_conf_reset
+  command:
+    - server
+    - sync
+    - pull
+    - "@preset:server.inside_folder"
+    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_conf')
+    - '@json:@extend:{"name":"serv_sync_pull_conf"}'
+serv_sync_pull_conf_status2:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  command:
+    - server
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_overview:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  command:
+    - server
+    - sync
+    - admin
+    - overview
+    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_fileinfo:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  command:
+    - server
+    - sync
+    - admin
+    - file_info
+    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+serv_upload_ex_list:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - --sources=@ts
+    - --transfer-info=@json:{"ascp_args":["--file-list","$(TMP / 'filelist.txt')"]}
+    - --to-folder=@preset:server.inside_folder
+serv_upload_ex_pair:
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - --sources=@ts
+    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(TMP / 'file_pair_list.txt')"]}
+serv_md5:
+  depends_on:
+    - serv_upload1
+  command:
+    - server
+    - md5sum
+    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+serv_down_lcl:
+  depends_on:
+    - serv_upload1
+  command:
+    - server
+    - download
+    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+    - --to-folder=$(TMP)
+    - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
+serv_down_from_node:
+  command:
+    - server
+    - download
+    - "@preset:server.large_file"
+    - --to-folder=@preset:server.upload_folder
+    - --transfer=node
+    - --ts.resume_policy=none
+serv_down_from_node_fail:
+  tags:
+    - hide_fail
+  command:
+    - server
+    - download
+    - file_does_not_exist.random
+    - --to-folder=@preset:server.upload_folder
+    - --transfer=node
+serv_cp:
+  depends_on:
+    - serv_upload1
+  command:
+    - server
+    - cp
+    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.upload_folder@/200KB.2"
+serv_mv:
+  depends_on:
+    - serv_cp
+  command:
+    - server
+    - mv
+    - "@extend:@preset:server.upload_folder@/200KB.2"
+    - "@extend:@preset:server.upload_folder@/to.delete"
+serv_delete:
+  depends_on:
+    - serv_mv
+  command:
+    - server
+    - delete
+    - "@extend:@preset:server.upload_folder@/to.delete"
+serv_cleanup1:
+  depends_on:
+    - serv_cp
+    - serv_down_from_node
+    - serv_down_lcl
+    - serv_md5
+  command:
+    - server
+    - delete
+    - "@preset:server.inside_folder"
+serv_info:
+  command:
+    - server
+    - info
+serv_du:
+  command:
+    - server
+    - du
+    - /
+serv_df:
+  command:
+    - server
+    - df
+serv_health_xfer_nagios:
+  command:
+    - server
+    - health
+    - transfer
+    - --to-folder=@preset:server.upload_folder
+    - --format=nagios
+serv_health_xfer_nagios_fail:
+  tags:
+    - must_fail
+  command:
+    - server
+    - health
+    - transfer
+    - --to-folder=/wrong
+    - --format=nagios
+serv_key_path:
+  save_output_to: aspera_key_path
+  command:
+    - config
+    - ascp
+    - info
+    - --fields=ssh_private_rsa
+serv_key:
+  command:
+    - server
+    - browse
+    - /
+    - "--password=@none:"
+    - --ssh-options=@json:{"number_of_password_prompts":0}
+    - --ssh-keys=$(read_value_from 'aspera_key_path')
+serv_pr1:
+  command:
+    - server
+    - upload
+    - "faux:///test1?100m"
+    - "faux:///test2?100m"
+    - --to-folder=/Upload
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
+    - --transfer-info=@json:{"quiet":false}
+    - --progress=no
+serv_pr2:
+  command:
+    - server
+    - upload
+    - "faux:///test1?100m"
+    - "faux:///test2?100m"
+    - --to-folder=/Upload
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
+# TODO: separately in rake task
+#asession:
+#	set -x&&\
+#	remote_host=$$( config preset get server_user url)&&\
+#	remote_host=$${remote_host#*://}&&\
+#	remote_port=$${remote_host#*:}&&\
+#	remote_host=$${remote_host%:*}&&\
+#	remote_user=$$( config preset get server_user username)&&\
+#	remote_pass=$$( config preset get server_user password)&&\
+#	$(DIR_BIN)asession @json:@extend:{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}

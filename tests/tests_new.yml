@@ -1,0 +1,4884 @@
+
+#######################################################################################################################
+f4_health:
+  command:
+    - faspex
+    - health
+f4_health_bad:
+  command:
+    - faspex
+    - health
+    - --url=https://wrong.example.com
+f4_detect:
+  command:
+    - config
+    - detect
+    - "@preset:faspex4_user.url"
+f4_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:faspex4_user.url"
+    - faspex
+    - --username=test
+    - --password=test
+f4_pack_list:
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=5
+f4_pack_send:
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
+    - $(TST_ASC_LCL_PATH)
+#	@sleep 8
+f4_prs:
+  depends_on:
+    - f4_pack_send
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_prs1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_prs1')
+    - --to-folder=$(TMP)
+  command:
+    - faspex
+    - package
+    - list
+    - --box=sent
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_prs2
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_prs2')
+    - --to-folder=$(TMP)
+    - --box=sent
+f4_pri:
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_pri1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_pri1')
+    - --to-folder=$(TMP)
+f4_prl:
+  tags:
+    - hide_fail
+  command:
+    - faspex
+    - package
+    - receive
+    - --to-folder=$(TMP)
+    - --link=@preset:faspex4.link_recv_from_user
+f4_prall:
+  command:
+    - faspex
+    - package
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --query=@json:{"max":10}
+f4_pslu:
+  command:
+    - faspex
+    - package
+    - send
+    - --link=@preset:faspex4.link_send_to_user
+    - --delivery-info=@json:'{"title":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+f4_psld:
+  command:
+    - faspex
+    - package
+    - send
+    - --link=@preset:faspex4.link_send_to_dropbox
+    - --delivery-info=@json:'{"title":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+f4_remote_src:
+  command:
+    - faspex
+    - source
+    - list
+  command:
+    - faspex
+    - source
+    - info
+    - "%name:@preset:faspex4.src"
+    - --storage=@preset:faspex4_storage
+  command:
+    - faspex
+    - source
+    - node
+    - "%name:@preset:faspex4.src"
+    - br
+    - /
+    - --storage=@preset:faspex4_storage
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}
+    - --remote-source=@extend:%name:@preset:faspex4.src
+    - sample_source.txt
+f4_misc:
+  command:
+    - faspex
+    - me
+  command:
+    - faspex
+    - address_book
+  command:
+    - faspex
+    - login_methods
+f4_v4:
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - dropbox
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - dmembership
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - workgroup
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - wmembership
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - user
+    - list
+  command:
+    - faspex
+    - v4
+    - metadata_profile
+    - list
+f4_db1:
+  command:
+    - faspex
+    - dropbox
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
+    - $(TST_ASC_LCL_PATH)
+  command:
+    - faspex
+    - package
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+    - --format=csv
+    - --fields=package_id
+    - --query.max=1
+  save_output_to: f4_db_id1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_db_id1')
+    - --recipient=@extend:*@preset:faspex4.dbx@
+    - --to-folder=$(TMP)
+  command:
+    - faspex
+    - dropbox
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
+    - $(TST_ASC_LCL_PATH)
+#	sleep 10
+  command:
+    - faspex
+    - package
+    - list
+    - --recipient=@extend:*@preset:faspex4.wkg@
+    - --format=csv
+    - --fields=package_id
+    - --query.max=1
+  save_output_to: f4_db_id2
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_db_id2')
+    - --recipient=@extend:*@preset:faspex4.wkg@
+    - --to-folder=$(TMP)
+#######################################################################################################################
+cons_health:
+  command:
+    - console
+    - health
+cons_health_bad:
+  command:
+    - console
+    - health
+    - --url=https://wrong.example.com
+cons_detect:
+  command:
+    - config
+    - detect
+    - "@preset:console_admin.url"
+cons_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:console_admin.url"
+    - console
+    - --preset=console_admin
+cons_cur_lst:
+  command:
+    - console
+    - transfer
+    - current
+    - list
+    - --query=@json:{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}
+cons_cur_lst_ex:
+  command:
+    - console
+    - transfer
+    - current
+    - list
+    - --query.filter='(transfer_name
+    - contain
+    - aoc)'
+cons_cur_lst_one:
+  command:
+    - console
+    - transfer
+    - current
+    - list
+    - --fields=id
+    - --format=csv
+    - |
+    - tail
+    - -n
+    - 1
+    - >
+    - $(STATE)console_xfer_id
+cons_cur_show_one:
+  depends_on:
+    - cons_cur_lst_one
+  command:
+    - console
+    - transfer
+    - current
+    - show
+    - $(read_value_from 'console_xfer_id')
+cons_cur_show_one1:
+  depends_on:
+    - cons_cur_lst_one
+  command:
+    - console
+    - transfer
+    - current
+    - files
+    - $(read_value_from 'console_xfer_id')
+cons_cur_show_one2:
+  tags:
+    - nodoc
+    - ignore_fail
+  depends_on:
+    - cons_cur_lst_one
+  command:
+    - console
+    - transfer
+    - current
+    - resume
+    - $(read_value_from 'console_xfer_id')
+cons_sma_lst:
+  command:
+    - console
+    - transfer
+    - smart
+    - list
+cons_sma_sta:
+  tags:
+    - ignore_fail
+  command:
+    - console
+    - transfer
+    - smart
+    - sub
+    - "@preset:console.smart_id"
+    - '@json:@extend:{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'
+
+#######################################################################################################################
+nd_health:
+  command:
+    - node
+    - health
+nd_health_bad:
+  command:
+    - node
+    - health
+    - --url=https://wrong.example.com
+nd_detect:
+  command:
+    - config
+    - detect
+    - "@preset:node_user.url"
+nd_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:node_user.url"
+    - node
+    - --username=test
+    - --password=test
+nd_info:
+  command:
+    - node
+    - info
+    - --fpac=function FindProxyForURL(url,host){return "DIRECT"}
+nd_lic:
+  command:
+    - node
+    - license
+nd_det:
+  command:
+    - node
+    - api_details
+nd_tra:
+  command:
+    - node
+    - transport
+nd_bro:
+  command:
+    - node
+    - browse
+    - /
+    - --log-level=trace2
+nd_sea:
+  command:
+    - node
+    - search
+    - /
+    - --query=@json:{"sort":"mtime"}
+nd_spa:
+  command:
+    - node
+    - space
+    - /
+nd_del_err:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - delete
+    - /a_folder
+nd_folder:
+  command:
+    - node
+    - mkdir
+    - "@extend:@preset:server.upload_folder@/a_folder"
+nd_folder2:
+  command:
+    - node
+    - mklink
+    - "@extend:@preset:server.upload_folder@/a_folder"
+    - "@extend:@preset:server.upload_folder@/tdlink"
+nd_folder3:
+  command:
+    - node
+    - mkfile
+    - "@extend:@preset:server.upload_folder@/a_file1"
+    - "hello"
+    - world"
+nd_folder4:
+  command:
+    - node
+    - rename
+    - "@preset:server.upload_folder"
+    - a_file1
+    - a_file
+nd_folder5:
+  command:
+    - node
+    - delete
+    - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
+nd2:
+  command:
+    - node
+    - upload
+    - $(TST_ASC_LCL_PATH)
+    - --to-folder=@preset:server.upload_folder
+    - --ts=@json:{"target_rate_cap_kbps":10000}
+  command:
+    - node
+    - download
+    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+    - --to-folder=$(TMP)
+  command:
+    - node
+    - delete
+    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+nd_slash:
+  command:
+    - node
+    - slash
+nd2_http:
+  command:
+    - node
+    - upload
+    - $(TST_ASC_LCL_PATH)
+    - --to-folder=@preset:server.upload_folder
+    - --ts=@json:{"target_rate_cap_kbps":10000}
+  command:
+    - node
+    - cat
+    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+  command:
+    - node
+    - delete
+    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+nd_2_nd_xfer:
+  command:
+    - node
+    - upload
+    - --to-folder=@preset:server.upload_folder
+    - --sources=@ts
+    - --ts=@json:{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}
+    - --transfer=node
+    - --transfer-info=@json:@extend:{"url":"@preset:node_user.url@","username":"@preset:node_user.username@","password":"@preset:node_user.password@"}
+  tags:
+    - ignore_fail
+  command:
+    - node
+    - delete
+    - "@extend:@preset:server.upload_folder@/10MB.2"
+nd_service:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - delete
+    - service1
+#	@echo "waiting a little...";$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - create
+    - '@json:{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - list
+#	@echo "waiting a little...";$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - delete
+    - service1
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - list
+#	@echo "waiting a little...";$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - list
+#	@echo "waiting a little...";$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - service
+    - list
+nd_xfer_lst:
+  command:
+    - node
+    - transfer
+    - list
+    - --query=@json:{"active_only":true}
+  command:
+    - node
+    - transfer
+    - list
+    - --query=@json:{"reset":true}
+    - --once-only=yes
+  command:
+    - node
+    - transfer
+    - list
+    - --once-only=yes
+  command:
+    - node
+    - transfer
+    - list
+    - --once-only=yes
+  command:
+    - node
+    - transfer
+    - sessions
+nd_xfer_ops:
+  tags:
+    - nodoc
+    - noblock
+  command:
+    - node
+    - upload
+    - --to-folder=@preset:server.upload_folder
+    - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
+    - faux:///bigfile?10G
+    - --progress=no
+# sleep 2
+nd_xfer_ops2:
+  command:
+    - node
+    - transfer
+    - list
+    - --query=@json:{"active_only":true,"count":1}
+    - --fields=id
+  save_output_to: nd_xfer_id
+nd_xfer_ops3:
+  command:
+    - node
+    - transfer
+    - show
+    - $(read_value_from 'nd_xfer_id')
+nd_xfer_ops4:
+  command:
+    - node
+    - transfer
+    - modify
+    - $(read_value_from 'nd_xfer_id')
+    - '@json:{"target_rate_kbps":10000}'
+nd_xfer_ops5:
+  command:
+    - node
+    - transfer
+    - show
+    - $(read_value_from 'nd_xfer_id')
+nd_xfer_ops6:
+  command:
+    - node
+    - transfer
+    - cancel
+    - $(read_value_from 'nd_xfer_id')
+nd_xfer_ops7:
+  command:
+    - node
+    - transfer
+    - bandwidth_average
+nd_xfer_ops8:
+  command:
+    - node
+    - transfer
+    - sessions
+node_basic_token:
+  command:
+    - node
+    - basic_token
+nd_browser:
+  command:
+    - node
+    - asperabrowser
+nd8:
+  command:
+    - node
+    - upload
+    - --username=@preset:aoc.ak_name
+    - --password=@preset:aoc.ak_secret
+    - $(TST_ASC_LCL_PATH)
+nd_central_1:
+  command:
+    - node
+    - central
+    - session
+    - list
+  command:
+    - node
+    - central
+    - file
+    - list
+  command:
+    - node
+    - central
+    - file
+    - modify
+    - --validator=1
+    - '@json:{"files":[]}'
+nd_watch_1:
+  command:
+    - node
+    - watch_folder
+    - list
+    - --preset=node_ak_adm
+  tags:
+    - hide_fail
+  command:
+    - node
+    - watch_folder
+    - create
+    - '@json:{"source":{"path":"/src1"},"target":{"path":"/dst1"}}'
+    - --preset=node_ak_adm
+nd_stream_1:
+  command:
+    - node
+    - stream
+    - list
+    - --preset=node_ak_adm
+
+#######################################################################################################################
+tnode: tnodegen3 tndak
+clean_tnode: clean_tnodegen3 clean_tndak
+#######################################################################################################################
+nd_ak:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - list
+nd_akb:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - node_info
+    - /
+nd_akc:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - browse
+    - /
+nd_akd:
+  tags:
+    - must_fail
+    - nodoc
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@json:{}"
+nd_ake:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+    - '@ruby:->(f){f["name"].end_with?(".jpg")}'
+nd_akf:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+    - '@re:\.jpg$'
+nd_akg:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+nd_ak_mkdir:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /tst_nd_ak
+#	$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mkdir
+    - /tst_nd_ak
+#	$(TEMPORIZE_CREATE)
+nd_ak_mkfile:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /mkfile.txt
+#	$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mkfile
+    - /mkfile.txt
+    - "hello
+    - world"
+#	$(TEMPORIZE_CREATE)
+nd_ak_mklink:
+  depends_on:
+    - nd_ak_mkfile
+  tags:
+    - ignore_fail
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /mklink.txt
+#	$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mklink
+    - /mklink.txt
+    - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
+#	$(TEMPORIZE_CREATE)
+nd_ak_mvdir:
+  depends_on:
+    - nd_ak_mkdir
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - browse
+    - /
+    - --node-cache=no
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - rename
+    - /tst_nd_ak
+    - test_nd_ak2
+nd_ak_deldir:
+  depends_on:
+    - nd_ak_mvdir
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /test_nd_ak2
+nd_ak3:
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - upload
+    - 'faux:///test_nd_ak3?100k'
+    - --default-ports=no
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - download
+    - test_nd_ak3
+    - --to-folder=$(TMP)
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - show
+    - /test_nd_ak3
+  tags:
+    - hide_fail
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - thumbnail
+    - /test_nd_ak3
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - test_nd_ak3
+nd_ak4:
+  depends_on:
+    - nd_ak3
+  command:
+    - node
+    - --preset=node_ak_adm
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - show
+    - "%id:1"
+nd_ak_bearer:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"
+#	$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - access_key
+    - create
+    -  '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
+#	$(TEMPORIZE_CREATE)
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - show
+    - "%id:self"
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - set_bearer_key
+    - self
+    - "@file:@preset:file.private_key"
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - show
+    - /
+    - --fields=id
+  save_output_to: root_id
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - permission
+    - "%id: $(read_value_from 'root_id')"
+    - create
+    - '@json:{"access_type":"user","access_id":"666"}'
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - show
+    - 1
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - bearer_token
+    - "@file:@preset:file.private_key"
+    - '@json:{"user_id":"666"}'
+  save_output_to: bearer_666
+  command:
+    - node
+    - -N
+    - --url=@preset:tst_node_preview.url
+    - --password="Bearer
+    - $(read_value_from 'bearer_666')"
+    - --root-id= $(read_value_from 'root_id')
+    - access_key
+    - do
+    - self
+    - br
+    - /
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - delete
+    - 1
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"
+
+#######################################################################################################################
+aoc_detect:
+  command:
+    - config
+    - detect
+    - "@preset:aoc.org"
+    - aoc
+aoc_wizard:
+  command:
+    - config
+    - tokens
+    - flush
+  command:
+    - config
+    - tokens
+    - list
+  command:
+    - config
+    - wizard
+    - "@preset:aoc.org"
+    - aoc
+    - --key-path=@preset:file.private_key
+    - --username=@preset:aoc.user_email
+    - --use-generic-client=yes
+aoc_wizard_2:
+  command:
+    - config
+    - tokens
+    - flush
+  tags:
+    - hide_fail
+  command:
+    - config
+    - tokens
+    - show
+    - foobar
+  command:
+    - config
+    - wizard
+    - "@preset:aoc.org"
+    - aoc
+    - mypreset
+    - --key-path=@preset:file.private_key
+    - --username=@preset:aoc.user_email
+aoc_faspex_gateway:
+#	rm -f $(TMP)pid_aoc_faspex_gateway
+  command:
+    - aoc
+    - gateway
+    - --pid-file=$(TMP)pid_aoc_faspex_gateway
+    - '@json:{"url":"https://localhost:12345/aspera/faspex"}'
+#let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_aoc_faspex_gateway;do sleep 1;let --i;done
+#kill -0 $$(cat $(TMP)pid_aoc_faspex_gateway)
+  command:
+    - -N
+    - faspex
+    - --url=https://localhost:12345/aspera/faspex
+    - --username=_unused_
+    - --password=_unused_
+    - --warn-insecure=yes
+    - package
+    - send
+    - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway
+    - aoc"}
+    - faux:///test1?1m
+#	kill -TERM $$(cat
+    - $(TMP)pid_aoc_faspex_gateway)
+#	let i=10;while test $$i -gt 0 -a -f $(TMP)pid_aoc_faspex_gateway;do sleep 1;let --i;done
+aocg1:
+  command:
+    - aoc
+    - -N
+    - servers
+  command:
+    - aoc
+    - -N
+    - remind
+    - --username=@preset:aoc.user_email
+aocg2:
+  command:
+    - aoc
+    - bearer_token
+    - --display=data
+    - --scope=user:all
+aocg3:
+  command:
+    - aoc
+    - organization
+  command:
+    - aoc
+    - organization
+    - --format=image
+    - --fields=background_image_url
+    - --ui=text
+  command:
+    - aoc
+    - tier_restrictions
+aocg4:
+  command:
+    - aoc
+    - user
+    - workspaces
+    - list
+aoc_user_profile:
+  command:
+    - aoc
+    - user
+    - profile
+    - show
+aocg6:
+  command:
+    - aoc
+    - user
+    - profile
+    - modify
+    - '@json:{"name":"dummy
+    - change"}'
+aocuprefshow:
+  command:
+    - aoc
+    - user
+    - pref
+    - show
+aocuprefmod:
+  command:
+    - aoc
+    - user
+    - pref
+    - modify
+    - '@json:{"default_language":"en-us"}'
+aocucontactlist:
+  command:
+    - aoc
+    - user
+    - contacts
+    - list
+aocg7:
+  command:
+    - aoc
+    - packages
+    - shared_inboxes
+    - list
+  command:
+    - aoc
+    - packages
+    - shared_inboxes
+    - show
+    - "%name:@preset:aoc.shared_inbox_name"
+aocg8:
+  command:
+    - aoc
+    - user
+    - workspaces
+    - current
+aoc_webauth:
+  command:
+    - aoc
+    - --preset=aoc_web
+    - user
+    - profile
+    - show
+  command:
+    - aoc
+    - --preset=aoc_web
+    - user
+    - profile
+    - show
+    - --http-options=@json:{"token_refresh_threshold":10000000000}
+
+#######################################################################################################################
+aocfbr:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+aocfbr1:
+  command:
+    - aoc
+    - files
+    - browse
+    - "@preset:aoc.remote_folder"
+  command:
+    - aoc
+    - files
+    - browse
+    - "@extend:@preset:aoc.remote_folder@/"
+  command:
+    - aoc
+    - files
+    - browse
+    - "@preset:aoc.remote_file"
+aocfbt:
+  command:
+    - aoc
+    - files
+    - bearer_token_node
+    - /
+    - --cache-tokens=no
+aocffin:
+  command:
+    - aoc
+    - files
+    - find
+    - /
+  command:
+    - aoc
+    - files
+    - find
+    - /
+    - \.partial$
+  command:
+    - aoc
+    - files
+    - find
+    - /
+    - '@ruby:->(f){f["type"].eql?("file")}'
+aoc_tstsrc:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - aoc
+    - files
+    - delete
+    - /testsrc
+#	$(TEMPORIZE_CREATE)
+  command:
+    - aoc
+    - files
+    - mkdir
+    - /testsrc
+aoc_some_folder:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - aoc
+    - files
+    - delete
+    - /some_folder
+#	$(TEMPORIZE_CREATE)
+  command:
+    - aoc
+    - files
+    - mkdir
+    - /some_folder
+#	$(TEMPORIZE_CREATE)
+aoc_tstdst:
+  tags:
+    - ignore_fail
+  depends_on:
+    - aoc_some_folder
+  command:
+    - aoc
+    - files
+    - delete
+    - /testdst
+#	$(TEMPORIZE_FILE)
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - --node-cache=no
+  command:
+    - aoc
+    - files
+    - modify
+    - /some_folder
+    - '@json:{"mount_point":false}'
+  command:
+    - aoc
+    - files
+    - rename
+    - /some_folder
+    - testdst
+aocfupl:
+  depends_on:
+    - aoc_tstsrc
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testsrc
+    - $(TST_ASC_LCL_PATH)
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testsrc
+    - $(TST_ASC_LCL_PATH)
+    - $(TST_UTF_LCL_PATH)
+aocftr:
+  depends_on:
+    - aocfupl
+    - aoc_tstdst
+  command:
+    - aoc
+    - files
+    - transfer
+    - push
+    - /testsrc
+    - --to-folder=/testdst
+    - $(TST_ASC_FILENAME)
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testdst
+    - $(TST_UTF_LCL_PATH)
+aocndinf:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - node_info
+    - /testdst
+    - --format=json
+    - --display=data
+    - |
+    - 
+    - aoc
+    - files
+    - upload
+    - --workspace=@preset:aoc.other_workspace
+    - --to-folder=@preset:aoc.other_folder
+    - $(TST_ASC_FILENAME)
+    - --transfer=node
+    - --transfer-info=@json:@stdin:
+aocfdel:
+  depends_on:
+    - aocftr
+    - aocndinf
+  command:
+    - aoc
+    - files
+    - delete
+    - /testsrc
+aocfbearnode:
+  command:
+    - aoc
+    - files
+    - bearer
+    - /
+aocfdownd:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - down
+    - --to-folder=$(TMP)
+    - testdst/$(TST_ASC_FILENAME)
+    - testdst/$(TST_UTF_FILENAME)
+  command:
+    - aoc
+    - files
+    - down
+    - --to-folder=$(TMP)
+    - testdst/$(TST_ASC_FILENAME)
+aocfdownc:
+  depends_on:
+    - aoc_tstdst
+#	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
+#	@-killall asperaconnect
+#	@sleep 1
+  command:
+    - aoc
+    - files
+    - download
+    - --transfer=connect
+    - testdst/$(TST_ASC_FILENAME)
+#	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
+aocfdowna:
+  depends_on:
+    - aoc_tstdst
+  command:
+    - aoc
+    - files
+    - download
+    - --transfer=desktop
+    - testdst/$(TST_ASC_FILENAME)
+#	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
+aocfhttpd:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - cat
+    - testdst/$(TST_ASC_FILENAME)
+aocfv3inf:
+  command:
+    - aoc
+    - files
+    - v3
+    - info
+aoc_sync_pull_conf_parms:
+#	rm -fr $(TMP_SYNCS)aoc_sync_pull_conf_parms
+#	mkdir -p $(TMP_SYNCS)aoc_sync_pull_conf_parms
+  command:
+    - aoc
+    - files
+    - sync
+    - pull
+    - /testdst
+    - --to-folder=$(TMP_SYNCS)aoc_sync_pull_conf_parms
+    - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+  command:
+    - aoc
+    - files
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS)aoc_sync_pull_conf_parms
+aoc_sync_conf_pull_params:
+#	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull_params
+#	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull_params
+  command:
+    - aoc
+    - files
+    - sync
+    - pull
+    - /testdst
+    - --to-folder=$(TMP_SYNCS)aoc_sync_conf_pull_params
+    - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+  command:
+    - aoc
+    - files
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS)aoc_sync_conf_pull_params
+aoc_file_id_1:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - br
+    - testdst/$(TST_ASC_FILENAME)
+    - --fields=id
+    - --format=csv
+    - --display=data
+  save_output_to: aoc_file_id
+aoc_file_id_2:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - "%id: $(read_value_from 'aoc_file_id')"
+aoc_file_id_3:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - /
+aoc_file_id_4:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - testdst/$(TST_ASC_FILENAME)
+aoc_file_id_5:
+  tags:
+    - ignore_fail
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - mkdir
+    - "@preset:aoc.test_folder"
+aoc_file_id_6:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=@preset:aoc.test_folder
+    - --src-type=pair
+    - "@preset:file.mpg"
+    - video_file.mpg
+#	@echo 'waiting for preview'
+#	sleep 60
+aoc_file_id_7:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=@preset:aoc.test_folder
+    - --src-type=pair
+    - "@preset:file.jpg"
+    - image_file.jpg
+aoc_file_id_8:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - permission
+    - "@preset:aoc.test_folder"
+    - list
+aoc_file_id_9:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+aoc_file_id_10:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - --query=@json:{"text":true,"double":true}
+aoc_file_id_11:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - --query=@json:{"text":true,"double":false}
+aoc_file_id_12:
+  env:
+    TERM_PROGRAM: null
+    LC_TERMINAL: null
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+#	 aoc files modify @preset:aoc.test_folder
+aocfpub:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - -N
+    - --url=@preset:aoc.public_link_folder_no_pass
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - -N
+    - --url=@preset:aoc.public_link_folder_pass
+    - --password=@preset:aoc.public_link_password
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/
+    - $(TST_ASC_LCL_PATH)
+    - -N
+    - --url=@preset:aoc.public_link_folder_no_pass
+aoc_lnk_priv:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - --url=@preset:aoc.private_link
+aocshlk2:
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - private
+    - create
+aocshlk3:
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - public
+    - create
+aocshlk1:
+  depends_on:
+    - aocshlk2
+    - aocshlk3
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - private
+    - list
+
+#######################################################################################################################
+aoc_pack_send1:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:@extend:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"],"note":"my
+    - note"}'
+    - $(TST_ASC_LCL_PATH)
+aoc_pack_send2:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:@extend:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_external@"]}'
+    - --new-user-option=@json:{"package_contact":true}
+    - $(TST_ASC_LCL_PATH)
+aocp2:
+  command:
+    - aoc
+    - packages
+    - list
+aocp3:
+  depends_on:
+    - aoc_pack_send1
+#	:>$(STATE)package_id3;while test -z "$(read_value_from 'package_id3')";do \
+  wait_command:
+    - aoc
+    - packages
+    - list
+    - --format=csv
+    - --fields=id
+    - --display=data
+    - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
+  save_output_to: package_id3
+  command:
+    - aoc
+    - packages
+    - receive
+    - $(read_value_from 'package_id3')
+    - --to-folder=$(TMP)
+  command:
+    - aoc
+    - packages
+    - receive
+    - $(read_value_from 'package_id3')
+    - --to-folder=$(TMP)
+    - /
+    - --package-folder=name
+  command:
+    - aoc
+    - packages
+    - browse
+    - $(read_value_from 'package_id3')
+    - /
+aocp4:
+  command:
+    - aoc
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --lock-port=12345
+aocp5:
+  command:
+    - aoc
+    - organization
+    - -N
+    - --url=@preset:aoc.public_link_recv_from_aoc_user
+aocp_send_pub_sh:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+    - -N
+    - --url=@preset:aoc.public_link_send_shared_inbox
+aocp_send_pub_usr:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)"
+    - -N
+    - --url=@preset:aoc.public_link_send_aoc_user
+    - --password=@preset:aoc.public_link_send_use_pass
+aocp_recv_init:
+  command:
+    - aoc
+    - packages
+    - receive
+    - INIT
+    - --once-only=yes
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@"}
+aocp_send_shbx:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - '@json:@extend:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"]}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_long:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project
+    - Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional
+    - Date","values":["2021-01-13T15:02:00.000Z"]}]}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_short:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project
+    - Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional
+    - Date":"2021-01-13T15:02:00.000Z"}}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_short2:
+  tags:
+    - hide_fail
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - $(TST_ASC_LCL_PATH)
+aocp_recv_shbx:
+  depends_on:
+    - aocp_send_shbx
+    - aocp_send_sh_meta_long
+    - aocp_send_sh_meta_short
+  command:
+    - aoc
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --lock-port=12345
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
+    - --ts=@json:{"resume_policy":"sparse_csum","target_rate_kbps":50000}
+aocp_list_shbx:
+  depends_on:
+    - aocp_send_shbx
+    - aocp_send_sh_meta_long
+    - aocp_send_sh_meta_short
+  command:
+    - aoc
+    - packages
+    - list
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
+
+#######################################################################################################################
+aoc_adm_authp_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - auth_providers
+    - list
+aoc_adm_authp_lst2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - account
+aoc_adm_authp_lst3:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - usage
+aoc_adm_authp_lst4:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - usage
+    - MONTH
+aoc_adm_ws_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - list
+aoc_adm_ws_lst2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - dropbox
+    - "%name:@preset:aoc.other_workspace"
+    - list
+aoc_adm_ws_lst3:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - list
+aoc_adm_ws_lst4:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - list
+    - --query.max=1
+    - --fields=id
+  save_output_to: shared_folder_id
+aoc_adm_ws_lst5:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - member
+    - $(read_value_from 'shared_folder_id')
+    - list
+aoc_adm_nd_events:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - events
+aoc_adm_ak_create:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - mkdir
+    - /folder_sub
+aoc_adm_ak_browse:
+  depends_on:
+    - aoc_adm_ak_create
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /folder_sub
+    - --node-cache=no
+aoc_adm_ak_sub_ak:
+  depends_on:
+    - aoc_adm_ak_create
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - access_key
+    - create
+    - '@json:{"id":"testsub1","storage":{"path":"/folder_sub"}}'
+aoc_adm_ak_del:
+  depends_on:
+    - aoc_adm_ak_create
+    - aoc_adm_ak_browse
+    - aoc_adm_ak_sub_ak
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - access_key
+    - delete
+    - testsub1
+aoc_adm_ak_dir_del:
+  depends_on:
+    - aoc_adm_ak_del
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder_sub
+aoc_adm_nd_br:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /
+aoc_adm_nd_mkdir_prep:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder1
+    - --node-cache=no
+#	sleep 4
+aoc_adm_nd_mkdir:
+  depends_on:
+    - aoc_adm_nd_mkdir_prep
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - mkdir
+    - /folder1
+# $(TEMPORIZE_CREATE)
+aoc_adm_nd_brse:
+  depends_on:
+    - aoc_adm_nd_mkdir
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /
+    - --node-cache=no
+aoc_adm_nd_rmdir:
+  depends_on:
+    - aoc_adm_nd_mkdir
+    - aoc_adm_nd_brse
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder1
+aoc_adm_wsm_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace_membership
+    - list
+    - --fields=ALL
+    - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
+aoc15:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - organization
+    - --query=@json:{"status":"completed","direction":"receive","limit":2}
+    - --notify-to=@preset:misc.email_external
+    - |
+      --notify-template=@ruby:%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+aoc_ana_tr:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - organization
+    - --query=@json:{"status":"completed","direction":"receive","limit":1}
+    - --fields=uuid
+  save_output_to: aoc_transfer_id
+aoc_ana_files:
+  depends_on:
+    - aoc_ana_tr
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - files
+    - organization
+    - ''
+    - $(read_value_from 'aoc_transfer_id')
+aoc16:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - users
+    - --once-only=yes
+#	 --preset=aoc_admin aoc admin analytics transfers nodes
+aoc_adm_res_01:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - self
+    - show
+aoc_adm_res_01b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - organization
+    - show
+aoc_adm_res_01c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - list
+aoc_adm_res_01d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - modify
+    - "@extend:%name:@preset:aoc.user_email@"
+    - '@json:{"deactivated":false}'
+aoc_adm_res_02:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - group
+    - list
+aoc_adm_res_02b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client
+    - list
+aoc_adm_res_02c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - contact
+    - list
+aoc_adm_res_02d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - dropbox
+    - list
+aoc_adm_res_03:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - list
+aoc_adm_res_03b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - operation
+    - list
+aoc_adm_res_03c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - package
+    - list
+    - --http-options=@json:{"read_timeout":120.0}
+aoc_adm_res_03d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - list
+aoc_adm_res_04:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - dropbox_membership
+    - list
+aoc_adm_res_04b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace_membership
+    - list
+aoc_adm_res_04c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - short_link
+    - list
+aoc_adm_res_05:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - list
+aoc_adm_res_05b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_access_key
+    - list
+aoc_adm_res_05c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - kms_profile
+    - list
+aoccltreg:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - create
+    - '@json:{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+aoccltregb:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - list
+aoccltregc:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - list
+    - --select=@json:{"data.name":"test_client_reg1"}
+    - --fields=id
+    - --display=data
+    - --query.max=1
+  save_output_to: client_reg_id
+aoccltregd:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - delete
+    - $(read_value_from 'client_reg_id')
+aocadmndcr:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - delete
+    - test_shared_folder
+    - --node-cache=no
+aocadmndcrb:
+  tags:
+    - ignore_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - browse
+    - test_shared_folder
+    - --node-cache=no
+aocadmndcrc:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - mkdir
+    - test_shared_folder
+aocadmndcrd:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - browse
+    - test_shared_folder
+    - --node-cache=no
+aocadmndsh1:
+  depends_on:
+    - aocadmndcr
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    - '@json:{"with":"","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh2:
+  depends_on:
+    - aocadmndsh1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    -  '@json:@extend:{"with":"@preset:aoc.user_email@","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh3:
+  depends_on:
+    - aocadmndsh1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    -  '@json:@extend:{"with":"@preset:aoc.user_group@","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh4:
+  depends_on:
+    - aocadmndsh2
+    - aocadmndsh3
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - delete
+    - test_shared_folder
+
+#######################################################################################################################
+aocat4:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - list
+aocat5:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - clouds
+aocat6:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - show
+    - --cloud=aws
+    - --region=eu-west-1
+aocat7:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - show
+    - 1f412ae7-869a-445c-9c05-02ad16813be2
+# see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
+aocat8:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - delete
+    - ak1ibmcloud
+aocat8b:
+  depends_on:
+    - aocat8
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - create
+    - --cloud=softlayer
+    - --region=@preset:icos.region
+    - '@json:@extend:{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my
+    - test
+    - key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+aocat9:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - create
+    - --cloud=aws
+    - --region=@preset:aws.region
+    - '@json:@extend:{"id":"ak_aws","name":"my
+    - test
+    - key
+    - AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
+aocat10:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - list
+    - --fields=name,id
+aocat11:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - node
+    - ak1ibmcloud
+    - --secret=@preset:misc.secret_here
+    - browse
+    - /
+aocat13:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - delete
+    - ak1ibmcloud
+
+#######################################################################################################################
+$(TMP)wf_id:
+  depends_on:
+    - aocauto1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+    - --select=@json:{"name":"test_workflow"}
+    - --fields=id
+    - --format=csv
+    - --display=data
+    - --output=$@
+aocauto1:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - create
+    - '@json:{"name":"test_workflow"}'
+aocauto2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+    - --query=@json:{"show_org_workflows":"true"}
+    - --scope=admin:all
+aocauto3:
+  depends_on:
+    - $(TMP / 'wf_id')
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - action
+    - $$(cat $(TMP)wf_id)
+    - create
+    - '@json:{"name":"toto"}'
+#    - \"
+#		| tee action.info
+#	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info > tmp_action_id.txt
+#	rm -f action.info
+#	rm -f tmp_action_id.txt
+aocauto10:
+  depends_on:
+    - $(TMP)wf_id
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - delete
+    - $$(cat $(TMP)wf_id)
+
+#######################################################################################################################
+taoc: taocgen taocf taocp taocadm taocts taocauto
+clean_taoc: clean_taocgen clean_taocf clean_taocp clean_taocadm clean_taocts clean_taocauto
+#######################################################################################################################
+orch_health:
+  command:
+    - orchestrator
+    - health
+orch_health_bad:
+  tags:
+    - hide_fail
+  command:
+    - orchestrator
+    - health
+    - --url=https://wrong.url
+    - --format=nagios
+orch_detect:
+  command:
+    - config
+    - detect
+    - "@preset:orch_user.url"
+orch_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:orch_user.url"
+    - orchestrator
+    - --username=test
+    - --password=test
+orch_info:
+  command:
+    - orchestrator
+    - info
+orch_wf_list:
+  command:
+    - orchestrator
+    - workflow
+    - list
+orch_wf_sta:
+  command:
+    - orchestrator
+    - workflow
+    - status
+    - ALL
+orch_wf_inp:
+  command:
+    - orchestrator
+    - workflow
+    - inputs
+    - "@preset:orch.workflow_id"
+orch_wf_sti:
+  command:
+    - orchestrator
+    - workflow
+    - status
+    - "@preset:orch.workflow_id"
+orch_wf_str1:
+  command:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - '@json:{"Param":"world
+    - !"}'
+orch_wf_str2:
+  command:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - '@json:{"Param":"world
+    - !"}'
+    - --result=ResultStep:Complete_status_message
+orch_plugins:
+  command:
+    - orchestrator
+    - plugins
+orch_processes:
+  command:
+    - orchestrator
+    - processes
+orch_wf_details:
+  command:
+    - orchestrator
+    - workflow
+    - details
+    - "@preset:orch.workflow_id"
+  command:
+    - orchestrator
+    - workflow
+    - export
+    - "@preset:orch.workflow_id"
+
+#######################################################################################################################
+at4:
+  command:
+    - ats
+    - cluster
+    - list
+at5:
+  command:
+    - ats
+    - cluster
+    - clouds
+at6:
+  command:
+    - ats
+    - cluster
+    - show
+    - --cloud=aws
+    - --region=eu-west-1
+at7:
+  command:
+    - ats
+    - cluster
+    - show
+    - 1f412ae7-869a-445c-9c05-02ad16813be2
+at2:
+  command:
+    - ats
+    - api_key
+    - instances
+at1:
+  command:
+    - ats
+    - api_key
+    - list
+at3:
+  command:
+    - ats
+    - api_key
+    - create
+at8:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak2ibmcloud
+#	$(TEMPORIZE_CREATE)
+  command:
+    - ats
+    - access_key
+    - create
+    - --cloud=softlayer
+    - --region=@preset:icos.region
+    - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+#	$(TEMPORIZE_CREATE)
+  command:
+    - ats
+    - access_key
+    - show
+    - ak2ibmcloud
+  command:
+    - ats
+    - access_key
+    - entitlement
+    - ak2ibmcloud
+at9:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - create
+    - --cloud=aws
+    - --region=@preset:aws.region
+    - '@json:@extend:{"id":"ak_aws","name":"my
+    - test
+    - key
+    - AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
+at10:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - list
+    - --fields=name,id
+at11:
+  command:
+    - ats
+    - access_key
+    - node
+    - ak2ibmcloud
+    - browse
+    - /
+    - --secret=@preset:misc.secret_here
+at12:
+  command:
+    - ats
+    - access_key
+    - cluster
+    - ak2ibmcloud
+    - --secret=@preset:misc.secret_here
+at13:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak2ibmcloud
+at14:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak_aws
+
+#######################################################################################################################
+nd_sync_pull_conf:
+#	rm -fr $(TMP_SYNCS)nd_sync_pull_conf
+#	mkdir -p $(TMP_SYNCS)nd_sync_pull_conf
+  command:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(TMP_SYNCS)nd_sync_pull_conf
+    - '@json:{"reset":true}'
+  command:
+    - node
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS)nd_sync_pull_conf
+nd_sync_v2:
+#	rm -fr $(TMP_SYNCS)nd_sync_v2
+#	mkdir -p $(TMP_SYNCS)nd_sync_v2
+  command:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(TMP_SYNCS)nd_sync_v2
+    - '@json:{"name":"my_sync_session_name","reset":true}'
+  command:
+    - node
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS)nd_sync_v2
+nd_async_list:
+  command:
+    - node
+    - async
+    - list
+nd_async_show:
+  command:
+    - node
+    - async
+    - show
+    - ALL
+  command:
+    - node
+    - async
+    - show
+    - "%name:my_sync_session_name"
+nd_async_cntr:
+  command:
+    - node
+    - async
+    - counters
+    - "%name:my_sync_session_name"
+nd_async_bw:
+  command:
+    - node
+    - async
+    - bandwidth
+    - "%name:my_sync_session_name"
+nd_async_files:
+  command:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+  command:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+    - --once-only=yes
+nd_async_del:
+  command:
+    - node
+    - async
+    - delete
+    - ALL
+
+#######################################################################################################################
+sync_create:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - server
+    - -Pserver2_user
+    - delete
+    - "@preset:sync.remote_path"
+  command:
+    - server
+    - -Pserver2_user
+    - mkdir
+    - "@preset:sync.remote_path"
+  tags:
+    - ignore_fail
+  command:
+    - node
+    - delete
+    - "@preset:sync.local_path"
+  command:
+    - node
+    - mkdir
+    - "@preset:sync.local_path"
+  command:
+    - node
+    - upload
+    - 'faux:///testfile1?1m'
+    - --to-folder=@preset:sync.local_path
+#	set -x&&\
+#	host_port=$$( config preset get server2_user url|cut -f3 -d/)&&\
+#	host=$${host_port%:*}&&\
+#	port=$${host_port#*:}&&\
+  command:
+    - node
+    - ssync
+    - create
+    - '@json:@extend:{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path_real@"},"remote":{"host":"${host}","port":${port},"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
+  command:
+    - node
+    - ssync
+    - list
+sync_other:
+  depends_on:
+    - sync_create
+  command:
+    - node
+    - ssync
+    - start
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - show
+    - "%name:my_node_sync"
+#	sleep 30
+  command:
+    - node
+    - ssync
+    - bandwidth
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - counters
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - files
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - state
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - stop
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - summary
+    - "%name:my_node_sync"
+  command:
+    - node
+    - ssync
+    - delete
+    - "%name:my_node_sync"
+  tags:
+    - hide_fail
+  command:
+    - node
+    - ssync
+    - delete
+    - not_exist
+
+#######################################################################################################################
+conf_detect:
+  command:
+    - config
+    - detect
+    - "@preset:node_user.url"
+  tags:
+    - hide_fail
+  command:
+    - config
+    - detect
+    - https://www.ibm.com
+conf_ascp_show:
+  command:
+    - config
+    - ascp
+    - show
+conf_ascp_spec:
+  command:
+    - config
+    - ascp
+    - spec
+  command:
+    - config
+    - sync
+    - spec
+  command:
+    - config
+    - sync
+    - translate
+    - --format=jsonpp
+    - --show-secrets=yes
+    - --
+    - -L
+    - /optlogs/
+    - -N
+    - transfer_test
+    - -x
+    - -P
+    - 33001
+    - -k
+    - md5-sparse
+    - -i
+    - /root/.ssh/id_rsa_eudemo
+    - -b
+    - /opt/async_db
+    - -d
+    - /opt/source/
+    - -C
+    - --scan-interval=30
+    - --transfer-threads=1
+    - --pending-max=2000
+    - -r
+    - /tmp/dest/
+    - --user
+    - root
+    - --host
+    - 1.2.3.4
+    - -R
+    - /tmp/logs/
+    - -B
+    - /opt/async_db
+    - -l
+    - 1000
+    - --cooloff=5
+    - --preserve-uid
+    - --preserve-gid
+    - -K
+    - push
+conf_ascp_schema:
+  command:
+    - config
+    - ascp
+    - schema
+    - --format=jsonpp
+conf_ascp_errors:
+  command:
+    - config
+    - ascp
+    - errors
+conf_ascp_2:
+  command:
+    - config
+    - ascp
+    - products
+    - list
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - ascp
+    - products
+    - use
+    - 'IBM
+    - Aspera
+    - Connect'
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - ascp
+    - use
+    - $$(which
+    - ascp)
+conf_ascp_3:
+  command:
+    - config
+    - ascp
+    - connect
+    - list
+conf_ascp_4:
+  command:
+    - config
+    - ascp
+    - connect
+    - info
+    - 'Aspera
+    - Connect
+    - for
+    - Windows'
+conf_ascp_5:
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - 'Aspera
+    - Connect
+    - for
+    - Windows'
+    - list
+conf_ascp_6:
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - 'Aspera
+    - Connect
+    - for
+    - Windows'
+    - download
+    - 'Windows
+    - Installer'
+    - --to-folder=$(TMP)
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - 'Aspera
+    - Connect
+    - for
+    - Windows'
+    - open
+    - documentation
+conf_ascp_install:
+#	rm -fr "$$( --show-config --fields=sdk_folder)"
+  command:
+    - config
+    - ascp
+    - install
+    - 1.1.3
+  command:
+    - config
+    - ascp
+    - install
+#	rm -fr $(TMP)sdk_test_dir
+  command:
+    - config
+    - ascp
+    - install
+    - --sdk-folder=$(TMP)sdk_test_dir
+  command:
+    - config
+    - transferd
+    - list
+  command:
+    - config
+    - transferd
+    - install
+  command:
+    - config
+    - transferd
+    - list
+    - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
+    - --fields=url
+#    - |
+#    - 
+#    - conf
+#    - download
+#    - "@stdin:"
+#    - --to-folder=$(TMP)
+conf_ascp_8:
+  depends_on:
+    - conf_ascp_install
+  command:
+    - config
+    - ascp
+    - info
+    - --sdk-folder=$(TMP)sdk_test_dir
+conf_pset_1:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - conf_name
+    - param
+    - value
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - unset
+    - conf_name
+    - param
+  command:
+    - config
+    - preset
+    - lookup
+    - --url=@preset:faspex4_user.url
+    - --username=@preset:faspex4_user.username
+conf_pset_2:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - show
+    - conf_name
+conf_pset_3:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - default
+    - shares
+    - conf_name
+conf_pset_4:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - delete
+    - conf_name
+conf_pset_5:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - initialize
+    - conf_name
+    - '@json:{"p1":"v1","p2":"v2"}'
+conf_pset_6:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - update
+    - conf_name
+    - --p1=v1
+    - --p2=v2
+conf_open:
+#	@echo $@ open configuration file in text editor
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - open
+conf_list:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - list
+conf_over:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - overview
+conf_vers_check:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - version_check_days
+    - 0
+conf_gem:
+  command:
+    - config
+    - gem
+    - path
+  command:
+    - config
+    - gem
+    - version
+  command:
+    - config
+    - gem
+    - name
+  command:
+    - config
+    - folder
+  command:
+    - config
+    - file
+  command:
+    - config
+    - smtp_settings
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - initdemo
+conf_gem2:
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - initdemo
+  command:
+    - config
+    - gem
+    - path
+    - --http-proxy=http://test1
+    - --http-options=@json:{"user_agent":"test1"}
+  command:
+    - config
+    - coffee
+    - --cert_stores=@ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
+    - --http-options=@json:{"ssl_options":["CIPHER_SERVER_PREFERENCE","-NETSCAPE_CA_DN_BUG"]}
+    - --insecure=yes
+conf_vault_macos:
+  command:
+    - -N
+    - config
+    - vault
+    - info
+    - --vault=@json:{"type":"system"}
+  tags:
+    - ignore_fail
+  command:
+    - -N
+    - config
+    - vault
+    - create
+    - '@json:{"label":"foo"}'
+    - --vault=@json:'{"type":"system"}'
+  command:
+    - -N
+    - config
+    - vault
+    - show
+    - foo
+    - --vault=@json:{"type":"system"}
+  tags:
+    - ignore_fail
+  command:
+    - -N
+    - config
+    - vault
+    - delete
+    - foo
+    - --vault=@json:'{"type":"system"}'
+conf_vault_file:
+#	rm -f $(VAULT_FILE) $(TEST_CONFIG)
+  tags:
+    - tmp_conf
+    - nodoc
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault
+    - '@json:{"type":"file","file":"$(VAULT_FILE)"}'
+conf_vault_file2:
+  tags:
+    - tmp_conf
+    - nodoc
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault_password
+    - _simple_one_
+conf_vault_create:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - create
+    - '@json:{"label":"my_label","password":"my_password_here","description":"my secret"}'
+conf_vault_info:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - info
+conf_vault_list:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - list
+conf_vault_show:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - show
+    - my_label
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - ask
+    - my_preset
+#    - <<<
+#    - $$'username\npassword\n\nthe_user\nthe_pass\n'
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - secure
+    - my_preset
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - password
+    - $(NEW_VAULT_PASS)
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault_password
+    - $(NEW_VAULT_PASS)
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - list
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - delete
+    - my_label
+todo_name:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:my_preset.password"
+todo_name:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:bad"
+todo_name:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:bad.password"
+todo_name:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:my_preset.bad"
+conf_help_1:
+  command:
+    - -h
+conf_help_2:
+  command:
+    - --bash-comp
+conf_coffee_1:
+  command:
+    - config
+    - coffee
+conf_coffee_2:
+  command:
+    - config
+    - coffee
+    - --ui=text
+conf_coffee_3:
+  command:
+    - config
+    - coffee
+    - --ui=text
+    - --image=@json:{"text":true}
+  command:
+    - config
+    - coffee
+    - --ui=text
+    - --image=@json:{"text":true,"double":false}
+conf_image:
+  command:
+    - config
+    - image
+    - https://eudemo.asperademo.com/wallpaper.jpg
+# unset: to test like on Windows
+conf_plugins:
+  command:
+    - config
+    - plugins
+    - list
+conf_plugins1:
+  env:
+    LC_ALL: null
+    LC_CTYPE: null
+    LANG: null
+  command:
+    - config
+    - plugins
+    - list
+conf_plugins2:
+  command:
+    - config
+    - plugins
+    - create
+    - my_command
+    - $(TMP)
+conf_plugins3:
+  depends_on:
+    - conf_plugins2
+  command:
+    - my_command
+    - --plugin-folder=$(TMP)
+conf_genkey:
+# rm -f $(TMP)my_key $(TMP)my_key.pub
+  command:
+    - config
+    - genkey
+    - $(TMP)my_key
+# rm -f $(TMP)my_key $(TMP)my_key.pub
+todo_name:
+  command:
+    - config
+    - genkey
+    - $(TMP)my_key
+    - 4096
+todo_name:
+  command:
+    - config
+    - pubkey
+    - "@file:$(TMP)my_key"
+  tags:
+    - hide_fail
+todo_name:
+  command:
+    - config
+    - genkey
+    - $(TMP)my_key
+    - not_int
+conf_cert:
+  command:
+    - config
+    - remote_certificate
+    - name
+    - "@preset:node_user.url"
+todo_name:
+  command:
+    - config
+    - remote_certificate
+    - chain
+    - "@preset:node_user.url"
+todo_name:
+  command:
+    - config
+    - remote_certificate
+    - only
+    - "@preset:node_user.url"
+conf_smtp:
+  command:
+    - config
+    - email_test
+    - --notify-to=@preset:misc.email_external
+conf_pac:
+  command:
+    - config
+    - proxy_check
+    - --fpac=@file:$(DIR_TST)proxy.pac
+    - https://eudemo.asperademo.com
+    - --proxy-credentials=@list:,user,pass
+conf_check_gem:
+  command:
+    - config
+    - check_update
+#	rm -f $(CLI_HOME)persist_store/version_last_check.txt
+todo_name:
+  command:
+    - config
+    - check_update
+conf_doc:
+  command:
+    - config
+    - doc
+todo_name:
+  command:
+    - config
+    - doc
+    - transfer-parameters
+conf_echo:
+  command:
+    - config
+    - echo
+    - hello
+todo_name:
+  command:
+    - config
+    - echo
+    - "@uri:/etc/hosts"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@uri:file:/etc/hosts"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@uri:http://ifconfig.me"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@uri:https://ifconfig.me"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@base64:SGVsbG8gV29ybGQK"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@list:,1,2,3"
+todo_name:
+  command:
+    - config
+    - echo
+    - "@env:USER"
+todo_name:
+  command:
+    - config
+    - echo
+    - --
+    - --special-string
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
+    - --multi-single=yes
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
+    - --multi-single=single
+todo_name:
+  command:
+    - config
+    - echo
+    - '<svg
+    - viewBox="0
+    - 0
+    - 100
+    - 100"
+    - xmlns="http://www.w3.org/2000/svg"><circle
+    - cx="50"
+    - cy="50"
+    - r="50"
+    - fill="#006699"/></svg>'
+    - --format=image
+  tags:
+    - hide_fail
+todo_name:
+  command:
+    - config
+    - echo
+    - "@file:no_such_file"
+todo_name:
+  tags:
+    - must_fail
+  command:
+    - config
+    - echo
+    - '@json:{"ok":1,"bad":mauvais}'
+#	echo $$'1\n2\n3'| config echo @lines:@stdin:
+#	echo $$'1\n2\n3'| config echo @stdbin:
+#	echo $$'t1,t2,t3\na,b,d\nd,e,f'| config echo @csvt:@stdin:
+#	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'| config echo @zlib:@stdin:
+#	set -xe&&\
+#	for f in text ruby json jsonpp yaml table csv;do \
+#	   config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
+#	done
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=csv
+    - --table=@json:{"headers":true,"force_quotes":true}
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@json:["id"]
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@re:i+
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@ruby:->(f){f.eql?("id")}
+todo_name:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --select=@ruby:->(r){r["id"].eql?(8)}
+conf_extended1:
+  expect: '@file:foo'
+  command:
+    - config
+    - echo
+    - '@val:@file:foo'
+    - --format=text
+conf_extended2:
+  expect: 'foo'
+  command:
+    - config
+    - echo
+    - '@base64:Zm9v'
+    - --format=text
+conf_extended3:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@lines:@json:1\n2\n'
+    - --format=ruby
+conf_extended4:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@list:,1,2'
+    - --format=ruby
+conf_extended5:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@json:["1","2"]'
+    - --format=ruby
+conf_extended6:
+  expect: '[1, 2]'
+  command:
+    - config
+    - echo
+    - '@yaml:@json:- 1\n- 2\n'
+    - --format=ruby
+conf_interactive:
+  command:
+    - config
+    - echo
+    - "@secret:"
+conf_hint:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - Aspera::RestCallError
+    - Signature has expired
+todo_name:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - Aspera::Transfer::Error
+    - Remote host is not who weexpected
+todo_name:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::SSL::SSLError
+    - does not match the server certificate
+todo_name:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::SSL::SSLError
+    - certificate verify failed
+todo_name:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::PKey::RSAError
+    - Neither PUB key nor PRIV key
+conf_logger:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --logger=syslog
+todo_name:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --log-format=standard
+todo_name:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --log-format=default
+todo_name:
+  command:
+    - config
+    - coffee
+    - --log-level=trace2
+    - --log-format=caller
+todo_name:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - '--log-format=@ruby:->(s,d,p,m){"#{d.strftime("%Y-%m-%d "%H:%M:%S")} - #{p} - #{s} - #{m}\n"}'
+todo_name:
+  command:
+    - config
+    - echo
+    - '@ruby:%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"'
+    - --log-level=trace2
+
+#######################################################################################################################
+prev_check:
+  command:
+    - preview
+    - check
+    - --skip-types=office
+prev_dcm:
+  command:
+    - preview
+    - test
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.dcm"
+prev_dcm_mm:
+  command:
+    - preview
+    - test
+    - --mimemagic=yes
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.dcm"
+prev_jpg_unk_mm:
+  command:
+    - preview
+    - test
+    - --mimemagic=yes
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.jpg_unk"
+prev_mxf_blend:
+  command:
+    - preview
+    - test
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.mxf"
+    - mp4
+    - --video-conversion=blend
+    - --query=@json:{"text":true,"double":true}
+prev_pdf:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.pdf"
+prev_txt:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - /etc/hosts
+prev_docx:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.docx"
+prev_mpg_png_fix:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.mpg"
+    - --video-png-conv=fixed
+prev_mpg_png_ani:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.mpg"
+    - --video-png-conv=animated
+prev_mpg_reencode:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.mpg"
+    - mp4
+    - --video-conversion=reencode
+prev_mpg_clips:
+  command:
+    - preview
+    - show
+    - --base=$(TMP
+    - /
+    - test_name)
+    - "@preset:file.mpg"
+    - mp4
+    - --video-conversion=clips
+prev_trevents:
+  command:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+#	sleep 4
+  command:
+    - preview
+    - trevents
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_events:
+  command:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+#	sleep 4
+  command:
+    - preview
+    - events
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_scan:
+  command:
+    - preview
+    - scan
+    - --skip-types=office
+    - --log-level=info
+    - --skip-folder=/special/folder
+  command:
+    - preview
+    - scan
+    - --skip-folder=foo
+    - --skip-folder=bar
+    - --skip-folder=@list:,1,2
+prev_folder:
+  command:
+    - preview
+    - scan
+    - --scan-id=1
+    - --skip-types=office
+    - --log-level=info
+    - --file-access=remote
+    - --ts=@json:{"target_rate_kbps":1000000}
+
+#######################################################################################################################
+# TODO : finalize
+thot:
+#	rm -fr source_hot
+#	mkdir source_hot
+  tags:
+    - ignore_fail
+  command:
+    - server
+    - delete
+    - "@extend:@preset:server.upload_folder@/target_hot"
+  command:
+    - server
+    - mkdir
+    - "@extend:@preset:server.upload_folder@/target_hot"
+#	echo hello > source_hot/new_file
+  command:
+    - server
+    - upload
+    - --to-folder=@extend:@preset:server.upload_folder@/target_hot
+    - --lock-port=12345
+    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}
+    - source_hot
+  command:
+    - server
+    - browse
+    - "@extend:@preset:server.upload_folder@/target_hot"
+#ls -al source_hot
+#$(TEMPORIZE_CREATE)
+  command:
+    - server
+    - upload
+    - --to-folder=@extend:@preset:server.upload_folder@/target_hot
+    - --lock-port=12345
+    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}
+    - source_hot
+  command:
+    - server
+    - browse
+    - "@extend:@preset:server.upload_folder@/target_hot"
+#ls -al source_hot
+#rm -fr source_hot
+#######################################################################################################################
+tcos_info1:
+  command:
+    - cos
+    - node
+    - info
+    - -N
+    - --bucket=@preset:icos.bucket
+    - --region=@preset:icos.region
+    - --service-credentials=@json:@file:@preset:file.cos_svc_cred
+tcos_info2:
+  command:
+    - cos
+    - node
+    - info
+    - -N
+    - --bucket=@preset:icos.bucket
+    - --endpoint=@preset:icos.endpoint
+    - --apikey=@preset:icos.api_key
+    - --crn=@preset:icos.resource_instance_id
+tcos_info3:
+  command:
+    - cos
+    - node
+    - info
+    - --log-level=trace2
+tcos_show:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - cos
+    - node
+    - access_key
+    - show
+    - self
+tcos_upload:
+  command:
+    - cos
+    - node
+    - upload
+    - $(TST_ASC_LCL_PATH)
+tcos_download:
+  depends_on:
+    - tcos_upload
+  command:
+    - cos
+    - node
+    - download
+    - $(TST_ASC_FILENAME)
+    - --to-folder=$(TMP)
+
+#######################################################################################################################
+f5_health:
+  command:
+    - faspex5
+    - health
+    - -N
+    - --url=@preset:faspex5_user.url
+f5_health_bad:
+  command:
+    - faspex5
+    - health
+    - --url=https://www.ibm.com
+f5_health_nagios:
+  tags:
+    - must_fail
+  command:
+    - faspex5
+    - health
+    - -N
+    - --url=https://www.ibm.com
+    - --format=nagios
+f5_detect:
+  command:
+    - config
+    - detect
+    - "@preset:faspex5_user.url"
+    - faspex5
+f5_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:faspex5_user.url"
+    - faspex5
+    - --key-path=@preset:file.private_key
+    - --preset=faspex5_user
+  command:
+    - config
+    - wizard
+    - "@preset:faspex5_user.url"
+    - faspex5
+    - --key-path=@preset:file.private_key
+    - --url=
+    - --username=a@b.c
+  command:
+    - config
+    - wizard
+    - https://eudemo.asperademo.com
+    - faspex5
+    - --username=admin@ibm.com
+    - --key-path=
+    - --show-secrets=yes
+    - --client-id=abc
+    - --client-secret=abc
+  tags:
+    - hide_fail
+  command:
+    - config
+    - detect
+    - https://eudemo.asperademo.com:22
+    - faspex5
+  command:
+    - -N
+    - config
+    - detect
+    - "@preset:faspex5_user.url"
+  command:
+    - config
+    - detect
+    - "@preset:faspex5_user.url"
+f5_version:
+  command:
+    - faspex5
+    - version
+f5_pack_rcv_init:
+  command:
+    - faspex5
+    - packages
+    - receive
+    - INIT
+    - --once-only=yes
+f5_p1:
+  command:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test
+    - title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}'
+    - $(TST_ASC_LCL_PATH)
+    - --ts=@json:{"content_protection_password":"my_secret_here"}
+f5_pack_list:
+  command:
+    - faspex5
+    - packages
+    - list
+    - --query=@json:{"mailbox":"inbox","status":"completed"}
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=ALL
+    - --preset=f5_admin
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=outbox
+    - --fields=DEF,sender.email,recipients.0.recipient_type
+f5_sh_folder_list:
+  command:
+    - faspex5
+    - shared_folders
+    - list
+f5_sh_folder_br:
+  command:
+    - faspex5
+    - shared_folders
+    - browse
+    - "@extend:%name:@preset:faspex5.shared_folder_name@"
+f5_sh_folder_send:
+  command:
+    - faspex5
+    - packages
+    - send
+    - --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@
+    - '@json:@extend:{"title":"test
+    - title","recipients":["@preset:misc.email_internal@"]}'
+    - "@preset:faspex5.shared_folder_file"
+    - --fields=id
+    - --display=data
+  save_output_to: f5_pack_id
+#@echo "Sent package with id: $(read_value_from 'f5_pack_id')"
+  command:
+    - faspex5
+    - packages
+    - status
+    - $(read_value_from 'f5_pack_id')
+    - "@list:,failed,completed"
+f5_p3:
+  depends_on:
+    - f5_sh_folder_send
+  command:
+    - faspex5
+    - packages
+    - list
+    - --query=@json:{"status":"completed","max":1}
+    - --fields=id
+  save_output_to: f5_pack_id
+  command:
+    - faspex5
+    - packages
+    - show
+    - $(read_value_from 'f5_pack_id')
+  command:
+    - faspex5
+    - packages
+    - status
+    - $(read_value_from 'f5_pack_id')
+  command:
+    - faspex5
+    - packages
+    - browse
+    - $(read_value_from 'f5_pack_id')
+    - --query=@json:{"recursive":true}
+  command:
+    - faspex5
+    - packages
+    - receive
+    - $(read_value_from 'f5_pack_id')
+    - --to-folder=$(TMP)
+    - --ts=@json:{"content_protection_password":"my_secret_here"}
+  command:
+    - faspex5
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+  command:
+    - faspex5
+    - packages
+    - delete
+    - $(read_value_from 'f5_pack_id')
+f5_pack_shbox:
+  command:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test
+    - title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example
+    - text"}}'
+    - $(TST_ASC_LCL_PATH)
+#	echo "Waiting for package to be available" && sleep 30
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:faspex5.shared_box_name
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:faspex5.shared_box_name
+    - --query=@json:{"status":"completed","limit":1,"max":1}
+    - --fields=id
+    - --format=csv
+    - --display=data
+  save_output_to: package_box_id1
+  command:
+    - faspex5
+    - packages
+    - show
+    - --box=@preset:faspex5.shared_box_name
+    - $(read_value_from 'package_box_id1')
+  command:
+    - faspex5
+    - packages
+    - receive
+    - --box=@preset:faspex5.shared_box_name
+    - $(read_value_from 'package_box_id1')
+    - --to-folder=$(TMP)
+f5_pack_shbox_public:
+  command:
+    - faspex5
+    - packages
+    - send
+    - -N
+    - --url=@preset:faspex5.public_link_send_shared_box
+    - '@json:@extend:{"title":"test
+    - title"}'
+    - $(TST_ASC_LCL_PATH)
+f5_pack_user_public:
+  command:
+    - faspex5
+    - packages
+    - send
+    - -N
+    - --url=@preset:faspex5.public_link_send_f5_user
+    - '@json:@extend:{"title":"test
+    - title"}'
+    - $(TST_ASC_LCL_PATH)
+f5_pack_wrkgrp:
+  command:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:
+    - {"title":"test
+    - title","recipients":["@preset:faspex5.workgroup@"]}'
+    - $(TST_ASC_LCL_PATH)
+#	$(TEMPORIZE_CREATE)
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:faspex5.workgroup
+    - --group-type=workgroups
+  command:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:faspex5.workgroup
+    - --group-type=workgroups
+    - --query=@json:{"status":"completed","limit":1,"max":1}
+    - --fields=id
+    - --format=csv
+    - --display=data
+  save_output_to: workgroup_package_id1
+  command:
+    - faspex5
+    - packages
+    - show
+    - --box=@preset:faspex5.workgroup
+    - --group-type=workgroups
+    - $(read_value_from 'workgroup_package_id1')
+  command:
+    - faspex5
+    - packages
+    - receive
+    - --box=@preset:faspex5.workgroup
+    - --group-type=workgroups
+    - $(read_value_from 'workgroup_package_id1')
+    - --to-folder=$(TMP)
+f5_sh_fold:
+  command:
+    - faspex5
+    - shared
+    - list
+  command:
+    - faspex5
+    - shared
+    - browse
+    - "%name:@preset:faspex4.src"
+f5_user_res:
+  command:
+    - faspex5
+    - bearer_token
+  command:
+    - faspex5
+    - admin
+    - contacts
+    - list
+  command:
+    - faspex5
+    - admin
+    - workgroups
+    - list
+  command:
+    - faspex5
+    - admin
+    - shared_inboxes
+    - list
+    - 
+  command:
+    - faspex5
+    - admin
+    - workgroups
+    - list
+  command:
+    - faspex5
+    - admin
+    - saml_configs
+    - list
+  command:
+    - faspex5
+    - admin
+    - metadata_profiles
+    - list
+  command:
+    - faspex5
+    - admin
+    - configuration
+    - show
+f5_dist_list:
+  command:
+    - faspex5
+    - admin
+    - distribution_lists
+    - list
+    - --query=@json:{"type":"global"}
+  command:
+    - faspex5
+    - admin
+    - distribution_lists
+    - create
+    - '@json:{"name":"test4","contacts":[{"name":"john@example.com"}]}'
+#	$(TEMPORIZE_CREATE)
+  command:
+    - faspex5
+    - admin
+    - distribution_lists
+    - delete
+    - "%name:test4"
+f5_adm_acc_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - accounts
+    - list
+f5_adm_job_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - jobs
+    - list
+    - --query=@json:{"job_type":"email","status":"failed"}
+    - --fields=id,error_desc
+f5_adm_nod_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - list
+    - 
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - show
+    - "%name:Local"
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - browse
+    - "%name:Local"
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - list
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - show
+    - "%name:Main"
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - user
+    - "%name:Main"
+    - list
+f5_adm_api_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - oauth_clients
+    - list
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - alternate_addresses
+    - list
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - email_notifications
+    - list
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - email_notifications
+    - show
+    - welcome_email
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - configuration
+    - modify
+    - '@json:{"mfa_required":false}'
+f5_adm_reg_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - registrations
+    - list
+f5_adm_sbx_lst:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - list
+    - --query=@json:{"all":true}
+f5_adm_sbx_mem:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - list
+f5_adm_sbx_cr:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - create
+    - "%name:john@example.com"
+    - submit_only
+f5_adm_sbx_del:
+  depends_on:
+    - f5_adm_sbx_cr
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - delete
+    - "%name:john@example.com"
+f5_adm_evt_app:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - event
+    - app
+    - --query=@json:{"max":20}
+f5_adm_evt_web:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - event
+    - web
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - invite
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - johnny@example.com
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - delete
+    - "%name:johnny@example.com"
+f5_clean_del:
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - clean_deleted
+f5_smtp:
+  tags:
+    - must_fail
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - create
+    - '@json:{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - modify
+    - '@json:{"default_time_zone_offset":"0"}'
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - show
+  command:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - test
+    - "@preset:misc.email_external"
+f5_user:
+  command:
+    - faspex5
+    - user
+    - account
+  command:
+    - faspex5
+    - user
+    - account
+    - --query.expand=true
+  command:
+    - faspex5
+    - user
+    - profile
+    - show
+  command:
+    - faspex5
+    - user
+    - profile
+    - modify
+    - '@json:{"preference":{"connect_disabled":false}}'
+f5_invite:
+  command:
+    - faspex5
+    - invitations
+    - create
+    - '@json:{"email_address":"aspera.user1+u@gmail.com"}'
+  command:
+    - faspex5
+    - invitation
+    - list
+  command:
+    - faspex5
+    - invitation
+    - list
+    - --fields=id
+    - --display=data
+    - --format=csv
+    - |
+    - 
+    - faspex5
+    - invitation
+    - delete
+    - --bulk=yes
+    - "@lines:@stdin:"
+f5_webauth:
+  command:
+    - --preset=f5_web
+    - faspex5
+    - version
+f5_fxgw:
+#	rm -f $(TMP)pid_f5_fxgw
+  command:
+    - faspex5
+    - gateway
+    - --pid-file=$(TMP)pid_f5_fxgw
+    - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_fxgw;do sleep 1;let --i;done
+#	kill -0 $$(cat $(TMP)pid_f5_fxgw)
+  command:
+    - -N
+    - faspex
+    - --url=https://localhost:12346/aspera/faspex
+    - --username=_unused_
+    - --password=_unused_
+    - package
+    - send
+    - --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}'
+    - faux:///test1?1m
+#	-curl -k https://localhost:12346/aspera/faspex/send -d 'bad'
+#	-curl -k https://localhost:12346/aspera/faspex/bad -d 'bad'
+#	kill -TERM $$(cat $(TMP)pid_f5_fxgw)
+#	let i=10;while test $$i -gt 0 -a -f $(TMP)pid_f5_fxgw;do sleep 1;let --i;done
+f5_postproc:
+#	-kill -TERM $$(cat $(TMP)pid_f5_postproc)
+#	rm -f $(TMP)pid_f5_postproc
+#	openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes -keyout $(TMP)key.pem -out $(TMP)cert.pem -subj "/CN=localhost"
+#	openssl pkcs12 -export -out $(TMP)localhost.p12 -inkey $(TMP)key.pem -in $(TMP)cert.pem -passout pass:changeit
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_postproc
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","cert":"$(TMP)localhost.p12","key":"changeit"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_postproc;do sleep 1;let --i;done
+#	kill -0 $$(cat $(TMP)pid_f5_postproc)&&echo ">>>> Process $$(cat $(TMP)pid_f5_postproc)"
+  command:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}'
+    - faux:///test1?1m
+#	-curl -k https://localhost:8553/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'
+#	-curl -k https://localhost:8553/wrong -d '{}'
+#	sleep 5
+#	kill -TERM $$(cat $(TMP)pid_f5_postproc)
+#	let i=10;while test $$i -gt 0 -a -f $(TMP)pid_f5_postproc;do sleep 1;let --i;done
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_postproc
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","key":"$(TMP)key.pem"}'
+#    - sleep 5
+#	kill -TERM $$(cat $(TMP)pid_f5_postproc)
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_postproc
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","cert":"$(TMP)cert.pem","key":"$(TMP)key.pem"}'
+#    - sleep 5
+#	kill -TERM $$(cat $(TMP)pid_f5_postproc)
+f5_cert_test:
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_cert_test
+    - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(DIR_TST)"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_cert_test;do sleep 1;let --i;done
+#	kill $$(cat $(TMP)pid_f5_cert_test)
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_cert_test
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(DIR_TST)"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_cert_test;do sleep 1;let --i;done
+#	kill $$(cat $(TMP)pid_f5_cert_test)
+#	openssl req -newkey rsa:2048 -x509 -days 365 -nodes -keyout $(TMP)private_key.pem -out $(TMP)certificate.pem -subj "/CN=MyCert"
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_cert_test
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP)certificate.pem","chain":"$(TMP)certificate.pem","key":"$(TMP)private_key.pem"},"script_folder":"$(DIR_TST)"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_cert_test;do sleep 1;let --i;done
+#	kill $$(cat $(TMP)pid_f5_cert_test)
+#	openssl pkcs12 -export -out $(TMP)certificate.p12 -inkey $(TMP)private_key.pem -in $(TMP)certificate.pem -name "MyCertAlias" -passout pass:$(PKCS_P)
+  command:
+    - faspex5
+    - postprocessing
+    - --pid-file=$(TMP)pid_f5_cert_test
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP)certificate.p12","key":"$(PKCS_P)"},"script_folder":"$(DIR_TST)"}'
+#	let i=10;while test $$i -gt 0 -a ! -f $(TMP)pid_f5_cert_test;do sleep 1;let --i;done
+#	kill $$(cat $(TMP)pid_f5_cert_test)
+
+#######################################################################################################################
+httpgw_nagios:
+  command:
+    - httpgw
+    - health
+httpgw_info:
+  command:
+    - httpgw
+    - info
+httpgw_detect:
+  command:
+    - config
+    - detect
+    - "@preset:tst_httpgw.url"
+    - httpgw
+
+#######################################################################################################################
+faspio_health:
+  command:
+    - faspio
+    - health
+faspio_detect:
+  command:
+    - config
+    - detect
+    - "@preset:tst_faspio.url"
+    - faspio
+faspio_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:tst_faspio.url"
+    - faspio
+    -  --username=@preset:tst_faspio.username
+    - --password=@preset:tst_faspio.password
+faspio_blist:
+  command:
+    - faspio
+    - bridges
+    - list
+faspio_bcreate:
+  command:
+    - faspio
+    - bridges
+    - create
+    - '@json:{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
+faspio_bclean_list:
+  command:
+    - faspio
+    - bridges
+    - list
+    - --fields=id
+    - --format=json
+  save_output_to: bclean
+faspio_bclean:
+  depends_on: faspio_bclean_list
+  command:
+    - faspio
+    - bridges
+    - delete
+    - --bulk=yes
+    - "@json:$(read_value_from 'bclean')"
+
+#######################################################################################################################
+alee_nagios:
+  command:
+    - -N
+    - alee
+    - health
+alee_entitlement:
+  command:
+    - alee
+    - entitlement
+
