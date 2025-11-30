@@ -1,3 +1,8 @@
+# Tags:
+# - nodoc : Do not include in documentation
+# - ignore_fail : If it fails, ignore it, it's a cleanup
+# - must_fail : Must fail case.
+# - hide_fail : Do not show failure
 # Shares ------------------------------------------------------
 shares_health:
   command:
@@ -970,18 +975,19 @@ nd_service_clean:
     - ignore_fail
     - nodoc
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - delete
     - service1
-  post_sleep: $(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 nd_service_create:
   depends_on:
     - nd_service_clean
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - create
     - '@json:{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -989,17 +995,18 @@ nd_service_list:
   depends_on:
     - nd_service_create
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - list
-  post_sleep: $(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 nd_service_delete:
   depends_on:
     - nd_service_list
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - delete
     - service1
@@ -1007,26 +1014,28 @@ nd_service_list_del:
   depends_on:
     - nd_service_delete
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - list
-  post_sleep: $(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 nd_service_list_del2:
   depends_on:
     - nd_service_list_del
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - list
-  post_sleep: $(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 nd_service_list_del3:
   depends_on:
     - nd_service_list_del2
   command:
-    - node
     - --preset=node_ak_adm
+    - node
     - service
     - list
 nd_xfer_lst:
@@ -1079,7 +1088,8 @@ nd_xfer_ops:
     - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
     - faux:///bigfile?10G
     - --progress=no
-  post_sleep: 2
+  post:
+    - sleep 5
 nd_xfer_ops2:
   command:
     - node
@@ -1176,7 +1186,401 @@ nd_watch_1b:
     - --preset=node_ak_adm
 nd_stream_1:
   command:
+    - --preset=node_ak_adm
     - node
     - stream
     - list
+nd_ak:
+  command:
     - --preset=node_ak_adm
+    - node
+    - access_key
+    - list
+nd_akb:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - node_info
+    - /
+nd_akc:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - browse
+    - /
+nd_akd:
+  tags:
+    - must_fail
+    - nodoc
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@json:{}"
+nd_ake:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+    - "@ruby:->(f){f['name'].end_with?('.jpg')}"
+nd_akf:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+    - '@re:\.jpg$'
+nd_akg:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - find
+    - "@preset:aoc.test_folder"
+nd_ak_mkdir:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /tst_nd_ak
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mkdirb:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mkdir
+    - /tst_nd_ak
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mkfile:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /mkfile.txt
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mkfileb:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mkfile
+    - /mkfile.txt
+    - "hello
+    - world"
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mklink:
+  depends_on:
+    - nd_ak_mkfile
+  tags:
+    - ignore_fail
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /mklink.txt
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mklinkb:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - mklink
+    - /mklink.txt
+    - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_mvdir:
+  depends_on:
+    - nd_ak_mkdir
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - browse
+    - /
+    - --node-cache=no
+nd_ak_mvdirb:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - rename
+    - /tst_nd_ak
+    - test_nd_ak2
+nd_ak_deldir:
+  depends_on:
+    - nd_ak_mvdir
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - /test_nd_ak2
+nd_ak3:
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - upload
+    - 'faux:///test_nd_ak3?100k'
+    - --default-ports=no
+nd_ak3b:
+  depends_on:
+    - nd_ak3
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - download
+    - test_nd_ak3
+    - --to-folder=$(TMP)
+nd_ak3c:
+  depends_on:
+    - nd_ak3
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - show
+    - /test_nd_ak3
+  tags:
+    - hide_fail
+nd_ak3d:
+  tags:
+    - hide_fail
+  depends_on:
+    - nd_ak3
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - thumbnail
+    - /test_nd_ak3
+nd_ak3e:
+  depends_on:
+    - nd_ak3b
+    - nd_ak3c
+    - nd_ak3d
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - delete
+    - test_nd_ak3
+nd_ak4:
+  depends_on:
+    - nd_ak3e
+  command:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:aoc.ak_name"
+    - show
+    - "%id:1"
+nd_ak_bearer_reset:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_bearer_create:
+  depends_on:
+    - nd_ak_bearer_reset
+  command:
+    - node
+    - -N
+    - --preset=tst_node_preview
+    - access_key
+    - create
+    -  '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
+  post:
+    - sleep TEMPORIZE_CREATE
+nd_ak_bearer_show:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - show
+    - "%id:self"
+nd_ak_bearer_set_key:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - set_bearer_key
+    - self
+    - "@file:@preset:file.private_key"
+nd_ak_bearer_show_root:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - show
+    - /
+    - --fields=id
+  save_output_to: root_id
+nd_ak_bearerf:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - "%id: $(read_value_from 'root_id')"
+    - create
+    - '@json:{"access_type":"user","access_id":"666"}'
+nd_ak_bearerg:
+  depends_on:
+    - nd_ak_bearerf
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - show
+    - 1
+nd_ak_bearerh:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - bearer_token
+    - "@file:@preset:file.private_key"
+    - '@json:{"user_id":"666"}'
+  save_output_to: bearer_666
+nd_ak_beareri:
+  depends_on:
+    - nd_ak_bearer_create
+  command:
+    - -N
+    - node
+    - --url=@preset:tst_node_preview.url
+    - --password="Bearer
+    - $(read_value_from 'bearer_666')"
+    - --root-id= $(read_value_from 'root_id')
+    - access_key
+    - do
+    - self
+    - br
+    - /
+nd_ak_bearer_del_perm:
+  depends_on:
+    - nd_ak_beareri
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - node
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - delete
+    - 1
+nd_ak_bearerk:
+  depends_on:
+    - nd_ak_bearer_del_perm
+  command:
+    - -N
+    - --preset=tst_node_preview
+    - node
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"

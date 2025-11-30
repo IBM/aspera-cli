@@ -50,6 +50,8 @@ TST_MED_FILENAME = TST_UTF_FILENAME
 # needs to be quoted, as there is shell special character: "?"
 TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
 
+TEMPORIZE_CREATE = 10
+TEMPORIZE_FILE = 30
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
 TMP_SYNCS = TMP / 'syncs'
 
@@ -97,7 +99,10 @@ def eval_macro(value)
 end
 
 def read_value_from(name)
-  (TMP_STATES / name).read.chomp
+  state_file = TMP_STATES / name
+  value = state_file.read.chomp
+  puts("Read: #{state_file}: #{value}")
+  value
 end
 
 namespace :test do
@@ -107,6 +112,20 @@ namespace :test do
     tests.each do |name, info|
       puts "#{name.ljust(20)} #{info['tags']&.join(', ')}"
     end
+  end
+
+  desc 'Skip a given test by name'
+  task :skip do
+    state[ENV['T']] = 'skipped'
+    save_state(state)
+    puts "[SKIP] #{ENV['T']}"
+  end
+
+  desc 'Clear a given test by name'
+  task :clear do
+    ENV['T'].split(',').each{ |k| state.delete(k)}
+    save_state(state)
+    puts "[CLEAR] #{ENV['T']}"
   end
 
   # Reset persistent state
@@ -138,7 +157,7 @@ namespace :test do
 
     deps = info['depends_on'] || []
     task name => deps.map{ |d| "test:#{d}"} do
-      if state[name] == 'passed' && !ENV['FORCE']
+      if %w[passed skipped].include?(state[name]) && !ENV['FORCE']
         # puts "[SKIP] #{name}"
         next
       end
@@ -155,10 +174,18 @@ namespace :test do
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
         full_args += info['command'].map{ |i| eval_macro(i)}
-        full_args += ["--output=#{TMP_STATES / info['save_output_to']}"] if info['save_output_to']
-        run(*full_args, env: info['env'])
+        full_args += ["--output=#{TMP_STATES / info['save_output_to']}", '--format=csv'] if info['save_output_to']
+        kwargs = {}
+        if info['tags']&.include?('noblock')
+          kwargs['background'] = true
+          full_args.push("--pid-file=#{TMP_STATES / "#{name}.pid"}")
+        end
+        run(*full_args, env: info['env'], **kwargs)
         puts "[OK]   #{name}"
-        sleep(info['post_sleep']) if info['post_sleep']
+        info['post']&.each do |cmd|
+          Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
+        end
+        puts("Saved: #{(TMP_STATES / info['save_output_to']).read}") if info['save_output_to']
         state[name] = 'passed'
         raise 'Must fail' if must_fail
       rescue RuntimeError

@@ -17,7 +17,11 @@ module BuildTools
   def run(*args, **kwargs)
     args = args.map(&:to_s)
     puts(args.join(' '))
-    Aspera::Environment.secure_execute(exec: args.shift, args: args, exception: true, **kwargs)
+    if kwargs.delete('background')
+      Aspera::Environment.secure_spawn(exec: args.shift, args: args)
+    else
+      Aspera::Environment.secure_execute(exec: args.shift, args: args, exception: true, **kwargs)
+    end
   end
 
   def download_proto_file

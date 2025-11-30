@@ -1,600 +1,6 @@
 
-#######################################################################################################################
-f4_health:
-  command:
-    - faspex
-    - health
-f4_health_bad:
-  command:
-    - faspex
-    - health
-    - --url=https://wrong.example.com
-f4_detect:
-  command:
-    - config
-    - detect
-    - "@preset:faspex4_user.url"
-f4_wizard:
-  command:
-    - config
-    - wizard
-    - "@preset:faspex4_user.url"
-    - faspex
-    - --username=test
-    - --password=test
-f4_pack_list:
-  command:
-    - faspex
-    - package
-    - list
-    - --query.max=5
-f4_pack_send:
-  command:
-    - faspex
-    - package
-    - send
-    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
-    - $(TST_ASC_LCL_PATH)
-#	@sleep 8
-f4_prs:
-  depends_on:
-    - f4_pack_send
-  command:
-    - faspex
-    - package
-    - list
-    - --query.max=1
-    - --fields=package_id
-    - --display=data
-    - --format=csv
-  save_output_to: f4_prs1
-  command:
-    - faspex
-    - package
-    - receive
-    - $(read_value_from 'f4_prs1')
-    - --to-folder=$(TMP)
-  command:
-    - faspex
-    - package
-    - list
-    - --box=sent
-    - --query.max=1
-    - --fields=package_id
-    - --display=data
-    - --format=csv
-  save_output_to: f4_prs2
-  command:
-    - faspex
-    - package
-    - receive
-    - $(read_value_from 'f4_prs2')
-    - --to-folder=$(TMP)
-    - --box=sent
-f4_pri:
-  command:
-    - faspex
-    - package
-    - list
-    - --query.max=1
-    - --fields=package_id
-    - --display=data
-    - --format=csv
-  save_output_to: f4_pri1
-  command:
-    - faspex
-    - package
-    - receive
-    - $(read_value_from 'f4_pri1')
-    - --to-folder=$(TMP)
-f4_prl:
-  tags:
-    - hide_fail
-  command:
-    - faspex
-    - package
-    - receive
-    - --to-folder=$(TMP)
-    - --link=@preset:faspex4.link_recv_from_user
-f4_prall:
-  command:
-    - faspex
-    - package
-    - receive
-    - ALL
-    - --once-only=yes
-    - --to-folder=$(TMP)
-    - --query=@json:{"max":10}
-f4_pslu:
-  command:
-    - faspex
-    - package
-    - send
-    - --link=@preset:faspex4.link_send_to_user
-    - --delivery-info=@json:'{"title":"$(test_name)
-    - $(PACKAGE_TITLE_BASE)"}'
-    - $(TST_ASC_LCL_PATH)
-f4_psld:
-  command:
-    - faspex
-    - package
-    - send
-    - --link=@preset:faspex4.link_send_to_dropbox
-    - --delivery-info=@json:'{"title":"$(test_name)
-    - $(PACKAGE_TITLE_BASE)"}'
-    - $(TST_ASC_LCL_PATH)
-f4_remote_src:
-  command:
-    - faspex
-    - source
-    - list
-  command:
-    - faspex
-    - source
-    - info
-    - "%name:@preset:faspex4.src"
-    - --storage=@preset:faspex4_storage
-  command:
-    - faspex
-    - source
-    - node
-    - "%name:@preset:faspex4.src"
-    - br
-    - /
-    - --storage=@preset:faspex4_storage
-  command:
-    - faspex
-    - package
-    - send
-    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}
-    - --remote-source=@extend:%name:@preset:faspex4.src
-    - sample_source.txt
-f4_misc:
-  command:
-    - faspex
-    - me
-  command:
-    - faspex
-    - address_book
-  command:
-    - faspex
-    - login_methods
-f4_v4:
-  command:
-    - --preset=faspex4_admin
-    - faspex
-    - v4
-    - dropbox
-    - list
-  command:
-    - --preset=faspex4_admin
-    - faspex
-    - v4
-    - dmembership
-    - list
-  command:
-    - --preset=faspex4_admin
-    - faspex
-    - v4
-    - workgroup
-    - list
-  command:
-    - --preset=faspex4_admin
-    - faspex
-    - v4
-    - wmembership
-    - list
-  command:
-    - --preset=faspex4_admin
-    - faspex
-    - v4
-    - user
-    - list
-  command:
-    - faspex
-    - v4
-    - metadata_profile
-    - list
-f4_db1:
-  command:
-    - faspex
-    - dropbox
-    - list
-    - --recipient=@extend:*@preset:faspex4.dbx@
-  command:
-    - faspex
-    - package
-    - send
-    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
-    - $(TST_ASC_LCL_PATH)
-  command:
-    - faspex
-    - package
-    - list
-    - --recipient=@extend:*@preset:faspex4.dbx@
-    - --format=csv
-    - --fields=package_id
-    - --query.max=1
-  save_output_to: f4_db_id1
-  command:
-    - faspex
-    - package
-    - receive
-    - $(read_value_from 'f4_db_id1')
-    - --recipient=@extend:*@preset:faspex4.dbx@
-    - --to-folder=$(TMP)
-  command:
-    - faspex
-    - dropbox
-    - list
-    - --recipient=@extend:*@preset:faspex4.dbx@
-  command:
-    - faspex
-    - package
-    - send
-    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
-    - $(TST_ASC_LCL_PATH)
-#	sleep 10
-  command:
-    - faspex
-    - package
-    - list
-    - --recipient=@extend:*@preset:faspex4.wkg@
-    - --format=csv
-    - --fields=package_id
-    - --query.max=1
-  save_output_to: f4_db_id2
-  command:
-    - faspex
-    - package
-    - receive
-    - $(read_value_from 'f4_db_id2')
-    - --recipient=@extend:*@preset:faspex4.wkg@
-    - --to-folder=$(TMP)
-#######################################################################################################################
 
 #######################################################################################################################
-
-#######################################################################################################################
-tnode: tnodegen3 tndak
-clean_tnode: clean_tnodegen3 clean_tndak
-#######################################################################################################################
-nd_ak:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - list
-nd_akb:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - node_info
-    - /
-nd_akc:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - browse
-    - /
-nd_akd:
-  tags:
-    - must_fail
-    - nodoc
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - find
-    - "@json:{}"
-nd_ake:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - find
-    - "@preset:aoc.test_folder"
-    - '@ruby:->(f){f["name"].end_with?(".jpg")}'
-nd_akf:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - find
-    - "@preset:aoc.test_folder"
-    - '@re:\.jpg$'
-nd_akg:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - find
-    - "@preset:aoc.test_folder"
-nd_ak_mkdir:
-  tags:
-    - ignore_fail
-    - nodoc
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - delete
-    - /tst_nd_ak
-#	$(TEMPORIZE_CREATE)
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - mkdir
-    - /tst_nd_ak
-#	$(TEMPORIZE_CREATE)
-nd_ak_mkfile:
-  tags:
-    - ignore_fail
-    - nodoc
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - delete
-    - /mkfile.txt
-#	$(TEMPORIZE_CREATE)
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - mkfile
-    - /mkfile.txt
-    - "hello
-    - world"
-#	$(TEMPORIZE_CREATE)
-nd_ak_mklink:
-  depends_on:
-    - nd_ak_mkfile
-  tags:
-    - ignore_fail
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - delete
-    - /mklink.txt
-#	$(TEMPORIZE_CREATE)
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - mklink
-    - /mklink.txt
-    - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
-#	$(TEMPORIZE_CREATE)
-nd_ak_mvdir:
-  depends_on:
-    - nd_ak_mkdir
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - browse
-    - /
-    - --node-cache=no
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - rename
-    - /tst_nd_ak
-    - test_nd_ak2
-nd_ak_deldir:
-  depends_on:
-    - nd_ak_mvdir
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - delete
-    - /test_nd_ak2
-nd_ak3:
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - upload
-    - 'faux:///test_nd_ak3?100k'
-    - --default-ports=no
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - download
-    - test_nd_ak3
-    - --to-folder=$(TMP)
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - show
-    - /test_nd_ak3
-  tags:
-    - hide_fail
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - thumbnail
-    - /test_nd_ak3
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - delete
-    - test_nd_ak3
-nd_ak4:
-  depends_on:
-    - nd_ak3
-  command:
-    - node
-    - --preset=node_ak_adm
-    - access_key
-    - do
-    - "@preset:aoc.ak_name"
-    - show
-    - "%id:1"
-nd_ak_bearer:
-  tags:
-    - ignore_fail
-    - nodoc
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - access_key
-    - delete
-    - "@preset:ak_creds.username"
-#	$(TEMPORIZE_CREATE)
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - access_key
-    - create
-    -  '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
-#	$(TEMPORIZE_CREATE)
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - show
-    - "%id:self"
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - set_bearer_key
-    - self
-    - "@file:@preset:file.private_key"
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - do
-    - self
-    - show
-    - /
-    - --fields=id
-  save_output_to: root_id
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - do
-    - self
-    - permission
-    - "%id: $(read_value_from 'root_id')"
-    - create
-    - '@json:{"access_type":"user","access_id":"666"}'
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - do
-    - self
-    - permission
-    - /
-    - show
-    - 1
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - bearer_token
-    - "@file:@preset:file.private_key"
-    - '@json:{"user_id":"666"}'
-  save_output_to: bearer_666
-  command:
-    - node
-    - -N
-    - --url=@preset:tst_node_preview.url
-    - --password="Bearer
-    - $(read_value_from 'bearer_666')"
-    - --root-id= $(read_value_from 'root_id')
-    - access_key
-    - do
-    - self
-    - br
-    - /
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - --preset=ak_creds
-    - access_key
-    - do
-    - self
-    - permission
-    - /
-    - delete
-    - 1
-  command:
-    - node
-    - -N
-    - --preset=tst_node_preview
-    - access_key
-    - delete
-    - "@preset:ak_creds.username"
 
 #######################################################################################################################
 aoc_detect:
@@ -822,7 +228,8 @@ aoc_tstsrc:
     - files
     - delete
     - /testsrc
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - aoc
     - files
@@ -837,13 +244,15 @@ aoc_some_folder:
     - files
     - delete
     - /some_folder
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - aoc
     - files
     - mkdir
     - /some_folder
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 aoc_tstdst:
   tags:
     - ignore_fail
@@ -854,7 +263,8 @@ aoc_tstdst:
     - files
     - delete
     - /testdst
-#	$(TEMPORIZE_FILE)
+  post:
+    - sleep $(TEMPORIZE_FILE)
   command:
     - aoc
     - files
@@ -1585,7 +995,8 @@ aoc_adm_nd_mkdir:
     - --secret=@preset:aoc.ak_secret
     - mkdir
     - /folder1
-# $(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
 aoc_adm_nd_brse:
   depends_on:
     - aoc_adm_nd_mkdir
@@ -2257,7 +1668,8 @@ at8:
     - access_key
     - delete
     - ak2ibmcloud
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - ats
     - access_key
@@ -2265,7 +1677,8 @@ at8:
     - --cloud=softlayer
     - --region=@preset:icos.region
     - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - ats
     - access_key
@@ -3614,7 +3027,8 @@ thot:
     - browse
     - "@extend:@preset:server.upload_folder@/target_hot"
 #ls -al source_hot
-#$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - server
     - upload
@@ -3929,7 +3343,8 @@ f5_pack_wrkgrp:
     - {"title":"test
     - title","recipients":["@preset:faspex5.workgroup@"]}'
     - $(TST_ASC_LCL_PATH)
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - faspex5
     - packages
@@ -4025,7 +3440,8 @@ f5_dist_list:
     - distribution_lists
     - create
     - '@json:{"name":"test4","contacts":[{"name":"john@example.com"}]}'
-#	$(TEMPORIZE_CREATE)
+  post:
+    - sleep TEMPORIZE_CREATE
   command:
     - faspex5
     - admin
@@ -4461,3 +3877,256 @@ alee_entitlement:
     - alee
     - entitlement
 
+#######################################################################################################################
+f4_health:
+  command:
+    - faspex
+    - health
+f4_health_bad:
+  command:
+    - faspex
+    - health
+    - --url=https://wrong.example.com
+f4_detect:
+  command:
+    - config
+    - detect
+    - "@preset:faspex4_user.url"
+f4_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:faspex4_user.url"
+    - faspex
+    - --username=test
+    - --password=test
+f4_pack_list:
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=5
+f4_pack_send:
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
+    - $(TST_ASC_LCL_PATH)
+#	@sleep 8
+f4_prs:
+  depends_on:
+    - f4_pack_send
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_prs1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_prs1')
+    - --to-folder=$(TMP)
+  command:
+    - faspex
+    - package
+    - list
+    - --box=sent
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_prs2
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_prs2')
+    - --to-folder=$(TMP)
+    - --box=sent
+f4_pri:
+  command:
+    - faspex
+    - package
+    - list
+    - --query.max=1
+    - --fields=package_id
+    - --display=data
+    - --format=csv
+  save_output_to: f4_pri1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_pri1')
+    - --to-folder=$(TMP)
+f4_prl:
+  tags:
+    - hide_fail
+  command:
+    - faspex
+    - package
+    - receive
+    - --to-folder=$(TMP)
+    - --link=@preset:faspex4.link_recv_from_user
+f4_prall:
+  command:
+    - faspex
+    - package
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --query=@json:{"max":10}
+f4_pslu:
+  command:
+    - faspex
+    - package
+    - send
+    - --link=@preset:faspex4.link_send_to_user
+    - --delivery-info=@json:'{"title":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+f4_psld:
+  command:
+    - faspex
+    - package
+    - send
+    - --link=@preset:faspex4.link_send_to_dropbox
+    - --delivery-info=@json:'{"title":"$(test_name)
+    - $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+f4_remote_src:
+  command:
+    - faspex
+    - source
+    - list
+  command:
+    - faspex
+    - source
+    - info
+    - "%name:@preset:faspex4.src"
+    - --storage=@preset:faspex4_storage
+  command:
+    - faspex
+    - source
+    - node
+    - "%name:@preset:faspex4.src"
+    - br
+    - /
+    - --storage=@preset:faspex4_storage
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}
+    - --remote-source=@extend:%name:@preset:faspex4.src
+    - sample_source.txt
+f4_misc:
+  command:
+    - faspex
+    - me
+  command:
+    - faspex
+    - address_book
+  command:
+    - faspex
+    - login_methods
+f4_v4:
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - dropbox
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - dmembership
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - workgroup
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - wmembership
+    - list
+  command:
+    - --preset=faspex4_admin
+    - faspex
+    - v4
+    - user
+    - list
+  command:
+    - faspex
+    - v4
+    - metadata_profile
+    - list
+f4_db1:
+  command:
+    - faspex
+    - dropbox
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
+    - $(TST_ASC_LCL_PATH)
+  command:
+    - faspex
+    - package
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+    - --format=csv
+    - --fields=package_id
+    - --query.max=1
+  save_output_to: f4_db_id1
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_db_id1')
+    - --recipient=@extend:*@preset:faspex4.dbx@
+    - --to-folder=$(TMP)
+  command:
+    - faspex
+    - dropbox
+    - list
+    - --recipient=@extend:*@preset:faspex4.dbx@
+  command:
+    - faspex
+    - package
+    - send
+    - --delivery-info=@json:@extend:{"title":"$(test_name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
+    - $(TST_ASC_LCL_PATH)
+#	sleep 10
+  command:
+    - faspex
+    - package
+    - list
+    - --recipient=@extend:*@preset:faspex4.wkg@
+    - --format=csv
+    - --fields=package_id
+    - --query.max=1
+  save_output_to: f4_db_id2
+  command:
+    - faspex
+    - package
+    - receive
+    - $(read_value_from 'f4_db_id2')
+    - --recipient=@extend:*@preset:faspex4.wkg@
+    - --to-folder=$(TMP)
+#######################################################################################################################
