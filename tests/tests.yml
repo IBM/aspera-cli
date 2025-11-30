@@ -1501,7 +1501,7 @@ nd_ak_bearer_show_root:
     - show
     - /
     - --fields=id
-  save_output_to: root_id
+  save_output_to: ak_bearer_root_id
 nd_ak_bearerf:
   depends_on:
     - nd_ak_bearer_create
@@ -1514,7 +1514,7 @@ nd_ak_bearerf:
     - do
     - self
     - permission
-    - "%id: $(read_value_from 'root_id')"
+    - "%id:$(read_value_from 'ak_bearer_root_id')"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearerg:
@@ -1551,9 +1551,8 @@ nd_ak_beareri:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
-    - --password="Bearer
-    - $(read_value_from 'bearer_666')"
-    - --root-id= $(read_value_from 'root_id')
+    - --password=Bearer $(read_value_from 'bearer_666')
+    - --root-id=$(read_value_from 'ak_bearer_root_id')
     - access_key
     - do
     - self

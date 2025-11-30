@@ -173,7 +173,7 @@ namespace :test do
         end
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
-        full_args += info['command'].map{ |i| eval_macro(i)}
+        full_args += info['command'].map{ |i| eval_macro(i.to_s)}
         full_args += ["--output=#{TMP_STATES / info['save_output_to']}", '--format=csv'] if info['save_output_to']
         kwargs = {}
         if info['tags']&.include?('noblock')
