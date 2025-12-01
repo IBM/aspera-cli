@@ -3601,3 +3601,788 @@ sync_other_delete_fail:
     - ssync
     - delete
     - not_exist
+conf_detect:
+  command:
+    - config
+    - detect
+    - "@preset:node_user.url"
+conf_detectb:
+  tags:
+    - hide_fail
+  command:
+    - config
+    - detect
+    - https://www.ibm.com
+conf_ascp_show:
+  command:
+    - config
+    - ascp
+    - show
+conf_ascp_spec:
+  command:
+    - config
+    - ascp
+    - spec
+conf_sync_spec:
+  command:
+    - config
+    - sync
+    - spec
+conf_sync_trans:
+  command:
+    - config
+    - sync
+    - translate
+    - --format=jsonpp
+    - --show-secrets=yes
+    - --
+    - -L
+    - /optlogs/
+    - -N
+    - transfer_test
+    - -x
+    - -P
+    - 33001
+    - -k
+    - md5-sparse
+    - -i
+    - /root/.ssh/id_rsa_eudemo
+    - -b
+    - /opt/async_db
+    - -d
+    - /opt/source/
+    - -C
+    - --scan-interval=30
+    - --transfer-threads=1
+    - --pending-max=2000
+    - -r
+    - /tmp/dest/
+    - --user
+    - root
+    - --host
+    - 1.2.3.4
+    - -R
+    - /tmp/logs/
+    - -B
+    - /opt/async_db
+    - -l
+    - 1000
+    - --cooloff=5
+    - --preserve-uid
+    - --preserve-gid
+    - -K
+    - push
+conf_ascp_schema:
+  command:
+    - config
+    - ascp
+    - schema
+    - --format=jsonpp
+conf_ascp_errors:
+  command:
+    - config
+    - ascp
+    - errors
+conf_ascp_2:
+  command:
+    - config
+    - ascp
+    - products
+    - list
+conf_ascp_prod:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - ascp
+    - products
+    - use
+    - 'IBM Aspera Connect'
+conf_ascp_use:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - ascp
+    - use
+    - $(`which ascp`)
+conf_ascp_3:
+  command:
+    - config
+    - ascp
+    - connect
+    - list
+conf_ascp_4:
+  command:
+    - config
+    - ascp
+    - connect
+    - info
+    - Aspera Connect for Windows
+conf_ascp_5:
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - Aspera Connect for Windows
+    - list
+conf_ascp_6:
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - Aspera Connect for Windows
+    - download
+    - Windows Installer
+    - --to-folder=$(TMP)
+conf_ascp_6b:
+  command:
+    - config
+    - ascp
+    - connect
+    - version
+    - Aspera Connect for Windows
+    - open
+    - documentation
+conf_ascp_sdk_folder:
+  tags:
+    - save_output
+  command:
+    - --show-config
+    - --fields=sdk_folder
+conf_ascp_install:
+  depends_on:
+    - conf_ascp_sdk_folder
+  pre:
+#    - FileUtils.rm_rf()
+    - puts(read_value_from('conf_ascp_sdk_folder'))
+  command:
+    - config
+    - ascp
+    - install
+    - 1.1.3
+conf_ascp_installb:
+  depends_on:
+    - conf_ascp_install
+  command:
+    - config
+    - ascp
+    - install
+conf_ascp_installc:
+  pre:
+    - (TMP / 'sdk_test_dir').rmtree
+  command:
+    - config
+    - ascp
+    - install
+    - --sdk-folder=$(TMP / 'sdk_test_dir')
+conf_ascp_installd:
+  command:
+    - config
+    - transferd
+    - list
+conf_ascp_installe:
+  command:
+    - config
+    - transferd
+    - install
+conf_ascp_installf:
+  tags:
+    - save_output
+  command:
+    - config
+    - transferd
+    - list
+    - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
+    - --fields=url
+conf_ascp_installg:
+  depends_on:
+    - conf_ascp_installf
+  command:
+    - conf
+    - download
+    - $(read_value_from 'conf_ascp_installf')
+    - --to-folder=$(TMP)
+conf_ascp_8:
+  depends_on:
+    - conf_ascp_install
+  command:
+    - config
+    - ascp
+    - info
+    - --sdk-folder=$(TMP / 'sdk_test_dir')
+conf_pset_1:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - conf_name
+    - param
+    - value
+conf_pset_1b:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - unset
+    - conf_name
+    - param
+conf_pset_1c:
+  command:
+    - config
+    - preset
+    - lookup
+    - --url=@preset:faspex4_user.url
+    - --username=@preset:faspex4_user.username
+conf_pset_2:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - show
+    - conf_name
+conf_pset_3:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - default
+    - shares
+    - conf_name
+conf_pset_4:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - delete
+    - conf_name
+conf_pset_5:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - initialize
+    - conf_name
+    - '@json:{"p1":"v1","p2":"v2"}'
+conf_pset_6:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - update
+    - conf_name
+    - --p1=v1
+    - --p2=v2
+conf_open:
+  comment: open configuration file in text editor
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - open
+conf_list:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - list
+conf_over:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - overview
+conf_vers_check:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - version_check_days
+    - 0
+conf_gem:
+  command:
+    - config
+    - gem
+    - path
+conf_gemb:
+  command:
+    - config
+    - gem
+    - version
+conf_gemc:
+  command:
+    - config
+    - gem
+    - name
+conf_gemd:
+  command:
+    - config
+    - folder
+conf_geme:
+  command:
+    - config
+    - file
+conf_gemf:
+  command:
+    - config
+    - smtp_settings
+conf_initdemo:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - initdemo
+conf_gem2:
+  command:
+    - config
+    - gem
+    - path
+    - --http-proxy=http://test1
+    - --http-options=@json:{"user_agent":"test1"}
+conf_gem2b:
+  command:
+    - config
+    - coffee
+    - --cert_stores=@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]
+    - --http-options=@json:{"ssl_options":["CIPHER_SERVER_PREFERENCE","-NETSCAPE_CA_DN_BUG"]}
+    - --insecure=yes
+conf_vault_macos:
+  command:
+    - -N
+    - config
+    - vault
+    - info
+    - --vault=@json:{"type":"system"}
+conf_vault_macosb:
+  tags:
+    - ignore_fail
+  command:
+    - -N
+    - config
+    - vault
+    - create
+    - '@json:{"label":"foo"}'
+    - --vault=@json:{"type":"system"}
+conf_vault_macosc:
+  command:
+    - -N
+    - config
+    - vault
+    - show
+    - foo
+    - --vault=@json:{"type":"system"}
+conf_vault_macosd:
+  tags:
+    - ignore_fail
+  command:
+    - -N
+    - config
+    - vault
+    - delete
+    - foo
+    - --vault=@json:{"type":"system"}
+conf_vault_file:
+  tags:
+    - tmp_conf
+    - nodoc
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault
+    - '@json:{"type":"file","file":"$(VAULT_FILE)"}'
+conf_vault_file2:
+  depends_on:
+    - conf_vault_file
+  tags:
+    - tmp_conf
+    - nodoc
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault_password
+    - _simple_one_
+conf_vault_create:
+  depends_on:
+    - conf_vault_file2
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - create
+    - '@json:{"label":"my_label","password":"my_password_here","description":"my secret"}'
+conf_vault_info:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - info
+conf_vault_list2:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - list
+conf_vault_show:
+  depends_on:
+    - conf_vault_create
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - show
+    - my_label
+conf_preset_ask:
+  stdin: "username\npassword\n\nthe_user\nthe_pass\n"
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - ask
+    - my_preset
+conf_preset_secure:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - secure
+    - my_preset
+conf_vault_pass:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - password
+    - $(NEW_VAULT_PASS)
+conf_vault_pass2:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - preset
+    - set
+    - GLOBAL
+    - vault_password
+    - $(NEW_VAULT_PASS)
+conf_vault_list:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - list
+conf_vault_delete_label:
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - vault
+    - delete
+    - my_label
+conf_echo_vault:
+  depends_on:
+    - conf_preset_secure
+  tags:
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:my_preset.password"
+conf_echo_fail1:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:bad"
+conf_echo_fail2:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:bad.password"
+conf_echo_fail3:
+  tags:
+    - must_fail
+    - tmp_conf
+  command:
+    - config
+    - echo
+    - "@vault:my_preset.bad"
+conf_help_1:
+  command:
+    - -h
+conf_help_2:
+  command:
+    - --bash-comp
+conf_coffee_1:
+  command:
+    - config
+    - coffee
+conf_coffee_2:
+  command:
+    - config
+    - coffee
+    - --ui=text
+conf_coffee_3:
+  command:
+    - config
+    - coffee
+    - --ui=text
+    - --image=@json:{"text":true}
+conf_coffee_4:
+  command:
+    - config
+    - coffee
+    - --ui=text
+    - --image=@json:{"text":true,"double":false}
+conf_image:
+  command:
+    - config
+    - image
+    - https://eudemo.asperademo.com/wallpaper.jpg
+conf_plugins:
+  command:
+    - config
+    - plugins
+    - list
+conf_plugins1:
+# unset: to test like on Windows
+  env:
+    LC_ALL: null
+    LC_CTYPE: null
+    LANG: null
+  command:
+    - config
+    - plugins
+    - list
+conf_plugins2:
+  command:
+    - config
+    - plugins
+    - create
+    - my_command
+    - $(TMP)
+conf_plugins3:
+  depends_on:
+    - conf_plugins2
+  command:
+    - my_command
+    - --plugin-folder=$(TMP)
+conf_genkey1:
+  pre:
+    - (TMP / 'my_key').delete rescue nil
+    - (TMP / 'my_key.pub').delete rescue nil
+  command:
+    - config
+    - genkey
+    - $(TMP / 'my_key')
+conf_genkey2:
+  pre:
+    - (TMP / 'my_key').delete rescue nil
+    - (TMP / 'my_key.pub').delete rescue nil
+  command:
+    - config
+    - genkey
+    - $(TMP / 'my_key')
+    - 4096
+conf_pub_key:
+  command:
+    - config
+    - pubkey
+    - "@file:$(TMP / 'my_key')"
+conf_genkey_fail:
+  tags:
+    - hide_fail
+  command:
+    - config
+    - genkey
+    - $(TMP / 'my_key')
+    - not_int
+conf_cert:
+  command:
+    - config
+    - remote_certificate
+    - name
+    - "@preset:node_user.url"
+conf_chain:
+  command:
+    - config
+    - remote_certificate
+    - chain
+    - "@preset:node_user.url"
+conf_cert_only:
+  command:
+    - config
+    - remote_certificate
+    - only
+    - "@preset:node_user.url"
+conf_smtp:
+  command:
+    - config
+    - email_test
+    - --notify-to=@preset:misc.email_external
+conf_pac:
+  command:
+    - config
+    - proxy_check
+    - --fpac=@file:$(TST / 'proxy.pac')
+    - https://eudemo.asperademo.com
+    - --proxy-credentials=@list:,user,pass
+conf_check_update:
+  command:
+    - config
+    - check_update
+#	rm -f 
+conf_check_update2:
+  depends_on:
+    - conf_check_update
+  pre:
+    - (CLI_HOME / 'persist_store/version_last_check.txt').delete
+  command:
+    - config
+    - check_update
+conf_doc:
+  command:
+    - config
+    - doc
+conf_doc2:
+  command:
+    - config
+    - doc
+    - transfer-parameters
+conf_echo_simple:
+  command:
+    - config
+    - echo
+    - hello
+conf_echo_uri_file_only:
+  command:
+    - config
+    - echo
+    - "@uri:/etc/hosts"
+conf_echo_uri_file:
+  command:
+    - config
+    - echo
+    - "@uri:file:/etc/hosts"
+conf_echo_uri_http:
+  command:
+    - config
+    - echo
+    - "@uri:http://ifconfig.me"
+conf_echo_uri_https:
+  command:
+    - config
+    - echo
+    - "@uri:https://ifconfig.me"
+conf_echo_base:
+  command:
+    - config
+    - echo
+    - "@base64:SGVsbG8gV29ybGQK"
+conf_echo_list:
+  command:
+    - config
+    - echo
+    - "@list:,1,2,3"
+conf_echo_env:
+  command:
+    - config
+    - echo
+    - "@env:USER"
+conf_echo_raw:
+  command:
+    - config
+    - echo
+    - --
+    - --special-string
+conf_echo_json_multi_yes:
+  command:
+    - config
+    - echo
+    - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
+    - --multi-single=yes
+conf_echo_json_multi_single:
+  command:
+    - config
+    - echo
+    - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
+    - --multi-single=single
+conf_echo_picture:
+  command:
+    - config
+    - echo
+    - <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>
+    - --format=image
+conf_echo_fail2b:
+  tags:
+    - must_fail
+  command:
+    - config
+    - echo
+    - "@file:no_such_file"
+conf_echo_fail4:
+  tags:
+    - must_fail
+  command:
+    - config
+    - echo
+    - '@json:{"ok":1,"bad":mauvais}'
+conf_echo_stdin:
+  stdin: "1\n2\n3"
+  command:
+    - config
+    - echo
+    - "@lines:@stdin:"
+conf_echo_stdbin:
+  stdin: "1\n2\n3"
+  command:
+    - config
+    - echo
+    - "@lines:@stdbin:"
+conf_echo_stdin_csv:
+  stdin: "t1,t2,t3\na,b,d\nd,e,f"
+  command:
+    - config
+    - echo
+    - "@csvt:@stdin:"
+conf_echo_stdin_zlib:
+  stdin: $(Zlib::Deflate.deflate("Hello World"))
+  command:
+    - config
+    - echo
+    - "@zlib:@stdin:"

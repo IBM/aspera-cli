@@ -4,6 +4,7 @@
 require 'yaml'
 require 'rake'
 require 'uri'
+require 'zlib'
 require 'fileutils'
 require 'aspera/environment'
 require_relative '../package/build_tools'
@@ -242,6 +243,13 @@ namespace :test do
         if info['tags']&.include?('noblock')
           kwargs['background'] = true
           full_args.push("--pid-file=#{pid_file(name)}")
+        end
+        if info['stdin']
+          stdinfile = TMP / "#{name}.stdin"
+          input = eval_macro(info['stdin'])
+          stdinfile.write(input)
+          kwargs[:in] = stdinfile.to_s
+          puts("Input: #{input}")
         end
         run(*full_args, env: info['env'], **kwargs)
         info['post']&.each do |cmd|
