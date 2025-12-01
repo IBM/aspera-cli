@@ -66,6 +66,8 @@ PKCS_P = 'YourExportPassword'
 FILE_LIST = TMP / 'filelist.txt'
 FILE_PAIR = TMP / 'file_pair_list.txt'
 
+SKIP_STATES = %w[passed skipped].freeze
+
 FileUtils.cp(GOOD_CONFIG, TEST_CONFIG) unless TEST_CONFIG.exist?
 TST_ASC_LCL_PATH.write('This is a small test file') unless  TST_ASC_LCL_PATH.exist?
 TST_UTF_LCL_PATH.write('This is a small test file') unless  TST_UTF_LCL_PATH.exist?
@@ -209,13 +211,15 @@ namespace :test do
     desc info['description'] || 'TODO'
 
     deps = info['depends_on'] || []
+    Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "test:#{d}"} do
-      if %w[passed skipped].include?(state[name]) && !ENV['FORCE']
+      if SKIP_STATES.include?(state[name]) && !ENV['FORCE']
         # puts "[SKIP] #{name}"
         next
       end
       puts "[RUN]  #{name}: #{info['command']&.join(' ')}"
       info['pre']&.each do |cmd|
+        cmd = eval_macro(cmd)
         puts("Executing: #{cmd}")
         Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
       end
