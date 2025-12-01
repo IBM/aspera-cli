@@ -674,7 +674,8 @@ serv_health_xfer_nagios_fail:
     - --to-folder=/wrong
     - --format=nagios
 serv_key_path:
-  save_output_to: aspera_key_path
+  tags:
+    - save_output
   command:
     - config
     - ascp
@@ -687,7 +688,7 @@ serv_key:
     - /
     - "--password=@none:"
     - --ssh-options=@json:{"number_of_password_prompts":0}
-    - --ssh-keys=$(read_value_from 'aspera_key_path')
+    - --ssh-keys=$(read_value_from 'serv_key_path')
 serv_pr1:
   command:
     - server
@@ -743,7 +744,8 @@ cons_cur_lst_ex:
     - list
     - --query.filter=(transfer_name contain aoc)
 cons_cur_lst_one:
-  save_output_to: console_xfer_id
+  tags:
+    - save_output
   command:
     - console
     - transfer
@@ -759,7 +761,7 @@ cons_cur_show_one:
     - transfer
     - current
     - show
-    - $(read_value_from('console_xfer_id').split("\n").last)
+    - $(read_value_from('cons_cur_lst_one').split("\n").last)
 cons_cur_show_one1:
   depends_on:
     - cons_cur_lst_one
@@ -768,7 +770,7 @@ cons_cur_show_one1:
     - transfer
     - current
     - files
-    - $(read_value_from('console_xfer_id').split("\n").last)
+    - $(read_value_from('cons_cur_lst_one').split("\n").last)
 cons_cur_show_one2:
   tags:
     - nodoc
@@ -780,7 +782,7 @@ cons_cur_show_one2:
     - transfer
     - current
     - resume
-    - $(read_value_from('console_xfer_id').split("\n").last)
+    - $(read_value_from('cons_cur_lst_one').split("\n").last)
 cons_sma_lst:
   command:
     - console
@@ -1091,38 +1093,39 @@ nd_xfer_ops:
   post:
     - sleep 5
 nd_xfer_ops2:
+  tags:
+    - save_output
   command:
     - node
     - transfer
     - list
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
-  save_output_to: nd_xfer_id
 nd_xfer_ops3:
   command:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from 'nd_xfer_ops2')
 nd_xfer_ops4:
   command:
     - node
     - transfer
     - modify
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from 'nd_xfer_ops2')
     - '@json:{"target_rate_kbps":10000}'
 nd_xfer_ops5:
   command:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from 'nd_xfer_ops2')
 nd_xfer_ops6:
   command:
     - node
     - transfer
     - cancel
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from 'nd_xfer_ops2')
 nd_xfer_ops7:
   command:
     - node
@@ -1490,6 +1493,8 @@ nd_ak_bearer_set_key:
 nd_ak_bearer_show_root:
   depends_on:
     - nd_ak_bearer_create
+  tags:
+    - save_output
   command:
     - -N
     - --preset=tst_node_preview
@@ -1501,7 +1506,6 @@ nd_ak_bearer_show_root:
     - show
     - /
     - --fields=id
-  save_output_to: ak_bearer_root_id
 nd_ak_bearerf:
   depends_on:
     - nd_ak_bearer_create
@@ -1514,7 +1518,7 @@ nd_ak_bearerf:
     - do
     - self
     - permission
-    - "%id:$(read_value_from 'ak_bearer_root_id')"
+    - "%id:$(read_value_from 'nd_ak_bearer_show_root')"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearerg:
@@ -1535,6 +1539,8 @@ nd_ak_bearerg:
 nd_ak_bearerh:
   depends_on:
     - nd_ak_bearer_create
+  tags:
+    - save_output
   command:
     - -N
     - --preset=tst_node_preview
@@ -1543,7 +1549,6 @@ nd_ak_bearerh:
     - bearer_token
     - "@file:@preset:file.private_key"
     - '@json:{"user_id":"666"}'
-  save_output_to: bearer_666
 nd_ak_beareri:
   depends_on:
     - nd_ak_bearer_create
@@ -1551,8 +1556,8 @@ nd_ak_beareri:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
-    - --password=Bearer $(read_value_from 'bearer_666')
-    - --root-id=$(read_value_from 'ak_bearer_root_id')
+    - --password=Bearer $(read_value_from 'nd_ak_bearerh')
+    - --root-id=$(read_value_from 'nd_ak_bearer_show_root')
     - access_key
     - do
     - self
@@ -1583,3 +1588,360 @@ nd_ak_bearerk:
     - access_key
     - delete
     - "@preset:ak_creds.username"
+# AoC ------------------------------------------------------
+aoc_detect:
+  command:
+    - config
+    - detect
+    - "@preset:aoc.org"
+    - aoc
+aoc_wizard:
+  command:
+    - config
+    - tokens
+    - flush
+aoc_wizardb:
+  command:
+    - config
+    - tokens
+    - list
+aoc_wizardc:
+  command:
+    - config
+    - wizard
+    - "@preset:aoc.org"
+    - aoc
+    - --key-path=@preset:file.private_key
+    - --username=@preset:aoc.user_email
+    - --use-generic-client=yes
+aoc_wizard_2:
+  command:
+    - config
+    - tokens
+    - flush
+  tags:
+    - hide_fail
+aoc_wizard_2b:
+  tags:
+    - must_fail
+  command:
+    - config
+    - tokens
+    - show
+    - foobar
+aoc_wizard_2c:
+  depends_on:
+    - aoc_wizard_2
+  command:
+    - config
+    - wizard
+    - "@preset:aoc.org"
+    - aoc
+    - mypreset
+    - --key-path=@preset:file.private_key
+    - --username=@preset:aoc.user_email
+aoc_faspex_gateway:
+  tags:
+    - noblock
+  command:
+    - aoc
+    - gateway
+    - '@json:{"url":"https://localhost:12345/aspera/faspex"}'
+aoc_faspex_gatewayb:
+  command:
+    - -N
+    - faspex
+    - --url=https://localhost:12345/aspera/faspex
+    - --username=_unused_
+    - --password=_unused_
+    - --warn-insecure=yes
+    - package
+    - send
+    - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
+    - faux:///test1?1m
+  post:
+    - stop_process 'aoc_faspex_gateway'
+aocg1:
+  command:
+    - -N
+    - aoc
+    - servers
+aocg1b:
+  command:
+    - -N
+    - aoc
+    - remind
+    - --username=@preset:aoc.user_email
+aocg2:
+  command:
+    - aoc
+    - bearer_token
+    - --display=data
+    - --scope=user:all
+aocg3:
+  command:
+    - aoc
+    - organization
+aocg3b:
+  command:
+    - aoc
+    - organization
+    - --format=image
+    - --fields=background_image_url
+    - --ui=text
+aocg3c:
+  command:
+    - aoc
+    - tier_restrictions
+aocg4:
+  command:
+    - aoc
+    - user
+    - workspaces
+    - list
+aoc_user_profile:
+  command:
+    - aoc
+    - user
+    - profile
+    - show
+aocg6:
+  command:
+    - aoc
+    - user
+    - profile
+    - modify
+    - '@json:{"name":"dummy change"}'
+aocuprefshow:
+  command:
+    - aoc
+    - user
+    - pref
+    - show
+aocuprefmod:
+  command:
+    - aoc
+    - user
+    - pref
+    - modify
+    - '@json:{"default_language":"en-us"}'
+aocucontactlist:
+  command:
+    - aoc
+    - user
+    - contacts
+    - list
+aocg7:
+  command:
+    - aoc
+    - packages
+    - shared_inboxes
+    - list
+aocg7b:
+  command:
+    - aoc
+    - packages
+    - shared_inboxes
+    - show
+    - "%name:@preset:aoc.shared_inbox_name"
+aocg8:
+  command:
+    - aoc
+    - user
+    - workspaces
+    - current
+aoc_webauth:
+  command:
+    - --preset=aoc_web
+    - aoc
+    - user
+    - profile
+    - show
+aoc_webauthb:
+  command:
+    - --preset=aoc_web
+    - aoc
+    - user
+    - profile
+    - show
+    - --http-options=@json:{"token_refresh_threshold":10000000000}
+aocfbr:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+aocfbr1:
+  command:
+    - aoc
+    - files
+    - browse
+    - "@preset:aoc.remote_folder"
+aocfbr1b:
+  command:
+    - aoc
+    - files
+    - browse
+    - "@extend:@preset:aoc.remote_folder@/"
+aocfbr1c:
+  command:
+    - aoc
+    - files
+    - browse
+    - "@preset:aoc.remote_file"
+aocfbt:
+  command:
+    - aoc
+    - files
+    - bearer_token_node
+    - /
+    - --cache-tokens=no
+aocffin:
+  command:
+    - aoc
+    - files
+    - find
+    - /
+aocffinb:
+  command:
+    - aoc
+    - files
+    - find
+    - /
+    - \.partial$
+aocffinc:
+  command:
+    - aoc
+    - files
+    - find
+    - /
+    - '@ruby:->(f){f["type"].eql?("file")}'
+aoc_tstsrc:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - aoc
+    - files
+    - delete
+    - /testsrc
+  post:
+    - sleep TEMPORIZE_CREATE
+aoc_tstsrcb:
+  command:
+    - aoc
+    - files
+    - mkdir
+    - /testsrc
+aoc_some_folder:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - aoc
+    - files
+    - delete
+    - /some_folder
+  post:
+    - sleep TEMPORIZE_CREATE
+aoc_some_folderb:
+  command:
+    - aoc
+    - files
+    - mkdir
+    - /some_folder
+  post:
+    - sleep TEMPORIZE_CREATE
+aoc_tstdst:
+  tags:
+    - ignore_fail
+  depends_on:
+    - aoc_some_folder
+  command:
+    - aoc
+    - files
+    - delete
+    - /testdst
+  post:
+    - sleep TEMPORIZE_FILE
+aoc_tstdstb:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - --node-cache=no
+aoc_tstdstc:
+  command:
+    - aoc
+    - files
+    - modify
+    - /some_folder
+    - '@json:{"mount_point":false}'
+aoc_tstdstd:
+  command:
+    - aoc
+    - files
+    - rename
+    - /some_folder
+    - testdst
+aocfupl:
+  depends_on:
+    - aoc_tstsrc
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testsrc
+    - $(TST_ASC_LCL_PATH)
+aocfuplb:
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testsrc
+    - $(TST_ASC_LCL_PATH)
+    - $(TST_UTF_LCL_PATH)
+aocftr:
+  depends_on:
+    - aocfupl
+    - aoc_tstdst
+  command:
+    - aoc
+    - files
+    - transfer
+    - push
+    - /testsrc
+    - --to-folder=/testdst
+    - $(TST_ASC_FILENAME)
+aocftrb:
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=/testdst
+    - $(TST_UTF_LCL_PATH)
+aocndinf:
+  depends_on:
+    - aocftr
+  tags:
+    - save_output
+  command:
+    - aoc
+    - files
+    - node_info
+    - /testdst
+    - --format=json
+    - --display=data
+aocndinfb:
+  depends_on:
+    - aocndinf
+  command:
+    - aoc
+    - files
+    - upload
+    - --workspace=@preset:aoc.other_workspace
+    - --to-folder=@preset:aoc.other_folder
+    - $(TST_ASC_FILENAME)
+    - --transfer=node
+    - --transfer-info=@json:$(read_value_from('aocndinf'))

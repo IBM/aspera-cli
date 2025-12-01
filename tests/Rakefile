@@ -98,11 +98,31 @@ def eval_macro(value)
   # puts "Eval: #{value} -> [#{x}]"
 end
 
+def pid_file(name)
+  TMP_STATES / "#{name}.pid"
+end
+
+def out_file(name)
+  TMP_STATES / "#{name}.out"
+end
+
 def read_value_from(name)
-  state_file = TMP_STATES / name
+  state_file = out_file(name)
   value = state_file.read.chomp
   puts("Read: #{state_file}: #{value}")
   value
+end
+
+def stop_process(name)
+  pid = pid_file(name).read.to_i
+  Process.kill('TERM', pid)
+  Process.wait(pid)
+end
+
+def check_process(name)
+  pid = pid_file(name).read.to_i
+  r = Process.kill(0, pid)
+  puts("Kill 0 : #{r}")
 end
 
 namespace :test do
@@ -116,9 +136,11 @@ namespace :test do
 
   desc 'Skip a given test by name'
   task :skip do
-    state[ENV['T']] = 'skipped'
+    ENV['T'].split(',').each do |k|
+      state[k] = 'skipped'
+      puts "[SKIP] #{k}"
+    end
     save_state(state)
-    puts "[SKIP] #{ENV['T']}"
   end
 
   desc 'Clear a given test by name'
@@ -164,6 +186,11 @@ namespace :test do
       must_fail = info['tags']&.include?('must_fail')
       hide_fail = info['tags']&.include?('hide_fail')
       ignore_fail = info['tags']&.include?('ignore_fail')
+      save_output = info['tags']&.include?('save_output')
+      if info['command'].include?('wizard')
+        info['env'] ||= {}
+        info['env']['ASCLI_WIZ_TEST'] = 'yes'
+      end
       begin
         puts "[RUN]  #{name}: #{info['command'].join(' ')}"
         if info['reset_folder']
@@ -174,18 +201,18 @@ namespace :test do
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{TMP_STATES / info['save_output_to']}", '--format=csv'] if info['save_output_to']
+        full_args += ["--output=#{out_file(name)}"] if save_output
         kwargs = {}
         if info['tags']&.include?('noblock')
           kwargs['background'] = true
-          full_args.push("--pid-file=#{TMP_STATES / "#{name}.pid"}")
+          full_args.push("--pid-file=#{pid_file(name)}")
         end
         run(*full_args, env: info['env'], **kwargs)
         puts "[OK]   #{name}"
         info['post']&.each do |cmd|
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
         end
-        puts("Saved: #{(TMP_STATES / info['save_output_to']).read}") if info['save_output_to']
+        puts("Saved: #{out_file(name).read}") if save_output
         state[name] = 'passed'
         raise 'Must fail' if must_fail
       rescue RuntimeError
