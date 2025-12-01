@@ -83,8 +83,40 @@ FileUtils.mkdir_p(TST_LCL_FOLDER / 'sub')
   (TST_LCL_FOLDER / f).write('Some sample file')
 end
 
-tests      = YAML.load_file(TEST_DEFS)
-state      = STATE_FILE.exist? ? YAML.load_file(STATE_FILE) : {}
+# Source - https://stackoverflow.com/a/55705853
+# Posted by user3592693, modified by community. See post 'Timeline' for change history
+# Retrieved 2025-12-01, License - CC BY-SA 4.0
+
+def safe_load_yaml(file_or_content)
+  yaml = file_or_content.is_a?(File) ? file_or_content.read : file_or_content
+  duplicate_keys = []
+  validator = ->(node, parent_path) do
+    if node.is_a?(Psych::Nodes::Mapping)
+      # In a Mapping, every other child is the key node, the other is the value node.
+      children = node.children.each_slice(2)
+      duplicates = children.map{ |key_node, _value_node| key_node}.group_by(&:value).select{ |_value, nodes| nodes.size > 1}
+      duplicates.each do |key, nodes|
+        duplicate_key = {
+          file:        (file_or_content.path if file_or_content.is_a?(File)),
+          key:         parent_path + [key],
+          occurrences: nodes.map{ |occurrence| "line: #{occurrence.start_line + 1}"}
+        }.compact
+        duplicate_keys << duplicate_key
+      end
+      children.each{ |key_node, value_node| validator.call(value_node, parent_path + [key_node.value].compact)}
+    else
+      node.children.to_a.each{ |child| validator.call(child, parent_path)}
+    end
+  end
+  ast = Psych.parse_stream(yaml)
+  validator.call(ast, [])
+  raise "Duplicate keys: #{duplicate_keys}" unless duplicate_keys.empty?
+  YAML.safe_load(yaml)
+end
+
+tests = safe_load_yaml(TEST_DEFS.read)
+# tests      = YAML.load_file(TEST_DEFS)
+state = STATE_FILE.exist? ? YAML.load_file(STATE_FILE) : {}
 
 def save_state(state)
   File.write(STATE_FILE, state.to_yaml)
@@ -183,16 +215,20 @@ namespace :test do
         # puts "[SKIP] #{name}"
         next
       end
+      puts "[RUN]  #{name}: #{info['command']&.join(' ')}"
+      info['pre']&.each do |cmd|
+        Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
+      end
       must_fail = info['tags']&.include?('must_fail')
       hide_fail = info['tags']&.include?('hide_fail')
       ignore_fail = info['tags']&.include?('ignore_fail')
       save_output = info['tags']&.include?('save_output')
+      wait_non_empty_output = info['tags']&.include?('wait_non_empty_output')
       if info['command'].include?('wizard')
         info['env'] ||= {}
         info['env']['ASCLI_WIZ_TEST'] = 'yes'
       end
-      begin
-        puts "[RUN]  #{name}: #{info['command'].join(' ')}"
+      loop do
         if info['reset_folder']
           folder = eval_macro(info['reset_folder'])
           FileUtils.rm_rf(folder)
@@ -208,13 +244,15 @@ namespace :test do
           full_args.push("--pid-file=#{pid_file(name)}")
         end
         run(*full_args, env: info['env'], **kwargs)
-        puts "[OK]   #{name}"
         info['post']&.each do |cmd|
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
         end
         puts("Saved: #{out_file(name).read}") if save_output
+        next if wait_non_empty_output && out_file(name).empty?
         state[name] = 'passed'
         raise 'Must fail' if must_fail
+        puts "[OK]   #{name}"
+        break
       rescue RuntimeError
         puts "[FAIL] #{name}"
         state[name] = 'failed'
@@ -224,6 +262,7 @@ namespace :test do
           raise
         end
         save_state(state)
+        break
       end
       save_state(state)
     end

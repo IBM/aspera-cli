@@ -1464,7 +1464,7 @@ nd_ak_bearer_create:
     - --preset=tst_node_preview
     - access_key
     - create
-    -  '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
+    - '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
   post:
     - sleep TEMPORIZE_CREATE
 nd_ak_bearer_show:
@@ -1945,3 +1945,1199 @@ aocndinfb:
     - $(TST_ASC_FILENAME)
     - --transfer=node
     - --transfer-info=@json:$(read_value_from('aocndinf'))
+aocfdel:
+  depends_on:
+    - aocftr
+    - aocndinf
+  command:
+    - aoc
+    - files
+    - delete
+    - /testsrc
+aocfbearnode:
+  command:
+    - aoc
+    - files
+    - bearer
+    - /
+aocfdownd:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - down
+    - --to-folder=$(TMP)
+    - testdst/$(TST_ASC_FILENAME)
+    - testdst/$(TST_UTF_FILENAME)
+aocfdowndb:
+  command:
+    - aoc
+    - files
+    - down
+    - --to-folder=$(TMP)
+    - testdst/$(TST_ASC_FILENAME)
+aocfdownc:
+  depends_on:
+    - aoc_tstdst
+  pre:
+    - (DIR_CONNECT_DOWNLOAD / TST_ASC_FILENAME).delete rescue nil
+    - system('killall asperaconnect') rescue nil
+    - sleep 1
+  command:
+    - aoc
+    - files
+    - download
+    - --transfer=connect
+    - testdst/$(TST_ASC_FILENAME)
+aocfdowna:
+  depends_on:
+    - aoc_tstdst
+  pre:
+    - (DIR_CONNECT_DOWNLOAD / TST_ASC_FILENAME).delete rescue nil
+  command:
+    - aoc
+    - files
+    - download
+    - --transfer=desktop
+    - testdst/$(TST_ASC_FILENAME)
+aocfhttpd:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - cat
+    - testdst/$(TST_ASC_FILENAME)
+aocfv3inf:
+  command:
+    - aoc
+    - files
+    - v3
+    - info
+aoc_sync_pull_conf_parms:
+  pre:
+    - (TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
+    - (TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
+  command:
+    - aoc
+    - files
+    - sync
+    - pull
+    - /testdst
+    - --to-folder=$(TMP_SYNCS / 'aoc_sync_pull_conf_parms')
+    - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+aoc_sync_pull_conf_parmsb:
+  command:
+    - aoc
+    - files
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'aoc_sync_pull_conf_parms')
+aoc_sync_conf_pull_params:
+  pre:
+    - (TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
+    - (TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
+  command:
+    - aoc
+    - files
+    - sync
+    - pull
+    - /testdst
+    - --to-folder=$(TMP_SYNCS / 'aoc_sync_conf_pull_params')
+    - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+aoc_sync_conf_pull_paramsb:
+  command:
+    - aoc
+    - files
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'aoc_sync_conf_pull_params')
+aoc_file_id_1:
+  depends_on:
+    - aocftr
+  tags:
+    - save_output
+  command:
+    - aoc
+    - files
+    - br
+    - testdst/$(TST_ASC_FILENAME)
+    - --fields=id
+    - --format=csv
+    - --display=data
+aoc_file_id_2:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - "%id:$(read_value_from 'aoc_file_id_1')"
+aoc_file_id_3:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - /
+aoc_file_id_4:
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - show
+    - testdst/$(TST_ASC_FILENAME)
+aoc_file_id_5:
+  tags:
+    - ignore_fail
+  depends_on:
+    - aocftr
+  command:
+    - aoc
+    - files
+    - mkdir
+    - "@preset:aoc.test_folder"
+aoc_file_id_6:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=@preset:aoc.test_folder
+    - --src-type=pair
+    - "@preset:file.mpg"
+    - video_file.mpg
+  post:
+    - puts 'waiting for preview'
+    - sleep 60
+aoc_file_id_7:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - upload
+    - --to-folder=@preset:aoc.test_folder
+    - --src-type=pair
+    - "@preset:file.jpg"
+    - image_file.jpg
+aoc_file_id_8:
+  depends_on:
+    - aoc_file_id_5
+  command:
+    - aoc
+    - files
+    - permission
+    - "@preset:aoc.test_folder"
+    - list
+aoc_file_id_9:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+aoc_file_id_10:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - --query=@json:{"text":true,"double":true}
+aoc_file_id_11:
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - --query=@json:{"text":true,"double":false}
+aoc_file_id_12:
+  env:
+    TERM_PROGRAM: null
+    LC_TERMINAL: null
+  depends_on:
+    - aoc_file_id_6
+  command:
+    - aoc
+    - files
+    - thumbnail
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+#	 aoc files modify @preset:aoc.test_folder
+aocfpub:
+  command:
+    - -N
+    - aoc
+    - files
+    - browse
+    - /
+    - --url=@preset:aoc.public_link_folder_no_pass
+aocfpubb:
+  command:
+    - -N
+    - aoc
+    - files
+    - browse
+    - /
+    - --url=@preset:aoc.public_link_folder_pass
+    - --password=@preset:aoc.public_link_password
+aocfpubc:
+  command:
+    - -N
+    - aoc
+    - files
+    - upload
+    - --to-folder=/
+    - $(TST_ASC_LCL_PATH)
+    - --url=@preset:aoc.public_link_folder_no_pass
+aoc_lnk_priv:
+  command:
+    - aoc
+    - files
+    - browse
+    - /
+    - --url=@preset:aoc.private_link
+aocshlk2:
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - private
+    - create
+aocshlk3:
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - public
+    - create
+aocshlk1:
+  depends_on:
+    - aocshlk2
+    - aocshlk3
+  command:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - private
+    - list
+aoc_pack_send1:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"],"note":"my
+    - note"}'
+    - $(TST_ASC_LCL_PATH)
+aoc_pack_send2:
+  command:
+    - aoc
+    - packages
+    - send
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_external@"]}'
+    - --new-user-option=@json:{"package_contact":true}
+    - $(TST_ASC_LCL_PATH)
+aocp2:
+  command:
+    - aoc
+    - packages
+    - list
+aocp3:
+  depends_on:
+    - aoc_pack_send1
+  tags:
+    - save_output
+    - wait_non_empty_output
+  command:
+    - aoc
+    - packages
+    - list
+    - --format=csv
+    - --fields=id
+    - --display=data
+    - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
+aocp3b:
+  depends_on:
+    - aoc_pack_send1
+  command:
+    - aoc
+    - packages
+    - receive
+    - $(read_value_from 'aocp3')
+    - --to-folder=$(TMP)
+aocp3c:
+  depends_on:
+    - aoc_pack_send1
+  command:
+    - aoc
+    - packages
+    - receive
+    - $(read_value_from 'aocp3')
+    - --to-folder=$(TMP)
+    - /
+    - --package-folder=name
+aocp3d:
+  depends_on:
+    - aocp3c
+  command:
+    - aoc
+    - packages
+    - browse
+    - $(read_value_from 'aocp3')
+    - /
+aocp4:
+  command:
+    - aoc
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --lock-port=12345
+aocp5:
+  command:
+    - aoc
+    - organization
+    - -N
+    - --url=@preset:aoc.public_link_recv_from_aoc_user
+aocp_send_pub_sh:
+  command:
+    - -N
+    - aoc
+    - packages
+    - send
+    - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+    - --url=@preset:aoc.public_link_send_shared_inbox
+aocp_send_pub_usr:
+  command:
+    - -N
+    - aoc
+    - packages
+    - send
+    - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
+    - $(TST_ASC_LCL_PATH)
+    - --url=@preset:aoc.public_link_send_aoc_user
+    - --password=@preset:aoc.public_link_send_use_pass
+aocp_recv_init:
+  command:
+    - aoc
+    - packages
+    - receive
+    - INIT
+    - --once-only=yes
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@"}
+aocp_send_shbx:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"]}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_long:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_short:
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - $(TST_ASC_LCL_PATH)
+aocp_send_sh_meta_short2:
+  comment: Fails because missing metadata "Project Id"
+  tags:
+    - hide_fail
+  depends_on:
+    - aocp_recv_init
+  command:
+    - aoc
+    - packages
+    - send
+    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --validate-metadata=yes
+    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - $(TST_ASC_LCL_PATH)
+aocp_recv_shbx:
+  depends_on:
+    - aocp_send_shbx
+    - aocp_send_sh_meta_long
+    - aocp_send_sh_meta_short
+  command:
+    - aoc
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --lock-port=12345
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
+    - --ts=@json:{"resume_policy":"sparse_csum","target_rate_kbps":50000}
+aocp_list_shbx:
+  depends_on:
+    - aocp_send_shbx
+    - aocp_send_sh_meta_long
+    - aocp_send_sh_meta_short
+  command:
+    - aoc
+    - packages
+    - list
+    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
+aoc_adm_authp_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - auth_providers
+    - list
+aoc_adm_authp_lst2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - account
+aoc_adm_authp_lst3:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - usage
+aoc_adm_authp_lst4:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - subscription
+    - usage
+    - MONTH
+aoc_adm_ws_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - list
+aoc_adm_ws_lst2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - dropbox
+    - "%name:@preset:aoc.other_workspace"
+    - list
+aoc_adm_ws_lst3:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - list
+aoc_adm_ws_lst4:
+  tags:
+    - save_output
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - list
+    - --query.max=1
+    - --fields=id
+aoc_adm_ws_lst5:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:aoc.other_workspace"
+    - member
+    - $(read_value_from 'aoc_adm_ws_lst4')
+    - list
+aoc_adm_nd_events:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - events
+aoc_adm_ak_create:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - mkdir
+    - /folder_sub
+aoc_adm_ak_browse:
+  depends_on:
+    - aoc_adm_ak_create
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /folder_sub
+    - --node-cache=no
+aoc_adm_ak_sub_ak:
+  depends_on:
+    - aoc_adm_ak_create
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - access_key
+    - create
+    - '@json:{"id":"testsub1","storage":{"path":"/folder_sub"}}'
+aoc_adm_ak_del:
+  depends_on:
+    - aoc_adm_ak_create
+    - aoc_adm_ak_browse
+    - aoc_adm_ak_sub_ak
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - v3
+    - access_key
+    - delete
+    - testsub1
+aoc_adm_ak_dir_del:
+  depends_on:
+    - aoc_adm_ak_del
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder_sub
+aoc_adm_nd_br:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /
+aoc_adm_nd_mkdir_prep:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder1
+    - --node-cache=no
+  post:
+    - sleep 4
+aoc_adm_nd_mkdir:
+  depends_on:
+    - aoc_adm_nd_mkdir_prep
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - mkdir
+    - /folder1
+  post:
+    - sleep TEMPORIZE_CREATE
+aoc_adm_nd_brse:
+  depends_on:
+    - aoc_adm_nd_mkdir
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - browse
+    - /
+    - --node-cache=no
+aoc_adm_nd_rmdir:
+  depends_on:
+    - aoc_adm_nd_mkdir
+    - aoc_adm_nd_brse
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - --secret=@preset:aoc.ak_secret
+    - delete
+    - /folder1
+aoc_adm_wsm_lst:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace_membership
+    - list
+    - --fields=ALL
+    - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
+aoc15:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - organization
+    - --query=@json:{"status":"completed","direction":"receive","limit":2}
+    - --notify-to=@preset:misc.email_external
+    - |
+      --notify-template=From: <%=from_name%> <<%=from_email%>>
+      To: <<%=to%>>
+      Subject: <%=ev["files_completed"]%> files received
+      
+      <%=ev.to_yaml%>
+aoc_ana_tr:
+  tags:
+    - save_output
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - organization
+    - --query=@json:{"status":"completed","direction":"receive","limit":1}
+    - --fields=uuid
+aoc_ana_files:
+  depends_on:
+    - aoc_ana_tr
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - files
+    - organization
+    - ''
+    - $(read_value_from 'aoc_ana_tr')
+aoc16:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - analytics
+    - transfers
+    - users
+    - --once-only=yes
+#	 --preset=aoc_admin aoc admin analytics transfers nodes
+aoc_adm_res_01:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - self
+    - show
+aoc_adm_res_01b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - organization
+    - show
+aoc_adm_res_01c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - list
+aoc_adm_res_01d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - modify
+    - "@extend:%name:@preset:aoc.user_email@"
+    - '@json:{"deactivated":false}'
+aoc_adm_res_02:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - group
+    - list
+aoc_adm_res_02b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client
+    - list
+aoc_adm_res_02c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - contact
+    - list
+aoc_adm_res_02d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - dropbox
+    - list
+aoc_adm_res_03:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - list
+aoc_adm_res_03b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - operation
+    - list
+aoc_adm_res_03c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - package
+    - list
+    - --http-options=@json:{"read_timeout":120.0}
+aoc_adm_res_03d:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - list
+aoc_adm_res_04:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - dropbox_membership
+    - list
+aoc_adm_res_04b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace_membership
+    - list
+aoc_adm_res_04c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - short_link
+    - list
+aoc_adm_res_05:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - list
+aoc_adm_res_05b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_access_key
+    - list
+aoc_adm_res_05c:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - kms_profile
+    - list
+aoccltreg:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - create
+    - '@json:{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+aoccltregb:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - list
+aoccltregc:
+  tags:
+    - save_output
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - list
+    - --select=@json:{"data.name":"test_client_reg1"}
+    - --fields=id
+    - --display=data
+    - --query.max=1
+aoccltregd:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_registration_token
+    - delete
+    - $(read_value_from 'aoccltregc')
+aocadmndcr:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - delete
+    - test_shared_folder
+    - --node-cache=no
+aocadmndcrb:
+  tags:
+    - ignore_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - browse
+    - test_shared_folder
+    - --node-cache=no
+aocadmndcrc:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - mkdir
+    - test_shared_folder
+aocadmndcrd:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - browse
+    - test_shared_folder
+    - --node-cache=no
+aocadmndsh1:
+  depends_on:
+    - aocadmndcr
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    - '@json:{"with":"","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh2:
+  depends_on:
+    - aocadmndsh1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    - '@json:@extend:{"with":"@preset:aoc.user_email@","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh3:
+  depends_on:
+    - aocadmndsh1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - perm
+    - test_shared_folder
+    - create
+    - '@json:@extend:{"with":"@preset:aoc.user_group@","as":"other_name_shared"}'
+    - --workspace=@preset:aoc.workspace_shared_inbox
+aocadmndsh4:
+  depends_on:
+    - aocadmndsh2
+    - aocadmndsh3
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - do
+    - "%name:@preset:aoc.node_name"
+    - delete
+    - test_shared_folder
+aocat4:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - list
+aocat5:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - clouds
+aocat6:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - show
+    - --cloud=aws
+    - --region=eu-west-1
+aocat7:
+  command:
+    - aoc
+    - admin
+    - ats
+    - cluster
+    - show
+    - 1f412ae7-869a-445c-9c05-02ad16813be2
+# see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
+aocat8:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - delete
+    - ak1ibmcloud
+aocat8b:
+  depends_on:
+    - aocat8
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - create
+    - --cloud=softlayer
+    - --region=@preset:icos.region
+    - '@json:@extend:{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+aocat9:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - create
+    - --cloud=aws
+    - --region=@preset:aws.region
+    - '@json:@extend:{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
+aocat10:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - list
+    - --fields=name,id
+aocat11:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - node
+    - ak1ibmcloud
+    - --secret=@preset:misc.secret_here
+    - browse
+    - /
+aocat13:
+  tags:
+    - hide_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - ats
+    - access_key
+    - delete
+    - ak1ibmcloud
+aocauto1:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - create
+    - '@json:{"name":"test_workflow"}'
+wf_id:
+  tags:
+    - save_output
+  depends_on:
+    - aocauto1
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+    - --select=@json:{"name":"test_workflow"}
+    - --fields=id
+aocauto2:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+aocauto2b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - list
+    - --query=@json:{"show_org_workflows":"true"}
+    - --scope=admin:all
+aocauto3:
+  comment: Verify what it should do, and not fail.
+  depends_on:
+    - wf_id
+  tags:
+    - ignore_fail
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - action
+    - $(read_value_from 'wf_id')
+    - create
+    - '@json:{"name":"toto"}'
+#		| tee action.info
+#	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info > tmp_action_id.txt
+#	rm -f action.info
+#	rm -f tmp_action_id.txt
+aocauto10:
+  depends_on:
+    - wf_id
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - delete
+    - $(read_value_from 'wf_id')
