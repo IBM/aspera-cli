@@ -3,7 +3,7 @@
 require 'aspera/log'
 require 'aspera/assert'
 require 'singleton'
-require 'mime/types'
+require 'marcel'
 
 module Aspera
   module Preview
@@ -61,7 +61,7 @@ module Aspera
       end
 
       # @param mimetype [String] mime type
-      # @return file type, one of enum CONVERSION_TYPES, or nil if not found
+      # @return [NilClass,Symbol] file type, one of enum CONVERSION_TYPES, or nil if not found
       def mime_to_type(mimetype)
         Aspera.assert_type(mimetype, String)
         return SUPPORTED_MIME_TYPES[mimetype] if SUPPORTED_MIME_TYPES.key?(mimetype)
@@ -72,19 +72,17 @@ module Aspera
         return
       end
 
-      # @param filepath [String] full path to file
-      # @param mimetype [String] provided by node API
+      # @param filepath [String] Full path to file
+      # @param mimetype [String] MIME typre provided by node API
       # @return file type, one of enum CONVERSION_TYPES
       # @raise [RuntimeError] if no conversion type found
       def conversion_type(filepath, mimetype)
         Log.log.debug{"conversion_type(#{filepath},mime=#{mimetype},magic=#{@use_mimemagic})"}
-        mimetype = nil if mimetype.is_a?(String) && (mimetype == 'application/octet-stream' || mimetype.empty?)
-        # Use mimemagic if available
-        mimetype ||= mime_using_mimemagic(filepath)
-        mimetype ||= mime_using_file(filepath)
-        # from extensions, using local mapping
-        mimetype ||= MIME::Types.of(File.basename(filepath)).first
-        raise "no MIME type found for #{File.basename(filepath)}" if mimetype.nil?
+        # Default type or empty means no type
+        mimetype = TYPE_NOT_FOUND if mimetype.nil? || (mimetype.is_a?(String) && mimetype.empty?)
+        mimetype = Marcel::MimeType.for(Pathname.new(filepath), name: File.basename(filepath), declared_type: mimetype)
+        mimetype = 'text/plain' if mimetype.eql?(TYPE_NOT_FOUND) && ascii_text_file?(filepath)
+        raise "no MIME type found for #{File.basename(filepath)}" if mimetype.eql?(TYPE_NOT_FOUND)
         conversion_type = mime_to_type(mimetype)
         raise "no conversion type found for #{File.basename(filepath)}" if conversion_type.nil?
         Log.log.trace1{"conversion_type(#{File.basename(filepath)}): #{conversion_type.class.name} [#{conversion_type}]"}
@@ -93,33 +91,21 @@ module Aspera
 
       private
 
-      # Use mime magic to find mime type based on file content (magic numbers)
-      # @param filepath [String] full path to file
-      # @return [String] mime type, or nil if not found
-      def mime_using_mimemagic(filepath)
-        return unless @use_mimemagic
-        # moved here, as `mimemagic` can cause installation issues
-        require 'mimemagic'
-        require 'mimemagic/version'
-        require 'mimemagic/overlay' if MimeMagic::VERSION.start_with?('0.3.')
-        # check magic number inside file (empty string if not found)
-        detected_mime = MimeMagic.by_magic(File.open(filepath)).to_s
-        # check extension only
-        if mime_to_type(detected_mime).nil?
-          Log.log.debug{"no conversion for #{detected_mime}, trying extension"}
-          detected_mime = MimeMagic.by_extension(File.extname(filepath)).to_s
-        end
-        detected_mime = nil if detected_mime.empty?
-        Log.log.debug{"mimemagic: #{detected_mime.class.name} [#{detected_mime}]"}
-        return detected_mime
-      end
+      TYPE_NOT_FOUND = 'application/octet-stream'
+      ACCEPT_CTRL_CHARS = [9, 10, 13]
 
-      # Use 'file' command to find mime type based on file content (Unix)
-      def mime_using_file(filepath)
-        return Environment.secure_capture(exec: 'file', args: ['--mime-type', '--brief', filepath]).strip
-      rescue => e
-        Log.log.error{"error using 'file' command: #{e.message}"}
-        return
+      # Returns true if the file looks like ASCII text (printable ASCII + \t, \r, \n, space).
+      # It reads only a small prefix (default: 64KB) and fails fast on the first bad byte.
+      def ascii_text_file?(path, sample_size: 64 * 1024)
+        File.open(path, 'rb') do |f|
+          sample = f.read(sample_size) || ''.b
+          sample.each_byte do |b|
+            next if b.between?(32, 126) || ACCEPT_CTRL_CHARS.include?(b)
+            # Any other control character => not ASCII text
+            return false
+          end
+          true
+        end
       end
     end
   end
