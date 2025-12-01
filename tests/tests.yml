@@ -4386,3 +4386,348 @@ conf_echo_stdin_zlib:
     - config
     - echo
     - "@zlib:@stdin:"
+conf_echo_json_format_text:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=text
+conf_echo_json_format_ruby:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=ruby
+conf_echo_json_format_json:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=json
+conf_echo_json_format_jsonpp:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=jsonpp
+conf_echo_json_format_yaml:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=yaml
+conf_echo_json_format_table:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=table
+conf_echo_json_format_csv:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=csv
+conf_echo_json_a:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --format=csv
+    - --table=@json:{"headers":true,"force_quotes":true}
+conf_echo_json_b:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@json:["id"]
+conf_echo_json_c:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@re:i+
+conf_echo_json_fields_ruby:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --fields=@ruby:->(f){f.eql?("id")}
+conf_echo_json_select_ruby:
+  command:
+    - config
+    - echo
+    - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
+    - --select=@ruby:->(r){r["id"].eql?(8)}
+conf_extended1:
+  expect: '@file:foo'
+  command:
+    - config
+    - echo
+    - '@val:@file:foo'
+    - --format=text
+conf_extended2:
+  expect: 'foo'
+  command:
+    - config
+    - echo
+    - '@base64:Zm9v'
+    - --format=text
+conf_extended3:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@lines:@json:"1\n2\n"'
+    - --format=ruby
+conf_extended4:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@list:,1,2'
+    - --format=ruby
+conf_extended5:
+  expect: '["1", "2"]'
+  command:
+    - config
+    - echo
+    - '@json:["1","2"]'
+    - --format=ruby
+conf_extended6:
+  expect: '[1, 2]'
+  command:
+    - config
+    - echo
+    - '@yaml:@json:"- 1\n- 2\n"'
+    - --format=ruby
+conf_interactive:
+  command:
+    - config
+    - echo
+    - "@secret:"
+conf_hint:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - Aspera::RestCallError
+    - Signature has expired
+config_hint_a:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - Aspera::Transfer::Error
+    - Remote host is not who weexpected
+config_hint_b:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::SSL::SSLError
+    - does not match the server certificate
+config_hint_c:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::SSL::SSLError
+    - certificate verify failed
+config_hint_d:
+  tags:
+    - must_fail
+  command:
+    - config
+    - test
+    - throw
+    - OpenSSL::PKey::RSAError
+    - Neither PUB key nor PRIV key
+conf_logger:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --logger=syslog
+config_file_a:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --log-format=standard
+config_file_b:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - --log-format=default
+config_log_trace_caller:
+  command:
+    - config
+    - coffee
+    - --log-level=trace2
+    - --log-format=caller
+config_log_custom:
+  command:
+    - config
+    - file
+    - --log-level=debug
+    - |
+      --log-format=@ruby:->(s,d,p,m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}
+config_log_all:
+  command:
+    - config
+    - echo
+    - '@ruby:%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"'
+    - --log-level=trace2
+prev_check:
+  command:
+    - preview
+    - check
+    - --skip-types=office
+prev_dcm:
+  command:
+    - preview
+    - test
+    - --base=$(TMP / 'prev_dcm')
+    - "@preset:file.dcm"
+prev_dcm_mm:
+  command:
+    - preview
+    - test
+    - --mimemagic=yes
+    - --base=$(TMP / 'prev_dcm_mm')
+    - "@preset:file.dcm"
+prev_jpg_unk_mm:
+  command:
+    - preview
+    - test
+    - --mimemagic=yes
+    - --base=$(TMP / 'prev_jpg_unk_mm')
+    - "@preset:file.jpg_unk"
+prev_mxf_blend:
+  command:
+    - preview
+    - test
+    - --base=$(TMP / 'prev_mxf_blend')
+    - "@preset:file.mxf"
+    - mp4
+    - --video-conversion=blend
+    - --query=@json:{"text":true,"double":true}
+prev_pdf:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_pdf')
+    - "@preset:file.pdf"
+prev_txt:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_txt')
+    - /etc/hosts
+prev_docx:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_docx')
+    - "@preset:file.docx"
+prev_mpg_png_fix:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_mpg_png_fix')
+    - "@preset:file.mpg"
+    - --video-png-conv=fixed
+prev_mpg_png_ani:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_mpg_png_ani')
+    - "@preset:file.mpg"
+    - --video-png-conv=animated
+prev_mpg_reencode:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'prev_mpg_reencode')
+    - "@preset:file.mpg"
+    - mp4
+    - --video-conversion=reencode
+prev_mpg_clips:
+  command:
+    - preview
+    - show
+    - --base=$(TMP / 'testprev_mpg_clips_name')
+    - "@preset:file.mpg"
+    - mp4
+    - --video-conversion=clips
+prev_trevents_prep:
+  command:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+  post:
+    - sleep 4
+prev_trevents:
+  depends_on:
+    - prev_trevents_prep
+  command:
+    - preview
+    - trevents
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_events_prep:
+  command:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+  post:
+    - sleep 4
+prev_events:
+  depends_on:
+    - prev_events_prep
+  command:
+    - preview
+    - events
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_scana:
+  command:
+    - preview
+    - scan
+    - --skip-types=office
+    - --log-level=info
+    - --skip-folder=/special/folder
+prev_scanb:
+  command:
+    - preview
+    - scan
+    - --skip-folder=foo
+    - --skip-folder=bar
+    - --skip-folder=@list:,1,2
+prev_folder:
+  command:
+    - preview
+    - scan
+    - --scan-id=1
+    - --skip-types=office
+    - --log-level=info
+    - --file-access=remote
+    - --ts=@json:{"target_rate_kbps":1000000}

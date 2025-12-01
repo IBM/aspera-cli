@@ -222,7 +222,7 @@ namespace :test do
       must_fail = info['tags']&.include?('must_fail')
       hide_fail = info['tags']&.include?('hide_fail')
       ignore_fail = info['tags']&.include?('ignore_fail')
-      save_output = info['tags']&.include?('save_output')
+      save_output = info['tags']&.include?('save_output') || info['expect']
       wait_non_empty_output = info['tags']&.include?('wait_non_empty_output')
       tmp_conf = info['tags']&.include?('tmp_conf')
       if info['command'].include?('wizard')
@@ -258,6 +258,9 @@ namespace :test do
         end
         puts("Saved: #{out_file(name).read}") if save_output
         next if wait_non_empty_output && out_file(name).empty?
+        if info['expect']
+          raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
+        end
         state[name] = 'passed'
         raise 'Must fail' if must_fail
         puts "[OK]   #{name}"
