@@ -36,8 +36,6 @@ CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
 TEST_CONFIG = TMP / 'sample.conf'
 # "CLI_TMP_CONF" is used for commands that modify the config file
 CLI_TMP_CONF = CLI_NOCONF + ["--config-file=#{TEST_CONFIG}"]
-CLI_WIZ_TEST_ENV = {'ASCLI_WIZ_TEST'=>'yes'}
-CLI_WIZ_TEST_CMD = CLI_TMP_CONF
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
 TST_ASC_FILENAME = 'data_file.bin'
 TST_ASC_LCL_PATH = TMP / TST_ASC_FILENAME
@@ -217,6 +215,7 @@ namespace :test do
       end
       puts "[RUN]  #{name}: #{info['command']&.join(' ')}"
       info['pre']&.each do |cmd|
+        puts("Executing: #{cmd}")
         Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
       end
       must_fail = info['tags']&.include?('must_fail')
@@ -224,6 +223,7 @@ namespace :test do
       ignore_fail = info['tags']&.include?('ignore_fail')
       save_output = info['tags']&.include?('save_output')
       wait_non_empty_output = info['tags']&.include?('wait_non_empty_output')
+      tmp_conf = info['tags']&.include?('tmp_conf')
       if info['command'].include?('wizard')
         info['env'] ||= {}
         info['env']['ASCLI_WIZ_TEST'] = 'yes'
@@ -235,7 +235,7 @@ namespace :test do
           FileUtils.mkdir_p(folder)
         end
         full_args = CLI_TEST
-        full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard])
+        full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
         full_args += ["--output=#{out_file(name)}"] if save_output
         kwargs = {}
@@ -245,6 +245,7 @@ namespace :test do
         end
         run(*full_args, env: info['env'], **kwargs)
         info['post']&.each do |cmd|
+          puts("Executing: #{cmd}")
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
         end
         puts("Saved: #{out_file(name).read}") if save_output

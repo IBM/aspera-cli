@@ -3040,7 +3040,7 @@ aocat9:
     - create
     - --cloud=aws
     - --region=@preset:aws.region
-    - '@json:@extend:{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
+    - '@json:@extend:{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
 aocat10:
   tags:
     - hide_fail
@@ -3141,3 +3141,463 @@ aocauto10:
     - workflow
     - delete
     - $(read_value_from 'wf_id')
+orch_health:
+  command:
+    - orchestrator
+    - health
+orch_health_bad:
+  tags:
+    - hide_fail
+  command:
+    - orchestrator
+    - health
+    - --url=https://wrong.url
+    - --format=nagios
+orch_detect:
+  command:
+    - config
+    - detect
+    - "@preset:orch_user.url"
+orch_wizard:
+  command:
+    - config
+    - wizard
+    - "@preset:orch_user.url"
+    - orchestrator
+    - --username=test
+    - --password=test
+orch_info:
+  command:
+    - orchestrator
+    - info
+orch_wf_list:
+  command:
+    - orchestrator
+    - workflow
+    - list
+orch_wf_sta:
+  command:
+    - orchestrator
+    - workflow
+    - status
+    - ALL
+orch_wf_inp:
+  command:
+    - orchestrator
+    - workflow
+    - inputs
+    - "@preset:orch.workflow_id"
+orch_wf_sti:
+  command:
+    - orchestrator
+    - workflow
+    - status
+    - "@preset:orch.workflow_id"
+orch_wf_str1:
+  command:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - '@json:{"Param":"world !"}'
+orch_wf_str2:
+  command:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - '@json:{"Param":"world !"}'
+    - --result=ResultStep:Complete_status_message
+orch_plugins:
+  command:
+    - orchestrator
+    - plugins
+orch_processes:
+  command:
+    - orchestrator
+    - processes
+orch_wf_details:
+  command:
+    - orchestrator
+    - workflow
+    - details
+    - "@preset:orch.workflow_id"
+orch_wf_detailsb:
+  command:
+    - orchestrator
+    - workflow
+    - export
+    - "@preset:orch.workflow_id"
+at4:
+  command:
+    - ats
+    - cluster
+    - list
+at5:
+  command:
+    - ats
+    - cluster
+    - clouds
+at6:
+  command:
+    - ats
+    - cluster
+    - show
+    - --cloud=aws
+    - --region=eu-west-1
+at7:
+  command:
+    - ats
+    - cluster
+    - show
+    - 1f412ae7-869a-445c-9c05-02ad16813be2
+at2:
+  command:
+    - ats
+    - api_key
+    - instances
+at1:
+  command:
+    - ats
+    - api_key
+    - list
+at3:
+  command:
+    - ats
+    - api_key
+    - create
+at8_prep:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak2ibmcloud
+  post:
+    - sleep TEMPORIZE_CREATE
+at8b:
+  depends_on:
+    - at8_prep
+  command:
+    - ats
+    - access_key
+    - create
+    - --cloud=softlayer
+    - --region=@preset:icos.region
+    - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+  post:
+    - sleep TEMPORIZE_CREATE
+at8c:
+  depends_on:
+    - at8b
+  command:
+    - ats
+    - access_key
+    - show
+    - ak2ibmcloud
+at8d:
+  depends_on:
+    - at8b
+  command:
+    - ats
+    - access_key
+    - entitlement
+    - ak2ibmcloud
+at9:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - create
+    - --cloud=aws
+    - --region=@preset:aws.region
+    - '@json:@extend:{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
+at10:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - list
+    - --fields=name,id
+at11:
+  command:
+    - ats
+    - access_key
+    - node
+    - ak2ibmcloud
+    - browse
+    - /
+    - --secret=@preset:misc.secret_here
+at12:
+  command:
+    - ats
+    - access_key
+    - cluster
+    - ak2ibmcloud
+    - --secret=@preset:misc.secret_here
+at13:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak2ibmcloud
+at14:
+  tags:
+    - hide_fail
+  command:
+    - ats
+    - access_key
+    - delete
+    - ak_aws
+nd_sync_pull_conf:
+  pre:
+    - (TMP_SYNCS / 'nd_sync_pull_conf').rmtree
+    - (TMP_SYNCS / 'nd_sync_pull_conf').mkdir
+  command:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(TMP_SYNCS / 'nd_sync_pull_conf')
+    - '@json:{"reset":true}'
+nd_sync_pull_confb:
+  depends_on:
+    - nd_sync_pull_conf
+  command:
+    - node
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'nd_sync_pull_conf')
+nd_sync_v2:
+  pre:
+    - (TMP_SYNCS / 'nd_sync_v2').rmtree
+    - (TMP_SYNCS / 'nd_sync_v2').mkdir
+  command:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(TMP_SYNCS / 'nd_sync_v2')
+    - '@json:{"name":"my_sync_session_name","reset":true}'
+nd_sync_v2b:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - sync
+    - admin
+    - status
+    - $(TMP_SYNCS / 'nd_sync_v2')
+nd_async_list:
+  command:
+    - node
+    - async
+    - list
+nd_async_show:
+  command:
+    - node
+    - async
+    - show
+    - ALL
+nd_async_showb:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - async
+    - show
+    - "%name:my_sync_session_name"
+nd_async_cntr:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - async
+    - counters
+    - "%name:my_sync_session_name"
+nd_async_bw:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - async
+    - bandwidth
+    - "%name:my_sync_session_name"
+nd_async_files:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+nd_async_filesb:
+  depends_on:
+    - nd_sync_v2
+  command:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+    - --once-only=yes
+nd_async_del:
+  depends_on:
+    - nd_async_showb
+    - nd_async_cntr
+    - nd_async_bw
+    - nd_async_files
+    - nd_async_filesb
+  command:
+    - node
+    - async
+    - delete
+    - ALL
+sync_create_prep1:
+  tags:
+    - ignore_fail
+    - nodoc
+  command:
+    - server
+    - -Pserver2_user
+    - delete
+    - "@preset:sync.remote_path"
+sync_create_prep2:
+  depends_on:
+    - sync_create_prep1
+  command:
+    - -Pserver2_user
+    - server
+    - mkdir
+    - "@preset:sync.remote_path"
+sync_create_prep3:
+  tags:
+    - ignore_fail
+  command:
+    - node
+    - delete
+    - "@preset:sync.local_path"
+sync_create_prep4:
+  depends_on:
+    - sync_create_prep3
+  command:
+    - node
+    - mkdir
+    - "@preset:sync.local_path"
+sync_create_prep5:
+  depends_on:
+    - sync_create_prep4
+  command:
+    - node
+    - upload
+    - 'faux:///testfile1?1m'
+    - --to-folder=@preset:sync.local_path
+sync_create:
+  depends_on:
+    - sync_create_prep2
+    - sync_create_prep5
+  command:
+    - node
+    - ssync
+    - create
+    - '@json:@extend:{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path_real@"},"remote":{"host":"@preset:server2_info.host@","port":@preset:server2_info.port@,"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
+sync_create_check:
+  depends_on:
+    - sync_create
+  command:
+    - node
+    - ssync
+    - list
+sync_start_1:
+  depends_on:
+    - sync_create_check
+  command:
+    - node
+    - ssync
+    - start
+    - "%name:my_node_sync"
+sync_check_1:
+  depends_on:
+    - sync_start_1
+  command:
+    - node
+    - ssync
+    - show
+    - "%name:my_node_sync"
+  post:
+    - sleep 30
+sync_other_a:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - bandwidth
+    - "%name:my_node_sync"
+sync_other_b:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - counters
+    - "%name:my_node_sync"
+sync_other_c:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - files
+    - "%name:my_node_sync"
+sync_other_d:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - state
+    - "%name:my_node_sync"
+sync_other_e:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - stop
+    - "%name:my_node_sync"
+sync_other_f:
+  depends_on:
+    - sync_check_1
+  command:
+    - node
+    - ssync
+    - summary
+    - "%name:my_node_sync"
+sync_other_delete:
+  depends_on:
+    - sync_other_a
+    - sync_other_b
+    - sync_other_c
+    - sync_other_d
+    - sync_other_e
+    - sync_other_f
+  command:
+    - node
+    - ssync
+    - delete
+    - "%name:my_node_sync"
+sync_other_delete_fail:
+  tags:
+    - hide_fail
+  command:
+    - node
+    - ssync
+    - delete
+    - not_exist
