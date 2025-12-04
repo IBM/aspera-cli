@@ -69,12 +69,12 @@ module Aspera
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)
               test_endpoint = 'ping'
-              result = api.call(operation: 'GET', subpath: test_endpoint)
-              next unless result[:http].body.eql?('')
+              http = api.read(test_endpoint, ret: :resp)
+              next unless http.body.eql?('')
               # also remove "/"
               url_end = -2 - test_endpoint.length
               return {
-                url:     result[:http].uri.to_s[0..url_end],
+                url:     http.uri.to_s[0..url_end],
                 version: 'requires authentication'
               }
             rescue StandardError => e
@@ -382,11 +382,8 @@ module Aspera
             remote_path = options.get_next_argument('remote path', validation: String)
             remote_path = @prefixer.add_to_path(remote_path) unless @prefixer.nil?
             File.basename(remote_path)
-            result = @api_node.call(
-              operation: 'GET',
-              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents"
-            )
-            return Main.result_text(result[:http].body)
+            http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
+            return Main.result_text(http.body)
           when :transport
             return Main.result_single_object(@api_node.transport_params)
           end
@@ -450,8 +447,9 @@ module Aspera
                 subpath:      'services/soap/Transfer-201210',
                 content_type: Rest::MIME_TEXT,
                 body:         CENTRAL_SOAP_API_TEST,
-                headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'}
-              )[:http].body
+                headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
+                ret:          :resp
+              ).body
               nagios.add_ok('central', 'accessible by node')
             rescue StandardError => e
               nagios.add_critical('central', e.to_s)
@@ -606,11 +604,8 @@ module Aspera
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :cat
             apifid = apifid_from_next_arg(top_file_id)
-            result = apifid[:api].call(
-              operation: 'GET',
-              subpath: "files/#{apifid[:file_id]}/content"
-            )
-            return Main.result_text(result[:http].body)
+            http = apifid[:api].read("files/#{apifid[:file_id]}/content", ret: :resp)
+            return Main.result_text(http.body)
           when :show
             apifid = apifid_from_next_arg(top_file_id)
             items = apifid[:api].read("files/#{apifid[:file_id]}")
@@ -622,12 +617,8 @@ module Aspera
             return Main.result_status('Done')
           when :thumbnail
             apifid = apifid_from_next_arg(top_file_id)
-            result = apifid[:api].call(
-              operation: 'GET',
-              subpath: "files/#{apifid[:file_id]}/preview",
-              headers: {'Accept' => 'image/png'}
-            )
-            return Main.result_image(result[:http].body)
+            http = apifid[:api].read("files/#{apifid[:file_id]}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
+            return Main.result_image(http.body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
             command_perm = options.get_next_command(%i[list show create delete])
@@ -841,8 +832,9 @@ module Aspera
                   operation:    'POST',
                   subpath:      "asyncs/#{asyncs_id}/#{sync_command}",
                   content_type: Rest::MIME_TEXT,
-                  body:         ''
-                )[:http].body
+                  body:         '',
+                  ret:          :resp
+                ).body
                 return Main.result_status('Done')
               end
               parameters = options.get_option(:query) || {} if %i[bandwidth counters files].include?(sync_command)
@@ -1157,13 +1149,13 @@ module Aspera
           item_list = []
           query_token[:iteration_token] = iteration[0] unless iteration.nil?
           loop do
-            result = api.call(**call_args, query: query_token)
-            Aspera.assert_type(result[:data], Array){"Expected data to be an Array, got: #{result[:data].class}"}
+            data, http = api.call(**call_args, query: query_token, ret: :both)
+            Aspera.assert_type(data, Array){"Expected data to be an Array, got: #{data.class}"}
             # no data
-            break if result[:data].empty?
+            break if data.empty?
             # get next iteration token from link
             next_iteration_token = nil
-            link_info = result[:http]['Link']
+            link_info = http['Link']
             unless link_info.nil?
               m = link_info.match(/<([^>]+)>/)
               Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
@@ -1172,7 +1164,7 @@ module Aspera
             # same as last iteration: stop
             break if next_iteration_token&.eql?(query_token[:iteration_token])
             query_token[:iteration_token] = next_iteration_token
-            item_list.concat(result[:data])
+            item_list.concat(data)
             if max&.<=(item_list.length)
               item_list = item_list.slice(0, max)
               break

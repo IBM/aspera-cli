@@ -47,22 +47,23 @@ module Aspera
             urls.each do |base_url|
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
-              result = api.call(
+              http = api.call(
                 operation:        'POST',
                 headers:          {
                   'Content-type' => Rest::MIME_TEXT,
                   'Accept'       => 'application/xrds+xml'
-                }
+                },
+                ret: :resp
               )
               # 4.x
-              next unless result[:http].body.start_with?('<?xml')
-              res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
-              Log.log.debug{"version: #{result[:http][HEADER_FASPEX_VERSION]}"}
+              next unless http.body.start_with?('<?xml')
+              res_s = XmlSimple.xml_in(http.body, {'ForceArray' => false})
+              Log.log.debug{"version: #{http[HEADER_FASPEX_VERSION]}"}
               version = res_s['XRD']['application']['version']
               # take redirect if any
               return {
                 version: version,
-                url:     result[:http].uri.to_s
+                url:     http.uri.to_s
               }
             rescue StandardError => e
               error = e
@@ -184,8 +185,9 @@ module Aspera
               operation: 'GET',
               subpath:   "#{mailbox}.atom",
               headers:   {'Accept' => 'application/xml'},
-              query:     mailbox_query
-            )[:http].body
+              query:     mailbox_query,
+              ret:       :resp
+            ).body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
             Log.dump(:box_data, box_data)
             items = box_data.key?('entry') ? box_data['entry'] : []
@@ -251,8 +253,9 @@ module Aspera
             subpath:      create_path,
             content_type: Rest::MIME_JSON,
             body:         package_create_params,
-            headers:      {'Accept' => 'text/javascript'}
-          )[:http].body
+            headers:      {'Accept' => 'text/javascript'},
+            ret:          :resp
+          ).body
           # get arguments of function call
           package_creation_data.delete!("\n") # one line
           package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
@@ -363,7 +366,7 @@ module Aspera
                     when :inbox, :archive then'received'
                     when :sent then 'sent'
                     end
-                  entry_xml = api_v3.call(operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'})[:http].body
+                  entry_xml = api_v3.call(operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'}, ret: :resp).body
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                   pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
                 end
@@ -374,17 +377,18 @@ module Aspera
                 raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}" if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
                 # NOTE: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new(base_url: link_data[:base_url])
-                package_creation_data = api_public_link.call(
+                pkg_xml = api_public_link.call(
                   operation: 'GET',
                   subpath:   link_data[:subpath],
                   headers:   {'Accept' => 'application/xml'},
-                  query:     {passcode: link_data[:query]['passcode']}
-                )
-                if !package_creation_data[:http].body.start_with?('<?xml ')
+                  query:     {passcode: link_data[:query]['passcode']},
+                  ret:       :resp
+                ).body
+                if !pkg_xml.start_with?('<?xml ')
                   Environment.instance.open_uri(link_url)
                   raise Cli::Error, 'Unexpected response: package not found ?'
                 end
-                package_entry = XmlSimple.xml_in(package_creation_data[:http].body, {'ForceArray' => false})
+                package_entry = XmlSimple.xml_in(pkg_xml, {'ForceArray' => false})
                 Log.dump(:package_entry, package_entry)
                 transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
                 pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]
@@ -413,8 +417,9 @@ module Aspera
                       query:        {'direction' => 'down'},
                       content_type: Rest::MIME_TEXT,
                       body:         xml_payload,
-                      headers:      {'Accept' => Rest::MIME_TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'}
-                    )[:http].body
+                      headers:      {'Accept' => Rest::MIME_TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
+                      ret:          :resp
+                    ).body
                   end
                   transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)
@@ -520,7 +525,7 @@ module Aspera
             end
             return Main.result_object_list(users)
           when :login_methods
-            login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'})[:http].body
+            login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}, ret: :resp).body
             login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
             return Main.result_object_list(login_methods['XRD']['Service'])
           end

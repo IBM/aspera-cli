@@ -26,8 +26,8 @@ module Aspera
             end
             return unless found
             version = 'unknown'
-            test_page = api.call(operation: 'GET', subpath: 'login')
-            if (m = test_page[:http].body.match(/\(v(1\..*)\)/))
+            http = api.read('login', ret: :resp)
+            if (m = http.body.match(/\(v(1\..*)\)/))
               version = m[1]
             end
             return {
@@ -68,14 +68,10 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              res = Rest
+              http = Rest
                 .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{NODE_API_PATH}")
-                .call(
-                  operation: 'GET',
-                  subpath: 'ping',
-                  headers: {'content-type': Rest::MIME_JSON}
-                )
-              raise Error, 'Shares not detected' unless res[:http].body.eql?(' ')
+                .read('ping', ret: :resp)
+              raise Error, 'Shares not detected' unless http.body.eql?(' ')
               nagios.add_ok('shares api', 'accessible')
             rescue StandardError => e
               nagios.add_critical('API', e.to_s)

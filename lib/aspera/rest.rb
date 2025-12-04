@@ -308,6 +308,8 @@ module Aspera
     # @param headers [Hash] additional headers (override Content-Type)
     # @param save_to_file (filepath)
     # @param exception (bool) true, error raise exception
+    # @param ret [:data, :resp, :both] Tell to return only data, only http response, or both
+    # @return [Object, Array] only data, only http response, or both
     def call(
       operation:,
       subpath: nil,
@@ -316,7 +318,8 @@ module Aspera
       body: nil,
       headers: nil,
       save_to_file: nil,
-      exception: true
+      exception: true,
+      ret: :data
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
@@ -348,7 +351,8 @@ module Aspera
         end
       else Aspera.error_unexpected_value(@auth_params[:type])
       end
-      result = {http: nil}
+      result_http = nil
+      result_data = nil
       # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
       begin
         # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
@@ -391,14 +395,14 @@ module Aspera
         file_saved = false
         # make http request (pipelined)
         http_session.request(req) do |response|
-          result[:http] = response
-          result_mime = self.class.parse_header(result[:http]['Content-Type'] || MIME_TEXT)[:type]
-          Log.log.debug{"response: code=#{result[:http].code}, mime=#{result_mime}, mime2= #{response['Content-Type']}"}
+          result_http = response
+          result_mime = self.class.parse_header(result_http['Content-Type'] || MIME_TEXT)[:type]
+          Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, mime2= #{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
-              result[:http].code.to_s.start_with?('2') &&
+              result_http.code.to_s.start_with?('2') &&
               !JSON_DECODE.include?(result_mime)
-            total_size = result[:http]['Content-Length']&.to_i
+            total_size = result_http['Content-Length']&.to_i
             Log.log.debug('before write file')
             target_file = save_to_file
             # override user's path to path in header
@@ -416,7 +420,7 @@ module Aspera
             FileUtils.mkdir_p(File.dirname(target_file_tmp))
             limiter = TimerLimiter.new(0.5)
             File.open(target_file_tmp, 'wb') do |file|
-              result[:http].read_body do |fragment|
+              result_http.read_body do |fragment|
                 file.write(fragment)
                 written_size += fragment.length
                 RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
@@ -429,32 +433,32 @@ module Aspera
             file_saved = true
           end
         end
-        Log.log.debug{"result: code=#{result[:http].code} mime=#{result_mime}"}
+        Log.log.debug{"result: code=#{result_http.code} mime=#{result_mime}"}
         # sometimes there is a UTF8 char (e.g. (c) ), TODO : related to mime type encoding ?
-        # result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
-        # Log.log.debug{"result: body=#{result[:http].body}"}
+        # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
+        # Log.log.debug{"result: body=#{result_http.body}"}
         case result_mime
         when *JSON_DECODE
-          result[:data] = JSON.parse(result[:http].body) rescue result[:http].body
-          Log.dump(:result_data, result[:data])
+          result_data = JSON.parse(result_http.body) rescue result_http.body
+          Log.dump(:result_data, result_data)
         else # when MIME_TEXT
-          result[:data] = result[:http].body
+          result_data = result_http.body
         end
-        RestErrorAnalyzer.instance.raise_on_error(req, result)
+        RestErrorAnalyzer.instance.raise_on_error(req, {data: result_data, http: result_http})
         unless file_saved || save_to_file.nil?
           FileUtils.mkdir_p(File.dirname(save_to_file))
-          File.write(save_to_file, result[:http].body, binmode: true)
+          File.write(save_to_file, result_http.body, binmode: true)
         end
       rescue RestCallError => e
         do_retry = false
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
         do_retry ||= true if e.response.body.include?('failed: connect timed out') && RestParameters.instance.retry_on_timeout
         # AoC sometimes not available
-        do_retry ||= true if RestParameters.instance.retry_on_unavailable && UNAVAILABLE_CODES.include?(result[:http].code.to_s)
+        do_retry ||= true if RestParameters.instance.retry_on_unavailable && UNAVAILABLE_CODES.include?(result_http.code.to_s)
         # possibility to retry anything if it fails
         do_retry ||= true if RestParameters.instance.retry_on_error
         # not authorized: oauth token expired
-        if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
+        if @not_auth_codes.include?(result_http.code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization'] = oauth.authorization(refresh: true)
@@ -494,14 +498,20 @@ module Aspera
             content_type: content_type,
             save_to_file: save_to_file,
             exception: exception,
-            headers: headers
+            headers: headers,
+            ret: ret
           )
         end
         # raise exception if could not retry and not return error in result
         raise e if exception
       end
-      Log.log.debug{"result=http:#{result[:http]}, data:#{result[:data].class}"}
-      return result
+      Log.log.debug{"result=http:#{result_http}, data:#{result_data.class}"}
+      return case ret
+             when :data then result_data
+             when :resp then result_http
+             when :both then [result_data, result_http]
+             else Aspera.error_unexpected_value(ret){'Type of result for REST'}
+             end
     end
 
     #
@@ -511,27 +521,27 @@ module Aspera
 
     # Create: `POST`
     def create(subpath, params, **kwargs)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)
     end
 
     # Read: `GET`
     def read(subpath, query = nil, **kwargs)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query, **kwargs)[:data]
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query, **kwargs)
     end
 
     # Update: `PUT`
     def update(subpath, params, **kwargs)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)[:data]
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)
     end
 
     # Delete: `DELETE`
     def delete(subpath, params = nil, **kwargs)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params, **kwargs)[:data]
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params, **kwargs)
     end
 
     # Cancel: `CANCEL`
     def cancel(subpath, **kwargs)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON}, **kwargs)[:data]
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON}, **kwargs)
     end
 
     # Query entity by general search (read with parameter `q`)

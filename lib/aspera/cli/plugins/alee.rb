@@ -17,8 +17,8 @@ module Aspera
             nagios = Nagios.new
             begin
               api = Api::Alee.new(nil, nil, version: 'ping')
-              result = api.call(operation: 'GET')
-              raise "unexpected response: #{result[:http].body}" unless result[:http].body.eql?('pong')
+              http = api.read(nil, ret: :resp)
+              raise "unexpected response: #{http.body}" unless http.body.eql?('pong')
               nagios.add_ok('api', 'answered ok')
             rescue StandardError => e
               nagios.add_critical('api', e.to_s)

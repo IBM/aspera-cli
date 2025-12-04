@@ -33,7 +33,7 @@ module Aspera
               # Faspex is always HTTPS
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
-              response = api.call(operation: 'GET', subpath: Api::Faspex::PATH_API_DETECT)[:http]
+              response = api.read(Api::Faspex::PATH_API_DETECT, ret: :resp)
               next unless response.code.start_with?('2') && response.body.strip.empty?
               # end is at -1, and subtract 1 for "/"
               url_length = -2 - Api::Faspex::PATH_API_DETECT.length
@@ -293,28 +293,29 @@ module Aspera
           until folders_to_process.empty?
             path = folders_to_process.shift
             loop do
-              response = @api_v5.call(
+              data, http = @api_v5.call(
                 operation:    'POST',
                 subpath:      browse_endpoint,
                 query:        query,
                 content_type: Rest::MIME_JSON,
                 body:         {'path' => path, 'filters' => filters},
-                headers:      {'Accept' => Rest::MIME_JSON}
+                headers:      {'Accept' => Rest::MIME_JSON},
+                ret:          :both
               )
-              all_items.concat(response[:data]['items'])
+              all_items.concat(data['items'])
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
               end
-              folders_to_process.concat(response[:data]['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
+              folders_to_process.concat(data['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
               if use_paging
-                iteration_token = response[:http][Api::Faspex::HEADER_ITERATION_TOKEN]
+                iteration_token = http[Api::Faspex::HEADER_ITERATION_TOKEN]
                 break if iteration_token.nil? || iteration_token.empty?
                 query['iteration_token'] = iteration_token
               else
-                total_count = response[:data]['total_count'] if total_count.nil?
-                break if response[:data]['item_count'].eql?(0)
-                query['offset'] += response[:data]['item_count']
+                total_count = data['total_count'] if total_count.nil?
+                break if data['item_count'].eql?(0)
+                query['offset'] += data['item_count']
               end
               formatter.long_operation_running(all_items.count)
             end
@@ -627,12 +628,12 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              http_res = Rest.new(base_url: options.get_option(:url, mandatory: true))
-                .call(operation: 'GET', subpath: 'health', headers: {'Accept' => Rest::MIME_JSON})
-              http_res[:data].each do |k, v|
+              data, http = Rest.new(base_url: options.get_option(:url, mandatory: true))
+                .read('health', ret: :both)
+              data.each do |k, v|
                 nagios.add_ok(k, v.to_s)
               end
-              nagios.add_ok('version', http_res[:http]['X-IBM-Aspera']) if http_res[:http]['X-IBM-Aspera']
+              nagios.add_ok('version', http['X-IBM-Aspera']) if http['X-IBM-Aspera']
             rescue StandardError => e
               nagios.add_critical('core', e.to_s)
             end

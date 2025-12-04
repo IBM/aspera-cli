@@ -22,17 +22,18 @@ module Aspera
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 2)
               test_endpoint = 'login'
-              test_page = api.call(
+              http = api.call(
                 operation: 'GET',
                 subpath:   test_endpoint,
-                query:     {local: true}
+                query:     {local: true},
+                ret:       :resp
               )
-              next unless test_page[:http].body.include?('Aspera Console')
+              next unless http.body.include?('Aspera Console')
               version = 'unknown'
-              if (m = test_page[:http].body.match(/\(v([1-9]\..*)\)/))
+              if (m = http.body.match(/\(v([1-9]\..*)\)/))
                 version = m[1]
               end
-              url = test_page[:http].uri.to_s
+              url = http.uri.to_s
               return {
                 version: version,
                 url:     url[0..url.index(test_endpoint) - 2]

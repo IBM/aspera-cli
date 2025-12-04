@@ -55,8 +55,9 @@ module Aspera
           operation: 'GET',
           subpath:   bucket,
           headers:   {'Accept' => 'application/xml'},
-          query:     {'faspConnectionInfo' => nil}
-        )[:http].body
+          query:     {'faspConnectionInfo' => nil},
+          ret:       :resp
+        ).body
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
         Log.dump(:ats_info, ats_info)
         @storage_credentials = {

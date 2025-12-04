@@ -189,11 +189,10 @@ module Aspera
               data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: query_read_delete(default: list_query))
               return Main.result_object_list(data, total: total, fields: display_fields)
             end
-            resp = api.read(entity, query_read_delete)
-            return Main.result_empty if resp[:http].code == '204'
-            data = resp[:data]
+            data, http = api.read(entity, query_read_delete, ret: :both)
+            return Main.result_empty if http.code == '204'
             # TODO: not generic : which application is this for ?
-            if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
+            if http['Content-Type'].start_with?('application/vnd.api+json')
               Log.log.debug('is vnd.api')
               data = data[entity]
             end

@@ -24,11 +24,11 @@ module Aspera
             urls.each do |base_url|
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)
-              result = api.call(operation: 'GET', subpath: TEST_ENDPOINT, headers: {'Accept' => Rest::MIME_JSON}, query: {format: :json})
-              next unless result[:data]['remote_orchestrator_info']
-              url = result[:http].uri.to_s
+              data, http = api.read(TEST_ENDPOINT, query: {format: :json}, ret: :both)
+              next unless data['remote_orchestrator_info']
+              url = http.uri.to_s
               return {
-                version: result[:data]['remote_orchestrator_info']['orchestrator-version'],
+                version: data['remote_orchestrator_info']['orchestrator-version'],
                 url:     url[0..url.index(TEST_ENDPOINT) - 2]
               }
             rescue StandardError => e
@@ -73,7 +73,7 @@ module Aspera
         # @param http       [Boolean] if true, returns the HttpResponse, else
         def call_ao(endpoint, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
           # calls are all GET
-          call_args = {operation: 'GET', subpath: "api/#{endpoint}"}
+          call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both}
           ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
           call_args[:query] = args unless args.nil?
           unless format.nil?
@@ -88,9 +88,9 @@ module Aspera
             else Aspera.error_unexpected_value(ret_style)
             end
           end
-          result = @api_orch.call(**call_args)
-          return result[:http] if http
-          result = format.eql?('xml') ? XmlSimple.xml_in(result[:http].body, {'ForceArray' => xml_arrays}) : result[:data]
+          data, resp = @api_orch.call(**call_args)
+          return resp if http
+          result = format.eql?('xml') ? XmlSimple.xml_in(resp.body, {'ForceArray' => xml_arrays}) : data
           Log.dump(:data, result)
           return result
         end

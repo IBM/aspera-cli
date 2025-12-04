@@ -69,9 +69,9 @@ module Aspera
             base_url = "#{base_url}.#{Api::AoC::SAAS_DOMAIN_PROD}" unless base_url.include?('.')
             # AoC is only https
             return unless base_url.start_with?('https://')
-            res_http = Rest.new(base_url: base_url, redirect_max: 0).call(operation: 'GET', subpath: 'auth/ping', exception: false)[:http]
-            return if res_http['Location'].nil?
-            redirect_uri = URI.parse(res_http['Location'])
+            location = Rest.new(base_url: base_url, redirect_max: 0).call(operation: 'GET', subpath: 'auth/ping', exception: false, ret: :resp)['Location']
+            return if location.nil?
+            redirect_uri = URI.parse(location)
             od = Api::AoC.split_org_domain(URI.parse(base_url))
             return unless redirect_uri.path.end_with?("oauth2/#{od[:organization]}/login")
             # either in standard domain, or product name in page

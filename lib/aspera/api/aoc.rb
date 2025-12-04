@@ -89,7 +89,7 @@ module Aspera
         # @param url [String] URL of AoC public link
         # @return [Hash] information about public link, or nil if not a public link
         def link_info(url)
-          final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET')[:http].uri
+          final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET', ret: :resp).uri
           Log.dump(:final_uri, final_uri, level: :trace1)
           org_domain = split_org_domain(final_uri)
           if (m = final_uri.path.match(%r{/oauth2/([^/]+)/login$}))

@@ -56,10 +56,10 @@ module Aspera
       # Retrieve structure from cloud (CDN) with all versions available
       def versions
         if @connect_versions.nil?
-          javascript = cdn_api.call(operation: 'GET', subpath: VERSION_INFO_FILE)
+          http = cdn_api.read(VERSION_INFO_FILE, ret: :resp)
           # get result on one line
-          connect_versions_javascript = javascript[:http].body.gsub(/\r?\n\s*/, '')
-          Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
+          connect_versions_javascript = http.body.gsub(/\r?\n\s*/, '')
+          Log.dump(:javascript, connect_versions_javascript)
           # get javascript object only
           found = connect_versions_javascript.match(/^.*? = (.*);/)
           raise Cli::Error, 'Problem when getting connect versions from internet' if found.nil?

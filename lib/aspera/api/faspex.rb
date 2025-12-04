@@ -28,7 +28,7 @@ module Aspera
 
     def create_token
       # Exchange context (passcode) for code
-      resp = api.call(
+      http = api.call(
         operation: 'GET',
         subpath:   @path_authorize,
         query: {
@@ -37,10 +37,11 @@ module Aspera
           client_id:     client_id,
           redirect_uri:  @redirect_uri
         },
-        exception: false
+        exception: false,
+        ret:       :resp
       )
       # code / state located in redirected URL query
-      info = Rest.query_to_h(URI.parse(resp[:http]['Location']).query)
+      info = Rest.query_to_h(URI.parse(http['Location']).query)
       Log.dump(:info, info)
       raise Error, info['action_message'] if info['action_message']
       Aspera.assert(info['code']){'Missing code in answer'}
@@ -133,7 +134,7 @@ module Aspera
           case auth
           when :public_link
             # Get URL of final redirect of public link
-            redir_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
+            redir_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
             Log.dump(:redir_url, redir_url, level: :trace1)
             # get context from query
             encoded_context = Rest.query_to_h(URI.parse(redir_url).query)['context']
