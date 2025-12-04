@@ -16,12 +16,14 @@ Released: not yet.
 ### Issues Fixed
 
 * `aoc`: Restored command `admin workspace shared_folder :id list` which was since 4.11.0.
+* `direct`: When using `ascp4` do not set env var: `ASPERA_TEST_REDIS_DISABLE`, else it fails with: `Failed to initialize application`.
 
 ### Breaking Changes
 
 * `server`: By default, SSH option `use_agent` is now `false`.
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
 * `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
+* `preview`: Replace gem `mimemagic` with `marcel`.
 
 ## 4.24.2
 

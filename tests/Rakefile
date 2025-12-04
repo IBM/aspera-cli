@@ -20,6 +20,7 @@ STATE_FILE = TMP / 'state.yml'
 CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 CLI_PATH = BIN / Aspera::Cli::Info::CMD_NAME
 
+Aspera.assert(ENV.key?('ASPERA_CLI_TEST_CONF_FILE')){'Missing env var: ASPERA_CLI_TEST_CONF_FILE'}
 GOOD_CONFIG = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD = Pathname.new(Dir.home) / 'Downloads'

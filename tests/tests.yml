@@ -2373,7 +2373,7 @@ aocp_send_sh_meta_short:
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(TST_ASC_LCL_PATH)
 aocp_send_sh_meta_short2:
-  comment: Fails because missing metadata "Project Id"
+  $comment: Fails because missing metadata "Project Id"
   tags:
     - hide_fail
   depends_on:
@@ -3113,7 +3113,7 @@ aocauto2b:
     - --query=@json:{"show_org_workflows":"true"}
     - --scope=admin:all
 aocauto3:
-  comment: Verify what it should do, and not fail.
+  $comment: Verify what it should do, and not fail.
   depends_on:
     - wf_id
   tags:
@@ -3885,7 +3885,7 @@ conf_pset_6:
     - --p1=v1
     - --p2=v2
 conf_open:
-  comment: open configuration file in text editor
+  $comment: open configuration file in text editor
   tags:
     - tmp_conf
   command:
@@ -4746,7 +4746,7 @@ serv_hot_prep2:
     - mkdir
     - "@extend:@preset:server.upload_folder@/target_hot"
 serv_hot_run:
-  comment: First run transfers nothing because file is too recent
+  $comment: First run transfers nothing because file is too recent
   pre:
     - Pathname.new('source_hot').rmtree
     - Pathname.new('source_hot').mkdir
@@ -4770,7 +4770,7 @@ serv_hot_check:
   post:
     - sleep TEMPORIZE_CREATE
 serv_hot_run2:
-  comment: Second run transfers file
+  $comment: Second run transfers file
   depends_on:
     - serv_hot_check
   command:
@@ -5401,20 +5401,21 @@ f5_adm_sbx_del:
     - delete
     - "%name:john@example.com"
 f5_adm_evt_app:
+  $comment: Retrieve successful login in the last hour.
   command:
     - --preset=f5_admin
     - faspex5
     - admin
     - event
-    - app
-    - --query=@json:{"max":20}
+    - application
+    - --query=@ruby:{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}
 f5_adm_evt_web:
   command:
     - --preset=f5_admin
     - faspex5
     - admin
     - event
-    - web
+    - webhook
 f5_adm_sh_invite:
   command:
     - --preset=f5_admin

@@ -62,10 +62,13 @@ module Aspera
           session['direction'] = direction.to_s
           # generate name if not provided by user
           if !session.key?('name')
+            safe_char = Environment.instance.safe_filename_character
+            # from async man page:
+            # -N : can contain only ASCII alphanumeric, hyphen, and underscore characters
             session['name'] = Environment.instance.sanitized_filename(
               ([direction.to_s] + local_remote).map do |value|
-                Pathname(value).each_filename.to_a.last(2).join(Environment.instance.safe_filename_character)
-              end.join(Environment.instance.safe_filename_character)
+                Pathname(value).each_filename.to_a.last(2).join(safe_char)
+              end.join(safe_char).gsub(/[^A-Za-z0-9_-]/, safe_char)
             )
           end
         end

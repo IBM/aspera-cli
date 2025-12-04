@@ -4018,8 +4018,13 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both using a passphrase, only known by users sharing files.
-Files stay encrypted on server side.
+Content protection (Client-Side Encryption at Rest, CSEAR)) ensures that files remain encrypted while stored on the server.
+With CSEAR, the client encrypts files during upload and decrypts files during download, using a passphrase known only to the users sharing the files.
+
+- Upload: Files are encrypted on the client side before being sent to the server.
+- Download: Files are decrypted on the client side as they are retrieved from the server.
+
+At all times, files remain encrypted on the server; encryption and decryption occur exclusively on the client side.
 
 Activating CSEAR consists in using transfer spec parameters:
 
@@ -4031,6 +4036,11 @@ Example: parameter to download a Faspex package and decrypt on the fly
 ```shell
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
 ```
+
+> [!NOTE]
+> Faspex 5 requires package parameter `ear_enabled` set to `true` for CSEAR.
+> In that case the transfer spec parameter `content_protection` is automatically set.
+> `content_protection_password` is then required in all cases.
 
 #### Transfer Spec Examples
 
@@ -4355,18 +4365,17 @@ This option is available only for some resources: if you need it: try and see if
 ### Option: `query`
 
 The `query` option can generally be used to add URL parameters to commands that list resources.
-It takes either a `Hash` or an `Array`, corresponding to key/value pairs that appear in the query part of request.
+It takes either a `Hash`, corresponding to key/value pairs that appear in the query part of request.
 
 For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
 
-If the same parameter needs to be provided several times, then it's possible as well to provide an `Array` or 2-element `Array`: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
+If the same parameter needs to be provided several times, then it's possible as well to provide an `Array`.
 
-If PHP's style array is used, then one can use either:
+For example: `--query=@json:'{"p":["v1","v2"]}'` leads to query: `?p=v1&p=v2`.
 
-- `--query=@json:'{"a":["[]","v1","v2"]}'`
-- `--query=@json:'[["a[]","v1"],["a[]","v2"]]'`
+If PHP's style array is expected in the API, then just add `[]` to the name of the parameter.
 
-Both result in: `?a[]=v1&a[]=v2`.
+For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
 
 ### Plugins
 
@@ -6824,6 +6833,14 @@ If the lookup needs to be only on certain types, you can specify the field: `rec
 
 ```json
 {"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
+```
+
+To enable content protection (CSEAR), set parameter `ear_enabled` to `true` in the package creation payload (refer to Faspex package creation API).
+
+The following error is returned by Faspex, if CSEAR was not specified in the package creation and if it is configured as mandatory on the server:
+
+```text
+the provided encryption value (no) does not match the expected server side encryption value (yes)
 ```
 
 ### Faspex 5: Send a package with metadata
