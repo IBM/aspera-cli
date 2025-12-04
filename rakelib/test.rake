@@ -69,6 +69,8 @@ FILE_PAIR = TMP / 'file_pair_list.txt'
 
 SKIP_STATES = %w[passed skipped].freeze
 
+TEST_CASE_NS = :case
+
 FileUtils.cp(GOOD_CONFIG, TEST_CONFIG) unless TEST_CONFIG.exist?
 TST_ASC_LCL_PATH.write('This is a small test file') unless  TST_ASC_LCL_PATH.exist?
 TST_UTF_LCL_PATH.write('This is a small test file') unless  TST_UTF_LCL_PATH.exist?
@@ -205,15 +207,22 @@ namespace :test do
       Rake::Task["test:#{name}"].invoke
     end
   end
+  # Run all tests in declared order
+  desc 'Run all tests'
+  task :all do
+    tests.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+  end
+end
 
+namespace TEST_CASE_NS do
   # Create a Rake task for each test
   tests.each do |name, info|
     # puts "-> #{name}"
-    desc info['description'] || 'TODO'
+    desc info['description'] || '-'
 
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
-    task name => deps.map{ |d| "test:#{d}"} do
+    task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
       if SKIP_STATES.include?(state[name]) && !ENV['FORCE']
         # puts "[SKIP] #{name}"
         next
@@ -283,12 +292,6 @@ namespace :test do
       end
       save_state(state)
     end
-  end
-
-  # Run all tests in declared order
-  desc 'Run all tests'
-  task :run do
-    tests.each_key{ |name| Rake::Task["test:#{name}"].invoke}
   end
 end
 
