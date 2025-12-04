@@ -370,18 +370,21 @@ module Aspera
               }]
             end
             normalize_recipients(parameters)
+            # User specified content prot in tspec, but faspex requires in package creation
+            # `transfer_spec/upload` will set `content_protection`
+            if transfer.user_transfer_spec['content_protection'] && !parameters.key?('ear_enabled')
+              transfer.user_transfer_spec.delete('content_protection')
+              parameters['ear_enabled'] = true
+            end
             package = @api_v5.create('packages', parameters)
             shared_folder = options.get_option(:shared_folder)
             if shared_folder.nil?
               # send from local files
-              transfer_spec = @api_v5.call(
-                operation:    'POST',
-                subpath:      "packages/#{package['id']}/transfer_spec/upload",
-                query:        {transfer_type: Api::Faspex::TRANSFER_CONNECT},
-                content_type: Rest::MIME_JSON,
-                body:         {paths: transfer.source_list},
-                headers:      {'Accept' => Rest::MIME_JSON}
-              )[:data]
+              transfer_spec = @api_v5.create(
+                "packages/#{package['id']}/transfer_spec/upload",
+                {paths: transfer.source_list},
+                query: {transfer_type: Api::Faspex::TRANSFER_CONNECT}
+              )
               # well, we asked a TS for connect, but we actually want a generic one
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec))

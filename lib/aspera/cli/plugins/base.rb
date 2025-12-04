@@ -170,12 +170,11 @@ module Aspera
             if !delete_style.nil?
               one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
               Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)
-              api.call(
-                operation:    'DELETE',
-                subpath:      entity,
+              api.delete(
+                entity,
+                nil,
                 content_type: Rest::MIME_JSON,
-                body:         {delete_style => one_res_id},
-                headers:      {'Accept' => Rest::MIME_JSON}
+                body:         {delete_style => one_res_id}
               )
               return Main.result_status('deleted')
             end
@@ -190,7 +189,7 @@ module Aspera
               data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: query_read_delete(default: list_query))
               return Main.result_object_list(data, total: total, fields: display_fields)
             end
-            resp = api.call(operation: 'GET', subpath: entity, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
+            resp = api.read(entity, query_read_delete)
             return Main.result_empty if resp[:http].code == '204'
             data = resp[:data]
             # TODO: not generic : which application is this for ?
