@@ -589,7 +589,7 @@ See [Gemfile](Gemfile):
 | name | version | comment |
 |----------------------|---------|-----------------------------------------------------|
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
-| mimemagic | ~> 0.4 | for preview |
+| marcel | ~> 1.1 | for preview |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
@@ -603,7 +603,7 @@ Install like this:
 
 ```shell
 gem install grpc -v '~> 1.71'
-gem install mimemagic -v '~> 0.4'
+gem install marcel -v '~> 1.1'
 gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
@@ -3979,8 +3979,8 @@ ascli config ascp schema transferd --format=jsonpp
 | authentication | string | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
 | cipher | string | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`<br/>(`-c (conversion){enum}`) |
 | cipher_allowed | string | Returned by node API. Valid literals include `aes-128` and `none`.<br/>(C)<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm` |
-| content_protection | string | Enable client-side encryption at rest (CSEAR).<br/>Allowed values: `encrypt`, `decrypt`<br/>(`--file-crypt={enum}`) |
-| content_protection_password | string | Specifies CSEAR password.<br/>(env:`ASPERA_SCP_FILEPASS`) |
+| content_protection | string | Enable client-side content protection (CSEAR, encryption-at-rest).<br/>For uploads, set to `encrypt` to transfer encrypted files and store them on the server with the extension `.aspera-env`. (`aspera.conf` parameter `transfer_encryption_content_protection_extension`). To download and decrypt encrypted files, set to `decrypt`<br/>`content_protection_password` must be specified if this option is set.<br/>Allowed values: `encrypt`, `decrypt`<br/>(`--file-crypt={enum}`) |
+| content_protection_password | string | Password for encryption/decryption of transferred assets.<br/>(env:`ASPERA_SCP_FILEPASS`) |
 | cookie | string | Metadata for transfer specified by application.<br/>(env:`ASPERA_SCP_COOKIE`) |
 | create_dir | boolean | Create target directory if it doesn't already exist.<br/>If **all** the following conditions are met, then the `destination_root` specifies a filename instead of destination folder:<br/>- `create_dir` is `false`<br/>- A single source file is given on **command line**<br/>- The target folder specified by `destination_root` does not exist<br/>In all other cases, `destination_root` specifies a folder, and it is created if it does not already exist. I.e. if **any** of those conditions is met:<br/>- `create_dir` is `true`<br/>- Multiple source files are provided<br/>- List of source files are provided in a file (list or pair), default for Node API and `ascli`.<br/>- The target folder exists<br/>(`-d`) |
 | delete_before_transfer | boolean | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
@@ -4257,8 +4257,13 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both using a passphrase, only known by users sharing files.
-Files stay encrypted on server side.
+Content protection (Client-Side Encryption at Rest, CSEAR)) ensures that files remain encrypted while stored on the server.
+With CSEAR, the client encrypts files during upload and decrypts files during download, using a passphrase known only to the users sharing the files.
+
+- Upload: Files are encrypted on the client side before being sent to the server.
+- Download: Files are decrypted on the client side as they are retrieved from the server.
+
+At all times, files remain encrypted on the server; encryption and decryption occur exclusively on the client side.
 
 Activating CSEAR consists in using transfer spec parameters:
 
@@ -4270,6 +4275,11 @@ Example: parameter to download a Faspex package and decrypt on the fly
 ```shell
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
 ```
+
+> [!NOTE]
+> Faspex 5 requires package parameter `ear_enabled` set to `true` for CSEAR.
+> In that case the transfer spec parameter `content_protection` is automatically set.
+> `content_protection_password` is then required in all cases.
 
 #### Transfer Spec Examples
 
@@ -4882,18 +4892,17 @@ This option is available only for some resources: if you need it: try and see if
 ### Option: `query`
 
 The `query` option can generally be used to add URL parameters to commands that list resources.
-It takes either a `Hash` or an `Array`, corresponding to key/value pairs that appear in the query part of request.
+It takes either a `Hash`, corresponding to key/value pairs that appear in the query part of request.
 
 For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
 
-If the same parameter needs to be provided several times, then it's possible as well to provide an `Array` or 2-element `Array`: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
+If the same parameter needs to be provided several times, then it's possible as well to provide an `Array`.
 
-If PHP's style array is used, then one can use either:
+For example: `--query=@json:'{"p":["v1","v2"]}'` leads to query: `?p=v1&p=v2`.
 
-- `--query=@json:'{"a":["[]","v1","v2"]}'`
-- `--query=@json:'[["a[]","v1"],["a[]","v2"]]'`
+If PHP's style array is expected in the API, then just add `[]` to the name of the parameter.
 
-Both result in: `?a[]=v1&a[]=v2`.
+For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
 
 ### Plugins
 
@@ -7265,13 +7274,13 @@ access_key set_bearer_key self @file:my_private_key
 access_key show %id:self
 api_details
 asperabrowser
-async bandwidth %name:SYNC_NAME
-async counters %name:SYNC_NAME
+async bandwidth %name:my_sync_session_name
+async counters %name:my_sync_session_name
 async delete ALL
-async files %name:SYNC_NAME
-async files %name:SYNC_NAME --once-only=yes
+async files %name:my_sync_session_name
+async files %name:my_sync_session_name --once-only=yes
 async list
-async show %name:SYNC_NAME
+async show %name:my_sync_session_name
 async show ALL
 basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
@@ -7309,7 +7318,7 @@ ssync stop %name:my_node_sync
 ssync summary %name:my_node_sync
 stream list
 sync admin status /data/local_sync
-sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"SYNC_NAME","reset":true}'
+sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_sync_session_name","reset":true}'
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"reset":true}'
 transfer bandwidth_average
 transfer cancel nd_xfer_id
@@ -7720,6 +7729,14 @@ If the lookup needs to be only on certain types, you can specify the field: `rec
 
 ```json
 {"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
+```
+
+To enable content protection (CSEAR), set parameter `ear_enabled` to `true` in the package creation payload (refer to Faspex package creation API).
+
+The following error is returned by Faspex, if CSEAR was not specified in the package creation and if it is configured as mandatory on the server:
+
+```text
+the provided encryption value (no) does not match the expected server side encryption value (yes)
 ```
 
 ### Faspex 5: Send a package with metadata
