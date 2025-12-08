@@ -141,7 +141,7 @@ module Aspera
         end
 
         # Call block with same query using paging and response information.
-        # Block must return a hash with :data and :http keys
+        # Block must return an Array with data and http response
         # @return [Hash] {items: , total: }
         def call_paging(query: nil, formatter: nil)
           query = {} if query.nil?
@@ -159,14 +159,12 @@ module Aspera
           loop do
             new_query = query.clone
             new_query['page'] = current_page
-            result = yield(new_query)
-            Aspera.assert_type(result, Hash)
-            Aspera.assert(result.keys.sort.eql?(%i[data http])){"wrongs keys: #{result.keys}"}
-            Aspera.assert(result[:http])
-            total_count = result[:http]['X-Total-Count']&.to_i
+            result_data, result_http = yield(new_query)
+            Aspera.assert(result_http)
+            total_count = result_http['X-Total-Count']&.to_i
             page_count += 1
             current_page += 1
-            add_items = result[:data]
+            add_items = result_data
             break if add_items.nil?
             break if add_items.empty?
             # append new items to full list
@@ -284,8 +282,7 @@ module Aspera
       # @return [Hash] {items: , total: }
       def read_with_paging(subpath, query = nil, formatter: nil)
         return self.class.call_paging(query: query, formatter: formatter) do |paged_query|
-          # Use `call` instead of `read` to get headers
-          call(operation: 'GET', subpath: subpath, headers: {'Accept' => Rest::MIME_JSON}, query: paged_query)
+          read(subpath, query: paged_query, ret: :both)
         end
       end
 

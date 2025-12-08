@@ -59,25 +59,13 @@ module Aspera
 
       attr_reader :scope, :api, :path_token, :client_id
 
-      # helper method to create token as per RFC
+      # Helper method to create token as per RFC
+      # @return [HTTPResponse]
+      # @raise RestError if not 2XX code
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
-        payload = if @use_query
-          {
-            query: creation_params
-          }
-        else
-          {
-            content_type: Rest::MIME_WWW,
-            body:         creation_params
-          }
-        end
-        return @api.call(
-          operation: 'POST',
-          subpath:   @path_token,
-          headers:   {'Accept' => Rest::MIME_JSON},
-          **payload
-        )
+        return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
+        return @api.create(@path_token, creation_params, content_type: Rest::MIME_WWW, ret: :resp)
       end
 
       # @param add_secret [Boolean] Add secret in default call parameters
@@ -122,17 +110,18 @@ module Aspera
             Factory.instance.persist_mgr.delete(@token_cache_id)
             token_data = nil
             # lets try the existing refresh token
+            # NOTE: AoC admin token has no refresh, and lives by default 1800secs
             if !refresh_token.nil?
-              Log.log.info{"refresh=[#{refresh_token}]".bg_green}
-              # NOTE: AoC admin token has no refresh, and lives by default 1800secs
-              resp = create_token_call(optional_scope_client_id(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
-              if resp[:http].code.start_with?('2')
-                # save only if success
-                json_data = resp[:http].body
+              Log.log.info{"refresh token=[#{refresh_token}]".bg_green}
+              begin
+                http = create_token_call(optional_scope_client_id(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
+                # Save only if success
+                json_data = http.body
                 token_data = JSON.parse(json_data)
                 Factory.instance.persist_mgr.put(@token_cache_id, json_data)
-              else
-                Log.log.debug{"refresh failed: #{resp[:http].body}".bg_red}
+              rescue => e
+                # Refresh token can fail.
+                Log.log.warn{"Refresh failed: #{e}"}
               end
             end
           end
@@ -140,8 +129,9 @@ module Aspera
 
         # no cache, nor refresh: generate a token
         if token_data.nil?
-          resp = create_token
-          json_data = resp[:http].body
+          # Call the method-specific token creation
+          # which returns the result of create_token_call
+          json_data = create_token.body
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(@token_cache_id, json_data)
         end
