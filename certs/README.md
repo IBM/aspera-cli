@@ -36,7 +36,8 @@ Show the current certificate contents
 make show
 ```
 
-> Note: to provide a passphrase add argument: `-passin pass:_value_` to `openssl`
+> [!NOTE]
+> To provide a passphrase add argument: `-passin pass:_value_` to `openssl`
 
 Check that the signing key is the same as used to sign the certificate:
 
