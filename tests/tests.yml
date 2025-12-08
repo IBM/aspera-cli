@@ -5,11 +5,12 @@
 # - hide_fail : Do not show failure
 # Shares ------------------------------------------------------
 shares_health:
+  tags:
+    - must_fail
+    - nodoc
   command:
     - shares
     - health
-  tags:
-    - must_fail
 shares_health_bad:
   tags:
     - nodoc
@@ -240,6 +241,7 @@ shares_10:
 shares_sync_prepare:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - shares
     - files
@@ -274,6 +276,8 @@ serv_health:
     - transfer
     - --to-folder=@preset:server.upload_folder
 serv_health_bad:
+  tags:
+    - nodoc
   command:
     - server
     - health
@@ -318,9 +322,10 @@ serv_mkdir:
 serv_error1:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
-    - -Pserver2_user
+    - --preset=server2_user
     - --password=wrong
     - upload
     - $(PATH_TST_ASC_LCL)
@@ -328,9 +333,10 @@ serv_error1:
 serv_error2:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
-    - -Pserver2_user
+    - --preset=server2_user
     - --password=wrong
     - browse
     - /
@@ -338,6 +344,7 @@ serv_error2:
 serv_error3:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
     - -N
@@ -347,6 +354,7 @@ serv_error3:
 serv_error4:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
     - -N
@@ -358,6 +366,7 @@ serv_error4:
 serv_error5:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
     - -N
@@ -366,9 +375,11 @@ serv_error5:
     - wrong
     - --transfer-info=@json:{"resume":{"iter_max":0}}
 serv_ls_local:
+  tags:
+    - nodoc
   command:
-    - server
     - -N
+    - server
     - --url=local://
     - ls
     - .
@@ -404,6 +415,7 @@ serv_upload2:
 serv_upload3_prep:
   tags:
     - ignore_fail
+    - nodoc
   depends_on:
     - serv_mkdir
   command:
@@ -512,6 +524,7 @@ serv_sync_pull_conf_status_fail:
     - serv_sync_pull_conf_reset
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
     - sync
@@ -519,6 +532,8 @@ serv_sync_pull_conf_status_fail:
     - status
     - '@json:{"name":"serv_sync_pull_conf"}'
 serv_sync_pull_conf_status:
+  tags:
+    - nodoc
   depends_on:
     - serv_sync_pull_conf_reset
   command:
@@ -609,6 +624,7 @@ serv_down_from_node:
 serv_down_from_node_fail:
   tags:
     - hide_fail
+    - nodoc
   command:
     - server
     - download
@@ -671,6 +687,7 @@ serv_health_xfer_nagios:
 serv_health_xfer_nagios_fail:
   tags:
     - must_fail
+    - nodoc
   command:
     - server
     - health
@@ -680,6 +697,7 @@ serv_health_xfer_nagios_fail:
 serv_key_path:
   tags:
     - save_output
+    - nodoc
   command:
     - config
     - ascp
@@ -694,6 +712,8 @@ serv_key:
     - --ssh-options=@json:{"number_of_password_prompts":0}
     - --ssh-keys=$(read_value_from 'serv_key_path')
 serv_pr1:
+  tags:
+    - nodoc
   command:
     - server
     - upload
@@ -704,6 +724,8 @@ serv_pr1:
     - --transfer-info=@json:{"quiet":false}
     - --progress=no
 serv_pr2:
+  tags:
+    - nodoc
   command:
     - server
     - upload
@@ -717,11 +739,15 @@ cons_health:
     - console
     - health
 cons_health_bad:
+  tags:
+    - nodoc
   command:
     - console
     - health
     - --url=https://wrong.example.com
 cons_detect:
+  tags:
+    - nodoc
   command:
     - config
     - detect
@@ -750,6 +776,7 @@ cons_cur_lst_ex:
 cons_cur_lst_one:
   tags:
     - save_output
+    - nodoc
   command:
     - console
     - transfer
@@ -777,8 +804,8 @@ cons_cur_show_one1:
     - $(read_value_from('cons_cur_lst_one').split("\n").last)
 cons_cur_show_one2:
   tags:
-    - nodoc
     - ignore_fail
+    - nodoc
   depends_on:
     - cons_cur_lst_one
   command:
@@ -796,6 +823,7 @@ cons_sma_lst:
 cons_sma_sta:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - console
     - transfer
@@ -810,6 +838,8 @@ nd_health:
     - node
     - health
 nd_health_bad:
+  tags:
+    - nodoc
   command:
     - node
     - health
@@ -912,6 +942,8 @@ nd_folder5:
     - delete
     - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
 nd2:
+  tags:
+    - nodoc
   command:
     - node
     - upload
@@ -938,6 +970,8 @@ nd_slash:
     - node
     - slash
 nd2_http:
+  tags:
+    - nodoc
   command:
     - node
     - upload
@@ -972,6 +1006,7 @@ nd_2_nd_xferb:
     - nd_2_nd_xfer
   tags:
     - ignore_fail
+    - nodoc
   command:
     - node
     - delete
@@ -1060,6 +1095,7 @@ nd_xfer_lstb:
 nd_xfer_lst_once1:
   tags:
     - ignore_fail
+    - nodoc
   depends_on:
     - nd_xfer_lstb
   command:
@@ -1096,9 +1132,10 @@ nd_xfer_ops:
     - --progress=no
   post:
     - sleep 5
-nd_xfer_ops2:
+nd_xfer_id:
   tags:
     - save_output
+    - nodoc
   command:
     - node
     - transfer
@@ -1110,26 +1147,26 @@ nd_xfer_ops3:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_ops2')
+    - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops4:
   command:
     - node
     - transfer
     - modify
-    - $(read_value_from 'nd_xfer_ops2')
+    - $(read_value_from 'nd_xfer_id')
     - '@json:{"target_rate_kbps":10000}'
 nd_xfer_ops5:
   command:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_ops2')
+    - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops6:
   command:
     - node
     - transfer
     - cancel
-    - $(read_value_from 'nd_xfer_ops2')
+    - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops7:
   command:
     - node
@@ -1242,7 +1279,8 @@ nd_ake:
     - "@preset:aoc.ak_name"
     - find
     - "@preset:aoc.test_folder"
-    - "@ruby:->(f){f['name'].end_with?('.jpg')}"
+    - |
+      @ruby:->(f){f["name"].end_with?(".jpg")}
 nd_akf:
   command:
     - --preset=node_ak_adm
@@ -1310,8 +1348,7 @@ nd_ak_mkfileb:
     - "@preset:aoc.ak_name"
     - mkfile
     - /mkfile.txt
-    - "hello
-    - world"
+    - hello world
   post:
     - sleep TEMPORIZE_CREATE
 nd_ak_mklink:
@@ -1319,6 +1356,7 @@ nd_ak_mklink:
     - nd_ak_mkfile
   tags:
     - ignore_fail
+    - nodoc
   command:
     - --preset=node_ak_adm
     - node
@@ -1397,6 +1435,9 @@ nd_ak3b:
     - test_nd_ak3
     - --to-folder=$(TMP)
 nd_ak3c:
+  tags:
+    - hide_fail
+    - nodoc
   depends_on:
     - nd_ak3
   command:
@@ -1407,11 +1448,10 @@ nd_ak3c:
     - "@preset:aoc.ak_name"
     - show
     - /test_nd_ak3
-  tags:
-    - hide_fail
 nd_ak3d:
   tags:
     - hide_fail
+    - nodoc
   depends_on:
     - nd_ak3
   command:
@@ -1494,11 +1534,12 @@ nd_ak_bearer_set_key:
     - set_bearer_key
     - self
     - "@file:@preset:file.private_key"
-nd_ak_bearer_show_root:
+bearer_root_id:
   depends_on:
     - nd_ak_bearer_create
   tags:
     - save_output
+    - nodoc
   command:
     - -N
     - --preset=tst_node_preview
@@ -1522,7 +1563,7 @@ nd_ak_bearerf:
     - do
     - self
     - permission
-    - "%id:$(read_value_from 'nd_ak_bearer_show_root')"
+    - "%id:$(read_value_from 'bearer_root_id')"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearerg:
@@ -1540,11 +1581,12 @@ nd_ak_bearerg:
     - /
     - show
     - 1
-nd_ak_bearerh:
+node_bearer_token:
   depends_on:
     - nd_ak_bearer_create
   tags:
     - save_output
+    - nodoc
   command:
     - -N
     - --preset=tst_node_preview
@@ -1560,12 +1602,12 @@ nd_ak_beareri:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
-    - --password=Bearer $(read_value_from 'nd_ak_bearerh')
-    - --root-id=$(read_value_from 'nd_ak_bearer_show_root')
+    - --password=Bearer $(read_value_from 'node_bearer_token')
+    - --root-id=$(read_value_from 'bearer_root_id')
     - access_key
     - do
     - self
-    - br
+    - browse
     - /
 nd_ak_bearer_del_perm:
   depends_on:
@@ -1619,15 +1661,17 @@ aoc_wizardc:
     - --username=@preset:aoc.user_email
     - --use-generic-client=yes
 aoc_wizard_2:
+  tags:
+    - hide_fail
+    - nodoc
   command:
     - config
     - tokens
     - flush
-  tags:
-    - hide_fail
 aoc_wizard_2b:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - tokens
@@ -1762,6 +1806,8 @@ aoc_webauth:
     - profile
     - show
 aoc_webauthb:
+  tags:
+    - nodoc
   command:
     - --preset=aoc_web
     - aoc
@@ -1859,6 +1905,7 @@ aoc_some_folderb:
 aoc_tstdst:
   tags:
     - ignore_fail
+    - nodoc
   depends_on:
     - aoc_some_folder
   command:
@@ -1869,6 +1916,8 @@ aoc_tstdst:
   post:
     - sleep TEMPORIZE_FILE
 aoc_tstdstb:
+  tags:
+    - nodoc
   command:
     - aoc
     - files
@@ -1930,6 +1979,7 @@ aocndinf:
     - aocftr
   tags:
     - save_output
+    - nodoc
   command:
     - aoc
     - files
@@ -1965,20 +2015,24 @@ aocfbearnode:
     - bearer
     - /
 aocfdownd:
+  tags:
+    - nodoc
   depends_on:
     - aocftr
   command:
     - aoc
     - files
-    - down
+    - download
     - --to-folder=$(TMP)
     - "@extend:testdst/@preset:file.asc_name@"
     - testdst/$(CONF_DATA['file']['utf_name'])
 aocfdowndb:
+  tags:
+    - nodoc
   command:
     - aoc
     - files
-    - down
+    - download
     - --to-folder=$(TMP)
     - "@extend:testdst/@preset:file.asc_name@"
 aocfdownc:
@@ -2064,6 +2118,7 @@ aoc_file_id_1:
     - aocftr
   tags:
     - save_output
+    - nodoc
   command:
     - aoc
     - files
@@ -2099,6 +2154,7 @@ aoc_file_id_4:
 aoc_file_id_5:
   tags:
     - ignore_fail
+    - nodoc
   depends_on:
     - aocftr
   command:
@@ -2107,6 +2163,8 @@ aoc_file_id_5:
     - mkdir
     - "@preset:aoc.test_folder"
 aoc_file_id_6:
+  tags:
+    - nodoc
   depends_on:
     - aoc_file_id_5
   command:
@@ -2121,6 +2179,8 @@ aoc_file_id_6:
     - puts 'waiting for preview'
     - sleep 60
 aoc_file_id_7:
+  tags:
+    - nodoc
   depends_on:
     - aoc_file_id_5
   command:
@@ -2259,12 +2319,13 @@ aocp2:
     - aoc
     - packages
     - list
-aocp3:
+package_id3:
   depends_on:
     - aoc_pack_send1
   tags:
     - save_output
     - wait_non_empty_output
+    - nodoc
   command:
     - aoc
     - packages
@@ -2280,7 +2341,7 @@ aocp3b:
     - aoc
     - packages
     - receive
-    - $(read_value_from 'aocp3')
+    - $(read_value_from 'package_id3')
     - --to-folder=$(TMP)
 aocp3c:
   depends_on:
@@ -2289,7 +2350,7 @@ aocp3c:
     - aoc
     - packages
     - receive
-    - $(read_value_from 'aocp3')
+    - $(read_value_from 'package_id3')
     - --to-folder=$(TMP)
     - /
     - --package-folder=name
@@ -2300,7 +2361,7 @@ aocp3d:
     - aoc
     - packages
     - browse
-    - $(read_value_from 'aocp3')
+    - $(read_value_from 'package_id3')
     - /
 aocp4:
   command:
@@ -2380,6 +2441,7 @@ aocp_send_sh_meta_short2:
   $comment: Fails because missing metadata "Project Id"
   tags:
     - hide_fail
+    - nodoc
   depends_on:
     - aocp_recv_init
   command:
@@ -2469,9 +2531,10 @@ aoc_adm_ws_lst3:
     - shared_folder
     - "%name:@preset:aoc.other_workspace"
     - list
-aoc_adm_ws_lst4:
+shared_folder_id:
   tags:
     - save_output
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -2491,7 +2554,7 @@ aoc_adm_ws_lst5:
     - shared_folder
     - "%name:@preset:aoc.other_workspace"
     - member
-    - $(read_value_from 'aoc_adm_ws_lst4')
+    - $(read_value_from 'shared_folder_id')
     - list
 aoc_adm_nd_events:
   command:
@@ -2618,6 +2681,8 @@ aoc_adm_nd_mkdir:
   post:
     - sleep TEMPORIZE_CREATE
 aoc_adm_nd_brse:
+  tags:
+    - nodoc
   depends_on:
     - aoc_adm_nd_mkdir
   command:
@@ -2670,9 +2735,10 @@ aoc15:
       Subject: <%=ev["files_completed"]%> files received
       
       <%=ev.to_yaml%>
-aoc_ana_tr:
+aoc_transfer_id:
   tags:
     - save_output
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -2684,7 +2750,7 @@ aoc_ana_tr:
     - --fields=uuid
 aoc_ana_files:
   depends_on:
-    - aoc_ana_tr
+    - aoc_transfer_id
   command:
     - --preset=aoc_admin
     - aoc
@@ -2693,7 +2759,7 @@ aoc_ana_files:
     - files
     - organization
     - ''
-    - $(read_value_from 'aoc_ana_tr')
+    - $(read_value_from 'aoc_transfer_id')
 aoc16:
   command:
     - --preset=aoc_admin
@@ -2848,9 +2914,10 @@ aoccltregb:
     - admin
     - client_registration_token
     - list
-aoccltregc:
+client_reg_id:
   tags:
     - save_output
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -2868,7 +2935,7 @@ aoccltregd:
     - admin
     - client_registration_token
     - delete
-    - $(read_value_from 'aoccltregc')
+    - $(read_value_from 'client_reg_id')
 aocadmndcr:
   tags:
     - ignore_fail
@@ -2886,6 +2953,7 @@ aocadmndcr:
 aocadmndcrb:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -2907,6 +2975,8 @@ aocadmndcrc:
     - mkdir
     - test_shared_folder
 aocadmndcrd:
+  tags:
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3035,6 +3105,7 @@ aocat8b:
 aocat9:
   tags:
     - hide_fail
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3048,6 +3119,7 @@ aocat9:
 aocat10:
   tags:
     - hide_fail
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3071,6 +3143,7 @@ aocat11:
 aocat13:
   tags:
     - hide_fail
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3090,6 +3163,7 @@ aocauto1:
 wf_id:
   tags:
     - save_output
+    - nodoc
   depends_on:
     - aocauto1
   command:
@@ -3122,6 +3196,7 @@ aocauto3:
     - wf_id
   tags:
     - ignore_fail
+    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3152,12 +3227,15 @@ orch_health:
 orch_health_bad:
   tags:
     - hide_fail
+    - nodoc
   command:
     - orchestrator
     - health
     - --url=https://wrong.url
     - --format=nagios
 orch_detect:
+  tags:
+    - nodoc
   command:
     - config
     - detect
@@ -3346,6 +3424,7 @@ at12:
 at13:
   tags:
     - hide_fail
+    - nodoc
   command:
     - ats
     - access_key
@@ -3354,6 +3433,7 @@ at13:
 at14:
   tags:
     - hide_fail
+    - nodoc
   command:
     - ats
     - access_key
@@ -3469,25 +3549,30 @@ sync_create_prep1:
     - nodoc
   command:
     - server
-    - -Pserver2_user
+    - --preset=server2_user
     - delete
     - "@preset:sync.remote_path"
 sync_create_prep2:
+  tags:
+    - nodoc
   depends_on:
     - sync_create_prep1
   command:
-    - -Pserver2_user
+    - --preset=server2_user
     - server
     - mkdir
     - "@preset:sync.remote_path"
 sync_create_prep3:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - node
     - delete
     - "@preset:sync.local_path"
 sync_create_prep4:
+  tags:
+    - nodoc
   depends_on:
     - sync_create_prep3
   command:
@@ -3600,6 +3685,7 @@ sync_other_delete:
 sync_other_delete_fail:
   tags:
     - hide_fail
+    - nodoc
   command:
     - node
     - ssync
@@ -3613,6 +3699,7 @@ conf_detect:
 conf_detectb:
   tags:
     - hide_fail
+    - nodoc
   command:
     - config
     - detect
@@ -3633,6 +3720,8 @@ conf_sync_spec:
     - sync
     - spec
 conf_sync_trans:
+  tags:
+    - nodoc
   command:
     - config
     - sync
@@ -3705,6 +3794,7 @@ conf_ascp_prod:
 conf_ascp_use:
   tags:
     - tmp_conf
+    - nodoc
   command:
     - config
     - ascp
@@ -3753,6 +3843,7 @@ conf_ascp_6b:
 conf_ascp_sdk_folder:
   tags:
     - save_output
+    - nodoc
   command:
     - --show-config
     - --fields=sdk_folder
@@ -3760,7 +3851,7 @@ conf_ascp_install:
   depends_on:
     - conf_ascp_sdk_folder
   pre:
-#    - FileUtils.rm_rf()
+#   - FileUtils.rm_rf()
     - puts(read_value_from('conf_ascp_sdk_folder'))
   command:
     - config
@@ -3795,6 +3886,7 @@ conf_ascp_installe:
 conf_ascp_installf:
   tags:
     - save_output
+    - nodoc
   command:
     - config
     - transferd
@@ -3802,10 +3894,12 @@ conf_ascp_installf:
     - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
     - --fields=url
 conf_ascp_installg:
+  tags:
+    - nodoc
   depends_on:
     - conf_ascp_installf
   command:
-    - conf
+    - config
     - download
     - $(read_value_from 'conf_ascp_installf')
     - --to-folder=$(TMP)
@@ -3837,6 +3931,8 @@ conf_pset_1b:
     - conf_name
     - param
 conf_pset_1c:
+  tags:
+    - nodoc
   command:
     - config
     - preset
@@ -3953,6 +4049,8 @@ conf_initdemo:
     - config
     - initdemo
 conf_gem2:
+  tags:
+    - nodoc
   command:
     - config
     - gem
@@ -3960,6 +4058,8 @@ conf_gem2:
     - --http-proxy=http://test1
     - --http-options=@json:{"user_agent":"test1"}
 conf_gem2b:
+  tags:
+    - nodoc
   command:
     - config
     - coffee
@@ -3967,6 +4067,8 @@ conf_gem2b:
     - --http-options=@json:{"ssl_options":["CIPHER_SERVER_PREFERENCE","-NETSCAPE_CA_DN_BUG"]}
     - --insecure=yes
 conf_vault_macos:
+  tags:
+    - nodoc
   command:
     - -N
     - config
@@ -3976,6 +4078,7 @@ conf_vault_macos:
 conf_vault_macosb:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - -N
     - config
@@ -3984,6 +4087,8 @@ conf_vault_macosb:
     - '@json:{"label":"foo"}'
     - --vault=@json:{"type":"system"}
 conf_vault_macosc:
+  tags:
+    - nodoc
   command:
     - -N
     - config
@@ -3994,6 +4099,7 @@ conf_vault_macosc:
 conf_vault_macosd:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - -N
     - config
@@ -4067,6 +4173,7 @@ conf_preset_ask:
   stdin: "username\npassword\n\nthe_user\nthe_pass\n"
   tags:
     - tmp_conf
+    - nodoc
   command:
     - config
     - preset
@@ -4075,6 +4182,7 @@ conf_preset_ask:
 conf_preset_secure:
   tags:
     - tmp_conf
+    - nodoc
   command:
     - config
     - preset
@@ -4083,6 +4191,7 @@ conf_preset_secure:
 conf_vault_pass:
   tags:
     - tmp_conf
+    - nodoc
   command:
     - config
     - vault
@@ -4091,6 +4200,7 @@ conf_vault_pass:
 conf_vault_pass2:
   tags:
     - tmp_conf
+    - nodoc
   command:
     - config
     - preset
@@ -4126,6 +4236,7 @@ conf_echo_fail1:
   tags:
     - must_fail
     - tmp_conf
+    - nodoc
   command:
     - config
     - echo
@@ -4134,6 +4245,7 @@ conf_echo_fail2:
   tags:
     - must_fail
     - tmp_conf
+    - nodoc
   command:
     - config
     - echo
@@ -4142,14 +4254,19 @@ conf_echo_fail3:
   tags:
     - must_fail
     - tmp_conf
+    - nodoc
   command:
     - config
     - echo
     - "@vault:my_preset.bad"
 conf_help_1:
+  tags:
+    - nodoc
   command:
     - -h
 conf_help_2:
+  tags:
+    - nodoc
   command:
     - --bash-comp
 conf_coffee_1:
@@ -4201,6 +4318,8 @@ conf_plugins2:
     - my_command
     - $(TMP)
 conf_plugins3:
+  tags:
+    - nodoc
   depends_on:
     - conf_plugins2
   command:
@@ -4231,6 +4350,7 @@ conf_pub_key:
 conf_genkey_fail:
   tags:
     - hide_fail
+    - nodoc
   command:
     - config
     - genkey
@@ -4355,6 +4475,7 @@ conf_echo_picture:
 conf_echo_fail2b:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - echo
@@ -4362,6 +4483,7 @@ conf_echo_fail2b:
 conf_echo_fail4:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - echo
@@ -4377,7 +4499,7 @@ conf_echo_stdbin:
   command:
     - config
     - echo
-    - "@lines:@stdbin:"
+    - "@stdbin:"
 conf_echo_stdin_csv:
   stdin: "t1,t2,t3\na,b,d\nd,e,f"
   command:
@@ -4391,48 +4513,64 @@ conf_echo_stdin_zlib:
     - echo
     - "@zlib:@stdin:"
 conf_echo_json_format_text:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=text
 conf_echo_json_format_ruby:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=ruby
 conf_echo_json_format_json:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=json
 conf_echo_json_format_jsonpp:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=jsonpp
 conf_echo_json_format_yaml:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=yaml
 conf_echo_json_format_table:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=table
 conf_echo_json_format_csv:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --format=csv
 conf_echo_json_a:
+  tags:
+    - nodoc
   command:
     - config
     - echo
@@ -4440,30 +4578,40 @@ conf_echo_json_a:
     - --format=csv
     - --table=@json:{"headers":true,"force_quotes":true}
 conf_echo_json_b:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --fields=@json:["id"]
 conf_echo_json_c:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --fields=@re:i+
 conf_echo_json_fields_ruby:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --fields=@ruby:->(f){f.eql?("id")}
 conf_echo_json_select_ruby:
+  tags:
+    - nodoc
   command:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
     - --select=@ruby:->(r){r["id"].eql?(8)}
 conf_extended1:
+  tags:
+    - nodoc
   expect: '@file:foo'
   command:
     - config
@@ -4471,6 +4619,8 @@ conf_extended1:
     - '@val:@file:foo'
     - --format=text
 conf_extended2:
+  tags:
+    - nodoc
   expect: 'foo'
   command:
     - config
@@ -4478,6 +4628,8 @@ conf_extended2:
     - '@base64:Zm9v'
     - --format=text
 conf_extended3:
+  tags:
+    - nodoc
   expect: '["1", "2"]'
   command:
     - config
@@ -4485,6 +4637,8 @@ conf_extended3:
     - '@lines:@json:"1\n2\n"'
     - --format=ruby
 conf_extended4:
+  tags:
+    - nodoc
   expect: '["1", "2"]'
   command:
     - config
@@ -4492,6 +4646,8 @@ conf_extended4:
     - '@list:,1,2'
     - --format=ruby
 conf_extended5:
+  tags:
+    - nodoc
   expect: '["1", "2"]'
   command:
     - config
@@ -4499,6 +4655,8 @@ conf_extended5:
     - '@json:["1","2"]'
     - --format=ruby
 conf_extended6:
+  tags:
+    - nodoc
   expect: '[1, 2]'
   command:
     - config
@@ -4513,6 +4671,7 @@ conf_interactive:
 conf_hint:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - test
@@ -4522,6 +4681,7 @@ conf_hint:
 config_hint_a:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - test
@@ -4531,6 +4691,7 @@ config_hint_a:
 config_hint_b:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - test
@@ -4540,6 +4701,7 @@ config_hint_b:
 config_hint_c:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - test
@@ -4549,6 +4711,7 @@ config_hint_c:
 config_hint_d:
   tags:
     - must_fail
+    - nodoc
   command:
     - config
     - test
@@ -4585,8 +4748,10 @@ config_log_custom:
     - file
     - --log-level=debug
     - |
-      --log-format=@ruby:->(s,d,p,m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}
+      --log-format=@ruby:->(s, d, p, m){"#{d.strftime("%Y-%m-%d %H:%M:%S")} - #{p} - #{s} - #{m}\n"}
 config_log_all:
+  tags:
+    - nodoc
   command:
     - config
     - echo
@@ -4738,6 +4903,7 @@ prev_folder:
 serv_hot_prep:
   tags:
     - ignore_fail
+    - nodoc
   command:
     - server
     - delete
@@ -4848,6 +5014,8 @@ f5_health:
     - health
     - --url=@preset:faspex5_user.url
 f5_health_bad:
+  tags:
+    - nodoc
   command:
     - -N
     - faspex5
@@ -4856,6 +5024,7 @@ f5_health_bad:
 f5_health_nagios:
   tags:
     - must_fail
+    - nodoc
   command:
     - -N
     - faspex5
@@ -4877,6 +5046,8 @@ f5_wizard:
     - --key-path=@preset:file.private_key
     - --preset=faspex5_user
 f5_wizardb:
+  tags:
+    - nodoc
   command:
     - config
     - wizard
@@ -4886,6 +5057,8 @@ f5_wizardb:
     - --url=
     - --username=a@b.c
 f5_wizardc:
+  tags:
+    - nodoc
   command:
     - config
     - wizard
@@ -4899,6 +5072,7 @@ f5_wizardc:
 f5_detect_fail:
   tags:
     - hide_fail
+    - nodoc
   command:
     - config
     - detect
@@ -4968,6 +5142,7 @@ f5_sh_folder_br:
 f5_p3a:
   tags:
     - save_output
+    - nodoc
   command:
     - faspex5
     - packages
@@ -4993,6 +5168,7 @@ f5_p3b:
     - f5_p3a
   tags:
     - save_output
+    - nodoc
   command:
     - faspex5
     - packages
@@ -5075,6 +5251,7 @@ f5_pack_shboxc:
     - f5_pack_shboxb
   tags:
     - save_output
+    - nodoc
   command:
     - faspex5
     - packages
@@ -5144,6 +5321,7 @@ f5_pack_wrkgrpc:
     - f5_pack_wrkgrp
   tags:
     - save_output
+    - nodoc
   command:
     - faspex5
     - packages
@@ -5522,6 +5700,7 @@ f5_invite_id:
     - f5_invite_list
   tags:
     - save_output
+    - nodoc
   command:
     - faspex5
     - invitation
@@ -5529,6 +5708,8 @@ f5_invite_id:
     - --fields=id
     - --format=csv
 f5_invited:
+  tags:
+    - nodoc
   depends_on:
     - f5_invite_id
   command:
@@ -5703,6 +5884,7 @@ faspio_bclean_list:
     - faspio_bcreate
   tags:
     - save_output
+    - nodoc
   command:
     - faspio
     - bridges
@@ -5732,6 +5914,8 @@ f4_health:
     - faspex
     - health
 f4_health_bad:
+  tags:
+    - nodoc
   command:
     - faspex
     - health
@@ -5739,6 +5923,7 @@ f4_health_bad:
 f4_detect:
   tags:
     - faspex
+    - nodoc
   command:
     - config
     - detect
@@ -5771,6 +5956,7 @@ f4_prs:
     - f4_pack_send
   tags:
     - save_output
+    - nodoc
   command:
     - faspex
     - package
@@ -5789,6 +5975,7 @@ f4_prsb:
 f4_prsc:
   tags:
     - save_output
+    - nodoc
   command:
     - faspex
     - package
@@ -5809,6 +5996,7 @@ f4_prsd:
 f4_pria:
   tags:
     - save_output
+    - nodoc
   command:
     - faspex
     - package
@@ -5827,6 +6015,7 @@ f4_prib:
 f4_prl:
   tags:
     - hide_fail
+    - nodoc
   command:
     - faspex
     - package
@@ -5956,6 +6145,7 @@ f4_db1b:
 f4_db1c:
   tags:
     - save_output
+    - nodoc
   command:
     - faspex
     - package
@@ -5990,6 +6180,7 @@ f4_db1f:
 f4_db1g:
   tags:
     - save_output
+    - nodoc
   command:
     - faspex
     - package

@@ -20,6 +20,7 @@ require 'yaml'
 require 'erb'
 require 'English'
 require_relative '../package/build_tools'
+require_relative '../package/folders'
 
 # Log control
 Aspera::Log.instance.level = :info
@@ -276,8 +277,31 @@ class DocHelper
     generate_help(:asession)
   end
 
+  REPLACEMENTS_YAML = [
+    ['@extend:', ''],
+    [/\$\(TMP\)$/, '.'],
+    [/\$\(read_value_from '([^']+)'\)$/, '\1'],
+    [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
+    [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
+    [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
+    [%r{\$\(TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
+    ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
+    [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
+    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
+    ['$(PATH_TST_ASC_LCL)', 'test_file.bin'],
+    ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
+    ['$(TST_MED_LCL_PATH)', 'test_file.bin'],
+    ["$(CONF_DATA['file']['utf_name'])", 'test_file.bin'],
+    ['my_asc_name', 'test_file.bin'],
+    ['"my_password"', '"my_password_here"'],
+    ['$(PATH_FILE_LIST)', 'filelist.txt'],
+    ['$(PATH_FILE_PAIR_LIST)', 'file_pair_list.txt'],
+    ['$(TST_MED_FILENAME)', 'test_file.bin'],
+    ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
+    [/^--base=.*/, '--base=test']
+  ]
   # various replacements from commands in test makefile
-  REPLACEMENTS = [
+  REPLACEMENTS_MAKEFILE = [
     # replace command name
     [/^.*\$\(INCMAN\)/, ''],
     [/\$\((CLI|BEG|END)_[A-Z_]+\)/, ''],
@@ -328,17 +352,38 @@ class DocHelper
   def all_test_commands_by_plugin
     if @commands.nil?
       commands = {}
-      File.open(@paths[:makefile]) do |file|
-        file.each_line do |line|
-          next unless line.include?('$(INCMAN)')
-          line = line.chomp
-          REPLACEMENTS.each{ |replace| line = line.gsub(replace.first, replace.last)}
+      if ENV['NEW']
+        all_tests = BuildTools.yaml_safe_load(Paths::PATH_TEST_DEFS.read)
+        all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
+          line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
+            next cmd unless cmd.is_a?(String)
+            REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
+            if !cmd.start_with?('-', '@') && cmd.include?(' ')
+              "'#{cmd}'"
+            else
+              cmd
+            end
+          end.join(' ')
           line = line.strip.squeeze(' ')
           Aspera::Log.log.debug(line)
           # plugin name shall be the first argument: command
           plugin = line.split(' ').first
           commands[plugin] ||= []
           commands[plugin].push(line.gsub(/^#{plugin} /, ''))
+        end
+      else
+        File.open(@paths[:makefile]) do |file|
+          file.each_line do |line|
+            next unless line.include?('$(INCMAN)')
+            line = line.chomp
+            REPLACEMENTS_MAKEFILE.each{ |replace| line = line.gsub(replace.first, replace.last)}
+            line = line.strip.squeeze(' ')
+            Aspera::Log.log.debug(line)
+            # plugin name shall be the first argument: command
+            plugin = line.split(' ').first
+            commands[plugin] ||= []
+            commands[plugin].push(line.gsub(/^#{plugin} /, ''))
+          end
         end
       end
       commands.each_key do |plugin|
@@ -366,6 +411,21 @@ class DocHelper
       all.concat(v)
     end
     return all.join("\n")
+  end
+
+  HEADING_PATTERN = /^#[^:]*: [a-z]/
+
+  def check_headings(file_path)
+    error = false
+    File.open(file_path) do |file|
+      file.each_line do |line|
+        if line.match?(HEADING_PATTERN)
+          error = true
+          Aspera::Log.log.error{"Heading shall be capitalized: #{line}"}
+        end
+      end
+    end
+    raise 'Check headings specified above' if error
   end
 
   # read markdown file line by line, and check that all links are valid
@@ -406,6 +466,7 @@ class DocHelper
 
   # main function to generate README.md
   def generate
+    check_headings(@paths[:template])
     check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
     # get current plugins
     plugin_manager = Aspera::Cli::Plugins::Factory.instance

@@ -9,13 +9,12 @@ require 'aspera/environment'
 require_relative '../package/build_tools'
 require_relative '../package/folders'
 
-include Folders
+include Paths
 include BuildTools
 
 Aspera.assert(ENV.key?('ASPERA_CLI_TEST_CONF_FILE')){'Missing env var: ASPERA_CLI_TEST_CONF_FILE'}
 PATH_CONF_FILE = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
 
-PATH_TEST_DEFS = TST / 'tests.yml'
 PATH_TESTS_STATES = TMP / 'state.yml'
 
 # override $HOME/.aspera/ascli
@@ -73,14 +72,12 @@ TEST_CASE_NS = :case
 FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
 PATH_TST_ASC_LCL.write('This is a small test file') unless  PATH_TST_ASC_LCL.exist?
 PATH_TST_UTF_LCL.write('This is a small test file') unless  PATH_TST_UTF_LCL.exist?
-
 PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
 # @preset:server.inside_folder@/other_name
 PATH_FILE_PAIR_LIST.write([
   PATH_TST_ASC_LCL,
   File.join(CONF_DATA['server']['inside_folder'], 'other_name')
 ].map(&:to_s).join("\n"))
-
 PATH_SHARES_SYNC.mkpath
 PATH_TMP_STATES.mkpath
 (PATH_SHARES_SYNC / 'sample_file.txt').write('Some sample file')
@@ -88,7 +85,6 @@ FileUtils.mkdir_p(PATH_TST_LCL_FOLDER / 'sub')
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
-
 TEST_DEFS = yaml_safe_load(PATH_TEST_DEFS.read)
 ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
 unsupported_keys = TEST_DEFS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
