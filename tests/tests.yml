@@ -141,7 +141,7 @@ shares_2:
     - files
     - upload
     - --to-folder=@preset:shares.share_folder
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 shares_3:
   depends_on:
     - shares_2
@@ -167,7 +167,7 @@ shares_5:
     - files
     - upload
     - --to-folder=@preset:shares.share_folder
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --transfer=httpgw
     - --preset=no_wss
     - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
@@ -186,7 +186,7 @@ shares_6bis:
     - shares
     - files
     - upload
-    - $(TST_LCL_FOLDER)
+    - $(PATH_TST_LCL_FOLDER)
     - --to-folder=@preset:shares.share_folder
     - --transfer=httpgw
     - --preset=no_wss
@@ -253,7 +253,7 @@ shares_sync_1:
     - files
     - sync
     - push
-    - $(SHARES_SYNC)
+    - $(PATH_SHARES_SYNC)
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
     - '@json:{"reset":true}'
 shares_sync_2:
@@ -264,7 +264,7 @@ shares_sync_2:
     - files
     - sync
     - push
-    - $(SHARES_SYNC)
+    - $(PATH_SHARES_SYNC)
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
 # Server ------------------------------------------------------
 serv_health:
@@ -323,7 +323,7 @@ serv_error1:
     - -Pserver2_user
     - --password=wrong
     - upload
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --transfer-info=@json:{"monitor":false,"resume":{"iter_max":0}}
 serv_error2:
   tags:
@@ -417,7 +417,7 @@ serv_upload3:
     - server
     - upload
     - --src-type=pair
-    - --sources=@json:@extend:["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]
+    - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server.inside_folder@/other_name_3"]
     - --transfer-info.quiet=false
     - --progress=no
 serv_upload4:
@@ -427,7 +427,7 @@ serv_upload4:
     - server
     - upload
     - --sources=@ts
-    - --ts=@json:@extend:{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}
+    - --ts=@json:@extend:{"paths":[{"source":"$(PATH_TST_ASC_LCL)","destination":"@preset:server.inside_folder@/other_name_4"}]}
     - --transfer=transferd
 serv_upload5:
   depends_on:
@@ -436,12 +436,14 @@ serv_upload5:
     - server
     - upload
     - --src-type=pair
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - "@extend:@preset:server.upload_folder@/other_name_5"
     - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
-  reset_folder: $(TMP_SYNCS / 'serv_sync_pull_args')
+  pre:
+    - (TMP_SYNCS / 'serv_sync_pull_args').rmtree
+    - (TMP_SYNCS / 'serv_sync_pull_args').mkdir
   tags:
     - nodoc
   depends_on:
@@ -493,7 +495,9 @@ serv_sync_pull_args_counters:
     - $(TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
 serv_sync_pull_conf_reset:
-  reset_folder: $(TMP_SYNCS / 'serv_sync_pull_conf')
+  pre:
+    - (TMP_SYNCS / 'serv_sync_pull_conf').rmtree
+    - (TMP_SYNCS / 'serv_sync_pull_conf').mkdir
   depends_on:
     - serv_sync_pull_args_counters
   command:
@@ -568,7 +572,7 @@ serv_upload_ex_list:
     - server
     - upload
     - --sources=@ts
-    - --transfer-info=@json:{"ascp_args":["--file-list","$(TMP / 'filelist.txt')"]}
+    - --transfer-info=@json:{"ascp_args":["--file-list","$(PATH_FILE_LIST)"]}
     - --to-folder=@preset:server.inside_folder
 serv_upload_ex_pair:
   depends_on:
@@ -577,21 +581,21 @@ serv_upload_ex_pair:
     - server
     - upload
     - --sources=@ts
-    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(TMP / 'file_pair_list.txt')"]}
+    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(PATH_FILE_PAIR_LIST)"]}
 serv_md5:
   depends_on:
     - serv_upload1
   command:
     - server
     - md5sum
-    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
 serv_down_lcl:
   depends_on:
     - serv_upload1
   command:
     - server
     - download
-    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
     - --to-folder=$(TMP)
     - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
@@ -617,7 +621,7 @@ serv_cp:
   command:
     - server
     - cp
-    - "@extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
     - "@extend:@preset:server.upload_folder@/200KB.2"
 serv_mv:
   depends_on:
@@ -911,7 +915,7 @@ nd2:
   command:
     - node
     - upload
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_cap_kbps":10000}
 nd2b:
@@ -920,7 +924,7 @@ nd2b:
   command:
     - node
     - download
-    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
     - --to-folder=$(TMP)
 nd2c:
   depends_on:
@@ -928,7 +932,7 @@ nd2c:
   command:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd_slash:
   command:
     - node
@@ -937,7 +941,7 @@ nd2_http:
   command:
     - node
     - upload
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_cap_kbps":10000}
 nd2_httpb:
@@ -946,14 +950,14 @@ nd2_httpb:
   command:
     - node
     - cat
-    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd2_httpc:
   depends_on:
     - nd2_httpb
   command:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)"
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd_2_nd_xfer:
   command:
     - node
@@ -1150,7 +1154,7 @@ nd8:
     - upload
     - --username=@preset:aoc.ak_name
     - --password=@preset:aoc.ak_secret
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 nd_central_1:
   command:
     - node
@@ -1893,15 +1897,15 @@ aocfupl:
     - files
     - upload
     - --to-folder=/testsrc
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocfuplb:
   command:
     - aoc
     - files
     - upload
     - --to-folder=/testsrc
-    - $(TST_ASC_LCL_PATH)
-    - $(TST_UTF_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
+    - $(PATH_TST_UTF_LCL)
 aocftr:
   depends_on:
     - aocfupl
@@ -1913,14 +1917,14 @@ aocftr:
     - push
     - /testsrc
     - --to-folder=/testdst
-    - $(TST_ASC_FILENAME)
+    - "@preset:file.asc_name"
 aocftrb:
   command:
     - aoc
     - files
     - upload
     - --to-folder=/testdst
-    - $(TST_UTF_LCL_PATH)
+    - $(PATH_TST_UTF_LCL)
 aocndinf:
   depends_on:
     - aocftr
@@ -1942,7 +1946,7 @@ aocndinfb:
     - upload
     - --workspace=@preset:aoc.other_workspace
     - --to-folder=@preset:aoc.other_folder
-    - $(TST_ASC_FILENAME)
+    - "@preset:file.asc_name"
     - --transfer=node
     - --transfer-info=@json:$(read_value_from('aocndinf'))
 aocfdel:
@@ -1968,20 +1972,20 @@ aocfdownd:
     - files
     - down
     - --to-folder=$(TMP)
-    - testdst/$(TST_ASC_FILENAME)
-    - testdst/$(TST_UTF_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(CONF_DATA['file']['utf_name'])
 aocfdowndb:
   command:
     - aoc
     - files
     - down
     - --to-folder=$(TMP)
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfdownc:
   depends_on:
     - aoc_tstdst
   pre:
-    - (DIR_CONNECT_DOWNLOAD / TST_ASC_FILENAME).delete rescue nil
+    - PATH_DOWN_TST_ASC.delete rescue nil
     - system('killall asperaconnect') rescue nil
     - sleep 1
   command:
@@ -1989,18 +1993,18 @@ aocfdownc:
     - files
     - download
     - --transfer=connect
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfdowna:
   depends_on:
     - aoc_tstdst
   pre:
-    - (DIR_CONNECT_DOWNLOAD / TST_ASC_FILENAME).delete rescue nil
+    - PATH_DOWN_TST_ASC.delete rescue nil
   command:
     - aoc
     - files
     - download
     - --transfer=desktop
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfhttpd:
   depends_on:
     - aocftr
@@ -2008,7 +2012,7 @@ aocfhttpd:
     - aoc
     - files
     - cat
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfv3inf:
   command:
     - aoc
@@ -2064,7 +2068,7 @@ aoc_file_id_1:
     - aoc
     - files
     - br
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
     - --fields=id
     - --format=csv
     - --display=data
@@ -2091,7 +2095,7 @@ aoc_file_id_4:
     - aoc
     - files
     - show
-    - testdst/$(TST_ASC_FILENAME)
+    - "@extend:testdst/@preset:file.asc_name@"
 aoc_file_id_5:
   tags:
     - ignore_fail
@@ -2198,7 +2202,7 @@ aocfpubc:
     - files
     - upload
     - --to-folder=/
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_folder_no_pass
 aoc_lnk_priv:
   command:
@@ -2241,7 +2245,7 @@ aoc_pack_send1:
     - send
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"],"note":"my
     - note"}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
   command:
     - aoc
@@ -2249,7 +2253,7 @@ aoc_pack_send2:
     - send
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_external@"]}'
     - --new-user-option=@json:{"package_contact":true}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocp2:
   command:
     - aoc
@@ -2320,7 +2324,7 @@ aocp_send_pub_sh:
     - packages
     - send
     - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_shared_inbox
 aocp_send_pub_usr:
   command:
@@ -2329,7 +2333,7 @@ aocp_send_pub_usr:
     - packages
     - send
     - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
 aocp_recv_init:
@@ -2349,7 +2353,7 @@ aocp_send_shbx:
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"]}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_long:
   depends_on:
     - aocp_recv_init
@@ -2360,7 +2364,7 @@ aocp_send_sh_meta_long:
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short:
   depends_on:
     - aocp_recv_init
@@ -2371,7 +2375,7 @@ aocp_send_sh_meta_short:
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short2:
   $comment: Fails because missing metadata "Project Id"
   tags:
@@ -2385,7 +2389,7 @@ aocp_send_sh_meta_short2:
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 aocp_recv_shbx:
   depends_on:
     - aocp_send_shbx
@@ -4007,7 +4011,7 @@ conf_vault_file:
     - set
     - GLOBAL
     - vault
-    - '@json:{"type":"file","file":"$(VAULT_FILE)"}'
+    - '@json:{"type":"file","file":"$(PATH_VAULT_FILE)"}'
 conf_vault_file2:
   depends_on:
     - conf_vault_file
@@ -4271,7 +4275,7 @@ conf_check_update2:
   depends_on:
     - conf_check_update
   pre:
-    - (CLI_HOME / 'persist_store/version_last_check.txt').delete
+    - PATH_VERSION_CHECK_PERSIST.delete
   command:
     - config
     - check_update
@@ -4827,7 +4831,7 @@ tcos_upload:
     - cos
     - node
     - upload
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 tcos_download:
   depends_on:
     - tcos_upload
@@ -4835,7 +4839,7 @@ tcos_download:
     - cos
     - node
     - download
-    - $(TST_ASC_FILENAME)
+    - "@preset:file.asc_name"
     - --to-folder=$(TMP)
 f5_health:
   command:
@@ -4928,7 +4932,7 @@ f5_p1:
     - packages
     - send
     - '@json:@extend:{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
     - --ts=@json:{"content_protection_password":"my_secret_here"}
 f5_pack_list:
   command:
@@ -5054,7 +5058,7 @@ f5_pack_shbox:
     - packages
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
   post:
     - puts 'Waiting for package to be available'
     - sleep 30
@@ -5107,7 +5111,7 @@ f5_pack_shbox_public:
     - send
     - --url=@preset:faspex5.public_link_send_shared_box
     - '@json:@extend:{"title":"test title"}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 f5_pack_user_public:
   command:
     - -N
@@ -5116,14 +5120,14 @@ f5_pack_user_public:
     - send
     - --url=@preset:faspex5.public_link_send_f5_user
     - '@json:@extend:{"title":"test title"}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 f5_pack_wrkgrp:
   command:
     - faspex5
     - packages
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}'
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
   post:
     - sleep TEMPORIZE_CREATE
 f5_pack_wrkgrpb:
@@ -5759,7 +5763,7 @@ f4_pack_send:
     - package
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
   post:
     - sleep 8
 f4_prs:
@@ -5845,7 +5849,7 @@ f4_pslu:
     - send
     - --link=@preset:faspex4.link_send_to_user
     - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 f4_psld:
   command:
     - faspex
@@ -5853,7 +5857,7 @@ f4_psld:
     - send
     - --link=@preset:faspex4.link_send_to_dropbox
     - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 f4_remote_src:
   command:
     - faspex
@@ -5948,7 +5952,7 @@ f4_db1b:
     - package
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
 f4_db1c:
   tags:
     - save_output
@@ -5980,7 +5984,7 @@ f4_db1f:
     - package
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
-    - $(TST_ASC_LCL_PATH)
+    - $(PATH_TST_ASC_LCL)
   post:
     - sleep 10
 f4_db1g:

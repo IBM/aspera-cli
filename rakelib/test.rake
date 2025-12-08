@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 # Rakefile
-require 'yaml'
 require 'rake'
 require 'uri'
 require 'zlib'
@@ -13,117 +12,91 @@ require_relative '../package/folders'
 include Folders
 include BuildTools
 
-TEST_DEFS  = TST / 'tests.yml'
-STATE_FILE = TMP / 'state.yml'
+Aspera.assert(ENV.key?('ASPERA_CLI_TEST_CONF_FILE')){'Missing env var: ASPERA_CLI_TEST_CONF_FILE'}
+PATH_CONF_FILE = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
+
+PATH_TEST_DEFS = TST / 'tests.yml'
+PATH_TESTS_STATES = TMP / 'state.yml'
 
 # override $HOME/.aspera/ascli
-CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
-CLI_PATH = BIN / Aspera::Cli::Info::CMD_NAME
+PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
+PATH_CLI_CMD = BIN / Aspera::Cli::Info::CMD_NAME
 
-Aspera.assert(ENV.key?('ASPERA_CLI_TEST_CONF_FILE')){'Missing env var: ASPERA_CLI_TEST_CONF_FILE'}
-GOOD_CONFIG = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
-# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
-DIR_CONNECT_DOWNLOAD = Pathname.new(Dir.home) / 'Downloads'
+# -----------------
+# Used in tests.yml
+CONF_DATA = yaml_safe_load(PATH_CONF_FILE.read)
+PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
-# give waring and stop on first warning in this gem code
-RUBY_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
-# CLI with default config file
-CLI_NOCONF = RUBY_WARN + [CLI_PATH, "--home=#{CLI_HOME}"]
-# "CLI_TEST" is used to call the tool in the testing environment
-CLI_TEST = CLI_NOCONF + ["--config-file=#{GOOD_CONFIG}"]
-# JRuby does not support some encryptions
-CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
-# temp configuration file that is modified, to avoid changing the main configuration file
-TEST_CONFIG = TMP / 'sample.conf'
-# "CLI_TMP_CONF" is used for commands that modify the config file
-CLI_TMP_CONF = CLI_NOCONF + ["--config-file=#{TEST_CONFIG}"]
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
-TST_ASC_FILENAME = 'data_file.bin'
-TST_ASC_LCL_PATH = TMP / TST_ASC_FILENAME
+PATH_TST_ASC_LCL = TMP / CONF_DATA['file']['asc_name']
+# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / CONF_DATA['file']['asc_name']
 # This file name contains special characters, it must be quoted when used in shell
-# cspell:disable-next-line
-TST_UTF_FILENAME = '𒐫spécial{\#😀تツ'
-TST_UTF_LCL_PATH = TMP / TST_UTF_FILENAME
+PATH_TST_UTF_LCL = TMP / CONF_DATA['file']['utf_name']
 # a medium sized file for testing
-TST_MED_FILENAME = TST_UTF_FILENAME
+TST_MED_FILENAME = CONF_DATA['file']['utf_name']
 # needs to be quoted, as there is shell special character: "?"
 TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
-
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
 TMP_SYNCS = TMP / 'syncs'
-
-SHARES_SYNC = TMP_SYNCS / 'shares_sync'
-TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
-
-TMP_STATES = TMP / 'states'
-
-VAULT_FILE = TOP / 'tmp/sample_vault.bin'
+PATH_SHARES_SYNC = TMP_SYNCS / 'shares_sync'
+PATH_TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
+PATH_VAULT_FILE = TOP / 'tmp/sample_vault.bin'
 NEW_VAULT_PASS = 'my_other_pass_here'
 PKCS_P = 'YourExportPassword'
+PATH_FILE_LIST = TMP / 'filelist.txt'
+PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
+# ------------------
 
-FILE_LIST = TMP / 'filelist.txt'
-FILE_PAIR = TMP / 'file_pair_list.txt'
-
+# give waring and stop on first warning in this gem code
+CMD_FAIL_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
+# CLI with default config file
+CLI_NOCONF = CMD_FAIL_WARN + [PATH_CLI_CMD, "--home=#{PATH_CLI_HOME}"]
+# "CLI_TEST" is used to call the tool in the testing environment
+CLI_TEST = CLI_NOCONF + ["--config-file=#{PATH_CONF_FILE}"]
+# JRuby does not support some encryptions
+CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
+# temp configuration file that is modified, to avoid changing the main configuration file
+PATH_TEST_CONFIG = TMP / 'sample.conf'
+# "CLI_TMP_CONF" is used for commands that modify the config file
+CLI_TMP_CONF = CLI_NOCONF + ["--config-file=#{PATH_TEST_CONFIG}"]
+# Folder where test case states (generated files) are stored
+PATH_TMP_STATES = TMP / 'states'
+# Test states to not re-execute
 SKIP_STATES = %w[passed skipped].freeze
-
+# Rake namespace for all test cases
 TEST_CASE_NS = :case
 
-FileUtils.cp(GOOD_CONFIG, TEST_CONFIG) unless TEST_CONFIG.exist?
-TST_ASC_LCL_PATH.write('This is a small test file') unless  TST_ASC_LCL_PATH.exist?
-TST_UTF_LCL_PATH.write('This is a small test file') unless  TST_UTF_LCL_PATH.exist?
+FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
+PATH_TST_ASC_LCL.write('This is a small test file') unless  PATH_TST_ASC_LCL.exist?
+PATH_TST_UTF_LCL.write('This is a small test file') unless  PATH_TST_UTF_LCL.exist?
 
-FILE_LIST.write("#{TST_ASC_LCL_PATH}")
+PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
 # @preset:server.inside_folder@/other_name
-FILE_PAIR.write("#{TST_ASC_LCL_PATH}\n/Upload/server_folder/other_name")
+PATH_FILE_PAIR_LIST.write([
+  PATH_TST_ASC_LCL,
+  File.join(CONF_DATA['server']['inside_folder'], 'other_name')
+].map(&:to_s).join("\n"))
 
-FileUtils.mkdir_p(SHARES_SYNC)
-FileUtils.mkdir_p(TMP_STATES)
-(SHARES_SYNC / 'sample_file.txt').write('Some sample file')
-FileUtils.mkdir_p(TST_LCL_FOLDER / 'sub')
+PATH_SHARES_SYNC.mkpath
+PATH_TMP_STATES.mkpath
+(PATH_SHARES_SYNC / 'sample_file.txt').write('Some sample file')
+FileUtils.mkdir_p(PATH_TST_LCL_FOLDER / 'sub')
 %w[1 2 3 sub/1 sub/2].each do |f|
-  (TST_LCL_FOLDER / f).write('Some sample file')
+  (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
 
-# Source - https://stackoverflow.com/a/55705853
-# Posted by user3592693, modified by community. See post 'Timeline' for change history
-# Retrieved 2025-12-01, License - CC BY-SA 4.0
-
-def safe_load_yaml(file_or_content)
-  yaml = file_or_content.is_a?(File) ? file_or_content.read : file_or_content
-  duplicate_keys = []
-  validator = ->(node, parent_path) do
-    if node.is_a?(Psych::Nodes::Mapping)
-      # In a Mapping, every other child is the key node, the other is the value node.
-      children = node.children.each_slice(2)
-      duplicates = children.map{ |key_node, _value_node| key_node}.group_by(&:value).select{ |_value, nodes| nodes.size > 1}
-      duplicates.each do |key, nodes|
-        duplicate_key = {
-          file:        (file_or_content.path if file_or_content.is_a?(File)),
-          key:         parent_path + [key],
-          occurrences: nodes.map{ |occurrence| "line: #{occurrence.start_line + 1}"}
-        }.compact
-        duplicate_keys << duplicate_key
-      end
-      children.each{ |key_node, value_node| validator.call(value_node, parent_path + [key_node.value].compact)}
-    else
-      node.children.to_a.each{ |child| validator.call(child, parent_path)}
-    end
-  end
-  ast = Psych.parse_stream(yaml)
-  validator.call(ast, [])
-  raise "Duplicate keys: #{duplicate_keys}" unless duplicate_keys.empty?
-  YAML.safe_load(yaml)
-end
-
-tests = safe_load_yaml(TEST_DEFS.read)
-# tests      = YAML.load_file(TEST_DEFS)
-state = STATE_FILE.exist? ? YAML.load_file(STATE_FILE) : {}
+TEST_DEFS = yaml_safe_load(PATH_TEST_DEFS.read)
+ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
+unsupported_keys = TEST_DEFS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
+raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
+state = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 
 def save_state(state)
-  File.write(STATE_FILE, state.to_yaml)
+  File.write(PATH_TESTS_STATES, state.to_yaml)
 end
 
 def eval_macro(value)
@@ -134,14 +107,17 @@ def eval_macro(value)
   # puts "Eval: #{value} -> [#{x}]"
 end
 
+# @return the Pathname to pid file generated for the given test case
 def pid_file(name)
-  TMP_STATES / "#{name}.pid"
+  PATH_TMP_STATES / "#{name}.pid"
 end
 
+# @return the Pathname to output file generated for the given test case
 def out_file(name)
-  TMP_STATES / "#{name}.out"
+  PATH_TMP_STATES / "#{name}.out"
 end
 
+# Read the value generated in output for the given test case
 def read_value_from(name)
   state_file = out_file(name)
   value = state_file.read.chomp
@@ -149,6 +125,7 @@ def read_value_from(name)
   value
 end
 
+# Terminates the process of previous test case
 def stop_process(name)
   pid = pid_file(name).read.to_i
   Process.kill('TERM', pid)
@@ -165,7 +142,7 @@ namespace :test do
   # List tests with metadata
   desc 'List all tests with tags'
   task :list do
-    tests.each do |name, info|
+    TEST_DEFS.each do |name, info|
       puts "#{name.ljust(20)} #{info['tags']&.join(', ')}"
     end
   end
@@ -189,8 +166,8 @@ namespace :test do
   # Reset persistent state
   desc 'Clear all stored test results'
   task :reset do
-    STATE_FILE.delete if STATE_FILE.exist?
-    TEST_CONFIG.delete if TEST_CONFIG.exist?
+    PATH_TESTS_STATES.delete if PATH_TESTS_STATES.exist?
+    PATH_TEST_CONFIG.delete if PATH_TEST_CONFIG.exist?
     puts 'State cleared.'
   end
 
@@ -200,7 +177,7 @@ namespace :test do
     tag = args[:tag]
     abort 'Usage: rake test:tags[download]' unless tag
 
-    selected = tests.select{ |_, info| info['tags']&.include?(tag)}
+    selected = TEST_DEFS.select{ |_, info| info['tags']&.include?(tag)}
     Rake::Task['test:run'].invoke if selected.empty?
 
     selected.each_key do |name|
@@ -210,13 +187,13 @@ namespace :test do
   # Run all tests in declared order
   desc 'Run all tests'
   task :all do
-    tests.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+    TEST_DEFS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
   end
 end
 
 namespace TEST_CASE_NS do
   # Create a Rake task for each test
-  tests.each do |name, info|
+  TEST_DEFS.each do |name, info|
     # puts "-> #{name}"
     desc info['description'] || '-'
 
@@ -244,11 +221,6 @@ namespace TEST_CASE_NS do
         info['env']['ASCLI_WIZ_TEST'] = 'yes'
       end
       loop do
-        if info['reset_folder']
-          folder = eval_macro(info['reset_folder'])
-          FileUtils.rm_rf(folder)
-          FileUtils.mkdir_p(folder)
-        end
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
@@ -296,7 +268,7 @@ namespace TEST_CASE_NS do
 end
 
 # default: run all tests
-task default: 'test:run'
+# task default: 'test:run'
 
 # TODO: separately in rake task
 # asession:
