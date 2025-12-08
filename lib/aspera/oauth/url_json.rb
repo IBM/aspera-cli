@@ -25,7 +25,8 @@ module Aspera
           query:        @query.merge(scope: scope), # scope is here because it may change over time (node)
           content_type: Rest::MIME_JSON,
           body:         @body,
-          headers:      {'Accept' => Rest::MIME_JSON}
+          headers:      {'Accept' => Rest::MIME_JSON},
+          ret:          :resp
         )
       end
     end

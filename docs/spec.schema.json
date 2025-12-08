@@ -75,7 +75,7 @@
       "x-agents": []
     },
     "content_protection": {
-      "description": "Enable client-side encryption at rest (CSEAR).",
+      "description": "Enable client-side content protection (CSEAR, encryption-at-rest).\nFor uploads, set to `encrypt` to transfer encrypted files and store them on the server with the extension `.aspera-env`. (`aspera.conf` parameter `transfer_encryption_content_protection_extension`). To download and decrypt encrypted files, set to `decrypt`\n`content_protection_password` must be specified if this option is set.",
       "type": "string",
       "enum": [
         "encrypt",
@@ -84,7 +84,7 @@
       "x-cli-option": "--file-crypt"
     },
     "content_protection_password": {
-      "description": "Specifies CSEAR password.",
+      "description": "Password for encryption/decryption of transferred assets.",
       "type": "string",
       "x-cli-envvar": "ASPERA_SCP_FILEPASS"
     },
