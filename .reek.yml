@@ -21,14 +21,14 @@ detectors:
   UncommunicativeVariableName:
     accept:
       - _
-      - k
-      - v
-      - h
-      - i
-      - m
-      - e
       - a
       - b
+      - e
+      - h
+      - i
+      - k
+      - m
+      - v
     enabled: false
   UncommunicativeMethodName:
     accept:
