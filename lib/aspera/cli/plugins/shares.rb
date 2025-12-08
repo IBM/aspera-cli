@@ -16,17 +16,12 @@ module Aspera
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             api = Rest.new(base_url: address_or_url, redirect_max: 1)
-            found = false
-            begin
-              # shall fail: shares requires auth, but we check error message
-              # TODO: use ping instead ?
-              api.read("#{NODE_API_PATH}/app")
-            rescue RestCallError => e
-              found = true if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-            end
-            return unless found
+            # TODO: use ping instead ?
+            resp = api.read("#{NODE_API_PATH}/app", exception: false, ret: :resp)
+            # shall fail: shares requires auth, but we check error message
+            return unless resp.code.to_s.eql?('401') && resp.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
             version = 'unknown'
-            http = api.read('login', ret: :resp)
+            http = api.read('login', headers: {'Accept'=>'*/*'}, ret: :resp)
             if (m = http.body.match(/\(v(1\..*)\)/))
               version = m[1]
             end
