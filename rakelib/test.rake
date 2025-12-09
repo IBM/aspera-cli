@@ -68,6 +68,7 @@ SKIP_STATES = %w[passed skipped].freeze
 # Rake namespace for all test cases
 TEST_CASE_NS = :case
 
+TMP.mkpath
 FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
 PATH_TST_ASC_LCL.write('This is a small test file') unless  PATH_TST_ASC_LCL.exist?
 PATH_TST_UTF_LCL.write('This is a small test file') unless  PATH_TST_UTF_LCL.exist?
@@ -80,7 +81,7 @@ PATH_FILE_PAIR_LIST.write([
 PATH_SHARES_SYNC.mkpath
 PATH_TMP_STATES.mkpath
 (PATH_SHARES_SYNC / 'sample_file.txt').write('Some sample file')
-FileUtils.mkdir_p(PATH_TST_LCL_FOLDER / 'sub')
+(PATH_TST_LCL_FOLDER / 'sub').mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
