@@ -20,7 +20,7 @@ require 'yaml'
 require 'erb'
 require 'English'
 require_relative '../package/build_tools'
-require_relative '../package/folders'
+require_relative '../package/paths'
 
 # Log control
 Aspera::Log.instance.level = :info
@@ -64,10 +64,7 @@ class DocHelper
     # main function to generate template configuration file for tests
     # hide sensitive information
     def generate_generic_conf
-      local_config = ENV['ASPERA_CLI_TEST_CONF_FILE']
-      raise 'missing env var ASPERA_CLI_TEST_CONF_FILE: local config file' if local_config.nil?
-      raise "Missing conf file: #{local_config}" if !File.exist?(local_config)
-      configuration = YAML.load_file(local_config)
+      configuration = YAML.load_file(Paths.config_file_path)
       configuration.each do |k, preset_hash|
         preset_hash.each do |param_name, param_value|
           param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')} if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)

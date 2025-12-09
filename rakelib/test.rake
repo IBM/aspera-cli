@@ -7,13 +7,12 @@ require 'zlib'
 require 'fileutils'
 require 'aspera/environment'
 require_relative '../package/build_tools'
-require_relative '../package/folders'
+require_relative '../package/paths'
 
 include Paths
 include BuildTools
 
-Aspera.assert(ENV.key?('ASPERA_CLI_TEST_CONF_FILE')){'Missing env var: ASPERA_CLI_TEST_CONF_FILE'}
-PATH_CONF_FILE = Pathname.new(ENV['ASPERA_CLI_TEST_CONF_FILE'])
+PATH_CONF_FILE = config_file_path
 
 PATH_TESTS_STATES = TMP / 'state.yml'
 
