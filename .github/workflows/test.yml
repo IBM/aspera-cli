@@ -23,6 +23,9 @@ jobs:
         run: |
           mkdir -p "$HOME/.aspera/ascli"
           cat > "$HOME/.aspera/ascli/config.yaml" << EOF
+          ---
+          config:
+            version: 4.25.0
           default:
             server: server_user
           server_user:
