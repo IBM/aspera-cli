@@ -30,10 +30,10 @@ jobs:
             username: "${{ secrets.CF_HSTS_SSH_USER }}"
             password: "${{ secrets.CF_HSTS_SSH_PASS }}"
           file:
-            asc_name: -
-            utf_name: -
+            asc_name: ""
+            utf_name: ""
           server:
-            inside_folder: -
+            inside_folder: ""
           EOF
         shell: bash
 
