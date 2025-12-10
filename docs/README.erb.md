@@ -2256,15 +2256,17 @@ EOF
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
-### Configuration and Persistency Folder
+### Main, configuration and Persistency Folder
 
-<%=tool%> configuration and persistency files (token cache, file lists, persistency files) are stored by default in `[User's home folder]/.aspera/<%=cmd%>`.
+<%=tool%> looks for configuration and persistency files (token cache, file lists, persistency files) in the folder specified using option `home`.
+The default value is `[User's home folder]/.aspera/<%=cmd%>`.
 
 > [!NOTE]
-> `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
-> It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
-> <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists.
-> So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
+> The `[User's home folder]` is determined using Ruby’s `Dir.home` method.
+> Primary source: The HOME environment variable.
+> On Windows: Ruby also checks `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%` (via `rb_w32_home_dir`).
+> Additionally, <%=tool%> sets the `%HOME%` environment variable to the value of `%USERPROFILE%` if it exists and is valid.
+> Therefore, on Windows, `%USERPROFILE%` is preferred because it is generally more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
 The configuration folder can be displayed using :
 
@@ -2277,9 +2279,11 @@ The configuration folder can be displayed using :
 ```
 
 > [!NOTE]
-> This is equivalent to: `<%=cmd%> --show-config --fields=home`
+> This is equivalent to display the value of the `home` option.
 
-It can be overridden using option `home`.
+```shell
+<%=cmd%> --show-config --fields=home
+```
 
 Example (Windows):
 
@@ -2291,11 +2295,28 @@ set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-When OAuth is used (AoC, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
+When OAuth is used (AoC, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` located in the configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows controlling if OAuth tokens are cached on file system, or generated for each request.
 The command `config tokens flush` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
-When a token has expired, then a new token is generated, either using a refresh_token if it is available, or by the default method.
+When a token has expired, then a new token is generated, either using a `refresh_token` if it is available, or by the default method.
+
+### Configuration file
+
+On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder (`<%=cmd%> config folder`).
+There is no mandatory information required in this file.
+The use of it is optional as any option can be provided on the command line.
+
+Although the file is a standard `YAML` file, <%=tool%> provides commands to read and modify it using the `config` command.
+
+All options for <%=tool%> can be set on command line, or by env vars, or using [Option Preset](#option-preset) in the configuration file.
+
+A configuration file provides a way to define default values, especially for authentication options, thus avoiding to always having to specify those options on the command line.
+
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
+
+The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
+Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
 
 ### Invalid Filename Characters
 
@@ -2317,23 +2338,6 @@ The temporary folder may be specified with option: `temp_folder`.
 Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
 By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
 A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
-
-### Configuration file
-
-On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder (`<%=cmd%> config folder`).
-There is no mandatory information required in this file.
-The use of it is optional as any option can be provided on the command line.
-
-Although the file is a standard `YAML` file, <%=tool%> provides commands to read and modify it using the `config` command.
-
-All options for <%=tool%> can be set on command line, or by env vars, or using [Option Preset](#option-preset) in the configuration file.
-
-A configuration file provides a way to define default values, especially for authentication options, thus avoiding to always having to specify those options on the command line.
-
-The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
-
-The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
-Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
 
 #### Option Preset
 
