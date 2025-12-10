@@ -277,14 +277,14 @@ class DocHelper
   REPLACEMENTS_YAML = [
     ['@extend:', ''],
     [/\$\(TMP\)$/, '.'],
-    [/\$\(read_value_from '([^']+)'\)$/, '\1'],
+    [/\$\(read_value_from[ (]'([^']+)'.*\)$/, '\1'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
     [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
     [%r{\$\(TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
     ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
-    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
+    #    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
     ['$(PATH_TST_ASC_LCL)', 'test_file.bin'],
     ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
     ['$(TST_MED_LCL_PATH)', 'test_file.bin'],
@@ -295,7 +295,8 @@ class DocHelper
     ['$(PATH_FILE_PAIR_LIST)', 'file_pair_list.txt'],
     ['$(TST_MED_FILENAME)', 'test_file.bin'],
     ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
-    [/^--base=.*/, '--base=test']
+    [/^--base=.*/, '--base=test'],
+    [/^(--[a-z-]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]
   # various replacements from commands in test makefile
   REPLACEMENTS_MAKEFILE = [
@@ -355,11 +356,7 @@ class DocHelper
           line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
             next cmd unless cmd.is_a?(String)
             REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
-            if !cmd.start_with?('-', '@') && cmd.include?(' ')
-              "'#{cmd}'"
-            else
-              cmd
-            end
+            cmd
           end.join(' ')
           line = line.strip.squeeze(' ')
           Aspera::Log.log.debug(line)

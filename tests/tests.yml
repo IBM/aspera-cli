@@ -773,7 +773,7 @@ cons_cur_lst_ex:
     - current
     - list
     - --query.filter=(transfer_name contain aoc)
-cons_cur_lst_one:
+console_xfer_id:
   tags:
     - save_output
     - nodoc
@@ -786,34 +786,34 @@ cons_cur_lst_one:
     - --format=csv
 cons_cur_show_one:
   depends_on:
-    - cons_cur_lst_one
+    - console_xfer_id
   command:
     - console
     - transfer
     - current
     - show
-    - $(read_value_from('cons_cur_lst_one').split("\n").last)
+    - $(read_value_from('console_xfer_id').split("\n").last)
 cons_cur_show_one1:
   depends_on:
-    - cons_cur_lst_one
+    - console_xfer_id
   command:
     - console
     - transfer
     - current
     - files
-    - $(read_value_from('cons_cur_lst_one').split("\n").last)
+    - $(read_value_from('console_xfer_id').split("\n").last)
 cons_cur_show_one2:
   tags:
     - ignore_fail
     - nodoc
   depends_on:
-    - cons_cur_lst_one
+    - console_xfer_id
   command:
     - console
     - transfer
     - current
     - resume
-    - $(read_value_from('cons_cur_lst_one').split("\n").last)
+    - $(read_value_from('console_xfer_id').split("\n").last)
 cons_sma_lst:
   command:
     - console
@@ -823,7 +823,6 @@ cons_sma_lst:
 cons_sma_sta:
   tags:
     - ignore_fail
-    - nodoc
   command:
     - console
     - transfer
@@ -1380,6 +1379,8 @@ nd_ak_mklinkb:
   post:
     - sleep TEMPORIZE_CREATE
 nd_ak_mvdir:
+  tags:
+    - nodoc
   depends_on:
     - nd_ak_mkdir
   command:
@@ -1968,6 +1969,8 @@ aocftr:
     - --to-folder=/testdst
     - "@preset:file.asc_name"
 aocftrb:
+  tags:
+    - nodoc
   command:
     - aoc
     - files
@@ -1988,6 +1991,8 @@ aocndinf:
     - --format=json
     - --display=data
 aocndinfb:
+  tags:
+    - nodoc
   depends_on:
     - aocndinf
   command:
@@ -2218,6 +2223,8 @@ aoc_file_id_10:
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
     - --query=@json:{"text":true,"double":true}
 aoc_file_id_11:
+  tags:
+    - nodoc
   depends_on:
     - aoc_file_id_6
   command:
@@ -4885,6 +4892,8 @@ prev_scana:
     - --log-level=info
     - --skip-folder=/special/folder
 prev_scanb:
+  tags:
+    - nodoc
   command:
     - preview
     - scan
@@ -5163,7 +5172,7 @@ f5_p3aa:
     - status
     - $(read_value_from 'f5_p3a')
     - "@list:,failed,completed"
-f5_p3b:
+f5_package_id:
   depends_on:
     - f5_p3a
   tags:
@@ -5177,42 +5186,42 @@ f5_p3b:
     - --fields=id
 f5_p3c:
   depends_on:
-    - f5_p3b
+    - f5_package_id
   command:
     - faspex5
     - packages
     - show
-    - $(read_value_from 'f5_p3b')
+    - $(read_value_from 'f5_package_id')
 f5_p3d:
   depends_on:
-    - f5_p3b
+    - f5_package_id
   command:
     - faspex5
     - packages
     - status
-    - $(read_value_from 'f5_p3b')
+    - $(read_value_from 'f5_package_id')
 f5_p3e:
   depends_on:
-    - f5_p3b
+    - f5_package_id
   command:
     - faspex5
     - packages
     - browse
-    - $(read_value_from 'f5_p3b')
+    - $(read_value_from 'f5_package_id')
     - --query=@json:{"recursive":true}
 f5_p3f:
   depends_on:
-    - f5_p3b
+    - f5_package_id
   command:
     - faspex5
     - packages
     - receive
-    - $(read_value_from 'f5_p3b')
+    - $(read_value_from 'f5_package_id')
     - --to-folder=$(TMP)
     - --ts=@json:{"content_protection_password":"my_secret_here"}
 f5_p3g:
   depends_on:
-    - f5_p3b
+    - f5_package_id
   command:
     - faspex5
     - packages
@@ -5227,7 +5236,7 @@ f5_p3h:
     - faspex5
     - packages
     - delete
-    - $(read_value_from 'f5_p3b')
+    - $(read_value_from 'f5_package_id')
 f5_pack_shbox:
   command:
     - faspex5
@@ -5775,6 +5784,7 @@ f5_postproc_test:
 f5_postproc_test_with_key:
   tags:
     - noblock
+    - nodoc
   command:
     - faspex5
     - postprocessing
@@ -5785,6 +5795,7 @@ f5_postproc_test_with_key:
 f5_postproc_test_with_key_cert:
   tags:
     - noblock
+    - nodoc
   command:
     - faspex5
     - postprocessing
@@ -5795,6 +5806,7 @@ f5_postproc_test_with_key_cert:
 f5_cert_test:
   tags:
     - noblock
+    - nodoc
   command:
     - faspex5
     - postprocessing
@@ -5805,6 +5817,7 @@ f5_cert_test:
 f5_cert_testb:
   tags:
     - noblock
+    - nodoc
   command:
     - faspex5
     - postprocessing
@@ -5815,6 +5828,7 @@ f5_cert_testb:
 f5_cert_testc:
   tags:
     - noblock
+    - nodoc
   pre:
     - system 'openssl req -newkey rsa:2048 -x509 -days 365 -nodes -keyout $(TMP / "private_key.pem") -out $(TMP / "certificate.pem") -subj /CN=MyCert'
   command:
@@ -5827,6 +5841,7 @@ f5_cert_testc:
 f5_cert_testd:
   tags:
     - noblock
+    - nodoc
   pre:
     - system 'openssl pkcs12 -export -out $(TMP / "certificate.p12") -inkey $(TMP / "private_key.pem") -in $(TMP / "certificate.pem") -name MyCertAlias -passout pass:"$(PKCS_P)"'
   command:
