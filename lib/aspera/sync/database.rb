@@ -8,7 +8,7 @@ else
   require 'sqlite3'
 end
 
-# A wrapper class that provides common API for Ruby and JRuby
+# A wrapper class that provides common API for sqlite in both Ruby and JRuby
 class SqLite3Wrapper
   def initialize(db_path)
     @db_path = db_path
@@ -52,6 +52,7 @@ end
 
 module Aspera
   module Sync
+    # Access `async` sqlite database
     class Database
       def initialize(db_path)
         @db = SqLite3Wrapper.new(db_path)

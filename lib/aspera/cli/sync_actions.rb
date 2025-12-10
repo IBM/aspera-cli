@@ -7,7 +7,7 @@ require 'pathname'
 
 module Aspera
   module Cli
-    # Manage command line arguments to provide to Sync::Run, Sync::Database and Sync::Operations
+    # Manage command line arguments to provide to Sync::Operations and Sync::Database
     module SyncActions
       # Translate state id (int) to string
       STATE_STR = (['Nil'] +
@@ -20,14 +20,18 @@ module Aspera
       end
 
       # Read 1 or 2 command line arguments and converts to `sync_info` format
+      # The resulting sync_info has `args` format only if it contains one of the `sessions` or `instance` keys.
+      # It has the `conf` format (default) otherwise.
+      # If the `conf` format is detected, then both `local` and `remote` keys are set.
       # @param direction [Symbol,NilClass] One of directions, or `nil` if only for admin command
       # @return [Hash] sync info
       def async_info_from_args(direction: nil)
         path = options.get_next_argument('path')
         sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {})
+        # is the positional path a remote path ?
         path_is_remote = direction.eql?(:pull)
         if sync_info.key?('sessions') || sync_info.key?('instance')
-          # "args"
+          # `args`
           sync_info['sessions'] ||= [{}]
           Aspera.assert(sync_info['sessions'].length == 1){'Only one session is supported'}
           session = sync_info['sessions'].first
@@ -41,7 +45,7 @@ module Aspera
             local_remote = %w[local remote].map{ |i| session["#{i}_dir"]}
           end
         else
-          # "conf"
+          # `conf`
           session = sync_info
           dir_key = path_is_remote ? 'remote' : 'local'
           session[dir_key] ||= {}
@@ -54,7 +58,7 @@ module Aspera
             session[dir_key]['path'] = transfer.destination_folder(path_is_remote ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND)
             local_remote = %w[local remote].map{ |i| session[i]['path']}
           end
-          # "conf" is quiet by default
+          # `conf` is quiet by default
           session['quiet'] = false if !session.key?('quiet') && Environment.terminal?
         end
         if direction
@@ -120,7 +124,7 @@ module Aspera
       end
 
       # Execute sync action
-      # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
+      # @param &block [nil, Proc] block to generate transfer spec, takes: `direction` (one of DIRECTIONS), `local_dir`, `remote_dir`
       def execute_sync_action(&block)
         command = options.get_next_command(%i[admin] + Sync::Operations::DIRECTIONS)
         # try to get 3 arguments as simple arguments
