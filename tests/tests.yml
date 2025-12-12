@@ -1697,6 +1697,8 @@ aoc_faspex_gateway:
     - gateway
     - '@json:{"url":"https://localhost:12345/aspera/faspex"}'
 aoc_faspex_gatewayb:
+  tags:
+    - nodoc
   command:
     - -N
     - faspex
@@ -1896,6 +1898,8 @@ aoc_some_folder:
   post:
     - sleep TEMPORIZE_CREATE
 aoc_some_folderb:
+  tags:
+    - nodoc
   command:
     - aoc
     - files
@@ -2021,7 +2025,6 @@ aocfbearnode:
     - /
 aocfdownd:
   tags:
-    - nodoc
   depends_on:
     - aocftr
   command:
@@ -2118,7 +2121,7 @@ aoc_sync_conf_pull_paramsb:
     - admin
     - status
     - $(TMP_SYNCS / 'aoc_sync_conf_pull_params')
-aoc_file_id_1:
+aoc_file_id:
   depends_on:
     - aocftr
   tags:
@@ -2139,7 +2142,7 @@ aoc_file_id_2:
     - aoc
     - files
     - show
-    - "%id:$(read_value_from 'aoc_file_id_1')"
+    - "%id:$(read_value_from 'aoc_file_id')"
 aoc_file_id_3:
   depends_on:
     - aocftr
@@ -2737,11 +2740,7 @@ aoc15:
     - --query=@json:{"status":"completed","direction":"receive","limit":2}
     - --notify-to=@preset:misc.email_external
     - |
-      --notify-template=From: <%=from_name%> <<%=from_email%>>
-      To: <<%=to%>>
-      Subject: <%=ev["files_completed"]%> files received
-      
-      <%=ev.to_yaml%>
+      --notify-template=@ruby:%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}
 aoc_transfer_id:
   tags:
     - save_output
@@ -3087,7 +3086,6 @@ aocat7:
 aocat8:
   tags:
     - ignore_fail
-    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3112,7 +3110,6 @@ aocat8b:
 aocat9:
   tags:
     - hide_fail
-    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3126,7 +3123,6 @@ aocat9:
 aocat10:
   tags:
     - hide_fail
-    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3170,7 +3166,6 @@ aocauto1:
 wf_id:
   tags:
     - save_output
-    - nodoc
   depends_on:
     - aocauto1
   command:
@@ -3203,7 +3198,6 @@ aocauto3:
     - wf_id
   tags:
     - ignore_fail
-    - nodoc
   command:
     - --preset=aoc_admin
     - aoc
@@ -3431,7 +3425,6 @@ at12:
 at13:
   tags:
     - hide_fail
-    - nodoc
   command:
     - ats
     - access_key
@@ -3858,7 +3851,6 @@ conf_ascp_install:
   depends_on:
     - conf_ascp_sdk_folder
   pre:
-#   - FileUtils.rm_rf()
     - puts(read_value_from('conf_ascp_sdk_folder'))
   command:
     - config
@@ -4397,7 +4389,6 @@ conf_check_update:
   command:
     - config
     - check_update
-#	rm -f 
 conf_check_update2:
   depends_on:
     - conf_check_update
@@ -5325,7 +5316,7 @@ f5_pack_wrkgrpb:
     - list
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-f5_pack_wrkgrpc:
+workgroup_package_id1:
   depends_on:
     - f5_pack_wrkgrp
   tags:
@@ -5341,24 +5332,24 @@ f5_pack_wrkgrpc:
     - --fields=id
 f5_pack_wrkgrpd:
   depends_on:
-    - f5_pack_wrkgrpc
+    - workgroup_package_id1
   command:
     - faspex5
     - packages
     - show
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(read_value_from 'f5_pack_wrkgrpc')
+    - $(read_value_from 'workgroup_package_id1')
 f5_pack_wrkgrpe:
   depends_on:
-    - f5_pack_wrkgrpc
+    - workgroup_package_id1
   command:
     - faspex5
     - packages
     - receive
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(read_value_from 'f5_pack_wrkgrpc')
+    - $(read_value_from 'workgroup_package_id1')
     - --to-folder=$(TMP)
 f5_sh_fold:
   command:
@@ -5740,6 +5731,8 @@ f5_fxgw_start:
     - gateway
     - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
 f5_fxgw_test:
+  tags:
+    - nodoc
   depends_on:
     - f5_fxgw_start
   command:

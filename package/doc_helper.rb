@@ -285,6 +285,7 @@ class DocHelper
     ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
     #    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
+    ['$(PATH_TST_LCL_FOLDER)', 'sendfolder'],
     ['$(PATH_TST_ASC_LCL)', 'test_file.bin'],
     ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
     ['$(TST_MED_LCL_PATH)', 'test_file.bin'],
@@ -296,7 +297,7 @@ class DocHelper
     ['$(TST_MED_FILENAME)', 'test_file.bin'],
     ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
     [/^--base=.*/, '--base=test'],
-    [/^(--[a-z-]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
+    [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]
   # various replacements from commands in test makefile
   REPLACEMENTS_MAKEFILE = [
@@ -350,22 +351,7 @@ class DocHelper
   def all_test_commands_by_plugin
     if @commands.nil?
       commands = {}
-      if ENV['NEW']
-        all_tests = BuildTools.yaml_safe_load(Paths::PATH_TEST_DEFS.read)
-        all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
-          line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
-            next cmd unless cmd.is_a?(String)
-            REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
-            cmd
-          end.join(' ')
-          line = line.strip.squeeze(' ')
-          Aspera::Log.log.debug(line)
-          # plugin name shall be the first argument: command
-          plugin = line.split(' ').first
-          commands[plugin] ||= []
-          commands[plugin].push(line.gsub(/^#{plugin} /, ''))
-        end
-      else
+      if ENV['OLD']
         File.open(@paths[:makefile]) do |file|
           file.each_line do |line|
             next unless line.include?('$(INCMAN)')
@@ -378,6 +364,23 @@ class DocHelper
             commands[plugin] ||= []
             commands[plugin].push(line.gsub(/^#{plugin} /, ''))
           end
+        end
+      else
+        all_tests = BuildTools.yaml_safe_load(Paths::PATH_TEST_DEFS.read)
+        all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
+          line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
+            next cmd unless cmd.is_a?(String)
+            next "''" if cmd.empty?
+            REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
+            cmd
+          end.join(' ')
+          line = line.strip.squeeze(' ')
+          Aspera::Log.log.debug(line)
+          # plugin name shall be the first argument: command
+          plugin = line.split(' ').first
+          raise ">>>#{plugin}" unless plugin.match?(/^[a-z0-9]+$/)
+          commands[plugin] ||= []
+          commands[plugin].push(line.gsub(/^#{plugin} /, ''))
         end
       end
       commands.each_key do |plugin|
