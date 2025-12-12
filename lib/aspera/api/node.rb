@@ -386,21 +386,19 @@ module Aspera
         return oauth.authorization(refresh: true)
       end
 
+      # Get a base download transfer spec (gen3)
+      # @return [Hash] Base transfer spec
+      def base_spec
+        create(
+          'files/download_setup',
+          {transfer_requests: [{transfer_request: {paths: [{source: '/'}]}}]}
+        )['transfer_specs'].first['transfer_spec']
+      end
+
       # Get generic part of transfer spec with transport parameters only
       # @return [Hash] Base transfer spec
       def transport_params
-        if @std_t_spec_cache.nil?
-          # Retrieve values from API (and keep a copy/cache)
-          full_spec = create(
-            'files/download_setup',
-            {transfer_requests: [{transfer_request: {paths: [{source: '/'}]}}]}
-          )['transfer_specs'].first['transfer_spec']
-          # Set available fields
-          @std_t_spec_cache = Transfer::Spec::TRANSPORT_FIELDS.each_with_object({}) do |i, h|
-            h[i] = full_spec[i] if full_spec.key?(i)
-          end
-        end
-        return @std_t_spec_cache
+        @std_t_spec_cache ||= base_spec.slice(*Transfer::Spec::TRANSPORT_FIELDS).freeze
       end
 
       # Create transfer spec for gen4

@@ -22,7 +22,7 @@ module Aspera
       # fields for WSS
       WSS_FIELDS = %w[wss_enabled wss_port].freeze
       # all fields for transport
-      TRANSPORT_FIELDS = %w[remote_host remote_user ssh_port fasp_port].concat(WSS_FIELDS).freeze
+      TRANSPORT_FIELDS = (%w[remote_host] + AK_TSPEC_BASE.keys + WSS_FIELDS).freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       class << self

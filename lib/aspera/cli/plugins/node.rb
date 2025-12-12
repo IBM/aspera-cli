@@ -138,7 +138,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # Actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download cat sync transport]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download cat sync transport spec]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -386,6 +386,8 @@ module Aspera
             return Main.result_text(http.body)
           when :transport
             return Main.result_single_object(@api_node.transport_params)
+          when :spec
+            return Main.result_single_object(@api_node.base_spec)
           end
           Aspera.error_unreachable_line
         end
