@@ -255,7 +255,7 @@ module Aspera
               content_type: Rest::MIME_JSON,
               body:         param_file_list,
               headers:      {'Accept' => Rest::MIME_JSON}
-            )[:data]
+            )
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)

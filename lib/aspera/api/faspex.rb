@@ -146,7 +146,7 @@ module Aspera
             base_url = redir_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             # Get web UI client_id and redirect_uri
             # TODO: change this for something more reliable
-            config = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET')[:data].sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
+            config = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET').sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
             Log.dump(:configjs, config)
             {
               base_url: "#{base_url}/#{PATH_API_V5}",

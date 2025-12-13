@@ -116,7 +116,7 @@ module Aspera
             subpath:   "files/#{file_id}/files",
             headers:   headers,
             query:     request_args
-          )[:data]
+          )
         end
 
         # old version based on folders

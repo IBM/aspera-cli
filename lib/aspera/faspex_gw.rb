@@ -55,7 +55,7 @@ module Aspera
         content_type: Rest::MIME_JSON,
         body:         {paths: [{'destination'=>'/'}]},
         headers:      {'Accept' => Rest::MIME_JSON}
-      )[:data]
+      )
       transfer_spec.delete('authentication')
       # but we place it in a Faspex package creation response
       return {
