@@ -106,15 +106,15 @@ module Aspera
         Aspera.assert_type(args, Array, NilClass)
         Aspera.assert_type(env, Hash, NilClass)
         Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
-        # start in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
-        # ensure no shell expansion
+        # Ensure no shell expansion
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
-        kwargs = {exception: true}
-        kwargs.merge!(system_args)
-        Kernel.system(*spawn_args, **kwargs, exception: true)
+        # By default: exception on error
+        system_args[:exception] = true unless system_args.key?(:exception)
+        # Start in separate process
+        Kernel.system(*spawn_args, **system_args)
         nil
       end
 
