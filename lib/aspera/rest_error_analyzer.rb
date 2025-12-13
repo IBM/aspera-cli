@@ -27,13 +27,13 @@ module Aspera
     # Use this method to analyze a EST result and raise an exception
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
-    def raise_on_error(req, res)
-      Log.log.debug{"raise_on_error #{req.method} #{req.path} #{res[:http].code}"}
+    def raise_on_error(req, data, http)
+      Log.log.debug{"raise_on_error #{req.method} #{req.path} #{http.code}"}
       call_context = {
         messages: [],
         request:  req,
-        response: res[:http],
-        data:     res[:data]
+        response: http,
+        data:     data
       }
       # multiple error messages can be found
       # analyze errors from provided handlers

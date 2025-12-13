@@ -444,7 +444,7 @@ module Aspera
         else # when MIME_TEXT
           result_data = result_http.body
         end
-        RestErrorAnalyzer.instance.raise_on_error(req, {data: result_data, http: result_http})
+        RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
         unless file_saved || save_to_file.nil?
           FileUtils.mkdir_p(File.dirname(save_to_file))
           File.write(save_to_file, result_http.body, binmode: true)
