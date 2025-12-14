@@ -1697,6 +1697,8 @@ aoc_faspex_gateway:
     - gateway
     - '@json:{"url":"https://localhost:12345/aspera/faspex"}'
 aoc_faspex_gatewayb:
+  depends_on:
+    - aoc_faspex_gateway
   tags:
     - nodoc
   command:

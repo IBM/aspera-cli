@@ -136,6 +136,9 @@ def stop_process(name)
   pid = pid_file(name).read.to_i
   Process.kill('TERM', pid)
   Process.wait(pid)
+rescue Errno::ECHILD
+  # ignore if process was started by another instance
+  nil
 end
 
 def check_process(name)
@@ -244,6 +247,8 @@ namespace TEST_CASE_NS do
           puts("Input: #{input}")
         end
         run(*full_args, env: info['env'], **kwargs)
+        # give time to start
+        sleep(1) if info['tags']&.include?('noblock')
         info['post']&.each do |cmd|
           puts("Executing: #{cmd}")
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
