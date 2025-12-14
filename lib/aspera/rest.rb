@@ -300,14 +300,14 @@ module Aspera
     end
 
     # HTTP/S REST call
-    # @param operation [String] HTTP operation (GET, POST, PUT, DELETE)
-    # @param subpath [String] subpath of REST API
-    # @param query [Hash] URL parameters
-    # @param content_type [String,nil] Type of body parameters (one of MIME_*) and serialization, else use headers
-    # @param body [Hash, String] body parameters
-    # @param headers [Hash] additional headers (override Content-Type)
-    # @param save_to_file (filepath)
-    # @param exception (bool) true, error raise exception
+    # @param operation    [String] HTTP operation (GET, POST, PUT, DELETE)
+    # @param subpath      [String] subpath of REST API
+    # @param query        [Hash] URL parameters
+    # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
+    # @param body       [Hash, String] body parameters
+    # @param headers      [Hash] additional headers (override Content-Type)
+    # @param save_to_file [String, nil](filepath)
+    # @param exception    [Bool] `true`, error raise exception
     # @param ret [:data, :resp, :both] Tell to return only data, only http response, or both
     # @return [Object, Array] only data, only http response, or both
     def call(
@@ -328,6 +328,8 @@ module Aspera
       Log.dump(:query, query, level: :trace1)
       Log.dump(:headers, headers, level: :trace1)
       Aspera.assert_type(subpath, String)
+      # We must have a way to check return code
+      Aspera.assert(exception || !ret.eql?(:data))
       if headers.nil?
         headers = @headers.clone
       else

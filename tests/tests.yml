@@ -2048,7 +2048,7 @@ aocfdownc:
     - aoc_tstdst
   pre:
     - PATH_DOWN_TST_ASC.delete rescue nil
-    - system('killall asperaconnect') rescue nil
+    - "run('killall', 'asperaconnect', exception: false)"
     - sleep 1
   command:
     - aoc
@@ -4086,6 +4086,8 @@ conf_vault_macosb:
     - '@json:{"label":"foo"}'
     - --vault=@json:{"type":"system"}
 conf_vault_macosc:
+  depends_on:
+    - conf_vault_macosb
   tags:
     - nodoc
   command:
@@ -4096,6 +4098,8 @@ conf_vault_macosc:
     - foo
     - --vault=@json:{"type":"system"}
 conf_vault_macosd:
+  depends_on:
+    - conf_vault_macosc
   tags:
     - ignore_fail
     - nodoc
@@ -4195,7 +4199,7 @@ conf_vault_pass:
     - config
     - vault
     - password
-    - $(NEW_VAULT_PASS)
+    - \@preset:misc.new_vault_pass
 conf_vault_pass2:
   tags:
     - tmp_conf
@@ -4206,8 +4210,10 @@ conf_vault_pass2:
     - set
     - GLOBAL
     - vault_password
-    - $(NEW_VAULT_PASS)
+    - \@preset:misc.new_vault_pass
 conf_vault_list:
+  depends_on:
+    - conf_vault_pass2
   tags:
     - tmp_conf
   command:
@@ -4215,6 +4221,8 @@ conf_vault_list:
     - vault
     - list
 conf_vault_delete_label:
+  depends_on:
+    - conf_vault_list
   tags:
     - tmp_conf
   command:
@@ -4932,7 +4940,7 @@ serv_hot_check:
   depends_on:
     - serv_hot_run
   pre:
-    - system 'ls -al source_hot'
+    - run('ls', '-al', 'source_hot')
   command:
     - server
     - browse
@@ -5724,6 +5732,7 @@ f5_webauth:
     - faspex5
     - version
 f5_fxgw_start:
+  description: Start a faspex4->faspex5 gateway in background.
   tags:
     - noblock
   command:
@@ -5731,6 +5740,7 @@ f5_fxgw_start:
     - gateway
     - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
 f5_fxgw_test:
+  description: Test the faspex4->faspex5 gateway.
   tags:
     - nodoc
   depends_on:
@@ -5746,15 +5756,16 @@ f5_fxgw_test:
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
   post:
-    - system 'curl -k https://localhost:12346/aspera/faspex/send -d bad'
-    - system 'curl -k https://localhost:12346/aspera/faspex/bad -d bad'
+    - Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    - "Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)"
+    - "Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)"
     - stop_process 'f5_fxgw_start'
 f5_postproc_start:
   tags:
     - noblock
   pre:
-    - system 'openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes -keyout $(TMP / "key.pem") -out $(TMP / "cert.pem") -subj /CN=localhost'
-    - system 'openssl pkcs12 -export -out $(TMP / "localhost.p12") -inkey $(TMP / "key.pem") -in $(TMP / "cert.pem") -passout pass:changeit'
+    - run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
+    - run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', 'pass:changeit')
   command:
     - faspex5
     - postprocessing
@@ -5769,9 +5780,9 @@ f5_postproc_test:
     - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}'
     - faux:///test1?1m
   post:
-    - |
-      system %q{curl -k https://localhost:8553/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'}
-    - system 'curl -k https://localhost:8553/wrong -d {}'
+    - Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    - "Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)"
+    - "Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)"
     - sleep 5
     - stop_process 'f5_postproc_start'
 f5_postproc_test_with_key:
@@ -5823,7 +5834,7 @@ f5_cert_testc:
     - noblock
     - nodoc
   pre:
-    - system 'openssl req -newkey rsa:2048 -x509 -days 365 -nodes -keyout $(TMP / "private_key.pem") -out $(TMP / "certificate.pem") -subj /CN=MyCert'
+    - run('openssl', 'req', '-newkey', 'rsa:2048', '-x509', '-days', 365, '-nodes', '-keyout', TMP / 'private_key.pem', '-out', TMP / 'certificate.pem', '-subj', '/CN=MyCert')
   command:
     - faspex5
     - postprocessing
@@ -5836,7 +5847,7 @@ f5_cert_testd:
     - noblock
     - nodoc
   pre:
-    - system 'openssl pkcs12 -export -out $(TMP / "certificate.p12") -inkey $(TMP / "private_key.pem") -in $(TMP / "certificate.pem") -name MyCertAlias -passout pass:"$(PKCS_P)"'
+    - run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{PKCS_P}")
   command:
     - faspex5
     - postprocessing

@@ -6,6 +6,7 @@ require 'uri'
 require 'zlib'
 require 'fileutils'
 require 'aspera/environment'
+require 'aspera/rest'
 require_relative '../package/build_tools'
 require_relative '../package/paths'
 
@@ -43,7 +44,6 @@ TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = TMP_SYNCS / 'shares_sync'
 PATH_TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TOP / 'tmp/sample_vault.bin'
-NEW_VAULT_PASS = 'my_other_pass_here'
 PKCS_P = 'YourExportPassword'
 PATH_FILE_LIST = TMP / 'filelist.txt'
 PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
@@ -86,6 +86,16 @@ PATH_TMP_STATES.mkpath
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
 TEST_DEFS = yaml_safe_load(PATH_TEST_DEFS.read)
+# Allowed keys in test defs
+# command: the list for command line
+# tags: arbitrary tags to identify special attributes
+# env: anv var to set
+# pre: List of Ruby commands to execute before the test
+# post: List of Ruby commands to execute after the test
+# description: a description of the test
+# $comment: an internal comment
+# stdin: input to provide to command line
+# expect: expected output
 ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
 unsupported_keys = TEST_DEFS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
 raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
