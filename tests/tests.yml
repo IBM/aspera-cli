@@ -22,13 +22,13 @@ shares_detect:
   command:
     - config
     - detect
-    - \@preset:shares_admin.url
+    - "@preset:shares_admin.url"
     - shares
 shares_wizard:
   command:
     - config
     - wizard
-    - \@preset:shares_admin.url
+    - "@preset:shares_admin.url"
     - shares
     - --username=test
     - --password=test
@@ -66,7 +66,7 @@ shares_admin_5:
     - user
     - all
     - app_authorizations
-    - \%username:@preset:shares_admin.username
+    - "%username:@preset:shares_admin.username"
     - show
 shares_admin_6:
   command:
@@ -75,7 +75,7 @@ shares_admin_6:
     - user
     - all
     - app_authorizations
-    - \%username:@preset:shares_admin.username
+    - "%username:@preset:shares_admin.username"
     - modify
     - '@json:{"app_login":true}'
 shares_admin_7:
@@ -85,7 +85,7 @@ shares_admin_7:
     - user
     - all
     - share_permissions
-    - \%username:@preset:shares_admin.username
+    - "%username:@preset:shares_admin.username"
     - list
 shares_admin_8:
   command:
@@ -94,9 +94,9 @@ shares_admin_8:
     - user
     - all
     - share_permissions
-    - \%username:@preset:shares_admin.username
+    - "%username:@preset:shares_admin.username"
     - show
-    - \%name:@preset:shares.share
+    - "%name:@preset:shares.share"
 shares_admin_9:
   command:
     - shares
@@ -128,7 +128,7 @@ shares_admin_12:
     - admin
     - share
     - user_permissions
-    - \%name:@preset:shares.share
+    - "%name:@preset:shares.share"
     - list
 shares_1:
   command:
@@ -151,7 +151,7 @@ shares_3:
     - files
     - download
     - --to-folder=$(TMP)
-    - \@extend:@preset:shares.share_folder@/@preset:file.asc_name@
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
 shares_4:
   depends_on:
     - shares_3
@@ -159,7 +159,7 @@ shares_4:
     - shares
     - files
     - delete
-    - \@extend:@preset:shares.share_folder@/@preset:file.asc_name@
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
 shares_5:
   depends_on:
     - shares_4
@@ -200,8 +200,8 @@ shares_7:
     - files
     - download
     - --to-folder=$(TMP)
-    - \@extend:@preset:shares.share_folder@/@preset:file.asc_name@
-    - \@extend:@preset:shares.share_folder@/@preset:file.asc_name@
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
     - --transfer=httpgw
     - --preset=no_wss
     - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
@@ -212,7 +212,7 @@ shares_8:
     - shares
     - files
     - delete
-    - \@extend:@preset:shares.share_folder@/@preset:file.asc_name@
+    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
 shares_9_prep:
   tags:
     - ignore_fail
@@ -221,7 +221,7 @@ shares_9_prep:
     - shares
     - files
     - delete
-    - \@extend:@preset:shares.share_folder@/new_folder
+    - "@extend:@preset:shares.share_folder@/new_folder"
 shares_9:
   depends_on:
     - shares_9_prep
@@ -229,7 +229,7 @@ shares_9:
     - shares
     - files
     - mkdir
-    - \@extend:@preset:shares.share_folder@/new_folder
+    - "@extend:@preset:shares.share_folder@/new_folder"
 shares_10:
   depends_on:
     - shares_9
@@ -237,7 +237,7 @@ shares_10:
     - shares
     - files
     - delete
-    - \@extend:@preset:shares.share_folder@/new_folder
+    - "@extend:@preset:shares.share_folder@/new_folder"
 shares_sync_prepare:
   tags:
     - ignore_fail
@@ -246,7 +246,7 @@ shares_sync_prepare:
     - shares
     - files
     - mkdir
-    - \@extend:@preset:shares.share_folder@/synctst
+    - "@extend:@preset:shares.share_folder@/synctst"
 shares_sync_1:
   depends_on:
     - shares_sync_prepare
@@ -287,13 +287,13 @@ serv_detect:
   command:
     - config
     - detect
-    - \@preset:server_user.url
+    - "@preset:server_user.url"
     - server
 serv_wizard:
   command:
     - config
     - wizard
-    - \@preset:server_user.url
+    - "@preset:server_user.url"
     - server
     - --username=@preset:server_user.username
     - --password=@preset:server_user.password
@@ -303,7 +303,7 @@ serv_wizard2:
   command:
     - config
     - wizard
-    - \@preset:server.address
+    - "@preset:server.address"
     - server
     - srv2
     - --username=@preset:server_user.username
@@ -317,7 +317,7 @@ serv_mkdir:
   command:
     - server
     - mkdir
-    - \@preset:server.inside_folder
+    - "@preset:server.inside_folder"
     - --logger=stdout
 serv_error1:
   tags:
@@ -400,7 +400,7 @@ serv_upload1b:
   command:
     - server
     - browse
-    - \@extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)
+    - "@extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)"
 serv_upload2:
   depends_on:
     - serv_mkdir
@@ -409,7 +409,7 @@ serv_upload2:
     - upload
     - --src-type=pair
     - $(TST_MED_LCL_PATH)
-    - \@extend:@preset:server.inside_folder@/other_name_2
+    - "@extend:@preset:server.inside_folder@/other_name_2"
     - --notify-to=@preset:misc.email_external
     - --transfer-info=@json:{"ascp_args":["-l","100m"]}
 serv_upload3_prep:
@@ -421,7 +421,7 @@ serv_upload3_prep:
   command:
     - server
     - delete
-    - \@extend:@preset:server.inside_folder@/other_name_3
+    - "@extend:@preset:server.inside_folder@/other_name_3"
 serv_upload3:
   depends_on:
     - serv_upload3_prep
@@ -449,13 +449,13 @@ serv_upload5:
     - upload
     - --src-type=pair
     - $(PATH_TST_ASC_LCL)
-    - \@extend:@preset:server.upload_folder@/other_name_5
+    - "@extend:@preset:server.upload_folder@/other_name_5"
     - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
   pre:
-    - (TMP_SYNCS / 'serv_sync_pull_args').rmtree
-    - (TMP_SYNCS / 'serv_sync_pull_args').mkdir
+    - (PATH_TMP_SYNCS / 'serv_sync_pull_args').rmtree
+    - (PATH_TMP_SYNCS / 'serv_sync_pull_args').mkdir
   tags:
     - nodoc
   depends_on:
@@ -467,8 +467,8 @@ serv_sync_pull_args_reset:
     - server
     - sync
     - pull
-    - \@preset:server.inside_folder
-    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_args')
+    - "@preset:server.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:@extend:{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
 serv_sync_pull_args_status1:
   tags:
@@ -480,7 +480,7 @@ serv_sync_pull_args_status1:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
 serv_sync_pull_args_sync2:
   tags:
@@ -492,7 +492,7 @@ serv_sync_pull_args_sync2:
     - sync
     - admin
     - meta
-    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
 serv_sync_pull_args_counters:
   tags:
@@ -504,20 +504,20 @@ serv_sync_pull_args_counters:
     - sync
     - admin
     - counters
-    - $(TMP_SYNCS / 'serv_sync_pull_args')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
 serv_sync_pull_conf_reset:
   pre:
-    - (TMP_SYNCS / 'serv_sync_pull_conf').rmtree
-    - (TMP_SYNCS / 'serv_sync_pull_conf').mkdir
+    - (PATH_TMP_SYNCS / 'serv_sync_pull_conf').rmtree
+    - (PATH_TMP_SYNCS / 'serv_sync_pull_conf').mkdir
   depends_on:
     - serv_sync_pull_args_counters
   command:
     - server
     - sync
     - pull
-    - \@preset:server.inside_folder
-    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_conf')
+    - "@preset:server.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@json:@extend:{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 serv_sync_pull_conf_status_fail:
   depends_on:
@@ -541,7 +541,7 @@ serv_sync_pull_conf_status:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@json:{"name":"serv_sync_pull_conf"}'
 serv_sync_pull_conf_sync:
   depends_on:
@@ -550,8 +550,8 @@ serv_sync_pull_conf_sync:
     - server
     - sync
     - pull
-    - \@preset:server.inside_folder
-    - --to-folder=$(TMP_SYNCS / 'serv_sync_pull_conf')
+    - "@preset:server.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@json:@extend:{"name":"serv_sync_pull_conf"}'
 serv_sync_pull_conf_status2:
   depends_on:
@@ -561,7 +561,7 @@ serv_sync_pull_conf_status2:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
 serv_sync_pull_conf_overview:
   depends_on:
     - serv_sync_pull_conf_sync
@@ -570,7 +570,7 @@ serv_sync_pull_conf_overview:
     - sync
     - admin
     - overview
-    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
 serv_sync_pull_conf_fileinfo:
   depends_on:
     - serv_sync_pull_conf_sync
@@ -579,7 +579,7 @@ serv_sync_pull_conf_fileinfo:
     - sync
     - admin
     - file_info
-    - $(TMP_SYNCS / 'serv_sync_pull_conf')
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
 serv_upload_ex_list:
   depends_on:
     - serv_mkdir
@@ -603,21 +603,21 @@ serv_md5:
   command:
     - server
     - md5sum
-    - \@extend:@preset:server.inside_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
 serv_down_lcl:
   depends_on:
     - serv_upload1
   command:
     - server
     - download
-    - \@extend:@preset:server.inside_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
     - --to-folder=$(TMP)
     - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
   command:
     - server
     - download
-    - \@preset:server.large_file
+    - "@preset:server.large_file"
     - --to-folder=@preset:server.upload_folder
     - --transfer=node
     - --ts.resume_policy=none
@@ -637,23 +637,23 @@ serv_cp:
   command:
     - server
     - cp
-    - \@extend:@preset:server.inside_folder@/@preset:file.asc_name@
-    - \@extend:@preset:server.upload_folder@/200KB.2
+    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.upload_folder@/200KB.2"
 serv_mv:
   depends_on:
     - serv_cp
   command:
     - server
     - mv
-    - \@extend:@preset:server.upload_folder@/200KB.2
-    - \@extend:@preset:server.upload_folder@/to.delete
+    - "@extend:@preset:server.upload_folder@/200KB.2"
+    - "@extend:@preset:server.upload_folder@/to.delete"
 serv_delete:
   depends_on:
     - serv_mv
   command:
     - server
     - delete
-    - \@extend:@preset:server.upload_folder@/to.delete
+    - "@extend:@preset:server.upload_folder@/to.delete"
 serv_cleanup1:
   depends_on:
     - serv_cp
@@ -663,7 +663,7 @@ serv_cleanup1:
   command:
     - server
     - delete
-    - \@preset:server.inside_folder
+    - "@preset:server.inside_folder"
 serv_info:
   command:
     - server
@@ -751,12 +751,12 @@ cons_detect:
   command:
     - config
     - detect
-    - \@preset:console_admin.url
+    - "@preset:console_admin.url"
 cons_wizard:
   command:
     - config
     - wizard
-    - \@preset:console_admin.url
+    - "@preset:console_admin.url"
     - console
     - --preset=console_admin
 cons_cur_lst:
@@ -828,7 +828,7 @@ cons_sma_sta:
     - transfer
     - smart
     - sub
-    - \@preset:console.smart_id
+    - "@preset:console.smart_id"
     - '@json:@extend:{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'
 # Node ------------------------------------------------------
 # nodegen3
@@ -847,12 +847,12 @@ nd_detect:
   command:
     - config
     - detect
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
 nd_wizard:
   command:
     - config
     - wizard
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
     - node
     - --username=test
     - --password=test
@@ -904,22 +904,22 @@ nd_folder:
   command:
     - node
     - mkdir
-    - \@extend:@preset:server.upload_folder@/a_folder
+    - "@extend:@preset:server.upload_folder@/a_folder"
 nd_folder2:
   depends_on:
     - nd_folder
   command:
     - node
     - mklink
-    - \@extend:@preset:server.upload_folder@/a_folder
-    - \@extend:@preset:server.upload_folder@/tdlink
+    - "@extend:@preset:server.upload_folder@/a_folder"
+    - "@extend:@preset:server.upload_folder@/tdlink"
 nd_folder3:
   depends_on:
     - nd_folder
   command:
     - node
     - mkfile
-    - \@extend:@preset:server.upload_folder@/a_file1
+    - "@extend:@preset:server.upload_folder@/a_file1"
     - hello world
 nd_folder4:
   depends_on:
@@ -927,7 +927,7 @@ nd_folder4:
   command:
     - node
     - rename
-    - \@preset:server.upload_folder
+    - "@preset:server.upload_folder"
     - a_file1
     - a_file
 nd_folder5:
@@ -939,7 +939,7 @@ nd_folder5:
   command:
     - node
     - delete
-    - \@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file
+    - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
 nd2:
   tags:
     - nodoc
@@ -955,7 +955,7 @@ nd2b:
   command:
     - node
     - download
-    - \@extend:@preset:server.upload_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
     - --to-folder=$(TMP)
 nd2c:
   depends_on:
@@ -963,7 +963,7 @@ nd2c:
   command:
     - node
     - delete
-    - \@extend:@preset:server.upload_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd_slash:
   command:
     - node
@@ -983,14 +983,14 @@ nd2_httpb:
   command:
     - node
     - cat
-    - \@extend:@preset:server.upload_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd2_httpc:
   depends_on:
     - nd2_httpb
   command:
     - node
     - delete
-    - \@extend:@preset:server.upload_folder@/@preset:file.asc_name@
+    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
 nd_2_nd_xfer:
   command:
     - node
@@ -1009,7 +1009,7 @@ nd_2_nd_xferb:
   command:
     - node
     - delete
-    - \@extend:@preset:server.upload_folder@/10MB.2
+    - "@extend:@preset:server.upload_folder@/10MB.2"
 nd_service_clean:
   tags:
     - ignore_fail
@@ -1245,7 +1245,7 @@ nd_akb:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - node_info
     - /
 nd_akc:
@@ -1254,7 +1254,7 @@ nd_akc:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - browse
     - /
 nd_akd:
@@ -1266,18 +1266,18 @@ nd_akd:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - find
-    - \@json:{}
+    - "@json:{}"
 nd_ake:
   command:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - find
-    - \@preset:aoc.test_folder
+    - "@preset:aoc.test_folder"
     - |
       @ruby:->(f){f["name"].end_with?(".jpg")}
 nd_akf:
@@ -1286,9 +1286,9 @@ nd_akf:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - find
-    - \@preset:aoc.test_folder
+    - "@preset:aoc.test_folder"
     - '@re:\.jpg$'
 nd_akg:
   command:
@@ -1296,9 +1296,9 @@ nd_akg:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - find
-    - \@preset:aoc.test_folder
+    - "@preset:aoc.test_folder"
 nd_ak_mkdir:
   tags:
     - ignore_fail
@@ -1308,7 +1308,7 @@ nd_ak_mkdir:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - delete
     - /tst_nd_ak
   post:
@@ -1319,7 +1319,7 @@ nd_ak_mkdirb:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - mkdir
     - /tst_nd_ak
   post:
@@ -1333,7 +1333,7 @@ nd_ak_mkfile:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - delete
     - /mkfile.txt
   post:
@@ -1344,7 +1344,7 @@ nd_ak_mkfileb:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - mkfile
     - /mkfile.txt
     - hello world
@@ -1361,7 +1361,7 @@ nd_ak_mklink:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - delete
     - /mklink.txt
   post:
@@ -1372,7 +1372,7 @@ nd_ak_mklinkb:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - mklink
     - /mklink.txt
     - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
@@ -1388,7 +1388,7 @@ nd_ak_mvdir:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - browse
     - /
     - --node-cache=no
@@ -1398,7 +1398,7 @@ nd_ak_mvdirb:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - rename
     - /tst_nd_ak
     - test_nd_ak2
@@ -1410,7 +1410,7 @@ nd_ak_deldir:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - delete
     - /test_nd_ak2
 nd_ak3:
@@ -1419,7 +1419,7 @@ nd_ak3:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - upload
     - 'faux:///test_nd_ak3?100k'
     - --default-ports=no
@@ -1431,7 +1431,7 @@ nd_ak3b:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - download
     - test_nd_ak3
     - --to-folder=$(TMP)
@@ -1446,7 +1446,7 @@ nd_ak3c:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - show
     - /test_nd_ak3
 nd_ak3d:
@@ -1460,7 +1460,7 @@ nd_ak3d:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - thumbnail
     - /test_nd_ak3
 nd_ak3e:
@@ -1473,7 +1473,7 @@ nd_ak3e:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - delete
     - test_nd_ak3
 nd_ak4:
@@ -1484,9 +1484,9 @@ nd_ak4:
     - node
     - access_key
     - do
-    - \@preset:aoc.ak_name
+    - "@preset:aoc.ak_name"
     - show
-    - \%id:1
+    - "%id:1"
 nd_ak_bearer_reset:
   tags:
     - ignore_fail
@@ -1497,7 +1497,7 @@ nd_ak_bearer_reset:
     - --preset=tst_node_preview
     - access_key
     - delete
-    - \@preset:ak_creds.username
+    - "@preset:ak_creds.username"
   post:
     - sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
@@ -1522,7 +1522,7 @@ nd_ak_bearer_show:
     - node
     - access_key
     - show
-    - \%id:self
+    - "%id:self"
 nd_ak_bearer_set_key:
   depends_on:
     - nd_ak_bearer_create
@@ -1534,7 +1534,7 @@ nd_ak_bearer_set_key:
     - access_key
     - set_bearer_key
     - self
-    - \@file:@preset:file.private_key
+    - "@file:@preset:file.private_key"
 bearer_root_id:
   depends_on:
     - nd_ak_bearer_create
@@ -1564,7 +1564,7 @@ nd_ak_bearerf:
     - do
     - self
     - permission
-    - \%id:$(read_value_from 'bearer_root_id')
+    - "%id:$(read_value_from 'bearer_root_id')"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearerg:
@@ -1594,7 +1594,7 @@ node_bearer_token:
     - --preset=ak_creds
     - node
     - bearer_token
-    - \@file:@preset:file.private_key
+    - "@file:@preset:file.private_key"
     - '@json:{"user_id":"666"}'
 nd_ak_beareri:
   depends_on:
@@ -1634,13 +1634,13 @@ nd_ak_bearerk:
     - node
     - access_key
     - delete
-    - \@preset:ak_creds.username
+    - "@preset:ak_creds.username"
 # AoC ------------------------------------------------------
 aoc_detect:
   command:
     - config
     - detect
-    - \@preset:aoc.org
+    - "@preset:aoc.org"
     - aoc
 aoc_wizard:
   command:
@@ -1656,7 +1656,7 @@ aoc_wizardc:
   command:
     - config
     - wizard
-    - \@preset:aoc.org
+    - "@preset:aoc.org"
     - aoc
     - --key-path=@preset:file.private_key
     - --username=@preset:aoc.user_email
@@ -1684,7 +1684,7 @@ aoc_wizard_2c:
   command:
     - config
     - wizard
-    - \@preset:aoc.org
+    - "@preset:aoc.org"
     - aoc
     - mypreset
     - --key-path=@preset:file.private_key
@@ -1796,7 +1796,7 @@ aocg7b:
     - packages
     - shared_inboxes
     - show
-    - \%name:@preset:aoc.shared_inbox_name
+    - "%name:@preset:aoc.shared_inbox_name"
 aocg8:
   command:
     - aoc
@@ -1831,19 +1831,19 @@ aocfbr1:
     - aoc
     - files
     - browse
-    - \@preset:aoc.remote_folder
+    - "@preset:aoc.remote_folder"
 aocfbr1b:
   command:
     - aoc
     - files
     - browse
-    - \@extend:@preset:aoc.remote_folder@/
+    - "@extend:@preset:aoc.remote_folder@/"
 aocfbr1c:
   command:
     - aoc
     - files
     - browse
-    - \@preset:aoc.remote_file
+    - "@preset:aoc.remote_file"
 aocfbt:
   command:
     - aoc
@@ -1973,7 +1973,7 @@ aocftr:
     - push
     - /testsrc
     - --to-folder=/testdst
-    - \@preset:file.asc_name
+    - "@preset:file.asc_name"
 aocftrb:
   tags:
     - nodoc
@@ -2007,7 +2007,7 @@ aocndinfb:
     - upload
     - --workspace=@preset:aoc.other_workspace
     - --to-folder=@preset:aoc.other_folder
-    - \@preset:file.asc_name
+    - "@preset:file.asc_name"
     - --transfer=node
     - --transfer-info=@json:$(read_value_from('aocndinf'))
 aocfdel:
@@ -2034,7 +2034,7 @@ aocfdownd:
     - files
     - download
     - --to-folder=$(TMP)
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
     - testdst/$(CONF_DATA['file']['utf_name'])
 aocfdowndb:
   tags:
@@ -2044,7 +2044,7 @@ aocfdowndb:
     - files
     - download
     - --to-folder=$(TMP)
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfdownc:
   depends_on:
     - aoc_tstdst
@@ -2057,7 +2057,7 @@ aocfdownc:
     - files
     - download
     - --transfer=connect
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfdowna:
   depends_on:
     - aoc_tstdst
@@ -2068,7 +2068,7 @@ aocfdowna:
     - files
     - download
     - --transfer=desktop
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfhttpd:
   depends_on:
     - aocftr
@@ -2076,7 +2076,7 @@ aocfhttpd:
     - aoc
     - files
     - cat
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
 aocfv3inf:
   command:
     - aoc
@@ -2085,15 +2085,15 @@ aocfv3inf:
     - info
 aoc_sync_pull_conf_parms:
   pre:
-    - (TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
-    - (TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
+    - (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
+    - (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
   command:
     - aoc
     - files
     - sync
     - pull
     - /testdst
-    - --to-folder=$(TMP_SYNCS / 'aoc_sync_pull_conf_parms')
+    - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_parmsb:
   command:
@@ -2102,18 +2102,18 @@ aoc_sync_pull_conf_parmsb:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'aoc_sync_pull_conf_parms')
+    - $(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
 aoc_sync_conf_pull_params:
   pre:
-    - (TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
-    - (TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
+    - (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
+    - (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
   command:
     - aoc
     - files
     - sync
     - pull
     - /testdst
-    - --to-folder=$(TMP_SYNCS / 'aoc_sync_conf_pull_params')
+    - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_paramsb:
   command:
@@ -2122,7 +2122,7 @@ aoc_sync_conf_pull_paramsb:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'aoc_sync_conf_pull_params')
+    - $(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
 aoc_file_id:
   depends_on:
     - aocftr
@@ -2133,7 +2133,7 @@ aoc_file_id:
     - aoc
     - files
     - br
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
     - --fields=id
     - --format=csv
     - --display=data
@@ -2144,7 +2144,7 @@ aoc_file_id_2:
     - aoc
     - files
     - show
-    - \%id:$(read_value_from 'aoc_file_id')
+    - "%id:$(read_value_from 'aoc_file_id')"
 aoc_file_id_3:
   depends_on:
     - aocftr
@@ -2160,7 +2160,7 @@ aoc_file_id_4:
     - aoc
     - files
     - show
-    - \@extend:testdst/@preset:file.asc_name@
+    - "@extend:testdst/@preset:file.asc_name@"
 aoc_file_id_5:
   tags:
     - ignore_fail
@@ -2171,7 +2171,7 @@ aoc_file_id_5:
     - aoc
     - files
     - mkdir
-    - \@preset:aoc.test_folder
+    - "@preset:aoc.test_folder"
 aoc_file_id_6:
   tags:
     - nodoc
@@ -2183,7 +2183,7 @@ aoc_file_id_6:
     - upload
     - --to-folder=@preset:aoc.test_folder
     - --src-type=pair
-    - \@preset:file.mpg
+    - "@preset:file.mpg"
     - video_file.mpg
   post:
     - puts 'waiting for preview'
@@ -2199,7 +2199,7 @@ aoc_file_id_7:
     - upload
     - --to-folder=@preset:aoc.test_folder
     - --src-type=pair
-    - \@preset:file.jpg
+    - "@preset:file.jpg"
     - image_file.jpg
 aoc_file_id_8:
   depends_on:
@@ -2208,7 +2208,7 @@ aoc_file_id_8:
     - aoc
     - files
     - permission
-    - \@preset:aoc.test_folder
+    - "@preset:aoc.test_folder"
     - list
 aoc_file_id_9:
   depends_on:
@@ -2217,7 +2217,7 @@ aoc_file_id_9:
     - aoc
     - files
     - thumbnail
-    - \@extend:@preset:aoc.test_folder@/video_file.mpg
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
 aoc_file_id_10:
   depends_on:
     - aoc_file_id_6
@@ -2225,7 +2225,7 @@ aoc_file_id_10:
     - aoc
     - files
     - thumbnail
-    - \@extend:@preset:aoc.test_folder@/video_file.mpg
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
     - --query=@json:{"text":true,"double":true}
 aoc_file_id_11:
   tags:
@@ -2236,7 +2236,7 @@ aoc_file_id_11:
     - aoc
     - files
     - thumbnail
-    - \@extend:@preset:aoc.test_folder@/video_file.mpg
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
     - --query=@json:{"text":true,"double":false}
 aoc_file_id_12:
   env:
@@ -2248,7 +2248,7 @@ aoc_file_id_12:
     - aoc
     - files
     - thumbnail
-    - \@extend:@preset:aoc.test_folder@/video_file.mpg
+    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
 #	 aoc files modify @preset:aoc.test_folder
 aocfpub:
   command:
@@ -2532,7 +2532,7 @@ aoc_adm_ws_lst2:
     - admin
     - workspace
     - dropbox
-    - \%name:@preset:aoc.other_workspace
+    - "%name:@preset:aoc.other_workspace"
     - list
 aoc_adm_ws_lst3:
   command:
@@ -2541,7 +2541,7 @@ aoc_adm_ws_lst3:
     - admin
     - workspace
     - shared_folder
-    - \%name:@preset:aoc.other_workspace
+    - "%name:@preset:aoc.other_workspace"
     - list
 shared_folder_id:
   tags:
@@ -2553,7 +2553,7 @@ shared_folder_id:
     - admin
     - workspace
     - shared_folder
-    - \%name:@preset:aoc.other_workspace
+    - "%name:@preset:aoc.other_workspace"
     - list
     - --query.max=1
     - --fields=id
@@ -2564,7 +2564,7 @@ aoc_adm_ws_lst5:
     - admin
     - workspace
     - shared_folder
-    - \%name:@preset:aoc.other_workspace
+    - "%name:@preset:aoc.other_workspace"
     - member
     - $(read_value_from 'shared_folder_id')
     - list
@@ -2575,7 +2575,7 @@ aoc_adm_nd_events:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - v3
     - events
@@ -2586,7 +2586,7 @@ aoc_adm_ak_create:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - mkdir
     - /folder_sub
@@ -2599,7 +2599,7 @@ aoc_adm_ak_browse:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - browse
     - /folder_sub
@@ -2613,7 +2613,7 @@ aoc_adm_ak_sub_ak:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - v3
     - access_key
@@ -2630,7 +2630,7 @@ aoc_adm_ak_del:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - v3
     - access_key
@@ -2645,7 +2645,7 @@ aoc_adm_ak_dir_del:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - delete
     - /folder_sub
@@ -2656,7 +2656,7 @@ aoc_adm_nd_br:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - browse
     - /
@@ -2670,7 +2670,7 @@ aoc_adm_nd_mkdir_prep:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - delete
     - /folder1
@@ -2686,7 +2686,7 @@ aoc_adm_nd_mkdir:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - mkdir
     - /folder1
@@ -2703,7 +2703,7 @@ aoc_adm_nd_brse:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - browse
     - /
@@ -2718,7 +2718,7 @@ aoc_adm_nd_rmdir:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - --secret=@preset:aoc.ak_secret
     - delete
     - /folder1
@@ -2806,7 +2806,7 @@ aoc_adm_res_01d:
     - admin
     - user
     - modify
-    - \@extend:%name:@preset:aoc.user_email@
+    - "@extend:%name:@preset:aoc.user_email@"
     - '@json:{"deactivated":false}'
 aoc_adm_res_02:
   command:
@@ -2954,7 +2954,7 @@ aocadmndcr:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - delete
     - test_shared_folder
     - --node-cache=no
@@ -2968,7 +2968,7 @@ aocadmndcrb:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - browse
     - test_shared_folder
     - --node-cache=no
@@ -2979,7 +2979,7 @@ aocadmndcrc:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - mkdir
     - test_shared_folder
 aocadmndcrd:
@@ -2991,7 +2991,7 @@ aocadmndcrd:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - browse
     - test_shared_folder
     - --node-cache=no
@@ -3004,7 +3004,7 @@ aocadmndsh1:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - perm
     - test_shared_folder
     - create
@@ -3019,7 +3019,7 @@ aocadmndsh2:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - perm
     - test_shared_folder
     - create
@@ -3034,7 +3034,7 @@ aocadmndsh3:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - perm
     - test_shared_folder
     - create
@@ -3050,7 +3050,7 @@ aocadmndsh4:
     - admin
     - node
     - do
-    - \%name:@preset:aoc.node_name
+    - "%name:@preset:aoc.node_name"
     - delete
     - test_shared_folder
 aocat4:
@@ -3242,12 +3242,12 @@ orch_detect:
   command:
     - config
     - detect
-    - \@preset:orch_user.url
+    - "@preset:orch_user.url"
 orch_wizard:
   command:
     - config
     - wizard
-    - \@preset:orch_user.url
+    - "@preset:orch_user.url"
     - orchestrator
     - --username=test
     - --password=test
@@ -3271,26 +3271,26 @@ orch_wf_inp:
     - orchestrator
     - workflow
     - inputs
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
 orch_wf_sti:
   command:
     - orchestrator
     - workflow
     - status
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
 orch_wf_str1:
   command:
     - orchestrator
     - workflow
     - start
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
     - '@json:{"Param":"world !"}'
 orch_wf_str2:
   command:
     - orchestrator
     - workflow
     - start
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
     - '@json:{"Param":"world !"}'
     - --result=ResultStep:Complete_status_message
 orch_plugins:
@@ -3306,13 +3306,13 @@ orch_wf_details:
     - orchestrator
     - workflow
     - details
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
 orch_wf_detailsb:
   command:
     - orchestrator
     - workflow
     - export
-    - \@preset:orch.workflow_id
+    - "@preset:orch.workflow_id"
 at4:
   command:
     - ats
@@ -3443,14 +3443,14 @@ at14:
     - ak_aws
 nd_sync_pull_conf:
   pre:
-    - (TMP_SYNCS / 'nd_sync_pull_conf').rmtree
-    - (TMP_SYNCS / 'nd_sync_pull_conf').mkdir
+    - (PATH_TMP_SYNCS / 'nd_sync_pull_conf').rmtree
+    - (PATH_TMP_SYNCS / 'nd_sync_pull_conf').mkdir
   command:
     - node
     - sync
     - pull
     - /aspera-test-dir-tiny
-    - --to-folder=$(TMP_SYNCS / 'nd_sync_pull_conf')
+    - --to-folder=$(PATH_TMP_SYNCS / 'nd_sync_pull_conf')
     - '@json:{"reset":true}'
 nd_sync_pull_confb:
   depends_on:
@@ -3460,17 +3460,17 @@ nd_sync_pull_confb:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'nd_sync_pull_conf')
+    - $(PATH_TMP_SYNCS / 'nd_sync_pull_conf')
 nd_sync_v2:
   pre:
-    - (TMP_SYNCS / 'nd_sync_v2').rmtree
-    - (TMP_SYNCS / 'nd_sync_v2').mkdir
+    - (PATH_TMP_SYNCS / 'nd_sync_v2').rmtree
+    - (PATH_TMP_SYNCS / 'nd_sync_v2').mkdir
   command:
     - node
     - sync
     - pull
     - /aspera-test-dir-tiny
-    - --to-folder=$(TMP_SYNCS / 'nd_sync_v2')
+    - --to-folder=$(PATH_TMP_SYNCS / 'nd_sync_v2')
     - '@json:{"name":"my_sync_session_name","reset":true}'
 nd_sync_v2b:
   depends_on:
@@ -3480,7 +3480,7 @@ nd_sync_v2b:
     - sync
     - admin
     - status
-    - $(TMP_SYNCS / 'nd_sync_v2')
+    - $(PATH_TMP_SYNCS / 'nd_sync_v2')
 nd_async_list:
   command:
     - node
@@ -3499,7 +3499,7 @@ nd_async_showb:
     - node
     - async
     - show
-    - \%name:my_sync_session_name
+    - "%name:my_sync_session_name"
 nd_async_cntr:
   depends_on:
     - nd_sync_v2
@@ -3507,7 +3507,7 @@ nd_async_cntr:
     - node
     - async
     - counters
-    - \%name:my_sync_session_name
+    - "%name:my_sync_session_name"
 nd_async_bw:
   depends_on:
     - nd_sync_v2
@@ -3515,7 +3515,7 @@ nd_async_bw:
     - node
     - async
     - bandwidth
-    - \%name:my_sync_session_name
+    - "%name:my_sync_session_name"
 nd_async_files:
   depends_on:
     - nd_sync_v2
@@ -3523,7 +3523,7 @@ nd_async_files:
     - node
     - async
     - files
-    - \%name:my_sync_session_name
+    - "%name:my_sync_session_name"
 nd_async_filesb:
   depends_on:
     - nd_sync_v2
@@ -3531,7 +3531,7 @@ nd_async_filesb:
     - node
     - async
     - files
-    - \%name:my_sync_session_name
+    - "%name:my_sync_session_name"
     - --once-only=yes
 nd_async_del:
   depends_on:
@@ -3553,7 +3553,7 @@ sync_create_prep1:
     - server
     - --preset=server2_user
     - delete
-    - \@preset:sync.remote_path
+    - "@preset:sync.remote_path"
 sync_create_prep2:
   tags:
     - nodoc
@@ -3563,7 +3563,7 @@ sync_create_prep2:
     - --preset=server2_user
     - server
     - mkdir
-    - \@preset:sync.remote_path
+    - "@preset:sync.remote_path"
 sync_create_prep3:
   tags:
     - ignore_fail
@@ -3571,7 +3571,7 @@ sync_create_prep3:
   command:
     - node
     - delete
-    - \@preset:sync.local_path
+    - "@preset:sync.local_path"
 sync_create_prep4:
   tags:
     - nodoc
@@ -3580,7 +3580,7 @@ sync_create_prep4:
   command:
     - node
     - mkdir
-    - \@preset:sync.local_path
+    - "@preset:sync.local_path"
 sync_create_prep5:
   depends_on:
     - sync_create_prep4
@@ -3612,7 +3612,7 @@ sync_start_1:
     - node
     - ssync
     - start
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_check_1:
   depends_on:
     - sync_start_1
@@ -3620,7 +3620,7 @@ sync_check_1:
     - node
     - ssync
     - show
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
   post:
     - sleep 30
 sync_other_a:
@@ -3630,7 +3630,7 @@ sync_other_a:
     - node
     - ssync
     - bandwidth
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_b:
   depends_on:
     - sync_check_1
@@ -3638,7 +3638,7 @@ sync_other_b:
     - node
     - ssync
     - counters
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_c:
   depends_on:
     - sync_check_1
@@ -3646,7 +3646,7 @@ sync_other_c:
     - node
     - ssync
     - files
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_d:
   depends_on:
     - sync_check_1
@@ -3654,7 +3654,7 @@ sync_other_d:
     - node
     - ssync
     - state
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_e:
   depends_on:
     - sync_check_1
@@ -3662,7 +3662,7 @@ sync_other_e:
     - node
     - ssync
     - stop
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_f:
   depends_on:
     - sync_check_1
@@ -3670,7 +3670,7 @@ sync_other_f:
     - node
     - ssync
     - summary
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_delete:
   depends_on:
     - sync_other_a
@@ -3683,7 +3683,7 @@ sync_other_delete:
     - node
     - ssync
     - delete
-    - \%name:my_node_sync
+    - "%name:my_node_sync"
 sync_other_delete_fail:
   tags:
     - hide_fail
@@ -3697,7 +3697,7 @@ conf_detect:
   command:
     - config
     - detect
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
 conf_detectb:
   tags:
     - hide_fail
@@ -4201,7 +4201,7 @@ conf_vault_pass:
     - config
     - vault
     - password
-    - \@preset:misc.new_vault_pass
+    - "@preset:misc.new_vault_pass"
 conf_vault_pass2:
   tags:
     - tmp_conf
@@ -4212,7 +4212,7 @@ conf_vault_pass2:
     - set
     - GLOBAL
     - vault_password
-    - \@preset:misc.new_vault_pass
+    - "@preset:misc.new_vault_pass"
 conf_vault_list:
   depends_on:
     - conf_vault_pass2
@@ -4240,7 +4240,7 @@ conf_echo_vault:
   command:
     - config
     - echo
-    - \@vault:my_preset.password
+    - "@vault:my_preset.password"
 conf_echo_fail1:
   tags:
     - must_fail
@@ -4249,7 +4249,7 @@ conf_echo_fail1:
   command:
     - config
     - echo
-    - \@vault:bad
+    - "@vault:bad"
 conf_echo_fail2:
   tags:
     - must_fail
@@ -4258,7 +4258,7 @@ conf_echo_fail2:
   command:
     - config
     - echo
-    - \@vault:bad.password
+    - "@vault:bad.password"
 conf_echo_fail3:
   tags:
     - must_fail
@@ -4267,7 +4267,7 @@ conf_echo_fail3:
   command:
     - config
     - echo
-    - \@vault:my_preset.bad
+    - "@vault:my_preset.bad"
 conf_help_1:
   tags:
     - nodoc
@@ -4355,7 +4355,7 @@ conf_pub_key:
   command:
     - config
     - pubkey
-    - \@file:$(TMP / 'my_key')
+    - "@file:$(TMP / 'my_key')"
 conf_genkey_fail:
   tags:
     - hide_fail
@@ -4370,19 +4370,19 @@ conf_cert:
     - config
     - remote_certificate
     - name
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
 conf_chain:
   command:
     - config
     - remote_certificate
     - chain
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
 conf_cert_only:
   command:
     - config
     - remote_certificate
     - only
-    - \@preset:node_user.url
+    - "@preset:node_user.url"
 conf_smtp:
   command:
     - config
@@ -4425,37 +4425,37 @@ conf_echo_uri_file_only:
   command:
     - config
     - echo
-    - \@uri:/etc/hosts
+    - "@uri:/etc/hosts"
 conf_echo_uri_file:
   command:
     - config
     - echo
-    - \@uri:file:/etc/hosts
+    - "@uri:file:/etc/hosts"
 conf_echo_uri_http:
   command:
     - config
     - echo
-    - \@uri:http://ifconfig.me
+    - "@uri:http://ifconfig.me"
 conf_echo_uri_https:
   command:
     - config
     - echo
-    - \@uri:https://ifconfig.me
+    - "@uri:https://ifconfig.me"
 conf_echo_base:
   command:
     - config
     - echo
-    - \@base64:SGVsbG8gV29ybGQK
+    - "@base64:SGVsbG8gV29ybGQK"
 conf_echo_list:
   command:
     - config
     - echo
-    - \@list:,1,2,3
+    - "@list:,1,2,3"
 conf_echo_env:
   command:
     - config
     - echo
-    - \@env:USER
+    - "@env:USER"
 conf_echo_raw:
   command:
     - config
@@ -4487,7 +4487,7 @@ conf_echo_fail2b:
   command:
     - config
     - echo
-    - \@file:no_such_file
+    - "@file:no_such_file"
 conf_echo_fail4:
   tags:
     - must_fail
@@ -4501,25 +4501,25 @@ conf_echo_stdin:
   command:
     - config
     - echo
-    - \@lines:@stdin:
+    - "@lines:@stdin:"
 conf_echo_stdbin:
   stdin: "1\n2\n3"
   command:
     - config
     - echo
-    - \@stdbin:
+    - "@stdbin:"
 conf_echo_stdin_csv:
   stdin: "t1,t2,t3\na,b,d\nd,e,f"
   command:
     - config
     - echo
-    - \@csvt:@stdin:
+    - "@csvt:@stdin:"
 conf_echo_stdin_zlib:
   stdin: $(Zlib::Deflate.deflate("Hello World"))
   command:
     - config
     - echo
-    - \@zlib:@stdin:
+    - "@zlib:@stdin:"
 conf_echo_json_format_text:
   tags:
     - nodoc
@@ -4675,7 +4675,7 @@ conf_interactive:
   command:
     - config
     - echo
-    - \@secret:
+    - "@secret:"
 conf_hint:
   tags:
     - must_fail
@@ -4775,27 +4775,27 @@ prev_dcm:
     - preview
     - test
     - --base=$(TMP / 'prev_dcm')
-    - \@preset:file.dcm
+    - "@preset:file.dcm"
 prev_dcm_mm:
   command:
     - preview
     - test
     - --mimemagic=yes
     - --base=$(TMP / 'prev_dcm_mm')
-    - \@preset:file.dcm
+    - "@preset:file.dcm"
 prev_jpg_unk_mm:
   command:
     - preview
     - test
     - --mimemagic=yes
     - --base=$(TMP / 'prev_jpg_unk_mm')
-    - \@preset:file.jpg_unk
+    - "@preset:file.jpg_unk"
 prev_mxf_blend:
   command:
     - preview
     - test
     - --base=$(TMP / 'prev_mxf_blend')
-    - \@preset:file.mxf
+    - "@preset:file.mxf"
     - mp4
     - --video-conversion=blend
     - --query=@json:{"text":true,"double":true}
@@ -4804,7 +4804,7 @@ prev_pdf:
     - preview
     - show
     - --base=$(TMP / 'prev_pdf')
-    - \@preset:file.pdf
+    - "@preset:file.pdf"
 prev_txt:
   command:
     - preview
@@ -4816,27 +4816,27 @@ prev_docx:
     - preview
     - show
     - --base=$(TMP / 'prev_docx')
-    - \@preset:file.docx
+    - "@preset:file.docx"
 prev_mpg_png_fix:
   command:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_png_fix')
-    - \@preset:file.mpg
+    - "@preset:file.mpg"
     - --video-png-conv=fixed
 prev_mpg_png_ani:
   command:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_png_ani')
-    - \@preset:file.mpg
+    - "@preset:file.mpg"
     - --video-png-conv=animated
 prev_mpg_reencode:
   command:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_reencode')
-    - \@preset:file.mpg
+    - "@preset:file.mpg"
     - mp4
     - --video-conversion=reencode
 prev_mpg_clips:
@@ -4844,7 +4844,7 @@ prev_mpg_clips:
     - preview
     - show
     - --base=$(TMP / 'testprev_mpg_clips_name')
-    - \@preset:file.mpg
+    - "@preset:file.mpg"
     - mp4
     - --video-conversion=clips
 prev_trevents_prep:
@@ -4852,8 +4852,8 @@ prev_trevents_prep:
     - --preset=preview_ak
     - node
     - upload
-    - \@preset:file.mxf
-    - \@preset:file.docx
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
   post:
     - sleep 4
@@ -4871,8 +4871,8 @@ prev_events_prep:
     - --preset=preview_ak
     - node
     - upload
-    - \@preset:file.mxf
-    - \@preset:file.docx
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
   post:
     - sleep 4
@@ -4917,14 +4917,14 @@ serv_hot_prep:
   command:
     - server
     - delete
-    - \@extend:@preset:server.upload_folder@/target_hot
+    - "@extend:@preset:server.upload_folder@/target_hot"
 serv_hot_prep2:
   depends_on:
     - serv_hot_prep
   command:
     - server
     - mkdir
-    - \@extend:@preset:server.upload_folder@/target_hot
+    - "@extend:@preset:server.upload_folder@/target_hot"
 serv_hot_run:
   $comment: First run transfers nothing because file is too recent
   pre:
@@ -4946,7 +4946,7 @@ serv_hot_check:
   command:
     - server
     - browse
-    - \@extend:@preset:server.upload_folder@/target_hot
+    - "@extend:@preset:server.upload_folder@/target_hot"
   post:
     - sleep TEMPORIZE_CREATE
 serv_hot_run2:
@@ -4966,7 +4966,7 @@ serv_hot_check2:
   command:
     - server
     - browse
-    - \@extend:@preset:server.upload_folder@/target_hot
+    - "@extend:@preset:server.upload_folder@/target_hot"
 tcos_info1:
   command:
     - -N
@@ -5015,7 +5015,7 @@ tcos_download:
     - cos
     - node
     - download
-    - \@preset:file.asc_name
+    - "@preset:file.asc_name"
     - --to-folder=$(TMP)
 f5_health:
   command:
@@ -5045,13 +5045,13 @@ f5_detect:
   command:
     - config
     - detect
-    - \@preset:faspex5_user.url
+    - "@preset:faspex5_user.url"
     - faspex5
 f5_wizard:
   command:
     - config
     - wizard
-    - \@preset:faspex5_user.url
+    - "@preset:faspex5_user.url"
     - faspex5
     - --key-path=@preset:file.private_key
     - --preset=faspex5_user
@@ -5061,7 +5061,7 @@ f5_wizardb:
   command:
     - config
     - wizard
-    - \@preset:faspex5_user.url
+    - "@preset:faspex5_user.url"
     - faspex5
     - --key-path=@preset:file.private_key
     - --url=
@@ -5093,12 +5093,12 @@ f5_detect_ok:
     - -N
     - config
     - detect
-    - \@preset:faspex5_user.url
+    - "@preset:faspex5_user.url"
 f5_detect_okb:
   command:
     - config
     - detect
-    - \@preset:faspex5_user.url
+    - "@preset:faspex5_user.url"
 f5_version:
   command:
     - faspex5
@@ -5148,7 +5148,7 @@ f5_sh_folder_br:
     - faspex5
     - shared_folders
     - browse
-    - \@extend:%name:@preset:faspex5.shared_folder_name@
+    - "@extend:%name:@preset:faspex5.shared_folder_name@"
 f5_p3a:
   tags:
     - save_output
@@ -5159,7 +5159,7 @@ f5_p3a:
     - send
     - --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@
     - '@json:@extend:{"title":"test title","recipients":["@preset:misc.email_internal@"]}'
-    - \@preset:faspex5.shared_folder_file
+    - "@preset:faspex5.shared_folder_file"
     - --fields=id
     - --display=data
   post:
@@ -5172,7 +5172,7 @@ f5_p3aa:
     - packages
     - status
     - $(read_value_from 'f5_p3a')
-    - \@list:,failed,completed
+    - "@list:,failed,completed"
 f5_package_id:
   depends_on:
     - f5_p3a
@@ -5371,7 +5371,7 @@ f5_sh_foldb:
     - faspex5
     - shared
     - browse
-    - \%name:@preset:faspex4.src
+    - "%name:@preset:faspex4.src"
 f5_user_bearer:
   command:
     - faspex5
@@ -5438,7 +5438,7 @@ f5_dist_delete:
     - admin
     - distribution_lists
     - delete
-    - \%name:test4
+    - "%name:test4"
 f5_adm_acc_lst:
   command:
     - --preset=f5_admin
@@ -5469,7 +5469,7 @@ f5_adm_nod_show:
     - admin
     - node
     - show
-    - \%name:Local
+    - "%name:Local"
 f5_adm_nod_br:
   command:
     - --preset=f5_admin
@@ -5477,7 +5477,7 @@ f5_adm_nod_br:
     - admin
     - node
     - browse
-    - \%name:Local
+    - "%name:Local"
 f5_adm_nod_sh_list:
   command:
     - --preset=f5_admin
@@ -5485,7 +5485,7 @@ f5_adm_nod_sh_list:
     - admin
     - node
     - shared_folders
-    - \%name:Local
+    - "%name:Local"
     - list
 f5_adm_nod_sh_show:
   command:
@@ -5494,9 +5494,9 @@ f5_adm_nod_sh_show:
     - admin
     - node
     - shared_folders
-    - \%name:Local
+    - "%name:Local"
     - show
-    - \%name:Main
+    - "%name:Main"
 f5_adm_nod_sh_usr_lst:
   command:
     - --preset=f5_admin
@@ -5504,9 +5504,9 @@ f5_adm_nod_sh_usr_lst:
     - admin
     - node
     - shared_folders
-    - \%name:Local
+    - "%name:Local"
     - user
-    - \%name:Main
+    - "%name:Main"
     - list
 f5_adm_api_lst:
   command:
@@ -5567,7 +5567,7 @@ f5_adm_sbx_mem:
     - admin
     - shared_inboxes
     - members
-    - \@extend:%name:@preset:faspex5.shared_box_name@
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
     - list
 f5_adm_sbx_cr:
   command:
@@ -5576,9 +5576,9 @@ f5_adm_sbx_cr:
     - admin
     - shared_inboxes
     - members
-    - \@extend:%name:@preset:faspex5.shared_box_name@
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
     - create
-    - \%name:john@example.com
+    - "%name:john@example.com"
     - submit_only
 f5_adm_sbx_del:
   depends_on:
@@ -5589,9 +5589,9 @@ f5_adm_sbx_del:
     - admin
     - shared_inboxes
     - members
-    - \@extend:%name:@preset:faspex5.shared_box_name@
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
     - delete
-    - \%name:john@example.com
+    - "%name:john@example.com"
 f5_adm_evt_app:
   description: Retrieve successful login in the last hour.
   command:
@@ -5615,7 +5615,7 @@ f5_adm_sh_invite:
     - admin
     - shared_inboxes
     - invite
-    - \@extend:%name:@preset:faspex5.shared_box_name@
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
     - johnny@example.com
 f5_adm_sh_members:
   depends_on:
@@ -5626,9 +5626,9 @@ f5_adm_sh_members:
     - admin
     - shared_inboxes
     - members
-    - \@extend:%name:@preset:faspex5.shared_box_name@
+    - "@extend:%name:@preset:faspex5.shared_box_name@"
     - delete
-    - \%name:johnny@example.com
+    - "%name:johnny@example.com"
 f5_clean_del:
   command:
     - --preset=f5_admin
@@ -5667,7 +5667,7 @@ f5_smtp_tst:
     - admin
     - smtp
     - test
-    - \@preset:misc.email_external
+    - "@preset:misc.email_external"
 f5_user_account:
   command:
     - faspex5
@@ -5727,7 +5727,7 @@ f5_invited:
     - invitation
     - delete
     - --bulk=yes
-    - \@lines:@file:$(out_file 'f5_invite_id')
+    - "@lines:@file:$(out_file 'f5_invite_id')"
 f5_webauth:
   command:
     - --preset=f5_web
@@ -5869,7 +5869,7 @@ httpgw_detect:
   command:
     - config
     - detect
-    - \@preset:tst_httpgw.url
+    - "@preset:tst_httpgw.url"
     - httpgw
 faspio_health:
   command:
@@ -5879,13 +5879,13 @@ faspio_detect:
   command:
     - config
     - detect
-    - \@preset:tst_faspio.url
+    - "@preset:tst_faspio.url"
     - faspio
 faspio_wizard:
   command:
     - config
     - wizard
-    - \@preset:tst_faspio.url
+    - "@preset:tst_faspio.url"
     - faspio
     - --username=@preset:tst_faspio.username
     - --password=@preset:tst_faspio.password
@@ -5920,7 +5920,7 @@ faspio_bclean:
     - bridges
     - delete
     - --bulk=yes
-    - \@json:$(read_value_from 'faspio_bclean_list')
+    - "@json:$(read_value_from 'faspio_bclean_list')"
 alee_nagios:
   command:
     - -N
@@ -5948,12 +5948,12 @@ f4_detect:
   command:
     - config
     - detect
-    - \@preset:faspex4_user.url
+    - "@preset:faspex4_user.url"
 f4_wizard:
   command:
     - config
     - wizard
-    - \@preset:faspex4_user.url
+    - "@preset:faspex4_user.url"
     - faspex
     - --username=test
     - --password=test
@@ -6078,14 +6078,14 @@ f4_remote_srcb:
     - faspex
     - source
     - info
-    - \%name:@preset:faspex4.src
+    - "%name:@preset:faspex4.src"
     - --storage=@preset:faspex4_storage
 f4_remote_srcc:
   command:
     - faspex
     - source
     - node
-    - \%name:@preset:faspex4.src
+    - "%name:@preset:faspex4.src"
     - br
     - /
     - --storage=@preset:faspex4_storage

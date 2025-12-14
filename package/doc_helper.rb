@@ -281,7 +281,7 @@ class DocHelper
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
     [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
-    [%r{\$\(TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
+    [%r{\$\(PATH_TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
     ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
     #    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
@@ -323,7 +323,7 @@ class DocHelper
     # remove extraneous quotes on JSON
     [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
     [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'test_file.bin'],
-    [/TMP_SYNCS[a-z_0-9]*/, '/data/local_sync'],
+    [/PATH_TMP_SYNCS[a-z_0-9]*/, '/data/local_sync'],
     ['HSTS_UPLOADED_FILE', 'test_file.bin'],
     ['HSTS_FOLDER_UPLOAD', 'folder_1'],
     [%q['"CF_LOCAL_SYNC_DIR"'], 'sync_dir'],

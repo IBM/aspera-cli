@@ -14,7 +14,7 @@ include Paths
 include BuildTools
 
 PATH_CONF_FILE = config_file_path
-
+# tests state is saved here
 PATH_TESTS_STATES = TMP / 'state.yml'
 
 # override $HOME/.aspera/ascli
@@ -40,9 +40,9 @@ TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?1
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
-TMP_SYNCS = TMP / 'syncs'
-PATH_SHARES_SYNC = TMP_SYNCS / 'shares_sync'
-PATH_TST_LCL_FOLDER = TMP_SYNCS / 'sendfolder'
+PATH_TMP_SYNCS = TMP / 'syncs'
+PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
+PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TOP / 'tmp/sample_vault.bin'
 PKCS_P = 'YourExportPassword'
 PATH_FILE_LIST = TMP / 'filelist.txt'
@@ -205,7 +205,6 @@ namespace TEST_CASE_NS do
   TEST_DEFS.each do |name, info|
     # puts "-> #{name}"
     desc info['description'] || '-'
-
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
@@ -216,7 +215,7 @@ namespace TEST_CASE_NS do
       puts "[RUN]  #{name}: #{info['command']&.join(' ')}"
       info['pre']&.each do |cmd|
         cmd = eval_macro(cmd)
-        puts("Executing: #{cmd}")
+        puts("Pre: Executing: #{cmd}")
         Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
       end
       must_fail = info['tags']&.include?('must_fail')
