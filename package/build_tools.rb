@@ -2,7 +2,7 @@
 
 require 'bundler'
 require 'yaml'
-require_relative '../package/paths'
+require_relative 'paths'
 
 module BuildTools
   # @param gemfile [String] Path to gem file

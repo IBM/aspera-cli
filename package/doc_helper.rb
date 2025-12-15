@@ -19,8 +19,8 @@ require 'aspera/markdown'
 require 'yaml'
 require 'erb'
 require 'English'
-require_relative '../package/build_tools'
-require_relative '../package/paths'
+require_relative 'build_tools'
+require_relative 'paths'
 
 # Log control
 Aspera::Log.instance.level = :info
