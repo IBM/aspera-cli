@@ -8,7 +8,7 @@ include $(DIR_TOP)common.mak
 DIR_DOC=
 include $(DIR_DOC)pandoc/pandoc.mak
 
-MANUAL_BASE=$(DIR_DOC)Manual
+MANUAL_BASE=$(DIR_REL)Manual-$(CLI_NAME)-$(GEM_VERSION)
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 TMPL_CONF_FILE_PATH=$(DIR_DOC)test_env.conf
@@ -22,7 +22,7 @@ all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(TSPEC_JSON_SCHEMA) $(MANU
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_CONF_FILE_PATH): $(DIR_PKG)build_tools.rb
+$(TMPL_CONF_FILE_PATH): $(DIR_BLB)build_tools.rb
 	$(BLD_TOOL) -r doc_helper -e DocHelper.generate_generic_conf $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
@@ -38,7 +38,7 @@ clean_doc::
 # regenerate always, as it depends on sources (when a new option is added for example). instead do: make clean_doc doc
 #.PHONY: $(DIR_TOP)README.md
 DOC_FILES=$(DIR_DOC)README.erb.md $(CLI_PATH) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC) $(DIR_TOP)Gemfile
-$(DIR_TOP)README.md: $(DOC_FILES) $(DIR_PKG)build_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(TSPEC_YAML_SCHEMA) $(ASYNC_YAML_SCHEMA) $(GEMSPEC)
+$(DIR_TOP)README.md: $(DOC_FILES) $(DIR_BLB)build_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(TSPEC_YAML_SCHEMA) $(ASYNC_YAML_SCHEMA) $(GEMSPEC)
 	$(BLD_TOOL) -r doc_helper -e generate_doc $@ $(DOC_FILES)
 
 clean_doc::

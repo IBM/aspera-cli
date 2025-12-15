@@ -4,19 +4,29 @@ all::
 
 # define common variables to be used in other Makefile
 # required: DIR_TOP (can be empty if cwd)
-DIR_BIN=$(DIR_TOP)bin/
-DIR_LIB=$(DIR_TOP)lib/
-DIR_TMP=$(DIR_TOP)tmp/
-DIR_TST=$(DIR_TOP)tests/
-DIR_DOC=$(DIR_TOP)docs/
-DIR_PKG=$(DIR_TOP)package/
 
-GEM_VERSION=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/version";print Aspera::Cli::VERSION')
-GEM_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::GEM_NAME')
-DCK_REPO=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CONTAINER')
-CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CMD_NAME')
-CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";print Aspera::Environment.instance.architecture')
-BLD_TOOL=ruby -I $(DIR_PKG). -I $(DIR_LIB).
+# gem executables
+DIR_BIN=$(DIR_TOP)bin/
+# gem files
+DIR_LIB=$(DIR_TOP)lib/
+# temp files (tests)
+DIR_TMP=$(DIR_TOP)tmp/
+# release files
+DIR_REL=$(DIR_TOP)pkg/
+# test files
+DIR_TST=$(DIR_TOP)tests/
+# documentation
+DIR_DOC=$(DIR_TOP)docs/
+# packaging
+DIR_BLD=$(DIR_TOP)build/
+DIR_BLB=$(DIR_BLD)lib/
+
+GEM_VERSION=$(shell ruby -I$(DIR_LIB) -e 'require "aspera/cli/version";print Aspera::Cli::VERSION')
+GEM_NAME=$(shell ruby -I$(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::GEM_NAME')
+DCK_REPO=$(shell ruby -I$(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CONTAINER')
+CLI_NAME=$(shell ruby -I$(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CMD_NAME')
+CLI_ARCH=$(shell ruby -I$(DIR_LIB) -e 'require "aspera/environment";print Aspera::Environment.instance.architecture')
+BLD_TOOL=ruby -I$(DIR_BLB). -I$(DIR_LIB).
 
 # path to CLI for execution (not using PATH)
 CLI_PATH=$(DIR_BIN)$(CLI_NAME)

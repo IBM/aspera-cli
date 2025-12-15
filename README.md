@@ -63,7 +63,7 @@ Minimum required Ruby version: >= 3.1.
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
-A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Manual.pdf).
+A PDF version of this documentation is delivered with [releases](https://github.com/IBM/aspera-cli/releases).
 
 ### BUGS, FEATURES, CONTRIBUTION
 
@@ -902,7 +902,7 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](package/container/Dockerfile.tmpl.erb).
+The container image is built from this [Dockerfile](build/container/Dockerfile.tmpl.erb).
 The entry point is `ascli` and the default command is `help`.
 
 The container can be executed for individual commands like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)

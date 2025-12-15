@@ -5,7 +5,7 @@ require 'aspera/cli/info'
 
 module Paths
   # Main project folder
-  TOP = Pathname.new(__dir__).parent
+  TOP = Pathname.new(__dir__).parent.parent
   TMP = TOP / 'tmp'
   BIN = TOP / 'bin'
   # Folder with tests
