@@ -7,6 +7,7 @@ require 'zlib'
 require 'fileutils'
 require 'aspera/environment'
 require 'aspera/rest'
+require 'aspera/log'
 require_relative '../package/build_tools'
 require_relative '../package/paths'
 
@@ -44,9 +45,9 @@ PATH_TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
 PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TOP / 'tmp/sample_vault.bin'
-PKCS_P = 'YourExportPassword'
 PATH_FILE_LIST = TMP / 'filelist.txt'
 PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
+PKCS_P = 'YourExportPassword'
 # ------------------
 
 # give waring and stop on first warning in this gem code
@@ -68,12 +69,12 @@ SKIP_STATES = %w[passed skipped].freeze
 # Rake namespace for all test cases
 TEST_CASE_NS = :case
 
+# Init folders and files
 TMP.mkpath
 FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
 PATH_TST_ASC_LCL.write('This is a small test file') unless  PATH_TST_ASC_LCL.exist?
 PATH_TST_UTF_LCL.write('This is a small test file') unless  PATH_TST_UTF_LCL.exist?
 PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
-# @preset:server.inside_folder@/other_name
 PATH_FILE_PAIR_LIST.write([
   PATH_TST_ASC_LCL,
   File.join(CONF_DATA['server']['inside_folder'], 'other_name')
@@ -195,7 +196,7 @@ namespace :test do
   end
   # Run all tests in declared order
   desc 'Run all tests'
-  task :all do
+  task :run do
     TEST_DEFS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
   end
 end
@@ -204,7 +205,7 @@ namespace TEST_CASE_NS do
   # Create a Rake task for each test
   TEST_DEFS.each do |name, info|
     # puts "-> #{name}"
-    desc info['description'] || '-'
+    # desc info['description'] || '-'
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
