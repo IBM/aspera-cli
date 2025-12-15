@@ -4,7 +4,7 @@
 
 ## 4.25.0.pre
 
-Released: not yet.
+Released: Place date of release here
 
 ### New Features
 
@@ -24,6 +24,8 @@ Released: not yet.
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
 * `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
 * `preview`: Replace gem `mimemagic` with `marcel`.
+* PDF manual is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
+* HTML manual is not generated anymore.
 
 ## 4.24.2
 

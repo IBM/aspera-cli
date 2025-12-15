@@ -1,8 +1,9 @@
 /Gemfile*.lock
-**/aspera-cli-*.gem
+#**/aspera-cli-*.gem
 /coverage/
 /simplecov.log
 /tmp/
+/pkg/
 /.*_checked
 .DS_Store
 # rspec failure tracking
