@@ -2,7 +2,7 @@
 
 require 'bundler/setup'
 require 'yaml'
-require_relative '../package/paths'
+require_relative '../build/lib/paths'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

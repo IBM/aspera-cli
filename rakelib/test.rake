@@ -8,8 +8,8 @@ require 'fileutils'
 require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/log'
-require_relative '../package/build_tools'
-require_relative '../package/paths'
+require_relative '../build/lib/build_tools'
+require_relative '../build/lib/paths'
 
 include Paths
 include BuildTools
