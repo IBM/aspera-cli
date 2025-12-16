@@ -7401,17 +7401,22 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ## Plugin: `cos`: IBM Cloud Object Storage
 
-The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
-It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
-Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
+IBM Cloud Object Storage supports high-speed transfers using the FASP protocol.
+These transfers leverage the same service used by Aspera on Cloud, called the Aspera Transfer Service (ATS).
+You can check the list of available ATS regions here: <https://status.aspera.io>.
+There are two ways to provide credentials:
 
-There are two possibilities to provide credentials.
-If you already have the endpoint, API key and Resource Instance ID (CRN), use the first method.
-If you don't have credentials but have access to the IBM Cloud console, then use the second method.
+- Using existing credentials
+
+  If you already have the endpoint, API key, and Resource Instance ID (CRN), use this method.
+
+- Using IBM Cloud Console access
+
+  If you do not have credentials but have access to the IBM Cloud Console, use this alternative method.
 
 ### Using endpoint, API key and Resource Instance ID (CRN)
 
-If you have those parameters already, then following options shall be provided:
+If you already have these parameters, provide the following options to <%=tool%>:
 
 | Option     | Description                                       |
 |------------|---------------------------------------------------|
@@ -7420,20 +7425,21 @@ If you have those parameters already, then following options shall be provided:
 | `apikey`   | API Key                                           |
 | `crn`      | Resource instance ID                              |
 
-For example, let us create a default configuration:
+Example: Create a Default Configuration
 
 ```shell
 <%=cmd%> config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
 <%=cmd%> config preset set default cos mycos
 ```
 
-Then, jump to the [transfer example](#operations-transfers).
+Once configured, proceed to the [transfer example](#operations-transfers).
 
 ### Using service credential file
 
-If you are the COS administrator and don't have yet the credential:
-Service credentials are directly created using the IBM cloud Console (web UI).
-Navigate to:
+If you are the COS administrator and do not yet have credentials,
+you can create them directly from the IBM Cloud Console (Web UI):
+
+Steps:
 
 - &rarr; Navigation Menu
 - &rarr; [Resource List](https://cloud.ibm.com/resources)
@@ -7443,7 +7449,7 @@ Navigate to:
 - &rarr; New credentials (Leave default role: Writer, no special options)
 - &rarr; Copy to clipboard
 
-Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
+Save the copied JSON value to a file, for example: `$HOME/cos_service_creds.json`
 
 or using the IBM Cloud CLI:
 
@@ -7452,9 +7458,10 @@ ibmcloud resource service-keys
 ibmcloud resource service-key _service_key_name_here_ --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
 
-(if you don't have `jq` installed, extract the structure as follows)
+> [!NOTE]
+> If `jq` is not installed, you can manually extract the credentials section from the JSON output.
 
-It consists in the following structure:
+The service credential file consists of the following structure:
 
 ```json
 {
@@ -7472,33 +7479,32 @@ It consists in the following structure:
 }
 ```
 
-The field `resource_instance_id` is for option `crn`
+The field mappings are as follows:
 
-The field `apikey` is for option `apikey`
+- `resource_instance_id` &rarr; option `crn`
+- `apikey` &rarr; option `apikey`
 
 > [!NOTE]
-> Endpoints for regions can be found by querying the `endpoints` URL from file or from the IBM Cloud Console.
+> Endpoints for regions can be found by querying the `endpoints` URL in the JSON file or from the IBM Cloud Console.
 
 The required options for this method are:
 
-| Option                | Description |
+| Option                | Description                                    |
 |-----------------------|------------------------------------------------|
-| `bucket`              | Bucket name |
-| `region`              | Bucket region<%=br%>e.g. `eu-de` |
+| `bucket`              | Bucket name                                    |
+| `region`              | Bucket region<%=br%>e.g. `eu-de`               |
 | `service_credentials` | JSON information saved from IBM Cloud console. |
 
-For example, let us create a default configuration:
+Example: Create a Default Configuration
 
 ```shell
-<%=cmd%> config preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+<%=cmd%> config preset update mycos --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
 <%=cmd%> config preset set default cos mycos
 ```
 
 ### Operations, transfers
 
-Let's assume you created a default configuration from one of the two previous steps (else specify the access options on command lines).
-
-A subset of `node` plugin operations are supported, basically Node API:
+Once you have created a default configuration using one of the previous methods (otherwise, specify the access options directly on the command line), you can perform a subset of `node` plugin operations, which correspond to the Node API.
 
 ```shell
 <%=cmd%> cos node info
@@ -7506,7 +7512,8 @@ A subset of `node` plugin operations are supported, basically Node API:
 ```
 
 > [!NOTE]
-> A dummy file `sample1G` of size 2 GB is generated using the `faux` PVCL scheme (see previous section and `man ascp`), but you can, of course, send a real file by specifying a real file path instead.
+> The file `sample1G` is a dummy file of size 2 GB, generated using the `faux` PVCL scheme (see previous section and `man ascp`).
+> To upload a real file, simply replace the `faux:///...` URI with the actual file path.
 
 <%=include_commands_for_plugin(:cos)%>
 
@@ -7515,6 +7522,10 @@ A subset of `node` plugin operations are supported, basically Node API:
 <%=include_commands_for_plugin(:httpgw)%>
 
 ## Plugin: `faspio`: Faspio Gateway
+
+IBM Aspera faspio Gateway is a high-performance proxy that bridges traditional TCP/UDP applications with the Aspera FASP protocol, enabling secure, ultra-fast transfers over any network, even with high latency or packet loss.
+It integrates seamlessly into existing workflows and supports use cases such as server-to-server transfers, database replication, and messaging systems.
+Using <%=tool%>, you can remotely create and manage bridges on faspio Gateway, simplifying configuration and automation.
 
 <%=include_commands_for_plugin(:faspio)%>
 
@@ -7526,13 +7537,27 @@ Retrieve information on subscription.
 
 ## Plugin: `preview`: Preview generator for AoC
 
-The `preview` generates thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
-It uses the **Node API** of Aspera HSTS and requires use of Access Keys and its **storage root**.
-Several options can be used to tune several aspects:
+The `preview` plugin is responsible for generating thumbnails (Office documents, images, videos) and video previews on storage, primarily for use within the Aspera on Cloud (AoC) application.
+This plugin leverages the **Node API** of Aspera HSTS and requires:
 
-- Methods for detection of new files needing generation
-- Methods for generation of video preview
-- Parameters for video handling
+- An Access Key
+- The associated **storage root**
+
+### Key Features and Options
+
+You can configure several aspects of the preview generation process:
+
+- File Detection Methods
+
+  Define how new files requiring previews are identified.
+
+- Video Preview Generation Methods
+  
+  Choose the approach for creating video previews (e.g., transcoding options).
+
+- Video Handling Parameters
+  
+  Fine-tune video processing, such as resolution, bitrate, and format.
 
 Using <%=tool%> is an alternative to <https://github.com/IBM/aspera-on-cloud-file-previews>.
 
