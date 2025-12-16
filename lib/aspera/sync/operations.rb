@@ -23,6 +23,8 @@ module Aspera
       # Default direction for sync
       DEFAULT_DIRECTION = DIRECTIONS.first
 
+      SCP_REMOTE_REGEX = /\A(?:(?:(?<user>[^@:\s]+)@)?(?<host>[^:\s]+):)?(?<path>.+)\z/
+
       class << self
         # Set `remote_dir` in sync parameters based on transfer spec
         # @param sync_info      [Hash]   Sync parameters, in `conf` or `args` format.
@@ -275,6 +277,11 @@ module Aspera
           end
         end
 
+        # Search given option in JSON Schema tree
+        # @param schema [Hash]   JSON Schema tree (root or sub-tree)
+        # @param path   [Array]  Path to subtree
+        # @param option [String] Option to search
+        # @return [Array,nil] with path/schema for that option
         def find_option(schema, path, option)
           if %w[x-cli-option x-cli-short].any?{ |i| schema[i].eql?(option)}
             Log.log.debug('Special') if schema['x-cli-special']
@@ -289,6 +296,7 @@ module Aspera
           return
         end
 
+        # Translate `async` native command line arguments to `conf` JSON
         def args_to_conf(args)
           result = {}
           while args.any?
@@ -297,10 +305,25 @@ module Aspera
               option = ::Regexp.last_match(1) # "--toto"
               args.unshift(::Regexp.last_match(2))
             end
+            if option.eql?('--preserve-time') || option.eql?('-t')
+              args.unshift('--preserve-creation-time') if Environment.instance.os.eql?(Environment::OS_WINDOWS)
+              option = '--preserve-modification-time'
+            end
+            if option.eql?('--remote') || option.eql?('-r')
+              value = args.first
+              if (m = SCP_REMOTE_REGEX.match(value))
+                if m[:host]
+                  args.shift
+                  args.unshift("--host=#{m[:host]}")
+                  args.unshift("--user=#{m[:user]}") if m[:user]
+                  args.unshift(m[:path])
+                end
+              end
+            end
             path, props = find_option(CONF_SCHEMA, [], option)
-            Aspera.assert(path){"No such option: #{option}"}
-            Aspera.assert(props){"No such option: #{option}"}
+            raise "Option not found: #{option}" if path.nil?
             last_key = path.pop
+            # navigate in the current result to insert the value
             current = result
             path.each do |key|
               current[key] ||= {}

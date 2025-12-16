@@ -119,6 +119,7 @@ properties:
     x-cli-option: true
     x-cli-short: -K
   filters:
+    $comment: "Options -E --exclude-from --exclude --include -I --include-from"
     description:
       The filters allow to further specify which files have to be excluded
       and included from the transfer list. Each filter is defined by a rule and
@@ -406,6 +407,7 @@ properties:
     x-cli-short: -j
     x-cli-switch: true
   preserve_modification_time:
+    $comment: --preserve-time, -t for both preserve_modification_time and preserve_creation_time
     description: Preserve file modification time from the source to the destination.
     type: boolean
     default: false
@@ -442,6 +444,7 @@ properties:
     default: true
     x-cli-option: true
     x-cli-switch: true
+    x-cli-short: -q
   remote:
     type: object
     required:
@@ -467,6 +470,7 @@ properties:
         x-cli-option: true
         x-cli-short: -w
       path:
+        $comment: This option can use this format [[USER@]HOST:]PATH
         description: Synchronize the specified directory on the remote host.
         type: string
         x-cli-option: --remote-dir
@@ -538,6 +542,7 @@ properties:
         type: string
         default: ""
         x-ts-name: token
+        x-cli-short: -W
       token_node_user:
         description: Node API user identity associated with the token.
           Required for node user bearer tokens

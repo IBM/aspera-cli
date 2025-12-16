@@ -3751,11 +3751,7 @@ conf_sync_trans:
     - --transfer-threads=1
     - --pending-max=2000
     - -r
-    - /tmp/dest/
-    - --user
-    - root
-    - --host
-    - 1.2.3.4
+    - root@1.2.3.4:/tmp/dest/
     - -R
     - /tmp/logs/
     - -B
