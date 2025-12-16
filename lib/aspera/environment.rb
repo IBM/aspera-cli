@@ -5,7 +5,9 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'rbconfig'
 require 'singleton'
+require 'open3'
 require 'English'
+require 'shellwords'
 
 # cspell:words MEBI mswin bccwin
 
