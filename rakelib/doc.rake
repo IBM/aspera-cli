@@ -6,6 +6,16 @@ require_relative '../build/lib/pandoc'
 require_relative '../build/lib/paths'
 require_relative '../build/lib/doc_helper'
 
+def capture_stdout_to_file(pathname)
+  raise 'Missing block' unless block_given?
+  real_stdout = $stdout
+  $stdout = StringIO.new
+  yield
+  pathname.write($stdout.string)
+ensure
+  $stdout = real_stdout
+end
+
 # Declare a PDF build rule
 def pdf_rule(pdf, md = nil)
   # pdf = File.expand_path(pdf)
@@ -22,18 +32,18 @@ rule '.pdf' => '.md' do |t|
   pdf_rule(t.name, t.source)
 end
 
-PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{GEM_VERSION}.pdf"
 PATH_MD_MANUAL = Paths::TOP / 'README.md'
-
-TMPL_CONF_FILE_PATH = Paths::DOC / 'test_env.conf'
+PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{GEM_VERSION}.pdf"
+PATH_TMPL_CONF_FILE = Paths::DOC / 'test_env.conf'
 TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
 TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
 ASYNC_YAML_SCHEMA = Paths::LIB / 'aspera/sync/conf.schema.yaml'
 PATH_BUILD_TOOLS = Paths::BUILD_LIB / 'build_tools.rb'
+
 pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
 
-file(TMPL_CONF_FILE_PATH => [PATH_BUILD_TOOLS, Paths.config_file_path]) do
-  DocHelper.config_to_template(Paths.config_file_path, TMPL_CONF_FILE_PATH)
+file(PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths.config_file_path]) do
+  DocHelper.config_to_template(Paths.config_file_path, PATH_TMPL_CONF_FILE)
 end
 
 file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do
@@ -60,4 +70,26 @@ end
 desc 'Generate PDF Manual'
 task pdf: PATH_PDF_MANUAL
 
-task doc: [PATH_PDF_MANUAL, TMPL_CONF_FILE_PATH, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL]
+desc 'Generate All Docs'
+task doc: [PATH_PDF_MANUAL, PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL]
+
+# UML Diagram : requires tools: graphviz and gem xumlidot
+# on mac: `gem install xumlidot pry` and `brew install graphviz`
+PATH_UML_PNG = Paths::DOC / 'uml.png'
+PATH_TMP_DOT = Paths::TMP / 'uml.dot'
+
+file PATH_UML_PNG => PATH_TMP_DOT do
+  Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}
+  Aspera::Environment.secure_execute(exec: 'dot', args: ['-Tpng', PATH_TMP_DOT.to_s], out: PATH_UML_PNG.to_s)
+end
+
+file PATH_TMP_DOT => [] do
+  Aspera::Log.log.info{"Generating: #{PATH_TMP_DOT}"}
+  require 'xumlidot'
+  capture_stdout_to_file(PATH_TMP_DOT) do
+    Xumlidot::Loader.new([Paths::LIB.to_s], Xumlidot::Options.parse(%w[--dot --no-composition --usage])).load
+  end
+end
+
+desc 'Generate uml'
+task uml: PATH_UML_PNG
