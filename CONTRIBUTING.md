@@ -10,7 +10,7 @@ Before submitting a new issue:
 
 To help us assist you efficiently, include the following in your report:
 
-- The version of ascli you are using:
+- The version of `ascli` you are using:
 
   ```bash
   ascli version
@@ -20,16 +20,16 @@ To help us assist you efficiently, include the following in your report:
 - The output of your Ruby environment:
 
   ```bash
-  ruby -e "puts RUBY_DESCRIPTION"
+  ruby -v
   ```
 
 ## Making Contributions
 
-We welcome contributions to improve the aspera-cli project!
+We welcome contributions to improve the `aspera-cli` project!
 
 ### Getting Started
 
-Clone the repository and navigate to the project folder:
+Clone the repository and navigate to the project's main folder:
 
 ```bash
 git clone https://github.com/IBM/aspera-cli.git
@@ -61,7 +61,7 @@ To submit a contribution:
 
 ## Architecture
 
-The overall architecture of aspera-cli is modular and extensible.
+The overall architecture of `aspera-cli` is modular and extensible.
 
 ![Architecture](docs/architecture.png)
 
@@ -84,7 +84,7 @@ A list of classes are provided in <docs/uml.png>
 ## Ruby version
 
 `aspera-cli` is built with Ruby.
-You can install Ruby using any method you prefer (e.g., rbenv, rvm, system package manager).
+You can install Ruby using any method you prefer (e.g., `rbenv`, `rvm`, system package manager).
 
 To start with a clean slate and remove all installed gems:
 
@@ -122,7 +122,7 @@ Those macros can be set either in an env var, or on the `make` command line.
 > Env vars `ASPERA_CLI_TEST_*` are typically set in user's shell profile for development.
 > Others are more for "one shot" use.
 
-To use the CLI directly from the development environment, add this to your shell profile:
+To use the CLI directly from the development environment, add this to your shell profile (adapt the real path):
 
 ```bash
 dev_ascli=$HOME/github/aspera-cli
@@ -165,7 +165,7 @@ cp docs/test_env.conf ~/some_secure_folder/.
 
 Fill `~/some_secure_folder/test_env.conf` with system URLs and credentials for tests.
 
-Then, tell where this file is located:
+Then, tell where this file is located (e.g. in your shell profile):
 
 ```bash
 export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
@@ -206,7 +206,7 @@ To run every test: `make full`
 
 For preparation of a release, do the following:
 
-1. Select a ruby version to test with.
+1. Select a Ruby version to test with.
 2. Remove all gems: `make clean_gems`
 3. `cd tests && make full`
 
@@ -263,12 +263,12 @@ cd container
 
 ## Single executable build
 
-See [Executable build](./binary/README.md).
+See [Executable build](build/binary/README.md).
 
-For operations, move to the folder:
+To list operations:
 
 ```bash
-cd binary
+rake -T ^binary:
 ```
 
 ## Development check list for new release

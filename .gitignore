@@ -1,5 +1,5 @@
+# do not save lock file for gems
 /Gemfile*.lock
-#**/aspera-cli-*.gem
 /coverage/
 /simplecov.log
 /tmp/
