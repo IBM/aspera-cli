@@ -5,16 +5,22 @@ Generate PDF manual using report type from markdown file.
 ## Usage
 
 1. In a folder, create a markdown file, e.g. `README.md`
-1. create a Makefile like this:
+1. Set an env var to where this library is located:
+
+```shell
+export DIR_PANDOC=.../path_to_this_folder
+```
+
+1. Create a Makefile like this:
 
 ```makefile
-include .../path_to_this_folder/pandoc.mak
+include $(DIR_PANDOC)/pandoc.mak
 all: README.pdf
 clean:
     rm -f README.pdf
 ```
 
-There is a default target for `Foo.pdf` from `Foo.md`.
+There is a default target for `%.pdf` from `%.md`.
 
 If the source and destination have different basenames or path, then it is possible to do:
 

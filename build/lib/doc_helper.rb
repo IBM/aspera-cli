@@ -19,6 +19,7 @@ require 'aspera/markdown'
 require 'yaml'
 require 'erb'
 require 'English'
+require 'pathname'
 require_relative 'build_tools'
 require_relative 'paths'
 
@@ -64,7 +65,12 @@ class DocHelper
     # main function to generate template configuration file for tests
     # hide sensitive information
     def generate_generic_conf
-      configuration = YAML.load_file(Paths.config_file_path)
+      config_to_template(Paths.config_file_path, Pathname.new(ARGV.shift))
+    end
+
+    def config_to_template(config, template)
+      Aspera::Log.log.info{"Generating: #{template}"}
+      configuration = YAML.load_file(config)
       configuration.each do |k, preset_hash|
         preset_hash.each do |param_name, param_value|
           param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')} if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
@@ -126,9 +132,7 @@ class DocHelper
           end
         end
       end
-      File.open(ARGV.shift, 'w') do |f|
-        f.puts(configuration.to_yaml)
-      end
+      template.write(configuration.to_yaml)
     end
   end
   # Place warning in generated file
@@ -366,7 +370,7 @@ class DocHelper
           end
         end
       else
-        all_tests = BuildTools.yaml_safe_load(Paths::PATH_TEST_DEFS.read)
+        all_tests = BuildTools.yaml_safe_load(Paths::TEST_DEFS.read)
         all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
           line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
             next cmd unless cmd.is_a?(String)
@@ -456,7 +460,7 @@ class DocHelper
     @undocumented_plugins = nil
     @paths = {}
     %i[outfile template ascli asession makefile gem_spec_file gemfile].each do |name|
-      @paths[name] = args.shift
+      @paths[name] = args.shift.to_s
       raise "Missing arg: #{name}" if @paths[name].nil?
     end
   end

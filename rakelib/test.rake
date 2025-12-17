@@ -20,7 +20,6 @@ PATH_TESTS_STATES = TMP / 'state.yml'
 
 # override $HOME/.aspera/ascli
 PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
-PATH_CLI_CMD = BIN / Aspera::Cli::Info::CMD_NAME
 
 # -----------------
 # Used in tests.yml
@@ -53,7 +52,7 @@ PKCS_P = 'YourExportPassword'
 # give waring and stop on first warning in this gem code
 CMD_FAIL_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
 # CLI with default config file
-CLI_NOCONF = CMD_FAIL_WARN + [PATH_CLI_CMD, "--home=#{PATH_CLI_HOME}"]
+CLI_NOCONF = CMD_FAIL_WARN + [CLI_CMD, "--home=#{PATH_CLI_HOME}"]
 # "CLI_TEST" is used to call the tool in the testing environment
 CLI_TEST = CLI_NOCONF + ["--config-file=#{PATH_CONF_FILE}"]
 # JRuby does not support some encryptions
@@ -86,7 +85,7 @@ PATH_TMP_STATES.mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
-TEST_DEFS = yaml_safe_load(PATH_TEST_DEFS.read)
+TEST_DEFS = yaml_safe_load(TEST_DEFS.read)
 # Allowed keys in test defs
 # command: the list for command line
 # tags: arbitrary tags to identify special attributes
