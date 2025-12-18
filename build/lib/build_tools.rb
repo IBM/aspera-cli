@@ -2,7 +2,14 @@
 
 require 'bundler'
 require 'yaml'
+require 'aspera/log'
+require 'aspera/rest'
 require_relative 'paths'
+
+# Log control
+Aspera::Log.instance.level = :info
+Aspera::Log.instance.level = ENV['RAKE_LOGLEVEL'].to_sym if ENV['RAKE_LOGLEVEL']
+Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 module BuildTools
   # @param gemfile [String] Path to gem file
@@ -16,10 +23,15 @@ module BuildTools
 
   # Execute the command line (not in shell)
   def run(*args, **kwargs)
+    args = args.first if args.length == 1 && args.first.is_a?(Array)
     args = args.map(&:to_s)
     puts(args.join(' '))
-    if kwargs.delete('background')
-      Aspera::Environment.secure_spawn(exec: args.shift, args: args)
+    background = kwargs.delete(:background)
+    capture = kwargs.delete(:capture)
+    if background
+      Aspera::Environment.secure_spawn(exec: args.shift, args: args, **kwargs)
+    elsif capture
+      Aspera::Environment.secure_capture(exec: args.shift, args: args, **kwargs)
     else
       Aspera::Environment.secure_execute(exec: args.shift, args: args, **kwargs)
     end

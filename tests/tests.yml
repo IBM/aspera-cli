@@ -8,6 +8,7 @@ shares_health:
   tags:
     - must_fail
     - nodoc
+    - health
   command:
     - shares
     - health
@@ -433,6 +434,8 @@ serv_upload3:
     - --transfer-info.quiet=false
     - --progress=no
 serv_upload4:
+  tags:
+    - grpc
   depends_on:
     - serv_mkdir
   command:
@@ -678,6 +681,8 @@ serv_df:
     - server
     - df
 serv_health_xfer_nagios:
+  tags:
+    - health
   command:
     - server
     - health
@@ -735,6 +740,8 @@ serv_pr2:
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
 # Console ------------------------------------------------------
 cons_health:
+  tags:
+    - health
   command:
     - console
     - health
@@ -833,6 +840,8 @@ cons_sma_sta:
 # Node ------------------------------------------------------
 # nodegen3
 nd_health:
+  tags:
+    - health
   command:
     - node
     - health
@@ -1804,6 +1813,8 @@ aocg8:
     - workspaces
     - current
 aoc_webauth:
+  tags:
+    - interactive
   command:
     - --preset=aoc_web
     - aoc
@@ -2221,6 +2232,7 @@ aoc_file_id_9:
 aoc_file_id_10:
   depends_on:
     - aoc_file_id_6
+    - rmagick
   command:
     - aoc
     - files
@@ -2230,6 +2242,7 @@ aoc_file_id_10:
 aoc_file_id_11:
   tags:
     - nodoc
+    - rmagick
   depends_on:
     - aoc_file_id_6
   command:
@@ -2242,6 +2255,8 @@ aoc_file_id_12:
   env:
     TERM_PROGRAM: null
     LC_TERMINAL: null
+  tags:
+    - rmagick
   depends_on:
     - aoc_file_id_6
   command:
@@ -4066,6 +4081,7 @@ conf_gem2b:
 conf_vault_macos:
   tags:
     - nodoc
+    - interactive
   command:
     - -N
     - config
@@ -4112,6 +4128,7 @@ conf_vault_file:
   tags:
     - tmp_conf
     - nodoc
+    - sym_encryption
   command:
     - config
     - preset
@@ -4284,6 +4301,8 @@ conf_coffee_2:
     - coffee
     - --ui=text
 conf_coffee_3:
+  tags:
+    - rmagick
   command:
     - config
     - coffee
@@ -4296,6 +4315,8 @@ conf_coffee_4:
     - --ui=text
     - --image=@json:{"text":true,"double":false}
 conf_image:
+  tags:
+    - rmagick
   command:
     - config
     - image
@@ -4668,6 +4689,8 @@ conf_extended6:
     - '@yaml:@json:"- 1\n- 2\n"'
     - --format=ruby
 conf_interactive:
+  tags:
+    - interactive
   command:
     - config
     - echo
@@ -5014,6 +5037,8 @@ tcos_download:
     - "@preset:file.asc_name"
     - --to-folder=$(TMP)
 f5_health:
+  tags:
+    - health
   command:
     - -N
     - faspex5
@@ -5725,6 +5750,8 @@ f5_invited:
     - --bulk=yes
     - "@lines:@file:$(out_file 'f5_invite_id')"
 f5_webauth:
+  tags:
+    - interactive
   command:
     - --preset=f5_web
     - faspex5
@@ -5927,6 +5954,8 @@ alee_entitlement:
     - alee
     - entitlement
 f4_health:
+  tags:
+    - health
   command:
     - faspex
     - health

@@ -8,6 +8,7 @@ require 'fileutils'
 require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/log'
+require 'etc'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
 
@@ -147,6 +148,32 @@ def check_process(name)
   puts("Kill 0 : #{r}")
 end
 
+ASPERA_LOG_PATH = '/Library/Logs/Aspera'
+
+def reset_macos_hsts
+  result = run(%w[sudo systemsetup -getremotelogin], capture: true)
+  run(%w[sudo systemsetup -setremotelogin on]) if result.include?('Off')
+  run(%w[sudo systemsetup -getremotelogin])
+  st = File.stat(ASPERA_LOG_PATH)
+  owner = Etc.getpwuid(st.uid).name
+  run(%w[sudo chown -R asperadaemon:] + [ASPERA_LOG_PATH]) if owner != 'asperauser'
+  restart_noded
+  # while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
+end
+
+def restart_noded
+  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperalee.plist])
+  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist])
+  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
+  sleep(5)
+  # run(%w[sudo /bin/chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera])
+  # -ps -ef|grep aspera|grep -v grep
+  run(%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
+  run(%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist])
+  sleep(5)
+  # -ps -ef|grep aspera|grep -v grep
+end
+
 namespace :test do
   # List tests with metadata
   desc 'List all tests with tags'
@@ -197,6 +224,10 @@ namespace :test do
   desc 'Run all tests'
   task :run do
     TEST_DEFS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+  end
+  desc 'noded'
+  task :noded do
+    reset_macos_hsts
   end
 end
 

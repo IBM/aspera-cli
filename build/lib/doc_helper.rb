@@ -22,11 +22,6 @@ require 'pathname'
 require_relative 'build_tools'
 require_relative 'paths'
 
-# Log control
-Aspera::Log.instance.level = :info
-Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
-Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
-
 # Format special values to markdown
 class MarkdownFormatter
   class << self

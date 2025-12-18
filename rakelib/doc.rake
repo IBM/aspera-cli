@@ -33,6 +33,7 @@ TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
 ASYNC_YAML_SCHEMA = Paths::LIB / 'aspera/sync/conf.schema.yaml'
 PATH_BUILD_TOOLS = Paths::BUILD_LIB / 'build_tools.rb'
 
+# Generated PATH_MD_MANUAL uses these files
 DOC_FILES = [
   Paths::DOC / 'README.erb.md',
   Paths::CLI_CMD,
@@ -73,7 +74,7 @@ namespace :doc do
   task pdf: PATH_PDF_MANUAL
 
   desc 'Generate All Docs'
-  task doc: [PATH_PDF_MANUAL, PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL]
+  task doc: [PATH_MD_MANUAL, PATH_PDF_MANUAL, PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA]
 
   file PATH_UML_PNG => PATH_TMP_DOT do
     Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}

@@ -99,7 +99,7 @@ make clean_gems
 
 TODO: document installation of tool chain.
 
-Build system uses GNU Make.
+Build system uses Ruby's `rake`.
 
 ### Environment
 

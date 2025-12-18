@@ -8,7 +8,7 @@ if ENV.key?('ENABLE_COVERAGE')
   development_root = File.dirname(File.realpath(__FILE__), 3)
   SimpleCov.root(development_root)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
-  # keep cache data for 1 day (must be longer that time to run the whole test suite)
+  # keep cache data for 1 day (must be longer than time to run the whole test suite)
   SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
