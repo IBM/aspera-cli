@@ -6,7 +6,7 @@
 # Review the version of Ruby to be used periodically from :
 # https://hub.docker.com/_/ruby
 # "-slim" image not used because rmagick requires native compilation
-FROM docker.io/ruby:3.4.7
+FROM docker.io/ruby:3.4.8
 #erb: if arg_gem.end_with?('.gem')
 # For beta, gem is file, then copy it.
 COPY <%=arg_gem%> .
