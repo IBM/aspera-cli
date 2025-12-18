@@ -5,6 +5,7 @@ require 'aspera/cli/info'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/pandoc'
 require_relative '../build/lib/doc_helper'
+include BuildTools
 
 def capture_stdout_to_file(pathname)
   raise 'Missing block' unless block_given?
@@ -61,7 +62,7 @@ namespace :doc do
 
   file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do
     Aspera::Log.log.info{"Generating: #{TSPEC_JSON_SCHEMA}"}
-    Aspera::Environment.secure_execute(exec: Paths::CLI_CMD.to_s, args: ['config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}"])
+    run(Paths::CLI_CMD, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}")
   end
 
   file PATH_MD_MANUAL => DOC_FILES + [PATH_BUILD_TOOLS, TSPEC_YAML_SCHEMA, ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
@@ -78,7 +79,7 @@ namespace :doc do
 
   file PATH_UML_PNG => PATH_TMP_DOT do
     Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}
-    Aspera::Environment.secure_execute(exec: 'dot', args: ['-Tpng', PATH_TMP_DOT.to_s], out: PATH_UML_PNG.to_s)
+    run('dot', '-Tpng', PATH_TMP_DOT, out: PATH_UML_PNG.to_s)
   end
 
   file PATH_TMP_DOT => [] do

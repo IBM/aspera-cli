@@ -14,6 +14,7 @@ require 'aspera/cli/transfer_progress'
 require 'aspera/ascp/installation'
 
 require_relative '../build/lib/build_tools'
+include BuildTools
 
 Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
@@ -51,12 +52,7 @@ namespace :windowszip do
   task gems: :prepare do
     puts('Getting gems'.blue)
     tmp_install_ruby = PATH_BUILD_DIR / 'tmpruby'
-
-    Aspera::Environment.secure_execute(
-      exec: 'gem',
-      args: ['install', "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}", '--no-document', '--install-dir', tmp_install_ruby]
-    )
-
+    run('gem', 'install', "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}", '--no-document', '--install-dir', tmp_install_ruby)
     File.rename(File.join(tmp_install_ruby, 'cache'), PATH_RESOURCES_DIR)
     tmp_install_ruby.rmtree
   end
