@@ -21,7 +21,7 @@ module BuildTools
     if kwargs.delete('background')
       Aspera::Environment.secure_spawn(exec: args.shift, args: args)
     else
-      Aspera::Environment.secure_execute(exec: args.shift, args: args, exception: true, **kwargs)
+      Aspera::Environment.secure_execute(exec: args.shift, args: args, **kwargs)
     end
   end
 
