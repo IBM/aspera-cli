@@ -125,13 +125,17 @@ module Aspera
       # @param args   [Array]  arguments to executable
       # @param kwargs [Hash]   options to Open3.capture3
       # @return stdout of executable or raise exception
-      def secure_capture(exec:, args: [], exception: true, **kwargs)
+      def secure_capture(exec:, args: [], env: nil, exception: true, **kwargs)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array)
-        Log.log.debug{log_spawn(exec: exec, args: args)}
+        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
         Log.dump(:kwargs, kwargs, level: :trace2)
-        Log.dump(:ENV, ENV.to_h, level: :trace1)
-        stdout, stderr, status = Open3.capture3(exec, *args, **kwargs)
+        # Log.dump(:ENV, ENV.to_h, level: :trace1)
+        capture_args = []
+        capture_args.push(env) unless env.nil?
+        capture_args.push(exec)
+        capture_args.concat(args)
+        stdout, stderr, status = Open3.capture3(*capture_args, **kwargs)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         Log.log.trace1{"stdout=#{stdout}"}
         raise "process failed: #{status.exitstatus} (#{stderr})" if !status.success? && exception
