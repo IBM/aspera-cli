@@ -12,16 +12,15 @@ A container version is provided for [`tebako`](https://github.com/tamatebako/teb
 To build a given version using the current Rakefile:
 
 ```bash
-cd package/binary
-rake GEM_VERSION=4.23.0
+rake binary:build GEM_VERSION=4.23.0
 ```
 
 To build a given version using the Rakefile of that version:
 
 ```bash
 git checkout v4.23.0
-cd package/binary
-rake
+rake binary:build
+
 ```
 
 ## History

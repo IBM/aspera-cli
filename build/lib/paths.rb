@@ -4,8 +4,10 @@ require 'pathname'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 
+# Gem version for build
 GEM_VERSION = ENV['GEM_VERSION'] || Aspera::Cli::VERSION
 
+# Fixed paths in project
 module Paths
   # Main project folder
   TOP = Pathname.new(__dir__).parent.parent
@@ -20,7 +22,6 @@ module Paths
   GEMSPEC = TOP / 'aspera-cli.gemspec'
   BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
-  RELEASE.mkpath
   # Definition of cmmand line tests
   TEST_DEFS = TST / 'tests.yml'
   # @return [Pathname]
