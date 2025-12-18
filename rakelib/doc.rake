@@ -2,8 +2,8 @@
 
 require 'aspera/cli/info'
 
+require_relative '../build/lib/build_tools'
 require_relative '../build/lib/pandoc'
-require_relative '../build/lib/paths'
 require_relative '../build/lib/doc_helper'
 
 def capture_stdout_to_file(pathname)
