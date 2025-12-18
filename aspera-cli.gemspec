@@ -38,7 +38,7 @@ Gem::Specification.new do |spec|
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   if ENV.key?('SIGNING_KEY')
     spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY'))
-    raise "Missing SIGNING_KEY: #{spec.signing_key}" unless File.exist?(spec.signing_key)
+    raise "Missing SIGNING_KEY file: #{spec.signing_key}" unless File.exist?(spec.signing_key)
   end
   # see also Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
   spec.required_ruby_version = '>= 3.1'
