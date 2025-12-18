@@ -3,13 +3,13 @@
 require 'bundler'
 require 'yaml'
 require 'aspera/log'
-require 'aspera/rest'
+# require 'aspera/rest'
 require_relative 'paths'
 
 # Log control
 Aspera::Log.instance.level = :info
 Aspera::Log.instance.level = ENV['RAKE_LOGLEVEL'].to_sym if ENV['RAKE_LOGLEVEL']
-Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
+# Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 module BuildTools
   # @param gemfile [String] Path to gem file
@@ -37,10 +37,9 @@ module BuildTools
     end
   end
 
-  def download_proto_file
+  def download_proto_file(tmp_proto_folder)
     require 'aspera/ascp/installation'
     require 'aspera/cli/transfer_progress'
-    tmp_proto_folder = ARGV.first
     Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
     # Retrieve `transfer.proto` from the web
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
