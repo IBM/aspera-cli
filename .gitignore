@@ -13,4 +13,3 @@
 .vscode
 .bundle
 *.pandoc_meta
-dev.*

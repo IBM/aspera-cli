@@ -56,12 +56,8 @@ class DocHelper
   SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
   SECRET_QUERIES = %w[token passcode context].freeze
   class << self
-    # main function to generate template configuration file for tests
-    # hide sensitive information
-    def generate_generic_conf
-      config_to_template(Paths.config_file_path, Pathname.new(ARGV.shift))
-    end
-
+    # Generate template configuration file for tests
+    # Hide sensitive information
     def config_to_template(config, template)
       Aspera::Log.log.info{"Generating: #{template}"}
       configuration = YAML.load_file(config)
@@ -480,10 +476,4 @@ class DocHelper
     end
     File.rename(tmp_file, @paths[:outfile])
   end
-end
-
-def generate_doc
-  # no unicode
-  Aspera::Environment.force_terminal_c
-  DocHelper.new(ARGV).generate
 end
