@@ -22,6 +22,7 @@ module Paths
   GEMSPEC = TOP / 'aspera-cli.gemspec'
   BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
+  GEMFILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem"
   # Definition of cmmand line tests
   TEST_DEFS = TST / 'tests.yml'
   # @return [Pathname]

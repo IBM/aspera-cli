@@ -56,21 +56,24 @@ namespace :tools do
     download_proto_file(PROTO_PATH)
     run('grpc_tools_ruby_protoc', "--proto_path=#{PROTO_PATH}", "--ruby_out=#{GRPC_DEST}", "--grpc_out=#{GRPC_DEST}", PROTO_PATH / 'transferd.proto')
   end
+  desc 'Build beta version'
+  task beta: ['gem:build'] do
+    Dir.chdir(ENV['ASPERA_CLI_TEST_PRIVATE']) do
+      run('make', 'push_beta', "PATH_GEMFILE=#{Paths::GEMFILE}")
+    end
+  end
 end
 
-# beta:
-#	cd $(ASPERA_CLI_TEST_PRIVATE) && make beta
-###################################
 ## Gem build
-# $(PATH_GEMFILE): ensure_gems_installed
+# $(Paths::GEMFILE): ensure_gems_installed
 #	gem build $(GEMSPEC)
-#	gem specification $(PATH_GEMFILE) version
+#	gem specification $(Paths::GEMFILE) version
 ## force rebuild of gem and sign it, then check signature
-# signed_gem: gem_check_signing_key clean_gem ensure_gems_installed $(PATH_GEMFILE)
-#	@tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
+# signed_gem: gem_check_signing_key clean_gem ensure_gems_installed $(Paths::GEMFILE)
+#	@tar tf $(Paths::GEMFILE)|grep '\.gz\.sig$$'
 #	@echo "Ok: gem is signed"
 ## build gem without signature for development and test
-# unsigned_gem: $(PATH_GEMFILE)
+# unsigned_gem: $(Paths::GEMFILE)
 # beta_gem:
 #	make GEM_VERSION=$(GEM_VERS_BETA) unsigned_gem
 # clean_optional_gems:
@@ -91,4 +94,94 @@ end
 ## in case of big problem on released gem version, it can be deleted from rubygems
 ## gem yank -v $(GEM_VERSION) $(GEM_NAME)
 # release: all
-#	gem push $(PATH_GEMFILE)
+#	gem push $(Paths::GEMFILE)
+
+namespace :todo do
+  GEM_VERS_BETA = "#{GEM_VERSION}.#{Time.now.strftime('%Y%m%d%H%M')}"
+
+  # Tasks
+  desc 'Default task: build documentation and signed gem'
+  task default: %i[doc signed_gem]
+
+  desc 'Clean temporary and build files'
+  task :clean do
+    FileUtils.rm_rf(DIR_TMP)
+    FileUtils.rm_f(DIR_TOP.join('.gems_checked'))
+    FileUtils.rm_f(DIR_TOP.join('Gemfile.lock'))
+    Dir.glob(DIR_TOP.join("#{GEM_NAME}-*.gem")).each{ |f| FileUtils.rm_f(f)}
+    FileUtils.rm_rf(DIR_TOP.join('.bundle'))
+    Rake::Task['clean_doc'].invoke
+    Rake::Task['clean_tests'].invoke
+  end
+
+  desc 'Install development gems'
+  task :install_dev_gems do
+    sh 'gem install bundler'
+    sh 'bundle config set with development'
+    sh 'bundle install'
+  end
+
+  desc 'Install optional gems'
+  task install_optional_gems: [:install_dev_gems] do
+    sh 'bundle config set with optional'
+    sh 'bundle install'
+  end
+
+  desc 'Clean installed gems'
+  task :clean_gems do
+    Rake::Task['clean_gems_installed'].invoke
+    gem_dir = %x(gem env gemdir).strip
+    gems = Dir.glob("#{gem_dir}/gems/*").map{ |f| File.basename(f).sub(/-[0-9].*$/, '')}.uniq
+    gems.each{ |g| sh "gem uninstall -axI #{g}"}
+  end
+
+  desc 'Clean installed development gems'
+  task :clean_gems_installed do
+    FileUtils.rm_f(DIR_TOP.join('.gems_checked'))
+    FileUtils.rm_f(DIR_TOP.join('Gemfile.lock'))
+  end
+
+  desc 'Build unsigned gem'
+  task unsigned_gem: [Paths::GEMFILE.to_s]
+
+  file Paths::GEMFILE.to_s => [:ensure_gems_installed] do
+    sh "gem build #{GEMSPEC}"
+    sh "gem specification #{Paths::GEMFILE} version"
+  end
+
+  desc 'Build signed gem'
+  task signed_gem: %i[gem_check_signing_key clean_gem ensure_gems_installed unsigned_gem] do
+    sh "tar tf #{Paths::GEMFILE} | grep '.gz.sig$'"
+    puts 'Ok: gem is signed'
+  end
+
+  desc 'Clean gem files'
+  task :clean_gem do
+    FileUtils.rm_f(Paths::GEMFILE)
+    Dir.glob(DIR_TOP.join("#{GEM_NAME}-*.gem")).each{ |f| FileUtils.rm_f(f)}
+  end
+
+  desc 'Check signing key presence'
+  task :gem_check_signing_key do
+    key_path = ENV['SIGNING_KEY']
+    abort 'Error: Missing env var SIGNING_KEY' if key_path.nil? || key_path.empty?
+    abort "Error: No such file: #{key_path}" unless File.exist?(key_path)
+  end
+
+  desc 'Release gem to RubyGems'
+  task release: [:default] do
+    cmd = Gem::Commands::PushCommand.new
+    cmd.handle_options([Paths::GEMFILE.to_s])
+    cmd.execute
+  end
+
+  desc 'Show gem version'
+  task :version do
+    puts GEM_VERSION
+  end
+
+  desc 'Show Docker repository'
+  task :repo do
+    puts DCK_REPO
+  end
+end

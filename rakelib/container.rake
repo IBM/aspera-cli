@@ -8,7 +8,6 @@ require 'aspera/cli/info'
 require 'aspera/cli/version'
 require_relative '../build/lib/build_tools'
 
-PATH_GEMFILE = Paths::TOP / 'aspera-cli.gem'
 TOOL = ENV['TOOL'] || 'podman'
 TAG_VERSION = "#{Aspera::Cli::Info::CONTAINER}:#{GEM_VERSION}"
 TAG_LATEST  = "#{Aspera::Cli::Info::CONTAINER}:latest"
@@ -28,98 +27,91 @@ def process_template(template_path, args = {})
   ERB.new(content, trim_mode: '-').result_with_hash(args)
 end
 
-##################################
-# DEFAULT
-##################################
-task default: :build
+namespace :container do
+  desc 'Build the container'
+  task build: ['Dockerfile.tmpl.erb'] do
+    out = process_template(
+      'Dockerfile.tmpl.erb',
+      arg_gem: "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}",
+      arg_opt: optional_gems
+    )
+    File.write('Dockerfile', out)
+    run(TOOL, 'build', '--squash', '--tag', TAG_VERSION, '--tag', TAG_LATEST, '.')
+  end
 
-##################################
-# BUILD
-##################################
+  desc 'Test the container'
+  task :test do
+    run(TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, Aspera::Cli::Info::CMD_NAME, '-v')
+  end
 
-desc 'Build the container (default)'
-task build: ['Dockerfile.tmpl.erb'] do
-  out = process_template(
-    'Dockerfile.tmpl.erb',
-    arg_gem: "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}",
-    arg_opt: optional_gems
-  )
-  File.write('Dockerfile', out)
-  run(TOOL, 'build', '--squash', '--tag', TAG_VERSION, '--tag', TAG_LATEST, '.')
-end
+  ##################################
+  # PUSH
+  ##################################
 
-desc 'Test the container'
-task :test do
-  run(TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, Aspera::Cli::Info::CMD_NAME, '-v')
-end
+  desc 'Push only the version tag'
+  task :push_version do
+    run(TOOL, 'push', TAG_VERSION)
+  end
 
-##################################
-# PUSH
-##################################
+  desc 'Push only the latest tag'
+  task :push_latest do
+    run(TOOL, 'push', TAG_LATEST)
+  end
 
-desc 'Push only the version tag'
-task :push_version do
-  run(TOOL, 'push', TAG_VERSION)
-end
+  desc 'Push version and latest tags'
+  task push: %i[push_version push_latest]
 
-desc 'Push only the latest tag'
-task :push_latest do
-  run(TOOL, 'push', TAG_LATEST)
-end
+  ##################################
+  # BETA BUILD
+  ##################################
 
-desc 'Push version and latest tags'
-task push: %i[push_version push_latest]
+  task Paths::GEMFILE do
+    Dir.chdir(Paths::TOP){run('make', 'unsigned_gem')}
+  end
 
-##################################
-# BETA BUILD
-##################################
+  task beta_build_target: ['Dockerfile.tmpl.erb', Paths::GEMFILE] do
+    FileUtils.cp(Paths::GEMFILE, 'aspera-cli-beta.gem')
+    out = process_template(
+      'Dockerfile.tmpl.erb',
+      arg_gem: 'aspera-cli-beta.gem',
+      arg_opt: optional_gems
+    )
+    File.write('Dockerfile', out)
+    run(TOOL, 'build', '--squash', '--tag', TAG_VERSION, '.')
+  end
 
-task PATH_GEMFILE do
-  Dir.chdir(Paths::TOP){run('make', 'unsigned_gem')}
-end
+  task :beta_build do
+    gem_vers_beta = ENV['GEM_VERS_BETA'] || raise('GEM_VERS_BETA required')
+    FileUtils.mkdir_p(Paths::TMP)
+    File.write(File.join(Paths::TMP, 'beta.txt'), gem_vers_beta)
+    run('rake', "GEM_VERSION=#{gem_vers_beta}", 'beta_build_target')
+  end
 
-task beta_build_target: ['Dockerfile.tmpl.erb', PATH_GEMFILE] do
-  FileUtils.cp(PATH_GEMFILE, 'aspera-cli-beta.gem')
-  out = process_template(
-    'Dockerfile.tmpl.erb',
-    arg_gem: 'aspera-cli-beta.gem',
-    arg_opt: optional_gems
-  )
-  File.write('Dockerfile', out)
-  run(TOOL, 'build', '--squash', '--tag', TAG_VERSION, '.')
-end
+  task :beta_push do
+    gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
+    run('rake', "GEM_VERSION=#{gem_ver}", 'push_version')
+  end
 
-task :beta_build do
-  gem_vers_beta = ENV['GEM_VERS_BETA'] || raise('GEM_VERS_BETA required')
-  FileUtils.mkdir_p(Paths::TMP)
-  File.write(File.join(Paths::TMP, 'beta.txt'), gem_vers_beta)
-  run('rake', "GEM_VERSION=#{gem_vers_beta}", 'beta_build_target')
-end
+  task :beta_test do
+    gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
+    run('rake', "GEM_VERSION=#{gem_ver}", 'test')
+  end
 
-task :beta_push do
-  gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
-  run('rake', "GEM_VERSION=#{gem_ver}", 'push_version')
-end
+  ##################################
+  # CLEAN
+  ##################################
 
-task :beta_test do
-  gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
-  run('rake', "GEM_VERSION=#{gem_ver}", 'test')
-end
+  task :clean do
+    FileUtils.rm_f('Dockerfile')
+    FileUtils.rm_f('aspera-cli-beta.gem')
+    FileUtils.rm_f(File.join(Paths::TMP, 'beta.txt'))
+  end
 
-##################################
-# CLEAN
-##################################
+  ##################################
+  # INFO
+  ##################################
 
-task :clean do
-  FileUtils.rm_f('Dockerfile')
-  FileUtils.rm_f('aspera-cli-beta.gem')
-  FileUtils.rm_f(File.join(Paths::TMP, 'beta.txt'))
-end
-
-##################################
-# INFO
-##################################
-
-task :info do
-  puts "Repo: #{Aspera::Cli::Info::CONTAINER}"
+  task :info do
+    puts "Repo: #{Aspera::Cli::Info::CONTAINER}"
+  end
 end

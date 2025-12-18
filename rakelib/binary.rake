@@ -24,18 +24,13 @@ def install_gem(name, into)
   run('gem', 'install', name, '--no-document', '--install-dir', into)
 end
 
-def fetch_gems
-end
-
 # clean   : Remove any temporary products.
 CLEAN.push(TEBAKO_TMP)
 # clobber : Remove any generated file.
 CLOBBER.push(PATH_CLI_EXEC)
 
 namespace :binary do
-  task default: :build
-
-  desc 'Build the single executable (default)'
+  desc 'Build the single executable'
   task build: [PATH_CLI_EXEC]
 
   file PATH_CLI_EXEC do
