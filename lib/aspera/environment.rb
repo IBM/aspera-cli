@@ -76,34 +76,34 @@ module Aspera
       # @param exec    [String]     Path to executable
       # @param args    [Array, nil] Arguments for executable
       # @param env     [Hash, nil]  Environment variables
-      # @param options [Hash, nil]  spawn options
+      # @param kwargs  [Hash]       Options for `Process.spawn`
       # @return [String]            PID of process
       # @raise  [Exception]         if problem
-      def secure_spawn(exec:, args: nil, env: nil, **options)
+      def secure_spawn(exec:, args: nil, env: nil, **kwargs)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array, NilClass)
         Aspera.assert_type(env, Hash, NilClass)
-        Aspera.assert_type(options, Hash, NilClass)
         Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
-        # start ascp in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
-        opts = {close_others: true}
-        opts.merge!(options) unless options.nil?
-        ascp_pid = Process.spawn(*spawn_args, **opts)
-        Log.log.debug{"pid: #{ascp_pid}"}
-        return ascp_pid
+        kwargs[:close_others] = true unless kwargs.key?(:close_others)
+        # Start separate process in background
+        pid = Process.spawn(*spawn_args, **kwargs)
+        Log.dump(:pid, pid)
+        return pid
       end
 
-      # Start process (not in shell) and wait for completion
-      # @param exec [String]     Path to executable
-      # @param args [Array, nil] Arguments
-      # @param env  [Hash, nil]  Environment variables
+      # Start process (not in shell) and wait for completion.
+      # By default, sets `exception: true` in `kwargs`
+      # @param exec   [String]     Path to executable
+      # @param args   [Array, nil] Arguments
+      # @param env    [Hash, nil]  Environment variables
+      # @param kwargs [Hash]       Arguments for `Kernel.system`
       # @return `nil`
       # @raise [RuntimeError] if problem
-      def secure_execute(exec:, args: nil, env: nil, **system_args)
+      def secure_execute(exec:, args: nil, env: nil, **kwargs)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array, NilClass)
         Aspera.assert_type(env, Hash, NilClass)
@@ -114,25 +114,24 @@ module Aspera
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
         # By default: exception on error
-        system_args[:exception] = true unless system_args.key?(:exception)
+        kwargs[:exception] = true unless kwargs.key?(:exception)
         # Start in separate process
-        Kernel.system(*spawn_args, **system_args)
+        Kernel.system(*spawn_args, **kwargs)
         nil
       end
 
       # Execute process and capture stdout
-      # @param exec [String] path to executable
-      # @param args [Array] arguments to executable
-      # @param opts [Hash] options to capture3
+      # @param exec   [String] path to executable
+      # @param args   [Array]  arguments to executable
+      # @param kwargs [Hash]   options to Open3.capture3
       # @return stdout of executable or raise exception
-      def secure_capture(exec:, args: [], exception: true, **opts)
+      def secure_capture(exec:, args: [], exception: true, **kwargs)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array)
-        Aspera.assert_type(opts, Hash)
         Log.log.debug{log_spawn(exec: exec, args: args)}
-        Log.dump(:opts, opts, level: :trace2)
+        Log.dump(:kwargs, kwargs, level: :trace2)
         Log.dump(:ENV, ENV.to_h, level: :trace1)
-        stdout, stderr, status = Open3.capture3(exec, *args, **opts)
+        stdout, stderr, status = Open3.capture3(exec, *args, **kwargs)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         Log.log.trace1{"stdout=#{stdout}"}
         raise "process failed: #{status.exitstatus} (#{stderr})" if !status.success? && exception
