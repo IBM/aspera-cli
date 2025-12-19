@@ -156,7 +156,7 @@ module Aspera
       def register_token_creator(creator_class)
         Aspera.assert_type(creator_class, Class)
         id = Factory.class_to_id(creator_class)
-        Log.log.debug{"registering token creator #{id}"}
+        Log.log.debug{"registering creator for #{id}"}
         @token_type_classes[id] = creator_class
       end
 
