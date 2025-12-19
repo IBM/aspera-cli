@@ -20,9 +20,11 @@ module Paths
   TST = TOP / 'tests'
   BUILD = TOP / 'build'
   GEMSPEC = TOP / 'aspera-cli.gemspec'
+  GEMFILE = TOP / 'Gemfile'
+  GEMFILE_LOCK = TOP / 'Gemfile.lock'
   BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
-  GEMFILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem"
+  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem"
   # Definition of cmmand line tests
   TEST_DEFS = TST / 'tests.yml'
   # @return [Pathname]

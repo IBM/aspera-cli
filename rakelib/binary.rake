@@ -44,7 +44,7 @@ namespace :binary do
     install_tmp = TEBAKO_TMP / 'install'
     install_tmp.mkpath
     install_gem(CLI_GEM_VERS_SPEC, install_tmp)
-    BuildTools.gems_in_group(Paths::TOP / 'Gemfile', :optional).each{ |spec| install_gem(spec, install_tmp)}
+    BuildTools.gems_in_group(Paths::GEMFILE, :optional).each{ |spec| install_gem(spec, install_tmp)}
     Dir.glob(install_tmp / 'cache/*.gem').each do |gem_file|
       FileUtils.mv(gem_file, TEBAKO_ROOT)
     end

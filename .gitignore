@@ -4,12 +4,9 @@
 /simplecov.log
 /tmp/
 /pkg/
-/.*_checked
 .DS_Store
 # rspec failure tracking
 /.rspec_status
-# to store things not to be in versioning:
 .idea
 .vscode
 .bundle
-*.pandoc_meta

@@ -41,7 +41,7 @@ DOC_FILES = [
   Paths::BIN / 'asession',
   Paths::TEST_DEFS,
   Paths::GEMSPEC,
-  Paths::TOP / 'Gemfile'
+  Paths::GEMFILE
 ]
 CONST_SOURCES = %w[info version manager].map{ |i| Paths::LIB / "aspera/cli/#{i}.rb"}
 # UML Diagram : requires tools: graphviz and gem xumlidot

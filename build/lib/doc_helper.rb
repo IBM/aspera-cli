@@ -438,7 +438,7 @@ class DocHelper
             Aspera::Rest.new(base_url: link_url, redirect_max: 5).call(operation: 'GET')
             next
           end
-          raise "Invalid link: no such file: #{link_url} (#{link_text})" unless File.exist?(File.join('..', link_url))
+          raise "Invalid link: no such file: #{link_url} (#{link_text})" unless File.exist?(link_url)
         end
       end
     end

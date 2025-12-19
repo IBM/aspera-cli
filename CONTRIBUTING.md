@@ -107,14 +107,13 @@ A few macros/env vars control some aspects:
 
 | `make` macro or Env var     | Description                          |
 |-----------------------------|--------------------------------------|
-| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests |
-| `ASPERA_CLI_TEST_MACOS`     | Set to `true` if local HSTS running on macOS      |
-| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder               |
+| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests. |
+| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder.              |
 | `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.    |
-| `ASPERA_CLI_DOC_DEBUG`      | Enable debug in doc generation.      |
+| `ASPERA_CLI_RAKE_LOGLEVEL`  | Enable debug in `rake`.              |
 | `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
 | `SIGNING_KEY`               | Path to signing key to build Gem.    |
-| `GEM_VERSION`               | Gem version to build container       |
+| `GEM_VERSION`               | Override gem version for builds.     |
 
 Those macros can be set either in an env var, or on the `make` command line.
 
@@ -171,24 +170,19 @@ Then, tell where this file is located (e.g. in your shell profile):
 export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 ```
 
-This project uses a `Makefile` for tests, in main folder:
+This project uses a `Rakefile` for tests, in main folder:
 
 ```bash
-make test
+rake test:run
 ```
 
-When new commands are added to the CLI, new tests shall be added to the test suite in `tests/Makefile`.
+When new commands are added to the CLI, new tests shall be added to the test suite in `tests/tests.yml`.
 
 One can also go to the `tests` folder:
 
 ```bash
-cd tests
-make
-make full
-make list
-make torc
-make skip_torc
-make skip T=orch_wizard
+rake test:run
+rake test:list
 ```
 
 ### Special tests
@@ -207,8 +201,9 @@ To run every test: `make full`
 For preparation of a release, do the following:
 
 1. Select a Ruby version to test with.
-2. Remove all gems: `make clean_gems`
-3. `cd tests && make full`
+2. Remove all gems: `rake tools:clean_gems`
+3. Install gems: `bundle install`
+4. `rake test:run`
 
 To test additional Ruby version, repeat the procedure with other Ruby versions.
 
@@ -218,21 +213,20 @@ A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
 Enable coverage monitoring using macro/envvar `ENABLE_COVERAGE`.
 
 ```bash
-cd tests
-make ENABLE_COVERAGE=1
+rake test:run ENABLE_COVERAGE=1
 ```
 
 Once tests are completed, or during test, consult the page: [coverage/index.html](coverage/index.html)
 
 ## Build
 
-By default, the gem is built signed: `make`.
+By default, the gem is built signed: `rake build`.
 A private key is required to generate a signed Gem.
 Its path must be set using macro/envvar `SIGNING_KEY`, see below.
-The gem is signed with the public certificate found in `certs` and the private key (kept secret by maintainer).
+The gem is signed with the public certificate found in `certs` and the private key pointed by `SIGNING_KEY` (kept secret by maintainer).
 
 ```bash
-make SIGNING_KEY=/path/to/vault/gem-private_key.pem
+rake build SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
 It is also possible to build an unsigned version for development purpose: `make unsigned_gem`.
@@ -246,7 +240,7 @@ Refer to <certs/README.md>
 Update with:
 
 ```bash
-make grpc
+rake tools:grpc
 ```
 
 It downloads the latest proto file and then compiles it.

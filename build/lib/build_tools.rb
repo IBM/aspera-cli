@@ -8,7 +8,7 @@ require_relative 'paths'
 
 # Log control
 Aspera::Log.instance.level = :info
-Aspera::Log.instance.level = ENV['RAKE_LOGLEVEL'].to_sym if ENV['RAKE_LOGLEVEL']
+Aspera::Log.instance.level = ENV['ASPERA_CLI_RAKE_LOGLEVEL'].to_sym if ENV['ASPERA_CLI_RAKE_LOGLEVEL']
 # Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 module BuildTools
