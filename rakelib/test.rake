@@ -214,10 +214,12 @@ namespace :test do
   end
 
   desc 'Clear a given test by name'
-  task :clear do
-    ENV['T'].split(',').each{ |k| state.delete(k)}
+  task :clear, [:name_list] do |_, args|
+    args[:name_list]&.split(' ')&.each do |k|
+      puts "[CLEAR] #{k}"
+      state.delete(k)
+    end
     save_state(state)
-    puts "[CLEAR] #{ENV['T']}"
   end
 
   # Reset persistent state
