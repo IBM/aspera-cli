@@ -28,7 +28,7 @@ CONF_DATA = yaml_safe_load(PATH_CONF_FILE.read)
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
-# testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
+# testing file generated locally
 PATH_TST_ASC_LCL = TMP / CONF_DATA['file']['asc_name']
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / CONF_DATA['file']['asc_name']
@@ -36,25 +36,25 @@ PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / CONF_DATA['file']['as
 PATH_TST_UTF_LCL = TMP / CONF_DATA['file']['utf_name']
 # a medium sized file for testing
 TST_MED_FILENAME = CONF_DATA['file']['utf_name']
-# needs to be quoted, as there is shell special character: "?"
+# local path, using `faux:`
 TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
-# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
+# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder shall exist
 PATH_TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
 PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
-PATH_VAULT_FILE = TOP / 'tmp/sample_vault.bin'
+PATH_VAULT_FILE = TMP / 'sample_vault.bin'
 PATH_FILE_LIST = TMP / 'filelist.txt'
 PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
 PKCS_P = 'YourExportPassword'
 # ------------------
 
-# give waring and stop on first warning in this gem code
+# give warning and stop on first warning in this gem code
 CMD_FAIL_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
 # CLI with default config file
 CLI_NOCONF = CMD_FAIL_WARN + [CLI_CMD, "--home=#{PATH_CLI_HOME}"]
-# "CLI_TEST" is used to call the tool in the testing environment
+# call the tool in the testing environment
 CLI_TEST = CLI_NOCONF + ["--config-file=#{PATH_CONF_FILE}"]
 # JRuby does not support some encryptions
 CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
@@ -72,8 +72,8 @@ TEST_CASE_NS = :case
 # Init folders and files
 TMP.mkpath
 FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
-PATH_TST_ASC_LCL.write('This is a small test file') unless  PATH_TST_ASC_LCL.exist?
-PATH_TST_UTF_LCL.write('This is a small test file') unless  PATH_TST_UTF_LCL.exist?
+PATH_TST_ASC_LCL.write('This is a small test file') unless PATH_TST_ASC_LCL.exist?
+PATH_TST_UTF_LCL.write('This is a small test file') unless PATH_TST_UTF_LCL.exist?
 PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
 PATH_FILE_PAIR_LIST.write([
   PATH_TST_ASC_LCL,
@@ -86,7 +86,14 @@ PATH_TMP_STATES.mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
-TEST_DEFS = yaml_safe_load(TEST_DEFS.read)
+ALL_TESTS = yaml_safe_load(TEST_DEFS.read)
+# add tags for plugin
+ALL_TESTS.each_value do |value|
+  plugin = value['command'].find{ |s| !s.start_with?('-')}
+  value['tags'] ||= []
+  value['tags'].push(plugin) unless value['tags'].include?(plugin)
+end
+
 # Allowed keys in test defs
 # command: the list for command line
 # tags: arbitrary tags to identify special attributes
@@ -98,7 +105,7 @@ TEST_DEFS = yaml_safe_load(TEST_DEFS.read)
 # stdin: input to provide to command line
 # expect: expected output
 ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
-unsupported_keys = TEST_DEFS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
+unsupported_keys = ALL_TESTS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
 raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
 state = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 
@@ -150,6 +157,7 @@ end
 
 ASPERA_LOG_PATH = '/Library/Logs/Aspera'
 
+# on macOS activate sshd, restore Log folder owner and restart noded
 def reset_macos_hsts
   result = run(%w[sudo systemsetup -getremotelogin], capture: true)
   run(%w[sudo systemsetup -setremotelogin on]) if result.include?('Off')
@@ -178,16 +186,29 @@ namespace :test do
   # List tests with metadata
   desc 'List all tests with tags'
   task :list do
-    TEST_DEFS.each do |name, info|
+    ALL_TESTS.each do |name, info|
       puts "#{name.ljust(20)} #{info['tags']&.join(', ')}"
     end
   end
 
-  desc 'Skip a given test by name'
-  task :skip do
-    ENV['T'].split(',').each do |k|
+  desc 'Skip a given tests by name (space-separated)'
+  task :skip_by_name, [:name_list] do |_, args|
+    args[:name_list].split(' ').each do |k|
+      raise "Unknown test: #{k}" unless ALL_TESTS.key?(k)
       state[k] = 'skipped'
       puts "[SKIP] #{k}"
+    end
+    save_state(state)
+  end
+
+  desc 'Skip a given test by tag (space-separated)'
+  task :skip_by_tag, [:name_list] do |_, args|
+    tags = args[:name_list].split(' ')
+    ALL_TESTS.each do |name, value|
+      if value['tags']&.any?{ |t| tags.include?(t)}
+        state[name] = 'skipped'
+        puts "[SKIP] #{name}"
+      end
     end
     save_state(state)
   end
@@ -209,23 +230,23 @@ namespace :test do
 
   # Run tests filtered by tag
   desc 'Run only tests matching tag'
-  task :tags, [:tag] do |_, args|
+  task :by_tag, [:tag] do |_, args|
     tag = args[:tag]
-    abort 'Usage: rake test:tags[download]' unless tag
-
-    selected = TEST_DEFS.select{ |_, info| info['tags']&.include?(tag)}
+    abort 'Usage: rake test:by_tag[download]' unless tag
+    selected = ALL_TESTS.select{ |_, info| info['tags']&.include?(tag)}
     Rake::Task['test:run'].invoke if selected.empty?
-
     selected.each_key do |name|
-      Rake::Task["test:#{name}"].invoke
+      Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
     end
   end
+
   # Run all tests in declared order
   desc 'Run all tests'
   task :run do
-    TEST_DEFS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+    ALL_TESTS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
   end
-  desc 'noded'
+
+  desc 'Restart noded on macOS'
   task :noded do
     reset_macos_hsts
   end
@@ -233,7 +254,7 @@ end
 
 namespace TEST_CASE_NS do
   # Create a Rake task for each test
-  TEST_DEFS.each do |name, info|
+  ALL_TESTS.each do |name, info|
     # puts "-> #{name}"
     # desc info['description'] || '-'
     deps = info['depends_on'] || []

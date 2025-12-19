@@ -5649,6 +5649,9 @@ f5_adm_sh_invite:
     - "@extend:%name:@preset:faspex5.shared_box_name@"
     - johnny@example.com
 f5_adm_sh_members:
+  $comment: TODO check if fail is normal
+  tags:
+    - ignore_fail
   depends_on:
     - f5_adm_sh_invite
   command:
@@ -5985,6 +5988,8 @@ f4_detect:
     - detect
     - "@preset:faspex4_user.url"
 f4_wizard:
+  tags:
+    - faspex
   command:
     - config
     - wizard

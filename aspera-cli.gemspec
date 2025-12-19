@@ -52,6 +52,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency('rainbow', '~> 3.0')
   spec.add_dependency('ruby-progressbar', '~> 1.0')
   spec.add_dependency('rubyzip', '~> 3.1')
+  spec.add_dependency('syslog', '~> 0.3')
   spec.add_dependency('terminal-table', '~> 4.0')
   spec.add_dependency('tty-spinner', '~> 0.9')
   spec.add_dependency('vault', '~> 0.18')
