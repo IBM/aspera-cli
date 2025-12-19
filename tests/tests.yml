@@ -6,7 +6,6 @@
 # Shares ------------------------------------------------------
 shares_health:
   tags:
-    - must_fail
     - nodoc
     - health
   command:
@@ -321,8 +320,9 @@ serv_mkdir:
     - "@preset:server.inside_folder"
     - --logger=stdout
 serv_error1:
+  description: Try to transfer with wrong password.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -332,8 +332,9 @@ serv_error1:
     - $(PATH_TST_ASC_LCL)
     - --transfer-info=@json:{"monitor":false,"resume":{"iter_max":0}}
 serv_error2:
+  description: Try to browse with wrong password.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -343,8 +344,9 @@ serv_error2:
     - /
     - --ssh-options=@json:{"number_of_password_prompts":0}
 serv_error3:
+  description: Try to use a wrong URL.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -353,8 +355,9 @@ serv_error3:
     - ls
     - .
 serv_error4:
+  description: Try to upload file that does not exist, with token.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -365,8 +368,9 @@ serv_error4:
     - --ts=@json:{"token":"test"}
     - --transfer-info=@json:{"resume":{"iter_max":0}}
 serv_error5:
+  description: Try to upload file that does not exist.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -625,8 +629,9 @@ serv_down_from_node:
     - --transfer=node
     - --ts.resume_policy=none
 serv_down_from_node_fail:
+  description: Try to download file that does not exist.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - server
@@ -1267,6 +1272,7 @@ nd_akc:
     - browse
     - /
 nd_akd:
+  $comment: TODO Check
   tags:
     - must_fail
     - nodoc
@@ -1672,13 +1678,13 @@ aoc_wizardc:
     - --use-generic-client=yes
 aoc_wizard_2:
   tags:
-    - hide_fail
     - nodoc
   command:
     - config
     - tokens
     - flush
 aoc_wizard_2b:
+  description: Try to show non existing token
   tags:
     - must_fail
     - nodoc
@@ -2230,9 +2236,10 @@ aoc_file_id_9:
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
 aoc_file_id_10:
+  tags:
+    - rmagick
   depends_on:
     - aoc_file_id_6
-    - rmagick
   command:
     - aoc
     - files
@@ -2465,9 +2472,9 @@ aocp_send_sh_meta_short:
     - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short2:
-  $comment: Fails because missing metadata "Project Id"
+  description: Fails because missing metadata "Project Id"
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   depends_on:
     - aocp_recv_init
@@ -3243,8 +3250,9 @@ orch_health:
     - orchestrator
     - health
 orch_health_bad:
+  description: Try to use wrong URL.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - orchestrator
@@ -3700,8 +3708,9 @@ sync_other_delete:
     - delete
     - "%name:my_node_sync"
 sync_other_delete_fail:
+  description: Try to delete sync that does not exist
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - node
@@ -3714,8 +3723,9 @@ conf_detect:
     - detect
     - "@preset:node_user.url"
 conf_detectb:
+  description: No Aspera app there.
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - config
@@ -4375,7 +4385,7 @@ conf_pub_key:
     - "@file:$(TMP / 'my_key')"
 conf_genkey_fail:
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - config
@@ -5102,7 +5112,7 @@ f5_wizardc:
     - --client-secret=abc
 f5_detect_fail:
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
   command:
     - config
@@ -6060,7 +6070,6 @@ f4_prib:
     - --to-folder=$(TMP)
 f4_prl:
   tags:
-    - hide_fail
     - nodoc
   command:
     - faspex

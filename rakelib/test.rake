@@ -266,7 +266,7 @@ namespace TEST_CASE_NS do
         full_args += ["--output=#{out_file(name)}"] if save_output
         kwargs = {}
         if info['tags']&.include?('noblock')
-          kwargs['background'] = true
+          kwargs[:background] = true
           full_args.push("--pid-file=#{pid_file(name)}")
         end
         if info['stdin']

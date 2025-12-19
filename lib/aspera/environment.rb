@@ -108,6 +108,7 @@ module Aspera
         Aspera.assert_type(args, Array, NilClass)
         Aspera.assert_type(env, Hash, NilClass)
         Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
+        Log.dump(:kwargs, kwargs, level: :trace1)
         spawn_args = []
         spawn_args.push(env) unless env.nil?
         # Ensure no shell expansion
