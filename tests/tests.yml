@@ -887,6 +887,10 @@ nd_tra:
   command:
     - node
     - transport
+nd_spec:
+  command:
+    - node
+    - spec
 nd_bro:
   command:
     - node
