@@ -18,6 +18,7 @@ group :optional do
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB
   gem('ed25519', '~> 1.4') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
   gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
+  gem('syslog', '~> 0.3') unless defined?(JRUBY_VERSION) # for logger=syslog
 end
 
 # Used only for development
