@@ -28,9 +28,9 @@ This creates two files in folder `/path/to/vault` (e.g. `$HOME/.ssh`):
 > [!NOTE]
 > Alternatively, use an existing key or generate one, and then `make new`
 
-Subsequently, the private key path is specified using `SIGNING_KEY` as env var or `make` macro.
+Subsequently, the private key path is specified using `SIGNING_KEY` as env var.
 
-Show the current certificate contents
+Show the current certificate contents:
 
 ```bash
 make show

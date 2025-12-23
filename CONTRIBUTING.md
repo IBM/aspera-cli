@@ -34,6 +34,8 @@ Clone the repository and navigate to the project's main folder:
 ```bash
 git clone https://github.com/IBM/aspera-cli.git
 cd aspera-cli
+bundle install
+rake -T
 ```
 
 For testing instructions, refer to [Running Tests](#running-tests).
@@ -86,10 +88,10 @@ A list of classes are provided in <docs/uml.png>
 `aspera-cli` is built with Ruby.
 You can install Ruby using any method you prefer (e.g., `rbenv`, `rvm`, system package manager).
 
-To start with a clean slate and remove all installed gems:
+To start with a clean state and remove all installed gems:
 
 ```bash
-make clean_gems
+rake tools:clean_gems
 ```
 
 > [!TIP]
@@ -105,7 +107,7 @@ Build system uses Ruby's `rake`.
 
 A few macros/env vars control some aspects:
 
-| `make` macro or Env var     | Description                          |
+| Environment variable        | Description                          |
 |-----------------------------|--------------------------------------|
 | `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests. |
 | `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder.              |
@@ -115,7 +117,7 @@ A few macros/env vars control some aspects:
 | `SIGNING_KEY`               | Path to signing key to build Gem.    |
 | `GEM_VERSION`               | Override gem version for builds.     |
 
-Those macros can be set either in an env var, or on the `make` command line.
+Those macros can be set either in an env var, or on the `rake` command line.
 
 > [!NOTE]
 > Env vars `ASPERA_CLI_TEST_*` are typically set in user's shell profile for development.

@@ -33,7 +33,7 @@ namespace :tools do
     run('semgrep', 'scan', '--config', 'auto')
   end
 
-  desc 'Remove all gems'
+  desc 'Remove all installed gems'
   task clean_gems: [] do
     gems_dir = File.join(Gem.dir, 'gems')
     if Dir.exist?(gems_dir) && !Dir.empty?(gems_dir)
@@ -116,14 +116,6 @@ namespace :todo do
     sh 'bundle install'
   end
 
-  desc 'Clean installed gems'
-  task :clean_gems do
-    Rake::Task['clean_gems_installed'].invoke
-    gem_dir = %x(gem env gemdir).strip
-    gems = Dir.glob("#{gem_dir}/gems/*").map{ |f| File.basename(f).sub(/-[0-9].*$/, '')}.uniq
-    gems.each{ |g| sh "gem uninstall -axI #{g}"}
-  end
-
   desc 'Build unsigned gem'
   task unsigned_gem: [Paths::GEM_PACK_FILE.to_s]
 
@@ -136,12 +128,6 @@ namespace :todo do
   task signed_gem: %i[gem_check_signing_key clean_gem ensure_gems_installed unsigned_gem] do
     sh "tar tf #{Paths::GEM_PACK_FILE} | grep '.gz.sig$'"
     puts 'Ok: gem is signed'
-  end
-
-  desc 'Clean gem files'
-  task :clean_gem do
-    FileUtils.rm_f(Paths::GEM_PACK_FILE)
-    Dir.glob(DIR_TOP.join("#{GEM_NAME}-*.gem")).each{ |f| FileUtils.rm_f(f)}
   end
 
   desc 'Check signing key presence'
