@@ -58,6 +58,7 @@ namespace :container do
   desc 'Push version and latest tags'
   task push: %i[push_version push_latest]
 
+  desc 'TODO'
   task beta_build_target: [TEMPLATE_DOCKERFILE, Paths::GEM_PACK_FILE] do
     FileUtils.cp(Paths::GEM_PACK_FILE, 'aspera-cli-beta.gem')
     out = process_template(
@@ -69,6 +70,7 @@ namespace :container do
     run(CONTAINER_TOOL, 'build', '--squash', '--tag', TAG_VERSION, '.')
   end
 
+  desc 'TODO'
   task :beta_build do
     gem_vers_beta = ENV['GEM_VERS_BETA'] || raise('GEM_VERS_BETA required')
     FileUtils.mkdir_p(Paths::TMP)
@@ -76,17 +78,20 @@ namespace :container do
     run('rake', "GEM_VERSION=#{gem_vers_beta}", 'beta_build_target')
   end
 
+  desc 'TODO'
   task :beta_push do
     gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
     run('rake', "GEM_VERSION=#{gem_ver}", 'push_version')
   end
 
+  desc 'TODO'
   task :beta_test do
     gem_ver = File.read(File.join(Paths::TMP, 'beta.txt')).strip
     run('rake', "GEM_VERSION=#{gem_ver}", 'test')
   end
 
-  task :info do
-    puts "Repo: #{Aspera::Cli::Info::CONTAINER}"
+  desc 'Show repo.'
+  task :repo do
+    puts Aspera::Cli::Info::CONTAINER
   end
 end

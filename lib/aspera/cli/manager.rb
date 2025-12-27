@@ -487,10 +487,10 @@ module Aspera
         rescue OptionParser::InvalidOption => e
           Log.log.trace1{"InvalidOption #{e}".red}
           if (m = e.args.first.match(/^--([a-z\-]+)\.([^=]+)=(.+)$/))
-            option, path, raw_value = m.captures
+            option, path, value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
-              set_option(option_sym, dotted_to_extended(path, raw_value), where: 'dotted')
+              set_option(option_sym, dotted_to_extended(path, value), where: 'dotted')
               retry
             end
           end
@@ -560,10 +560,13 @@ module Aspera
       end
 
       # Read remaining args and build an Array or Hash
+      # @param value [nil] Argument to `@:` extended value
       def args_as_extended(value)
+        # This extended value does not take args (`@:`)
         ExtendedValue.assert_no_value(value, :p)
         result = nil
         get_next_argument(:args, multiple: true).each do |arg|
+          Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not inlude #{OPTION_VALUE_SEPARATOR}"}
           path, raw = arg.split(OPTION_VALUE_SEPARATOR, 2)
           result = dotted_to_extended(path, raw, result)
         end
@@ -577,30 +580,47 @@ module Aspera
       # @param value [String] The value to convert to appropriate type
       # @return the converted value
       def smart_convert(value)
-        return true  if value == 'true'
-        return false if value == 'false'
-        Integer(value)
-      rescue ::ArgumentError
-        begin
-          Float(value)
-        rescue ::ArgumentError
-          ExtendedValue.instance.evaluate(value, context: 'dotted expression')
+        case value
+        when 'true'  then true
+        when 'false' then false
+        else
+          Integer(value, exception: false) ||
+            Float(value, exception: false) ||
+            ExtendedValue.instance.evaluate(value, context: 'dotted expression')
         end
       end
 
-      def int_or_orig(value)
-        v = Integer(value, exception: false)
-        v.nil? ? value : v
+      # Convert `String` to `Integer`, or keep `String` if not `Integer`
+      def int_or_string(value)
+        Integer(value, exception: false) || value
       end
 
-      def dotted_to_extended(path, raw_value, result = nil)
-        keys = path.split(OPTION_HASH_SEPARATOR)
-        result = Integer(keys.first, exception: false).nil? ? {} : [] if result.nil?
-        current = result
-        keys[0...-1].each_with_index do |k, i|
-          current = current[int_or_orig(k)] ||= Integer(keys[i + 1], exception: false).nil? ? {} : []
+      def new_hash_or_array_from_key(key)
+        key.is_a?(Integer) ? [] : {}
+      end
+
+      def array_requires_integer_index!(container, index)
+        Aspera.assert(container.is_a?(Hash) || index.is_a?(Integer)){'Using String index when Integer index used previously'}
+      end
+
+      # Insert extended value `value` into struct `result` at `path`
+      # @param path   [String]
+      # @param value  [String]
+      # @param result [NilClass, Hash, Array]
+      # @return [Hash, Array]
+      def dotted_to_extended(path, value, result = nil)
+        # Typed keys
+        keys = path.split(OPTION_DOTTED_SEPARATOR).map{ |k| int_or_string(k)}
+        # Create, or re-used higher level container
+        current = (result ||= new_hash_or_array_from_key(keys.first))
+        # walk the path, and create sub-containers if necessary
+        keys.each_cons(2) do |k, next_k|
+          array_requires_integer_index!(current, k)
+          current = (current[k] ||= new_hash_or_array_from_key(next_k))
         end
-        current[int_or_orig(keys.last)] = smart_convert(raw_value)
+        # Assign value at last index
+        array_requires_integer_index!(current, keys.last)
+        current[keys.last] = smart_convert(value)
         result
       end
 
@@ -655,17 +675,17 @@ module Aspera
       OPTION_SEP_LINE = '-'
       # Option name separator in code (symbol), e.g. in :option_blah, the "_"
       OPTION_SEP_SYMBOL = '_'
+      # Option value separator on command line, e.g. in --option-blah=foo, the "="
       OPTION_VALUE_SEPARATOR = '='
-      # an option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-      # TODO: all Hash are additive, + way to reset Hash (e.g. --option-blah=@none:)
-      OPTION_HASH_SEPARATOR = '.'
+      # "." : An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
+      OPTION_DOTTED_SEPARATOR = '.'
       # Starts an option, e.g. in --option-blah, the two first "--"
       OPTION_PREFIX = '--'
       # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
 
-      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_HASH_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
+      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_DOTTED_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
     end
   end
 end

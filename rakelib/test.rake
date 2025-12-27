@@ -118,7 +118,7 @@ def eval_macro(value)
   value.gsub(/\$\((?<inner>(?:[^()]+|\((?:[^()]+|\g<inner>)*\))*)\)/) do
     Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
   end
-  # puts "Eval: #{value} -> [#{x}]"
+  # log.info "Eval: #{value} -> [#{x}]"
 end
 
 # @return the Pathname to pid file generated for the given test case
@@ -135,7 +135,7 @@ end
 def read_value_from(name)
   state_file = out_file(name)
   value = state_file.read.chomp
-  puts("Read: #{state_file}: #{value}")
+  log.info("Read: #{state_file}: #{value}")
   value
 end
 
@@ -152,7 +152,7 @@ end
 def check_process(name)
   pid = pid_file(name).read.to_i
   r = Process.kill(0, pid)
-  puts("Kill 0 : #{r}")
+  log.info("Kill 0 : #{r}")
 end
 
 ASPERA_LOG_PATH = '/Library/Logs/Aspera'
@@ -187,7 +187,7 @@ namespace :test do
   desc 'List all tests with tags'
   task :list do
     ALL_TESTS.each do |name, info|
-      puts "#{name.ljust(20)} #{info['tags']&.join(', ')}"
+      log.info("#{name.ljust(20)} #{info['tags']&.join(', ')}")
     end
   end
 
@@ -196,7 +196,7 @@ namespace :test do
     args[:name_list].split(' ').each do |k|
       raise "Unknown test: #{k}" unless ALL_TESTS.key?(k)
       state[k] = 'skipped'
-      puts "[SKIP] #{k}"
+      log.info("[SKIP] #{k}")
     end
     save_state(state)
   end
@@ -207,7 +207,7 @@ namespace :test do
     ALL_TESTS.each do |name, value|
       if value['tags']&.any?{ |t| tags.include?(t)}
         state[name] = 'skipped'
-        puts "[SKIP] #{name}"
+        log.info("[SKIP] #{name}")
       end
     end
     save_state(state)
@@ -216,7 +216,8 @@ namespace :test do
   desc 'Clear a given test by name'
   task :clear, [:name_list] do |_, args|
     args[:name_list]&.split(' ')&.each do |k|
-      puts "[CLEAR] #{k}"
+      log.info("[CLEAR] #{k}")
+      Aspera.assert(ALL_TESTS.key?(k)){"Invalid test case name: #{k}"}
       state.delete(k)
     end
     save_state(state)
@@ -227,7 +228,7 @@ namespace :test do
   task :reset do
     PATH_TESTS_STATES.delete if PATH_TESTS_STATES.exist?
     PATH_TEST_CONFIG.delete if PATH_TEST_CONFIG.exist?
-    puts 'State cleared.'
+    log.info('State cleared.')
   end
 
   # Run tests filtered by tag
@@ -257,19 +258,19 @@ end
 namespace TEST_CASE_NS do
   # Create a Rake task for each test
   ALL_TESTS.each do |name, info|
-    # puts "-> #{name}"
+    # log.info "-> #{name}"
     # desc info['description'] || '-'
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
       if SKIP_STATES.include?(state[name]) && !ENV['FORCE']
-        # puts "[SKIP] #{name}"
+        # log.info "[SKIP] #{name}"
         next
       end
-      puts "[RUN]  #{name}: #{info['command']&.join(' ')}"
+      log.info("[RUN]  #{name}: #{info['command']&.join(' ')}")
       info['pre']&.each do |cmd|
         cmd = eval_macro(cmd)
-        puts("Pre: Executing: #{cmd}")
+        log.info("Pre: Executing: #{cmd}")
         Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
       end
       must_fail = info['tags']&.include?('must_fail')
@@ -297,26 +298,26 @@ namespace TEST_CASE_NS do
           input = eval_macro(info['stdin'])
           stdinfile.write(input)
           kwargs[:in] = stdinfile.to_s
-          puts("Input: #{input}")
+          log.info("Input: #{input}")
         end
         run(*full_args, env: info['env'], **kwargs)
         # give time to start
         sleep(1) if info['tags']&.include?('noblock')
         info['post']&.each do |cmd|
-          puts("Executing: #{cmd}")
+          log.info("Executing: #{cmd}")
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
         end
-        puts("Saved: #{out_file(name).read}") if save_output
+        log.info("Saved: #{out_file(name).read}") if save_output
         next if wait_non_empty_output && out_file(name).empty?
         if info['expect']
           raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
         end
         state[name] = 'passed'
         raise 'Must fail' if must_fail
-        puts "[OK]   #{name}"
+        log.info("[OK]   #{name}")
         break
       rescue RuntimeError
-        puts "[FAIL] #{name}"
+        log.error("[FAIL] #{name}")
         state[name] = 'failed'
         if must_fail || hide_fail || ignore_fail
           state[name] = 'passed'
@@ -330,9 +331,6 @@ namespace TEST_CASE_NS do
     end
   end
 end
-
-# default: run all tests
-# task default: 'test:run'
 
 # TODO: separately in rake task
 # asession:

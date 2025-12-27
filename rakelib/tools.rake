@@ -8,7 +8,7 @@ namespace :tools do
   desc 'Show changes since latest tag'
   task changes: [] do
     latest_tag = run(%w[git describe --tags --abbrev=0], capture: true).chomp
-    puts "Changes since #{latest_tag}"
+    log.info("Changes since #{latest_tag}")
     run('git', 'log', "#{latest_tag}..HEAD", '--oneline', env: {'PAGER'=>''})
   end
   # https://github.com/Yelp/detect-secrets
@@ -99,10 +99,6 @@ end
 namespace :todo do
   GEM_VERS_BETA = "#{GEM_VERSION}.#{Time.now.strftime('%Y%m%d%H%M')}"
 
-  # Tasks
-  desc 'Default task: build documentation and signed gem'
-  task default: %i[doc signed_gem]
-
   desc 'Install development gems'
   task :install_dev_gems do
     sh 'gem install bundler'
@@ -147,10 +143,5 @@ namespace :todo do
   desc 'Show gem version'
   task :version do
     puts GEM_VERSION
-  end
-
-  desc 'Show Docker repository'
-  task :repo do
-    puts DCK_REPO
   end
 end

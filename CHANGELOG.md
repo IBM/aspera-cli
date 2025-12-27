@@ -4,13 +4,13 @@
 
 ## 4.25.0.pre
 
-Released: Place date of release here
+Released: [Place date of release here]
 
 ### New Features
 
 * **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
 * **global**: Improved error diagnostic during evaluation of extended value.
-* **global**: New Extended value modifier: `p` to evaluate remaining arguments as `Hash` or `Array`.
+* **global**: New Extended value modifier: `@:` (empty modifier) to evaluate remaining arguments as `Hash` or `Array`.
 * `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
 
 ### Issues Fixed
@@ -26,6 +26,7 @@ Released: Place date of release here
 * `preview`: Replace gem `mimemagic` with `marcel`.
 * PDF manual is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
 * HTML manual is not generated anymore.
+* Build system uses now `rake` instead of `make` for easier portability with Windows.
 
 ## 4.24.2
 

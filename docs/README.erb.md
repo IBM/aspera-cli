@@ -1676,7 +1676,7 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-A special Extended Value `@p:` has the following meaning:
+A special Extended Value `@:` has the following meaning:
 
 - Take all remaining positional arguments
 - Expect each of them to have the format: `<path>=<value>`
@@ -1692,7 +1692,7 @@ A special Extended Value `@p:` has the following meaning:
 Example:
 
 ```bash
-<%=cmd%> conf echo @p: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
+<%=cmd%> conf echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
 ```json

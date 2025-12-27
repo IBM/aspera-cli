@@ -841,7 +841,9 @@ cons_sma_sta:
     - smart
     - sub
     - "@preset:console.smart_id"
-    - '@json:@extend:{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'
+    - "@:"
+    - source.paths.0=@preset:console.smart_file
+    - source_type=user_selected
 # Node ------------------------------------------------------
 # nodegen3
 nd_health:

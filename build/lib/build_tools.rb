@@ -7,11 +7,14 @@ require 'aspera/log'
 require_relative 'paths'
 
 # Log control
-Aspera::Log.instance.level = :info
-Aspera::Log.instance.level = ENV['ASPERA_CLI_RAKE_LOGLEVEL'].to_sym if ENV['ASPERA_CLI_RAKE_LOGLEVEL']
+Aspera::Log.instance.level = ENV.key?('ASPERA_CLI_RAKE_LOGLEVEL') ? ENV['ASPERA_CLI_RAKE_LOGLEVEL'].to_sym : :info
 # Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 module BuildTools
+  def log(*args, **kwargs, &block)
+    Aspera::Log.instance.logger(*args, **kwargs, &block)
+  end
+
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
   def gems_in_group(gemfile, group_name_sym)
