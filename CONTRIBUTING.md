@@ -109,10 +109,10 @@ A few macros/env vars control some aspects:
 
 | Environment variable        | Description                          |
 |-----------------------------|--------------------------------------|
-| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests. |
-| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder.              |
-| `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.    |
-| `ASPERA_CLI_RAKE_LOGLEVEL`  | Enable debug in `rake`.              |
+| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests.      |
+| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder with makefile for beta delivery. |
+| `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.          |
+| `LOG_LEVEL`                 | Change log level in `rake` tasks.    |
 | `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
 | `SIGNING_KEY`               | Path to signing key to build Gem.    |
 | `GEM_VERSION`               | Override gem version for builds.     |
@@ -120,8 +120,8 @@ A few macros/env vars control some aspects:
 Those macros can be set either in an env var, or on the `rake` command line.
 
 > [!NOTE]
-> Env vars `ASPERA_CLI_TEST_*` are typically set in user's shell profile for development.
-> Others are more for "one shot" use.
+> Env vars `ASPERA_CLI_*` are typically set in user's shell profile for development.
+> Others are more for "one shot" use (on command line).
 
 To use the CLI directly from the development environment, add this to your shell profile (adapt the real path):
 
@@ -154,9 +154,15 @@ To check URL during doc generation, set env var: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
 
 To debug doc generation, set env var: `ASPERA_CLI_DOC_DEBUG=debug`.
 
-## Running Tests
+## Test Environment
 
-First, a testing configuration file must be created.
+The test envornment is composed with a YAML configuration file with server addresses and secrets and a YAML file describing tests, including the command line to run.
+
+Previously it was based on Makefile, but this has been replaced for better portability to the Windows OS.
+
+### Preparation of environment
+
+First, a testing configuration file must be created (once).
 From project top folder, execute:
 
 ```bash
@@ -172,19 +178,25 @@ Then, tell where this file is located (e.g. in your shell profile):
 export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 ```
 
-This project uses a `Rakefile` for tests, in main folder:
-
-```bash
-rake test:run
-```
+### Test descriptions
 
 When new commands are added to the CLI, new tests shall be added to the test suite in `tests/tests.yml`.
 
-One can also go to the `tests` folder:
+### Running Tests
+
+This project uses a `Rakefile` for tests.
+`rake` can be executed in any folder (it will look for the `Rakefile` in one of the parent folders).
+To lists test tasks:
 
 ```bash
+rake -T test:
+```
+
+To force run all tests:
+
+```bash
+rake test:reset
 rake test:run
-rake test:list
 ```
 
 ### Special tests
