@@ -110,7 +110,6 @@ A few macros/env vars control some aspects:
 | Environment variable        | Description                          |
 |-----------------------------|--------------------------------------|
 | `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests.      |
-| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder with makefile for beta delivery. |
 | `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.          |
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.    |
 | `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
@@ -181,6 +180,22 @@ export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 ### Test descriptions
 
 When new commands are added to the CLI, new tests shall be added to the test suite in `tests/tests.yml`.
+YAML formating rules apply.
+Values inside `$(...)` are evaluated as ruby expressions.
+Some constants are defined in `test.rake` and can be used.
+Test cases are given some tags.
+Some tags have special meaning.
+Other tags are only a way to group test cases togeteher, for example to skip them.
+
+| Tag           | Description                             |
+|---------------|-----------------------------------------|
+| `nodoc`       | Do not include in documentation.        |
+| `ignore_fail` | If it fails, ignore it, it's a cleanup. |
+| `must_fail`   | Must fail case.                         |
+| `hide_fail`   | Do not show failure. Test should work but it does not. |
+| `save_output` | Output is saved in state file with same name as test case. |
+
+Function `read_value_from` reads a value previously saved with `save_output`.
 
 ### Running Tests
 
@@ -199,17 +214,6 @@ rake test:reset
 rake test:run
 ```
 
-### Special tests
-
-Some gems are optional: `rmagick` and `grpc`, as they require compilation of native code which may cause problems.
-By default, tests that use those gems are skipped.
-To run them: `make optional`.
-Those tests also require the optional gems to be installed: `make install_optional_gems`.
-
-Some other tests require interactive input. To run them: `make interactive`
-
-To run every test: `make full`
-
 ### Pre-release tests
 
 For preparation of a release, do the following:
@@ -224,7 +228,7 @@ To test additional Ruby version, repeat the procedure with other Ruby versions.
 ## Coverage
 
 A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
-Enable coverage monitoring using macro/envvar `ENABLE_COVERAGE`.
+Enable coverage monitoring using envvar `ENABLE_COVERAGE`.
 
 ```bash
 rake test:run ENABLE_COVERAGE=1
@@ -234,16 +238,19 @@ Once tests are completed, or during test, consult the page: [coverage/index.html
 
 ## Build
 
-By default, the gem is built signed: `rake build`.
+The gem is built with:
+
+```bash
+bundle exec rake build
+```
+
 A private key is required to generate a signed Gem.
-Its path must be set using macro/envvar `SIGNING_KEY`, see below.
+Its path must be set using envvar `SIGNING_KEY`.
 The gem is signed with the public certificate found in `certs` and the private key pointed by `SIGNING_KEY` (kept secret by maintainer).
 
 ```bash
-rake build SIGNING_KEY=/path/to/vault/gem-private_key.pem
+bundle exec rake build SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
-
-It is also possible to build an unsigned version for development purpose: `make unsigned_gem`.
 
 ### Gem Signature
 

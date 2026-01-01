@@ -1,8 +1,3 @@
-# Tags:
-# - nodoc : Do not include in documentation
-# - ignore_fail : If it fails, ignore it, it's a cleanup
-# - must_fail : Must fail case.
-# - hide_fail : Do not show failure
 # Shares ------------------------------------------------------
 shares_health:
   tags:

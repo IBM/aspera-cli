@@ -44,7 +44,7 @@ Think of me as Aspera’s command-line sidekick: quick, reliable, and a little n
 
 Version : 4.25.0.pre
 
-Laurent/2016-2025
+Laurent/2016-2026
 
 The aspera-cli Ruby gem offers a powerful command-line interface (CLI, `ascli`) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
 It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
@@ -598,6 +598,7 @@ See [Gemfile](Gemfile):
 | sequel | ~> 5.96 | (jruby) for async DB |
 | ed25519 | ~> 1.4 | (no jruby) for ed25519 and OpenSSH file format |
 | bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
+| syslog | ~> 0.3 | (no jruby) for logger=syslog |
 
 Install like this:
 
@@ -612,6 +613,7 @@ gem install jdbc-sqlite3 -v '~> 3.46'
 gem install sequel -v '~> 5.96'
 gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
+gem install syslog -v '~> 0.3'
 ```
 
 ### Ruby Gem: `aspera-cli`
@@ -1706,7 +1708,7 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-A special Extended Value `@p:` has the following meaning:
+A special Extended Value `@:` has the following meaning:
 
 - Take all remaining positional arguments
 - Expect each of them to have the format: `<path>=<value>`
@@ -1722,7 +1724,7 @@ A special Extended Value `@p:` has the following meaning:
 Example:
 
 ```bash
-ascli conf echo @p: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
+ascli conf echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
 ```json
@@ -4614,7 +4616,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, stdbin, yaml, zlib, extend, preset, vault, p
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, stdbin, yaml, zlib, extend, preset, vault, 
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -7302,6 +7304,7 @@ service delete service1
 service list
 slash
 space /
+spec
 ssync bandwidth %name:my_node_sync
 ssync counters %name:my_node_sync
 ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path_real"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
@@ -8357,7 +8360,7 @@ transfer current list --query.filter='(transfer_name contain aoc)'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
 transfer current show console_xfer_id
 transfer smart list
-transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
+transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_selected
 ```
 
 ## Plugin: `orchestrator`:IBM Aspera Orchestrator
