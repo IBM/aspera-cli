@@ -244,6 +244,8 @@ The gem is built with:
 bundle exec rake build
 ```
 
+### Signed gem
+
 A private key is required to generate a signed Gem.
 Its path must be set using envvar `SIGNING_KEY`.
 The gem is signed with the public certificate found in `certs` and the private key pointed by `SIGNING_KEY` (kept secret by maintainer).
@@ -252,9 +254,7 @@ The gem is signed with the public certificate found in `certs` and the private k
 bundle exec rake build SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
-### Gem Signature
-
-Refer to <certs/README.md>
+Refer to <certs/README.md>.
 
 ### gRPC stubs for transfer SDK
 

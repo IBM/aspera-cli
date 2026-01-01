@@ -7,3 +7,5 @@ RSpec::Core::RakeTask.new do |t|
   # t.rspec_opts = ['-v', '-r ./spec/spec_helper.rb']
   t.pattern = 'spec/*_spec.rb'
 end
+
+task default: [:build]

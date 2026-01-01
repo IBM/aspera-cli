@@ -55,7 +55,10 @@ module Aspera
       assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
 
-    # Assert that all value of array are of the same type
+    # Assert that all value of array are of the same specified type
+    # @param array   [Array]            The array to check
+    # @param klass   [Class]            The expected type of elements
+    # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block   [Proc]             Additional description in front of message
     def assert_array_all(array, klass, type: AssertError)
       assert_type(array, Array, type: type)
@@ -63,7 +66,11 @@ module Aspera
     end
 
     # Assert value is Hash, keys have type, and Values have type
-    # @param block   [Proc]             Additional description in front of message
+    # @param hash        [Hash]             The hash to check
+    # @param key_class   [Class]            The expected type of keys (or nil)
+    # @param value_class [Class]            The expected type of values (or nil)
+    # @param type        [Exception,Symbol] Exception to raise, or Symbol for Log.log
+    # @param block       [Proc]             Additional description in front of message
     def assert_hash_all(hash, key_class, value_class, type: AssertError)
       assert_type(hash, Hash, type: type)
       assert_array_all(hash.keys, key_class, type: AssertError){"#{"#{yield}: " if block_given?}keys"} unless key_class.nil?
