@@ -107,10 +107,10 @@ end
 ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
 unsupported_keys = ALL_TESTS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
 raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
-state = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
+STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 
-def save_state(state)
-  File.write(PATH_TESTS_STATES, state.to_yaml)
+def save_state
+  File.write(PATH_TESTS_STATES, STATES.to_yaml)
 end
 
 def eval_macro(value)
@@ -195,10 +195,10 @@ namespace :test do
   task :skip_by_name, [:name_list] do |_, args|
     args[:name_list].split(' ').each do |k|
       raise "Unknown test: #{k}" unless ALL_TESTS.key?(k)
-      state[k] = 'skipped'
+      STATES[k] = 'skipped'
       log.info("[SKIP] #{k}")
     end
-    save_state(state)
+    save_state
   end
 
   desc 'Skip a given test by tag (space-separated)'
@@ -206,11 +206,11 @@ namespace :test do
     tags = args[:name_list].split(' ')
     ALL_TESTS.each do |name, value|
       if value['tags']&.any?{ |t| tags.include?(t)}
-        state[name] = 'skipped'
+        STATES[name] = 'skipped'
         log.info("[SKIP] #{name}")
       end
     end
-    save_state(state)
+    save_state
   end
 
   desc 'Clear a given test by name'
@@ -218,9 +218,9 @@ namespace :test do
     args[:name_list]&.split(' ')&.each do |k|
       log.info("[CLEAR] #{k}")
       Aspera.assert(ALL_TESTS.key?(k)){"Invalid test case name: #{k}"}
-      state.delete(k)
+      STATES.delete(k)
     end
-    save_state(state)
+    save_state
   end
 
   # Reset persistent state
@@ -246,7 +246,7 @@ namespace :test do
   # Run all tests in declared order
   desc 'Run all tests'
   task :run do
-    ALL_TESTS.each_key{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+    (ALL_TESTS.keys + ['unit']).each{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
   end
 
   desc 'Restart noded on macOS'
@@ -256,6 +256,16 @@ namespace :test do
 end
 
 namespace TEST_CASE_NS do
+  desc 'Unit tests (spec)'
+  task unit: [] do
+    if SKIP_STATES.include?(STATES['unit']) && !ENV['FORCE']
+      # log.info "[SKIP] #{name}"
+      next
+    end
+    Rake::Task[:spec].invoke
+    STATES['unit'] = 'passed'
+    save_state
+  end
   # Create a Rake task for each test
   ALL_TESTS.each do |name, info|
     # log.info "-> #{name}"
@@ -263,7 +273,7 @@ namespace TEST_CASE_NS do
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
-      if SKIP_STATES.include?(state[name]) && !ENV['FORCE']
+      if SKIP_STATES.include?(STATES[name]) && !ENV['FORCE']
         # log.info "[SKIP] #{name}"
         next
       end
@@ -316,22 +326,22 @@ namespace TEST_CASE_NS do
         if info['expect']
           raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
         end
-        state[name] = 'passed'
+        STATES[name] = 'passed'
         raise 'Must fail' if must_fail
         log.info("[OK]   #{name}")
         break
       rescue RuntimeError
         log.error("[FAIL] #{name}")
-        state[name] = 'failed'
+        STATES[name] = 'failed'
         if must_fail || hide_fail || ignore_fail
-          state[name] = 'passed'
+          STATES[name] = 'passed'
         else
           raise
         end
-        save_state(state)
+        save_state
         break
       end
-      save_state(state)
+      save_state
     end
   end
 end
