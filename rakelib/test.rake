@@ -91,7 +91,7 @@ ALL_TESTS = yaml_safe_load(TEST_DEFS.read)
 ALL_TESTS.each_value do |value|
   plugin = value['command'].find{ |s| !s.start_with?('-')}
   value['tags'] ||= []
-  value['tags'].push(plugin) unless value['tags'].include?(plugin)
+  value['tags'].unshift(plugin) unless value['tags'].include?(plugin)
 end
 
 # Allowed keys in test defs
@@ -287,7 +287,7 @@ namespace TEST_CASE_NS do
         full_args = CLI_TEST
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{out_file(name)}"] if save_output
+        full_args += ["--output=#{out_file(name)}", '--format=csv'] if save_output
         kwargs = {}
         if info['tags']&.include?('noblock')
           kwargs[:background] = true
@@ -307,7 +307,11 @@ namespace TEST_CASE_NS do
           log.info("Executing: #{cmd}")
           Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
         end
-        log.info("Saved: #{out_file(name).read}") if save_output
+        if save_output
+          saved_value = out_file(name).read
+          raise 'No value saved (empty value)' if saved_value.empty?
+          log.info("Saved: #{saved_value}")
+        end
         next if wait_non_empty_output && out_file(name).empty?
         if info['expect']
           raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
