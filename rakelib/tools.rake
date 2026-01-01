@@ -4,6 +4,8 @@ require_relative '../build/lib/build_tools'
 include BuildTools
 include Paths
 
+CLEAN.push(TMP)
+
 namespace :tools do
   desc 'Show changes since latest tag'
   task changes: [] do
@@ -55,12 +57,6 @@ namespace :tools do
     PROTO_PATH.mkpath
     download_proto_file(PROTO_PATH)
     run('grpc_tools_ruby_protoc', "--proto_path=#{PROTO_PATH}", "--ruby_out=#{GRPC_DEST}", "--grpc_out=#{GRPC_DEST}", PROTO_PATH / 'transferd.proto')
-  end
-  desc 'Build beta version'
-  task beta: ['gem:build'] do
-    Dir.chdir(ENV['ASPERA_CLI_TEST_PRIVATE']) do
-      run('make', 'push_beta', "PATH_GEMFILE=#{Paths::GEM_PACK_FILE}")
-    end
   end
 end
 
