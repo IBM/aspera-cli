@@ -30,6 +30,7 @@ require 'aspera/oauth/jwt'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
+require 'aspera/ssl'
 require 'openssl'
 require 'open3'
 require 'date'
@@ -186,27 +187,7 @@ module Aspera
               RestParameters.instance.send(method, v)
             elsif k.eql?('ssl_options')
               keys_to_delete.push(k)
-              # NOTE: here is a hack that allows setting SSLContext options
-              Aspera.assert_type(v, Array){'ssl_options'}
-              # Start with default options
-              ssl_options = OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options]
-              v.each do |opt|
-                case opt
-                when Integer
-                  ssl_options = opt
-                when String
-                  name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
-                  raise Cli::BadArgument, "Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}" if !OpenSSL::SSL.const_defined?(name)
-                  if opt.start_with?('-')
-                    ssl_options &= ~OpenSSL::SSL.const_get(name)
-                  else
-                    ssl_options |= OpenSSL::SSL.const_get(name)
-                  end
-                else
-                  Aspera.error_unexpected_value(opt.class.name){'Expected String or Integer in ssl_options'}
-                end
-              end
-              OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options] = ssl_options
+              Aspera::SSL.option_list = v
             elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
               keys_to_delete.push(k)
               OAuth::Factory.instance.parameters[k.to_sym] = v
