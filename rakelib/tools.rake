@@ -5,6 +5,7 @@ include BuildTools
 include Paths
 
 CLEAN.push(TMP)
+CLEAN.push(TOP / 'coverage', TOP / 'simplecov.log')
 
 namespace :tools do
   desc 'Show changes since latest tag'
