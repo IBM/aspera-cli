@@ -277,7 +277,9 @@ namespace TEST_CASE_NS do
         # log.info "[SKIP] #{name}"
         next
       end
-      log.info("[RUN]  #{name}: #{info['command']&.join(' ')}")
+      log.info('---------------------------------------------------')
+      log.info("[RUN]  #{name} [#{info['tags']&.join(' ')}]")
+      log.info("[EXEC] #{info['command']&.join(' ')}")
       info['pre']&.each do |cmd|
         cmd = eval_macro(cmd)
         log.info("Pre: Executing: #{cmd}")
@@ -287,17 +289,18 @@ namespace TEST_CASE_NS do
       hide_fail = info['tags']&.include?('hide_fail')
       ignore_fail = info['tags']&.include?('ignore_fail')
       save_output = info['tags']&.include?('save_output') || info['expect']
-      wait_non_empty_output = info['tags']&.include?('wait_non_empty_output')
+      wait_value = info['tags']&.include?('wait_value')
       tmp_conf = info['tags']&.include?('tmp_conf')
       if info['command'].include?('wizard')
         info['env'] ||= {}
         info['env']['ASCLI_WIZ_TEST'] = 'yes'
       end
       loop do
-        full_args = CLI_TEST
+        full_args = CLI_TEST.map(&:to_s)
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{out_file(name)}", '--format=csv'] if save_output
+        full_args += ["--output=#{out_file(name)}"] if save_output
+        full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
         kwargs = {}
         if info['tags']&.include?('noblock')
           kwargs[:background] = true
@@ -322,7 +325,7 @@ namespace TEST_CASE_NS do
           raise 'No value saved (empty value)' if saved_value.empty?
           log.info("Saved: #{saved_value}")
         end
-        next if wait_non_empty_output && out_file(name).empty?
+        next if wait_value && out_file(name).empty?
         if info['expect']
           raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
         end
@@ -331,11 +334,12 @@ namespace TEST_CASE_NS do
         log.info("[OK]   #{name}")
         break
       rescue RuntimeError
-        log.error("[FAIL] #{name}")
         STATES[name] = 'failed'
         if must_fail || hide_fail || ignore_fail
+          log.error("[IGNORE FAIL] #{name}")
           STATES[name] = 'passed'
         else
+          log.error("[FAIL] #{name}")
           raise
         end
         save_state

@@ -2359,7 +2359,7 @@ package_id3:
     - aoc_pack_send1
   tags:
     - save_output
-    - wait_non_empty_output
+    - wait_value
     - nodoc
   command:
     - aoc
@@ -4071,7 +4071,8 @@ conf_initdemo:
   command:
     - config
     - initdemo
-conf_gem2:
+conf_gem_path:
+  description: Test of `http_proxy` and `http_options.user_agent`
   tags:
     - nodoc
   command:
@@ -4080,14 +4081,14 @@ conf_gem2:
     - path
     - --http-proxy=http://test1
     - --http-options=@json:{"user_agent":"test1"}
-conf_gem2b:
-  tags:
-    - nodoc
+conf_ssl_options:
+  description: Test of `ssl_options`, `cert-stores` and `insecure`
   command:
     - config
-    - coffee
-    - --cert_stores=@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]
-    - --http-options=@json:{"ssl_options":["CIPHER_SERVER_PREFERENCE","-NETSCAPE_CA_DN_BUG"]}
+    - echo
+    - "@uri:https://ifconfig.me/ip"
+    - --cert-stores=@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]
+    - --http-options.ssl_options=@list:,CIPHER_SERVER_PREFERENCE,-NETSCAPE_CA_DN_BUG
     - --insecure=yes
 conf_vault_macos:
   tags:
