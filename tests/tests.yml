@@ -1,7 +1,6 @@
 # Shares ------------------------------------------------------
 shares_health:
   tags:
-    - nodoc
     - health
   command:
     - shares
