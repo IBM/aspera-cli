@@ -420,6 +420,7 @@ One can remove all installed gems, for example to start fresh:
 
 ```shell
 ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs gem uninstall -axI
+rm -f Gemfile.lock
 ```
 
 #### Unix-like: RVM: Single user installation (not root)

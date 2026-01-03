@@ -162,7 +162,20 @@ Refer to <tests/README.md>.
 The gem is built with:
 
 ```bash
+bundle install
 bundle exec rake build
+```
+
+If you don't want to install optional gems:
+
+```bash
+bundle config set without optional
+```
+
+Build beta version:
+
+```bash
+export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 ```
 
 ### Signed gem

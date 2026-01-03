@@ -45,7 +45,7 @@ namespace :windowszip do
   task :prepare do
     puts("Generating Windows package for #{Aspera::Cli::Info::GEM_NAME} v#{GEM_VERSION}")
     PATH_BUILD_DIR.rmtree
-    PATH_RESOURCES_DIR.mkdir
+    PATH_RESOURCES_DIR.mkpath
     puts("Building in #{PATH_BUILD_DIR}")
   end
 
@@ -96,7 +96,7 @@ namespace :windowszip do
   end
 
   desc 'Create installation archive for Windows'
-  task zip: :package do
+  task build: :package do
     zip_target = Paths::TMP / "#{TARGET_FOLDER_NAME}.zip"
     puts('Generating installer zip'.blue)
     zip_directory(PATH_BUILD_DIR, zip_target)
