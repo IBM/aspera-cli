@@ -435,7 +435,7 @@ module Aspera
               Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
               return
             end
-            Log.log.warn{"overwriting value: #{selected_preset[param_name]}"}
+            Log.log.warn{"overwriting value for #{param_name}: #{selected_preset[param_name]}"}
           end
           selected_preset[param_name] = param_value
           formatter.display_status("Updated: #{preset}: #{param_name} <- #{param_value}")

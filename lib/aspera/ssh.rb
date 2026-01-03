@@ -11,7 +11,7 @@ module Aspera
     class Error < Aspera::Error
     end
     class << self
-      # Hack: disable some key type
+      # HACK: disable some key type
       def disable_ed25519_keys
         Log.log.debug('Disabling SSH ed25519 user keys')
         old_verbose = $VERBOSE
@@ -25,7 +25,7 @@ module Aspera
         $VERBOSE = old_verbose
       end
 
-      # Hack: disable some algorithms
+      # HACK: disable some algorithms
       def disable_ecd_sha2_algorithms
         Log.log.debug('Disabling SSH ecdsa')
         Net::SSH::Transport::Algorithms::ALGORITHMS.each_value{ |a| a.reject!{ |a| a =~ /^ecd(sa|h)-sha2/}}
@@ -65,7 +65,7 @@ module Aspera
             exit_code = data.read_long
             next if exit_code.zero?
             error_message = "#{cmd}: exit #{exit_code}, #{error.join.chomp}"
-            raise Error, error_message if  exception
+            raise Error, error_message if exception
             # Happens when windows user hasn't logged in and created home account.
             error_message += "\nHint: home not created in Windows?" if data.include?('Could not chdir to home directory')
             Log.log.debug(error_message)
@@ -85,5 +85,5 @@ module Aspera
 end
 
 # Deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
-Aspera::Ssh.disable_ed25519_keys if Gem::Specification.find_all_by_name('ed25519').none?
+Aspera::Ssh.disable_ed25519_keys if Gem::Specification.find_all_by_name('ed25519').none? || ENV.fetch('ASCLI_ENABLE_ED25519', 'true').eql?('false')
 Aspera::Ssh.disable_ecd_sha2_algorithms if defined?(JRUBY_VERSION) && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')

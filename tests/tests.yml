@@ -307,6 +307,15 @@ serv_browse:
     - server
     - browse
     - /
+serv_browse_ed25519:
+  tags:
+    - nodoc
+  env:
+    ASCLI_ENABLE_ED25519: "false"
+  command:
+    - server
+    - browse
+    - /
 serv_mkdir:
   command:
     - server
@@ -3324,18 +3333,94 @@ orch_processes:
   command:
     - orchestrator
     - processes
+orch_monitors:
+  command:
+    - orchestrator
+    - monitors
 orch_wf_details:
   command:
     - orchestrator
     - workflow
     - details
     - "@preset:orch.workflow_id"
-orch_wf_detailsb:
+orch_wf_outputs:
+  command:
+    - orchestrator
+    - workflow
+    - outputs
+    - "@preset:orch.workflow_id"
+orch_wf_workorders:
+  command:
+    - orchestrator
+    - workflow
+    - workorders
+    - "@preset:orch.workflow_id"
+orch_wf_export:
   command:
     - orchestrator
     - workflow
     - export
     - "@preset:orch.workflow_id"
+orch_workorder_id:
+  tags:
+    - save_output
+  command:
+    - orchestrator
+    - workflow
+    - workorders
+    - "@preset:orch.workflow_id"
+    - --fields=id
+    - --query.max_results=1
+orch_workorder_status:
+  depends_on:
+    - orch_workorder_id
+  command:
+    - orchestrator
+    - workorder
+    - status
+    - $(read_value_from 'orch_workorder_id')
+orch_workorder_cancel:
+  depends_on:
+    - orch_workorder_id
+  command:
+    - orchestrator
+    - workorder
+    - cancel
+    - $(read_value_from 'orch_workorder_id')
+orch_workorder_reset:
+  depends_on:
+    - orch_workorder_id
+  command:
+    - orchestrator
+    - workorder
+    - reset
+    - $(read_value_from 'orch_workorder_id')
+orch_workorder_output:
+  depends_on:
+    - orch_workorder_id
+  command:
+    - orchestrator
+    - workorder
+    - output
+    - $(read_value_from 'orch_workorder_id')
+orch_workstep_status:
+  $comment: TODO get some workstep id
+  tags:
+    - ignore_fail
+  command:
+    - orchestrator
+    - workstep
+    - status
+    - 1
+orch_workstep_cancel:
+  $comment: TODO get some workstep id
+  tags:
+    - ignore_fail
+  command:
+    - orchestrator
+    - workstep
+    - cancel
+    - 1
 at4:
   command:
     - ats

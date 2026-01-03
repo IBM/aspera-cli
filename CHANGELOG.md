@@ -12,6 +12,7 @@ Released: [Place date of release here]
 * **global**: Improved error diagnostic during evaluation of extended value.
 * **global**: New Extended value modifier: `@:` (empty modifier) to evaluate remaining arguments as `Hash` or `Array`.
 * `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
+* `orchestrator`: Commands now takes option `query`.
 
 ### Issues Fixed
 

@@ -2566,6 +2566,7 @@ echo @uri:/etc/hosts
 echo @uri:file:/etc/hosts
 echo @uri:http://ifconfig.me
 echo @uri:https://ifconfig.me
+echo @uri:https://ifconfig.me/ip --cert-stores=@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE] --http-options.ssl_options=@list:,CIPHER_SERVER_PREFERENCE,-NETSCAPE_CA_DN_BUG --insecure=yes
 echo @vault:my_preset.password
 echo @zlib:@stdin:
 echo hello
@@ -8334,6 +8335,7 @@ files upload 'faux:///testfile?1m' --to-folder=my_share_folder --transfer=httpgw
 files upload --to-folder=my_share_folder test_file.bin
 files upload --to-folder=my_share_folder test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files upload sendfolder --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+health
 ```
 
 ## Plugin: `console`: IBM Aspera Console

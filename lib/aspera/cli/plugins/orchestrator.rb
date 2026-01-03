@@ -73,21 +73,22 @@ module Aspera
         # @param http       [Boolean] if true, returns the HttpResponse, else
         def call_ao(endpoint, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
           # calls are all GET
-          call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both}
+          call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both, query: {}}
           ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
-          call_args[:query] = args unless args.nil?
+          call_args[:query].merge!(args) unless args.nil?
           unless format.nil?
             case ret_style
             when :header
               call_args[:headers] = {'Accept' => "application/#{format}"}
             when :arg
-              call_args[:query] ||= {}
               call_args[:query][:format] = format
             when :ext
               call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
             else Aspera.error_unexpected_value(ret_style)
             end
           end
+          add_query = options.get_option(:query)
+          call_args[:query].merge!(add_query.symbolize_keys) unless add_query.nil?
           data, resp = @api_orch.call(**call_args)
           return resp if http
           result = format.eql?('xml') ? XmlSimple.xml_in(resp.body, {'ForceArray' => xml_arrays}) : data

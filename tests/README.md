@@ -60,6 +60,12 @@ bundle exec rake test:reset
 bundle exec rake test:run
 ```
 
+To skip some tests by tags:
+
+```bash
+bundle exec rake test:skip_by_tag'[faspex tag2]'
+```
+
 ## Pre-release tests
 
 For preparation of a release, do the following:
