@@ -6,6 +6,8 @@ require 'aspera/cli/version'
 
 # Gem version for build
 GEM_VERSION = ENV['GEM_VERSION'] || Aspera::Cli::VERSION
+# `true` if built from local gem file
+GEM_BETA = !!ENV['GEM_VERSION']&.start_with?("#{Aspera::Cli::VERSION}.")
 
 # Fixed paths in project
 module Paths
@@ -24,7 +26,7 @@ module Paths
   GEMFILE_LOCK = TOP / 'Gemfile.lock'
   BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
-  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem"
+  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{GEM_VERSION}.gem"
   # Definition of cmmand line tests
   TEST_DEFS = TST / 'tests.yml'
   # @return [Pathname]

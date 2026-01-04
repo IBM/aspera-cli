@@ -299,7 +299,7 @@ module Aspera
       # @param backup   [Bool]   If destination folder exists, then rename
       # @param with_exe [Bool]   If false, only retrieves files, but do not generate or restrict access
       # @param &block   [Proc]   A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
-      # @return ascp version (from execution)
+      # @return [Array] name, ascp version (from execution), folder
       def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')
         folder = Products::Transferd.sdk_directory if folder.nil?
@@ -348,7 +348,7 @@ module Aspera
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
         File.write(File.join(folder, Products::Other::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
-        return sdk_name, sdk_version
+        return sdk_name, sdk_version, folder
       end
 
       attr_accessor :transferd_urls

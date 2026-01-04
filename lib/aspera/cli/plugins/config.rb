@@ -586,6 +586,14 @@ module Aspera
           end
         end
 
+        def install_transfer_sdk
+          # Reset to default location, if older default was used
+          Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
+          asked_version = options.get_next_argument('transferd version', mandatory: false)
+          name, version, folder = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: asked_version)
+          return Main.result_status("Installed #{name} version #{version} in #{folder}")
+        end
+
         def execute_action_ascp
           command = options.get_next_command(%i[connect use show products info install spec schema errors])
           case command
@@ -621,11 +629,7 @@ module Aspera
               return Main.result_nothing
             end
           when :install
-            # Reset to default location, if older default was used
-            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
-            version = options.get_next_argument('transferd version', mandatory: false)
-            n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
-            return Main.result_status("Installed #{n} version #{v}")
+            return install_transfer_sdk
           when :spec
             fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true)
             return Main.result_object_list(data, fields: fields.map(&:to_s))
@@ -650,11 +654,7 @@ module Aspera
           command = options.get_next_command(%i[list install])
           case command
           when :install
-            # Reset to default location, if older default was used
-            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
-            version = options.get_next_argument('transferd version', mandatory: false)
-            n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
-            return Main.result_status("Installed #{n} version #{v}")
+            return install_transfer_sdk
           when :list
             sdk_list = Ascp::Installation.instance.sdk_locations
             return Main.result_object_list(
