@@ -5,7 +5,7 @@ Generate PDF manual using report type from markdown file.
 ## Usage
 
 1. In a folder, create a markdown file, e.g. `README.md`
-1. Set an env var to where this library is located:
+1. Set the `DIR_PANDOC` env var to where this library is located:
 
 ```shell
 export DIR_PANDOC=.../path_to_this_folder

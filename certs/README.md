@@ -19,6 +19,8 @@ gem cert --build maintainer@example.com
 
 > [!NOTE]
 > The email must match the field `spec.email` in `aspera-cli.gemspec`
+>
+> To display current info: `bundle exec rake certs:info`
 
 This creates two files in folder `/path/to/vault` (e.g. `$HOME/.ssh`):
 
@@ -26,14 +28,14 @@ This creates two files in folder `/path/to/vault` (e.g. `$HOME/.ssh`):
 - `gem-public_cert.pem` : This file is copied to a public place, here in folder `certs`
 
 > [!NOTE]
-> Alternatively, use an existing key or generate one, and then `make new`
+> Alternatively, use an existing key or generate one, pointed with `SIGNING_KEY`, and then `rake certs:new`
 
-Subsequently, the private key path is specified using `SIGNING_KEY` as env var.
+Subsequently, the private key path is specified using the `SIGNING_KEY` env var.
 
 Show the current certificate contents:
 
 ```bash
-make show
+bundle exec rake certs:show
 ```
 
 > [!NOTE]
@@ -42,7 +44,7 @@ make show
 Check that the signing key is the same as used to sign the certificate:
 
 ```bash
-make check-key SIGNING_KEY=/path/to/vault/gem-private_key.pem
+bundle exec rake certs:check_key SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
 ## Renew certificate after expiration
@@ -50,13 +52,13 @@ make check-key SIGNING_KEY=/path/to/vault/gem-private_key.pem
 The maintainer can renew the certificate when it is expired using the same private key:
 
 ```bash
-make update SIGNING_KEY=/path/to/vault/gem-private_key.pem
+bundle exec rake certs:update SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
 Alternatively, to generate a new certificate with the same key:
 
 ```bash
-make new SIGNING_KEY=/path/to/vault/gem-private_key.pem
+bundle exec rake certs:new SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
 ## Build Procedure
