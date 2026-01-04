@@ -218,7 +218,24 @@ bundle exec rake -T ^binary:
 
 When preparing for a new release do the following:
 
-- TODO
+- Run test suite:
+
+```bash
+bundle exec rake test:run
+```
+
+- Set beta version:
+
+```bash
+export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
+```
+
+- Check that container builds (using beta):
+
+```bash
+bundle exec rake container:build
+bundle exec rake container:test
+```
 
 ## Long Term Implementation and delivery improvements
 
