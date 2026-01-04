@@ -50,7 +50,8 @@ namespace :container do
 
   desc 'Test the container'
   task :test do
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, Aspera::Cli::Info::CMD_NAME, '-v')
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, '-v')
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, 'config', 'ascp', 'info')
   end
 
   desc 'Push only the version tag'
