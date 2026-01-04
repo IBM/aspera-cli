@@ -13,12 +13,6 @@ COPY <%=arg_gem%> .
 # If a gem file was provided, once copied in container: use the basename only
 #erb: arg_gem=File.basename(arg_gem)
 #erb: end
-# Location of Aspera SDK files (binaries, license file)
-# Install globally, does not need to be in user's home
-# Must be outside /home/cliuser/.aspera/ascli which will be a volume
-ARG aspera_bin_dir=/ibm_aspera
-# set SDK location in container
-ENV ASCLI_SDK_FOLDER=$aspera_bin_dir
 # Install aspera-cli gem (beta or release), optional gems and other packages
 # Install SDK, create key files and check that ascp works
 RUN \
@@ -28,15 +22,12 @@ RUN \
   rm -fr /var/lib/apt/lists/* && \
   gem install <%=arg_opt%> <%=arg_gem%> && \
   rm -f <%=arg_gem%> && \
-  useradd -m -u 1000 -s /bin/bash cliuser && \
-  mkdir -p /home/cliuser/.aspera/ascli && \
-  chown -R cliuser: /home/cliuser && \
-  mkdir -p $aspera_bin_dir && \
-  chmod 755 $aspera_bin_dir && \
-  ascli conf ascp install && \
-  ascli conf ascp info
+  useradd -m -u 1000 -s /bin/bash cliuser
 # rootless execution
 USER cliuser
+RUN \
+  ascli conf ascp install && \
+  ascli conf ascp info
 # Default cwd when starting the container
 WORKDIR /home/cliuser
 ENTRYPOINT ["ascli"]

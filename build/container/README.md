@@ -5,10 +5,16 @@ The `Dockerfile.tmpl.erb` template enables building the container image using ei
 > [!NOTE]
 > An `ERB` (embedded Ruby) template is used as it allows some level of customization to tell where to take the gem from.
 
+Available tasks:
+
+```bash
+rake -T ^container
+```
+
 The repository can be displayed with:
 
 ```shell
-make repo
+bundle exec rake container:repo
 ```
 
 ## Image build
@@ -24,13 +30,13 @@ To build the image for a released version:
 - Check the version:
 
   ```shell
-  make version
+  bundle exec rake tools:version
   ```
 
 - Build the container image:
 
   ```shell
-  make
+  bundle exec rake container:build
   ```
 
   This command performs the following steps:
@@ -42,19 +48,18 @@ To build the image for a released version:
 - Push to the image registry (both tags: version and `latest`):
 
   ```shell
-  make push
+  bundle exec rake container:push
   ```
 
 ## Image build using current branch
 
 To build a specific version outside that version branch:
-Override `make` macro `GEM_VERSION`:
+Set the env var `GEM_VERSION`:
 
 ```shell
-v=4.23.0
-cd container
-make GEM_VERSION=$v
-make push GEM_VERSION=$v
+export GEM_VERSION=4.23.0
+bundle exec rake container:build
+bundle exec rake container:push
 ```
 
 > [!NOTE]
@@ -68,10 +73,9 @@ make push GEM_VERSION=$v
 To build/push a beta/development container:
 
 ```shell
-cd container
-make beta_build
-make beta_test
-make beta_push
+export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
+bundle exec rake container:build
+bundle exec rake container:build
 ```
 
 > [!NOTE]
