@@ -6,14 +6,18 @@ if ENV.key?('ENABLE_COVERAGE')
   require 'securerandom'
   # compute development top folder based on this source location
   development_root = File.dirname(File.realpath(__FILE__), 3)
+  coverage_dir = 'tmp/coverage'
+  coverage_root = File.join(development_root, coverage_dir)
+  FileUtils.mkdir_p(coverage_root)
   SimpleCov.root(development_root)
+  SimpleCov.coverage_dir(coverage_dir)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
   # keep cache data for 1 day (must be longer than time to run the whole test suite)
   SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
     original_file_descriptor = $stdout
-    $stdout.reopen(File.join(development_root, 'simplecov.log'))
+    $stdout.reopen(File.join(coverage_root, 'simplecov.log'))
     SimpleCov.result.format!
     $stdout.reopen(original_file_descriptor)
   end

@@ -1,7 +1,5 @@
 # do not save lock file for gems
 /Gemfile*.lock
-/coverage/
-/simplecov.log
 /tmp/
 /pkg/
 .DS_Store
