@@ -250,7 +250,6 @@ namespace TEST_CASE_NS do
   end
   # Create a Rake task for each test
   ALL_TESTS.each do |name, info|
-    # log.info "-> #{name}"
     # desc info['description'] || '-'
     deps = info['depends_on'] || []
     Aspera.assert_array_all(deps, String)
