@@ -9,7 +9,7 @@ jobs:
       BUNDLE_WITHOUT: optional
     strategy:
       matrix:
-        ruby: ["3.1", "3.2", "3.3", "3.4", "jruby"]
+        ruby: ["3.1", "3.2", "3.3", "3.4", "4.0", "jruby"]
     steps:
       - uses: actions/checkout@v5
 
@@ -55,7 +55,7 @@ jobs:
         run: bundle exec ascli config preset overview
 
       - name: Run ascli install ascp
-        run: bundle exec ascli conf ascp install
+        run: bundle exec ascli config ascp install
 
       - name: Run ascli test transfer
         run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.${{ matrix.ruby }}?1k'
