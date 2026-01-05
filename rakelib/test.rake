@@ -182,71 +182,53 @@ def restart_noded
   # -ps -ef|grep aspera|grep -v grep
 end
 
+def select_test_cases(selection, &block)
+  raise 'missing block' unless block_given?
+  list = selection&.split(' ')
+  if list.nil?
+    ALL_TESTS.each(&block)
+  elsif list.first.eql?('tag')
+    list.shift
+    ALL_TESTS.select{ |_, info| info['tags']&.intersect?(list)}.each(&block)
+  else
+    list.each do |name|
+      raise "Unknown test: #{name}" unless ALL_TESTS.key?(name)
+      yield(name, ALL_TESTS[name])
+    end
+  end
+end
+
 namespace :test do
-  # List tests with metadata
-  desc 'List all tests with tags'
-  task :list do
-    ALL_TESTS.each do |name, info|
+  desc 'List tests: all, by names, or by tags (space-sep)'
+  task :list, [:name_list] do |_, args|
+    select_test_cases(args[:name_list]) do |name, info|
       log.info("#{name.ljust(20)} #{info['tags']&.join(', ')}")
     end
   end
 
-  desc 'Skip a given tests by name (space-separated)'
-  task :skip_by_name, [:name_list] do |_, args|
-    args[:name_list].split(' ').each do |k|
-      raise "Unknown test: #{k}" unless ALL_TESTS.key?(k)
-      STATES[k] = 'skipped'
-      log.info("[SKIP] #{k}")
-    end
-    save_state
-  end
-
-  desc 'Skip a given test by tag (space-separated)'
-  task :skip_by_tag, [:name_list] do |_, args|
-    tags = args[:name_list].split(' ')
-    ALL_TESTS.each do |name, value|
-      if value['tags']&.any?{ |t| tags.include?(t)}
-        STATES[name] = 'skipped'
-        log.info("[SKIP] #{name}")
-      end
-    end
-    save_state
-  end
-
-  desc 'Clear a given test by name'
-  task :clear, [:name_list] do |_, args|
-    args[:name_list]&.split(' ')&.each do |k|
-      log.info("[CLEAR] #{k}")
-      Aspera.assert(ALL_TESTS.key?(k)){"Invalid test case name: #{k}"}
-      STATES.delete(k)
-    end
-    save_state
-  end
-
-  # Reset persistent state
-  desc 'Clear all stored test results'
-  task :reset do
-    PATH_TESTS_STATES.delete if PATH_TESTS_STATES.exist?
-    PATH_TEST_CONFIG.delete if PATH_TEST_CONFIG.exist?
-    log.info('State cleared.')
-  end
-
-  # Run tests filtered by tag
-  desc 'Run only tests matching tag'
-  task :by_tag, [:tag] do |_, args|
-    tag = args[:tag]
-    abort 'Usage: rake test:by_tag[download]' unless tag
-    selected = ALL_TESTS.select{ |_, info| info['tags']&.include?(tag)}
-    Rake::Task['test:run'].invoke if selected.empty?
-    selected.each_key do |name|
+  desc 'Run tests: all, by names, or by tags (space-sep)'
+  task :run, [:name_list] do |_, args|
+    select_test_cases(args[:name_list]) do |name, _info|
       Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
     end
   end
 
-  # Run all tests in declared order
-  desc 'Run all tests'
-  task :run do
-    (ALL_TESTS.keys + ['unit']).each{ |name| Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke}
+  desc 'Skip tests: all, by names, or by tags (space-sep)'
+  task :skip, [:name_list] do |_, args|
+    select_test_cases(args[:name_list]) do |name, _info|
+      STATES[name] = 'skipped'
+      log.info("[SKIP] #{name}")
+    end
+    save_state
+  end
+
+  desc 'Reset tests: all, by names, or by tags (space-sep)'
+  task :reset, [:name_list] do |_, args|
+    select_test_cases(args[:name_list]) do |name, _info|
+      STATES.delete(name)
+      log.info("[RESET] #{name}")
+    end
+    save_state
   end
 
   desc 'Restart noded on macOS'

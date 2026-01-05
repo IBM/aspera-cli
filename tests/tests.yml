@@ -1,4 +1,12 @@
 # Shares ------------------------------------------------------
+unit:
+  $comment: Run spec
+  tags:
+    - nodoc
+  pre:
+    - Rake::Task["#{TEST_CASE_NS}:unit"].invoke
+  command:
+    - -v
 shares_health:
   tags:
     - health
