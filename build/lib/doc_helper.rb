@@ -283,7 +283,7 @@ class DocHelper
     ['$(PATH_TST_ASC_LCL)', 'test_file.bin'],
     ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
     ['$(TST_MED_LCL_PATH)', 'test_file.bin'],
-    ["$(CONF_DATA['file']['utf_name'])", 'test_file.bin'],
+    ["$(conf_data('file.utf_name'))", 'test_file.bin'],
     ['my_asc_name', 'test_file.bin'],
     ['"my_password"', '"my_password_here"'],
     ['$(PATH_FILE_LIST)', 'filelist.txt'],

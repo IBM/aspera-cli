@@ -2081,7 +2081,7 @@ aocfdownd:
     - download
     - --to-folder=$(TMP)
     - "@extend:testdst/@preset:file.asc_name@"
-    - testdst/$(CONF_DATA['file']['utf_name'])
+    - testdst/$(conf_data('file.utf_name'))
 aocfdowndb:
   tags:
     - nodoc

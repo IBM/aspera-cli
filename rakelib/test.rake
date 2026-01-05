@@ -22,20 +22,30 @@ PATH_TESTS_STATES = TMP / 'state.yml'
 # override $HOME/.aspera/ascli
 PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 
+PARAM_CONFIG = yaml_safe_load(PATH_CONF_FILE.read)
+
+def conf_data(path)
+  current = PARAM_CONFIG
+  path.split('.').each do |k|
+    current = current[k]
+    raise "Missing config: #{k} for #{path}" if current.nil?
+  end
+  current
+end
+
 # -----------------
 # Used in tests.yml
-CONF_DATA = yaml_safe_load(PATH_CONF_FILE.read)
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
 # testing file generated locally
-PATH_TST_ASC_LCL = TMP / CONF_DATA['file']['asc_name']
+PATH_TST_ASC_LCL = TMP / conf_data('file.asc_name')
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
-PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / CONF_DATA['file']['asc_name']
+PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / conf_data('file.asc_name')
 # This file name contains special characters, it must be quoted when used in shell
-PATH_TST_UTF_LCL = TMP / CONF_DATA['file']['utf_name']
+PATH_TST_UTF_LCL = TMP / conf_data('file.utf_name')
 # a medium sized file for testing
-TST_MED_FILENAME = CONF_DATA['file']['utf_name']
+TST_MED_FILENAME = conf_data('file.utf_name')
 # local path, using `faux:`
 TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
 TEMPORIZE_CREATE = 10
@@ -77,7 +87,7 @@ PATH_TST_UTF_LCL.write('This is a small test file') unless PATH_TST_UTF_LCL.exis
 PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
 PATH_FILE_PAIR_LIST.write([
   PATH_TST_ASC_LCL,
-  File.join(CONF_DATA['server']['inside_folder'], 'other_name')
+  File.join(conf_data('server.inside_folder'), 'other_name')
 ].map(&:to_s).join("\n"))
 PATH_SHARES_SYNC.mkpath
 PATH_TMP_STATES.mkpath
