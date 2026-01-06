@@ -345,7 +345,7 @@ module Aspera
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
         end
-        Log.log.debug{"#{descr}=#{result}"}
+        Log.log.trace1{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
         result = result.to_s if result.is_a?(Integer) && validation&.eql?(Allowed::TYPES_STRING)

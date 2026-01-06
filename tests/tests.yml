@@ -427,7 +427,7 @@ serv_upload2:
     - $(TST_MED_LCL_PATH)
     - "@extend:@preset:server.inside_folder@/other_name_2"
     - --notify-to=@preset:misc.email_external
-    - --transfer-info=@json:{"ascp_args":["-l","100m"]}
+    - "--transfer-info.ascp_args=@list: -l 100m"
 serv_upload3_prep:
   tags:
     - ignore_fail

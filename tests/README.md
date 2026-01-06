@@ -24,7 +24,7 @@ export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 
 ## Test descriptions
 
-When new commands are added to the CLI, new tests shall be added to the test suite in `tests/tests.yml`.
+When new commands are added to the CLI, corresponding tests shall be added to the test suite in `tests/tests.yml`.
 YAML formating rules apply.
 Values inside `$(...)` are evaluated as Ruby expressions.
 Some constants are defined in `test.rake` and can be used.
@@ -42,6 +42,9 @@ Some tags have special meaning while other tags are only a way to group test cas
 | `tmp_conf`    | Use temporary config file (config is modified).        |
 
 Function `read_value_from` reads a value previously saved with `save_output`.
+
+The command to execute is described by an array: `command`.
+Note that it does not include any shell special character protection because it is actually not executed by a shell: it's executed by the system's `exec` call.
 
 ## Running Tests
 
@@ -86,4 +89,4 @@ Enable coverage monitoring using envvar `ENABLE_COVERAGE`.
 bundle exec rake test:run ENABLE_COVERAGE=1
 ```
 
-Once tests are completed, or during test, consult the page: [coverage/index.html](coverage/index.html)
+Once tests are completed, or during test, consult the page: [tmp/coverage/index.html](tmp/coverage/index.html)

@@ -430,6 +430,7 @@ One can remove all installed gems, for example to start fresh:
 
 ```shell
 ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs gem uninstall -axI
+rm -f Gemfile.lock
 ```
 
 #### Unix-like: RVM: Single user installation (not root)
@@ -1878,17 +1879,17 @@ ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
 
 The style of output can be set using the `format` option:
 
-| `format` | Output formatting       |
-|----------|-------------------------|
-| `table`  | Text table (default)    |
-| `text`   | Value as `String`       |
-| `ruby`   | Ruby code               |
-| `json`   | JSON code               |
-| `jsonpp` | JSON pretty printed     |
-| `yaml`   | YAML                    |
-| `csv`    | Comma Separated Values  |
-| `image`  | Image URL or data       |
-| `nagios` | Suitable for Nagios     |
+| `format` | Output formatting         |
+|----------|---------------------------|
+| `table`  | Text table (default)      |
+| `text`   | Value as `String`         |
+| `ruby`   | Ruby code                 |
+| `json`   | JSON code                 |
+| `jsonpp` | JSON pretty printed       |
+| `yaml`   | YAML                      |
+| `csv`    | Comma Separated Values    |
+| `image`  | URL or data for a [picture/video](#image-and-video-thumbnails) |
+| `nagios` | Suitable for Nagios       |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
@@ -3067,33 +3068,42 @@ Parameter `url` (base URL) defines:
 
 ### Image and video thumbnails
 
-`ascli` can display thumbnails for images and videos in the terminal.
-This is available:
+`ascli` can display thumbnails for images and videos in the **terminal**, using [iTerm2 inline image protocol](https://iterm2.com/documentation-images.html) or through colorized text.
+
+This feature can be used:
 
 - In the `thumbnail` command of `node` when using **gen4/access key** API.
 - When using the `show` command of `preview` plugin.
 - `coffee` and `image` commands of `config` plugin.
 - Any displayed value which is a URL to image can be displayed with option `format` set to `image`
 
-The following options can be specified in the option `image`:
+The following options can be specified in the `image` option:
 
-| Option     | Type      | Description                                       |
+| Option     | Type      | Description                                                             |
 |------------|-----------|---------------------------------------------------|
-| reserve    | `Integer` | Lines reserved to display a status.               |
-| text       | `Bool`    | Display text instead of image.                    |
-| double     | `Bool`    | Display double text resolution (half characters). |
-| font_ratio | `Float`   | Font height/width ratio in terminal.              |
+| reserve    | `Integer` | Lines reserved to display a status.<br/>Default: `3`                  |
+| text       | `Bool`    | Display text instead of image (iTerm).<br/>Default: `false`           |
+| double     | `Bool`    | Display double text resolution (half characters).<br/>Default: `true` |
+| font_ratio | `Float`   | Font height/width ratio in terminal.<br/>Default: `2.3`               |
+
+Examples:
+
+- Display image as colorized text (requires `rmagick`)
 
 ```shell
-ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
+ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image.text=true
 ```
+
+- Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
 
 ```shell
 curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @stdbin:
 ```
 
+- Display image from file (requires iTerm2-compatible terminal)
+
 ```shell
-echo -n https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @uri:@stdin:
+ascli config image @stdbin: < A-team.jpg
 ```
 
 ### Graphical Interactions: Browser and Text Editor
@@ -3538,15 +3548,15 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                   | Type      | Description                                                                 |
 |------------------------|-----------|-----------------------------------------------------------------------------|
 | `wss`                  | `Bool`    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: `true` |
-| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
-| `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
+| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false`    |
+| `trusted_certs`        | `Array`   | List of repositories for trusted certificates.                              |
 | `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers.<br/>One of: `dsa_rsa`, `rsa`, `per_client`.<br/>Default: `rsa` |
-| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<br/>Default: `[]` |
+| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<br/>Default: `[]`        |
 | `spawn_timeout_sec`    | `Float`   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
-| `spawn_delay_sec`      | `Float`   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
+| `spawn_delay_sec`      | `Float`   | Multi session<br/>Delay between startup of sessions<br/>Default: `2`    |
 | `multi_incr_udp`       | `Bool`    | Multi Session<br/>Increment UDP port on multi-session<br/>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: `true` on Windows, else `false` |
-| `resume`               | `Hash`    | Resume parameters. See below. |
-| `resume.iter_max`      | `Integer` | Max number of retry on error<br/>Default: `7` |
+| `resume`               | `Hash`    | Resume parameters. See below.                                               |
+| `resume.iter_max`      | `Integer` | Max number of retry on error<br/>Default: `7`                             |
 | `resume.sleep_initial` | `Integer` | First Sleep before retry<br/>Default: `2` |
 | `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<br/>Default: `2` |
 | `resume.sleep_max`     | `Integer` | Default: `60` |
@@ -3928,7 +3938,18 @@ ascli config ascp info --fields=ts --flat-hash=no
 ```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
-Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
+Example:
+
+```json
+--transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+```
+
+Or an equivalent (using dotted expression):
+
+```json
+--transfer-info.ascp_args=@list:' -l 100m'
+```
+
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
 
 The use of a [**transfer-spec**](#transfer-specification) instead of `ascp` command line arguments has the advantage of:
@@ -6371,6 +6392,7 @@ For instructions, refer to section `find` for plugin `node`.
 > Add `ascli aoc` in front of the following commands:
 
 ```bash
+admin analytics application_events
 admin analytics files organization '' aoc_transfer_id
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
@@ -6394,7 +6416,9 @@ admin contact list
 admin dropbox list
 admin dropbox_membership list
 admin group list
+admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 admin kms_profile list
+admin node bearer_token %name:my_node_name --scope=admin:all
 admin node do %name:my_node_name --secret=my_ak_secret browse /
 admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-cache=no
 admin node do %name:my_node_name --secret=my_ak_secret delete /folder1
@@ -6703,8 +6727,8 @@ upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelis
 upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=transferd
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
-upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
-upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer-info.ascp_args=@list: -l 100m'
+upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
@@ -8375,16 +8399,26 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 ```bash
 health
 info
+monitors
 plugins
 processes
 workflow details my_workflow_id
 workflow export my_workflow_id
 workflow inputs my_workflow_id
 workflow list
+workflow outputs my_workflow_id
 workflow start my_workflow_id @json:'{"Param":"world !"}'
 workflow start my_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 workflow status ALL
 workflow status my_workflow_id
+workflow workorders my_workflow_id
+workflow workorders my_workflow_id --fields=id --query.max_results=1
+workorder cancel orch_workorder_id
+workorder output orch_workorder_id
+workorder reset orch_workorder_id
+workorder status orch_workorder_id
+workstep cancel 1
+workstep status 1
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage

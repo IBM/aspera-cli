@@ -43,6 +43,7 @@ Gem::Specification.new do |spec|
   # see also Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
   spec.required_ruby_version = '>= 3.1'
   spec.add_dependency('blankslate', '~> 3.1')
+  spec.add_dependency('chunky_png', '~> 1.4')
   spec.add_dependency('csv', '~> 3.0')
   spec.add_dependency('execjs', '~> 2.0')
   spec.add_dependency('jwt', '~> 3.0')

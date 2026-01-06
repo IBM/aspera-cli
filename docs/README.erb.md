@@ -1847,17 +1847,17 @@ Example:
 
 The style of output can be set using the `format` option:
 
-| `format` | Output formatting       |
-|----------|-------------------------|
-| `table`  | Text table (default)    |
-| `text`   | Value as `String`       |
-| `ruby`   | Ruby code               |
-| `json`   | JSON code               |
-| `jsonpp` | JSON pretty printed     |
-| `yaml`   | YAML                    |
-| `csv`    | Comma Separated Values  |
-| `image`  | Image URL or data       |
-| `nagios` | Suitable for Nagios     |
+| `format` | Output formatting         |
+|----------|---------------------------|
+| `table`  | Text table (default)      |
+| `text`   | Value as `String`         |
+| `ruby`   | Ruby code                 |
+| `json`   | JSON code                 |
+| `jsonpp` | JSON pretty printed       |
+| `yaml`   | YAML                      |
+| `csv`    | Comma Separated Values    |
+| `image`  | URL or data for a [picture/video](#image-and-video-thumbnails) |
+| `nagios` | Suitable for Nagios       |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
@@ -2927,33 +2927,42 @@ Parameter `url` (base URL) defines:
 
 ### Image and video thumbnails
 
-<%=tool%> can display thumbnails for images and videos in the terminal.
-This is available:
+<%=tool%> can display thumbnails for images and videos in the **terminal**, using [iTerm2 inline image protocol](https://iterm2.com/documentation-images.html) or through colorized text.
+
+This feature can be used:
 
 - In the `thumbnail` command of `node` when using **gen4/access key** API.
 - When using the `show` command of `preview` plugin.
 - `coffee` and `image` commands of `config` plugin.
 - Any displayed value which is a URL to image can be displayed with option `format` set to `image`
 
-The following options can be specified in the option `image`:
+The following options can be specified in the `image` option:
 
-| Option     | Type      | Description                                       |
+| Option     | Type      | Description                                                             |
 |------------|-----------|---------------------------------------------------|
-| reserve    | `Integer` | Lines reserved to display a status.               |
-| text       | `Bool`    | Display text instead of image.                    |
-| double     | `Bool`    | Display double text resolution (half characters). |
-| font_ratio | `Float`   | Font height/width ratio in terminal.              |
+| reserve    | `Integer` | Lines reserved to display a status.<%=br%>Default: `3`                  |
+| text       | `Bool`    | Display text instead of image (iTerm).<%=br%>Default: `false`           |
+| double     | `Bool`    | Display double text resolution (half characters).<%=br%>Default: `true` |
+| font_ratio | `Float`   | Font height/width ratio in terminal.<%=br%>Default: `2.3`               |
+
+Examples:
+
+- Display image as colorized text (requires `rmagick`)
 
 ```shell
-<%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
+<%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image.text=true
 ```
+
+- Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
 
 ```shell
 curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @stdbin:
 ```
 
+- Display image from file (requires iTerm2-compatible terminal)
+
 ```shell
-echo -n https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @uri:@stdin:
+<%=cmd%> config image @stdbin: < A-team.jpg
 ```
 
 ### Graphical Interactions: Browser and Text Editor
@@ -3398,15 +3407,15 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                   | Type      | Description                                                                 |
 |------------------------|-----------|-----------------------------------------------------------------------------|
 | `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: `true` |
-| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false` |
-| `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
+| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false`    |
+| `trusted_certs`        | `Array`   | List of repositories for trusted certificates.                              |
 | `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers.<%=br%>One of: `dsa_rsa`, `rsa`, `per_client`.<%=br%>Default: `rsa` |
-| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<%=br%>Default: `[]` |
+| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<%=br%>Default: `[]`        |
 | `spawn_timeout_sec`    | `Float`   | Multi session<%=br%>Verification time that `ascp` is running<%=br%>Default: `3` |
-| `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2` |
+| `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2`    |
 | `multi_incr_udp`       | `Bool`    | Multi Session<%=br%>Increment UDP port on multi-session<%=br%>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<%=br%>Else, each session will use `fasp_port` (or `ascp` default)<%=br%>Default: `true` on Windows, else `false` |
-| `resume`               | `Hash`    | Resume parameters. See below. |
-| `resume.iter_max`      | `Integer` | Max number of retry on error<%=br%>Default: `7` |
+| `resume`               | `Hash`    | Resume parameters. See below.                                               |
+| `resume.iter_max`      | `Integer` | Max number of retry on error<%=br%>Default: `7`                             |
 | `resume.sleep_initial` | `Integer` | First Sleep before retry<%=br%>Default: `2` |
 | `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<%=br%>Default: `2` |
 | `resume.sleep_max`     | `Integer` | Default: `60` |
@@ -3788,7 +3797,18 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 ```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
-Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
+Example:
+
+```json
+--transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+```
+
+Or an equivalent (using dotted expression):
+
+```json
+--transfer-info.ascp_args=@list:' -l 100m'
+```
+
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
 
 The use of a [**transfer-spec**](#transfer-specification) instead of `ascp` command line arguments has the advantage of:
