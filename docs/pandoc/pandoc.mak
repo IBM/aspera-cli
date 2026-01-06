@@ -24,7 +24,7 @@ $(2): $(1) $$(PANDOC_DEPS)
 	GFX_DIR=$$(DIR_PANDOC) pandoc \
 		--defaults=$$(DEF_COMMON) \
 		--defaults=$$(DEF_PDF) \
-		--variable=date:"$$$$(date $$$$ref '+%Y/%m/%d')" \
+		--variable=date:"$$$$(/bin/date $$$$ref '+%Y/%m/%d')" \
 	    --metadata-file=$$<.pandoc_meta \
 		--output=$$@ \
 		$$<
