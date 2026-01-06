@@ -21,7 +21,7 @@ end
 def pdf_rule(pdf, md = nil)
   # pdf = File.expand_path(pdf)
   md ||= pdf.sub(/\.pdf$/, '.md')
-  file(pdf => [md, *PANDOC_DEPS]) do
+  file(pdf => [md] + PANDOC_DEPS) do
     markdown_to_pdf(md: md, pdf: pdf)
   end
 end

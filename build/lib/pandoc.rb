@@ -6,25 +6,21 @@ require 'aspera/log'
 require_relative 'paths'
 
 PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::TOP / 'doc' / 'pandoc'
-PATH_DEF_COMMON = PATH_PANDOC_ROOT / 'defaults_common.yaml'
-PATH_DEF_PDF = PATH_PANDOC_ROOT / 'defaults_pdf.yaml'
-PATH_DEF_HTML = PATH_PANDOC_ROOT / 'defaults_html.yaml'
 PANDOC_DEPS = [
-  PATH_DEF_COMMON,
-  PATH_DEF_PDF,
-  PATH_DEF_HTML,
-  PATH_PANDOC_ROOT / 'break_replace.lua',
-  PATH_PANDOC_ROOT / 'find_admonition.lua',
-  PATH_PANDOC_ROOT / 'gfm_admonition.css',
-  PATH_PANDOC_ROOT / 'gfm_admonition.lua',
-  PATH_PANDOC_ROOT / 'pdf_after_body.tex',
-  PATH_PANDOC_ROOT / 'pdf_in_header.tex'
-  #  PATH_PANDOC_ROOT / 'pandoc.rb'
-].map(&:to_s)
+  'defaults_common.yaml',
+  'defaults_pdf.yaml',
+  'defaults_html.yaml',
+  'break_replace.lua',
+  'find_admonition.lua',
+  'gfm_admonition.css',
+  'gfm_admonition.lua',
+  'pdf_after_body.tex',
+  'pdf_in_header.tex'
+].map{ |f| (PATH_PANDOC_ROOT / f).to_s}.freeze
 
 # Extract pandoc metadata from markdown comment
 def extract_metadata_file(md)
-  metadata_file = "#{md}.pandoc_meta"
+  metadata_file = TMP / 'pandoc_meta'
   inside = false
   File.open(metadata_file, 'w') do |out|
     File.foreach(md.to_s) do |line|
@@ -62,8 +58,8 @@ def markdown_to_pdf(md:, pdf:)
       env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s},
       exec: 'pandoc',
       args: [
-        "--defaults=#{PATH_DEF_COMMON}",
-        "--defaults=#{PATH_DEF_PDF}",
+        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
+        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
         "--variable=date:#{get_change_date(md)}",
         "--metadata-file=#{metadatafile}",
         "--output=#{pdf}",
@@ -83,8 +79,8 @@ def markdown_to_html(md:, html:)
       env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s},
       exec: 'pandoc',
       args: [
-        "--defaults=#{PATH_DEF_COMMON}",
-        "--defaults=#{PATH_DEF_HTML}",
+        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
+        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_html.yaml'}",
         "--output=#{html}",
         md
       ]
