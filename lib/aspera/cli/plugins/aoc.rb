@@ -977,7 +977,8 @@ module Aspera
               end
               # download all files, or specified list only
               ts_paths = transfer.ts_source_paths(default: ['.'])
-              per_package_def = options.get_option(:package_folder)
+              per_package_def = options.get_option(:package_folder).symbolize_keys
+              save_metadata = per_package_def.delete(:inf)
               # get value outside of loop
               destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               result_transfer = []
@@ -993,12 +994,14 @@ module Aspera
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths}
                 )
-                transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def.symbolize_keys) unless per_package_def.empty?
-                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.user_transfer_spec['destination_root'] || destination_folder}]})
+                transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def) unless per_package_def.empty?
+                dest_folder = transfer.user_transfer_spec['destination_root'] || destination_folder
+                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
                 statuses = transfer.start(
                   transfer_spec,
                   rest_token: package_node_api
                 )
+                File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
                 if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)

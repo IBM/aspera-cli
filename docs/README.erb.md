@@ -5433,6 +5433,7 @@ The following fields are supported to define the name of the sub-folder:
 | `fld` | `Array` | The package's specified fields (`.`-joined). (max size: 2)                |
 | `seq` | `Bool`  | If `true`, add an incrementing number to the folder name starting at `1`. |
 | `opt` | `Bool`  | If `false` (default), then all fields are used.<%=br%>Else, only if the folder does not already exist. |
+| `inf` | `Bool`  | If `true`, then a file is created (`<ID>.info.json`) with package information (metadata, same information as sidecar file). |
 
 Examples (JSON):
 
