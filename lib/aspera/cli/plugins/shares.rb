@@ -13,20 +13,46 @@ module Aspera
         # path for node admin after base url
         ADMIN_API_PATH = 'api/v1'
         class << self
+          # Check various endpoints on Shares
+          # @return [Hash] with version, ping, api
+          def health_check(url)
+            result = {}
+            login_page = Rest
+              .new(base_url: url, redirect_max: 2)
+              .read('', headers: {'Accept'=>'text/html'})
+            if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
+              result[:version] = m[1]
+              if (m = login_page.match(/Patch level ([0-9]+)/))
+                result[:version] = "#{result[:version]} #{m[0]}"
+              end
+            end
+            result[:ping] =
+              begin
+                Rest
+                  .new(base_url: "#{url}/#{NODE_API_PATH}")
+                  .read('ping', headers: {'Content-Type'=>'application/json'})
+                'ping ok'
+              rescue => e
+                e
+              end
+            result[:api] =
+              begin
+                resp = Rest.new(base_url: url, redirect_max: 1).read("#{NODE_API_PATH}/app", exception: false, ret: :resp)
+                # shall fail: shares requires auth, but we check error message
+                raise 'not found' unless resp.code.to_s.eql?('401') && resp.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
+                'available'
+              rescue => e
+                e
+              end
+            result
+          end
+
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
-            api = Rest.new(base_url: address_or_url, redirect_max: 1)
-            # TODO: use ping instead ?
-            resp = api.read("#{NODE_API_PATH}/app", exception: false, ret: :resp)
-            # shall fail: shares requires auth, but we check error message
-            return unless resp.code.to_s.eql?('401') && resp.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-            version = 'unknown'
-            http = api.read('login', headers: {'Accept'=>'*/*'}, ret: :resp)
-            if (m = http.body.match(/\(v(1\..*)\)/))
-              version = m[1]
-            end
+            health = health_check(address_or_url)
+            raise health[:api] unless health[:api].is_a?(String)
             return {
-              version: version,
+              version: health[:version] || 'unknown',
               url:     address_or_url
             }
           end
@@ -62,14 +88,18 @@ module Aspera
           case command
           when :health
             nagios = Nagios.new
-            begin
-              http = Rest
-                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{NODE_API_PATH}")
-                .read('ping', ret: :resp)
-              raise Error, 'Shares not detected' unless http.body.eql?(' ')
-              nagios.add_ok('shares api', 'accessible')
-            rescue StandardError => e
-              nagios.add_critical('API', e.to_s)
+            shares_url = options.get_option(:url, mandatory: true)
+            health = self.class.health_check(shares_url)
+            nagios.add_ok('version', health[:version]) if health.key?(:version)
+            if health[:ping].is_a?(String)
+              nagios.add_ok('ping', health[:ping])
+            else
+              nagios.add_critical('ping', health[:ping].to_s)
+            end
+            if health[:api].is_a?(String)
+              nagios.add_ok('API', health[:api])
+            else
+              nagios.add_critical('API', health[:api].to_s)
             end
             Main.result_object_list(nagios.status_list)
           when :files
