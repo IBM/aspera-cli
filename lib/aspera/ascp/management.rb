@@ -5,8 +5,12 @@ require 'aspera/assert'
 module Aspera
   module Ascp
     # processing of ascp management port events
+    # Reference: `mgmtmess.c`
     class Management
-      # from https://www.google.com/search?q=FASP+error+codes
+      # References:
+      # https://www.google.com/search?q=FASP+error+codes
+      # https://www.ibm.com/support/pages/error-code-reference-tables
+      # mgmtmess.c : as_mgmt_err_is_retryable
       # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
       # rubocop:disable Layout/FirstHashElementLineBreak
       ERRORS = {
@@ -289,7 +293,7 @@ module Aspera
       # cspell: enable
 
       class << self
-        # translate native event name to snake case
+        # Translate native event name to snake case
         def field_native_to_snake(name)
           case name
           when 'Elapsedusec' then 'elapsed_usec'
@@ -298,7 +302,7 @@ module Aspera
           end
         end
 
-        # translate snake case event name to native
+        # Translate snake case event name to native
         # @param name [String] Field name
         def field_snake_to_native(name)
           field = name.delete('_')
@@ -339,7 +343,7 @@ module Aspera
       end
       attr_reader :last_event
 
-      # process line of mgt port event
+      # Process line of mgt port event
       # @param line [String] line of mgt port event
       # @return [Hash] event hash or nil if event is not yet complete
       def process_line(line)
