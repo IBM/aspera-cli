@@ -81,7 +81,8 @@ module Aspera
             }
           end
 
-          # @param base [String] Base folder path
+          # @param base   [String] Base folder path
+          # @param always [Bool]   `true` always add number, `false` only if base folder already exists
           # @return [String] Folder path that does jot exist, with possible .<number> extension
           def next_available_folder(base, always: false)
             counter = always ? 1 : 0
@@ -95,22 +96,21 @@ module Aspera
           # Get folder path that does not exist
           # If it exists, an extension is added
           # or a sequential number if extension == :seq
-          # @param folder [String] base folder
-          def unique_folder(folder, extension: nil, always: false)
-            case extension
-            when nil
-              folder
-            when :seq
-              # reuse helper
-              next_available_folder(folder, always: always)
-            else
-              if Dir.exist?(folder) || always
-                # NOTE: it might already exist
-                "#{folder}.#{Environment.instance.sanitized_filename(extension)}"
-              else
-                folder
-              end
+          # @param package_info       [Hash]   Package information
+          # @param destination_folder [String] Base folder
+          # @param fld.               [Array]  List of fields of package
+          def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
+            Aspera.assert_array_all(fld, String, type: Cli::BadArgument){'fld'}
+            Aspera.assert([1, 2].include?(fld.length)){'fld must have 1 or 2 elements'}
+            folder = Environment.instance.sanitized_filename(package_info[fld[0]])
+            if seq
+              folder = next_available_folder(folder, always: !opt)
+            elsif fld[1] && (Dir.exist?(folder) || !opt)
+              # NOTE: it might already exist
+              folder = "#{folder}.#{Environment.instance.sanitized_filename(fld[1])}"
             end
+            puts("sub= #{folder}")
+            File.join(destination_folder, folder)
           end
         end
 
@@ -208,7 +208,7 @@ module Aspera
           options.declare(:workspace, 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', allowed: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', allowed: [String, NilClass])
+          options.declare(:package_folder, 'Handling of reception of packages in folders', allowed: Hash, default: {})
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)
@@ -978,12 +978,6 @@ module Aspera
               # download all files, or specified list only
               ts_paths = transfer.ts_source_paths(default: ['.'])
               per_package_def = options.get_option(:package_folder)
-              unless per_package_def.nil?
-                raise Cli::BadArgument, "Invalid package folder option : #{per_package_def}" unless per_package_def =~ /\A([^+]+)(?:\+([^?]+)(\?)?)?\z/
-                per_package_field1 = Regexp.last_match(1)
-                per_package_field2 = Regexp.last_match(2)
-                per_package_sub_always = Regexp.last_match(3).nil?
-              end
               # get value outside of loop
               destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               result_transfer = []
@@ -999,19 +993,8 @@ module Aspera
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths}
                 )
-                unless per_package_def.nil?
-                  # folder based on first field
-                  folder = File.join(
-                    destination_folder,
-                    Environment.instance.sanitized_filename(package_info[per_package_field1])
-                  )
-                  transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(
-                    folder,
-                    extension: per_package_field2.eql?('seq') ? :seq : package_info[per_package_field2],
-                    always: per_package_sub_always
-                  )
-                end
-                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{destination_folder}]})
+                transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def.symbolize_keys) unless per_package_def.empty?
+                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.user_transfer_spec['destination_root'] || destination_folder}]})
                 statuses = transfer.start(
                   transfer_spec,
                   rest_token: package_node_api

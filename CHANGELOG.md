@@ -21,13 +21,14 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `aoc`: Option `package_folder` is now a Hash instead of formatted String.
 * `server`: By default, SSH option `use_agent` is now `false`.
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
 * `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
 * `preview`: Replaced gem `mimemagic` with `marcel`.
-* PDF manual is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
-* HTML manual is not generated anymore.
 * Build system uses now `rake` instead of `make` for easier portability on Windows.
+* PDF manual removed from repo, it is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
+* HTML manual is not generated anymore.
 
 ## 4.24.2
 

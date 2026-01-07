@@ -2416,7 +2416,6 @@ aocp3c:
     - $(read_value_from 'package_id3')
     - --to-folder=$(TMP)
     - /
-    - --package-folder=name
 aocp3d:
   depends_on:
     - aocp3c
@@ -2435,6 +2434,9 @@ aocp4:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --lock-port=12345
+    - --package-folder.fld.0=name
+    - --package-folder.fld.1=id
+    - --package-folder.opt=true
 aocp5:
   command:
     - aoc

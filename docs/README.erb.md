@@ -2326,7 +2326,7 @@ The option `invalid_characters` allows specifying a replacement character for a 
 
 The first character specifies the replacement character, and the following characters are the invalid ones.
 This is used when a folder or file is created from a value that potentially contains invalid characters.
-For example, using the option `package_folder`.
+For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
 The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
 
 > [!NOTE]
@@ -5420,39 +5420,37 @@ Option `once_only` is supported, see below.
 To download only some files from the package, just add the path of the files on the command line: `[<file> ...]`, see option `sources`.
 By default, all files in the package are downloaded, i.e. `.` is used as the file list.
 
-Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
-The following syntax is supported
+##### Option `package_folder`
 
-| Syntax               | Description                                                                            |
-|----------------------|----------------------------------------------------------------------------------------|
-| `@none:`             | No subfolder is created, files are downloaded directly into the specified `to_folder`. |
-| `<field>`            | A subfolder named after the package's specified field is created inside `to_folder`.   |
-| `<field1>+<field2>`  | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
-| `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists.<%=br%>Else it falls back to the combination of both fields with `.`. |
+The option `package_folder` (Hash) allows downloading packages in sub-folders of the `to_folder` path (see description earlier).
+If this option is not specified (or Hash is empty), then packages are downloaded in the folder specified by the `to_folder` option.
 
-The special value `seq` for `<field2>` will append an incrementing number to the folder name starting at `1`.
-If `?` is used, then the sequence number is used only if the folder already exists.
+The following fields are supported to define the name of the sub-folder:
 
-Examples:
+| Field | Type    | Description                                                               |
+|-------|---------|---------------------------------------------------------------------------|
+| none  | -       | (Default) No subfolder.                                                   |
+| `fld` | `Array` | The package's specified fields (`.`-joined). (max size: 2)                |
+| `seq` | `Bool`  | If `true`, add an incrementing number to the folder name starting at `1`. |
+| `opt` | `Bool`  | If `false` (default), then all fields are used.<%=br%>Else, only if the folder does not already exist. |
 
-- `id` :
-  Subfolder named after package ID.
+Examples (JSON):
+
+- `{"fields":["id"]}` :
+  Subfolder is the package ID.
   If the same package is downloaded several times, it will always be placed in the same folder.
-- `name` :
-  Subfolder named after package name.
+- `{"fields":["name"]}` :
+  Subfolder is the package name.
   If two packages with the same name are downloaded, they will be combined in the same folder.
-- `name+id` :
-  Subfolder named after the combination of package name and ID.
-- `name+id?` :
-  Subfolder named after the package's name is created, unless it already exists.
-  Else it falls back to the combination of both fields with `.`.
-- `name+seq?` :
-  Subfolder named after the package's name is created, unless it already exists.
-  Else it falls back to the combination of name and sequence number.
-
-> [!NOTE]
-> When `<field1>+<field2>?` is used, if two packages are downloaded and have the same fields, they will be downloaded in the same folder.
-> If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
+- `{"fields":["name","id"]}` :
+  Subfolder is the combination of package name and ID.
+- `{"fields":["name","id"],"opt":true}` :
+  Subfolder is the package's name is created, unless it already exists.
+  If it exists, then the combination of both fields joined with `.` is used.
+- `{"fields":["name"],"seq":true,"opt":true}` :
+  Subfolder is the package's name, unless it already exists.
+  If it exists, then the combination of name and sequence number.
+  If the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
 
 ##### Example: Receive all packages from a given shared inbox
 
