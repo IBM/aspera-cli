@@ -490,7 +490,7 @@ module Aspera
             option, path, value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
-              set_option(option_sym, dotted_to_extended(path, value), where: 'dotted')
+              set_option(option_sym, dotted_to_extended(path, value, get_option(option_sym)), where: 'dotted')
               retry
             end
           end
@@ -604,14 +604,14 @@ module Aspera
       end
 
       # Insert extended value `value` into struct `result` at `path`
-      # @param path   [String]
-      # @param value  [String]
-      # @param result [NilClass, Hash, Array]
+      # @param path   [String] dotted path
+      # @param value  [String] Smart expression
+      # @param result [NilClass, Hash, Array] current value
       # @return [Hash, Array]
       def dotted_to_extended(path, value, result = nil)
         # Typed keys
         keys = path.split(OPTION_DOTTED_SEPARATOR).map{ |k| int_or_string(k)}
-        # Create, or re-used higher level container
+        # Create, or re-use first level container
         current = (result ||= new_hash_or_array_from_key(keys.first))
         # walk the path, and create sub-containers if necessary
         keys.each_cons(2) do |k, next_k|
