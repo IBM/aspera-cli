@@ -3489,6 +3489,11 @@ at4:
     - ats
     - cluster
     - list
+at4b:
+  command:
+    - ats
+    - aws_trust_policy
+    - --region=us-east-1
 at5:
   command:
     - ats
