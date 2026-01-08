@@ -1,6 +1,6 @@
 # Testing Environment
 
-The test envorinment is composed with a YAML configuration file with server addresses and secrets and a YAML file describing tests, including the command line to run.
+The test environment is composed with a YAML configuration file with server addresses and secrets and a YAML file describing tests, including the command line to run.
 
 Previously it was based on Makefile, but this has been replaced for better portability to the Windows OS.
 
@@ -25,14 +25,14 @@ export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 ## Test descriptions
 
 When new commands are added to the CLI, corresponding tests shall be added to the test suite in `tests/tests.yml`.
-YAML formating rules apply.
-Values inside `$(...)` are evaluated as Ruby expressions.
-Some constants are defined in `test.rake` and can be used.
+YAML formatting rules apply.
+The command to execute is described by an array: `command`.
+It does not include any shell special character protection because it is actually not executed by a shell: it's executed by the system's `exec` call.
 Test cases are assigned some tags.
 
 The following keys are supported in test description:
 
-| Key           | Type     | Description                            |
+| Field         | Type     | Description                            |
 |---------------|----------|----------------------------------------|
 | `description` | `String` | Description.                           |
 | `$comment`    | `String` | Internal comment.                      |
@@ -45,7 +45,7 @@ The following keys are supported in test description:
 | `stdin`       | `String` | Input to command.                      |
 | `expect`      | `String` | Expected output.                       |
 
-Some tags have special meaning while other tags are only a way to group test cases togeteher (for example to skip them).
+Some tags have special meaning while other tags are only a way to group test cases together (for example to skip them).
 
 | Tag           | Description                                            |
 |---------------|--------------------------------------------------------|
@@ -59,8 +59,8 @@ Some tags have special meaning while other tags are only a way to group test cas
 
 Function `read_value_from` reads a value previously saved with `save_output`.
 
-The command to execute is described by an array: `command`.
-Note that it does not include any shell special character protection because it is actually not executed by a shell: it's executed by the system's `exec` call.
+Values inside `$(...)` are evaluated as Ruby expressions.
+Some constants are defined in `test.rake` and can be used.
 
 ## Running Tests
 
@@ -82,8 +82,12 @@ bundle exec rake test:run
 To skip some tests by tags:
 
 ```bash
-bundle exec rake test:skip_by_tag'[faspex tag2]'
+bundle exec rake test:skip'[tag faspex tag2]'
 ```
+
+> [!NOTE]
+> The first parameter: `tag` tells that the next parameters are tags, else it's a test case name.
+> No parameter: apply to all test cases.
 
 ## Pre-release tests
 
@@ -99,7 +103,7 @@ To test additional Ruby version, repeat the procedure with other Ruby versions.
 ## Coverage
 
 A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
-Enable coverage monitoring using envvar `ENABLE_COVERAGE`.
+Enable coverage monitoring using environment variable `ENABLE_COVERAGE`.
 
 ```bash
 bundle exec rake test:run ENABLE_COVERAGE=1
