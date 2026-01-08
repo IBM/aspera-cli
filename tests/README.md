@@ -29,6 +29,22 @@ YAML formating rules apply.
 Values inside `$(...)` are evaluated as Ruby expressions.
 Some constants are defined in `test.rake` and can be used.
 Test cases are assigned some tags.
+
+The following keys are supported in test description:
+
+| Key           | Type     | Description                            |
+|---------------|----------|----------------------------------------|
+| `description` | `String` | Description.                           |
+| `$comment`    | `String` | Internal comment.                      |
+| `tags`        | `Array`  | Group test cases, or special handling. |
+| `depends_on`  | `Array`  | Dependency.                            |
+| `command`     | `Array`  | Command line arguments.                |
+| `env`         | `Hash`   | Environment variables to set.          |
+| `pre`         | `Array`  | Ruby code to execute beforehand.       |
+| `post`        | `Array`  | Ruby code to execute afterward.        |
+| `stdin`       | `String` | Input to command.                      |
+| `expect`      | `String` | Expected output.                       |
+
 Some tags have special meaning while other tags are only a way to group test cases togeteher (for example to skip them).
 
 | Tag           | Description                                            |
