@@ -40,8 +40,8 @@ The following keys are supported in test description:
 | `depends_on`  | `Array`  | Dependency.                            |
 | `command`     | `Array`  | Command line arguments.                |
 | `env`         | `Hash`   | Environment variables to set.          |
-| `pre`         | `Array`  | Ruby code to execute beforehand.       |
-| `post`        | `Array`  | Ruby code to execute afterward.        |
+| `pre`         | `String` | Ruby code to execute before test.      |
+| `post`        | `String` | Ruby code to execute after test.       |
 | `stdin`       | `String` | Input to command.                      |
 | `expect`      | `String` | Expected output.                       |
 

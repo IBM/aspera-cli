@@ -6,8 +6,7 @@ unit:
   $comment: Run spec
   tags:
     - nodoc
-  pre:
-    - Rake::Task["#{TEST_CASE_NS}:unit"].invoke
+  pre: Rake::Task["#{TEST_CASE_NS}:unit"].invoke
   command:
     - echo
     - ""
@@ -414,6 +413,30 @@ serv_upload1:
     - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
     - --transfer-info=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
     - --progress-bar=yes
+serv_upload_multi_test:
+  tags:
+    - nodoc
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - faux:///serv_upload_multi_test?1k
+    - --to-folder=@preset:server.inside_folder
+    - --ts=@json:{"multi_session":2,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
+    - --transfer-info=@json:{"multi_incr_udp":true}
+serv_upload_multi_test2:
+  tags:
+    - nodoc
+  depends_on:
+    - serv_mkdir
+  command:
+    - server
+    - upload
+    - faux:///serv_upload_multi_test2?1k
+    - --to-folder=@preset:server.inside_folder
+    - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100000}
+    - --transfer-info=@json:{"multi_incr_udp":true}
 serv_upload1b:
   depends_on:
     - serv_upload1
@@ -475,9 +498,9 @@ serv_upload5:
     - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
-  pre:
-    - (PATH_TMP_SYNCS / 'serv_sync_pull_args').rmtree
-    - (PATH_TMP_SYNCS / 'serv_sync_pull_args').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'serv_sync_pull_args').rmtree
+    (PATH_TMP_SYNCS / 'serv_sync_pull_args').mkdir
   tags:
     - nodoc
   depends_on:
@@ -529,9 +552,9 @@ serv_sync_pull_args_counters:
     - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
 serv_sync_pull_conf_reset:
-  pre:
-    - (PATH_TMP_SYNCS / 'serv_sync_pull_conf').rmtree
-    - (PATH_TMP_SYNCS / 'serv_sync_pull_conf').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'serv_sync_pull_conf').rmtree
+    (PATH_TMP_SYNCS / 'serv_sync_pull_conf').mkdir
   depends_on:
     - serv_sync_pull_args_counters
   command:
@@ -1055,8 +1078,7 @@ nd_service_clean:
     - service
     - delete
     - service1
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_service_create:
   depends_on:
     - nd_service_clean
@@ -1074,8 +1096,7 @@ nd_service_list:
     - node
     - service
     - list
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_service_delete:
   depends_on:
     - nd_service_list
@@ -1093,8 +1114,7 @@ nd_service_list_del:
     - node
     - service
     - list
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_service_list_del2:
   depends_on:
     - nd_service_list_del
@@ -1103,8 +1123,7 @@ nd_service_list_del2:
     - node
     - service
     - list
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_service_list_del3:
   depends_on:
     - nd_service_list_del2
@@ -1164,8 +1183,7 @@ nd_xfer_ops:
     - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
     - faux:///bigfile?10G
     - --progress=no
-  post:
-    - sleep 5
+  post: sleep 5
 nd_xfer_id:
   tags:
     - save_output
@@ -1347,8 +1365,7 @@ nd_ak_mkdir:
     - "@preset:aoc.ak_name"
     - delete
     - /tst_nd_ak
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mkdirb:
   command:
     - --preset=node_ak_adm
@@ -1358,8 +1375,7 @@ nd_ak_mkdirb:
     - "@preset:aoc.ak_name"
     - mkdir
     - /tst_nd_ak
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile:
   tags:
     - ignore_fail
@@ -1372,8 +1388,7 @@ nd_ak_mkfile:
     - "@preset:aoc.ak_name"
     - delete
     - /mkfile.txt
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mkfileb:
   command:
     - --preset=node_ak_adm
@@ -1384,8 +1399,7 @@ nd_ak_mkfileb:
     - mkfile
     - /mkfile.txt
     - hello world
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mklink:
   depends_on:
     - nd_ak_mkfile
@@ -1400,8 +1414,7 @@ nd_ak_mklink:
     - "@preset:aoc.ak_name"
     - delete
     - /mklink.txt
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mklinkb:
   command:
     - --preset=node_ak_adm
@@ -1412,8 +1425,7 @@ nd_ak_mklinkb:
     - mklink
     - /mklink.txt
     - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_mvdir:
   tags:
     - nodoc
@@ -1534,8 +1546,7 @@ nd_ak_bearer_reset:
     - access_key
     - delete
     - "@preset:ak_creds.username"
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
   depends_on:
     - nd_ak_bearer_reset
@@ -1546,8 +1557,7 @@ nd_ak_bearer_create:
     - access_key
     - create
     - '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_show:
   depends_on:
     - nd_ak_bearer_create
@@ -1748,8 +1758,7 @@ aoc_faspex_gatewayb:
     - send
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
-  post:
-    - stop_process 'aoc_faspex_gateway'
+  post: stop_process 'aoc_faspex_gateway'
 aocg1:
   command:
     - -N
@@ -1918,8 +1927,7 @@ aoc_testsrc_cleanup:
     - files
     - delete
     - /testsrc
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 aoc_some_folder_cleanup:
   tags:
     - ignore_fail
@@ -1938,8 +1946,7 @@ aoc_testdst_cleanup:
     - files
     - delete
     - /testdst
-  post:
-    - sleep TEMPORIZE_FILE
+  post: sleep TEMPORIZE_FILE
 aoc_testsrc_create:
   depends_on:
     - aoc_testsrc_cleanup
@@ -1958,8 +1965,7 @@ aoc_some_folder_create:
     - files
     - mkdir
     - /some_folder
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 aoc_testdst_check:
   $comment: no-cache ensure we read the folder content on storage, not redis
   depends_on:
@@ -2098,10 +2104,10 @@ aocfdowndb:
 aocfdownc:
   depends_on:
     - aoc_testdst_cleanup
-  pre:
-    - PATH_DOWN_TST_ASC.delete rescue nil
-    - "run('killall', 'asperaconnect', exception: false)"
-    - sleep 1
+  pre: |
+    PATH_DOWN_TST_ASC.delete rescue nil
+    run('killall', 'asperaconnect', exception: false)
+    sleep 1
   command:
     - aoc
     - files
@@ -2111,8 +2117,7 @@ aocfdownc:
 aocfdowna:
   depends_on:
     - aoc_testdst_cleanup
-  pre:
-    - PATH_DOWN_TST_ASC.delete rescue nil
+  pre: PATH_DOWN_TST_ASC.delete rescue nil
   command:
     - aoc
     - files
@@ -2134,9 +2139,9 @@ aocfv3inf:
     - v3
     - info
 aoc_sync_pull_conf_parms:
-  pre:
-    - (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
-    - (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
+    (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
   command:
     - aoc
     - files
@@ -2154,9 +2159,9 @@ aoc_sync_pull_conf_parmsb:
     - status
     - $(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
 aoc_sync_conf_pull_params:
-  pre:
-    - (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
-    - (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
+    (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
   command:
     - aoc
     - files
@@ -2235,9 +2240,9 @@ aoc_file_id_6:
     - --src-type=pair
     - "@preset:file.mpg"
     - video_file.mpg
-  post:
-    - puts 'waiting for preview'
-    - sleep 60
+  post: |
+    puts 'waiting for preview'
+    sleep 60
 aoc_file_id_7:
   tags:
     - nodoc
@@ -2732,8 +2737,7 @@ aoc_adm_nd_mkdir_prep:
     - delete
     - /folder1
     - --node-cache=no
-  post:
-    - sleep 4
+  post: sleep 4
 aoc_adm_nd_mkdir:
   depends_on:
     - aoc_adm_nd_mkdir_prep
@@ -2747,8 +2751,7 @@ aoc_adm_nd_mkdir:
     - --secret=@preset:aoc.ak_secret
     - mkdir
     - /folder1
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 aoc_adm_nd_brse:
   tags:
     - nodoc
@@ -3522,8 +3525,7 @@ at8_prep:
     - access_key
     - delete
     - ak2ibmcloud
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 at8b:
   depends_on:
     - at8_prep
@@ -3534,8 +3536,7 @@ at8b:
     - --cloud=softlayer
     - --region=@preset:icos.region
     - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 at8c:
   depends_on:
     - at8b
@@ -3604,9 +3605,9 @@ at14:
     - delete
     - ak_aws
 nd_sync_pull_conf:
-  pre:
-    - (PATH_TMP_SYNCS / 'nd_sync_pull_conf').rmtree
-    - (PATH_TMP_SYNCS / 'nd_sync_pull_conf').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'nd_sync_pull_conf').rmtree
+    (PATH_TMP_SYNCS / 'nd_sync_pull_conf').mkdir
   command:
     - node
     - sync
@@ -3624,9 +3625,9 @@ nd_sync_pull_confb:
     - status
     - $(PATH_TMP_SYNCS / 'nd_sync_pull_conf')
 nd_sync_v2:
-  pre:
-    - (PATH_TMP_SYNCS / 'nd_sync_v2').rmtree
-    - (PATH_TMP_SYNCS / 'nd_sync_v2').mkdir
+  pre: |
+    (PATH_TMP_SYNCS / 'nd_sync_v2').rmtree
+    (PATH_TMP_SYNCS / 'nd_sync_v2').mkdir
   command:
     - node
     - sync
@@ -3783,8 +3784,7 @@ sync_check_1:
     - ssync
     - show
     - "%name:my_node_sync"
-  post:
-    - sleep 30
+  post: sleep 30
 sync_other_a:
   depends_on:
     - sync_check_1
@@ -4012,8 +4012,7 @@ conf_ascp_sdk_folder:
 conf_ascp_install:
   depends_on:
     - conf_ascp_sdk_folder
-  pre:
-    - puts(read_value_from('conf_ascp_sdk_folder'))
+  pre: puts(read_value_from('conf_ascp_sdk_folder'))
   command:
     - config
     - ascp
@@ -4027,8 +4026,7 @@ conf_ascp_installb:
     - ascp
     - install
 conf_ascp_installc:
-  pre:
-    - (TMP / 'sdk_test_dir').rmtree
+  pre: (TMP / 'sdk_test_dir').rmtree
   command:
     - config
     - ascp
@@ -4502,17 +4500,17 @@ conf_plugins3:
     - my_command
     - --plugin-folder=$(TMP)
 conf_genkey1:
-  pre:
-    - (TMP / 'my_key').delete rescue nil
-    - (TMP / 'my_key.pub').delete rescue nil
+  pre: |
+    (TMP / 'my_key').delete rescue nil
+    (TMP / 'my_key.pub').delete rescue nil
   command:
     - config
     - genkey
     - $(TMP / 'my_key')
 conf_genkey2:
-  pre:
-    - (TMP / 'my_key').delete rescue nil
-    - (TMP / 'my_key.pub').delete rescue nil
+  pre: |
+    (TMP / 'my_key').delete rescue nil
+    (TMP / 'my_key.pub').delete rescue nil
   command:
     - config
     - genkey
@@ -4569,8 +4567,7 @@ conf_check_update:
 conf_check_update2:
   depends_on:
     - conf_check_update
-  pre:
-    - PATH_VERSION_CHECK_PERSIST.delete
+  pre: PATH_VERSION_CHECK_PERSIST.delete
   command:
     - config
     - check_update
@@ -5024,8 +5021,7 @@ prev_trevents_prep:
     - "@preset:file.mxf"
     - "@preset:file.docx"
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
-  post:
-    - sleep 4
+  post: sleep 4
 prev_trevents:
   depends_on:
     - prev_trevents_prep
@@ -5043,8 +5039,7 @@ prev_events_prep:
     - "@preset:file.mxf"
     - "@preset:file.docx"
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
-  post:
-    - sleep 4
+  post: sleep 4
 prev_events:
   depends_on:
     - prev_events_prep
@@ -5096,10 +5091,10 @@ serv_hot_prep2:
     - "@extend:@preset:server.upload_folder@/target_hot"
 serv_hot_run:
   $comment: First run transfers nothing because file is too recent
-  pre:
-    - Pathname.new('source_hot').rmtree
-    - Pathname.new('source_hot').mkdir
-    - Pathname.new('source_hot/new_file').write('hello')
+  pre: |
+    Pathname.new('source_hot').rmtree
+    Pathname.new('source_hot').mkdir
+    Pathname.new('source_hot/new_file').write('hello')
   command:
     - server
     - upload
@@ -5110,14 +5105,12 @@ serv_hot_run:
 serv_hot_check:
   depends_on:
     - serv_hot_run
-  pre:
-    - run('ls', '-al', 'source_hot')
+  pre: run('ls', '-al', 'source_hot')
   command:
     - server
     - browse
     - "@extend:@preset:server.upload_folder@/target_hot"
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 serv_hot_run2:
   $comment: Second run transfers file
   depends_on:
@@ -5333,8 +5326,7 @@ f5_p3a:
     - "@preset:faspex5.shared_folder_file"
     - --fields=id
     - --display=data
-  post:
-    - 'puts "Sent package with id: #{read_value_from "f5_p3a"}"'
+  post: 'puts "Sent package with id: #{read_value_from "f5_p3a"}"'
 f5_p3aa:
   depends_on:
     - f5_p3a
@@ -5416,9 +5408,9 @@ f5_pack_shbox:
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}'
     - $(PATH_TST_ASC_LCL)
-  post:
-    - puts 'Waiting for package to be available'
-    - sleep 30
+  post: |
+    puts 'Waiting for package to be available'
+    sleep 30
 f5_pack_shboxb:
   depends_on:
     - f5_pack_shbox
@@ -5486,8 +5478,7 @@ f5_pack_wrkgrp:
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}'
     - $(PATH_TST_ASC_LCL)
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 f5_pack_wrkgrpb:
   depends_on:
     - f5_pack_wrkgrp
@@ -5590,8 +5581,7 @@ f5_dist_create:
     - distribution_lists
     - create
     - '@json:{"name":"test4","contacts":[{"name":"john@example.com"}]}'
-  post:
-    - sleep TEMPORIZE_CREATE
+  post: sleep TEMPORIZE_CREATE
 f5_dist_list:
   depends_on:
     - f5_dist_create
@@ -5933,17 +5923,17 @@ f5_fxgw_test:
     - send
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
-  post:
-    - Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
-    - "Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)"
-    - "Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)"
-    - stop_process 'f5_fxgw_start'
+  post: |
+    Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
+    stop_process 'f5_fxgw_start'
 f5_postproc_start:
   tags:
     - noblock
-  pre:
-    - run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
-    - run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', 'pass:changeit')
+  pre: |
+    run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
+    run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', 'pass:changeit')
   command:
     - faspex5
     - postprocessing
@@ -5957,12 +5947,12 @@ f5_postproc_test:
     - send
     - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}'
     - faux:///test1?1m
-  post:
-    - Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
-    - "Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)"
-    - "Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)"
-    - sleep 5
-    - stop_process 'f5_postproc_start'
+  post: |
+    Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
+    Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
+    sleep 5
+    stop_process 'f5_postproc_start'
 f5_postproc_test_with_key:
   tags:
     - noblock
@@ -5971,9 +5961,9 @@ f5_postproc_test_with_key:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","key":"$(TMP / "key.pem")"}'
-  post:
-    - sleep 5
-    - stop_process 'f5_postproc_test_with_key'
+  post: |
+    sleep 5
+    stop_process 'f5_postproc_test_with_key'
 f5_postproc_test_with_key_cert:
   tags:
     - noblock
@@ -5982,9 +5972,9 @@ f5_postproc_test_with_key_cert:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
-  post:
-    - sleep 5
-    - stop_process 'f5_postproc_test_with_key_cert'
+  post: |
+    sleep 5
+    stop_process 'f5_postproc_test_with_key_cert'
 f5_cert_test:
   tags:
     - noblock
@@ -5993,9 +5983,9 @@ f5_cert_test:
     - faspex5
     - postprocessing
     - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(TST)"}'
-  post:
-    - sleep 2
-    - stop_process 'f5_cert_test'
+  post: |
+    sleep 2
+    stop_process 'f5_cert_test'
 f5_cert_testb:
   tags:
     - noblock
@@ -6004,35 +5994,33 @@ f5_cert_testb:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(TST)"}'
-  post:
-    - sleep 2
-    - stop_process 'f5_cert_testb'
+  post: |
+    sleep 2
+    stop_process 'f5_cert_testb'
 f5_cert_testc:
   tags:
     - noblock
     - nodoc
-  pre:
-    - run('openssl', 'req', '-newkey', 'rsa:2048', '-x509', '-days', 365, '-nodes', '-keyout', TMP / 'private_key.pem', '-out', TMP / 'certificate.pem', '-subj', '/CN=MyCert')
+  pre: run('openssl', 'req', '-newkey', 'rsa:2048', '-x509', '-days', 365, '-nodes', '-keyout', TMP / 'private_key.pem', '-out', TMP / 'certificate.pem', '-subj', '/CN=MyCert')
   command:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(TST)"}'
-  post:
-    - sleep 2
-    - stop_process 'f5_cert_testc'
+  post: |
+    sleep 2
+    stop_process 'f5_cert_testc'
 f5_cert_testd:
   tags:
     - noblock
     - nodoc
-  pre:
-    - run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{PKCS_P}")
+  pre: run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{PKCS_P}")
   command:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(TST)"}'
-  post:
-    - sleep 2
-    - stop_process 'f5_cert_testd'
+  post: |
+    sleep 2
+    stop_process 'f5_cert_testd'
 httpgw_nagios:
   command:
     - httpgw
@@ -6150,8 +6138,7 @@ f4_pack_send:
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
     - $(PATH_TST_ASC_LCL)
-  post:
-    - sleep 8
+  post: sleep 8
 f4_prs:
   depends_on:
     - f4_pack_send
@@ -6375,8 +6362,7 @@ f4_db1f:
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
     - $(PATH_TST_ASC_LCL)
-  post:
-    - sleep 10
+  post: sleep 10
 f4_db1g:
   tags:
     - save_output

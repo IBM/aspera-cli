@@ -271,10 +271,10 @@ namespace TEST_CASE_NS do
       log.info('---------------------------------------------------')
       log.info("[RUN]  #{name} [#{info['tags']&.join(' ')}]")
       log.info("[EXEC] #{info['command']&.join(' ')}")
-      info['pre']&.each do |cmd|
-        cmd = eval_macro(cmd)
-        log.info("Pre: Executing: #{cmd}")
-        Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
+      if info['pre']
+        Aspera.assert_type(info['pre'], String)
+        log.info("Pre: Executing: #{info['pre']}")
+        Aspera::Environment.secure_eval(info['pre'], __FILE__, __LINE__)
       end
       must_fail = info['tags']&.include?('must_fail')
       hide_fail = info['tags']&.include?('hide_fail')
@@ -307,9 +307,10 @@ namespace TEST_CASE_NS do
         run(*full_args, env: info['env'], **kwargs)
         # give time to start
         sleep(1) if info['tags']&.include?('noblock')
-        info['post']&.each do |cmd|
-          log.info("Executing: #{cmd}")
-          Aspera::Environment.secure_eval(cmd, __FILE__, __LINE__)
+        if info['post']
+          Aspera.assert_type(info['post'], String)
+          log.info("Executing: #{info['post']}")
+          Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
         end
         if save_output
           saved_value = out_file(name).read
