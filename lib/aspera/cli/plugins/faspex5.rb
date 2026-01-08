@@ -23,6 +23,7 @@ module Aspera
             'Faspex'
           end
 
+          # @return [Hash,NilClass]
           def detect(address_or_url)
             # add scheme if missing
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -52,7 +53,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           client_id = options.get_option(:client_id)

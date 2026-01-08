@@ -13,6 +13,7 @@ module Aspera
             'faspio Gateway'
           end
 
+          # @return [Hash,NilClass]
           def detect(base_url)
             api = Rest.new(base_url: base_url)
             data, http = api.read('ping', ret: :both)
@@ -27,7 +28,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {

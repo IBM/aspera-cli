@@ -39,6 +39,7 @@ module Aspera
         private_constant :KEY_NODE, :KEY_PATH, :PACKAGE_MATCH_FIELD, :ATOM_MAILBOXES, :ATOM_PARAMS, :ATOM_EXT_PARAMS, :PUB_LINK_EXTERNAL_MATCH, :HEADER_FASPEX_VERSION
 
         class << self
+          # @return [Hash,NilClass]
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
@@ -108,7 +109,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {

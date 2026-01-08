@@ -16,6 +16,7 @@ module Aspera
         TEST_ENDPOINT = 'api/remote_node_ping'
         private_constant :STANDARD_PATH, :TEST_ENDPOINT
         class << self
+          # @return [Hash,NilClass]
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
@@ -41,7 +42,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {

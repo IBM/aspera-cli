@@ -13,6 +13,7 @@ module Aspera
         private_constant :STANDARD_PATH, :DEFAULT_FILTER_AGE_SECONDS, :EXPR_RE
 
         class << self
+          # @return [Hash,NilClass]
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
@@ -52,7 +53,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {

@@ -62,6 +62,7 @@ module Aspera
             'Aspera on Cloud'
           end
 
+          # @return [Hash,NilClass]
           def detect(base_url)
             # no protocol ?
             base_url = "https://#{base_url}" unless base_url.match?(%r{^[a-z]{1,6}://})
@@ -115,7 +116,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           pub_link_info = Api::AoC.link_info(app_url)

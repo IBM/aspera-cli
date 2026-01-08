@@ -41,6 +41,7 @@ module Aspera
             'HSTS Fasp/SSH'
           end
 
+          # @return [Hash,NilClass]
           def detect(address_or_url)
             urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
               [address_or_url]
@@ -70,7 +71,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {
