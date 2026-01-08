@@ -108,20 +108,22 @@ module Aspera
           return iterm_display_image(blob) if iterm_supported? && !text
           pixel_colors =
             begin
-              Log.log.debug('Trying rmagick')
-              Backend::RMagick.new(blob, reserve: reserve, double: double, font_ratio: font_ratio).terminal_pixels
-            rescue LoadError => e
+              Log.log.debug('Trying chunky_png')
+              Backend::ChunkyPNG.new(blob, reserve: reserve, double: double, font_ratio: font_ratio).terminal_pixels
+            rescue => e
               Log.log.debug(e.message)
               begin
-                Log.log.debug('Trying chunky_png')
-                Backend::ChunkyPNG.new(blob, reserve: reserve, double: double, font_ratio: font_ratio).terminal_pixels
-              rescue
-                # fallback to iterm, if supported
-                return iterm_display_image(blob) if iterm_supported?
-                Log.log.error('Cant display picture.')
-                raise e
+                Log.log.debug('Trying rmagick')
+                Backend::RMagick.new(blob, reserve: reserve, double: double, font_ratio: font_ratio).terminal_pixels
+              rescue => e
+                Log.log.debug(e.message)
+                nil
               end
             end
+          if pixel_colors.nil?
+            return iterm_display_image(blob) if iterm_supported?
+            raise 'Cannot decode picture.'
+          end
           # now generate text
           text_pixels = []
           pixel_colors.each_with_index do |row_data, row|

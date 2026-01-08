@@ -4649,12 +4649,31 @@ conf_echo_json_multi_single:
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
     - --multi-single=single
-conf_echo_picture:
+conf_echo_picture_svg:
   command:
     - config
     - echo
-    - <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>
+    - <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>
     - --format=image
+    - --image.text=true
+conf_echo_picture_png:
+  tags:
+    - nodoc
+  command:
+    - config
+    - echo
+    - "@base64:iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
+    - --format=image
+    - --image.text=true
+conf_echo_picture_jpg:
+  tags:
+    - nodoc
+  command:
+    - config
+    - echo
+    - "@base64:/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k="
+    - --format=image
+    - --image.text=true
 conf_echo_fail2b:
   tags:
     - must_fail
