@@ -1335,7 +1335,7 @@ Details can be found here:
 
 - [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
-##### PowserShell 5
+##### PowerShell 5
 
 - Check your powershell version:
 
@@ -1377,9 +1377,9 @@ $var="v"
 <%=cmd%> conf echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
 ```
 
-##### PowserShell 7
+##### PowerShell 7
 
-- Check your powershell version:
+- Check your PowerShell version:
 
 ```powershell
 $psversiontable.psversion.Major
@@ -1738,7 +1738,7 @@ Exceptions and Special Cases:
   If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
   For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
   This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
-- **Cummulative Hashes**:
+- **Cumulative Hashes**:
   When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
   Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
   This can be used to start from an empty value, and not used existing default value.
@@ -2178,7 +2178,7 @@ To display the result of an extended value, use the `config echo` command.
 The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
 It expects a `@` to close the embedded extended value syntax.
 
-Option `parser` allows definition of a default parser when the positinal parameter or option expects a `Hash` or `Array`.
+Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
 
 Example: Create a `Hash` value with the convenient `@json:` decoder:
@@ -3265,7 +3265,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 
 A special value `product:<product name>` can be used for option `ascp_path`.
 It specifies to use `ascp` from the given product name.
-A special valuefor product name is `FIRST`, which means: use the first found.
+A special value for product name is `FIRST`, which means: use the first found.
 
 Locally installed Aspera products can be listed with:
 
@@ -7942,7 +7942,7 @@ An optional positional `Hash` argument (`sync_info`) can be provided in either `
 
 A single session can be specified using either formats.
 
-If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next sectin.
+If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next section.
 
 If argument `<sync_info>` is provided, it defines the format to use.
 If parameter `sessions` or `instance` is present, then `args` is used, else `conf` is used.
