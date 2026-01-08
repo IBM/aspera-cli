@@ -21,7 +21,7 @@ PANDOC_META_END
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
+It doesn’t chatter; it hoots-clear, precise, and always on time.
 
 Like <%=tool%>, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
@@ -29,7 +29,7 @@ When you hear Hootput’s call, you know your data is already in flight.
 
 ---
 
-"Hey, I’m <%=tool%> — your data’s personal courier.
+"Hey, I’m <%=tool%> - your data’s personal courier.
 I don’t do flashy dashboards; I’m happiest in a terminal window.
 Hand me a command, and I’ll zip your files across the network faster than you thought possible.
 
@@ -3499,10 +3499,10 @@ In addition to standard methods described in section [File List](#list-of-files-
 By default, <%=tool%> gets notification from `ascp` on its management port.
 This can be de-activated with parameter: `monitor=false` of `transfer_info`.
 
-It is also possible to send local messages to this management port.
+It is also possible to send messages to `ascp` using this management port.
 A typical use is to change the target rate of a running transfer.
 
-The communication is done through a flat JSON file that shall be created in <%=tool%> config folder as displayed with:
+The communication is done through a JSON file that shall be created in <%=tool%>'s config folder as displayed with:
 
 ```shell
 <%=cmd%> config folder
@@ -3523,6 +3523,11 @@ echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
 ```
 
 When <%=tool%> detects this file, it uses it during a transfer and then deletes it.
+
+> [!NOTE]
+> The JSON's keys use **snake case**, i.e. lower case with `_` as word separator.
+> The list of message `type` can be found in `aspera/ascp/management.rb` : `OPERATIONS`.
+> The list of parameters (capitalized) is `PARAMETERS`.
 
 ##### Agent: Direct: `aspera.conf`: Virtual Links
 
