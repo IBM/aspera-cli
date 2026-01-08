@@ -186,9 +186,10 @@ module Aspera
         Log.log.debug('fasp local shutdown')
       end
 
+      # @param id [String] Transfer session identifier
       # @return [Array] list of sessions for a job
-      def sessions_by_job(job_id)
-        @sessions.select{ |session| session[:job_id].eql?(job_id)}
+      def sessions_by_job(id)
+        @sessions.select{ |session| session[:job_id].eql?(id)}
       end
 
       # Send command to management port of command (used in `asession).
@@ -196,10 +197,10 @@ module Aspera
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
       # @param data [Hash]   Command on mgt port (snake case)
-      # @param id   [String] Optional identifier or transfer session
+      # @param id   [String] Optional identifier of transfer session
       def send_command(data, id: nil)
         Log.dump(:command, data)
-        sessions = id ? @sessions.select{ |session| session[:job_id].eql?(id)} : @sessions
+        sessions = id ? sessions_by_job(id) : @sessions
         if sessions.empty?
           Log.log.warn('No transfer session')
           return
