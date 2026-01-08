@@ -195,7 +195,7 @@ module Aspera
       # Examples:
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
-      # @param data [Hash]   Command on mgt port
+      # @param data [Hash]   Command on mgt port (snake case)
       # @param id   [String] Optional identifier or transfer session
       def send_command(data, id: nil)
         Log.dump(:command, data)

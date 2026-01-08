@@ -136,6 +136,10 @@ def pid_file(name)
   PATH_TMP_STATES / "#{name}.pid"
 end
 
+def pid_of_test(name)
+  pid_file(name).read.to_i
+end
+
 # @return the Pathname to output file generated for the given test case
 def out_file(name)
   PATH_TMP_STATES / "#{name}.out"
@@ -151,7 +155,7 @@ end
 
 # Terminates the process of previous test case
 def stop_process(name)
-  pid = pid_file(name).read.to_i
+  pid = pid_of_test(name)
   Process.kill('TERM', pid)
   Process.wait(pid)
 rescue Errno::ECHILD
@@ -160,7 +164,7 @@ rescue Errno::ECHILD
 end
 
 def check_process(name)
-  pid = pid_file(name).read.to_i
+  pid = pid_of_test(name)
   r = Process.kill(0, pid)
   log.info("Kill 0 : #{r}")
 end

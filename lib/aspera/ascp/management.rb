@@ -324,7 +324,7 @@ module Aspera
         end
 
         # Build command to send on management port
-        # @param data [Hash] e.g. {'type'=>'START','source'=>_path_,'destination'=>_path_}
+        # @param data [Hash] keys are snake case: e.g. {'type'=>'START','source'=>_path_,'destination'=>_path_}
         # @return [String] frame to send on management port
         def command_to_stream(data)
           data

@@ -428,15 +428,21 @@ serv_upload_multi_test:
 serv_upload_multi_test2:
   tags:
     - nodoc
+    - noblock
   depends_on:
     - serv_mkdir
   command:
     - server
     - upload
-    - faux:///serv_upload_multi_test2?1k
+    - faux:///serv_upload_multi_test2?100k
     - --to-folder=@preset:server.inside_folder
-    - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100000}
+    - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100}
     - --transfer-info=@json:{"multi_incr_udp":true}
+  post: |
+    sleep 2
+    pid = pid_of_test('serv_upload_multi_test2')
+    (PATH_CLI_HOME / "send_#{pid}").write({type: 'CANCEL'}.to_json)
+    Process.wait(pid)
 serv_upload1b:
   depends_on:
     - serv_upload1
