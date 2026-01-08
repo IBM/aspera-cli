@@ -56,8 +56,10 @@ Some tags have special meaning while other tags are only a way to group test cas
 | `save_output` | Output is saved in a file with same name as test case. |
 | `wait_value`  | Run test until output get a value.                     |
 | `tmp_conf`    | Use temporary config file (config is modified).        |
+| `noblock`     | Do not wait completion, save PID.                      |
 
 Function `read_value_from` reads a value previously saved with `save_output`.
+Function `stop_process` reads the PID value previously saved with `noblock`.
 
 Values inside `$(...)` are evaluated as Ruby expressions.
 Some constants are defined in `test.rake` and can be used.
