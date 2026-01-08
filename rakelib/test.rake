@@ -57,6 +57,7 @@ PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TMP / 'sample_vault.bin'
 PATH_FILE_LIST = TMP / 'filelist.txt'
 PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
+PATH_HOT_FOLDER = TMP / 'source_hot'
 PKCS_P = 'YourExportPassword'
 # ------------------
 

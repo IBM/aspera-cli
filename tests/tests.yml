@@ -5122,20 +5122,20 @@ serv_hot_prep2:
 serv_hot_run:
   $comment: First run transfers nothing because file is too recent
   pre: |
-    Pathname.new('source_hot').rmtree
-    Pathname.new('source_hot').mkdir
-    Pathname.new('source_hot/new_file').write('hello')
+    PATH_HOT_FOLDER.rmtree
+    PATH_HOT_FOLDER.mkdir
+    (PATH_HOT_FOLDER / 'new_file').write('hello')
   command:
     - server
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
     - --lock-port=12345
-    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}
-    - source_hot
+    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
+    - $(PATH_HOT_FOLDER)
 serv_hot_check:
   depends_on:
     - serv_hot_run
-  pre: run('ls', '-al', 'source_hot')
+  pre: run('ls', '-al', PATH_HOT_FOLDER)
   command:
     - server
     - browse
@@ -5150,8 +5150,8 @@ serv_hot_run2:
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
     - --lock-port=12345
-    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}
-    - source_hot
+    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
+    - $(PATH_HOT_FOLDER)
 serv_hot_check2:
   depends_on:
     - serv_hot_run2
