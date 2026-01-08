@@ -17,15 +17,23 @@ module Aspera
           # @return [Hash] with version, ping, api
           def health_check(url)
             result = {}
-            login_page = Rest
-              .new(base_url: url, redirect_max: 2)
-              .read('', headers: {'Accept'=>'text/html'})
-            if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
-              result[:version] = m[1]
-              if (m = login_page.match(/Patch level ([0-9]+)/))
-                result[:version] = "#{result[:version]} #{m[0]}"
+            result[:version] =
+              begin
+                version = nil
+                login_page = Rest
+                  .new(base_url: url, redirect_max: 2)
+                  .read('', headers: {'Accept'=>'text/html'})
+                if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
+                  version = m[1]
+                  if (m = login_page.match(/Patch level ([0-9]+)/))
+                    version = "#{result[:version]} #{m[0]}"
+                  end
+                end
+                raise 'no version' if version.nil?
+                version
+              rescue => e
+                e
               end
-            end
             result[:ping] =
               begin
                 Rest
@@ -51,9 +59,9 @@ module Aspera
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             health = health_check(address_or_url)
-            raise health[:api] unless health[:api].is_a?(String)
+            return unless health[:api].is_a?(String)
             return {
-              version: health[:version] || 'unknown',
+              version: health[:version].is_a?(String) ? health[:version] : 'unknown',
               url:     address_or_url
             }
           end
@@ -91,7 +99,7 @@ module Aspera
             nagios = Nagios.new
             shares_url = options.get_option(:url, mandatory: true)
             health = self.class.health_check(shares_url)
-            nagios.add_ok('version', health[:version]) if health.key?(:version)
+            nagios.add_ok('version', health[:version]) if health[:version].is_a?(String)
             if health[:ping].is_a?(String)
               nagios.add_ok('ping', health[:ping])
             else
