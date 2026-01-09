@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -11,22 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '3.4.7'
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-    - name: Publish to RubyGems
-      if: contains(github.ref, 'refs/tags/v')
-      run: |
-        mkdir -p $HOME/.gem
-        touch $HOME/.gem/credentials
-        chmod 0600 $HOME/.gem/credentials
-        printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}\n" > $HOME/.gem/credentials
-        printf -- "${{ secrets.PRIVATE_KEY_PEM }}" > $HOME/.gem/signing_key.pem
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.0"
 
-        SIGNING_KEY=$HOME/.gem/signing_key.pem gem build *.gemspec
-        gem push *.gem
-      env:
-        RUBYGEMS_API_KEY: "${{ secrets.RUBYGEMS_API_KEY }}"
+      - name: Publish to RubyGems
+        if: contains(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p $HOME/.gem
+          echo "${{ secrets.PRIVATE_KEY_PEM }}" > $HOME/.gem/signing_key.pem
+          echo "rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/signing_key.pem $HOME/.gem/credentials
+          SIGNING_KEY=$HOME/.gem/signing_key.pem gem build *.gemspec
+          gem push *.gem
