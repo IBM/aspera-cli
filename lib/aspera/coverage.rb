@@ -17,7 +17,7 @@ if ENV.key?('ENABLE_COVERAGE')
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
     original_file_descriptor = $stdout
-    $stdout.reopen(File.join(coverage_root, 'simplecov.log'))
+    $stdout.reopen(File.open(File.join(coverage_root, 'simplecov.log'), 'a'))
     SimpleCov.result.format!
     $stdout.reopen(original_file_descriptor)
   end
