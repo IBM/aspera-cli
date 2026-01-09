@@ -26,9 +26,8 @@ module BuildTools
 
   # Execute the command line (not in shell)
   def run(*args, **kwargs)
-    args = args.first if args.length == 1 && args.first.is_a?(Array)
     args = args.map(&:to_s)
-    puts(args.join(' '))
+    Aspera::Log.dump(:run, args)
     background = kwargs.delete(:background)
     capture = kwargs.delete(:capture)
     if background
@@ -48,6 +47,7 @@ module BuildTools
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
+  # @param node [Psych::Nodes::Stream]
   def yaml_list_duplicate_keys(node, parent_path = nil, duplicate_keys = nil)
     duplicate_keys ||= []
     parent_path ||= []

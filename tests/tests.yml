@@ -1865,6 +1865,7 @@ aoc_webauth:
     - show
 aoc_webauthb:
   tags:
+    - interactive
     - nodoc
   command:
     - --preset=aoc_web
@@ -2400,6 +2401,8 @@ aocp2:
 package_id3:
   depends_on:
     - aoc_pack_send1
+  $comment: Wait for package to be seen.
+  pre: sleep 30
   tags:
     - save_output
     - wait_value
@@ -4248,6 +4251,8 @@ conf_vault_macos:
     - info
     - --vault=@json:{"type":"system"}
 conf_vault_macosb:
+  depends_on:
+    - conf_vault_macos
   tags:
     - ignore_fail
     - nodoc
@@ -4865,7 +4870,7 @@ conf_extended6:
     - echo
     - '@yaml:@json:"- 1\n- 2\n"'
     - --format=ruby
-conf_interactive:
+conf_echo_secret:
   tags:
     - interactive
   command:
@@ -5135,7 +5140,7 @@ serv_hot_run:
 serv_hot_check:
   depends_on:
     - serv_hot_run
-  pre: run('ls', '-al', PATH_HOT_FOLDER)
+  pre: ls_l PATH_HOT_FOLDER
   command:
     - server
     - browse

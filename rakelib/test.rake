@@ -170,29 +170,34 @@ def check_process(name)
   log.info("Kill 0 : #{r}")
 end
 
+# @param pathname [Pathname] Folder
+def ls_l(pathname)
+  puts pathname.children.map{ |p| format('%10d %s %s', p.lstat.size, p.lstat.mtime.strftime('%b %e %H:%M'), p.basename)}
+end
+
 ASPERA_LOG_PATH = '/Library/Logs/Aspera'
 
 # on macOS activate sshd, restore Log folder owner and restart noded
 def reset_macos_hsts
-  result = run(%w[sudo systemsetup -getremotelogin], capture: true)
-  run(%w[sudo systemsetup -setremotelogin on]) if result.include?('Off')
-  run(%w[sudo systemsetup -getremotelogin])
+  result = run(*%w[sudo systemsetup -getremotelogin], capture: true)
+  run(*%w[sudo systemsetup -setremotelogin on]) if result.include?('Off')
+  run(*%w[sudo systemsetup -getremotelogin])
   st = File.stat(ASPERA_LOG_PATH)
   owner = Etc.getpwuid(st.uid).name
-  run(%w[sudo chown -R asperadaemon:] + [ASPERA_LOG_PATH]) if owner != 'asperauser'
+  run(*%w[sudo chown -R asperadaemon:] + [ASPERA_LOG_PATH]) if owner != 'asperauser'
   restart_noded
   # while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 end
 
 def restart_noded
-  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperalee.plist])
-  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist])
-  run(%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
+  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperalee.plist])
+  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist])
+  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
   sleep(5)
-  # run(%w[sudo /bin/chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera])
+  # run(*%w[sudo /bin/chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera])
   # -ps -ef|grep aspera|grep -v grep
-  run(%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
-  run(%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist])
+  run(*%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
+  run(*%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist])
   sleep(5)
   # -ps -ef|grep aspera|grep -v grep
 end
@@ -291,6 +296,7 @@ namespace TEST_CASE_NS do
         info['env'] ||= {}
         info['env']['ASCLI_WIZ_TEST'] = 'yes'
       end
+      # This test case can potentially be executed repeatedly, e.g. if we wait for a value
       loop do
         full_args = CLI_TEST.map(&:to_s)
         full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
@@ -318,13 +324,20 @@ namespace TEST_CASE_NS do
           Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
         end
         if save_output
-          saved_value = out_file(name).read
-          raise 'No value saved (empty value)' if saved_value.empty?
+          saved_value = read_value_from(name)
+          if saved_value.empty?
+            if wait_value
+              log.info('No value saved, retry...')
+              sleep(5)
+              redo
+            else
+              raise 'No value saved (empty value)'
+            end
+          end
           log.info("Saved: #{saved_value}")
-        end
-        next if wait_value && out_file(name).empty?
-        if info['expect']
-          raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
+          if info['expect']
+            raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
+          end
         end
         STATES[name] = 'passed'
         raise 'Must fail' if must_fail

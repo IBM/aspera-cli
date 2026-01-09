@@ -54,7 +54,7 @@ Some tags have special meaning while other tags are only a way to group test cas
 | `must_fail`   | Must fail case.                                        |
 | `hide_fail`   | Do not show failure. Test should work but it does not. |
 | `save_output` | Output is saved in a file with same name as test case. |
-| `wait_value`  | Run test until output get a value.                     |
+| `wait_value`  | Run test until output get a value (requires `save_output`). |
 | `tmp_conf`    | Use temporary config file (config is modified).        |
 | `noblock`     | Do not wait completion, save PID.                      |
 

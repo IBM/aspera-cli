@@ -181,7 +181,7 @@ export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 ### Signed gem
 
 A private key is required to generate a signed Gem.
-Its path must be set using envvar `SIGNING_KEY`.
+Its path must be set using environment variable `SIGNING_KEY`.
 The gem is signed with the public certificate found in `certs` and the private key pointed by `SIGNING_KEY` (kept secret by maintainer).
 
 ```bash
@@ -198,7 +198,7 @@ Update with:
 bundle exec rake tools:grpc
 ```
 
-It downloads the latest proto file and then compiles it.
+It downloads the latest `proto` file and then compiles it.
 
 ## Container image build
 
@@ -214,7 +214,9 @@ To list operations:
 bundle exec rake -T ^binary:
 ```
 
-## Development check list for new release
+## Release
+
+### Check list before new release
 
 When preparing for a new release do the following:
 
@@ -224,7 +226,7 @@ When preparing for a new release do the following:
 bundle exec rake test:run
 ```
 
-- Set beta version:
+- Set beta version (to use the gem file built):
 
 ```bash
 export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
@@ -236,6 +238,20 @@ export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 bundle exec rake container:build
 bundle exec rake container:test
 ```
+
+### Version Release
+
+Once the development branch is ready for release:
+
+- Decide on version number
+
+TODO : git operations
+
+includes updating the version in `lib/aspera/cli/version.rb`
+
+The release in GitHub contains the following files:
+
+- The `.gem` file from folder `pkg`
 
 ## Long Term Implementation and delivery improvements
 

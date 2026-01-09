@@ -32,7 +32,7 @@ group :development do
   gem 'rubocop-ast', '~> 1.4'
   gem 'rubocop-performance', '~> 1.10' unless defined?(JRUBY_VERSION)
   gem 'rubocop-shopify', '~> 2.0'
-  gem 'ruby-lsp', '~> 0.23' unless defined?(JRUBY_VERSION)
+  #  gem 'ruby-lsp', '~> 0.23' unless defined?(JRUBY_VERSION)
   gem 'simplecov', '~> 0.22'
   gem 'solargraph', '~> 0.48' unless defined?(JRUBY_VERSION)
 end

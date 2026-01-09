@@ -10,7 +10,7 @@ CLEAN.push(TOP / 'coverage', TOP / 'simplecov.log')
 namespace :tools do
   desc 'Show changes since latest tag'
   task changes: [] do
-    latest_tag = run(%w[git describe --tags --abbrev=0], capture: true).chomp
+    latest_tag = run(*%w[git describe --tags --abbrev=0], capture: true).chomp
     log.info("Changes since #{latest_tag}")
     run('git', 'log', "#{latest_tag}..HEAD", '--oneline', env: {'PAGER'=>''})
   end
