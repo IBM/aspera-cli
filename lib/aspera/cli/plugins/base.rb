@@ -48,10 +48,15 @@ module Aspera
         # Global objects
         attr_reader :context
 
+        # @return [Manager]
         def options; @context.options; end
+        # @return [TransferAgent]
         def transfer; @context.transfer; end
+        # @return [Config]
         def config; @context.config; end
+        # @return [Formatter]
         def formatter; @context.formatter; end
+        # @return [PersistencyFolder]
         def persistency; @context.persistency; end
 
         def add_manual_header(has_options = true)

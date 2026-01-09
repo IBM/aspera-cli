@@ -80,7 +80,7 @@ module Aspera
           # We need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super
           @use_plugin_defaults = true
-          @config_presets = nil
+          @config_presets = {}
           @config_checksum_on_disk = nil
           @vault_instance = nil
           @pac_exec = nil
@@ -493,6 +493,7 @@ module Aspera
           end
         end
 
+        # @return [Integer]
         def config_checksum
           JSON.generate(@config_presets).hash
         end
@@ -535,6 +536,7 @@ module Aspera
               Log.log.warn{"#{file} -> #{@main_folder}"}
             end
           end
+          return
         rescue Psych::SyntaxError => e
           Log.log.error('YAML error in config file')
           raise e
@@ -584,6 +586,7 @@ module Aspera
               return Main.result_status("Opened: #{one_link['href']}")
             end
           end
+          Aspera.error_unreachable_line
         end
 
         def install_transfer_sdk
