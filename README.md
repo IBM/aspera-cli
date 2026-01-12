@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0.pre"
+subtitle: "ascli 4.25.0.beta1"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0.pre
+Version : 4.25.0.beta1
 
 Laurent/2016-2026
 
@@ -76,6 +76,10 @@ For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
+> [!NOTE]
+> If you are scripting or automating transfers from the command line, `ascli` is the right choice.
+> If you are developing an application, prefer the APIs or SDKs instead.
+
 The `ascli` tool is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform file transfers efficiently.
 It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or cron).
 
@@ -95,7 +99,7 @@ These include:
 Using these APIs is generally more suitable for long-term development and maintenance.
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
-For scripting and ad hoc command-line tasks, `ascli` is ideal.
+For scripting and ad-hoc command-line tasks, `ascli` is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (See [Logging, Debugging](#logging-debugging)).
 
 Clarifying the CLI landscape:
@@ -135,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0.pre
+4.25.0.beta1
 ```
 
 > [!NOTE]
@@ -778,11 +782,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0.beta1 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.0.beta1-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0.pre-gems aspera-cli-4.25.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.0.beta1-gems aspera-cli-4.25.0.beta1-gems.tgz
 ```
 
 #### Unix-like
@@ -927,7 +931,7 @@ ascli -v
 ```
 
 ```text
-4.25.0.pre
+4.25.0.beta1
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -1685,14 +1689,14 @@ ascli config ascp info
 - `ascli` is the executable executed by the shell
 - `conf` is the first level command: name of the plugin to be used
 - `ascp` is the second level command: name of the component (singleton)
-- `info` is the third level command: action to be performed
+- `info` is the third level command: action to be performed (verb)
 
 Typically, **Commands** are located at the **beginning** of the command line.
 The provided command must match one of the supported commands in the given context.
 If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
 Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
-Some entities also support additional commands.
+Some entities also support additional commands, especially to select sub-entities.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
 For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do <node_id> browse /`: `browse` is a sub-command of `node`.
 
@@ -1730,6 +1734,18 @@ ascli conf echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 
 ```json
 {"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
+
+The general structure of positional arguments is:
+
+```text
+ascli <plugin> <entity> <command> [<ID>] [<parameters>]
+```
+
+If a sub-entity is used:
+
+```text
+ascli <plugin> <entity1> <sub-entity> [<ID>1] <command2> [<ID2>] [<parameters>]
 ```
 
 #### Options
@@ -3202,22 +3218,22 @@ To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type      | Default         | Handler         |
+| Parameter                 | Type      | Default         | Handler       |
 |-------------------------|---------|---------------|---------------|
-| `read_timeout`            | `Integer` | `60`            | Ruby            |
-| `write_timeout`           | `Integer` | `60`            | Ruby            |
-| `open_timeout`            | `Integer` | `60`            | Ruby            |
-| `keep_alive_timeout`      | `Integer` | `2`             | Ruby            |
-| `ssl_options`             | `Array`   | See below       | Ruby            |
-| `user_agent`              | `Integer` | `ascli`       | `ascli` Rest  |
-| `download_partial_suffix` | `Integer` | `.http_partial` | `ascli` Rest  |
-| `retry_on_error`          | `Bool`    | `false`         | `ascli` Rest  |
-| `retry_on_timeout`        | `Bool`    | `true`          | `ascli` Rest  |
-| `retry_on_unavailable`    | `Bool`    | `true`          | `ascli` Rest  |
-| `retry_max`               | `Integer` | `1`             | `ascli` Rest  |
-| `retry_sleep`             | `Integer` | `4`             | `ascli` Rest  |
-| `token_cache_max_age`     | `Integer` | `1800`          | `ascli` OAuth |
-| `token_refresh_threshold` | `Integer` | `120`           | `ascli` OAuth |
+| `read_timeout`            | `Integer` | `60`            | Ruby          |
+| `write_timeout`           | `Integer` | `60`            | Ruby          |
+| `open_timeout`            | `Integer` | `60`            | Ruby          |
+| `keep_alive_timeout`      | `Integer` | `2`             | Ruby          |
+| `ssl_options`             | `Array`   | See below       | Ruby          |
+| `user_agent`              | `Integer` | `ascli`       | `Rest` class  |
+| `download_partial_suffix` | `Integer` | `.http_partial` | `Rest` class  |
+| `retry_on_error`          | `Bool`    | `false`         | `Rest` class  |
+| `retry_on_timeout`        | `Bool`    | `true`          | `Rest` class  |
+| `retry_on_unavailable`    | `Bool`    | `true`          | `Rest` class  |
+| `retry_max`               | `Integer` | `1`             | `Rest` class  |
+| `retry_sleep`             | `Integer` | `4`             | `Rest` class  |
+| `token_cache_max_age`     | `Integer` | `1800`          | `OAuth` class |
+| `token_refresh_threshold` | `Integer` | `120`           | `OAuth` class |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -3676,8 +3692,8 @@ This agent supports a local configuration file: `aspera.conf` where Virtual link
 On a server (HSTS), the following commands can be used to set a global virtual link:
 
 ```shell
-asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true'
-asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true'
+asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,100000;trunk_on,true'
+asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,100000;trunk_on,true'
 asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```
@@ -4288,7 +4304,7 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Content protection (Client-Side Encryption at Rest, CSEAR)) ensures that files remain encrypted while stored on the server.
+Content protection (Client-Side Encryption at REST, CSEAR)) ensures that files remain encrypted while stored on the server.
 With CSEAR, the client encrypts files during upload and decrypts files during download, using a passphrase known only to the users sharing the files.
 
 - Upload: Files are encrypted on the client side before being sent to the server.
@@ -4620,7 +4636,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.0.beta1)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -8984,7 +9000,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 > [!NOTE]
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
->The Aspera Transfer Daemon 1.3+ includes this.
+> The Aspera Transfer Daemon 1.3+ includes this.
 
 ### Starting a sync session
 

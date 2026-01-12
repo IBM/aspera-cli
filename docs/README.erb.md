@@ -72,6 +72,10 @@ For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
+> [!NOTE]
+> If you are scripting or automating transfers from the command line, <%=tool%> is the right choice.
+> If you are developing an application, prefer the APIs or SDKs instead.
+
 The <%=tool%> tool is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform file transfers efficiently.
 It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or cron).
 
@@ -91,7 +95,7 @@ These include:
 Using these APIs is generally more suitable for long-term development and maintenance.
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
-For scripting and ad hoc command-line tasks, <%=tool%> is ideal.
+For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (See [Logging, Debugging](#logging-debugging)).
 
 Clarifying the CLI landscape:
@@ -1653,14 +1657,14 @@ Example:
 - <%=tool%> is the executable executed by the shell
 - `conf` is the first level command: name of the plugin to be used
 - `ascp` is the second level command: name of the component (singleton)
-- `info` is the third level command: action to be performed
+- `info` is the third level command: action to be performed (verb)
 
 Typically, **Commands** are located at the **beginning** of the command line.
 The provided command must match one of the supported commands in the given context.
 If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
 Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
-Some entities also support additional commands.
+Some entities also support additional commands, especially to select sub-entities.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
 For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do <node_id> browse /`: `browse` is a sub-command of `node`.
 
@@ -1698,6 +1702,18 @@ Example:
 
 ```json
 {"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
+
+The general structure of positional arguments is:
+
+```text
+<%=cmd%> <plugin> <entity> <command> [<ID>] [<parameters>]
+```
+
+If a sub-entity is used:
+
+```text
+<%=cmd%> <plugin> <entity1> <sub-entity> [<ID>1] <command2> [<ID2>] [<parameters>]
 ```
 
 #### Options
@@ -3061,22 +3077,22 @@ To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type      | Default         | Handler         |
+| Parameter                 | Type      | Default         | Handler       |
 |-------------------------|---------|---------------|---------------|
-| `read_timeout`            | `Integer` | `60`            | Ruby            |
-| `write_timeout`           | `Integer` | `60`            | Ruby            |
-| `open_timeout`            | `Integer` | `60`            | Ruby            |
-| `keep_alive_timeout`      | `Integer` | `2`             | Ruby            |
-| `ssl_options`             | `Array`   | See below       | Ruby            |
-| `user_agent`              | `Integer` | <%=tool%>       | <%=tool%> Rest  |
-| `download_partial_suffix` | `Integer` | `.http_partial` | <%=tool%> Rest  |
-| `retry_on_error`          | `Bool`    | `false`         | <%=tool%> Rest  |
-| `retry_on_timeout`        | `Bool`    | `true`          | <%=tool%> Rest  |
-| `retry_on_unavailable`    | `Bool`    | `true`          | <%=tool%> Rest  |
-| `retry_max`               | `Integer` | `1`             | <%=tool%> Rest  |
-| `retry_sleep`             | `Integer` | `4`             | <%=tool%> Rest  |
-| `token_cache_max_age`     | `Integer` | `1800`          | <%=tool%> OAuth |
-| `token_refresh_threshold` | `Integer` | `120`           | <%=tool%> OAuth |
+| `read_timeout`            | `Integer` | `60`            | Ruby          |
+| `write_timeout`           | `Integer` | `60`            | Ruby          |
+| `open_timeout`            | `Integer` | `60`            | Ruby          |
+| `keep_alive_timeout`      | `Integer` | `2`             | Ruby          |
+| `ssl_options`             | `Array`   | See below       | Ruby          |
+| `user_agent`              | `Integer` | <%=tool%>       | `Rest` class  |
+| `download_partial_suffix` | `Integer` | `.http_partial` | `Rest` class  |
+| `retry_on_error`          | `Bool`    | `false`         | `Rest` class  |
+| `retry_on_timeout`        | `Bool`    | `true`          | `Rest` class  |
+| `retry_on_unavailable`    | `Bool`    | `true`          | `Rest` class  |
+| `retry_max`               | `Integer` | `1`             | `Rest` class  |
+| `retry_sleep`             | `Integer` | `4`             | `Rest` class  |
+| `token_cache_max_age`     | `Integer` | `1800`          | `OAuth` class |
+| `token_refresh_threshold` | `Integer` | `120`           | `OAuth` class |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -4047,7 +4063,7 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Content protection (Client-Side Encryption at Rest, CSEAR)) ensures that files remain encrypted while stored on the server.
+Content protection (Client-Side Encryption at REST, CSEAR)) ensures that files remain encrypted while stored on the server.
 With CSEAR, the client encrypts files during upload and decrypts files during download, using a passphrase known only to the users sharing the files.
 
 - Upload: Files are encrypted on the client side before being sent to the server.
@@ -7923,7 +7939,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 > [!NOTE]
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
->The Aspera Transfer Daemon 1.3+ includes this.
+> The Aspera Transfer Daemon 1.3+ includes this.
 
 ### Starting a sync session
 
