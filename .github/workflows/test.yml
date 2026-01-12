@@ -24,7 +24,6 @@ jobs:
         shell: bash
         run: |
           echo "ASPERA_CLI_TEST_CONF_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
-          echo "ASCLI_CONFIG_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
 
       - name: Create ascli config file for tests
         shell: bash
@@ -43,6 +42,19 @@ jobs:
           server:
             upload_folder: /Upload
             inside_folder: ""
+          jns:
+            ssh_options:
+              host_key:
+              - rsa-sha2-512
+              - rsa-sha2-256
+              - ssh-rsa
+              kex:
+              - curve25519-sha256
+              - diffie-hellman-group14-sha256
+              encryption:
+              - aes256-ctr
+              - aes192-ctr
+              - aes128-ctr
           EOF
 
       - name: Run tests
