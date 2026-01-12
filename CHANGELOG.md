@@ -39,7 +39,7 @@ Released: 2025-10-24
 ### New Features
 
 * `direct`: Capability to send management messages to `ascp` on running sessions. e.g. change target rate.
-* `config`: Added command: `sync spec` to get sync parameters documentation. Also added to manual.
+* `config`: Added command: `sync spec` to get sync parameters' documentation. Also added to manual.
 
 ### Issues Fixed
 
@@ -312,17 +312,17 @@ Released: 2024-07-13
 * `config`: Command `remote_certificate` now takes a subcommand.
 * **global**: Moved a few internal classes in new/renamed modules
 * **global**: Deprecated pseudo transfer specification parameters starting with `EX_`:
-  * `EX_ssh_key_paths`. Use spec `ssh_private_key` or option `transfer_info={"ascp_args":["-i","..."]}`
-  * `EX_http_proxy_url`. Use option `transfer_info={"ascp_args":["-x","..."]}`
-  * `EX_http_transfer_jpeg`. Use option `transfer_info={"ascp_args":["-j","1"]}`
-  * `EX_no_read`. Use option `transfer_info={"ascp_args":["--no-read"]}`
-  * `EX_no_write`. Use option `transfer_info={"ascp_args":["--no-write"]}`
-  * `EX_file_list`. Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-list","..."]}`
-  * `EX_file_pair_list`. Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-pair-list","..."]}`
-  * `EX_ascp_args`. Use option `transfer_info={"ascp_args":[...]}`
-  * `EX_at_rest_password`. Use spec parameter `content_protection_password`
-  * `EX_proxy_password`. Set password in spec parameter `proxy` or use env var `ASPERA_PROXY_PASS`.
-  * `EX_license_text`. Use env var `ASPERA_SCP_LICENSE`.
+  * `EX_ssh_key_paths`: Use spec `ssh_private_key` or option `transfer_info={"ascp_args":["-i","..."]}`
+  * `EX_http_proxy_url`: Use option `transfer_info={"ascp_args":["-x","..."]}`
+  * `EX_http_transfer_jpeg`: Use option `transfer_info={"ascp_args":["-j","1"]}`
+  * `EX_no_read`: Use option `transfer_info={"ascp_args":["--no-read"]}`
+  * `EX_no_write`: Use option `transfer_info={"ascp_args":["--no-write"]}`
+  * `EX_file_list`: Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-list","..."]}`
+  * `EX_file_pair_list`: Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-pair-list","..."]}`
+  * `EX_ascp_args`: Use option `transfer_info={"ascp_args":[...]}`
+  * `EX_at_rest_password`: Use spec parameter `content_protection_password`
+  * `EX_proxy_password`: Set password in spec parameter `proxy` or use env var `ASPERA_PROXY_PASS`.
+  * `EX_license_text`: Use env var `ASPERA_SCP_LICENSE`.
 
 ## 4.16.0
 
@@ -1056,7 +1056,7 @@ Released: 2021-02-03
 
 ### Breaking Changes
 
-* **global**: @stdin is now @stdin
+* **global**: `@stdin` is now `@stdin:`
 
 ## 0.9.10
 

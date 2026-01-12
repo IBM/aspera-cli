@@ -31,7 +31,7 @@ module Aspera
     end
 
     # Assert that a condition is true, else raise exception
-    # @param assertion [Bool]       Must be true
+    # @param assertion [TrueClass, FalseClass]       Must be true
     # @param info      [String,nil] Fixed message in case assert fails, else use `block`
     # @param type      [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block     [Proc]       Produces a string that describes the problem for complex messages
@@ -78,7 +78,7 @@ module Aspera
     end
 
     # Assert that value is one of the given values
-    # @param value  [any]              Value to check
+    # @param value  [Object]           Value to check
     # @param values [Array]            Accepted values
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block  [Proc]             Additional description in front of message
@@ -91,7 +91,7 @@ module Aspera
     end
 
     # The value is not one of the expected values
-    # @param value  [any]              The wrong value
+    # @param value  [Object]           The wrong value
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block  [Proc]             Additional description in front of message
     def error_unexpected_value(value, type: InternalError)
