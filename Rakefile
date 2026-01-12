@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
-# build tasks for gem file
+# Adds the following tasks:
+# See: https://bundler.io/guides/creating_gem.html
+# build            # Build aspera-cli-x.y.z.gem into the pkg directory
+# build:checksum   # Generate SHA512 checksum of aspera-cli-x.y.z.gem into the checksums directory
+# clean            # Remove any temporary products
+# clobber          # Remove any generated files
+# install          # Build and install aspera-cli-x.y.z.gem into system gems
+# install:local    # Build and install aspera-cli-x.y.z.gem into system gems without network access
+# release[remote]  # Create tag vx.y.z and build and push aspera-cli-x.y.z.gem to https://rubygems.org
 require 'bundler/gem_tasks'
 require 'bundler/setup'
 # spec tests
