@@ -26,5 +26,4 @@ jobs:
           echo "${{ secrets.PRIVATE_KEY_PEM }}" > $HOME/.gem/signing_key.pem
           echo "rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $HOME/.gem/credentials
           chmod 0600 $HOME/.gem/signing_key.pem $HOME/.gem/credentials
-          SIGNING_KEY=$HOME/.gem/signing_key.pem gem build *.gemspec
-          gem push *.gem
+          bundle exec rake release SIGNING_KEY=$HOME/.gem/signing_key.pem
