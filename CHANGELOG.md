@@ -10,7 +10,8 @@ Released: [Place date of release here]
 
 * **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
 * **global**: Improved error diagnostic during evaluation of extended value.
-* **global**: New Extended value modifier: `@:` (empty modifier) to evaluate remaining arguments as `Hash` or `Array`.
+* **global**: New extended value modifier: `@:` (empty modifier) to evaluate remaining arguments as `Hash` or `Array`.
+* **global**: New extended value modifier: `@stdin:chomp` reads stdin and removes `\n`.
 * `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
 * `orchestrator`: Commands now takes option `query`.
 
@@ -26,6 +27,7 @@ Released: [Place date of release here]
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
 * `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
 * `preview`: Replaced gem `mimemagic` with `marcel`.
+* **global**: Extended value modifier `@stdbin:` is replaced with `@stdin:bin`.
 * Build system uses now `rake` instead of `make` for easier portability on Windows.
 * PDF manual removed from repo, it is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
 * HTML manual is not generated anymore.

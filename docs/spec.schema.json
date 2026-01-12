@@ -830,7 +830,7 @@
       "x-cli-special": true
     },
     "xfer_max_retries": {
-      "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).",
+      "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 5).",
       "type": "integer",
       "x-agents": [
         "node"

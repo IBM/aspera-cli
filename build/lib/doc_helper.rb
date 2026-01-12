@@ -276,106 +276,42 @@ class DocHelper
     [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
     [%r{\$\(PATH_TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
-    ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
-    #    [/(@[a-z]+:)(.+[ '"*].+)/, %q{\1'\2'}],
+    ['$(PATH_SHARES_SYNC)', '/data/local_sync'],
     ['$(PATH_TST_LCL_FOLDER)', 'sendfolder'],
     ['$(PATH_TST_ASC_LCL)', 'test_file.bin'],
     ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
-    ['$(TST_MED_LCL_PATH)', 'test_file.bin'],
-    ["$(conf_data('file.utf_name'))", 'test_file.bin'],
-    ['my_asc_name', 'test_file.bin'],
-    ['"my_password"', '"my_password_here"'],
+    ['$(PATH_TST_LCL_FILE)', 'test_file.bin'],
     ['$(PATH_FILE_LIST)', 'filelist.txt'],
     ['$(PATH_FILE_PAIR_LIST)', 'file_pair_list.txt'],
     ['$(TST_MED_FILENAME)', 'test_file.bin'],
+    ['$(PATH_HOT_FOLDER)', 'hot_folder'],
+    ["$(conf_data('file.utf_name'))", 'test_file.bin'],
+    ['my_asc_name', 'test_file.bin'],
+    ['"my_password"', '"my_password_here"'],
     ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]
-  # various replacements from commands in test makefile
-  REPLACEMENTS_MAKEFILE = [
-    # replace command name
-    [/^.*\$\(INCMAN\)/, ''],
-    [/\$\((CLI|BEG|END)_[A-Z_]+\)/, ''],
-    # replace file_vars
-    [/\$\$\((cat|basename) ([^)]+)\)/, '\2'],
-    # replace makefile macros
-    [/\$\(([^) ]*)\)/, '\1'],
-    # remove multi command mark
-    [/\)?&&\\$/, ''],
-    [/ & sleep .*/, ''],
-    # remove redirection to file
-    [/ *> *[^(}][^ ]*$/, ''],
-    # remove folder macro
-    [/DIR_[A-Z]+/, ''],
-    [/STATE/, ''],
-    # de-dup dollar in regex
-    ['$$', '$'],
-    # replace shell vars in shell
-    [/\$\{([a-z_0-9]+)\}/, 'my_\1'],
-    # remove extraneous quotes on JSON
-    [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
-    [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'test_file.bin'],
-    [/PATH_TMP_SYNCS[a-z_0-9]*/, '/data/local_sync'],
-    ['HSTS_UPLOADED_FILE', 'test_file.bin'],
-    ['HSTS_FOLDER_UPLOAD', 'folder_1'],
-    [%q['"CF_LOCAL_SYNC_DIR"'], 'sync_dir'],
-    ['Test Package TIMESTAMP', 'Important files delivery'],
-    ['AOC_EXTERNAL_EMAIL', 'external.user@example.com'],
-    ['EMAIL_ADDR', 'internal.user@example.com'],
-    ['CF_', ''],
-    ['$@', 'test'],
-    ['my_f5_meta', ''],
-    # remove special configs
-    ['-N ', ''],
-    [/-P[0-9a-z_]+ /, ''],
-    [/--preset=[0-9a-z_]+/, ''],
-    ['TMP_CONF', ''],
-    ['WIZ_TEST', ''],
-    # URLs for doc
-    [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
-    [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
-    [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
-    ['@extend:', ''],
-    ['"my_password"', '"my_password_here"']
-  ].freeze
-
   # @return [Hash] all test commands with key by plugin
   def all_test_commands_by_plugin
     if @commands.nil?
       commands = {}
-      if ENV['OLD']
-        File.open(@paths[:makefile]) do |file|
-          file.each_line do |line|
-            next unless line.include?('$(INCMAN)')
-            line = line.chomp
-            REPLACEMENTS_MAKEFILE.each{ |replace| line = line.gsub(replace.first, replace.last)}
-            line = line.strip.squeeze(' ')
-            Aspera::Log.log.debug(line)
-            # plugin name shall be the first argument: command
-            plugin = line.split(' ').first
-            commands[plugin] ||= []
-            commands[plugin].push(line.gsub(/^#{plugin} /, ''))
-          end
-        end
-      else
-        all_tests = BuildTools.yaml_safe_load(Paths::TEST_DEFS.read)
-        all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
-          line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
-            next cmd unless cmd.is_a?(String)
-            next "''" if cmd.empty?
-            REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
-            cmd
-          end.join(' ')
-          line = line.strip.squeeze(' ')
-          Aspera::Log.log.debug(line)
-          # plugin name shall be the first argument: command
-          plugin = line.split(' ').first
-          raise ">>>#{plugin}" unless plugin.match?(/^[a-z0-9]+$/)
-          commands[plugin] ||= []
-          commands[plugin].push(line.gsub(/^#{plugin} /, ''))
-        end
+      all_tests = BuildTools.yaml_safe_load(Paths::TEST_DEFS.read)
+      all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
+        line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
+          next cmd unless cmd.is_a?(String)
+          next "''" if cmd.empty?
+          REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
+          cmd
+        end.join(' ')
+        line = line.strip.squeeze(' ')
+        Aspera::Log.log.debug(line)
+        # plugin name shall be the first argument: command
+        plugin = line.split(' ').first
+        raise "Wrong plugin name: #{plugin}" unless plugin.match?(/^[a-z0-9]+$/)
+        commands[plugin] ||= []
+        commands[plugin].push(line.gsub(/^#{plugin} /, ''))
       end
       commands.each_key do |plugin|
         commands[plugin] = commands[plugin].sort.uniq

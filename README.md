@@ -22,7 +22,7 @@ PANDOC_META_END
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
+It doesn’t chatter; it hoots-clear, precise, and always on time.
 
 Like `ascli`, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
@@ -30,7 +30,7 @@ When you hear Hootput’s call, you know your data is already in flight.
 
 ---
 
-"Hey, I’m `ascli` — your data’s personal courier.
+"Hey, I’m `ascli` - your data’s personal courier.
 I don’t do flashy dashboards; I’m happiest in a terminal window.
 Hand me a command, and I’ll zip your files across the network faster than you thought possible.
 
@@ -1367,7 +1367,7 @@ Details can be found here:
 
 - [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
 
-##### PowserShell 5
+##### PowerShell 5
 
 - Check your powershell version:
 
@@ -1409,9 +1409,9 @@ $var="v"
 ascli conf echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
 ```
 
-##### PowserShell 7
+##### PowerShell 7
 
-- Check your powershell version:
+- Check your PowerShell version:
 
 ```powershell
 $psversiontable.psversion.Major
@@ -1770,7 +1770,7 @@ Exceptions and Special Cases:
   If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
   For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
   This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
-- **Cummulative Hashes**:
+- **Cumulative Hashes**:
   When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
   Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
   This can be used to start from an empty value, and not used existing default value.
@@ -2193,8 +2193,7 @@ The following decoders are supported:
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
 | `secret` | None     | `String` | Ask password interactively (hides input). |
-| `stdin`  | None     | `String` | Read from stdin in text mode (no value on right). |
-| `stdbin` | None     | `String` | Read from stdin in binary mode (no value on right). |
+| `stdin`  | None     | `String` | Read from stdin in text mode (with arg: empty, `bin` or `chomp`). |
 | `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
@@ -2210,7 +2209,7 @@ To display the result of an extended value, use the `config echo` command.
 The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
 It expects a `@` to close the embedded extended value syntax.
 
-Option `parser` allows definition of a default parser when the positinal parameter or option expects a `Hash` or `Array`.
+Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
 
 Example: Create a `Hash` value with the convenient `@json:` decoder:
@@ -2358,7 +2357,7 @@ The option `invalid_characters` allows specifying a replacement character for a 
 
 The first character specifies the replacement character, and the following characters are the invalid ones.
 This is used when a folder or file is created from a value that potentially contains invalid characters.
-For example, using the option `package_folder`.
+For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
 The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
 
 > [!NOTE]
@@ -2552,7 +2551,7 @@ detect https://tst.example.com/path httpgw
 detect my_org aoc
 doc
 doc transfer-parameters
-echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
+echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>' --format=image --image.text=true
 echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
 echo @csvt:@stdin:
@@ -2562,7 +2561,7 @@ echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
 echo @secret:
-echo @stdbin:
+echo @stdin:bin
 echo @uri:/etc/hosts
 echo @uri:file:/etc/hosts
 echo @uri:http://ifconfig.me
@@ -3097,13 +3096,13 @@ ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image
 - Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
 
 ```shell
-curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @stdbin:
+curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @stdin:bin
 ```
 
 - Display image from file (requires iTerm2-compatible terminal)
 
 ```shell
-ascli config image @stdbin: < A-team.jpg
+ascli config image @stdin:bin < A-team.jpg
 ```
 
 ### Graphical Interactions: Browser and Text Editor
@@ -3406,7 +3405,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 
 A special value `product:<product name>` can be used for option `ascp_path`.
 It specifies to use `ascp` from the given product name.
-A special valuefor product name is `FIRST`, which means: use the first found.
+A special value for product name is `FIRST`, which means: use the first found.
 
 Locally installed Aspera products can be listed with:
 
@@ -3638,12 +3637,12 @@ In addition to standard methods described in section [File List](#list-of-files-
 ##### Agent: Direct: Management messages
 
 By default, `ascli` gets notification from `ascp` on its management port.
-This can be de-activated with parameter: `monitor=false` of `transfer_info`.
+This can be disabled with parameter: `monitor=false` of `transfer_info`.
 
-It is also possible to send local messages to this management port.
+It is also possible to send messages to `ascp` using this management port.
 A typical use is to change the target rate of a running transfer.
 
-The communication is done through a flat JSON file that shall be created in `ascli` config folder as displayed with:
+The communication is done through a JSON file that shall be created in `ascli`'s config folder as displayed with:
 
 ```shell
 ascli config folder
@@ -3664,6 +3663,11 @@ echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
 ```
 
 When `ascli` detects this file, it uses it during a transfer and then deletes it.
+
+> [!NOTE]
+> The JSON's keys use **snake case**, i.e. lower case with `_` as word separator.
+> The list of message `type` can be found in `aspera/ascp/management.rb` : `OPERATIONS`.
+> The list of parameters (capitalized) is `PARAMETERS`.
 
 ##### Agent: Direct: `aspera.conf`: Virtual Links
 
@@ -4091,7 +4095,7 @@ ascli config ascp schema transferd --format=jsonpp
 | use_system_ssh | boolean | Use an external `ssh` program instead of the built-in `libssh2` implementation to establish the connection to the remote host. The desired `ssh` program must be in the environment's `PATH`.<br/>To enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH`) |
 | wss_enabled | boolean | Server has Web Socket service enabled.<br/>(special:`--ws-connect`) |
 | wss_port | integer | TCP port used for Web Socket service feed. |
-| xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(N) |
+| xfer_max_retries | integer | Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 5).<br/>(N) |
 
 #### Destination folder for transfers
 
@@ -4638,7 +4642,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, stdbin, yaml, zlib, extend, preset, vault, 
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, yaml, zlib, extend, preset, vault, 
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -4883,7 +4887,7 @@ OPTIONS:
         --workspace=VALUE            Name of workspace
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --package-folder=VALUE       Field of package to use as folder name, or @none:
+        --package-folder=VALUE       Handling of reception of packages in folders (Hash)
 
 
 COMMAND: server
@@ -5949,39 +5953,38 @@ Option `once_only` is supported, see below.
 To download only some files from the package, just add the path of the files on the command line: `[<file> ...]`, see option `sources`.
 By default, all files in the package are downloaded, i.e. `.` is used as the file list.
 
-Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
-The following syntax is supported
+##### Option `package_folder`
 
-| Syntax               | Description                                                                            |
-|----------------------|----------------------------------------------------------------------------------------|
-| `@none:`             | No subfolder is created, files are downloaded directly into the specified `to_folder`. |
-| `<field>`            | A subfolder named after the package's specified field is created inside `to_folder`.   |
-| `<field1>+<field2>`  | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
-| `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists.<br/>Else it falls back to the combination of both fields with `.`. |
+The option `package_folder` (Hash) allows downloading packages in sub-folders of the `to_folder` path (see description earlier).
+If this option is not specified (or Hash is empty), then packages are downloaded in the folder specified by the `to_folder` option.
 
-The special value `seq` for `<field2>` will append an incrementing number to the folder name starting at `1`.
-If `?` is used, then the sequence number is used only if the folder already exists.
+The following fields are supported to define the name of the sub-folder:
 
-Examples:
+| Field | Type    | Description                                                               |
+|-------|---------|---------------------------------------------------------------------------|
+| none  | -       | (Default) No subfolder.                                                   |
+| `fld` | `Array` | The package's specified fields (`.`-joined). (max size: 2)                |
+| `seq` | `Bool`  | If `true`, add an incrementing number to the folder name starting at `1`. |
+| `opt` | `Bool`  | If `false` (default), then all fields are used.<br/>Else, only if the folder does not already exist. |
+| `inf` | `Bool`  | If `true`, then a file is created (`<ID>.info.json`) with package information (metadata, same information as sidecar file). |
 
-- `id` :
-  Subfolder named after package ID.
+Examples (JSON):
+
+- `{"fields":["id"]}` :
+  Subfolder is the package ID.
   If the same package is downloaded several times, it will always be placed in the same folder.
-- `name` :
-  Subfolder named after package name.
+- `{"fields":["name"]}` :
+  Subfolder is the package name.
   If two packages with the same name are downloaded, they will be combined in the same folder.
-- `name+id` :
-  Subfolder named after the combination of package name and ID.
-- `name+id?` :
-  Subfolder named after the package's name is created, unless it already exists.
-  Else it falls back to the combination of both fields with `.`.
-- `name+seq?` :
-  Subfolder named after the package's name is created, unless it already exists.
-  Else it falls back to the combination of name and sequence number.
-
-> [!NOTE]
-> When `<field1>+<field2>?` is used, if two packages are downloaded and have the same fields, they will be downloaded in the same folder.
-> If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
+- `{"fields":["name","id"]}` :
+  Subfolder is the combination of package name and ID.
+- `{"fields":["name","id"],"opt":true}` :
+  Subfolder is the package's name is created, unless it already exists.
+  If it exists, then the combination of both fields joined with `.` is used.
+- `{"fields":["name"],"seq":true,"opt":true}` :
+  Subfolder is the package's name, unless it already exists.
+  If it exists, then the combination of name and sequence number.
+  If the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
 
 ##### Example: Receive all packages from a given shared inbox
 
@@ -6501,11 +6504,11 @@ organization --url=my_public_link_recv_from_aoc_user
 packages browse package_id3 /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
+packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
 packages receive package_id3 --to-folder=.
-packages receive package_id3 --to-folder=. / --package-folder=name
+packages receive package_id3 --to-folder=. /
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
@@ -6669,6 +6672,7 @@ access_key show ak2ibmcloud
 api_key create
 api_key instances
 api_key list
+aws_trust_policy --region=us-east-1
 cluster clouds
 cluster list
 cluster show --cloud=aws --region=eu-west-1
@@ -6729,7 +6733,7 @@ upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destinatio
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer-info.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
-upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","hot_folder"]}' hot_folder
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
@@ -7663,7 +7667,7 @@ packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 packages show f5_package_id
 packages status f5_p3a @list:,failed,completed
 packages status f5_package_id
-postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
+postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
 shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
@@ -9003,7 +9007,7 @@ An optional positional `Hash` argument (`sync_info`) can be provided in either `
 
 A single session can be specified using either formats.
 
-If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next sectin.
+If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next section.
 
 If argument `<sync_info>` is provided, it defines the format to use.
 If parameter `sessions` or `instance` is present, then `args` is used, else `conf` is used.

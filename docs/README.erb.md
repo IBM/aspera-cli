@@ -2161,8 +2161,7 @@ The following decoders are supported:
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
 | `secret` | None     | `String` | Ask password interactively (hides input). |
-| `stdin`  | None     | `String` | Read from stdin in text mode (no value on right). |
-| `stdbin` | None     | `String` | Read from stdin in binary mode (no value on right). |
+| `stdin`  | None     | `String` | Read from stdin in text mode (with arg: empty, `bin` or `chomp`). |
 | `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
@@ -2956,13 +2955,13 @@ Examples:
 - Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
 
 ```shell
-curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @stdbin:
+curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @stdin:bin
 ```
 
 - Display image from file (requires iTerm2-compatible terminal)
 
 ```shell
-<%=cmd%> config image @stdbin: < A-team.jpg
+<%=cmd%> config image @stdin:bin < A-team.jpg
 ```
 
 ### Graphical Interactions: Browser and Text Editor
@@ -3497,7 +3496,7 @@ In addition to standard methods described in section [File List](#list-of-files-
 ##### Agent: Direct: Management messages
 
 By default, <%=tool%> gets notification from `ascp` on its management port.
-This can be de-activated with parameter: `monitor=false` of `transfer_info`.
+This can be disabled with parameter: `monitor=false` of `transfer_info`.
 
 It is also possible to send messages to `ascp` using this management port.
 A typical use is to change the target rate of a running transfer.
@@ -3536,8 +3535,8 @@ This agent supports a local configuration file: `aspera.conf` where Virtual link
 On a server (HSTS), the following commands can be used to set a global virtual link:
 
 ```shell
-asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true'
-asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true'
+asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,100000;trunk_on,true'
+asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,100000;trunk_on,true'
 asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```

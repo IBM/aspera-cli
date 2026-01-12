@@ -408,7 +408,7 @@ serv_upload1:
   command:
     - server
     - upload
-    - $(TST_MED_LCL_PATH)
+    - $(PATH_TST_LCL_FILE)
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
     - --transfer-info=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
@@ -457,7 +457,7 @@ serv_upload2:
     - server
     - upload
     - --src-type=pair
-    - $(TST_MED_LCL_PATH)
+    - $(PATH_TST_LCL_FILE)
     - "@extend:@preset:server.inside_folder@/other_name_2"
     - --notify-to=@preset:misc.email_external
     - "--transfer-info.ascp_args=@list: -l 100m"
@@ -4573,7 +4573,7 @@ conf_pac:
   command:
     - config
     - proxy_check
-    - --fpac=@file:$(TST / 'proxy.pac')
+    - --fpac=@file:$(PATH_SCRIPTS / 'proxy.pac')
     - https://eudemo.asperademo.com
     - --proxy-credentials=@list:,user,pass
 conf_check_update:
@@ -4701,12 +4701,12 @@ conf_echo_stdin:
     - config
     - echo
     - "@lines:@stdin:"
-conf_echo_stdbin:
+conf_echo_stdin_bin:
   stdin: "1\n2\n3"
   command:
     - config
     - echo
-    - "@stdbin:"
+    - "@stdin:bin"
 conf_echo_stdin_csv:
   stdin: "t1,t2,t3\na,b,d\nd,e,f"
   command:
@@ -5972,7 +5972,7 @@ f5_postproc_start:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
 f5_postproc_test:
   depends_on:
     - f5_postproc_start
@@ -5995,7 +5995,7 @@ f5_postproc_test_with_key:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key'
@@ -6006,7 +6006,7 @@ f5_postproc_test_with_key_cert:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(TST)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key_cert'
@@ -6017,7 +6017,7 @@ f5_cert_test:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(TST)"}'
+    - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     stop_process 'f5_cert_test'
@@ -6028,7 +6028,7 @@ f5_cert_testb:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(TST)"}'
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     stop_process 'f5_cert_testb'
@@ -6040,7 +6040,7 @@ f5_cert_testc:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(TST)"}'
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     stop_process 'f5_cert_testc'
@@ -6052,7 +6052,7 @@ f5_cert_testd:
   command:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(TST)"}'
+    - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     stop_process 'f5_cert_testd'

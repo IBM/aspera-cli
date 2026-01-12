@@ -36,29 +36,30 @@ end
 # -----------------
 # Used in tests.yml
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
-# package title for faspex and aoc
+# Package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
-# testing file generated locally
+# Testing file generated locally
 PATH_TST_ASC_LCL = TMP / conf_data('file.asc_name')
-# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+# Default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / conf_data('file.asc_name')
-# This file name contains special characters, it must be quoted when used in shell
-PATH_TST_UTF_LCL = TMP / conf_data('file.utf_name')
-# a medium sized file for testing
+# A medium sized file for testing
 TST_MED_FILENAME = conf_data('file.utf_name')
+# This file name contains special characters, it must be quoted when used in shell
+PATH_TST_UTF_LCL = TMP / TST_MED_FILENAME
 # local path, using `faux:`
-TST_MED_LCL_PATH = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
-TEMPORIZE_CREATE = 10
-TEMPORIZE_FILE = 30
+PATH_TST_LCL_FILE = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder shall exist
 PATH_TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
 PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TMP / 'sample_vault.bin'
-PATH_FILE_LIST = TMP / 'filelist.txt'
+PATH_FILE_LIST = TMP / 'file_list.txt'
 PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
 PATH_HOT_FOLDER = TMP / 'source_hot'
+PATH_SCRIPTS = TST
 PKCS_P = 'YourExportPassword'
+TEMPORIZE_CREATE = 10
+TEMPORIZE_FILE = 30
 # ------------------
 
 # give warning and stop on first warning in this gem code
