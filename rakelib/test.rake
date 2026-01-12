@@ -24,30 +24,23 @@ PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 
 PARAM_CONFIG = yaml_safe_load(PATH_CONF_FILE.read)
 
-def conf_data(path)
-  current = PARAM_CONFIG
-  path.split('.').each do |k|
-    current = current[k]
-    raise "Missing config: #{k} for #{path}" if current.nil?
-  end
-  current
-end
-
 # -----------------
 # Used in tests.yml
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # Package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
-# Testing file generated locally
-PATH_TST_ASC_LCL = TMP / conf_data('file.asc_name')
-# Default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
-PATH_DOWN_TST_ASC = Pathname.new(Dir.home) / 'Downloads' / conf_data('file.asc_name')
+FILENAME_ASCII = 'data_file.bin'
 # A medium sized file for testing
-TST_MED_FILENAME = conf_data('file.utf_name')
+FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ"
+# Testing file generated locally
+PATH_TST_ASC_LCL = TMP / FILENAME_ASCII
+# Default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+PATH_WEB_DOWNLOAD = Pathname.new(Dir.home) / 'Downloads'
+PATH_DOWN_TST_ASC = PATH_WEB_DOWNLOAD / FILENAME_ASCII
 # This file name contains special characters, it must be quoted when used in shell
-PATH_TST_UTF_LCL = TMP / TST_MED_FILENAME
+PATH_TST_UTF_LCL = TMP / FILENAME_UNICODE
 # local path, using `faux:`
-PATH_TST_LCL_FILE = "faux:///#{URI.encode_www_form_component(TST_MED_FILENAME)}?100m"
+PATH_TST_LCL_FILE = "faux:///#{URI.encode_www_form_component(FILENAME_UNICODE)}?100m"
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder shall exist
 PATH_TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
@@ -61,6 +54,15 @@ PKCS_P = 'YourExportPassword'
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
+
+def conf_data(path)
+  current = PARAM_CONFIG
+  path.split('.').each do |k|
+    current = current[k]
+    raise "Missing config: #{k} for #{path}" if current.nil?
+  end
+  current
+end
 
 # give warning and stop on first warning in this gem code
 CMD_FAIL_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']

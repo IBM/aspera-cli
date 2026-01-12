@@ -156,7 +156,7 @@ shares_3:
     - files
     - download
     - --to-folder=$(TMP)
-    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
 shares_4:
   depends_on:
     - shares_3
@@ -164,7 +164,7 @@ shares_4:
     - shares
     - files
     - delete
-    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
 shares_5:
   depends_on:
     - shares_4
@@ -205,8 +205,8 @@ shares_7:
     - files
     - download
     - --to-folder=$(TMP)
-    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
-    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
     - --transfer=httpgw
     - --preset=no_wss
     - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
@@ -217,7 +217,7 @@ shares_8:
     - shares
     - files
     - delete
-    - "@extend:@preset:shares.share_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
 shares_9_prep:
   tags:
     - ignore_fail
@@ -449,7 +449,7 @@ serv_upload1b:
   command:
     - server
     - browse
-    - "@extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)"
+    - "@extend:@preset:server.inside_folder@/$(FILENAME_UNICODE)"
 serv_upload2:
   depends_on:
     - serv_mkdir
@@ -654,14 +654,14 @@ serv_md5:
   command:
     - server
     - md5sum
-    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
 serv_down_lcl:
   depends_on:
     - serv_upload1
   command:
     - server
     - download
-    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
     - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
@@ -689,7 +689,7 @@ serv_cp:
   command:
     - server
     - cp
-    - "@extend:@preset:server.inside_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
     - "@extend:@preset:server.upload_folder@/200KB.2"
 serv_mv:
   depends_on:
@@ -1019,7 +1019,7 @@ nd2b:
   command:
     - node
     - download
-    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
 nd2c:
   depends_on:
@@ -1027,7 +1027,7 @@ nd2c:
   command:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd_slash:
   command:
     - node
@@ -1047,14 +1047,14 @@ nd2_httpb:
   command:
     - node
     - cat
-    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd2_httpc:
   depends_on:
     - nd2_httpb
   command:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/@preset:file.asc_name@"
+    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd_2_nd_xfer:
   command:
     - node
@@ -2034,7 +2034,7 @@ aoc_files_transfer:
     - push
     - /testsrc
     - --to-folder=/testdst
-    - "@preset:file.asc_name"
+    - $(FILENAME_ASCII)
 aocftrb:
   depends_on:
     - aoc_testsrc_upload_2
@@ -2070,7 +2070,7 @@ aocndinfb:
     - upload
     - --workspace=@preset:aoc.other_workspace
     - --to-folder=@preset:aoc.other_folder
-    - "@preset:file.asc_name"
+    - $(FILENAME_ASCII)
     - --transfer=node
     - --transfer-info=@json:$(read_value_from('aoc_files_node_info'))
 aocfdel:
@@ -2097,8 +2097,8 @@ aocfdownd:
     - files
     - download
     - --to-folder=$(TMP)
-    - "@extend:testdst/@preset:file.asc_name@"
-    - testdst/$(conf_data('file.utf_name'))
+    - testdst/$(FILENAME_ASCII)
+    - testdst/$(FILENAME_UNICODE)
 aocfdowndb:
   tags:
     - nodoc
@@ -2107,7 +2107,7 @@ aocfdowndb:
     - files
     - download
     - --to-folder=$(TMP)
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
 aocfdownc:
   depends_on:
     - aoc_testdst_cleanup
@@ -2120,7 +2120,7 @@ aocfdownc:
     - files
     - download
     - --transfer=connect
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
 aocfdowna:
   depends_on:
     - aoc_testdst_cleanup
@@ -2130,7 +2130,7 @@ aocfdowna:
     - files
     - download
     - --transfer=desktop
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
 aocfhttpd:
   depends_on:
     - aoc_files_transfer
@@ -2138,7 +2138,7 @@ aocfhttpd:
     - aoc
     - files
     - cat
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
 aocfv3inf:
   command:
     - aoc
@@ -2195,7 +2195,7 @@ aoc_file_id:
     - aoc
     - files
     - br
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
     - --fields=id
     - --format=csv
     - --display=data
@@ -2222,7 +2222,7 @@ aoc_file_id_4:
     - aoc
     - files
     - show
-    - "@extend:testdst/@preset:file.asc_name@"
+    - testdst/$(FILENAME_ASCII)
 aoc_file_id_5:
   tags:
     - ignore_fail
@@ -5212,7 +5212,7 @@ tcos_download:
     - cos
     - node
     - download
-    - "@preset:file.asc_name"
+    - $(FILENAME_ASCII)
     - --to-folder=$(TMP)
 f5_health:
   tags:

@@ -10,6 +10,8 @@ require_relative 'paths'
 Aspera::Log.instance.level = ENV.key?('LOG_LEVEL') ? ENV['LOG_LEVEL'].to_sym : :info
 # Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
+CLOBBER.push(Paths::GEMFILE_LOCK)
+
 module BuildTools
   def log(*args, **kwargs, &block)
     Aspera::Log.instance.logger(*args, **kwargs, &block)
