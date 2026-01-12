@@ -9,6 +9,7 @@ require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/log'
 require 'etc'
+require 'securerandom'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
 
@@ -103,7 +104,7 @@ end
 ALL_TESTS = yaml_safe_load(TEST_DEFS.read)
 # add tags for plugin
 ALL_TESTS.each_value do |value|
-  plugin = value['command'].find{ |s| !s.start_with?('-')}
+  plugin = value['command']&.find{ |s| !s.start_with?('-')}
   value['tags'] ||= []
   value['tags'].unshift(plugin) unless value['tags'].include?(plugin)
 end
@@ -295,68 +296,70 @@ namespace TEST_CASE_NS do
       save_output = info['tags']&.include?('save_output') || info['expect']
       wait_value = info['tags']&.include?('wait_value')
       tmp_conf = info['tags']&.include?('tmp_conf')
-      if info['command'].include?('wizard')
-        info['env'] ||= {}
-        info['env']['ASCLI_WIZ_TEST'] = 'yes'
-      end
-      # This test case can potentially be executed repeatedly, e.g. if we wait for a value
-      loop do
-        full_args = CLI_TEST.map(&:to_s)
-        full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
-        full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{out_file(name)}"] if save_output
-        full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
-        kwargs = {}
-        if info['tags']&.include?('noblock')
-          kwargs[:background] = true
-          full_args.push("--pid-file=#{pid_file(name)}")
+      if info['command']
+        if info['command'].include?('wizard')
+          info['env'] ||= {}
+          info['env']['ASCLI_WIZ_TEST'] = 'yes'
         end
-        if info['stdin']
-          stdinfile = TMP / "#{name}.stdin"
-          input = eval_macro(info['stdin'])
-          stdinfile.write(input)
-          kwargs[:in] = stdinfile.to_s
-          log.info("Input: #{input}")
-        end
-        run(*full_args, env: info['env'], **kwargs)
-        # give time to start
-        sleep(1) if info['tags']&.include?('noblock')
-        if info['post']
-          Aspera.assert_type(info['post'], String)
-          log.info("Executing: #{info['post']}")
-          Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
-        end
-        if save_output
-          saved_value = read_value_from(name)
-          if saved_value.empty?
-            if wait_value
-              log.info('No value saved, retry...')
-              sleep(5)
-              redo
-            else
-              raise 'No value saved (empty value)'
+        # This test case can potentially be executed repeatedly, e.g. if we wait for a value
+        loop do
+          full_args = CLI_TEST.map(&:to_s)
+          full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
+          full_args += info['command'].map{ |i| eval_macro(i.to_s)}
+          full_args += ["--output=#{out_file(name)}"] if save_output
+          full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
+          kwargs = {}
+          if info['tags']&.include?('noblock')
+            kwargs[:background] = true
+            full_args.push("--pid-file=#{pid_file(name)}")
+          end
+          if info['stdin']
+            stdinfile = TMP / "#{name}.stdin"
+            input = eval_macro(info['stdin'])
+            stdinfile.write(input)
+            kwargs[:in] = stdinfile.to_s
+            log.info("Input: #{input}")
+          end
+          run(*full_args, env: info['env'], **kwargs)
+          # give time to start
+          sleep(1) if info['tags']&.include?('noblock')
+          if info['post']
+            Aspera.assert_type(info['post'], String)
+            log.info("Executing: #{info['post']}")
+            Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
+          end
+          if save_output
+            saved_value = read_value_from(name)
+            if saved_value.empty?
+              if wait_value
+                log.info('No value saved, retry...')
+                sleep(5)
+                redo
+              else
+                raise 'No value saved (empty value)'
+              end
+            end
+            log.info("Saved: #{saved_value}")
+            if info['expect']
+              raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
             end
           end
-          log.info("Saved: #{saved_value}")
-          if info['expect']
-            raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
-          end
-        end
-        STATES[name] = 'passed'
-        raise 'Must fail' if must_fail
-        log.info("[OK]   #{name}")
-        break
-      rescue RuntimeError
-        STATES[name] = 'failed'
-        if must_fail || hide_fail || ignore_fail
-          log.error("[IGNORE FAIL] #{name}")
           STATES[name] = 'passed'
-        else
-          log.error("[FAIL] #{name}")
-          raise
+          raise 'Must fail' if must_fail
+          log.info("[OK]   #{name}")
+          break
+        rescue RuntimeError
+          STATES[name] = 'failed'
+          if must_fail || hide_fail || ignore_fail
+            log.error("[IGNORE FAIL] #{name}")
+            STATES[name] = 'passed'
+          else
+            log.error("[FAIL] #{name}")
+            raise
+          end
+          save_state
+          break
         end
-        save_state
-        break
       end
       save_state
     end

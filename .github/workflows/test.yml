@@ -20,10 +20,17 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
 
-      - name: Create Aspera config file
+      - name: Set test environment
+        shell: bash
+        run: |
+          echo "ASPERA_CLI_TEST_CONF_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
+          echo "ASCLI_CONFIG_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
+
+      - name: Create ascli config file for tests
+        shell: bash
         run: |
           mkdir -p "$HOME/.aspera/ascli"
-          cat > "$HOME/.aspera/ascli/config.yaml" << EOF
+          cat > $ASPERA_CLI_TEST_CONF_FILE << 'EOF'
           ---
           config:
             version: 4.25.0
@@ -33,30 +40,10 @@ jobs:
             url: ssh://eudemo.asperademo.com:33001
             username: "${{ secrets.CF_HSTS_SSH_USER }}"
             password: "${{ secrets.CF_HSTS_SSH_PASS }}"
-          file:
-            asc_name: ""
-            utf_name: ""
           server:
+            upload_folder: /Upload
             inside_folder: ""
           EOF
-        shell: bash
-
-      - name: Set ASPERA_CLI_TEST_CONF_FILE
-        run: |
-          echo "ASPERA_CLI_TEST_CONF_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
-          echo "ASCLI_CONFIG_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
 
       - name: Run tests
-        run: bundle exec rake spec
-
-      - name: Run ascli test browse
-        run: bundle exec ascli server browse /
-
-      - name: Run ascli test browse
-        run: bundle exec ascli config preset overview
-
-      - name: Run ascli install ascp
-        run: bundle exec ascli config ascp install
-
-      - name: Run ascli test transfer
-        run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.${{ matrix.ruby }}?1k'
+        run: bundle exec rake test:run'[github_smoke_test]'

@@ -1,15 +1,11 @@
 # Refer to README.md for fields and tags
 # --------------------------------------
-
-# Shares ------------------------------------------------------
 unit:
   $comment: Run spec
   tags:
     - nodoc
   pre: Rake::Task["#{TEST_CASE_NS}:unit"].invoke
-  command:
-    - echo
-    - ""
+# Shares ------------------------------------------------------
 shares_health:
   tags:
     - health
@@ -402,6 +398,12 @@ serv_ls_local:
     - --url=local://
     - ls
     - .
+serv_upload_simple:
+  command:
+    - server
+    - upload
+    - faux:///test.$(SecureRandom.uuid).bin?1k
+    - --to-folder=@preset:server.upload_folder
 serv_upload1:
   depends_on:
     - serv_mkdir
@@ -669,7 +671,7 @@ serv_down_from_node:
     - server
     - download
     - "@preset:server.large_file"
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=$(TMP)
     - --transfer=node
     - --ts.resume_policy=none
 serv_down_from_node_fail:
@@ -681,7 +683,7 @@ serv_down_from_node_fail:
     - server
     - download
     - file_does_not_exist.random
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=$(TMP)
     - --transfer=node
 serv_cp:
   depends_on:
@@ -773,7 +775,7 @@ serv_pr1:
     - upload
     - faux:///test1?100m
     - faux:///test2?100m
-    - --to-folder=/Upload
+    - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
     - --transfer-info=@json:{"quiet":false}
     - --progress=no
@@ -785,7 +787,7 @@ serv_pr2:
     - upload
     - faux:///test1?100m
     - faux:///test2?100m
-    - --to-folder=/Upload
+    - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
 # Console ------------------------------------------------------
 cons_health:
@@ -2089,7 +2091,6 @@ aocfbearnode:
     - bearer
     - /
 aocfdownd:
-  tags:
   depends_on:
     - aoc_files_transfer
   command:
@@ -4023,7 +4024,7 @@ conf_ascp_sdk_folder:
   command:
     - --show-config
     - --fields=sdk_folder
-conf_ascp_install:
+conf_ascp_install_113:
   depends_on:
     - conf_ascp_sdk_folder
   pre: puts(read_value_from('conf_ascp_sdk_folder'))
@@ -4032,9 +4033,9 @@ conf_ascp_install:
     - ascp
     - install
     - 1.1.3
-conf_ascp_installb:
+conf_ascp_install_latest:
   depends_on:
-    - conf_ascp_install
+    - conf_ascp_install_113
   command:
     - config
     - ascp
@@ -4051,7 +4052,7 @@ conf_ascp_installd:
     - config
     - transferd
     - list
-conf_ascp_installe:
+conf_transferd_install_latest:
   command:
     - config
     - transferd
@@ -4077,8 +4078,9 @@ conf_ascp_installg:
     - $(read_value_from 'conf_ascp_installf')
     - --to-folder=$(TMP)
 conf_ascp_8:
+  $comment: Install in non standard folder
   depends_on:
-    - conf_ascp_install
+    - conf_ascp_install_113
   command:
     - config
     - ascp
@@ -6418,3 +6420,10 @@ f4_db1h:
     - $(read_value_from 'f4_db1g')
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
+github_smoke_test:
+  depends_on:
+    - unit
+    - serv_browse
+    - conf_over
+    - conf_transferd_install_latest
+    - serv_upload_simple

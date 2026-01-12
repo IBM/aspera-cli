@@ -246,7 +246,7 @@ module Aspera
 
         # Generate or update Hash with workspace id and name (option), if not already set
         # @param hash   [Hash, Nil] set in provided hash
-        # @param string [Bool] true to set key as string, else as symbol
+        # @param string [TrueClass,FalseClass] true to set key as string, else as symbol
         # @param name   [Bool] include name
         # @return [Hash] with key `workspace_[id,name]` (symbol or string) only if defined
         def workspace_id_hash(hash: nil, string: false, name: false)
