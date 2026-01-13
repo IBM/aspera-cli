@@ -92,7 +92,7 @@ module Aspera
         Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError){'mode'}
         Log.log.debug do
           parts = [mode.to_s, 'command:']
-          env&.each{ |k, v| parts << "#{k}=#{Shellwords.shellescape(v.to_s)}"}
+          kwargs[:env]&.each{ |k, v| parts << "#{k}=#{Shellwords.shellescape(v.to_s)}"}
           cmd.each{ |a| parts << Shellwords.shellescape(a)}
           parts.join(' ')
         end
