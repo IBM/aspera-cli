@@ -671,7 +671,7 @@ serv_down_from_node:
     - server
     - download
     - "@preset:server.large_file"
-    - --to-folder=$(TMP)
+    - --to-folder=@preset:server.upload_folder
     - --transfer=node
     - --ts.resume_policy=none
 serv_down_from_node_fail:
@@ -683,7 +683,7 @@ serv_down_from_node_fail:
     - server
     - download
     - file_does_not_exist.random
-    - --to-folder=$(TMP)
+    - --to-folder=@preset:server.upload_folder
     - --transfer=node
 serv_cp:
   depends_on:
@@ -2132,7 +2132,7 @@ aocfdowna:
     - download
     - --transfer=desktop
     - testdst/$(FILENAME_ASCII)
-aocfhttpd:
+aoc_files_cat:
   depends_on:
     - aoc_files_transfer
   command:
@@ -2140,7 +2140,7 @@ aocfhttpd:
     - files
     - cat
     - testdst/$(FILENAME_ASCII)
-aocfv3inf:
+aoc_files_v3_info:
   command:
     - aoc
     - files
@@ -4057,7 +4057,7 @@ conf_transferd_install_latest:
     - config
     - transferd
     - install
-conf_ascp_installf:
+conf_transferd_url:
   tags:
     - save_output
     - nodoc
@@ -4071,11 +4071,11 @@ conf_ascp_installg:
   tags:
     - nodoc
   depends_on:
-    - conf_ascp_installf
+    - conf_transferd_url
   command:
     - config
     - download
-    - $(read_value_from 'conf_ascp_installf')
+    - $(read_value_from 'conf_transferd_url')
     - --to-folder=$(TMP)
 conf_ascp_8:
   $comment: Install in non standard folder
@@ -6176,7 +6176,7 @@ f4_pack_send:
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 8
-f4_prs:
+f4_package_id:
   depends_on:
     - f4_pack_send
   tags:
@@ -6195,9 +6195,9 @@ f4_prsb:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_prs')
+    - $(read_value_from 'f4_package_id')
     - --to-folder=$(TMP)
-f4_prsc:
+f4_package_id2:
   tags:
     - save_output
     - nodoc
@@ -6215,10 +6215,10 @@ f4_prsd:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_prsc')
+    - $(read_value_from 'f4_package_id2')
     - --to-folder=$(TMP)
     - --box=sent
-f4_pria:
+f4_package_id3:
   tags:
     - save_output
     - nodoc
@@ -6235,7 +6235,7 @@ f4_prib:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_pria')
+    - $(read_value_from 'f4_package_id3')
     - --to-folder=$(TMP)
 f4_prl:
   tags:
@@ -6254,7 +6254,7 @@ f4_prall:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
-    - --query=@json:{"max":10}
+    - --query.max=10
 f4_pslu:
   command:
     - faspex
@@ -6366,7 +6366,7 @@ f4_db1b:
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
     - $(PATH_TST_ASC_LCL)
-f4_db1c:
+f4_package_id4:
   tags:
     - save_output
     - nodoc
@@ -6383,7 +6383,7 @@ f4_db1d:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_db1c')
+    - $(read_value_from 'f4_package_id4')
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
 f4_db1e:
@@ -6400,7 +6400,7 @@ f4_db1f:
     - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 10
-f4_db1g:
+f4_package_id5:
   tags:
     - save_output
     - nodoc
@@ -6417,7 +6417,7 @@ f4_db1h:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_db1g')
+    - $(read_value_from 'f4_package_id5')
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
 github_smoke_test:
