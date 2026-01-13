@@ -160,9 +160,11 @@ end
 
 # Terminates the process of previous test case
 def stop_process(name)
+  log.info("Stopping process for test case: #{name}")
   pid = pid_of_test(name)
   Process.kill('TERM', pid)
-  Process.wait(pid)
+  _, status = Process.waitpid2(pid)
+  log.info("Status: #{status}")
 rescue Errno::ECHILD
   # ignore if process was started by another instance
   nil
@@ -180,6 +182,7 @@ def ls_l(pathname)
 end
 
 ASPERA_LOG_PATH = '/Library/Logs/Aspera'
+ASPERA_DAEMON_USER = 'asperadaemon'
 
 # on macOS activate sshd, restore Log folder owner and restart noded
 def reset_macos_hsts
@@ -188,7 +191,7 @@ def reset_macos_hsts
   run(*%w[sudo systemsetup -getremotelogin])
   st = File.stat(ASPERA_LOG_PATH)
   owner = Etc.getpwuid(st.uid).name
-  run(*%w[sudo chown -R asperadaemon:] + [ASPERA_LOG_PATH]) if owner != 'asperauser'
+  run(*%W[sudo chown -R #{ASPERA_DAEMON_USER}: #{ASPERA_LOG_PATH}]) if owner != ASPERA_DAEMON_USER
   restart_noded
   # while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 end

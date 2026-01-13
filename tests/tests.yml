@@ -5965,7 +5965,7 @@ f5_fxgw_test:
     Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
     Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
     stop_process 'f5_fxgw_start'
-f5_postproc_start:
+f5_postproc_pid:
   tags:
     - noblock
   pre: |
@@ -5977,7 +5977,7 @@ f5_postproc_start:
     - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
 f5_postproc_test:
   depends_on:
-    - f5_postproc_start
+    - f5_postproc_pid
   command:
     - faspex5
     - packages
@@ -5988,8 +5988,8 @@ f5_postproc_test:
     Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
     Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
     Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
-    sleep 5
-    stop_process 'f5_postproc_start'
+    sleep 20
+    stop_process 'f5_postproc_pid'
 f5_postproc_test_with_key:
   tags:
     - noblock
