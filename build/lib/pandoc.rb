@@ -38,9 +38,9 @@ end
 # Get latest git change date, or else just the file's modification date
 def get_change_date(md)
   begin
-    changes = Aspera::Environment.secure_capture(exec: 'git', args: ['status', '--porcelain', md.to_s])
+    changes = Aspera::Environment.secure_execute('git', 'status', '--porcelain', md.to_s, mode: :capture)
     raise changes unless changes.empty?
-    epoch = Aspera::Environment.secure_capture(exec: 'git', args: ['log', '-1', '--pretty=format:%cd', '--date=unix', md.to_s]).to_i
+    epoch = Aspera::Environment.secure_execute('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md.to_s, mode: :capture).to_i
     Time.at(epoch)
   rescue
     Time.now
@@ -55,16 +55,14 @@ def markdown_to_pdf(md:, pdf:)
     md = File.basename(md)
     metadatafile = extract_metadata_file(md)
     Aspera::Environment.secure_execute(
-      env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s},
-      exec: 'pandoc',
-      args: [
-        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
-        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
-        "--variable=date:#{get_change_date(md)}",
-        "--metadata-file=#{metadatafile}",
-        "--output=#{pdf}",
-        md
-      ]
+      'pandoc',
+      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
+      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
+      "--variable=date:#{get_change_date(md)}",
+      "--metadata-file=#{metadatafile}",
+      "--output=#{pdf}",
+      md,
+      env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s}
     )
     File.delete(metadatafile)
   end
@@ -76,14 +74,12 @@ def markdown_to_html(md:, html:)
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
     Aspera::Environment.secure_execute(
-      env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s},
-      exec: 'pandoc',
-      args: [
-        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
-        "--defaults=#{PATH_PANDOC_ROOT / 'defaults_html.yaml'}",
-        "--output=#{html}",
-        md
-      ]
+      'pandoc',
+      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
+      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_html.yaml'}",
+      "--output=#{html}",
+      md,
+      env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s}
     )
   end
 end

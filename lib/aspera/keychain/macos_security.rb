@@ -49,7 +49,7 @@ module Aspera
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
-            command_args = [command]
+            command_args = [SECURITY_UTILITY, command]
             options&.each do |k, v|
               Aspera.assert(supported.key?(k)){"unknown option: #{k}"}
               next if v.nil?
@@ -57,7 +57,7 @@ module Aspera
               command_args.push(v.shellescape) unless v.empty?
             end
             command_args.push(last_opt) unless last_opt.nil?
-            return Environment.secure_capture(exec: SECURITY_UTILITY, args: command_args)
+            return Environment.secure_execute(*command_args, mode: :capture)
           end
 
           def key_chains(output)

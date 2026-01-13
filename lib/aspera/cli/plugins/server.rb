@@ -32,7 +32,7 @@ module Aspera
 
         class LocalExecutor
           def execute(ascmd_path, input:)
-            return Environment.secure_capture(exec: ascmd_path, stdin_data: input, binmode: true, exception: false)
+            return Environment.secure_execute(ascmd_path, mode: :capture, stdin_data: input, binmode: true, exception: false)
           end
         end
 

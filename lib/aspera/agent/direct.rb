@@ -252,11 +252,14 @@ module Aspera
         Aspera.assert_type(session, Hash)
         notify_progress(:sessions_init, info: 'starting')
         begin
+          # do not use
           capture_stderr = false
           stderr_r, stderr_w = nil
           spawn_args = {}
           command_pid = nil
-          command_arguments = []
+          # get location of command executable (ascp, async)
+          command_path = Ascp::Installation.instance.path(name)
+          command_arguments = [command_path]
           if @monitor
             # we use Socket directly, instead of TCPServer, as it gives access to lower level options
             socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
@@ -267,20 +270,18 @@ module Aspera
             mgt_server_socket.listen(1)
             # build arguments and add mgt port
             command_arguments = if name.eql?(:async)
-              ["--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
+              [command_path, "--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
             else
-              ['-M', mgt_server_socket.local_address.ip_port.to_s]
+              [command_path, '-M', mgt_server_socket.local_address.ip_port.to_s]
             end
           end
           command_arguments.concat(args)
           if capture_stderr
             # capture process stderr
             stderr_r, stderr_w = IO.pipe
-            spawn_args[err] = stderr_w
+            spawn_args[:err] = stderr_w
           end
-          # get location of command executable (ascp, async)
-          command_path = Ascp::Installation.instance.path(name)
-          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, **spawn_args)
+          command_pid = Environment.secure_execute(*command_arguments, mode: :background, env: env, **spawn_args)
           # close here, but still used in other process (pipe)
           stderr_w&.close
           notify_progress(:sessions_init, info: "waiting for #{name} to start")

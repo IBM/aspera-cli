@@ -308,19 +308,19 @@ namespace TEST_CASE_NS do
           full_args += info['command'].map{ |i| eval_macro(i.to_s)}
           full_args += ["--output=#{out_file(name)}"] if save_output
           full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
-          kwargs = {}
+          run_options = {}
           if info['tags']&.include?('noblock')
-            kwargs[:background] = true
+            run_options[:mode] = :background
             full_args.push("--pid-file=#{pid_file(name)}")
           end
           if info['stdin']
             stdinfile = TMP / "#{name}.stdin"
             input = eval_macro(info['stdin'])
             stdinfile.write(input)
-            kwargs[:in] = stdinfile.to_s
+            run_options[:in] = stdinfile.to_s
             log.info("Input: #{input}")
           end
-          run(*full_args, env: info['env'], **kwargs)
+          run(*full_args, env: info['env'], **run_options)
           # give time to start
           sleep(1) if info['tags']&.include?('noblock')
           if info['post']

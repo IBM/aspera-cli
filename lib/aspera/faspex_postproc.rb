@@ -50,7 +50,7 @@ module Aspera
         Log.dump(:webhook_parameters, webhook_parameters)
         # env expects only strings
         environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
-        post_proc_pid = Environment.secure_spawn(env: environment, exec: script_path)
+        post_proc_pid = Environment.secure_execute(script_path, mode: :background, env: environment)
         Timeout.timeout(@parameters[:timeout_seconds]) do
           # "wait" for process to avoid zombie
           Process.wait(post_proc_pid)

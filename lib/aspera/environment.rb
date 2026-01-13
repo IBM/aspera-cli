@@ -42,105 +42,85 @@ module Aspera
 
     RB_EXT = '.rb'
 
+    PROCESS_MODES = %i[execute background capture].freeze
+
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
       end
 
-      # empty variable binding for secure eval
+      # Empty variable binding for secure eval
       def empty_binding
         return Kernel.binding
       end
 
-      # secure execution of Ruby code
+      # Secure execution of Ruby code
+      # @param code [String] Ruby code to execute
+      # @param file [String] File name for error reporting
+      # @param line [Integer] Line number for error reporting
       def secure_eval(code, file, line)
         Kernel.send('lave'.reverse, code, empty_binding, file, line)
       end
 
-      # Generate log line for external program with arguments
-      # @param exec [String]     Path to executable
-      # @param args [Array, nil] Arguments
-      # @param env [Hash, nil]   Environment variables
-      # @return [String] log line with environment, program and arguments
-      def log_spawn(exec:, args: nil, env: nil)
-        [
-          'execute:'.red,
-          env&.map{ |k, v| "#{k}=#{Shellwords.shellescape(v)}"},
-          Shellwords.shellescape(exec),
-          args&.map{ |a| Shellwords.shellescape(a)}
-        ].compact.flatten.join(' ')
+      # Build argv for Process.spawn / Kernel.system (no shell)
+      # @param cmd    [Array]  Command and arguments
+      # @param kwargs [Hash]   Additional arguments to `secure_execute`
+      def build_spawn_argv(cmd, kwargs)
+        env = kwargs.delete(:env)
+        argv = []
+        argv << env if env
+        argv << [cmd.first, cmd.first] # no shell, preserve argv[0]
+        argv.concat(cmd.drop(1))
+        argv
       end
 
-      # Start process in background
-      # caller can call Process.wait on returned value
-      # @param exec    [String]     Path to executable
-      # @param args    [Array, nil] Arguments for executable
-      # @param env     [Hash, nil]  Environment variables
-      # @param kwargs  [Hash]       Options for `Process.spawn`
-      # @return [String]            PID of process
-      # @raise  [Exception]         if problem
-      def secure_spawn(exec:, args: nil, env: nil, **kwargs)
-        Aspera.assert_type(exec, String)
-        Aspera.assert_type(args, Array, NilClass)
-        Aspera.assert_type(env, Hash, NilClass)
-        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
-        spawn_args = []
-        spawn_args.push(env) unless env.nil?
-        spawn_args.push([exec, exec])
-        spawn_args.concat(args) unless args.nil?
-        kwargs[:close_others] = true unless kwargs.key?(:close_others)
-        # Start separate process in background
-        pid = Process.spawn(*spawn_args, **kwargs)
-        Log.dump(:pid, pid)
-        return pid
-      end
-
-      # Start process (not in shell) and wait for completion.
-      # By default, sets `exception: true` in `kwargs`
-      # @param exec   [String]     Path to executable
-      # @param args   [Array, nil] Arguments
-      # @param env    [Hash, nil]  Environment variables
-      # @param kwargs [Hash]       Arguments for `Kernel.system`
-      # @return `nil`
-      # @raise [RuntimeError] if problem
-      def secure_execute(exec:, args: nil, env: nil, **kwargs)
-        Aspera.assert_type(exec, String)
-        Aspera.assert_type(args, Array, NilClass)
-        Aspera.assert_type(env, Hash, NilClass)
-        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
-        Log.dump(:kwargs, kwargs, level: :trace1)
-        spawn_args = []
-        spawn_args.push(env) unless env.nil?
-        # Ensure no shell expansion
-        spawn_args.push([exec, exec])
-        spawn_args.concat(args) unless args.nil?
-        # By default: exception on error
-        kwargs[:exception] = true unless kwargs.key?(:exception)
-        # Start in separate process
-        Kernel.system(*spawn_args, **kwargs)
-        nil
-      end
-
-      # Execute process and capture stdout
-      # @param exec   [String] path to executable
-      # @param args   [Array]  arguments to executable
-      # @param kwargs [Hash]   options to Open3.capture3
-      # @return stdout of executable or raise exception
-      def secure_capture(exec:, args: [], env: nil, exception: true, **kwargs)
-        Aspera.assert_type(exec, String)
-        Aspera.assert_type(args, Array)
-        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
-        Log.dump(:kwargs, kwargs, level: :trace2)
-        # Log.dump(:ENV, ENV.to_h, level: :trace1)
-        capture_args = []
-        capture_args.push(env) unless env.nil?
-        capture_args.push(exec)
-        capture_args.concat(args)
-        stdout, stderr, status = Open3.capture3(*capture_args, **kwargs)
-        Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-        Log.log.trace1{"stdout=#{stdout}"}
-        raise "process failed: #{status.exitstatus} (#{stderr})" if !status.success? && exception
-        return stdout
+      # Execute a process securely (no shell)
+      # mode:
+      #   :execute    -> Kernel.system, return nil
+      #   :background -> Process.spawn, return pid
+      #   :capture    -> Open3.capture3, return stdout
+      # @param cmd       [Array]     Command and arguments
+      # @param env       [Hash, nil] Environment variables
+      # @param mode      [Symbol]    Execution mode (see above)
+      # @param kwargs    [Hash]      Additional arguments to underlying method, includes:
+      #                              :exception [Boolean] for :capture mode, raise error if process fails
+      #                              :close_others [Boolean] for :background mode
+      #                              :env [Hash] for :execute mode
+      def secure_execute(*cmd, mode: :execute, **kwargs)
+        cmd = cmd.map(&:to_s)
+        Aspera.assert(cmd.size.positive?, type: ArgumentError){'executable must be present'}
+        Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError){'mode'}
+        Log.log.debug do
+          parts = [mode.to_s, 'command:']
+          env&.each{ |k, v| parts << "#{k}=#{Shellwords.shellescape(v.to_s)}"}
+          cmd.each{ |a| parts << Shellwords.shellescape(a)}
+          parts.join(' ')
+        end
+        case mode
+        when :execute
+          # https://docs.ruby-lang.org/en/master/Kernel.html#method-i-system
+          # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
+          kwargs[:exception] = true unless kwargs.key?(:exception)
+          Kernel.system(*build_spawn_argv(cmd, kwargs), **kwargs)
+        when :background
+          # https://docs.ruby-lang.org/en/master/Process.html#method-c-spawn
+          # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
+          kwargs[:close_others] = true unless kwargs.key?(:close_others)
+          pid = Process.spawn(*build_spawn_argv(cmd, kwargs), **kwargs)
+          Log.dump(:pid, pid)
+          pid
+        when :capture
+          # https://docs.ruby-lang.org/en/master/Open3.html#method-c-capture3
+          # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
+          argv = [kwargs.delete(:env)].compact + cmd
+          exception = kwargs.delete(:exception){true}
+          stdout, stderr, status = Open3.capture3(*argv, **kwargs)
+          Log.log.debug{"status=#{status}, stderr=#{stderr}"}
+          Log.log.trace1{"stdout=#{stdout}"}
+          raise "Process failed: #{status.exitstatus} (#{stderr})" if exception && !status.success?
+          stdout
+        else Aspera.error_unreachable_line
+        end
       end
 
       # Write content to a file, with restricted access
@@ -273,9 +253,9 @@ module Aspera
     # @param uri [String] the URI to open
     def open_uri_graphical(uri)
       case @os
-      when Environment::OS_MACOS then return self.class.secure_execute(exec: 'open', args: [uri.to_s])
-      when Environment::OS_WINDOWS then return self.class.secure_execute(exec: 'start', args: ['explorer', %Q{"#{uri}"}])
-      when Environment::OS_LINUX   then return self.class.secure_execute(exec: 'xdg-open', args: [uri.to_s])
+      when Environment::OS_MACOS then return self.class.secure_execute('open', uri.to_s)
+      when Environment::OS_WINDOWS then return self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
+      when Environment::OS_LINUX   then return self.class.secure_execute('xdg-open', uri.to_s)
       else Assert.error_unexpected_value(os){'no graphical open method'}
       end
     end
@@ -283,9 +263,9 @@ module Aspera
     # open a file in an editor
     def open_editor(file_path)
       if ENV.key?('EDITOR')
-        self.class.secure_execute(exec: ENV['EDITOR'], args: [file_path.to_s])
+        self.class.secure_execute(ENV['EDITOR'], file_path.to_s)
       elsif @os.eql?(Environment::OS_WINDOWS)
-        self.class.secure_execute(exec: 'notepad.exe', args: [%Q{"#{file_path}"}])
+        self.class.secure_execute('notepad.exe', %Q{"#{file_path}"})
       else
         open_uri_graphical(file_path.to_s)
       end

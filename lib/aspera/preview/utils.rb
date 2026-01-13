@@ -44,17 +44,18 @@ module Aspera
           end
         end
 
-        # execute external command
-        # one could use "system", but we would need to redirect stdout/err
-        # @return nil
+        # Execute external command
+        # @return [nil]
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          Environment.secure_execute(exec: command_sym.to_s, args: command_args.map(&:to_s), out: File::NULL, err: File::NULL)
+          Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), out: File::NULL, err: File::NULL)
         end
 
+        # Execute external command and capture output
+        # @return [String]
         def external_capture(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          return Environment.secure_capture(exec: command_sym.to_s, args: command_args.map(&:to_s))
+          return Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), mode: :capture)
         end
 
         def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)

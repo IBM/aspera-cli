@@ -146,7 +146,7 @@ module Aspera
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end
-            Environment.secure_execute(exec: Ascp::Installation.instance.path(:async), **env_args)
+            Environment.secure_execute(Ascp::Installation.instance.path(:async), *env_args[:args], env: env_args[:env])
           end
           return
         end
@@ -174,7 +174,7 @@ module Aspera
         # @return [Hash] parsed output of asyncadmin
         def admin_status(sync_info)
           Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, type: Error){'At least one of `local` or `sessions` must be present in async parameters'}
-          arguments = ['--quiet']
+          arguments = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
           if sync_info.key?('local')
             # `conf` format
             arguments.push("--name=#{sync_info['name']}")
@@ -197,7 +197,7 @@ module Aspera
               raise Error, 'Missing either local_db_dir or local_dir'
             end
           end
-          stdout = Environment.secure_capture(exec: ASYNC_ADMIN_EXECUTABLE, args: arguments)
+          stdout = Environment.secure_execute(*arguments, mode: :capture)
           return parse_status(stdout)
         end
 

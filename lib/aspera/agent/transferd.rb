@@ -79,9 +79,9 @@ module Aspera
           log_stdout = "#{transferd_base_tmp}.out"
           log_stderr = "#{transferd_base_tmp}.err"
           File.write(conf_file, config.to_json)
-          @daemon_pid = Environment.secure_spawn(
-            exec: Ascp::Installation.instance.path(:transferd),
-            args: ['--config', conf_file],
+          @daemon_pid = Environment.secure_execute(
+            Ascp::Installation.instance.path(:transferd), '--config', conf_file,
+            mode: :background,
             out: log_stdout,
             err: log_stderr
           )

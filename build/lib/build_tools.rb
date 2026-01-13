@@ -28,17 +28,7 @@ module BuildTools
 
   # Execute the command line (not in shell)
   def run(*args, **kwargs)
-    args = args.map(&:to_s)
-    Aspera::Log.dump(:run, args)
-    background = kwargs.delete(:background)
-    capture = kwargs.delete(:capture)
-    if background
-      Aspera::Environment.secure_spawn(exec: args.shift, args: args, **kwargs)
-    elsif capture
-      Aspera::Environment.secure_capture(exec: args.shift, args: args, **kwargs)
-    else
-      Aspera::Environment.secure_execute(exec: args.shift, args: args, **kwargs)
-    end
+    Aspera::Environment.secure_execute(*args, **kwargs)
   end
 
   def download_proto_file(tmp_proto_folder)

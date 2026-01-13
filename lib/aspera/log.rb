@@ -81,8 +81,9 @@ module Aspera
       # @param object [Hash, nil]       Data to dump
       # @param level  [Symbol]          Debug level
       # @param block  [Proc, nil]       Give computed object
-      def dump(name, object = nil, level: :debug)
+      def dump(name, object = nil, level: :debug, &block)
         return unless instance.logger.send(:"#{level}?")
+        Aspera.assert(object.nil? || block.nil?){'Use either object, or block, not both'}
         object = yield if block_given?
         instance.logger.send(level, obj_dump(name, object))
       end
