@@ -40,7 +40,7 @@ jobs:
 
       - name: Run tests
         run: |
-          export ASPERA_CLI_TEST_CONF_URL="data:application/x-yaml;base64,$(base64 -w0 <<<$(cat <<'EOF'
+          export ASPERA_CLI_TEST_CONF_URL="data:application/yaml;base64,$(base64 -w0 <<<$(cat <<'EOF'
           ---
           config:
             version: 4.25.0
