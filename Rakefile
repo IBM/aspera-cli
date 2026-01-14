@@ -12,6 +12,8 @@
 require 'bundler/gem_tasks'
 require 'bundler/setup'
 
+require_relative 'build/lib/paths'
+
 # default gem file build tasks
 task default: [:signed]
 
@@ -23,6 +25,12 @@ end
 
 desc 'Build unsigned gem'
 task unsigned: [:build]
+
+desc 'Tag current version in git and push to remote'
+task :release_tag do
+  run('git', 'tag', '-a', "v#{GEM_VERSION}", '-m', "Version #{GEM_VERSION}")
+  run('git', 'push', 'origin', "v#{GEM_VERSION}")
+end
 
 desc 'Build and push gem to rubygems.org'
 task release_signed: :signed do
