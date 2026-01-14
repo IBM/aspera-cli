@@ -21,6 +21,8 @@ desc 'Build signed gem (default)'
 task :signed do
   raise 'Please set env var: SIGNING_KEY to build a signed gem file' unless ENV.key?('SIGNING_KEY')
   Rake::Task['build'].invoke
+  # `build` generates the file with version from the code, so rename it
+  (Paths::GEM_PACK_FILE.parent / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem").rename(Paths::GEM_PACK_FILE) unless GEM_VERSION.eql?(Aspera::Cli::VERSION)
 end
 
 desc 'Build unsigned gem'
