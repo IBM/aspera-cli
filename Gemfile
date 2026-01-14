@@ -13,6 +13,7 @@ group :optional do
   # gem('rmagick4j', '~> 0.3') if defined?(JRUBY_VERSION) # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
+  gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # 
   gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
   gem('jdbc-sqlite3', '~> 3.46') if defined?(JRUBY_VERSION) # for async DB
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB
