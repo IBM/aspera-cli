@@ -337,3 +337,9 @@ RSpec.describe(String) do
     expect('bonjour_la_france'.snake_to_capital).to(eq('BonjourLaFrance'))
   end
 end
+
+RSpec.describe(Aspera::UriReader) do
+  it 'decodes data scheme' do
+    expect(Aspera::UriReader.read('data:text/plain;base64,SGVsbG8gd29ybGQh')).to(eq('Hello world!'))
+  end
+end

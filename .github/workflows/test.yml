@@ -38,16 +38,9 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
 
-      - name: Set test environment
-        shell: bash
+      - name: Run tests
         run: |
-          echo "ASPERA_CLI_TEST_CONF_FILE=$HOME/.aspera/ascli/config.yaml" >> $GITHUB_ENV
-
-      - name: Create ascli config file for tests
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.aspera/ascli"
-          cat > $ASPERA_CLI_TEST_CONF_FILE << 'EOF'
+          export ASPERA_CLI_TEST_CONF_URL="data:application/x-yaml;base64,$(base64 -w0 <<<$(cat <<'EOF'
           ---
           config:
             version: 4.25.0
@@ -74,6 +67,5 @@ jobs:
               - aes192-ctr
               - aes128-ctr
           EOF
-
-      - name: Run tests
-        run: bundle exec rake test:run'[github_smoke_test]'
+          ))"
+          bundle exec rake test:run'[github_smoke_test]'

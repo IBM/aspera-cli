@@ -107,7 +107,7 @@ A few macros and environment variables control certain aspects of the build:
 
 | Environment variable        | Description                                         |
 |-----------------------------|-----------------------------------------------------|
-| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests.  |
+| `ASPERA_CLI_TEST_CONF_URL`  | URL for configuration file with secrets for tests.  |
 | `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.      |
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
 | `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
@@ -118,7 +118,7 @@ These can be set either as environment variables or directly on the `rake` comma
 
 > [!NOTE]
 > Environment variables `ASPERA_CLI_*` are typically set in the user’s shell profile for development.
-> Others are intended for one‑time use on the command line.
+> Others are intended for use on the command line.
 
 To use the CLI directly from the development environment, add this to your shell profile (adapt the real path):
 
@@ -224,15 +224,10 @@ When preparing for a new release, do the following:
 bundle exec rake test:run
 ```
 
-- Set beta version (to use the gem file built):
-
-```bash
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
-```
-
 - Verify that the container builds successfully (using the beta version):
 
 ```bash
+export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 bundle exec rake container:build
 bundle exec rake container:test
 ```
@@ -241,14 +236,13 @@ bundle exec rake container:test
 
 Once the development branch is ready for release:
 
-- Decide on the version number
+- Merge on main branch
 
-- Update the version in `lib/aspera/cli/version.rb`
+- Update the version in `lib/aspera/cli/version.rb` and checkin.
 
-- Execute `bundle exec rake release` (see `.github/workflows/deploy.yml`)
+- Execute `bundle exec rake release_tag`, this creates the according tag and pushes it.
 
-  - It builds the `.gem` file in the `pkg` folder.
-  - Then runs `gem push`.
+- This will trigger `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
 ## Long‑Term Implementation and Delivery Improvements
 

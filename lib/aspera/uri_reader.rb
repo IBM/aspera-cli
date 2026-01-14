@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
+require 'base64'
 require 'aspera/assert'
 require 'aspera/rest'
 require 'aspera/temp_file_manager'
@@ -19,6 +20,13 @@ module Aspera
         case uri.scheme
         when 'http', 'https'
           return Rest.new(base_url: uri_to_read, redirect_max: 5).read(nil, headers: {'Accept' => '*/*'})
+        when 'data'
+          metadata, encoded_data = uri.opaque.split(',', 2)
+          if metadata.end_with?(';base64')
+            Base64.decode64(encoded_data)
+          else
+            URI.decode_www_form_component(encoded_data)
+          end
         when SCHEME_FILE, NilClass
           local_file_path = uri.path
           raise Error, 'URL shall have a path, check syntax' if local_file_path.nil?
@@ -38,9 +46,9 @@ module Aspera
         else
           # download to temp file
           # auto-delete on exit
-          sdk_archive_path = TempFileManager.instance.new_file_path_global(suffix: File.basename(url))
-          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_archive_path)
-          return sdk_archive_path
+          temp_file = TempFileManager.instance.new_file_path_global('uri_reader')
+          File.write(temp_file, read(url))
+          return temp_file
         end
       end
     end

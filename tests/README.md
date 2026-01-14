@@ -19,7 +19,7 @@ Fill `~/some_secure_folder/test_env.conf` with system URLs and credentials for t
 Then, tell where this file is located (e.g. in your shell profile):
 
 ```bash
-export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
+export ASPERA_CLI_TEST_CONF_URL=~/some_secure_folder/test_env.conf
 ```
 
 ## Test descriptions
