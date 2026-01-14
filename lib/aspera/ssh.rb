@@ -35,16 +35,17 @@ module Aspera
     # ssh_options: same as Net::SSH.start
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
     def initialize(host, username, ssh_options)
-      Log.log.debug{"ssh:#{username}@#{host}"}
-      Log.log.debug{"ssh_options:#{ssh_options}"}
       Aspera.assert_type(host, String)
       Aspera.assert_type(username, String)
       Aspera.assert_type(ssh_options, Hash)
-      ssh_options[:use_agent] = false unless ssh_options.key?(:use_agent)
       @host = host
       @username = username
-      @ssh_options = ssh_options
-      @ssh_options[:logger] = Log.log
+      @ssh_options = ssh_options.dup
+      @ssh_options[:logger] = Log.log unless @ssh_options.key?(:logger)
+      @ssh_options[:verbose] = :warn unless @ssh_options.key?(:verbose)
+      @ssh_options[:use_agent] = false unless @ssh_options.key?(:use_agent)
+      Log.log.debug{"ssh:#{@username}@#{@host}"}
+      Log.dump(:ssh_options, @ssh_options)
     end
 
     # Anything on stderr raises an exception
