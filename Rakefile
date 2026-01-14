@@ -34,5 +34,10 @@ end
 
 desc 'Build and push gem to rubygems.org'
 task release_signed: :signed do
-  run('gem', 'push', Paths::GEM_PACK_FILE, '--no-document')
+  run('gem', 'push', Paths::GEM_PACK_FILE)
+end
+
+desc 'Build and push gem to rubygems.org'
+task release_unsigned: :unsigned do
+  run('gem', 'push', Paths::GEM_PACK_FILE)
 end
