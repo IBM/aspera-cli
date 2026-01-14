@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rspec'
 require 'spec_helper'
 require 'aspera/log'
 # Aspera::Log.instance.level = :debug
@@ -17,14 +18,6 @@ require 'aspera/ascp/management'
 require 'uri'
 require 'openssl'
 require 'pathname'
-
-class LocalExecutor
-  def execute(cmd, input:)
-    # :nocov:
-    %Q(echo "#{input}"|#{cmd})
-    # :nocov:
-  end
-end
 
 ssh_url = URI.parse(RSpec.configuration.url)
 # main folder relative to docroot and server executor
@@ -47,9 +40,6 @@ demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, **ss
 # top folder of project
 project_top_folder = File.dirname(File.realpath(__FILE__), 2)
 
-# to use a local executor, set PATH_FOLDER_MAIN to the pseudo docroot (local) folder
-# PATH_FOLDER_MAIN='/pseudo/docroot'
-# demo_executor=LocalExecutor.new
 TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
 PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN, 'Upload')
