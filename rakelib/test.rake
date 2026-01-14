@@ -219,6 +219,13 @@ def select_test_cases(selection, &block)
   end
 end
 
+# @return [Integer] Percentage of completed tests
+def percent_completed
+  total = ALL_TESTS.size
+  completed = STATES.count{ |_, v| SKIP_STATES.include?(v)}
+  (completed * 100) / total
+end
+
 namespace :test do
   desc 'List tests: all, by names, or by tags (space-sep)'
   task :list, [:name_list] do |_, args|
@@ -269,7 +276,7 @@ namespace TEST_CASE_NS do
         # log.info "[SKIP] #{name}"
         next
       end
-      log.info('---------------------------------------------------')
+      log.info("--#{percent_completed}%-------------------------------------------------")
       log.info("[RUN]  #{name} [#{info['tags']&.join(' ')}]")
       log.info("[EXEC] #{info['command']&.join(' ')}")
       if info['pre']

@@ -74,21 +74,36 @@ To lists test tasks:
 bundle exec rake -T ^test:
 ```
 
-To force run all tests:
+To run all tests (but a few), in a given order:
 
-```bash
-bundle exec rake test:reset
+```shell
+# Cleanup installed gems:
+ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs -n 1 gem uninstall -axI
+
+# clean Gemfile.lock
+rm -f Gemfile.lock
+killall ascli
+
+# re-install Gems
+gem install bundler
+bundle install
+
+bundle exec rake clobber
+
+# skip some tests
+bundle exec rake test:skip'[nd_xfer_lst_once1 nd_xfer_lst_once2]'
+bundle exec rake test:skip'[tag faspex]'
+
+# run some tests first
+bundle exec rake test:run'[tag interactive]'
+
+# run remaining tests
 bundle exec rake test:run
 ```
 
-To skip some tests by tags:
-
-```bash
-bundle exec rake test:skip'[tag faspex tag2]'
-```
-
 > [!NOTE]
-> The first parameter: `tag` tells that the next parameters are tags, else it's a test case name.
+> `text:` rake tasks take optional argument inside `[]`.
+> If the first parameter is `tag` then next parameters are tags, else it's test case names.
 > No parameter: apply to all test cases.
 
 ## Pre-release tests
@@ -96,9 +111,7 @@ bundle exec rake test:skip'[tag faspex tag2]'
 For preparation of a release, do the following:
 
 1. Select a Ruby version to test with.
-2. Remove all gems: `bundle exec rake tools:clean_gems`
-3. Install gems: `bundle install`
-4. `bundle exec rake test:run`
+2. Run tests as in previous section.
 
 To test additional Ruby version, repeat the procedure with other Ruby versions.
 
