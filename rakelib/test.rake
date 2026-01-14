@@ -352,6 +352,9 @@ namespace TEST_CASE_NS do
           save_state
           break
         end
+      else
+        log.info("[OK]   #{name} (no command)")
+        STATES[name] = 'passed'
       end
       save_state
     end

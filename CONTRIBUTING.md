@@ -238,7 +238,7 @@ Once the development branch is ready for release:
 
 - Merge on main branch
 
-- Update the version in `lib/aspera/cli/version.rb` and checkin.
+- Update the version in `lib/aspera/cli/version.rb` and check-in.
 
 - Execute `bundle exec rake release_tag`, this creates the according tag and pushes it.
 
