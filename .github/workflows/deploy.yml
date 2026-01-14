@@ -1,3 +1,4 @@
+# Action to push a gem version to RubyGems when a new tag is created
 name: Deploy
 
 on:
@@ -23,7 +24,9 @@ jobs:
         if: contains(github.ref, 'refs/tags/v')
         run: |
           mkdir -p $HOME/.gem
-          echo "${{ secrets.PRIVATE_KEY_PEM }}" > $HOME/.gem/signing_key.pem
-          echo "rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/signing_key.pem $HOME/.gem/credentials
-          bundle exec rake release SIGNING_KEY=$HOME/.gem/signing_key.pem
+          export SIGNING_KEY=$HOME/.gem/signing_key.pem
+          GEM_CREDS=$HOME/.gem/credentials
+          echo "${{ secrets.PRIVATE_KEY_PEM }}" > $SIGNING_KEY
+          echo "rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $GEM_CREDS
+          chmod 0600 $SIGNING_KEY $GEM_CREDS
+          bundle exec rake release_signed

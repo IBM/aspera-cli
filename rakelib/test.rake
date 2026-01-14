@@ -1,32 +1,31 @@
 # frozen_string_literal: true
 
-# Rakefile
-require 'rake'
-require 'uri'
-require 'zlib'
-require 'fileutils'
 require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/log'
+require 'rake'
+require 'uri'
+require 'zlib'
 require 'etc'
+require 'fileutils'
 require 'securerandom'
+require 'yaml'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
+require_relative '../build/lib/test_env'
+# spec tests
+require 'rspec/core/rake_task'
+RSpec::Core::RakeTask.new
 
 include Paths
 include BuildTools
 
-PATH_CONF_FILE = config_file_path
-# tests state is saved here
-PATH_TESTS_STATES = TMP / 'state.yml'
-
-# override $HOME/.aspera/ascli
-PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
-
-PARAM_CONFIG = yaml_safe_load(PATH_CONF_FILE.read)
+CLOBBER.push(Paths::GEMFILE_LOCK)
 
 # -----------------
 # Used in tests.yml
+# override $HOME/.aspera/ascli
+PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # Package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
@@ -48,7 +47,7 @@ PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
 PATH_TST_LCL_FOLDER = PATH_TMP_SYNCS / 'sendfolder'
 PATH_VAULT_FILE = TMP / 'sample_vault.bin'
 PATH_FILE_LIST = TMP / 'file_list.txt'
-PATH_FILE_PAIR_LIST = TMP / 'file_pair_list.txt'
+PATH_FILE_PAIR_LIST2 = TMP / 'file_pair_list.txt'
 PATH_HOT_FOLDER = TMP / 'source_hot'
 PATH_SCRIPTS = TST
 PKCS_P = 'YourExportPassword'
@@ -56,27 +55,15 @@ TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
 
-def conf_data(path)
-  current = PARAM_CONFIG
-  path.split('.').each do |k|
-    current = current[k]
-    raise "Missing config: #{k} for #{path}" if current.nil?
-  end
-  current
-end
-
-# give warning and stop on first warning in this gem code
-CMD_FAIL_WARN = ['ruby', '-w', TST / 'warning_exit_wrapper.rb']
 # CLI with default config file
-CLI_NOCONF = CMD_FAIL_WARN + [CLI_CMD, "--home=#{PATH_CLI_HOME}"]
-# call the tool in the testing environment
-CLI_TEST = CLI_NOCONF + ["--config-file=#{PATH_CONF_FILE}"]
+# give warning and stop on first warning in this gem
+CLI_TEST = ['ruby', '-w', TST / 'warning_exit_wrapper.rb', CLI_CMD, "--home=#{PATH_CLI_HOME}"]
 # JRuby does not support some encryptions
 CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
-# temp configuration file that is modified, to avoid changing the main configuration file
-PATH_TEST_CONFIG = TMP / 'sample.conf'
-# "CLI_TMP_CONF" is used for commands that modify the config file
-CLI_TMP_CONF = CLI_NOCONF + ["--config-file=#{PATH_TEST_CONFIG}"]
+# Copy of the main configuration file to be used in tests
+PATH_CONF_FILE = PATH_CLI_HOME / 'config.yaml'
+# Temp configuration file that is modified, to avoid changing the main configuration file
+PATH_TEST_CONFIG = TMP / 'test_config.yaml'
 # Folder where test case states (generated files) are stored
 PATH_TMP_STATES = TMP / 'states'
 # Test states to not re-execute
@@ -86,14 +73,10 @@ TEST_CASE_NS = :case
 
 # Init folders and files
 TMP.mkpath
-FileUtils.cp(PATH_CONF_FILE, PATH_TEST_CONFIG) unless PATH_TEST_CONFIG.exist?
+PATH_CLI_HOME.mkpath
 PATH_TST_ASC_LCL.write('This is a small test file') unless PATH_TST_ASC_LCL.exist?
 PATH_TST_UTF_LCL.write('This is a small test file') unless PATH_TST_UTF_LCL.exist?
 PATH_FILE_LIST.write(PATH_TST_ASC_LCL.to_s)
-PATH_FILE_PAIR_LIST.write([
-  PATH_TST_ASC_LCL,
-  File.join(conf_data('server.inside_folder'), 'other_name')
-].map(&:to_s).join("\n"))
 PATH_SHARES_SYNC.mkpath
 PATH_TMP_STATES.mkpath
 (PATH_SHARES_SYNC / 'sample_file.txt').write('Some sample file')
@@ -109,23 +92,34 @@ ALL_TESTS.each_value do |value|
   value['tags'].unshift(plugin) unless value['tags'].include?(plugin)
 end
 
-# Allowed keys in test defs
-# command: the list for command line
-# tags: arbitrary tags to identify special attributes
-# env: anv var to set
-# pre: List of Ruby commands to execute before the test
-# post: List of Ruby commands to execute after the test
-# description: a description of the test
-# $comment: an internal comment
-# stdin: input to provide to command line
-# expect: expected output
+# Allowed keys in test defs: See tests/README.md
 ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
 unsupported_keys = ALL_TESTS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
 raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
+# tests state is saved here
+PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
+
+def path_file_pair_list
+  PATH_FILE_PAIR_LIST2.write([
+    PATH_TST_ASC_LCL,
+    File.join(conf_data('server.inside_folder'), 'other_name')
+  ].map(&:to_s).join("\n")) unless PATH_FILE_PAIR_LIST2.exist?
+  PATH_FILE_PAIR_LIST2
+end
 
 def save_state
   File.write(PATH_TESTS_STATES, STATES.to_yaml)
+end
+
+def conf_data(path)
+  @param_config_cache = TestEnv.test_configuration if @param_config_cache.nil?
+  current = @param_config_cache
+  path.split('.').each do |k|
+    current = current[k]
+    raise "Missing config: #{k} for #{path}" if current.nil?
+  end
+  current
 end
 
 def eval_macro(value)
@@ -265,16 +259,6 @@ namespace :test do
 end
 
 namespace TEST_CASE_NS do
-  desc 'Unit tests (spec)'
-  task unit: [] do
-    if SKIP_STATES.include?(STATES['unit']) && !ENV['FORCE']
-      # log.info "[SKIP] #{name}"
-      next
-    end
-    Rake::Task[:spec].invoke
-    STATES['unit'] = 'passed'
-    save_state
-  end
   # Create a Rake task for each test
   ALL_TESTS.each do |name, info|
     # desc info['description'] || '-'
@@ -305,24 +289,29 @@ namespace TEST_CASE_NS do
           info['env']['ASCLI_WIZ_TEST'] = 'yes'
         end
         # This test case can potentially be executed repeatedly, e.g. if we wait for a value
+        full_args = CLI_TEST.map(&:to_s)
+        if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
+          PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
+          full_args += ["--config-file=#{PATH_TEST_CONFIG}"]
+        else
+          PATH_CONF_FILE.write(TestEnv.test_configuration.to_yaml) unless PATH_CONF_FILE.exist?
+        end
+        full_args += info['command'].map{ |i| eval_macro(i.to_s)}
+        full_args += ["--output=#{out_file(name)}"] if save_output
+        full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
+        run_options = {}
+        if info['tags']&.include?('noblock')
+          run_options[:mode] = :background
+          full_args.push("--pid-file=#{pid_file(name)}")
+        end
+        if info['stdin']
+          stdinfile = TMP / "#{name}.stdin"
+          input = eval_macro(info['stdin'])
+          stdinfile.write(input)
+          run_options[:in] = stdinfile.to_s
+          log.info("Input: #{input}")
+        end
         loop do
-          full_args = CLI_TEST.map(&:to_s)
-          full_args = CLI_TMP_CONF if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
-          full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-          full_args += ["--output=#{out_file(name)}"] if save_output
-          full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
-          run_options = {}
-          if info['tags']&.include?('noblock')
-            run_options[:mode] = :background
-            full_args.push("--pid-file=#{pid_file(name)}")
-          end
-          if info['stdin']
-            stdinfile = TMP / "#{name}.stdin"
-            input = eval_macro(info['stdin'])
-            stdinfile.write(input)
-            run_options[:in] = stdinfile.to_s
-            log.info("Input: #{input}")
-          end
           run(*full_args, env: info['env'], **run_options)
           # give time to start
           sleep(1) if info['tags']&.include?('noblock')

@@ -3,16 +3,14 @@
 require 'bundler'
 require 'yaml'
 require 'aspera/log'
-# require 'aspera/rest'
 require_relative 'paths'
 
 # Log control
 Aspera::Log.instance.level = ENV.key?('LOG_LEVEL') ? ENV['LOG_LEVEL'].to_sym : :info
 # Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
-CLOBBER.push(Paths::GEMFILE_LOCK)
-
 module BuildTools
+  # @see Aspera::Log#logger
   def log(*args, **kwargs, &block)
     Aspera::Log.instance.logger(*args, **kwargs, &block)
   end
@@ -31,6 +29,7 @@ module BuildTools
     Aspera::Environment.secure_execute(*args, **kwargs)
   end
 
+  # @param tmp_proto_folder [String] Temporary folder to download the proto file into
   def download_proto_file(tmp_proto_folder)
     require 'aspera/ascp/installation'
     require 'aspera/cli/transfer_progress'
@@ -60,6 +59,10 @@ module BuildTools
     duplicate_keys
   end
 
+  # Safely load YAML content, raising an error if duplicate keys are found
+  # @param yaml [String] YAML content
+  # @return [Object] Parsed YAML content
+  # @raise [RuntimeError] If duplicate keys are found
   def yaml_safe_load(yaml)
     duplicate_keys = yaml_list_duplicate_keys(Psych.parse_stream(yaml))
     raise "Duplicate keys: #{duplicate_keys}" unless duplicate_keys.empty?

@@ -58,9 +58,8 @@ class DocHelper
   class << self
     # Generate template configuration file for tests
     # Hide sensitive information
-    def config_to_template(config, template)
+    def config_to_template(configuration, template)
       Aspera::Log.log.info{"Generating: #{template}"}
-      configuration = YAML.load_file(config)
       configuration.each do |k, preset_hash|
         preset_hash.each do |param_name, param_value|
           param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')} if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
@@ -270,6 +269,7 @@ class DocHelper
 
   REPLACEMENTS_YAML = [
     ['@extend:', ''],
+    ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
     [/\$\(read_value_from[ (]'([^']+)'.*\)$/, '\1'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
@@ -283,7 +283,7 @@ class DocHelper
     ['$(PATH_TST_UTF_LCL)', 'test_file.bin'],
     ['$(PATH_TST_LCL_FILE)', 'test_file.bin'],
     ['$(PATH_FILE_LIST)', 'filelist.txt'],
-    ['$(PATH_FILE_PAIR_LIST)', 'file_pair_list.txt'],
+    ['$(path_file_pair_list)', 'file_pair_list.txt'],
     ['$(FILENAME_UNICODE)', 'test_file.bin'],
     ['$(FILENAME_ASCII)', 'test_file.bin'],
     ['$(PATH_HOT_FOLDER)', 'hot_folder'],
@@ -297,7 +297,7 @@ class DocHelper
     if @commands.nil?
       commands = {}
       all_tests = BuildTools.yaml_safe_load(Paths::TEST_DEFS.read)
-      all_tests.select{ |_, v| !v['tags']&.include?('nodoc')}.each_value do |test|
+      all_tests.select{ |_, v| v['command'] && !v['tags']&.include?('nodoc')}.each_value do |test|
         line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
           next cmd unless cmd.is_a?(String)
           next "''" if cmd.empty?

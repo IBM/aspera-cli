@@ -4,7 +4,7 @@ unit:
   $comment: Run spec
   tags:
     - nodoc
-  pre: Rake::Task["#{TEST_CASE_NS}:unit"].invoke
+  pre: Rake::Task[:spec].invoke
 # Shares ------------------------------------------------------
 shares_health:
   tags:
@@ -649,7 +649,7 @@ serv_upload_ex_pair:
     - server
     - upload
     - --sources=@ts
-    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(PATH_FILE_PAIR_LIST)"]}
+    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(path_file_pair_list)"]}
 serv_md5:
   depends_on:
     - serv_upload1

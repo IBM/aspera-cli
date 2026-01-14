@@ -32,6 +32,7 @@ require 'aspera/assert'
 require 'aspera/oauth'
 require 'aspera/ssl'
 require 'openssl'
+require 'digest'
 require 'open3'
 require 'date'
 require 'erb'
@@ -495,7 +496,7 @@ module Aspera
 
         # @return [Integer]
         def config_checksum
-          JSON.generate(@config_presets).hash
+          Digest::SHA1.hexdigest(JSON.generate(@config_presets))
         end
 
         # Read config file and validate format

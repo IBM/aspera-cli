@@ -16,6 +16,7 @@ require 'aspera/environment'
 require 'aspera/ascp/management'
 require 'uri'
 require 'openssl'
+require 'pathname'
 
 class LocalExecutor
   def execute(cmd, input:)

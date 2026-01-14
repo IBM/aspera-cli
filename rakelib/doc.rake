@@ -1,11 +1,24 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/info'
-
+require 'digest'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/pandoc'
 require_relative '../build/lib/doc_helper'
+require_relative '../build/lib/test_env'
 include BuildTools
+
+# Update signature file if configuration has changed
+if Paths::CONF_SIGNATURE.exist? && TestEnv.test_configuration.any?
+  stored = Paths::CONF_SIGNATURE.read
+  current = Digest::SHA1.hexdigest(JSON.generate(TestEnv.test_configuration))
+  if current != stored
+    puts current
+    puts stored
+    Aspera::Log.log.warn("Test configuration has changed, updating signature file: #{Paths::CONF_SIGNATURE}")
+    Paths::CONF_SIGNATURE.write(current)
+  end
+end
 
 def capture_stdout_to_file(pathname)
   raise 'Missing block' unless block_given?
@@ -56,8 +69,8 @@ namespace :doc do
 
   pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
 
-  file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths.config_file_path] do
-    DocHelper.config_to_template(Paths.config_file_path, PATH_TMPL_CONF_FILE)
+  file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths::CONF_SIGNATURE] do
+    DocHelper.config_to_template(TestEnv.test_configuration, PATH_TMPL_CONF_FILE)
   end
 
   file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do

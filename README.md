@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0.beta1"
+subtitle: "ascli 4.25.0.beta2"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0.beta1
+Version : 4.25.0.beta2
 
 Laurent/2016-2026
 
@@ -139,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0.beta1
+4.25.0.beta2
 ```
 
 > [!NOTE]
@@ -782,11 +782,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0.beta1 --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0.beta2 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0.beta1-gems
+mv temp_folder/cache aspera-cli-4.25.0.beta2-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0.beta1-gems aspera-cli-4.25.0.beta1-gems.tgz
+tar zcvf aspera-cli-4.25.0.beta2-gems aspera-cli-4.25.0.beta2-gems.tgz
 ```
 
 #### Unix-like
@@ -931,7 +931,7 @@ ascli -v
 ```
 
 ```text
-4.25.0.beta1
+4.25.0.beta2
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4636,7 +4636,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0.beta1)
+        ascli -- a command line tool for Aspera Applications (v4.25.0.beta2)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -6743,6 +6743,7 @@ sync admin overview /data/local_sync
 sync admin status /data/local_sync
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
+upload 'faux:///test.bin?1k' --to-folder=my_upload_folder
 upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
 upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=transferd
@@ -8290,12 +8291,12 @@ health
 login_methods
 me
 package list --query.max=5
-package receive ALL --once-only=yes --to-folder=. --query=@json:'{"max":10}'
-package receive f4_db1c --recipient='*my_dbx' --to-folder=.
-package receive f4_db1g --recipient='*my_wkg' --to-folder=.
-package receive f4_pria --to-folder=.
-package receive f4_prs --to-folder=.
-package receive f4_prsc --to-folder=. --box=sent
+package receive ALL --once-only=yes --to-folder=. --query.max=10
+package receive f4_package_id --to-folder=.
+package receive f4_package_id2 --to-folder=. --box=sent
+package receive f4_package_id3 --to-folder=.
+package receive f4_package_id4 --recipient='*my_dbx' --to-folder=.
+package receive f4_package_id5 --recipient='*my_wkg' --to-folder=.
 package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal","my_username"]}' test_file.bin
 package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
 package send --delivery-info=@json:'{"title":"package title","recipients":[*my_dbx]}' test_file.bin
