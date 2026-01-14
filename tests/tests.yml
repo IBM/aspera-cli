@@ -4250,7 +4250,7 @@ conf_vault_macos:
     - config
     - vault
     - info
-    - --vault=@json:{"type":"system"}
+    - --vault.type=system
 conf_vault_macos_prepare:
   depends_on:
     - conf_vault_macos
@@ -4264,7 +4264,7 @@ conf_vault_macos_prepare:
     - vault
     - create
     - '@json:{"label":"foo"}'
-    - --vault=@json:{"type":"system"}
+    - --vault.type=system
 conf_vault_macosc:
   depends_on:
     - conf_vault_macos_prepare
@@ -4276,24 +4276,22 @@ conf_vault_macosc:
     - vault
     - show
     - foo
-    - --vault=@json:{"type":"system"}
+    - --vault.type=system
 conf_vault_macosd:
   depends_on:
     - conf_vault_macosc
   tags:
     - ignore_fail
-    - nodoc
   command:
     - -N
     - config
     - vault
     - delete
     - foo
-    - --vault=@json:{"type":"system"}
+    - --vault.type=system
 conf_vault_file:
   tags:
     - tmp_conf
-    - nodoc
     - sym_encryption
   command:
     - config
@@ -4301,13 +4299,14 @@ conf_vault_file:
     - set
     - GLOBAL
     - vault
-    - '@json:{"type":"file","file":"$(PATH_VAULT_FILE)"}'
+    - '@:'
+    - type=file
+    - file=$(PATH_VAULT_FILE)
 conf_vault_file2:
   depends_on:
     - conf_vault_file
   tags:
     - tmp_conf
-    - nodoc
   command:
     - config
     - preset
@@ -4324,7 +4323,10 @@ conf_vault_create:
     - config
     - vault
     - create
-    - '@json:{"label":"my_label","password":"my_password_here","description":"my secret"}'
+    - '@:'
+    - label=my_label
+    - password=my_password_here
+    - description=my secret
 conf_vault_info:
   depends_on:
     - conf_vault_create

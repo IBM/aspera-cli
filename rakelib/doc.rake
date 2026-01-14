@@ -46,6 +46,7 @@ TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
 TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
 ASYNC_YAML_SCHEMA = Paths::LIB / 'aspera/sync/conf.schema.yaml'
 PATH_BUILD_TOOLS = Paths::BUILD_LIB / 'build_tools.rb'
+PATH_DOC_HELPER = Paths::BUILD_LIB / 'doc_helper.rb'
 
 # Generated PATH_MD_MANUAL uses these files
 DOC_FILES = [
@@ -78,7 +79,7 @@ namespace :doc do
     run(Paths::CLI_CMD, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}")
   end
 
-  file PATH_MD_MANUAL => DOC_FILES + [PATH_BUILD_TOOLS, TSPEC_YAML_SCHEMA, ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
+  file PATH_MD_MANUAL => DOC_FILES + [PATH_BUILD_TOOLS, PATH_DOC_HELPER, TSPEC_YAML_SCHEMA, ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
     Aspera::Log.log.info{"Generating: #{PATH_MD_MANUAL}"}
     Aspera::Environment.force_terminal_c
     DocHelper.new([PATH_MD_MANUAL] + DOC_FILES).generate

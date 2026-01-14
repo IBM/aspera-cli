@@ -2609,6 +2609,8 @@ preset delete conf_name
 preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
+preset set GLOBAL vault @: type=file file=/secure/vault_file
+preset set GLOBAL vault_password _simple_one_
 preset set GLOBAL version_check_days 0
 preset set conf_name param value
 preset set default shares conf_name
@@ -2626,7 +2628,8 @@ tokens flush
 tokens list
 transferd install
 transferd list
-vault create @json:'{"label":"my_label","password":"my_password_here","description":"my secret"}'
+vault create @: label=my_label password=my_password_here 'description=my secret'
+vault delete foo --vault.type=system
 vault delete my_label
 vault info
 vault list
