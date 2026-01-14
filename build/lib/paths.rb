@@ -4,10 +4,10 @@ require 'pathname'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 
-# Gem version for build
-GEM_VERSION = ENV['GEM_VERSION'] || Aspera::Cli::VERSION
+# Gem version for build and release
+GEM_VERSION = ENV['GEM_VERSION'] || ENV['GITHUB_REF_NAME']&.gsub(/^v/, '') || Aspera::Cli::VERSION
 # `true` if built from local gem file
-GEM_BETA = !!ENV['GEM_VERSION']&.start_with?("#{Aspera::Cli::VERSION}.")
+GEM_BETA = !GEM_VERSION.eql?(Aspera::Cli::VERSION)
 
 # Fixed paths in project
 module Paths
