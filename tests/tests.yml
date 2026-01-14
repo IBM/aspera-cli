@@ -4245,19 +4245,19 @@ conf_ssl_options:
 conf_vault_macos:
   tags:
     - nodoc
-    - interactive
   command:
     - -N
     - config
     - vault
     - info
     - --vault=@json:{"type":"system"}
-conf_vault_macosb:
+conf_vault_macos_prepare:
   depends_on:
     - conf_vault_macos
   tags:
     - ignore_fail
     - nodoc
+    - interactive
   command:
     - -N
     - config
@@ -4267,7 +4267,7 @@ conf_vault_macosb:
     - --vault=@json:{"type":"system"}
 conf_vault_macosc:
   depends_on:
-    - conf_vault_macosb
+    - conf_vault_macos_prepare
   tags:
     - nodoc
   command:
