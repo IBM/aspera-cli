@@ -43,11 +43,17 @@ module Aspera
           # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
           raise "use format: #{SCHEME_FILE_PFX2}<path>" unless url.start_with?(SCHEME_FILE_PFX2)
           return File.expand_path(url[SCHEME_FILE_PFX2.length..-1])
-        else
+        elsif url.start_with?('data:')
           # download to temp file
           # auto-delete on exit
           temp_file = TempFileManager.instance.new_file_path_global('uri_reader')
-          File.write(temp_file, read(url))
+          File.write(temp_file, read(url), binmode: true)
+          return temp_file
+        else
+          # download to temp file
+          # auto-delete on exit
+          temp_file = TempFileManager.instance.new_file_path_global(suffix: File.basename(url))
+          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: temp_file)
           return temp_file
         end
       end

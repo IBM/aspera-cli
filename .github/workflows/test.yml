@@ -52,7 +52,6 @@ jobs:
             password: "${{ secrets.CF_HSTS_SSH_PASS }}"
           server:
             upload_folder: /Upload
-            inside_folder: ""
           jns:
             ssh_options:
               host_key:
