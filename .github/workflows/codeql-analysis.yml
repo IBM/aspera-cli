@@ -13,7 +13,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: ["main"]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: ["main"]
@@ -39,6 +39,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          # On schedule → analyze develop
+          # Otherwise → analyze the triggering ref (push / PR)
+          ref: ${{ github.event_name == 'schedule' && 'develop' || github.ref }}
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
