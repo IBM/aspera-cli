@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0.beta2"
+subtitle: "ascli 4.25.0.pre2"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0.beta2
+Version : 4.25.0.pre2
 
 Laurent/2016-2026
 
@@ -139,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0.beta2
+4.25.0.pre2
 ```
 
 > [!NOTE]
@@ -598,6 +598,7 @@ See [Gemfile](Gemfile):
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
+| base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' |
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
 | sequel | ~> 5.96 | (jruby) for async DB |
@@ -613,6 +614,7 @@ gem install marcel -v '~> 1.1'
 gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
+gem install base64 -v '~> 0.3'
 gem install sqlite3 -v '~> 2.7'
 gem install jdbc-sqlite3 -v '~> 3.46'
 gem install sequel -v '~> 5.96'
@@ -782,11 +784,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0.beta2 --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0.pre2 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0.beta2-gems
+mv temp_folder/cache aspera-cli-4.25.0.pre2-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0.beta2-gems aspera-cli-4.25.0.beta2-gems.tgz
+tar zcvf aspera-cli-4.25.0.pre2-gems aspera-cli-4.25.0.pre2-gems.tgz
 ```
 
 #### Unix-like
@@ -931,7 +933,7 @@ ascli -v
 ```
 
 ```text
-4.25.0.beta2
+4.25.0.pre2
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4636,7 +4638,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0.beta2)
+        ascli -- a command line tool for Aspera Applications (v4.25.0.pre2)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]

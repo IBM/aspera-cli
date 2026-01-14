@@ -157,11 +157,11 @@ Refer to <tests/README.md>.
 
 ## Build
 
-The gem is built with:
+The unsigned gem is built with:
 
 ```bash
 bundle install
-bundle exec rake build
+bundle exec rake unsigned
 ```
 
 If you don't want to install optional gems:
@@ -183,7 +183,7 @@ Its path must be set using environment variable `SIGNING_KEY`.
 The gem is signed with the public certificate found in `certs` and the private key specified by `SIGNING_KEY` (kept secret by the maintainer).
 
 ```bash
-bundle exec rake build SIGNING_KEY=/path/to/vault/gem-private_key.pem
+bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
 Refer to <certs/README.md>.
@@ -236,13 +236,34 @@ bundle exec rake container:test
 
 Once the development branch is ready for release:
 
-- Merge on main branch
+- Merge branch `develop` into `main` branch
 
 - Update the version in `lib/aspera/cli/version.rb` and check-in.
 
-- Execute `bundle exec rake release_tag`, this creates the according tag and pushes it.
+- Build the PDF manual in `pkg`:
 
-- This will trigger `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
+  ```shell
+  bundle exec rake doc:build
+  ```
+
+- Build the signed `.gem` in `pkg`:
+
+  ```shell
+  bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
+  ```
+
+- Create the release version tag and push it to GitHub:
+
+  ```shell
+  bundle exec rake release_tag
+  ```
+
+  This will trigger `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
+
+- Include generated artifacts from `pkg/` in github release:
+
+  - The signed `.gem`
+  - The PDF Manual
 
 ## Long‑Term Implementation and Delivery Improvements
 
