@@ -1,7 +1,25 @@
 name: Test
 
-on: [push, pull_request]
-
+# Trigger tests only on Ruby file changes
+on:
+  push:
+    paths:
+      - "**/*.rb"
+      - "Rakefile"
+      - "**/*.rake"
+      - "bin/**"
+      - "Gemfile"
+      - "**/*.gemspec"
+      - "tests/tests.yml"
+  pull_request:
+    paths:
+      - "**/*.rb"
+      - "Rakefile"
+      - "**/*.rake"
+      - "bin/**"
+      - "Gemfile"
+      - "**/*.gemspec"
+      - "tests/tests.yml"
 jobs:
   test:
     runs-on: ubuntu-latest
