@@ -61,32 +61,32 @@ module Aspera
       result = {}
       until @stack.empty?
         path, current = @stack.pop
-        # empty things will be displayed as such
+        to_insert = nil
+        # empty things are left intact
         if current.respond_to?(:empty?) && current.empty?
-          result[path] = current
-          next
-        end
-        insert = nil
-        case current
-        when Hash
-          add_elements(path, current)
-        when Array
-          # Array has no nested structures -> list of Strings
-          if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
-            insert = current.map(&:to_s)
-          # Array of Hashes with only 'name' keys -> list of Strings
-          elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
-            insert = current.map{ |i| i['name']}
-          # Array of Hashes with only 'name' and 'value' keys -> Hash of key/values
-          elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
-            add_elements(path, current.each_with_object({}){ |i, h| h[i['name']] = i['value']})
-          else
-            add_elements(path, current.each_with_index.map{ |v, i| [i, v]})
-          end
+          to_insert = current
         else
-          insert = current
+          case current
+          when Hash
+            add_elements(path, current)
+          when Array
+            # Array has no nested structures -> list of Strings
+            if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
+              to_insert = current.map(&:to_s)
+            # Array of Hashes with only 'name' keys -> list of Strings
+            elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
+              to_insert = current.map{ |i| i['name']}
+            # Array of Hashes with only 'name' and 'value' keys -> Hash of key/values
+            elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
+              add_elements(path, current.each_with_object({}){ |i, h| h[i['name']] = i['value']})
+            else
+              add_elements(path, current.each_with_index.map{ |v, i| [i, v]})
+            end
+          else
+            to_insert = current
+          end
         end
-        result[path.map(&:to_s).join(OPTION_DOTTED_SEPARATOR)] = insert unless insert.nil?
+        result[path.map(&:to_s).join(OPTION_DOTTED_SEPARATOR)] = to_insert unless to_insert.nil?
       end
       result
     end
@@ -98,6 +98,7 @@ module Aspera
       enum.reverse_each do |key, value|
         @stack.push([path + [key], value])
       end
+      nil
     end
 
     # "."
