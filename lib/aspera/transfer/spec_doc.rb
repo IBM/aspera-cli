@@ -14,9 +14,8 @@ module Aspera
         # @param schema         [Hash]           The JSON spec
         # @return [Array] a table suitable to display in manual
         def man_table(formatter, include_option: false, agent_columns: true, schema: Spec::SCHEMA)
-          short_direct = Agent::Factory::ALL[:direct][:short]
           cols = %i[name type description]
-          cols.insert(-2, *Agent::Factory::ALL.map{ |i| i[:short]}) if agent_columns
+          cols.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if agent_columns
           rows = []
           schema['properties'].each do |name, info|
             rows.concat(man_table(formatter, include_option: include_option, agent_columns: agent_columns, schema: info).last.map{ |h| h.merge(name: "#{name}.#{h[:name]}")}) if info['type'].eql?('object') && info['properties']
@@ -35,16 +34,16 @@ module Aspera
             columns[:description].unshift("DEPRECATED: #{info['x-deprecation']}") if info.key?('x-deprecation')
             # Add flags for supported agents in doc
             agents = []
-            Agent::Factory::ALL.each do |sym, names|
-              agents.push(names[:short]) if info['x-agents'].nil? || info['x-agents'].include?(sym.to_s)
+            Agent::Factory::ALL.each_key do |sym|
+              agents.push(sym) if info['x-agents'].nil? || info['x-agents'].include?(sym.to_s)
             end
-            Aspera.assert(agents.include?(short_direct)){"#{name}: x-cli-option requires agent direct (or nil)"} if info['x-cli-option']
+            Aspera.assert(agents.include?(:direct)){"#{name}: x-cli-option requires agent direct (or nil)"} if info['x-cli-option']
             if agent_columns
               Agent::Factory::ALL.each do |sym, names|
-                columns[names[:short]] = formatter.tick(agents.include?(sym.to_s))
+                columns[names[:short]] = formatter.tick(agents.include?(sym))
               end
             else
-              columns[:description].push("(#{agents.map(&:upcase).sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
+              columns[:description].push("(#{agents.map{ |i| Agent::Factory::ALL[i][:short].to_s.upcase}.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
             end
             # Only keep lines that are usable in supported agents
             next false if agents.empty?
