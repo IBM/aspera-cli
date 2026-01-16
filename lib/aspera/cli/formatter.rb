@@ -68,7 +68,7 @@ module Aspera
         # Give Markdown String, or matched data, return formatted string for terminal
         # used by spec_doc
         # @param match [MatchData,String]
-        def markdown_to_terminal(match)
+        def markdown_text(match)
           if match.is_a?(String)
             match = Markdown::FORMATS.match(match)
             Aspera.assert(match)

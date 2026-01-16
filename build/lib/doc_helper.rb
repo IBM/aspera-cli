@@ -7,6 +7,7 @@
 # get transfer spec parameter description
 require 'aspera/environment'
 require 'aspera/cli/info'
+require 'aspera/agent/factory'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/main'
@@ -37,7 +38,7 @@ class MarkdownFormatter
     end
 
     # @param match [MatchData]
-    def markdown(match)
+    def markdown_text(match)
       # keep markdown unchanged
       match.to_s
     end
@@ -208,7 +209,7 @@ class DocHelper
 
   # Transfer spec description generation for markdown manual
   def spec_table
-    agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
+    agents = Aspera::Agent::Factory::ALL.map{ |_, v| [v[:short].upcase, v[:long]]}.sort_by{ |a| a[0]}
     agents.unshift(%w[ID Name])
     fields, data = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true, agent_columns: false)
     props = data.map{ |param| fields.map{ |field_name| param[field_name]}}

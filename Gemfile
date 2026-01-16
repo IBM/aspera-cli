@@ -10,10 +10,9 @@ group :optional do
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
   gem('marcel', '~> 1.1') # for preview
   gem('rmagick', '~> 6.1') unless defined?(JRUBY_VERSION) # for terminal view
-  # gem('rmagick4j', '~> 0.3') if defined?(JRUBY_VERSION) # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
-  gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # 
+  gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # remove from standard gems
   gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
   gem('jdbc-sqlite3', '~> 3.46') if defined?(JRUBY_VERSION) # for async DB
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB
@@ -33,7 +32,6 @@ group :development do
   gem 'rubocop-ast', '~> 1.4'
   gem 'rubocop-performance', '~> 1.10' unless defined?(JRUBY_VERSION)
   gem 'rubocop-shopify', '~> 2.0'
-  #  gem 'ruby-lsp', '~> 0.23' unless defined?(JRUBY_VERSION)
   gem 'simplecov', '~> 0.22'
   gem 'solargraph', '~> 0.48' unless defined?(JRUBY_VERSION)
 end

@@ -107,7 +107,7 @@
     },
     "delete_source": {
       "$comment": "TODO: implement",
-      "description": "Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.",
+      "description": "Remove transferred source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.",
       "type": "boolean",
       "x-agents": [
         "direct",

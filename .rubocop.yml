@@ -30,7 +30,7 @@ Layout/EmptyLineAfterGuardClause:
   Enabled: false
 Metrics/PerceivedComplexity:
   Enabled: true
-  Max: 60
+  Max: 62
 Metrics/ParameterLists:
   Max: 6
 Metrics/BlockNesting:

@@ -598,7 +598,7 @@ See [Gemfile](Gemfile):
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
-| base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' |
+| base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
 | sequel | ~> 5.96 | (jruby) for async DB |
@@ -4036,7 +4036,7 @@ ascli config ascp schema transferd --format=jsonpp
 | cookie | string | Metadata for transfer specified by application.<br/>(env:`ASPERA_SCP_COOKIE`) |
 | create_dir | boolean | Create target directory if it doesn't already exist.<br/>If **all** the following conditions are met, then the `destination_root` specifies a filename instead of destination folder:<br/>- `create_dir` is `false`<br/>- A single source file is given on **command line**<br/>- The target folder specified by `destination_root` does not exist<br/>In all other cases, `destination_root` specifies a folder, and it is created if it does not already exist. I.e. if **any** of those conditions is met:<br/>- `create_dir` is `true`<br/>- Multiple source files are provided<br/>- List of source files are provided in a file (list or pair), default for Node API and `ascli`.<br/>- The target folder exists<br/>(`-d`) |
 | delete_before_transfer | boolean | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
-| delete_source | boolean | Remove transfered source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
+| delete_source | boolean | Remove transferred source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
 | destination_root | string | Destination root directory. |
 | destination_root_id | string | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(T) |
 | dgram_size | integer | UDP datagram size in bytes.<br/>(`-Z {integer}`) |
@@ -6496,9 +6496,9 @@ files delete /testsrc
 files download --to-folder=. testdst/test_file.bin testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin
 files download --transfer=desktop testdst/test_file.bin
-files find /
-files find / '\.partial$'
-files find / @ruby:'->(f){f["type"].eql?("file")}'
+files find /sample_video
+files find /sample_video '\.partial$'
+files find /sample_video @ruby:'->(f){f["type"].eql?("file")}'
 files mkdir /testsrc
 files modify /some_folder @json:'{"mount_point":false}'
 files permission my_test_folder list

@@ -31,7 +31,6 @@ module Aspera
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
-      TRANSFER_AGENTS = Agent::Factory.instance.list.freeze
 
       class << self
         # @return :success if all sessions statuses returned by "start" are success
@@ -65,7 +64,7 @@ module Aspera
         @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
         @opt_mgr.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
-        @opt_mgr.declare(:transfer, 'Type of transfer agent', allowed: TRANSFER_AGENTS, default: :direct)
+        @opt_mgr.declare(:transfer, 'Type of transfer agent', allowed: Agent::Factory::ALL.keys, default: :direct)
         @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_info})
         @opt_mgr.parse_options!
         @notification_cb = nil
