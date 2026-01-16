@@ -242,25 +242,23 @@ Once the development branch is ready for release:
 
 - Build the PDF manual in `pkg`:
 
-  ```shell
-  bundle exec rake doc:build
-  ```
+```shell
+bundle exec rake doc:build
+```
 
 - Build the signed `.gem` in `pkg`:
 
-  ```shell
-  bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
-  ```
+```shell
+bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
+```
 
-- Create the release version tag and push it to GitHub:
+- Create the release version tag and push it to GitHub. This will trigger the action `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
-  ```shell
-  bundle exec rake release_tag
-  ```
+```shell
+bundle exec rake release_tag
+```
 
-  This will trigger `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
-
-- Include generated artifacts from `pkg/` in github release:
+- Include generated artifacts from `pkg/` in GitHub release:
 
   - The signed `.gem`
   - The PDF Manual
