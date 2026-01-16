@@ -6,6 +6,7 @@ require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/dot_container'
 require 'io/console'
 require 'optparse'
 
@@ -486,11 +487,12 @@ module Aspera
           Log.log.trace1('After parse')
         rescue OptionParser::InvalidOption => e
           Log.log.trace1{"InvalidOption #{e}".red}
+          # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
           if (m = e.args.first.match(/^--([a-z\-]+)\.([^=]+)=(.+)$/))
             option, path, value = m.captures
             option_sym = self.class.option_line_to_name(option).to_sym
             if @declared_options.key?(option_sym)
-              set_option(option_sym, dotted_to_extended(path, value, get_option(option_sym)), where: 'dotted')
+              set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
               retry
             end
           end
@@ -561,14 +563,14 @@ module Aspera
 
       # Read remaining args and build an Array or Hash
       # @param value [nil] Argument to `@:` extended value
-      def args_as_extended(value)
+      def args_as_extended(arg)
         # This extended value does not take args (`@:`)
-        ExtendedValue.assert_no_value(value, :p)
+        ExtendedValue.assert_no_value(arg, :p)
         result = nil
         get_next_argument(:args, multiple: true).each do |arg|
           Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not inlude #{OPTION_VALUE_SEPARATOR}"}
-          path, raw = arg.split(OPTION_VALUE_SEPARATOR, 2)
-          result = dotted_to_extended(path, raw, result)
+          path, value = arg.split(OPTION_VALUE_SEPARATOR, 2)
+          result = DotContainer.dotted_to_container(path, smart_convert(value), result)
         end
         result
       end
@@ -588,40 +590,6 @@ module Aspera
             Float(value, exception: false) ||
             ExtendedValue.instance.evaluate(value, context: 'dotted expression')
         end
-      end
-
-      # Convert `String` to `Integer`, or keep `String` if not `Integer`
-      def int_or_string(value)
-        Integer(value, exception: false) || value
-      end
-
-      def new_hash_or_array_from_key(key)
-        key.is_a?(Integer) ? [] : {}
-      end
-
-      def array_requires_integer_index!(container, index)
-        Aspera.assert(container.is_a?(Hash) || index.is_a?(Integer)){'Using String index when Integer index used previously'}
-      end
-
-      # Insert extended value `value` into struct `result` at `path`
-      # @param path   [String] dotted path
-      # @param value  [String] Smart expression
-      # @param result [NilClass, Hash, Array] current value
-      # @return [Hash, Array]
-      def dotted_to_extended(path, value, result = nil)
-        # Typed keys
-        keys = path.split(OPTION_DOTTED_SEPARATOR).map{ |k| int_or_string(k)}
-        # Create, or re-use first level container
-        current = (result ||= new_hash_or_array_from_key(keys.first))
-        # walk the path, and create sub-containers if necessary
-        keys.each_cons(2) do |k, next_k|
-          array_requires_integer_index!(current, k)
-          current = (current[k] ||= new_hash_or_array_from_key(next_k))
-        end
-        # Assign value at last index
-        array_requires_integer_index!(current, keys.last)
-        current[keys.last] = smart_convert(value)
-        result
       end
 
       # generate command line option from option symbol
@@ -677,15 +645,13 @@ module Aspera
       OPTION_SEP_SYMBOL = '_'
       # Option value separator on command line, e.g. in --option-blah=foo, the "="
       OPTION_VALUE_SEPARATOR = '='
-      # "." : An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-      OPTION_DOTTED_SEPARATOR = '.'
       # Starts an option, e.g. in --option-blah, the two first "--"
       OPTION_PREFIX = '--'
       # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
 
-      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_DOTTED_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
+      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
     end
   end
 end

@@ -8,6 +8,7 @@ require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/markdown'
+require 'aspera/dot_container'
 require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
@@ -64,9 +65,10 @@ module Aspera
           end
         end
 
+        # Give Markdown String, or matched data, return formatted string for terminal
         # used by spec_doc
         # @param match [MatchData,String]
-        def markdown(match)
+        def markdown_to_terminal(match)
           if match.is_a?(String)
             match = Markdown::FORMATS.match(match)
             Aspera.assert(match)
@@ -84,11 +86,11 @@ module Aspera
           end
         end
 
-        # replace empty values with a readable version on terminal
-        def enhance_display_values_hash(input_hash)
-          stack = [input_hash]
-          until stack.empty?
-            current = stack.pop
+        # Replace special values with a readable version on terminal
+        def replace_specific_for_terminal(input_hash)
+          hash_to_process = [input_hash]
+          until hash_to_process.empty?
+            current = hash_to_process.pop
             current.each do |key, value|
               case value
               when NilClass
@@ -100,71 +102,22 @@ module Aspera
               when Array
                 if value.empty?
                   current[key] = special_format('empty list')
+                elsif value.all?(String)
+                  current[key] = value.join(',')
                 else
                   value.each do |item|
-                    stack.push(item) if item.is_a?(Hash)
+                    hash_to_process.push(item) if item.is_a?(Hash)
                   end
                 end
               when Hash
                 if value.empty?
                   current[key] = special_format('empty dict')
                 else
-                  stack.push(value)
+                  hash_to_process.push(value)
                 end
               end
             end
           end
-        end
-
-        # Given a list of string, display that list in a single cell
-        def list_to_string(list)
-          list.join(',')
-        end
-
-        # Build new prefix
-        def add_prefix(prefix, key)
-          [prefix, key].compact.join('.')
-        end
-
-        # Add elements of enumerator to the stack, in reverse order
-        def add_elements(stack, prefix, enum)
-          enum.reverse_each do |key, value|
-            stack.push([add_prefix(prefix, key), value])
-          end
-        end
-
-        # Flatten a Hash into single level hash
-        def flatten_hash(input)
-          Aspera.assert_type(input, Hash)
-          return input if input.empty?
-          flat = {}
-          # tail (pop,push) contains the next element to display
-          stack = [[nil, input]]
-          until stack.empty?
-            prefix, current = stack.pop
-            # empty things will be displayed as such
-            if current.respond_to?(:empty?) && current.empty?
-              flat[prefix] = current
-              next
-            end
-            case current
-            when Hash
-              add_elements(stack, prefix, current)
-            when Array
-              if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
-                flat[prefix] = list_to_string(current.map(&:to_s))
-              elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
-                flat[prefix] = list_to_string(current.map{ |i| i['name']})
-              elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
-                add_elements(stack, prefix, current.each_with_object({}){ |i, h| h[i['name']] = i['value']})
-              else
-                add_elements(stack, prefix, current.each_with_index.map{ |v, i| [i, v]})
-              end
-            else
-              flat[prefix] = current
-            end
-          end
-          flat
         end
 
         def all_but(list)
@@ -356,13 +309,13 @@ module Aspera
             if data.empty?
               display_message(:data, self.class.special_format('empty dict'))
             else
-              data = self.class.flatten_hash(data) if @options[:flat_hash]
+              data = DotContainer.new(data).to_dotted if @options[:flat_hash]
               display_table([data], compute_fields([data], fields), single: true)
             end
           when :object_list
             # :object_list is an Array of Hash, where key=column name
             Aspera.assert_array_all(data, Hash){'result'}
-            data = data.map{ |obj| self.class.flatten_hash(obj)} if @options[:flat_hash]
+            data = data.map{ |obj| DotContainer.new(obj).to_dotted} if @options[:flat_hash]
             display_table(data, compute_fields(data, fields), single: type.eql?(:single_object))
           when :value_list
             # :value_list is a simple array of values, name of column provided in `name`
@@ -474,7 +427,7 @@ module Aspera
           return
         end
         filter_columns_on_select(object_array)
-        object_array.each{ |i| self.class.enhance_display_values_hash(i)}
+        object_array.each{ |i| self.class.replace_specific_for_terminal(i)}
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
           Log.log.debug("display_table: single element, field: #{fields.first}")
