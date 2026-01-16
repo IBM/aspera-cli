@@ -1912,20 +1912,20 @@ aocffin:
     - aoc
     - files
     - find
-    - /
+    - /sample_video
 aocffinb:
   command:
     - aoc
     - files
     - find
-    - /
+    - /sample_video
     - \.partial$
 aocffinc:
   command:
     - aoc
     - files
     - find
-    - /
+    - /sample_video
     - '@ruby:->(f){f["type"].eql?("file")}'
 aoc_testsrc_cleanup:
   tags:
