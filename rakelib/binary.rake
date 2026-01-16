@@ -10,11 +10,13 @@ require 'aspera/environment'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 require_relative '../build/lib/build_tools'
+include BuildTools
 
 CLI_EXEC_FILENAME = "#{Aspera::Cli::Info::CMD_NAME}.#{GEM_VERSION}.#{Aspera::Environment.instance.architecture}"
 PATH_CLI_EXEC = Paths::RELEASE / CLI_EXEC_FILENAME
 CLI_GEM_VERS_SPEC = "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}"
-TEBAKO_VERSION = '0.14.0'
+# TEBAKO_VERSION = '0.14.0'
+TEBAKO_VERSION = '0.13.4'
 TEBAKO_LINUX_CONTAINER_IMAGE = 'ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4'
 TEBAKO_TMP   = Paths::TMP / 'tebako'
 TEBAKO_ENV   = TEBAKO_TMP / 'env'
@@ -44,7 +46,7 @@ namespace :binary do
     install_tmp = TEBAKO_TMP / 'install'
     install_tmp.mkpath
     install_gem(CLI_GEM_VERS_SPEC, install_tmp)
-    BuildTools.gems_in_group(Paths::GEMFILE, :optional).each{ |spec| install_gem(spec, install_tmp)}
+    # gems_in_group(Paths::GEMFILE, :optional).each{ |spec| install_gem(spec, install_tmp)}
     Dir.glob(install_tmp / 'cache/*.gem').each do |gem_file|
       FileUtils.mv(gem_file, TEBAKO_ROOT)
     end
@@ -64,16 +66,7 @@ namespace :binary do
     ##########################################################
     case Aspera::Environment.instance.os
     when Aspera::Environment::OS_MACOS
-      run('brew', 'update')
-      run('brew', 'install', 'bash', 'binutils', 'bison', 'flex', 'gnu-sed', 'lz4', 'pkg-config', 'xz')
-      run(
-        'brew', 'install',
-        'double-conversion', 'fmt', 'gdbm', 'glog',
-        'jemalloc', 'libevent', 'libffi', 'libsodium',
-        'libyaml', 'ncurses', 'openssl@3', 'zlib'
-      )
-      run('brew', 'install', 'boost@1.85')
-      run('brew', 'link', '--force', 'boost@1.85')
+      run(*%W[brew bundle install --file=#{Paths::TOP / 'build/binary/Brewfile'}])
       ENV['PATH'] =
         [
           File.join(%x(brew --prefix flex).strip, 'bin'),

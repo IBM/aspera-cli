@@ -1,0 +1,26 @@
+# frozen_string_literal: true
+
+# See: https://github.com/tamatebako/tebako/blob/main/Brewfile
+
+brew 'bash'
+brew 'binutils'
+brew 'bison'
+brew 'flex'
+brew 'gnu-sed'
+brew 'lz4'
+brew 'pkg-config'
+brew 'xz'
+brew 'double-conversion'
+brew 'fmt'
+brew 'gdbm'
+brew 'glog'
+brew 'jemalloc'
+brew 'libevent'
+brew 'libffi'
+brew 'libsodium'
+brew 'libyaml'
+brew 'ncurses'
+brew 'openssl@3'
+brew 'zlib'
+brew 'curl'
+brew 'boost'
