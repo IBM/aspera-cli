@@ -33,7 +33,7 @@ module Aspera
       # types of events for shared folder creation
       # Node events: permission.created permission.modified permission.deleted
       PERMISSIONS_CREATED = ['permission.created'].freeze
-      # Special name when creating workspace shared folders
+      # Special user identifier when creating workspace shared folders
       ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
 
       private_constant :MAX_AOC_URL_REDIRECT,
@@ -386,11 +386,12 @@ module Aspera
         @home_info
       end
 
-      # @param node_id [String] identifier of node in AoC
-      # @param workspace_id [String] workspace identifier
-      # @param workspace_name [String] workspace name
-      # @param scope e.g. Node::SCOPE_USER, or nil (requires secret)
-      # @param package_info [Hash] created package information
+      # Return a Node API for given node id, in a given context (files, packages), for the given scope.
+      # @param node_id        [String] identifier of node in AoC
+      # @param workspace_id   [String,nil] workspace identifier
+      # @param workspace_name [String,nil] workspace name
+      # @param scope          [String,nil] e.g. Node::SCOPE_USER, or Node::SCOPE_ADMIN, or nil (requires secret)
+      # @param package_info   [Hash,nil] created package information
       # @returns [Node] a node API for access key
       def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::SCOPE_USER, package_info: nil)
         Aspera.assert_type(node_id, String)
@@ -419,6 +420,7 @@ module Aspera
         else
           # OAuth bearer token
           node_params[:auth] = auth_params.clone
+          # node_params[:auth][] = ID_AK_ADMIN if scope.eql?(Node::SCOPE_ADMIN)
           node_params[:auth][:scope] = Node.token_scope(node_info['access_key'], scope)
           # special header required for bearer token only
           node_params[:headers] = {Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}

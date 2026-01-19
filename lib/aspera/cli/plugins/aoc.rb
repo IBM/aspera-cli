@@ -83,7 +83,7 @@ module Aspera
           end
 
           # @param base   [String] Base folder path
-          # @param always [Bool]   `true` always add number, `false` only if base folder already exists
+          # @param always [Boolean]   `true` always add number, `false` only if base folder already exists
           # @return [String] Folder path that does jot exist, with possible .<number> extension
           def next_available_folder(base, always: false)
             counter = always ? 1 : 0
@@ -245,9 +245,9 @@ module Aspera
         end
 
         # Generate or update Hash with workspace id and name (option), if not already set
-        # @param hash   [Hash, Nil] set in provided hash
-        # @param string [TrueClass,FalseClass] true to set key as string, else as symbol
-        # @param name   [Bool] include name
+        # @param hash   [Hash,nil] set in provided hash
+        # @param string [Boolean] true to set key as string, else as symbol
+        # @param name   [Boolean] include name
         # @return [Hash] with key `workspace_[id,name]` (symbol or string) only if defined
         def workspace_id_hash(hash: nil, string: false, name: false)
           info = aoc_api.workspace
@@ -320,8 +320,11 @@ module Aspera
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
         private_constant :NODE4_EXT_COMMANDS
 
-        # @param file_id [String] root file id for the operation (can be AK root, or other, e.g. package, or link)
-        # @param scope [String] node scope, or nil (admin)
+        # Execute a node gen4 command
+        # @param command_repo [Symbol] command to execute
+        # @param node_id [String] Node identifier
+        # @param file_id [String] Root file id for the operation (can be AK root, or other, e.g. package, or link). If `nil` use AK root file id.
+        # @param scope [String] node scope (Node::SCOPE_<USER|ADMIN>), or nil (requires secret)
         def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil)
           top_node_api = aoc_api.node_api_from(
             node_id:        node_id,

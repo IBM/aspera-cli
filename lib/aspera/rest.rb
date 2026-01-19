@@ -307,9 +307,12 @@ module Aspera
     # @param body       [Hash, String] body parameters
     # @param headers      [Hash] additional headers (override Content-Type)
     # @param save_to_file [String, nil](filepath)
-    # @param exception    [Bool] `true`, error raise exception
+    # @param exception    [Boolean] `true`, error raise exception
     # @param ret [:data, :resp, :both] Tell to return only data, only http response, or both
-    # @return [Object, Array] only data, only http response, or both
+    # @return [(HTTPResponse,Hash)] If ret is :both
+    # @return [HTTPResponse] If ret is :resp
+    # @return [Hash] If ret is :data
+    # @raise [RestCallError] on error if `exception` is true
     def call(
       operation:,
       subpath: nil,
