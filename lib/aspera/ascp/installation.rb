@@ -294,11 +294,11 @@ module Aspera
       end
 
       # Retrieves ascp binary for current system architecture from URL or file
-      # @param url      [String] URL to SDK archive, or SpecialValues::DEF
-      # @param folder   [String] Destination folder path
-      # @param backup   [Bool]   If destination folder exists, then rename
-      # @param with_exe [Bool]   If false, only retrieves files, but do not generate or restrict access
-      # @param &block   [Proc]   A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
+      # @param url      [String]  URL to SDK archive, or SpecialValues::DEF
+      # @param folder   [String]  Destination folder path
+      # @param backup   [Boolean] If destination folder exists, then rename
+      # @param with_exe [Boolean] If false, only retrieves files, but do not generate or restrict access
+      # @param &block   [Proc]    A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
       # @return [Array] name, ascp version (from execution), folder
       def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')

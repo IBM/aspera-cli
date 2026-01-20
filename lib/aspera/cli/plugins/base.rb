@@ -136,12 +136,12 @@ module Aspera
         # @param command        [Symbol]  command to execute: create show list modify delete
         # @param display_fields [Array]   fields to display by default
         # @param items_key      [String]  result is in a sub key of the json
-        # @param delete_style   [String]  if set, the delete operation by array in payload
-        # @param id_as_arg      [String]  if set, the id is provided as url argument ?<id_as_arg>=<id>
-        # @param is_singleton   [Boolean] if true, entity is the full path to the resource
-        # @param tclo           [Bool]    if set, :list use paging with total_count, limit, offset
-        # @param block          [Proc]    block to search for identifier based on attribute value
-        # @return result suitable for CLI result
+        # @param delete_style   [String]  If set, the delete operation by array in payload
+        # @param id_as_arg      [String]  If set, the id is provided as url argument ?<id_as_arg>=<id>
+        # @param is_singleton   [Boolean] If `true`, entity is the full path to the resource
+        # @param tclo           [Boolean] If `true`, :list use paging with total_count, limit, offset
+        # @param block          [Proc]    Block to search for identifier based on attribute value
+        # @return [Hash] Result suitable for CLI result
         def entity_execute(
           api:,
           entity:,

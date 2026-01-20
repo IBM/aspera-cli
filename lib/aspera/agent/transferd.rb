@@ -21,10 +21,10 @@ module Aspera
 
       private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
 
-      # @param url   [String] URL of the transfer manager daemon
-      # @param start [Bool]   if false, expect that an external daemon is already running
-      # @param stop  [Bool]   if false, do not shutdown daemon on exit
-      # @param base  [Hash]   base class options
+      # @param url   [String]  URL of the transfer manager daemon
+      # @param start [Boolean] If `false`, expect that an external daemon is already running
+      # @param stop  [Boolean] If `false`, do not shutdown daemon on exit
+      # @param base  [Hash]    Base class options
       def initialize(
         url:   AUTO_LOCAL_TCP_PORT,
         start: true,

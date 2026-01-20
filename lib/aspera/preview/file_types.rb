@@ -53,7 +53,7 @@ module Aspera
 
       private_constant :SUPPORTED_MIME_TYPES
 
-      # @attr use_mimemagic [bool] true to use mimemagic to determine real mime type based on file content
+      # @attr use_mimemagic [Boolean] `true` to use mimemagic to determine real mime type based on file content
       attr_accessor :use_mimemagic
 
       def initialize

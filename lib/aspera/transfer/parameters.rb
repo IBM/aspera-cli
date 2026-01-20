@@ -45,12 +45,12 @@ module Aspera
         end
       end
 
-      # @param job_spec        [Hash]   Transfer spec
-      # @param ascp_args       [Array]  Other ascp args
-      # @param quiet           [Bool]   Remove ascp output
-      # @param trusted_certs   [Array]  Trusted certificates
-      # @param client_ssh_key  [Symbol] :rsa or :dsa
-      # @param check_ignore_cb [Proc]   Callback
+      # @param job_spec        [Hash]    Transfer spec
+      # @param ascp_args       [Array]   Other ascp args
+      # @param quiet           [Boolean] Remove ascp output
+      # @param trusted_certs   [Array]   Trusted certificates
+      # @param client_ssh_key  [:rsa,:dsa] :rsa or :dsa
+      # @param check_ignore_cb [Proc]    Callback
       def initialize(
         job_spec,
         ascp_args:       nil,

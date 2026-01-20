@@ -89,7 +89,7 @@ module Aspera
     # Version 2 allows use of reverse proxy with multiple addresses.
     # @param [Symbol] one of OPERATIONS
     # @param [Array] parameters for "as" command
-    # @return result of command, type depends on command (bool, array, hash)
+    # @return [Boolean,Array,Hash] result of command, type depends on command
     def execute_single(action_sym, arguments, version: 1, host: nil)
       arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}

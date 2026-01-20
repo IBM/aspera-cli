@@ -4,8 +4,8 @@ description: Async session description, identical to `asyncs` Node API.
 $comment: >-
   This is a YAML version of the original JSON schema from asyncs API.
   It is modified with special `x-` fields.
-  x-ts-name      [Bool,String]  `true` if same name in transfer spec, else real name in transfer spec
-  x-ts-convert   [String]       Name of methods to convert value from transfer spec to `conf`
+  x-ts-name      [Boolean,String] `true` if same name in transfer spec, else real name in transfer spec
+  x-ts-convert   [String]         Name of methods to convert value from transfer spec to `conf`
   `x-` fields are also documented in `command_line_builder.rb`
 type: object
 required:

@@ -22,11 +22,11 @@ module Aspera
       'x-cli-envvar',   # [String]       Name of env var
       'x-cli-option',   # [String]       Command line option (starts with "-")
       'x-cli-short',    # [String]       Command line option (starts with "-")
-      'x-cli-switch',   # [Bool]         `true` if option has no arg, else by default option has a value
-      'x-cli-special',  # [Bool]         `true` if special handling (deferred)
+      'x-cli-switch',   # [Boolean]      `true` if option has no arg, else by default option has a value
+      'x-cli-special',  # [Boolean]      `true` if special handling (deferred)
       'x-cli-convert',  # [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
       'x-agents',       # [Array]        Supported agents (for doc only), if not specified: all
-      'x-ts-name',      # [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
+      'x-ts-name',      # [Boolean,String] (async) true if same name in transfer spec, else real name in transfer spec, else ignored
       'x-ts-convert',   # [String]       (async) Name of methods to convert value from transfer spec to `conf` API.
       'x-deprecation'   # [String]       Deprecation message for doc
     ].freeze
@@ -50,8 +50,8 @@ module Aspera
       private
 
       # Fill default values for some fields in the schema
-      # @param schema [Hash] The JSON schema
-      # @param ascp [Bool] `true` if ascp
+      # @param schema [Hash]    The JSON schema
+      # @param ascp   [Boolean] `true` if ascp
       def validate_schema(schema, ascp: false)
         direct_props = %w[x-cli-option x-cli-envvar x-cli-special].freeze
         schema['properties'].each do |name, info|
