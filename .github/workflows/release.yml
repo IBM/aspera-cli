@@ -35,6 +35,9 @@ jobs:
           ruby-version: "4.0.1"
           bundler-cache: true
 
+      - name: Install optional gems needed for doc generation
+        run: gem install marcel
+
       - name: Install documentation dependencies
         run: |
           sudo apt-get update
