@@ -19,7 +19,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     env:
-      BUNDLE_WITHOUT: optional:special
+      BUNDLE_WITHOUT: special
     permissions:
       contents: write
     steps:
@@ -35,8 +35,6 @@ jobs:
           ruby-version: "4.0.1"
           bundler-cache: true
 
-      - name: Install optional gems needed for doc generation
-        run: gem install marcel
 
       - name: Install documentation dependencies
         run: |
