@@ -19,7 +19,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     env:
-      BUNDLE_WITHOUT: optional:special
+      BUNDLE_WITHOUT: special
     permissions:
       contents: write
     steps:
