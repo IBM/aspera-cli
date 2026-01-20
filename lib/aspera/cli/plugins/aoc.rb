@@ -82,9 +82,10 @@ module Aspera
             }
           end
 
-          # @param base   [String] Base folder path
-          # @param always [Boolean]   `true` always add number, `false` only if base folder already exists
-          # @return [String] Folder path that does jot exist, with possible .<number> extension
+          # Get folder path that does not exist
+          # @param base   [String]  Base folder path
+          # @param always [Boolean] `true` always add number, `false` only if base folder already exists
+          # @return [String] Folder path that does not exist, with possible .<number> extension
           def next_available_folder(base, always: false)
             counter = always ? 1 : 0
             loop do
@@ -224,6 +225,8 @@ module Aspera
         end
 
         # create an API object with the same options, but with a different subpath
+        # @param aoc_base_path [String] New subpath
+        # @return [Api::AoC] API object for AoC (is Rest)
         def api_from_options(aoc_base_path)
           return new_with_options(
             Api::AoC,
@@ -239,7 +242,7 @@ module Aspera
         end
 
         # AoC Rest object
-        # @return [Rest]
+        # @return [Api::AoC] API object for AoC (is Rest)
         def aoc_api
           if @cache_api_aoc.nil?
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
