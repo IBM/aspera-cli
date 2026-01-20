@@ -27,15 +27,15 @@ end
 
 # Used only for development
 group :development do
-  gem 'debug', '~> 1.11' unless defined?(JRUBY_VERSION)
-  gem 'grpc-tools', '~> 1.67'
-  gem 'rake', '~> 13.0'
-  gem 'reek', '~> 6.5.0'
-  gem 'rspec', '~> 3.0'
-  gem 'rubocop', '~> 1.75'
-  gem 'rubocop-ast', '~> 1.4'
-  gem 'rubocop-performance', '~> 1.10' unless defined?(JRUBY_VERSION)
-  gem 'rubocop-shopify', '~> 2.0'
-  gem 'simplecov', '~> 0.22'
-  gem 'solargraph', '~> 0.48' unless defined?(JRUBY_VERSION)
+  gem('debug', '~> 1.11') unless defined?(JRUBY_VERSION)
+  gem('grpc-tools', '~> 1.67')
+  gem('rake', '~> 13.0')
+  gem('reek', '~> 6.5.0')
+  gem('rspec', '~> 3.0')
+  gem('rubocop', '~> 1.75')
+  gem('rubocop-ast', '~> 1.4')
+  gem('rubocop-performance', '~> 1.10') unless defined?(JRUBY_VERSION)
+  gem('rubocop-shopify', '~> 2.0')
+  gem('simplecov', '~> 0.22')
+  gem('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
 end
