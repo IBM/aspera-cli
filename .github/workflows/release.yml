@@ -1,0 +1,104 @@
+# Workflow to create a new release
+# Triggered manually via GitHub Actions UI
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., x.y.z). Leave empty to use version.rb without .pre suffix'
+        required: false
+        type: string
+      next_version:
+        description: 'Next development version (e.g., x.y.z). Leave empty to auto-increment minor version. Will append .pre automatically'
+        required: false
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_WITHOUT: optional:special
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.0"
+          bundler-cache: true
+
+      - name: Install documentation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-luatex texlive-fonts-extra texlive-latex-extra
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine release version
+        id: version
+        run: |
+          # Read current version from version.rb
+          CURRENT_VERSION=$(grep -oP "VERSION = '\K[^']+" lib/aspera/cli/version.rb)
+          echo "Current version in version.rb: $CURRENT_VERSION"
+
+          # Determine release version
+          if [ -n "${{ inputs.version }}" ]; then
+            RELEASE_VERSION="${{ inputs.version }}"
+          else
+            # Strip .pre suffix if present
+            RELEASE_VERSION="${CURRENT_VERSION%.pre}"
+          fi
+          echo "Release version: $RELEASE_VERSION"
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+
+          # Determine next development version
+          if [ -n "${{ inputs.next_version }}" ]; then
+            NEXT_VERSION="${{ inputs.next_version }}"
+          else
+            # Parse version components and increment minor version
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$RELEASE_VERSION"
+            NEXT_MINOR=$((MINOR + 1))
+            NEXT_VERSION="${MAJOR}.${NEXT_MINOR}.0"
+          fi
+          echo "Next development version: ${NEXT_VERSION}.pre"
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version.rb for release
+        run: |
+          sed -i "s/VERSION = '.*'/VERSION = '${{ steps.version.outputs.release_version }}'/" lib/aspera/cli/version.rb
+          cat lib/aspera/cli/version.rb
+
+      - name: Build documentation
+        run: bundle exec rake doc:build
+
+      - name: Commit release changes
+        run: |
+          git add -A
+          git commit -m "Release v${{ steps.version.outputs.release_version }}"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.version.outputs.release_version }}" -m "Version ${{ steps.version.outputs.release_version }}"
+          git push origin "v${{ steps.version.outputs.release_version }}"
+
+      - name: Update version.rb for next development cycle
+        run: |
+          sed -i "s/VERSION = '.*'/VERSION = '${{ steps.version.outputs.next_version }}.pre'/" lib/aspera/cli/version.rb
+          cat lib/aspera/cli/version.rb
+
+      - name: Commit next development version
+        run: |
+          git add lib/aspera/cli/version.rb
+          git commit -m "Prepare for next development cycle (${{ steps.version.outputs.next_version }}.pre)"
+          git push origin main

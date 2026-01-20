@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0.pre2"
+subtitle: "ascli 4.25.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0.pre2
+Version : 4.25.0.pre
 
 Laurent/2016-2026
 
@@ -139,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0.pre2
+4.25.0.pre
 ```
 
 > [!NOTE]
@@ -592,10 +592,9 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](Gemfile):
 
 | name | version | comment |
-|----------------------|---------|-----------------------------------------------------|
+|----------------------|----------|-----------------------------------------------------|
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | marcel | ~> 1.1 | for preview |
-| rmagick | ~> 6.1 | (no jruby) for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 | base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
@@ -605,13 +604,24 @@ See [Gemfile](Gemfile):
 | ed25519 | ~> 1.4 | (no jruby) for ed25519 and OpenSSH file format |
 | bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
+| rmagick | ~> 6.1 | (no jruby) for terminal view |
+| debug | ~> 1.11 | (no jruby) |
+| grpc-tools | ~> 1.67 |  |
+| rake | ~> 13.0 |  |
+| reek | ~> 6.5.0 |  |
+| rspec | ~> 3.0 |  |
+| rubocop | ~> 1.75 |  |
+| rubocop-ast | ~> 1.4 |  |
+| rubocop-performance | ~> 1.10 | (no jruby) |
+| rubocop-shopify | ~> 2.0 |  |
+| simplecov | ~> 0.22 |  |
+| solargraph | ~> 0.48 | (no jruby) |
 
 Install like this:
 
 ```shell
 gem install grpc -v '~> 1.71'
 gem install marcel -v '~> 1.1'
-gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
 gem install base64 -v '~> 0.3'
@@ -621,6 +631,18 @@ gem install sequel -v '~> 5.96'
 gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
+gem install rmagick -v '~> 6.1'
+gem install debug -v '~> 1.11'
+gem install grpc-tools -v '~> 1.67'
+gem install rake -v '~> 13.0'
+gem install reek -v '~> 6.5.0'
+gem install rspec -v '~> 3.0'
+gem install rubocop -v '~> 1.75'
+gem install rubocop-ast -v '~> 1.4'
+gem install rubocop-performance -v '~> 1.10'
+gem install rubocop-shopify -v '~> 2.0'
+gem install simplecov -v '~> 0.22'
+gem install solargraph -v '~> 0.48'
 ```
 
 ### Ruby Gem: `aspera-cli`
@@ -784,11 +806,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0.pre2 --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0.pre --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0.pre2-gems
+mv temp_folder/cache aspera-cli-4.25.0.pre-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0.pre2-gems aspera-cli-4.25.0.pre2-gems.tgz
+tar zcvf aspera-cli-4.25.0.pre-gems aspera-cli-4.25.0.pre-gems.tgz
 ```
 
 #### Unix-like
@@ -933,7 +955,7 @@ ascli -v
 ```
 
 ```text
-4.25.0.pre2
+4.25.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4641,7 +4663,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0.pre2)
+        ascli -- a command line tool for Aspera Applications (v4.25.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]

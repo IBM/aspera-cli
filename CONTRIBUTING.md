@@ -214,7 +214,16 @@ bundle exec rake -T ^binary:
 
 ## Release
 
-### Checklist before a new release
+### Branching Strategy
+
+This project uses a single `main` branch for development. During the development cycle, the version in `lib/aspera/cli/version.rb` uses a `.pre` suffix (e.g., `x.y.z.pre`) to indicate a pre-release state.
+
+Feature development and bug fixes can be done either:
+
+- Directly on `main` for small changes
+- Via feature branches with pull requests for larger changes
+
+### Checklist Before a New Release
 
 When preparing for a new release, do the following:
 
@@ -232,13 +241,34 @@ bundle exec rake container:build
 bundle exec rake container:test
 ```
 
-### Version Release Process
+### Automated Release Process
 
-Once the development branch is ready for release:
+Releases are triggered via the GitHub Actions UI using the **Release** workflow (`.github/workflows/release.yml`).
 
-- Merge branch `develop` into `main` branch
+To create a release:
 
-- Update the version in `lib/aspera/cli/version.rb` and check-in.
+1. Navigate to **Actions** > **Release** in the GitHub repository
+2. Click **Run workflow**
+3. Optionally specify:
+   - **Release version**: The version to release. If left empty, uses the current version from `version.rb` without the `.pre` suffix.
+   - **Next development version**: The next version to prepare for. If left empty, auto-increments the minor version. The `.pre` suffix is added automatically.
+4. Click **Run workflow**
+
+The workflow automatically:
+
+1. Updates `version.rb` with the release version
+2. Rebuilds documentation (PDF manual, README)
+3. Commits the changes
+4. Creates and pushes the release tag
+5. Triggers the deploy workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
+6. Updates `version.rb` to the next development version with `.pre` suffix
+7. Commits and pushes the version bump
+
+### Manual Release Process (Alternative)
+
+If needed, releases can still be done manually:
+
+- Update the version in `lib/aspera/cli/version.rb` (remove `.pre` suffix)
 
 - Build the PDF manual in `pkg`:
 
@@ -252,16 +282,15 @@ bundle exec rake doc:build
 bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
-- Create the release version tag and push it to GitHub. This will trigger the action `.github/workflows/deploy.yml`, which builds the gem file and pushes it to [rubygems.org](https://rubygems.org/gems/aspera-cli).
+- Create the release version tag and push it to GitHub:
 
 ```shell
 bundle exec rake release_tag
 ```
 
-- Include generated artifacts from `pkg/` in GitHub release:
+This will trigger the action `.github/workflows/deploy.yml`, which builds the gem file and pushes it to RubyGems.
 
-  - The signed `.gem`
-  - The PDF Manual
+- After release, update `version.rb` to the next development version with `.pre` suffix
 
 ## Long‑Term Implementation and Delivery Improvements
 
