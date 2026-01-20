@@ -5,7 +5,7 @@ require 'aspera/environment'
 require 'aspera/log'
 require_relative 'paths'
 
-PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::TOP / 'doc' / 'pandoc'
+PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::TOP / 'docs' / 'pandoc'
 PANDOC_DEPS = [
   'defaults_common.yaml',
   'defaults_pdf.yaml',
