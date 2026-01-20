@@ -256,7 +256,7 @@ class DocHelper
     # Add library path for Ruby CLI execution
     lib_path = File.expand_path('../lib', File.dirname(exec_path))
     output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1).gsub(/^Ignoring.+Try: gem pristine.*\n/, '')
-    raise "Error executing: ruby -I #{lib_path} #{exec_path} -h" unless $CHILD_STATUS.success?
+    raise "Error executing: ruby -I #{lib_path} #{exec_path} -h\nOutput:\n#{output}" unless $CHILD_STATUS.success?
     return output
   end
 
