@@ -573,6 +573,7 @@ serv_sync_pull_conf_reset:
     - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@json:@extend:{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 serv_sync_pull_conf_status_fail:
+  description: Check failure if wrong arg type.
   depends_on:
     - serv_sync_pull_conf_reset
   tags:
