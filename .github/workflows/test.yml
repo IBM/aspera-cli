@@ -11,6 +11,7 @@ on:
       - "Gemfile"
       - "**/*.gemspec"
       - "tests/tests.yml"
+      - ".github/workflows/test.yml"
   pull_request:
     paths:
       - "**/*.rb"
@@ -20,6 +21,7 @@ on:
       - "Gemfile"
       - "**/*.gemspec"
       - "tests/tests.yml"
+      - ".github/workflows/test.yml"
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-# gem's dependencies are in file <gem name>.gemspec
+# Gem's dependencies are in file <gem name>.gemspec
 gemspec
 
 # Optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
