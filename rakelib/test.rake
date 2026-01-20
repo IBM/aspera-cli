@@ -99,6 +99,8 @@ raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
 # tests state is saved here
 PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
+# tags that have special meaning
+SPECIAL_TAGS = %w[ignore_fail must_fail hide_fail save_output wait_value tmp_conf noblock]
 
 def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
@@ -210,7 +212,7 @@ def select_test_cases(selection, &block)
     ALL_TESTS.each(&block)
   elsif list.first.eql?('tag')
     list.shift
-    ALL_TESTS.select{ |_, info| info['tags']&.intersect?(list)}.each(&block)
+    ALL_TESTS.select{ |_, info| info['tags'].intersect?(list)}.each(&block)
   else
     list.each do |name|
       raise "Unknown test: #{name}" unless ALL_TESTS.key?(name)
@@ -230,7 +232,7 @@ namespace :test do
   desc 'List tests: all, by names, or by tags (space-sep)'
   task :list, [:name_list] do |_, args|
     select_test_cases(args[:name_list]) do |name, info|
-      log.info("#{name.ljust(20)} #{info['tags']&.join(', ')}")
+      log.info("#{name.ljust(20)} #{info['tags'].join(', ')}")
     end
   end
 
@@ -277,19 +279,15 @@ namespace TEST_CASE_NS do
         next
       end
       log.info("--#{percent_completed}%-------------------------------------------------")
-      log.info("[RUN]  #{name} [#{info['tags']&.join(' ')}]")
+      log.info("[RUN]  #{name} [#{info['tags'].join(' ')}]")
       log.info("[EXEC] #{info['command']&.join(' ')}")
       if info['pre']
         Aspera.assert_type(info['pre'], String)
         log.info("Pre: Executing: #{info['pre']}")
         Aspera::Environment.secure_eval(info['pre'], __FILE__, __LINE__)
       end
-      must_fail = info['tags']&.include?('must_fail')
-      hide_fail = info['tags']&.include?('hide_fail')
-      ignore_fail = info['tags']&.include?('ignore_fail')
-      save_output = info['tags']&.include?('save_output') || info['expect']
-      wait_value = info['tags']&.include?('wait_value')
-      tmp_conf = info['tags']&.include?('tmp_conf')
+      tags = SPECIAL_TAGS.to_h{ |s| [s.to_sym, info['tags'].include?(s)]}
+      tags[:save_output] ||= info['expect']
       if info['command']
         if info['command'].include?('wizard')
           info['env'] ||= {}
@@ -297,17 +295,17 @@ namespace TEST_CASE_NS do
         end
         # This test case can potentially be executed repeatedly, e.g. if we wait for a value
         full_args = CLI_TEST.map(&:to_s)
-        if info['command'][0..1].eql?(%w[config wizard]) || tmp_conf
+        if info['command'][0..1].eql?(%w[config wizard]) || tags[:tmp_conf]
           PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
           full_args += ["--config-file=#{PATH_TEST_CONFIG}"]
         else
           PATH_CONF_FILE.write(TestEnv.test_configuration.to_yaml) unless PATH_CONF_FILE.exist?
         end
         full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{out_file(name)}"] if save_output
-        full_args += ['--format=csv'] if save_output && !full_args.find{ |i| i.start_with?('--format=')}
+        full_args += ["--output=#{out_file(name)}"] if tags[:save_output]
+        full_args += ['--format=csv'] if tags[:save_output] && !full_args.find{ |i| i.start_with?('--format=')}
         run_options = {}
-        if info['tags']&.include?('noblock')
+        if tags[:noblock]
           run_options[:mode] = :background
           full_args.push("--pid-file=#{pid_file(name)}")
         end
@@ -321,16 +319,16 @@ namespace TEST_CASE_NS do
         loop do
           run(*full_args, env: info['env'], **run_options)
           # give time to start
-          sleep(1) if info['tags']&.include?('noblock')
+          sleep(1) if tags[:noblock]
           if info['post']
             Aspera.assert_type(info['post'], String)
             log.info("Executing: #{info['post']}")
             Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
           end
-          if save_output
+          if tags[:save_output]
             saved_value = read_value_from(name)
             if saved_value.empty?
-              if wait_value
+              if tags[:wait_value]
                 log.info('No value saved, retry...')
                 sleep(5)
                 redo
@@ -344,18 +342,21 @@ namespace TEST_CASE_NS do
             end
           end
           STATES[name] = 'passed'
-          raise 'Must fail' if must_fail
+          raise 'Must fail' if tags[:must_fail]
           log.info("[OK]   #{name}")
           break
         rescue RuntimeError
           STATES[name] = 'failed'
-          if must_fail || hide_fail || ignore_fail
-            log.error("[IGNORE FAIL] #{name}")
-            STATES[name] = 'passed'
-          else
+          expected_fails = tags.filter_map do |k, v|
+            s = k.to_s
+            s.delete_suffix!('_fail') && v == true ? s.upcase : nil
+          end
+          if expected_fails.empty?
             log.error("[FAIL] #{name}")
             raise
           end
+          log.info("[#{expected_fails.join(' ')} FAIL] #{name}")
+          STATES[name] = 'passed'
           save_state
           break
         end
