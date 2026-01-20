@@ -5,6 +5,7 @@ require 'aspera/rest'
 
 module Aspera
   module Api
+    # ATS API without authentication
     class Ats < Aspera::Rest
       SERVICE_BASE_URL = 'https://ats.aspera.io'
       # currently supported clouds

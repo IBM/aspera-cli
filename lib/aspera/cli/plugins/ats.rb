@@ -18,10 +18,10 @@ module Aspera
         # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE
-        def initialize(**_)
-          super
-          @ats_api_pub = nil
-          @ats_api_pub_v1_cache = nil
+        def initialize(api: nil, **base_args)
+          super(**base_args)
+          @ats_api_open = Api::Ats.new
+          @ats_api_auth = api
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
           options.declare(:instance, 'ATS instance in ibm cloud')
           options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
@@ -36,13 +36,13 @@ module Aspera
           # TODO: provide list ?
           cloud = options.get_option(:cloud, mandatory: true).upcase
           region = options.get_option(:region, mandatory: true)
-          return @ats_api_pub.read("servers/#{cloud}/#{region}")
+          return @ats_api_open.read("servers/#{cloud}/#{region}")
         end
 
         # require api key only if needed
-        def ats_api_pub_v1
-          return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
-          @ats_api_pub_v1_cache = Rest.new(
+        def ats_api
+          return @ats_api_auth unless @ats_api_auth.nil?
+          @ats_api_auth = Rest.new(
             base_url: "#{Api::Ats::SERVICE_BASE_URL}/pub/v1",
             auth:     {
               type:     :basic,
@@ -73,10 +73,10 @@ module Aspera
               when 'ibm-s3'
                 server_data2 = nil
                 if server_data.nil?
-                  server_data2 = @ats_api_pub.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
+                  server_data2 = @ats_api_open.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                 else
-                  server_data2 = @ats_api_pub.all_servers.find do |s|
+                  server_data2 = @ats_api_open.all_servers.find do |s|
                     s['cloud'].eql?(server_data['cloud']) &&
                       s['region'].eql?(server_data['region']) &&
                       s.key?('s3_authentication_endpoint')
@@ -88,31 +88,31 @@ module Aspera
                 params['storage']['endpoint'] = server_data2['s3_authentication_endpoint'] if !params['storage'].key?('authentication_endpoint')
               end
             end
-            res = ats_api_pub_v1.create('access_keys', params)
+            res = ats_api.create('access_keys', params)
             return Main.result_single_object(res)
             # TODO : action : modify, with "PUT"
           when :list
             params = query_read_delete(default: {'offset' => 0, 'max_results' => 1000})
-            res = ats_api_pub_v1.read('access_keys', params)
+            res = ats_api.read('access_keys', params)
             return Main.result_object_list(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
           when :show
-            res = ats_api_pub_v1.read("access_keys/#{access_key_id}")
+            res = ats_api.read("access_keys/#{access_key_id}")
             return Main.result_single_object(res)
           when :modify
             params = value_create_modify(command: command)
             params['id'] = access_key_id
-            ats_api_pub_v1.update("access_keys/#{access_key_id}", params)
+            ats_api.update("access_keys/#{access_key_id}", params)
             return Main.result_status('modified')
           when :entitlement
-            ak = ats_api_pub_v1.read("access_keys/#{access_key_id}")
+            ak = ats_api.read("access_keys/#{access_key_id}")
             api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
             return Main.result_single_object(api_bss.read('entitlement'))
           when :delete
-            ats_api_pub_v1.delete("access_keys/#{access_key_id}")
+            ats_api.delete("access_keys/#{access_key_id}")
             return Main.result_status("deleted #{access_key_id}")
           when :node
-            ak_data = ats_api_pub_v1.read("access_keys/#{access_key_id}")
-            server_data = @ats_api_pub.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
+            ak_data = ats_api.read("access_keys/#{access_key_id}")
+            server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
             raise Cli::Error, 'no such server found' if server_data.nil?
             node_url = server_data['transfer_setup_url']
             api_node = Api::Node.new(
@@ -126,7 +126,7 @@ module Aspera
             command = options.get_next_command(Node::COMMANDS_GEN4)
             return Node.new(context: context, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
-            ats_url = ats_api_pub_v1.base_url
+            ats_url = ats_api.base_url
             api_ak_auth = Rest.new(
               base_url: ats_url,
               auth:     {
@@ -140,19 +140,19 @@ module Aspera
           end
         end
 
-        def execute_action_cluster_pub
+        def execute_action_cluster_open
           command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
-            return Main.result_object_list(@ats_api_pub.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
+            return Main.result_object_list(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
           when :list
-            return Main.result_object_list(@ats_api_pub.all_servers, fields: %w[id cloud region])
+            return Main.result_object_list(@ats_api_open.all_servers, fields: %w[id cloud region])
           when :show
             if options.get_option(:cloud) || options.get_option(:region)
               server_data = server_by_cloud_region
             else
               server_id = instance_identifier
-              server_data = @ats_api_pub.all_servers.find{ |i| i['id'].eql?(server_id)}
+              server_data = @ats_api_open.all_servers.find{ |i| i['id'].eql?(server_id)}
               raise BadIdentifier.new('server', server_id) if server_data.nil?
             end
             return Main.result_single_object(server_data)
@@ -170,7 +170,9 @@ module Aspera
               # does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
               grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
               response_type: 'cloud_iam',
-              apikey:        options.get_option(:ibm_api_key, mandatory: true)
+              params:        {
+                apikey: options.get_option(:ibm_api_key, mandatory: true)
+              }
             }
           )
         end
@@ -213,30 +215,22 @@ module Aspera
         ACTIONS = %i[cluster access_key api_key aws_trust_policy].freeze
 
         # called for legacy and AoC
-        def execute_action_gen(ats_api_arg)
+        def execute_action
           actions = ACTIONS.dup
-          actions.delete(:api_key) unless ats_api_arg.nil?
+          actions.delete(:api_key) unless @ats_api_auth.nil?
           command = options.get_next_command(actions)
-          @ats_api_pub_v1_cache = ats_api_arg
-          # keep as member variable as we may want to use the api in AoC name space
-          @ats_api_pub = Api::Ats.new
           case command
           when :cluster # display general ATS cluster information, this uses public API, no auth
-            return execute_action_cluster_pub
+            return execute_action_cluster_open
           when :access_key
             return execute_action_access_key
           when :api_key # manage credential to access ATS API
             return execute_action_api_key
           when :aws_trust_policy
-            res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
+            res = ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
             return Main.result_single_object(res)
           else Aspera.error_unexpected_value(command)
           end
-        end
-
-        # called for legacy ATS only
-        def execute_action
-          execute_action_gen(nil)
         end
       end
     end

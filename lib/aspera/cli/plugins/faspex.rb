@@ -150,7 +150,9 @@ module Aspera
                 grant_method: :generic,
                 base_url:     "#{faspex_api_base}/auth/oauth2",
                 auth:         {type: :basic, username: options.get_option(:username, mandatory: true), password: options.get_option(:password, mandatory: true)},
-                scope:        'admin',
+                params:       {
+                  scope: 'admin'
+                },
                 grant_type:   'password'
               }
             )
@@ -337,12 +339,12 @@ module Aspera
                   skip_ids_persistency = PersistencyActionOnce.new(
                     manager: persistency,
                     data:    skip_ids_data,
-                    id:      IdGenerator.from_list([
+                    id:      IdGenerator.from_list(
                       'faspex_recv',
                       options.get_option(:url, mandatory: true),
                       options.get_option(:username, mandatory: true),
                       options.get_option(:box, mandatory: true).to_s
-                    ])
+                    )
                   )
                 end
                 # get command line parameters

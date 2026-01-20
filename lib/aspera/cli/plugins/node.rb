@@ -415,10 +415,12 @@ module Aspera
               root_file_id = options.get_option(:root_id)
               if root_file_id.nil?
                 ak_info = @api_node.read("access_keys/#{access_key_id}")
+                ak_secret = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'])
                 # change API credentials if different access key
                 if !access_key_id.eql?('self')
+                  Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
                   @api_node.auth_params[:username] = ak_info['id']
-                  @api_node.auth_params[:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
+                  @api_node.auth_params[:password] = ak_secret
                 end
                 root_file_id = ak_info['root_file_id']
               end
@@ -517,7 +519,8 @@ module Aspera
             else Aspera.error_unreachable_line
             end
             return Main.result_single_object(result) if command_repo.eql?(:node_info)
-            raise BadArgument, 'Cannot get bearer token if authenticating with secret' unless apifid[:api].auth_params[:type].eql?(:oauth2)
+            Log.dump(:result, result)
+            raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid[:api].auth_params[:type]})" unless apifid[:api].auth_params[:type].eql?(:oauth2)
             Aspera.assert(OAuth::Factory.bearer_auth?(result[:password])){'Not using bearer token auth'}
             return Main.result_text(result[:password])
           when :browse
@@ -728,12 +731,12 @@ module Aspera
               skip_ids_persistency = PersistencyActionOnce.new(
                 manager: persistency,
                 data:    iteration_data,
-                id:      IdGenerator.from_list([
+                id:      IdGenerator.from_list(
                   'sync_files',
                   options.get_option(:url, mandatory: true),
                   options.get_option(:username, mandatory: true),
                   async_id
-                ])
+                )
               )
               data.select!{ |l| l['fnid'].to_i > iteration_data.first} unless iteration_data.first.nil?
               iteration_data[0] = data.last['fnid'].to_i unless data.empty?
@@ -873,11 +876,11 @@ module Aspera
                 iteration_persistency = PersistencyActionOnce.new(
                   manager: persistency,
                   data:    [],
-                  id:      IdGenerator.from_list([
+                  id:      IdGenerator.from_list(
                     'node_transfers',
                     options.get_option(:url, mandatory: true),
                     options.get_option(:username, mandatory: true)
-                  ])
+                  )
                 )
                 if transfer_filter.delete('reset')
                   iteration_persistency.data.clear

@@ -64,7 +64,9 @@ module Aspera
                   type:            :oauth2,
                   grant_method:    :jwt,
                   base_url:        "#{base_url}/auth",
-                  client_id:       app_client_id,
+                  params:          {
+                    client_id: app_client_id
+                  },
                   use_query:       true,
                   payload:         {
                     iss: app_client_id, # issuer

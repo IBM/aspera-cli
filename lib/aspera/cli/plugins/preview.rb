@@ -451,12 +451,12 @@ module Aspera
               iteration_persistency = PersistencyActionOnce.new(
                 manager: persistency,
                 data:    [],
-                id:      IdGenerator.from_list([
+                id:      IdGenerator.from_list(
                   'preview_iteration',
                   command.to_s,
                   options.get_option(:url, mandatory: true),
                   options.get_option(:username, mandatory: true)
-                ])
+                )
               )
             end
             # call processing method specified by command line command

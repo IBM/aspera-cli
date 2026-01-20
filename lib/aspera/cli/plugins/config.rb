@@ -1170,16 +1170,17 @@ module Aspera
         end
 
         # Lookup the corresponding secret for the given URL and usernames
-        # @raise Exception if mandatory and not found
-        def lookup_secret(url:, username:, mandatory: false)
+        # @param url      [String] Server URL
+        # @param username [String] Username
+        # @return [String, nil] Secret if found
+        def lookup_secret(url:, username:)
           secret = options.get_option(:secret)
-          if secret.nil?
+          if secret.eql?('PRESET')
             conf = lookup_preset(url: url, username: username)
             if conf.is_a?(Hash)
               Log.log.debug{"Found preset #{conf} with URL and username"}
               secret = conf['password']
             end
-            raise "Please provide secret for #{username} using option: secret or by setting a preset for #{username}@#{url}." if secret.nil? && mandatory
           end
           return secret
         end

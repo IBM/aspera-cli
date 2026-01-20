@@ -34,7 +34,7 @@ module Aspera
         query: {
           response_type: :code,
           state:         @context,
-          client_id:     client_id,
+          client_id:     params[:client_id],
           redirect_uri:  @redirect_uri
         },
         exception: false,
@@ -46,7 +46,7 @@ module Aspera
       raise Error, info['action_message'] if info['action_message']
       Aspera.assert(info['code']){'Missing code in answer'}
       # Exchange code for token
-      return create_token_call(optional_scope_client_id.merge(
+      return create_token_call(base_params.merge(
         grant_type:   'authorization_code',
         code:         info['code'],
         redirect_uri: @redirect_uri
@@ -155,7 +155,9 @@ module Aspera
                 base_url:     "#{base_url}/#{PATH_AUTH}",
                 grant_method: :faspex_pub_link,
                 context:      encoded_context,
-                client_id:    config[:client_id],
+                params:       {
+                  client_id: config[:client_id]
+                },
                 redirect_uri: config[:redirect_uri]
               }
             }
@@ -177,7 +179,9 @@ module Aspera
                 type:         :oauth2,
                 base_url:     "#{url}/#{PATH_AUTH}",
                 grant_method: :web,
-                client_id:    client_id,
+                params:       {
+                  client_id: client_id
+                },
                 redirect_uri: redirect_uri
               }
             }
@@ -190,7 +194,9 @@ module Aspera
                 type:            :oauth2,
                 base_url:        "#{url}/#{PATH_AUTH}",
                 grant_method:    :jwt,
-                client_id:       client_id,
+                params:          {
+                  client_id: client_id
+                },
                 payload:         {
                   iss: client_id, # issuer
                   aud: client_id, # audience (this field is not clear...)

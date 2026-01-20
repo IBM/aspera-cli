@@ -61,7 +61,7 @@ module Aspera
         Log.log.debug{"private=[#{@private_key_obj}]"}
         assertion = JWT.encode(jwt_payload, @private_key_obj, 'RS256', @headers)
         Log.log.debug{"assertion=[#{assertion}]"}
-        return create_token_call(optional_scope_client_id.merge(grant_type: GRANT_TYPE, assertion: assertion))
+        return create_token_call(base_params.merge(grant_type: GRANT_TYPE, assertion: assertion))
       end
     end
     Factory.instance.register_token_creator(Jwt)

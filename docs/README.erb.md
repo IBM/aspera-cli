@@ -2798,7 +2798,7 @@ Then secrets can be manipulated using commands:
 
 #### Configuration Finder
 
-When a secret is needed by a sub command, the command can search for existing configurations in the configuration file.
+When a secret is needed by a sub command, the command can search for existing configurations in the configuration file by setting option `secret` to the special value `PRESET`.
 
 The lookup is done by comparing the service URL and username (or access key).
 
@@ -4773,7 +4773,7 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `<%=cmd%> aoc bearer` can be used to generate an OAuth token suitable to call any AoC API (use the `scope` option to change the scope, default is `user:all`).
+The command `<%=cmd%> aoc bearer` can be used to generate an OAuth token suitable to call any AoC API.
 This can be useful when a command is not yet available.
 
 Example:
@@ -5888,8 +5888,11 @@ ATS is usable either :
 
 ### IBM Cloud ATS : Creation of API key
 
+> [!NOTE]
+> If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
+> Refer to the AoC section instead.
+
 This section is about using ATS with an IBM cloud subscription.
-If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
 
 First get your IBM Cloud API key.
 For instance, it can be created using the IBM Cloud web interface, or using command line:

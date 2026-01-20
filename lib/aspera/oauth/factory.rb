@@ -36,14 +36,13 @@ module Aspera
           return authorization[SPACE_BEARER_AUTH_SCHEME.length..-1]
         end
 
+        # Generate a unique cache id for a token creator
+        # @param url           [String] Base URL of the OAuth server
+        # @param creator_class [Class]  Class of the token creator
+        # @param params        [Array]  List of parameters (can be nested) to uniquely identify the token
         # @return a unique cache identifier
         def cache_id(url, creator_class, *params)
-          return IdGenerator.from_list([
-            PERSIST_CATEGORY_TOKEN,
-            url,
-            Factory.class_to_id(creator_class)
-          ] +
-            params)
+          return IdGenerator.from_list(PERSIST_CATEGORY_TOKEN, url, Factory.class_to_id(creator_class), params)
         end
 
         # @return snake version of class name

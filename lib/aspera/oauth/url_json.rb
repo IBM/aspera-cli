@@ -6,8 +6,9 @@ module Aspera
   module OAuth
     # This class is used to create a token using a JSON body and a URL
     class UrlJson < Base
-      # @param url  URL to send the JSON body
-      # @param json JSON body to send
+      # @param url  [Hash] Query parameters to send
+      # @param json [Hash] Body parameters to send as JSON
+      # @param generic_params [Hash] Generic parameters for OAuth::Base
       def initialize(
         url:,
         json:,
@@ -22,7 +23,7 @@ module Aspera
         api.call(
           operation:    'POST',
           subpath:      path_token,
-          query:        @query.merge(scope: scope), # scope is here because it may change over time (node)
+          query:        @query.merge(scope: params[:scope]), # scope is here because it may change over time (node)
           content_type: Rest::MIME_JSON,
           body:         @body,
           headers:      {'Accept' => Rest::MIME_JSON},

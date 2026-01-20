@@ -175,7 +175,7 @@ module Aspera
             auto_set_jwt = true
             Aspera.error_not_implemented
             # aoc_api.oauth.grant_method = :web
-            # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
+            # aoc_api.oauth.scope = Api::AoC::Scope::ADMIN
             # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
           end
           myself = aoc_api.read('self')
@@ -206,6 +206,7 @@ module Aspera
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
+          @scope = Api::AoC::Scope::USER
           options.declare(:workspace, 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', allowed: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true)
@@ -215,16 +216,23 @@ module Aspera
           Node.declare_options(options)
         end
 
+        # Change API scope for subsequent calls, re-instantiate API object
+        # @param new_scope [String] New scope
+        def change_api_scope(new_scope)
+          @cache_api_aoc = nil
+          @scope = new_scope
+        end
+
+        # create an API object with the same options, but with a different subpath
         def api_from_options(aoc_base_path)
-          # create an API object with the same options, but with a different subpath
           return new_with_options(
             Api::AoC,
-            base: {
+            kwargs: {
+              scope:         @scope,
               subpath:       aoc_base_path,
               secret_finder: config
             },
-            add: {
-              scope:     Api::AoC::SCOPE_FILES_USER,
+            option: {
               workspace: nil
             }
           )
@@ -235,17 +243,17 @@ module Aspera
         def aoc_api
           if @cache_api_aoc.nil?
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
-            organization = @cache_api_aoc.read('organization')
-            if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
-              transfer.httpgw_url_cb = lambda{organization['http_gateway_server_url']}
+            transfer.httpgw_url_cb = lambda do
+              organization = @cache_api_aoc.read('organization')
               # @cache_api_aoc.current_user_info['connect_disabled']
+              organization['http_gateway_server_url'] if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
             end
           end
           return @cache_api_aoc
         end
 
         # Generate or update Hash with workspace id and name (option), if not already set
-        # @param hash   [Hash,nil] set in provided hash
+        # @param hash   [Hash,nil] Optional base hash (modified)
         # @param string [Boolean] true to set key as string, else as symbol
         # @param name   [Boolean] include name
         # @return [Hash] with key `workspace_[id,name]` (symbol or string) only if defined
@@ -426,7 +434,7 @@ module Aspera
             when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
             when :contact
               default_fields = %w[source_type source_id name email]
-              default_query = {'include_only_user_personal_contacts' => true} if aoc_api.oauth.scope == Api::AoC::SCOPE_FILES_USER
+              default_query = {'include_only_user_personal_contacts' => true} if @scope == Api::AoC::Scope::USER
             when :node then default_fields.push('name', 'host', 'access_key')
             when :operation then default_fields = nil
             when :short_link then default_fields.push('short_url', 'data.url_token_data.purpose')
@@ -459,7 +467,7 @@ module Aspera
             return Main.result_success
           when :do
             command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
-            return execute_nodegen4_command(command_repo, res_id)
+            return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::SCOPE_ADMIN)
           when :bearer_token
             node_api = aoc_api.node_api_from(
               node_id: res_id,
@@ -518,13 +526,15 @@ module Aspera
           end
         end
 
-        ADMIN_ACTIONS = %i[ats resource usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
+        ADMIN_ACTIONS = %i[ats bearer_token resource usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
         def execute_admin_action
-          # default scope to admin
-          aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN if options.get_option(:scope).nil?
+          # change scope to admin
+          change_api_scope(Api::AoC::Scope::ADMIN)
           command_admin = options.get_next_command(ADMIN_ACTIONS)
           case command_admin
+          when :bearer_token
+            return Main.result_text(aoc_api.oauth.authorization)
           when :resource
             Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
             return execute_resource_action(options.get_next_argument('resource', accept_list: ADMIN_OBJECTS))
@@ -653,13 +663,13 @@ module Aspera
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
-              auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
+              auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
             }))
-            return Ats.new(context: context).execute_action_gen(ats_api)
+            return Ats.new(context: context, api: ats_api).execute_action
           when :analytics
             analytics_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
-              auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
+              auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
             }))
             command_analytics = options.get_next_command(%i[application_events transfers files])
             case command_analytics
@@ -684,13 +694,13 @@ module Aspera
                 start_date_persistency = PersistencyActionOnce.new(
                   manager: persistency,
                   data: saved_date,
-                  id: IdGenerator.from_list([
+                  id: IdGenerator.from_list(
                     'aoc_ana_date',
                     options.get_option(:url, mandatory: true),
                     aoc_api.workspace[:name],
                     event_resource_type.to_s,
                     event_resource_id
-                  ])
+                  )
                 )
                 start_date_time = saved_date.first
                 stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
@@ -843,9 +853,10 @@ module Aspera
             manager: persistency,
             data: [],
             id: IdGenerator.from_list(
-              ['aoc_recv',
-               options.get_option(:url, mandatory: true),
-               aoc_api.workspace[:id]].concat(aoc_api.additional_persistence_ids)
+              'aoc_recv',
+              options.get_option(:url, mandatory: true),
+              aoc_api.workspace[:id],
+              aoc_api.additional_persistence_ids
             )
           )
         end
@@ -1082,6 +1093,7 @@ module Aspera
                      end
             end
           when :automation
+            change_api_scope(Api::AoC::Scope::ADMIN_USER)
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
             automation_api = Rest.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))

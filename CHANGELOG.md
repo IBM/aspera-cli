@@ -14,6 +14,7 @@ Released: [Place date of release here]
 * **global**: New extended value modifier: `@stdin:chomp` reads stdin and removes `\n`.
 * `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
 * `orchestrator`: Commands now takes option `query`.
+* `aoc`: The admin command for `node` now support nodes owned by admin, so that secret is no more necessary.
 
 ### Issues Fixed
 
@@ -23,8 +24,10 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * `aoc`: Option `package_folder` is now a Hash instead of formatted String.
+* `aoc`: Deprecated option `scope`. It is selected from the command directly. For `bearer_token --scope=admin:all`, now use: `admin bearer_token`.
 * `server`: By default, SSH option `use_agent` is now `false`.
 * `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
+* `config`: Secret lookup is no more automatic, activate setting option `secret` to `PRESET`.
 * `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
 * `preview`: Replaced gem `mimemagic` with `marcel`.
 * **global**: Extended value modifier `@stdbin:` is replaced with `@stdin:bin`.

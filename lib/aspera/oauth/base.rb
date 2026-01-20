@@ -14,50 +14,38 @@ module Aspera
     # Bearer Token Usage: https://tools.ietf.org/html/rfc6750
     class Base
       Aspera.require_method!(:create_token)
-      # @param **             Parameters for REST
-      # @param client_id      [String, nil]
-      # @param client_secret  [String, nil]
-      # @param scope          [String, nil]
-      # @param use_query      [bool]        Provide parameters in query instead of body
-      # @param path_token     [String]      API end point to create a token from base URL
-      # @param token_field    [String]      Field in result that contains the token
-      # @param cache_ids      [Array, nil]  List of unique identifiers for cache id generation
+      # @param params         [Hash]    Parameters for token creation (client_id, client_secret, scope, etc...)
+      # @param use_query      [Boolean] Provide parameters in query instead of body
+      # @param path_token     [String]  API end point to create a token from base URL
+      # @param token_field    [String]  Field in result that contains the token
+      # @param cache_ids      [Array]   List of unique identifiers for cache id generation
+      # @param **rest_params  [Hash]    Parameters for REST
       def initialize(
-        client_id: nil,
-        client_secret: nil,
-        scope: nil,
+        params: {},
         use_query: false,
         path_token:  'token',
         token_field: Factory::TOKEN_FIELD,
-        cache_ids: nil,
+        cache_ids: [],
         **rest_params
       )
+        Aspera.assert_type(params, Hash)
+        Aspera.assert_type(cache_ids, Array)
         # This is the OAuth API
         @api = Rest.new(**rest_params)
-        @scope = nil
-        @token_cache_id = nil
+        @params = params.dup.freeze
         @path_token = path_token
         @token_field = token_field
-        @client_id = client_id
-        @client_secret = client_secret
         @use_query = use_query
-        @base_cache_ids = cache_ids.nil? ? [] : cache_ids.clone
-        Aspera.assert_type(@base_cache_ids, Array)
-        # TODO: this shall be done in class, using cache_ids
-        @base_cache_ids.push(@api.auth_params[:username]) if @api.auth_params.key?(:username)
-        @base_cache_ids.compact!
-        @base_cache_ids.freeze
-        self.scope = scope
+        # TODO: :username and :scope shall be done in class, using cache_ids
+        @token_cache_id = Factory.cache_id(@api.base_url, self.class, cache_ids, rest_params[:username], @params[:scope])
       end
 
-      # Scope can be modified after creation, then update identifier for cache
-      def scope=(scope)
-        @scope = scope
-        # generate token unique identifier for persistency (memory/disk cache)
-        @token_cache_id = Factory.cache_id(@api.base_url, self.class, @base_cache_ids, @scope)
-      end
-
-      attr_reader :scope, :api, :path_token, :client_id
+      # The OAuth API Object
+      attr_reader :api
+      # Sub path to generate token
+      attr_reader :path_token
+      # Parameters to generate token
+      attr_reader :params
 
       # Helper method to create token as per RFC
       # @return [HTTPResponse]
@@ -68,17 +56,16 @@ module Aspera
         return @api.create(@path_token, creation_params, content_type: Rest::MIME_WWW, ret: :resp)
       end
 
+      # Create base parameters for token creation calls
       # @param add_secret [Boolean] Add secret in default call parameters
       # @return [Hash] Optional general parameters
-      def optional_scope_client_id(add_secret: false)
-        call_params = {}
-        call_params[:scope] = @scope unless @scope.nil?
-        call_params[:client_id] = @client_id unless @client_id.nil?
-        call_params[:client_secret] = @client_secret unless !add_secret || @client_id.nil? || @client_secret.nil?
+      def base_params(add_secret: false)
+        call_params = @params.dup
+        call_params.delete(:client_secret) unless add_secret
         return call_params
       end
 
-      # @return value suitable for Authorization header
+      # @return [String] value suitable for Authorization header
       def authorization(**kwargs)
         return OAuth::Factory.bearer_authorization(token(**kwargs))
       end
@@ -114,7 +101,7 @@ module Aspera
             if !refresh_token.nil?
               Log.log.info{"refresh token=[#{refresh_token}]".bg_green}
               begin
-                http = create_token_call(optional_scope_client_id(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
+                http = create_token_call(base_params(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
                 # Save only if success
                 json_data = http.body
                 token_data = JSON.parse(json_data)

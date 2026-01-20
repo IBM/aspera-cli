@@ -2944,7 +2944,7 @@ ascli config vault create @json:'{"label":"mylabel","password":"my_password_here
 
 #### Configuration Finder
 
-When a secret is needed by a sub command, the command can search for existing configurations in the configuration file.
+When a secret is needed by a sub command, the command can search for existing configurations in the configuration file by setting option `secret` to the special value `PRESET`.
 
 The lookup is done by comparing the service URL and username (or access key).
 
@@ -4819,7 +4819,6 @@ OPTIONS:
         --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
         --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --scope=VALUE                OAuth scope for API calls
         --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
@@ -4904,7 +4903,6 @@ OPTIONS:
         --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
         --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --scope=VALUE                OAuth scope for API calls
         --workspace=VALUE            Name of workspace
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
@@ -5307,7 +5305,7 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `ascli aoc bearer` can be used to generate an OAuth token suitable to call any AoC API (use the `scope` option to change the scope, default is `user:all`).
+The command `ascli aoc bearer` can be used to generate an OAuth token suitable to call any AoC API.
 This can be useful when a command is not yet available.
 
 Example:
@@ -6431,6 +6429,7 @@ admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
 admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 admin auth_providers list
+admin bearer_token --display=data
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
@@ -6442,7 +6441,7 @@ admin dropbox_membership list
 admin group list
 admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 admin kms_profile list
-admin node bearer_token %name:my_node_name --scope=admin:all
+admin node bearer_token %name:my_node_name
 admin node do %name:my_node_name --secret=my_ak_secret browse /
 admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-cache=no
 admin node do %name:my_node_name --secret=my_ak_secret delete /folder1
@@ -6479,9 +6478,9 @@ automation workflow action wf_id create @json:'{"name":"toto"}'
 automation workflow create @json:'{"name":"test_workflow"}'
 automation workflow delete wf_id
 automation workflow list
-automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+automation workflow list --query=@json:'{"show_org_workflows":"true"}'
 automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id
-bearer_token --display=data --scope=user:all
+bearer_token --display=data
 files bearer /
 files bearer_token_node / --cache-tokens=no
 files browse /
@@ -6518,15 +6517,15 @@ files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 files upload --to-folder=/testsrc test_file.bin
 files upload --to-folder=/testsrc test_file.bin test_file.bin
 files v3 info
-gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
+gateway @json:'{"url":"https://localhost:12346/aspera/faspex"}'
 organization
 organization --format=image --fields=background_image_url --ui=text
 organization --url=my_public_link_recv_from_aoc_user
 packages browse package_id3 /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
-packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
+packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
 packages receive package_id3 --to-folder=.
 packages receive package_id3 --to-folder=. /
@@ -6561,8 +6560,11 @@ ATS is usable either :
 
 ### IBM Cloud ATS : Creation of API key
 
+> [!NOTE]
+> If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
+> Refer to the AoC section instead.
+
 This section is about using ATS with an IBM cloud subscription.
-If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
 
 First get your IBM Cloud API key.
 For instance, it can be created using the IBM Cloud web interface, or using command line:
@@ -6755,7 +6757,7 @@ upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destinatio
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer-info.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
-upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","hot_folder"]}' hot_folder
+upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","hot_folder"]}' hot_folder
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
@@ -7303,20 +7305,21 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 --url=https://tst.example.com/path --password='Bearer node_bearer_token' --root-id=bearer_root_id access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
-access_key do my_ak_name browse /
-access_key do my_ak_name delete /test_nd_ak2
-access_key do my_ak_name delete test_nd_ak3
-access_key do my_ak_name download test_nd_ak3 --to-folder=.
-access_key do my_ak_name find my_test_folder
-access_key do my_ak_name find my_test_folder @re:'\.jpg$'
+access_key do my_ak_name browse / --secret=my_ak_secret
+access_key do my_ak_name delete /test_nd_ak2 --secret=my_ak_secret
+access_key do my_ak_name delete test_nd_ak3 --secret=my_ak_secret
+access_key do my_ak_name download test_nd_ak3 --to-folder=. --secret=my_ak_secret
+access_key do my_ak_name find my_test_folder --secret=my_ak_secret
+access_key do my_ak_name find my_test_folder @re:'\.jpg$' --secret=my_ak_secret
 access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
-access_key do my_ak_name mkdir /tst_nd_ak
-access_key do my_ak_name mkfile /mkfile.txt 'hello world'
-access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}'
-access_key do my_ak_name node_info /
-access_key do my_ak_name rename /tst_nd_ak test_nd_ak2
-access_key do my_ak_name show %id:1
-access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no
+ --secret=my_ak_secret
+access_key do my_ak_name mkdir /tst_nd_ak --secret=my_ak_secret
+access_key do my_ak_name mkfile /mkfile.txt 'hello world' --secret=my_ak_secret
+access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}' --secret=my_ak_secret
+access_key do my_ak_name node_info / --secret=my_ak_secret
+access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=my_ak_secret
+access_key do my_ak_name show %id:1 --secret=my_ak_secret
+access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no --secret=my_ak_secret
 access_key do self permission %id:bearer_root_id create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / show 1

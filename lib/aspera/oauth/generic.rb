@@ -23,7 +23,7 @@ module Aspera
       end
 
       def create_token
-        return create_token_call(optional_scope_client_id.merge(@create_params))
+        return create_token_call(base_params.merge(@create_params))
       end
     end
     Factory.instance.register_token_creator(Generic)

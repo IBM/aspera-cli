@@ -48,11 +48,13 @@ module Aspera
         :ID_AK_ADMIN
 
       # various API scopes supported
-      SCOPE_FILES_SELF = 'self'
-      SCOPE_FILES_USER = 'user:all'
-      SCOPE_FILES_ADMIN = 'admin:all'
-      SCOPE_FILES_ADMIN_USER = 'admin-user:all'
-      SCOPE_FILES_ADMIN_USER_USER = "#{SCOPE_FILES_ADMIN_USER}+#{SCOPE_FILES_USER}"
+      module Scope
+        SELF = 'self'
+        USER = 'user:all'
+        ADMIN = 'admin:all'
+        ADMIN_USER = 'admin-user:all'
+        ADMIN_USER_USER = "#{ADMIN_USER}+#{USER}"
+      end
       FILES_APP = 'files'
       PACKAGES_APP = 'packages'
       API_V1 = 'api/v1'
@@ -227,10 +229,12 @@ module Aspera
         @workspace_info = nil
         @home_info = nil
         auth_params = {
-          type:          :oauth2,
-          client_id:     client_id,
-          client_secret: client_secret,
-          scope:         scope
+          type:   :oauth2,
+          params: {
+            client_id:     client_id,
+            client_secret: client_secret,
+            scope:         scope
+          }
         }
         # analyze type of url
         url_info = AoC.link_info(url)
@@ -256,20 +260,20 @@ module Aspera
           Aspera.assert(username, 'Missing mandatory option: username', type: ParameterError)
           auth_params[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
           auth_params[:payload] = {
-            iss: auth_params[:client_id], # issuer
+            iss: client_id, # issuer
             sub: username, # subject
             aud: JWT_AUDIENCE
           }
           # add jwt payload for global client id
-          auth_params[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(auth_params[:client_id])
+          auth_params[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(client_id)
           auth_params[:cache_ids] = [url_info[:organization]]
         when :url_json
-          auth_params[:url] = {grant_type: 'url_token'} # URL arguments
+          auth_params[:url] = {grant_type: 'url_token'} # Query arguments
           auth_params[:json] = {url_token: url_info[:token]} # JSON body
           # password protection of link
           auth_params[:json][:password] = password unless password.nil?
           # basic auth required for /token
-          auth_params[:auth] = {type: :basic, username: auth_params[:client_id], password: auth_params[:client_secret]}
+          auth_params[:auth] = {type: :basic, username: client_id, password: client_secret}
         else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: :web, :jwt'}
         end
         super(
@@ -410,19 +414,22 @@ module Aspera
           app_info[:package_name] = package_info['name']
         end
         node_params = {base_url: node_info['url']}
-        # if secret is available
-        if scope.nil?
+        ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'])
+        # If secret is available, or no scope, use basic auth
+        if scope.nil? || ak_secret
+          Aspera.assert(ak_secret, "Secret not found for access key #{node_info['access_key']}@#{node_info['url']}", type: Error)
           node_params[:auth] = {
             type:     :basic,
             username: node_info['access_key'],
-            password: @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: true)
+            password: ak_secret
           }
         else
           # OAuth bearer token
           node_params[:auth] = auth_params.clone
-          # node_params[:auth][] = ID_AK_ADMIN if scope.eql?(Node::SCOPE_ADMIN)
-          node_params[:auth][:scope] = Node.token_scope(node_info['access_key'], scope)
-          # special header required for bearer token only
+          node_params[:auth][:params] ||= {}
+          node_params[:auth][:params][:scope] = Node.token_scope(node_info['access_key'], scope)
+          node_params[:auth][:params][:owner_access] = true if scope.eql?(Node::SCOPE_ADMIN)
+          # Special header required for bearer token only
           node_params[:headers] = {Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
         end
         node_params[:app_info] = app_info

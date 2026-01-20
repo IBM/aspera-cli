@@ -1309,6 +1309,7 @@ nd_akb:
     - "@preset:aoc.ak_name"
     - node_info
     - /
+    - --secret=@preset:aoc.ak_secret
 nd_akc:
   command:
     - --preset=node_ak_adm
@@ -1318,6 +1319,7 @@ nd_akc:
     - "@preset:aoc.ak_name"
     - browse
     - /
+    - --secret=@preset:aoc.ak_secret
 nd_akd:
   $comment: TODO Check
   tags:
@@ -1342,6 +1344,7 @@ nd_ake:
     - "@preset:aoc.test_folder"
     - |
       @ruby:->(f){f["name"].end_with?(".jpg")}
+    - --secret=@preset:aoc.ak_secret
 nd_akf:
   command:
     - --preset=node_ak_adm
@@ -1352,6 +1355,7 @@ nd_akf:
     - find
     - "@preset:aoc.test_folder"
     - '@re:\.jpg$'
+    - --secret=@preset:aoc.ak_secret
 nd_akg:
   command:
     - --preset=node_ak_adm
@@ -1361,6 +1365,7 @@ nd_akg:
     - "@preset:aoc.ak_name"
     - find
     - "@preset:aoc.test_folder"
+    - --secret=@preset:aoc.ak_secret
 nd_ak_mkdir:
   tags:
     - ignore_fail
@@ -1373,6 +1378,7 @@ nd_ak_mkdir:
     - "@preset:aoc.ak_name"
     - delete
     - /tst_nd_ak
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkdirb:
   command:
@@ -1383,6 +1389,7 @@ nd_ak_mkdirb:
     - "@preset:aoc.ak_name"
     - mkdir
     - /tst_nd_ak
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile:
   tags:
@@ -1396,6 +1403,7 @@ nd_ak_mkfile:
     - "@preset:aoc.ak_name"
     - delete
     - /mkfile.txt
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfileb:
   command:
@@ -1407,6 +1415,7 @@ nd_ak_mkfileb:
     - mkfile
     - /mkfile.txt
     - hello world
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mklink:
   depends_on:
@@ -1422,6 +1431,7 @@ nd_ak_mklink:
     - "@preset:aoc.ak_name"
     - delete
     - /mklink.txt
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mklinkb:
   command:
@@ -1433,6 +1443,7 @@ nd_ak_mklinkb:
     - mklink
     - /mklink.txt
     - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
+    - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mvdir:
   tags:
@@ -1448,6 +1459,7 @@ nd_ak_mvdir:
     - browse
     - /
     - --node-cache=no
+    - --secret=@preset:aoc.ak_secret
 nd_ak_mvdirb:
   command:
     - --preset=node_ak_adm
@@ -1458,6 +1470,7 @@ nd_ak_mvdirb:
     - rename
     - /tst_nd_ak
     - test_nd_ak2
+    - --secret=@preset:aoc.ak_secret
 nd_ak_deldir:
   depends_on:
     - nd_ak_mvdir
@@ -1469,6 +1482,7 @@ nd_ak_deldir:
     - "@preset:aoc.ak_name"
     - delete
     - /test_nd_ak2
+    - --secret=@preset:aoc.ak_secret
 nd_ak3:
   command:
     - --preset=node_ak_adm
@@ -1479,6 +1493,7 @@ nd_ak3:
     - upload
     - 'faux:///test_nd_ak3?100k'
     - --default-ports=no
+    - --secret=@preset:aoc.ak_secret
 nd_ak3b:
   depends_on:
     - nd_ak3
@@ -1491,6 +1506,7 @@ nd_ak3b:
     - download
     - test_nd_ak3
     - --to-folder=$(TMP)
+    - --secret=@preset:aoc.ak_secret
 nd_ak3c:
   tags:
     - hide_fail
@@ -1505,6 +1521,7 @@ nd_ak3c:
     - "@preset:aoc.ak_name"
     - show
     - /test_nd_ak3
+    - --secret=@preset:aoc.ak_secret
 nd_ak3d:
   tags:
     - hide_fail
@@ -1519,6 +1536,7 @@ nd_ak3d:
     - "@preset:aoc.ak_name"
     - thumbnail
     - /test_nd_ak3
+    - --secret=@preset:aoc.ak_secret
 nd_ak3e:
   depends_on:
     - nd_ak3b
@@ -1532,6 +1550,7 @@ nd_ak3e:
     - "@preset:aoc.ak_name"
     - delete
     - test_nd_ak3
+    - --secret=@preset:aoc.ak_secret
 nd_ak4:
   depends_on:
     - nd_ak3e
@@ -1543,6 +1562,7 @@ nd_ak4:
     - "@preset:aoc.ak_name"
     - show
     - "%id:1"
+    - --secret=@preset:aoc.ak_secret
 nd_ak_bearer_reset:
   tags:
     - ignore_fail
@@ -1749,7 +1769,7 @@ aoc_faspex_gateway:
   command:
     - aoc
     - gateway
-    - '@json:{"url":"https://localhost:12345/aspera/faspex"}'
+    - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
 aoc_faspex_gatewayb:
   depends_on:
     - aoc_faspex_gateway
@@ -1758,7 +1778,7 @@ aoc_faspex_gatewayb:
   command:
     - -N
     - faspex
-    - --url=https://localhost:12345/aspera/faspex
+    - --url=https://localhost:12346/aspera/faspex
     - --username=_unused_
     - --password=_unused_
     - --warn-insecure=yes
@@ -1783,7 +1803,13 @@ aocg2:
     - aoc
     - bearer_token
     - --display=data
-    - --scope=user:all
+aocg2b:
+  command:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - bearer_token
+    - --display=data
 aocg3:
   command:
     - aoc
@@ -2452,7 +2478,7 @@ aocp4:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
-    - --lock-port=12345
+    - --lock-port=50101
     - --package-folder.fld.0=name
     - --package-folder.fld.1=id
     - --package-folder.opt=true
@@ -2548,7 +2574,7 @@ aocp_recv_shbx:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
-    - --lock-port=12345
+    - --lock-port=50101
     - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
     - --ts=@json:{"resume_policy":"sparse_csum","target_rate_kbps":50000}
 aocp_list_shbx:
@@ -3041,7 +3067,6 @@ aoc_adm_node_bearer:
     - node
     - bearer_token
     - "%name:@preset:aoc.node_name"
-    - --scope=admin:all
 aocadmndcr:
   tags:
     - ignore_fail
@@ -3291,7 +3316,6 @@ aocauto2b:
     - workflow
     - list
     - --query=@json:{"show_org_workflows":"true"}
-    - --scope=admin:all
 aocauto3:
   $comment: Verify what it should do, and not fail.
   depends_on:
@@ -5138,7 +5162,7 @@ serv_hot_run:
     - server
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
-    - --lock-port=12345
+    - --lock-port=50101
     - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
     - $(PATH_HOT_FOLDER)
 serv_hot_check:
@@ -5158,7 +5182,7 @@ serv_hot_run2:
     - server
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
-    - --lock-port=12345
+    - --lock-port=50101
     - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
     - $(PATH_HOT_FOLDER)
 serv_hot_check2:
