@@ -5,11 +5,10 @@ source 'https://rubygems.org'
 # gem's dependencies are in file <gem name>.gemspec
 gemspec
 
-# optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
+# Optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
   gem('marcel', '~> 1.1') # for preview
-  gem('rmagick', '~> 6.1') unless defined?(JRUBY_VERSION) # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
   gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # remove from standard gems
@@ -19,6 +18,11 @@ group :optional do
   gem('ed25519', '~> 1.4') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
   gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
   gem('syslog', '~> 0.3') unless defined?(JRUBY_VERSION) # for logger=syslog
+end
+
+# Special dependency gems for runtime that can cause problems (native part to compile) but required for some features
+group :special do
+  gem('rmagick', '~> 6.1') unless defined?(JRUBY_VERSION) # for terminal view
 end
 
 # Used only for development
