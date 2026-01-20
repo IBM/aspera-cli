@@ -29,23 +29,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "4.0.1"
-          bundler-cache: true
-
-
-      - name: Install documentation dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex librsvg2-bin
-
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Determine release version
         id: version
         run: |
@@ -62,6 +45,7 @@ jobs:
           fi
           echo "Release version: $RELEASE_VERSION"
           echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "GEM_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
           # Determine next development version
           if [ -n "${{ inputs.next_version }}" ]; then
@@ -74,6 +58,22 @@ jobs:
           fi
           echo "Next development version: ${NEXT_VERSION}.pre"
           echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: true
+
+      - name: Install documentation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex librsvg2-bin
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Update version.rb for release
         run: |
