@@ -81,7 +81,11 @@ jobs:
           cat lib/aspera/cli/version.rb
 
       - name: Build documentation
-        run: bundle exec rake doc:build
+        run: |
+          mkdir -p pkg
+          bundle exec rake doc:build
+        env:
+          GEM_VERSION: ${{ steps.version.outputs.release_version }}
 
       - name: Commit release changes
         run: |
