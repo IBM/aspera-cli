@@ -38,7 +38,7 @@ jobs:
       - name: Install documentation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc texlive-luatex texlive-fonts-extra texlive-latex-extra
+          sudo apt-get install -y pandoc texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex
 
       - name: Configure git
         run: |
