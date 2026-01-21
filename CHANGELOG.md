@@ -2,6 +2,14 @@
 
 <!-- markdownlint-configure-file { "no-duplicate-heading": { "siblings_only": true } } -->
 
+## 4.26.0.pre
+
+### Breaking Changes
+
+* `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
+* `config`: Removed command `ascp use`, instead do: `ascli conf preset set GLOBAL sdk_folder <path>`.
+* `config`: Removed command `ascp products use`, instead do: `ascli conf preset set GLOBAL sdk_folder product:<path>`.
+
 ## 4.25.0.pre
 
 Released: [Place date of release here]

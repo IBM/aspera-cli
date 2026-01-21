@@ -20,9 +20,9 @@ module Aspera
           @plugins = {}
         end
 
-        # @return list of registered plugins
+        # @return [Array<Symbol>] Sorted list of registered plugins
         def plugin_list
-          @plugins.keys
+          @plugins.keys.sort
         end
 
         # add a folder to the list of folders to look for plugins

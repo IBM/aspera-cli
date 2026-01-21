@@ -82,28 +82,12 @@ PATH_TMP_STATES.mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
-# Allowed keys in test defs: See tests/README.md
-ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect}
-ALL_TESTS = yaml_safe_load(TEST_DEFS.read)
-# Normalize test definitions
-ALL_TESTS.each do |name, properties|
-  properties.symbolize_keys!
-  unsupported_keys = properties.keys - ALLOWED_KEYS
-  raise "Unsupported key(s): #{unsupported_keys} in #{name}" unless unsupported_keys.empty?
-  properties[:command] = Aspera::Cli::Info::CMD_NAME unless properties.key?(:command)
-  properties[:args] ||= []
-  plugin = properties[:args].find{ |s| !s.start_with?('-', '@')}
-  properties[:tags] ||= []
-  properties[:tags].unshift(plugin) unless plugin.nil? || properties[:tags].include?(plugin)
-  if properties[:args].include?('wizard')
-    properties[:env] ||= {}
-    properties[:env]['ASCLI_WIZ_TEST'] = 'yes'
-  end
-end
+ALL_TESTS = read_test_definitions
 
 # tests state is saved here
 PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
+
 # tags that have special meaning
 SPECIAL_TAGS = %w[ignore_fail must_fail hide_fail save_output wait_value tmp_conf noblock].freeze
 
@@ -152,6 +136,10 @@ end
 # @return the Pathname to output file generated for the given test case
 def out_file(name)
   PATH_TMP_STATES / "#{name}.out"
+end
+
+def err_file(name)
+  PATH_TMP_STATES / "#{name}.err"
 end
 
 # Read the value generated in output for the given test case
@@ -313,7 +301,7 @@ namespace TEST_CASE_NS do
         Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
       end
       tags = SPECIAL_TAGS.to_h{ |s| [s.to_sym, info[:tags].include?(s)]}
-      tags[:save_output] ||= info[:expect]
+      tags[:save_output] ||= info[:expect] unless tags[:must_fail]
       if info[:command].nil?
         log.info("[OK]   #{name} (no command)")
         STATES[name] = 'passed'
@@ -345,7 +333,11 @@ namespace TEST_CASE_NS do
         input = eval_macro(info[:stdin], exec_binding)
         stdinfile.write(input)
         run_options[:in] = stdinfile.to_s
-        log.info("Input: #{input}")
+        log.info("in: #{input}")
+      end
+      if tags[:must_fail] || tags[:ignore_fail]
+        run_options[:err] = err_file(name).to_s
+        log.info("err: #{run_options[:err]}")
       end
       # This test case can potentially be executed repeatedly, e.g. if we wait for a value
       # Loop for possible `redo`
@@ -379,7 +371,7 @@ namespace TEST_CASE_NS do
           end
         end
         STATES[name] = 'passed'
-        raise 'Must fail' if tags[:must_fail]
+        raise 'Must fail, but did not' if tags[:must_fail]
         log.info("[OK]   #{name}")
         break
       rescue RuntimeError => e
@@ -391,6 +383,11 @@ namespace TEST_CASE_NS do
         if expected_fails.empty?
           log.error("[FAIL] #{name} : #{e.message}")
           raise
+        end
+        if tags[:must_fail]
+          stderr = err_file(name).read
+          raise "Missing :expect: #{stderr}" unless info[:expect]
+          raise "Expected message not found in stderr: #{info[:expect]}" unless stderr.include?(info[:expect])
         end
         log.info("[#{expected_fails.join(' ')} FAIL] #{name}")
         STATES[name] = 'passed'

@@ -601,9 +601,12 @@ module Aspera
       end
 
       # TODO: use formatter
-      # @return [String] comma separated list of values, with the current value highlighted
+      # Highlight current value in list
+      # @param list    [Array<Symbol>] List of possible values
+      # @param current [Symbol]        Current value
+      # @return [String] comma separated sorted list of values, with the current value highlighted
       def highlight_current_in_list(list, current)
-        list.map do |i|
+        list.sort.map do |i|
           if i.eql?(current)
             $stdout.isatty ? i.to_s.red.bold : "[#{i}]"
           else

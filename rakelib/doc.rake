@@ -89,7 +89,7 @@ namespace :doc do
   task pdf: PATH_PDF_MANUAL
 
   desc 'Generate All Docs'
-  task build: [PATH_MD_MANUAL, PATH_PDF_MANUAL, PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA]
+  task build: [PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL, PATH_PDF_MANUAL]
 
   file PATH_UML_PNG => PATH_TMP_DOT do
     Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}

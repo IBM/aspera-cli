@@ -292,7 +292,6 @@ serv_health:
 serv_health_bad:
   tags:
     - nodoc
-    - must_fail
   args:
     - server
     - health
@@ -348,6 +347,7 @@ serv_error1:
   tags:
     - must_fail
     - nodoc
+  expect: failed to authenticate
   args:
     - server
     - --preset=server2_user
@@ -360,6 +360,7 @@ serv_error2:
   tags:
     - must_fail
     - nodoc
+  expect: Authentication failed
   args:
     - server
     - --preset=server2_user
@@ -372,6 +373,7 @@ serv_error3:
   tags:
     - must_fail
     - nodoc
+  expect: Scheme [foo] not supported
   args:
     - server
     - -N
@@ -383,10 +385,11 @@ serv_error4:
   tags:
     - must_fail
     - nodoc
+  expect: No such file or directory
   args:
     - server
     - -N
-    - --url=@preset:node_user.url
+    - --url=@preset:server_user.url
     - upload
     - wrong
     - --ts=@json:{"token":"test"}
@@ -396,10 +399,9 @@ serv_error5:
   tags:
     - must_fail
     - nodoc
+  expect: No such file or directory
   args:
     - server
-    - -N
-    - --url=@preset:node_user.url
     - upload
     - wrong
     - --transfer-info=@json:{"resume":{"iter_max":0}}
@@ -591,8 +593,9 @@ serv_sync_pull_conf_status_fail:
   depends_on:
     - serv_sync_pull_conf_reset
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
+  expect: Argument path is a Hash but must be String
   args:
     - server
     - sync
@@ -694,6 +697,7 @@ serv_down_from_node_fail:
   tags:
     - must_fail
     - nodoc
+  expect: "Server aborted session: No such file or directory"
   args:
     - server
     - download
@@ -759,6 +763,7 @@ serv_health_xfer_nagios_fail:
   tags:
     - must_fail
     - nodoc
+  expect: (EACCES) creating destination path
   args:
     - server
     - health
@@ -1287,13 +1292,14 @@ nd_central_1c:
     - modify
     - --validator=1
     - '@json:{"files":[]}'
-nd_watch_1:
+nd_watch_list:
   args:
     - node
     - watch_folder
     - list
     - --preset=node_ak_adm
 nd_watch_1b:
+  $comment: Fails because watchfolderd is not running
   tags:
     - hide_fail
     - nodoc
@@ -1340,6 +1346,7 @@ nd_akd:
   tags:
     - must_fail
     - nodoc
+  expect: Please provide secret
   args:
     - --preset=node_ak_adm
     - node
@@ -1762,6 +1769,7 @@ aoc_wizard_2b:
   tags:
     - must_fail
     - nodoc
+  expect: Unknown identifier
   args:
     - config
     - tokens
@@ -2567,6 +2575,7 @@ aocp_send_sh_meta_short2:
   tags:
     - must_fail
     - nodoc
+  expect: "missing mandatory field: Project Id"
   depends_on:
     - aocp_recv_init
   args:
@@ -3365,10 +3374,12 @@ orch_health:
     - orchestrator
     - health
 orch_health_bad:
+  $comment: With nagios format, error goes to stdout and exit code is set.
   description: Try to use wrong URL.
   tags:
     - must_fail
     - nodoc
+  expect: ""
   args:
     - orchestrator
     - health
@@ -3905,6 +3916,7 @@ sync_other_delete_fail:
   tags:
     - must_fail
     - nodoc
+  expect: Not found
   args:
     - node
     - ssync
@@ -3920,6 +3932,7 @@ conf_detectb:
   tags:
     - must_fail
     - nodoc
+  expect: No known application found
   args:
     - config
     - detect
@@ -4003,18 +4016,21 @@ conf_ascp_prod:
     - tmp_conf
   args:
     - config
-    - ascp
-    - products
-    - use
-    - 'IBM Aspera Connect'
+    - preset
+    - set
+    - GLOBAL
+    - sdk_folder
+    - 'product:IBM Aspera Connect'
 conf_ascp_use:
   tags:
     - tmp_conf
     - nodoc
   args:
     - config
-    - ascp
-    - use
+    - preset
+    - set
+    - GLOBAL
+    - sdk_folder
     - $(`which ascp`)
 conf_ascp_3:
   args:
@@ -4056,7 +4072,7 @@ conf_ascp_6b:
     - Aspera Connect for Windows
     - open
     - documentation
-conf_ascp_sdk_folder:
+conf_ascp_sdk_folder_save:
   tags:
     - save_output
     - nodoc
@@ -4065,8 +4081,8 @@ conf_ascp_sdk_folder:
     - --fields=sdk_folder
 conf_ascp_install_113:
   depends_on:
-    - conf_ascp_sdk_folder
-  pre: puts(read_value_from('conf_ascp_sdk_folder'))
+    - conf_ascp_sdk_folder_save
+  pre: puts(read_value_from('conf_ascp_sdk_folder_save'))
   args:
     - config
     - ascp
@@ -4079,7 +4095,8 @@ conf_ascp_install_latest:
     - config
     - ascp
     - install
-conf_ascp_installc:
+conf_ascp_install_in_other_folder:
+  $comment: Install in non standard folder
   pre: (TMP / 'sdk_test_dir').rmtree
   args:
     - config
@@ -4116,10 +4133,9 @@ conf_ascp_installg:
     - download
     - $(read_value_from 'conf_transferd_url')
     - --to-folder=$(TMP)
-conf_ascp_8:
-  $comment: Install in non standard folder
+conf_ascp_info_other_folder:
   depends_on:
-    - conf_ascp_install_113
+    - conf_ascp_install_in_other_folder
   args:
     - config
     - ascp
@@ -4466,6 +4482,7 @@ conf_echo_fail1:
     - must_fail
     - tmp_conf
     - nodoc
+  expect: vault name shall match <name>.<param>
   args:
     - config
     - echo
@@ -4475,6 +4492,7 @@ conf_echo_fail2:
     - must_fail
     - tmp_conf
     - nodoc
+  expect: "Label not found: bad"
   args:
     - config
     - echo
@@ -4484,6 +4502,7 @@ conf_echo_fail3:
     - must_fail
     - tmp_conf
     - nodoc
+  expect: "no such entry value: bad"
   args:
     - config
     - echo
@@ -4584,6 +4603,7 @@ conf_genkey_fail:
   tags:
     - must_fail
     - nodoc
+  expect: "Invalid integer: not_int"
   args:
     - config
     - genkey
@@ -4726,6 +4746,7 @@ conf_echo_fail2b:
   tags:
     - must_fail
     - nodoc
+  expect: No such file or directory
   args:
     - config
     - echo
@@ -4734,6 +4755,7 @@ conf_echo_fail4:
   tags:
     - must_fail
     - nodoc
+  expect: unexpected character
   args:
     - config
     - echo
@@ -4924,6 +4946,7 @@ conf_hint:
   tags:
     - must_fail
     - nodoc
+  expect: "Rest: Signature has expired"
   args:
     - config
     - test
@@ -4934,6 +4957,7 @@ config_hint_a:
   tags:
     - must_fail
     - nodoc
+  expect: "Transfer: Remote host is not who weexpected"
   args:
     - config
     - test
@@ -4944,6 +4968,7 @@ config_hint_b:
   tags:
     - must_fail
     - nodoc
+  expect: "SSL: does not match the server certificate"
   args:
     - config
     - test
@@ -4954,6 +4979,7 @@ config_hint_c:
   tags:
     - must_fail
     - nodoc
+  expect: "SSL: certificate verify failed"
   args:
     - config
     - test
@@ -4964,6 +4990,7 @@ config_hint_d:
   tags:
     - must_fail
     - nodoc
+  expect: "Other(OpenSSL::PKey::PKeyError): Neither PUB key nor PRIV key"
   args:
     - config
     - test
@@ -5277,6 +5304,7 @@ f5_health_nagios:
   tags:
     - must_fail
     - nodoc
+  expect: ""
   args:
     - -N
     - faspex5
@@ -5325,6 +5353,7 @@ f5_detect_fail:
   tags:
     - must_fail
     - nodoc
+  expect: No known application found
   args:
     - config
     - detect
@@ -5880,6 +5909,7 @@ f5_clean_del:
 f5_smtp:
   tags:
     - must_fail
+  expect: This SMTP configuration already exists
   args:
     - --preset=f5_admin
     - faspex5
@@ -6038,7 +6068,7 @@ f5_postproc_test_with_key:
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8554/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key'
@@ -6049,7 +6079,7 @@ f5_postproc_test_with_key_cert:
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8555/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key_cert'
