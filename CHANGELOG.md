@@ -2,9 +2,9 @@
 
 <!-- markdownlint-configure-file { "no-duplicate-heading": { "siblings_only": true } } -->
 
-## 4.25.1.pre
+## 4.25.1
 
-Released: [Place date of release here]
+Released: 2026-01-21
 
 ### Issues Fixed
 
