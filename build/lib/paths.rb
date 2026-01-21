@@ -15,7 +15,6 @@ module Paths
   TOP = Pathname.new(__dir__).parent.parent
   TMP = TOP / 'tmp'
   BIN = TOP / 'bin'
-  CLI_CMD = BIN / Aspera::Cli::Info::CMD_NAME
   LIB = TOP / 'lib'
   DOC = TOP / 'docs'
   TST = TOP / 'tests'

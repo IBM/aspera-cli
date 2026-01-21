@@ -58,8 +58,8 @@ module Aspera
       # @param code [String] Ruby code to execute
       # @param file [String] File name for error reporting
       # @param line [Integer] Line number for error reporting
-      def secure_eval(code, file, line)
-        Kernel.send('lave'.reverse, code, empty_binding, file, line)
+      def secure_eval(code, file, line, user_binding = nil)
+        Kernel.send('lave'.reverse, code, user_binding || empty_binding, file, line)
       end
 
       # Build argv for Process.spawn / Kernel.system (no shell)

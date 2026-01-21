@@ -3,6 +3,7 @@
 require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/log'
+require 'aspera/hash_ext'
 require 'rake'
 require 'uri'
 require 'zlib'
@@ -55,11 +56,8 @@ TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
 
-# CLI with default config file
 # give warning and stop on first warning in this gem
-CLI_TEST = ['ruby', '-w', TST / 'warning_exit_wrapper.rb', CLI_CMD, "--home=#{PATH_CLI_HOME}"]
-# JRuby does not support some encryptions
-CLI_TEST.push('-Pjns') if defined?(JRUBY_VERSION)
+RUBY_WRAPPER = ['ruby', '-w', TST / 'warning_exit_wrapper.rb'].freeze
 # Copy of the main configuration file to be used in tests
 PATH_CONF_FILE = PATH_CLI_HOME / 'config.yaml'
 # Temp configuration file that is modified, to avoid changing the main configuration file
@@ -84,23 +82,30 @@ PATH_TMP_STATES.mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
+# Allowed keys in test defs: See tests/README.md
+ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect}
 ALL_TESTS = yaml_safe_load(TEST_DEFS.read)
-# add tags for plugin
-ALL_TESTS.each_value do |value|
-  plugin = value['command']&.find{ |s| !s.start_with?('-')}
-  value['tags'] ||= []
-  value['tags'].unshift(plugin) unless value['tags'].include?(plugin)
+# Normalize test definitions
+ALL_TESTS.each do |name, properties|
+  properties.symbolize_keys!
+  unsupported_keys = properties.keys - ALLOWED_KEYS
+  raise "Unsupported key(s): #{unsupported_keys} in #{name}" unless unsupported_keys.empty?
+  properties[:command] = Aspera::Cli::Info::CMD_NAME unless properties.key?(:command)
+  properties[:args] ||= []
+  plugin = properties[:args].find{ |s| !s.start_with?('-', '@')}
+  properties[:tags] ||= []
+  properties[:tags].unshift(plugin) unless plugin.nil? || properties[:tags].include?(plugin)
+  if properties[:args].include?('wizard')
+    properties[:env] ||= {}
+    properties[:env]['ASCLI_WIZ_TEST'] = 'yes'
+  end
 end
 
-# Allowed keys in test defs: See tests/README.md
-ALLOWED_KEYS = %w{command tags depends_on description pre post env $comment stdin expect}
-unsupported_keys = ALL_TESTS.values.map(&:keys).flatten.uniq - ALLOWED_KEYS
-raise "Unsupported keys: #{unsupported_keys}" unless unsupported_keys.empty?
 # tests state is saved here
 PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 # tags that have special meaning
-SPECIAL_TAGS = %w[ignore_fail must_fail hide_fail save_output wait_value tmp_conf noblock]
+SPECIAL_TAGS = %w[ignore_fail must_fail hide_fail save_output wait_value tmp_conf noblock].freeze
 
 def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
@@ -114,6 +119,9 @@ def save_state
   File.write(PATH_TESTS_STATES, STATES.to_yaml)
 end
 
+# Retrieve test environment config parameters
+# @param path [String] Dot-separated path in config
+# @return [Object] Value found at given path
 def conf_data(path)
   @param_config_cache = TestEnv.test_configuration if @param_config_cache.nil?
   current = @param_config_cache
@@ -124,10 +132,10 @@ def conf_data(path)
   current
 end
 
-def eval_macro(value)
+def eval_macro(value, user_binding)
   # value.gsub(/\$\((.*?)\)/) do
   value.gsub(/\$\((?<inner>(?:[^()]+|\((?:[^()]+|\g<inner>)*\))*)\)/) do
-    Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__).to_s
+    Aspera::Environment.secure_eval(Regexp.last_match(1), __FILE__, __LINE__, user_binding).to_s
   end
   # log.info "Eval: #{value} -> [#{x}]"
 end
@@ -189,7 +197,7 @@ def reset_macos_hsts
   owner = Etc.getpwuid(st.uid).name
   run(*%W[sudo chown -R #{ASPERA_DAEMON_USER}: #{ASPERA_LOG_PATH}]) if owner != ASPERA_DAEMON_USER
   restart_noded
-  # while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
+  # while ! $(CLI_COMMAND) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 end
 
 def restart_noded
@@ -212,7 +220,7 @@ def select_test_cases(selection, &block)
     ALL_TESTS.each(&block)
   elsif list.first.eql?('tag')
     list.shift
-    ALL_TESTS.select{ |_, info| info['tags'].intersect?(list)}.each(&block)
+    ALL_TESTS.select{ |_, info| info[:tags].intersect?(list)}.each(&block)
   else
     list.each do |name|
       raise "Unknown test: #{name}" unless ALL_TESTS.key?(name)
@@ -232,7 +240,7 @@ namespace :test do
   desc 'List tests: all, by names, or by tags (space-sep)'
   task :list, [:name_list] do |_, args|
     select_test_cases(args[:name_list]) do |name, info|
-      log.info("#{name.ljust(20)} #{info['tags'].join(', ')}")
+      log.info("#{name.ljust(20)} #{info[:tags].join(', ')}")
     end
   end
 
@@ -270,8 +278,8 @@ end
 namespace TEST_CASE_NS do
   # Create a Rake task for each test
   ALL_TESTS.each do |name, info|
-    # desc info['description'] || '-'
-    deps = info['depends_on'] || []
+    # desc info[:description] || '-'
+    deps = info[:depends_on] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
       if SKIP_STATES.include?(STATES[name]) && !ENV['FORCE']
@@ -279,90 +287,99 @@ namespace TEST_CASE_NS do
         next
       end
       log.info("--#{percent_completed}%-------------------------------------------------")
-      log.info("[RUN]  #{name} [#{info['tags'].join(' ')}]")
-      log.info("[EXEC] #{info['command']&.join(' ')}")
-      if info['pre']
-        Aspera.assert_type(info['pre'], String)
-        log.info("Pre: Executing: #{info['pre']}")
-        Aspera::Environment.secure_eval(info['pre'], __FILE__, __LINE__)
+      log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
+      log.info("[EXEC] #{info[:args]&.join(' ')}")
+      exec_binding = binding
+      if info[:pre]
+        Aspera.assert_type(info[:pre], String)
+        log.info("Pre: Executing: #{info[:pre]}")
+        Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
       end
-      tags = SPECIAL_TAGS.to_h{ |s| [s.to_sym, info['tags'].include?(s)]}
-      tags[:save_output] ||= info['expect']
-      if info['command']
-        if info['command'].include?('wizard')
-          info['env'] ||= {}
-          info['env']['ASCLI_WIZ_TEST'] = 'yes'
-        end
-        # This test case can potentially be executed repeatedly, e.g. if we wait for a value
-        full_args = CLI_TEST.map(&:to_s)
-        if info['command'][0..1].eql?(%w[config wizard]) || tags[:tmp_conf]
-          PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
-          full_args += ["--config-file=#{PATH_TEST_CONFIG}"]
-        else
-          PATH_CONF_FILE.write(TestEnv.test_configuration.to_yaml) unless PATH_CONF_FILE.exist?
-        end
-        full_args += info['command'].map{ |i| eval_macro(i.to_s)}
-        full_args += ["--output=#{out_file(name)}"] if tags[:save_output]
-        full_args += ['--format=csv'] if tags[:save_output] && !full_args.find{ |i| i.start_with?('--format=')}
-        run_options = {}
-        if tags[:noblock]
-          run_options[:mode] = :background
-          full_args.push("--pid-file=#{pid_file(name)}")
-        end
-        if info['stdin']
-          stdinfile = TMP / "#{name}.stdin"
-          input = eval_macro(info['stdin'])
-          stdinfile.write(input)
-          run_options[:in] = stdinfile.to_s
-          log.info("Input: #{input}")
-        end
-        loop do
-          run(*full_args, env: info['env'], **run_options)
-          # give time to start
-          sleep(1) if tags[:noblock]
-          if info['post']
-            Aspera.assert_type(info['post'], String)
-            log.info("Executing: #{info['post']}")
-            Aspera::Environment.secure_eval(info['post'], __FILE__, __LINE__)
-          end
-          if tags[:save_output]
-            saved_value = read_value_from(name)
-            if saved_value.empty?
-              if tags[:wait_value]
-                log.info('No value saved, retry...')
-                sleep(5)
-                redo
-              else
-                raise 'No value saved (empty value)'
-              end
-            end
-            log.info("Saved: #{saved_value}")
-            if info['expect']
-              raise "not match[#{info['expect']}][#{out_file(name).read}]" unless info['expect'].eql?(out_file(name).read.chomp)
-            end
-          end
-          STATES[name] = 'passed'
-          raise 'Must fail' if tags[:must_fail]
-          log.info("[OK]   #{name}")
-          break
-        rescue RuntimeError
-          STATES[name] = 'failed'
-          expected_fails = tags.filter_map do |k, v|
-            s = k.to_s
-            s.delete_suffix!('_fail') && v == true ? s.upcase : nil
-          end
-          if expected_fails.empty?
-            log.error("[FAIL] #{name}")
-            raise
-          end
-          log.info("[#{expected_fails.join(' ')} FAIL] #{name}")
-          STATES[name] = 'passed'
-          save_state
-          break
-        end
-      else
+      tags = SPECIAL_TAGS.to_h{ |s| [s.to_sym, info[:tags].include?(s)]}
+      tags[:save_output] ||= info[:expect]
+      if info[:command].nil?
         log.info("[OK]   #{name} (no command)")
         STATES[name] = 'passed'
+        save_state
+        next
+      end
+      command_line = [BIN / info[:command]]
+      if info[:command].eql?(Aspera::Cli::Info::CMD_NAME)
+        command_line.push("--home=#{PATH_CLI_HOME}")
+        command_line.push('-Pjns') if defined?(JRUBY_VERSION)
+      end
+      command_line = (RUBY_WRAPPER + command_line).map(&:to_s)
+      # ensure that config file is there (a copy)
+      if info[:args][0..1].eql?(%w[config wizard]) || tags[:tmp_conf]
+        PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
+        command_line += ["--config-file=#{PATH_TEST_CONFIG}"]
+      else
+        PATH_CONF_FILE.write(TestEnv.test_configuration.to_yaml) unless PATH_CONF_FILE.exist?
+      end
+      command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
+      command_line += ["--output=#{out_file(name)}"] if tags[:save_output]
+      command_line += ['--format=csv'] if tags[:save_output] && !full_args.find{ |i| i.start_with?('--format=')}
+      run_options = {}
+      if tags[:noblock]
+        run_options[:mode] = :background
+        command_line.push("--pid-file=#{pid_file(name)}")
+      end
+      if info[:stdin]
+        stdinfile = TMP / "#{name}.stdin"
+        input = eval_macro(info[:stdin], exec_binding)
+        stdinfile.write(input)
+        run_options[:in] = stdinfile.to_s
+        log.info("Input: #{input}")
+      end
+      # This test case can potentially be executed repeatedly, e.g. if we wait for a value
+      # Loop for possible `redo`
+      loop do
+        run(*command_line, env: info[:env], **run_options)
+        # Give time to start
+        if tags[:noblock]
+          sleep(1)
+          raise 'Process not started' unless pid_file(name).exist?
+        end
+        if info[:post]
+          Aspera.assert_type(info[:post], String)
+          log.info("Executing: #{info[:post]}")
+          Aspera::Environment.secure_eval(info[:post], __FILE__, __LINE__, exec_binding)
+        end
+        if tags[:save_output]
+          saved_value = read_value_from(name)
+          if saved_value.empty?
+            message = 'Empty result'
+            if tags[:wait_value]
+              log.info("#{message}, retry...")
+              sleep(5)
+              redo
+            else
+              raise message
+            end
+          end
+          log.info("Saved: #{saved_value}")
+          if info[:expect]
+            raise "not match[#{info[:expect]}][#{out_file(name).read}]" unless info[:expect].eql?(out_file(name).read.chomp)
+          end
+        end
+        STATES[name] = 'passed'
+        raise 'Must fail' if tags[:must_fail]
+        log.info("[OK]   #{name}")
+        break
+      rescue RuntimeError => e
+        STATES[name] = 'failed'
+        expected_fails = tags.filter_map do |k, v|
+          s = k.to_s
+          s.delete_suffix!('_fail') && v == true ? s.upcase : nil
+        end
+        if expected_fails.empty?
+          log.error("[FAIL] #{name} : #{e.message}")
+          raise
+        end
+        log.info("[#{expected_fails.join(' ')} FAIL] #{name}")
+        STATES[name] = 'passed'
+        save_state
+        break
       end
       save_state
     end

@@ -25,8 +25,9 @@ module BuildTools
   end
 
   # Execute the command line (not in shell)
-  def run(*args, **kwargs)
-    Aspera::Environment.secure_execute(*args, **kwargs)
+  # Alias for `Aspera::Environment.secure_execute`
+  def run(...)
+    Aspera::Environment.secure_execute(...)
   end
 
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
