@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0"
+subtitle: "ascli 4.25.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0
+Version : 4.25.0.pre
 
 Laurent/2016-2026
 
@@ -139,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0
+4.25.0.pre
 ```
 
 > [!NOTE]
@@ -650,7 +650,7 @@ gem install solargraph -v '~> 0.48'
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```shell
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -806,11 +806,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0 --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0.pre --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0-gems
+mv temp_folder/cache aspera-cli-4.25.0.pre-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0-gems aspera-cli-4.25.0-gems.tgz
+tar zcvf aspera-cli-4.25.0.pre-gems aspera-cli-4.25.0.pre-gems.tgz
 ```
 
 #### Unix-like
@@ -955,7 +955,7 @@ ascli -v
 ```
 
 ```text
-4.25.0
+4.25.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4662,9 +4662,8 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 
 ```text
 ascli -h
-WARN No config file found. New configuration file: /home/runner/.aspera/ascli/config.yaml
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0)
+        ascli -- a command line tool for Aspera Applications (v4.25.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4709,7 +4708,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [text], graphical
+        --ui=ENUM                    Method to start browser: text, [graphical]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -4758,38 +4757,15 @@ OPTIONS: global
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: httpgw, transferd, node, desktop, [direct], connect
+        --transfer=ENUM              Type of transfer agent: desktop, node, [direct], transferd, httpgw, connect
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
 
 
-COMMAND: httpgw
-SUBCOMMANDS: health info
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-
-
-COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
-        --client-id=VALUE            OAuth client identifier
-        --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
-        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
-        --shared-folder=VALUE        Send package with files from shared folder
-        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
-
-
-COMMAND: alee
-SUBCOMMANDS: entitlement health
+COMMAND: shares
+SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
@@ -4810,33 +4786,36 @@ OPTIONS:
         --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
 
 
-COMMAND: aoc
-SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
+COMMAND: faspio
+SUBCOMMANDS: bridges health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
+        --auth=ENUM                  OAuth type of authentication: jwt, basic
         --client-id=VALUE            OAuth client identifier
-        --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
-        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --workspace=VALUE            Name of workspace
-        --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
-        --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --package-folder=VALUE       Handling of reception of packages in folders (Hash)
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
 
 
-COMMAND: server
-SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
+COMMAND: orchestrator
+SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --ssh-keys=VALUE             SSH key path list (Array)
-        --passphrase=VALUE           SSH private key passphrase
-        --ssh-options=VALUE          SSH options (Hash)
+        --result=VALUE               Specify result value as: 'work_step:parameter'
+        --synchronous=ENUM           Wait for completion: [no], yes
+        --ret-style=ENUM             How return type is requested in api: header, [arg], ext
+        --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
+
+
+COMMAND: alee
+SUBCOMMANDS: entitlement health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
 
 
 COMMAND: ats
@@ -4848,6 +4827,55 @@ OPTIONS:
         --ats-secret=VALUE           ATS key secret
         --cloud=VALUE                Cloud provider
         --region=VALUE               Cloud region
+
+
+COMMAND: faspex5
+SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
+        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
+        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
+        --shared-folder=VALUE        Send package with files from shared folder
+        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
+
+
+COMMAND: cos
+SUBCOMMANDS: node
+OPTIONS:
+        --bucket=VALUE               Bucket name
+        --endpoint=VALUE             Storage endpoint (URL)
+        --apikey=VALUE               Storage API key
+        --crn=VALUE                  Resource instance id (CRN)
+        --service-credentials=VALUE  IBM Cloud service credentials (Hash)
+        --region=VALUE               Storage region
+        --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
+
+
+COMMAND: httpgw
+SUBCOMMANDS: health info
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+
+
+COMMAND: faspex
+SUBCOMMANDS: address_book dropbox health login_methods me package source v4
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --link=VALUE                 Public link for specific operation
+        --delivery-info=VALUE        Package delivery information (Hash)
+        --remote-source=VALUE        Remote source for package send (id or %name:)
+        --storage=VALUE              Faspex local storage definition (for browsing source)
+        --recipient=VALUE            Use if recipient is a dropbox (with *)
+        --box=ENUM                   Package box: [inbox], archive, sent
 
 
 COMMAND: preview
@@ -4885,16 +4913,33 @@ OPTIONS:
         --clips-length=VALUE         Mp4: clips: length in seconds of each clips
 
 
-COMMAND: orchestrator
-SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
+COMMAND: aoc
+SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --result=VALUE               Specify result value as: 'work_step:parameter'
-        --synchronous=ENUM           Wait for completion: [no], yes
-        --ret-style=ENUM             How return type is requested in api: header, [arg], ext
-        --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
+        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
+        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
+        --workspace=VALUE            Name of workspace
+        --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
+        --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
+        --package-folder=VALUE       Handling of reception of packages in folders (Hash)
+
+
+COMMAND: server
+SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --ssh-keys=VALUE             SSH key path list (Array)
+        --passphrase=VALUE           SSH private key passphrase
+        --ssh-options=VALUE          SSH options (Hash)
 
 
 COMMAND: console
@@ -4903,52 +4948,6 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-
-
-COMMAND: shares
-SUBCOMMANDS: admin files health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-
-
-COMMAND: cos
-SUBCOMMANDS: node
-OPTIONS:
-        --bucket=VALUE               Bucket name
-        --endpoint=VALUE             Storage endpoint (URL)
-        --apikey=VALUE               Storage API key
-        --crn=VALUE                  Resource instance id (CRN)
-        --service-credentials=VALUE  IBM Cloud service credentials (Hash)
-        --region=VALUE               Storage region
-        --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
-
-
-COMMAND: faspio
-SUBCOMMANDS: bridges health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: jwt, basic
-        --client-id=VALUE            OAuth client identifier
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth JWT RSA private key passphrase
-
-
-COMMAND: faspex
-SUBCOMMANDS: address_book dropbox health login_methods me package source v4
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --link=VALUE                 Public link for specific operation
-        --delivery-info=VALUE        Package delivery information (Hash)
-        --remote-source=VALUE        Remote source for package send (id or %name:)
-        --storage=VALUE              Faspex local storage definition (for browsing source)
-        --recipient=VALUE            Use if recipient is a dropbox (with *)
-        --box=ENUM                   Package box: [inbox], archive, sent
 
 
 ```
