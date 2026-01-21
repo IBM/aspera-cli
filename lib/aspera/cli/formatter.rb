@@ -30,10 +30,6 @@ module Aspera
       SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
 
       private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES
-      # prefix to display error messages in user messages (terminal)
-      ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
-      WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
-      HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
       class << self
         # nicer display for boolean
