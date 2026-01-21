@@ -13,9 +13,13 @@ require 'yaml'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
 require_relative '../build/lib/test_env'
-# spec tests
-require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new
+# spec tests (only if rspec is available)
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new
+rescue LoadError
+  # rspec not available (e.g., in production/deploy environment)
+end
 
 include Paths
 include BuildTools
