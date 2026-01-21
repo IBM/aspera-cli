@@ -31,4 +31,4 @@ jobs:
           echo "${{ secrets.PRIVATE_KEY_PEM }}" > $SIGNING_KEY
           echo ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $GEM_CREDS
           chmod 0600 $SIGNING_KEY $GEM_CREDS
-          bundle exec rake release_signed
+          rake release_signed
