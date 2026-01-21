@@ -11,7 +11,7 @@ jobs:
     name: Build + Publish
     runs-on: ubuntu-latest
     env:
-      BUNDLE_WITHOUT: optional
+      BUNDLE_WITHOUT: optional:development:special
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -20,6 +20,8 @@ jobs:
         with:
           ruby-version: "4.0.1"
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+      - name: Install rake
+        run: gem install rake
       - name: Publish to RubyGems
         if: contains(github.ref, 'refs/tags/v')
         run: |
