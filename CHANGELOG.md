@@ -11,6 +11,39 @@ Released: [Place date of release here]
 * `build`: Fixed deploy workflow to use global rake instead of bundle exec.
 * `build`: Made rspec require conditional in test.rake for deploy environment.
 
+## 4.25.0
+
+Released: 2026-01-21
+
+### New Features
+
+* **global**: All `Hash` and `Array` options are now cumulative (merged). Value `@none:` resets to empty value.
+* **global**: Improved error diagnostic during evaluation of extended value.
+* **global**: New extended value modifier: `@:` (empty modifier) to evaluate remaining arguments as `Hash` or `Array`.
+* **global**: New extended value modifier: `@stdin:chomp` reads stdin and removes `\n`.
+* `config`: New option: `parser` allows definition of default parser for extended values when expecting a `Hash` or `Array` type.
+* `orchestrator`: Commands now takes option `query`.
+* `aoc`: The admin command for `node` now support nodes owned by admin, so that secret is no more necessary.
+
+### Issues Fixed
+
+* `aoc`: Restored command `admin workspace shared_folder :id list` which was since 4.11.0.
+* `direct`: When using `ascp4` do not set env var: `ASPERA_TEST_REDIS_DISABLE`, else it fails with: `Failed to initialize application`.
+
+### Breaking Changes
+
+* `aoc`: Option `package_folder` is now a Hash instead of formatted String.
+* `aoc`: Deprecated option `scope`. It is selected from the command directly. For `bearer_token --scope=admin:all`, now use: `admin bearer_token`.
+* `server`: By default, SSH option `use_agent` is now `false`.
+* `config`: Removed option `use_product`, replaced with prefix `product:` of option `ascp_path`.
+* `config`: Secret lookup is no more automatic, activate setting option `secret` to `PRESET`.
+* `faspex5`: Removed deprecated (4.18) command in `admin`: `resource`, use resource name as command directly in `admin`.
+* `preview`: Replaced gem `mimemagic` with `marcel`.
+* **global**: Extended value modifier `@stdbin:` is replaced with `@stdin:bin`.
+* Build system uses now `rake` instead of `make` for easier portability on Windows.
+* PDF manual removed from repo, it is now generated for [releases](https://github.com/IBM/aspera-cli/releases) only.
+* HTML manual is not generated anymore.
+
 ## 4.24.2
 
 Released: 2025-10-24
