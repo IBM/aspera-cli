@@ -1,0 +1,39 @@
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/ed25519-1.4.0/ext/ed25519_ref10
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby extconf.rb
+checking for whether -Wall is accepted as CFLAGS... yes
+checking for whether -O3 is accepted as CFLAGS... yes
+checking for whether -pedantic is accepted as CFLAGS... no
+checking for whether -std=c99 is accepted as CFLAGS... yes
+creating Makefile
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/ed25519-1.4.0/ext/ed25519_ref10
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-qummix sitelibdir\=./.gem.20260120-2154-qummix clean
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/ed25519-1.4.0/ext/ed25519_ref10
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-qummix sitelibdir\=./.gem.20260120-2154-qummix
+compiling ed25519_ref10.c
+compiling fe.c
+compiling ge.c
+compiling keypair.c
+compiling open.c
+ed25519_ref10.c: In function ‘Init_ed25519_ref10’:
+ed25519_ref10.c:12:6: warning: old-style function definition [-Wold-style-definition]
+   12 | void Init_ed25519_ref10()
+      |      ^~~~~~~~~~~~~~~~~~
+compiling sc_muladd.c
+At top level:
+cc1: note: unrecognized command-line option ‘-Wno-self-assign’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-parentheses-equality’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-constant-logical-operand’ may have been intended to silence earlier diagnostics
+compiling sc_reduce.c
+compiling sha512.c
+compiling sign.c
+compiling verify.c
+linking shared-object ed25519_ref10.so
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/ed25519-1.4.0/ext/ed25519_ref10
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-qummix sitelibdir\=./.gem.20260120-2154-qummix install
+/usr/bin/install -c -m 0755 ed25519_ref10.so ./.gem.20260120-2154-qummix
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/ed25519-1.4.0/ext/ed25519_ref10
+make DESTDIR\= sitearchdir\=./.gem.20260120-2154-qummix sitelibdir\=./.gem.20260120-2154-qummix clean

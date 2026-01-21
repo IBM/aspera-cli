@@ -1,0 +1,19 @@
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/erb-6.0.1/ext/erb/escape
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby extconf.rb
+checking for rb_ext_ractor_safe() in ruby.h... yes
+creating Makefile
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/erb-6.0.1/ext/erb/escape
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-vq0l79 sitelibdir\=./.gem.20260120-2154-vq0l79 clean
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/erb-6.0.1/ext/erb/escape
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-vq0l79 sitelibdir\=./.gem.20260120-2154-vq0l79
+compiling escape.c
+linking shared-object erb/escape.so
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/erb-6.0.1/ext/erb/escape
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260120-2154-vq0l79 sitelibdir\=./.gem.20260120-2154-vq0l79 install
+/usr/bin/install -c -m 0755 escape.so ./.gem.20260120-2154-vq0l79/erb
+
+current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/erb-6.0.1/ext/erb/escape
+make DESTDIR\= sitearchdir\=./.gem.20260120-2154-vq0l79 sitelibdir\=./.gem.20260120-2154-vq0l79 clean
