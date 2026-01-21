@@ -225,9 +225,9 @@ module Aspera
             start_and_monitor_process(session: session, **session[:env_args])
           end
           Log.log.debug('transfer ok'.bg_green)
-        rescue StandardError => e
+        rescue => e
           session[:error] = e
-          Log.log.error{"Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red} if Log.instance.level.eql?(:debug)
+          raise if Log.log.debug? || !e.is_a?(Transfer::Error)
         end
         Log.log.debug{"EXIT (#{Thread.current[:name]})"}
       end
@@ -251,15 +251,15 @@ module Aspera
       )
         Aspera.assert_type(session, Hash)
         notify_progress(:sessions_init, info: 'starting')
+        # Do not use `capture_stderr`
+        capture_stderr = false
+        stderr_r, stderr_w = nil
+        spawn_args = {}
+        command_pid = nil
+        # Get location of command executable (ascp, async)
+        command_path = Ascp::Installation.instance.path(name)
+        command_arguments = [command_path]
         begin
-          # do not use
-          capture_stderr = false
-          stderr_r, stderr_w = nil
-          spawn_args = {}
-          command_pid = nil
-          # get location of command executable (ascp, async)
-          command_path = Ascp::Installation.instance.path(name)
-          command_arguments = [command_path]
           if @monitor
             # we use Socket directly, instead of TCPServer, as it gives access to lower level options
             socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
@@ -353,7 +353,7 @@ module Aspera
             Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
             # collect process exit status or wait for termination
             _, status = Process.wait2(command_pid)
-            if stderr_r
+            if capture_stderr
               # process stderr of ascp
               stderr_flag = false
               stderr_r.each_line do |line|

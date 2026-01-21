@@ -14,6 +14,7 @@ asession:
       @json:{"loglevel":"info","spec":{"remote_host":"$(remote_host)","remote_user":"$(remote_user)","ssh_port":$(remote_port),"remote_password":"$(remote_pass)","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}
 unit:
   $comment: Run spec
+  command: null
   tags:
     - nodoc
   pre: Rake::Task[:spec].invoke
@@ -291,6 +292,7 @@ serv_health:
 serv_health_bad:
   tags:
     - nodoc
+    - must_fail
   args:
     - server
     - health

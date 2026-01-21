@@ -628,8 +628,10 @@ module Aspera
               return Main.result_object_list(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
             when :use
               default_product = options.get_next_argument('product name')
-              Ascp::Installation.instance.use_ascp_from_product(default_product)
-              set_global_default(:ascp_path, "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{default_product}")
+              product_spec = "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{default_product}"
+              # Test it is ok
+              Ascp::Installation.instance.sdk_folder = (product_spec)
+              set_global_default(:ascp_path, product_spec)
               return Main.result_nothing
             end
           when :install

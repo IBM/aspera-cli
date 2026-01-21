@@ -200,15 +200,32 @@ def reset_macos_hsts
   # while ! $(CLI_COMMAND) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 end
 
+MACOS_LAUNCHD_UNLOAD = %w[sudo launchctl unload]
+MACOS_LAUNCHD_LOAD = %w[sudo launchctl load]
+MACOS_LAUNCHD_FOLDERS = Pathname.new('/Library/LaunchDaemons')
+
+def macos_service(action, aspera_name)
+  run(*(%w[sudo launchctl] + [action, MACOS_LAUNCHD_FOLDERS / "com.aspera.#{aspera_name}.plist"]))
+end
+
+def macos_stop_service(aspera_name)
+  macos_service('unload', aspera_name)
+end
+
+def macos_start_service(aspera_name)
+  macos_service('load', aspera_name)
+end
+
 def restart_noded
-  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperalee.plist])
-  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist])
-  run(*%w[sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
+  log.info('Restarting noded on macOS')
+  macos_stop_service('asperalee') # not needed
+  macos_stop_service('asperanoded')
+  macos_stop_service('asperaredisd')
   sleep(5)
   # run(*%w[sudo /bin/chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera])
   # -ps -ef|grep aspera|grep -v grep
-  run(*%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist])
-  run(*%w[sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist])
+  macos_start_service('asperaredisd')
+  macos_start_service('asperanoded')
   sleep(5)
   # -ps -ef|grep aspera|grep -v grep
 end
@@ -303,12 +320,11 @@ namespace TEST_CASE_NS do
         save_state
         next
       end
-      command_line = [BIN / info[:command]]
+      command_line = [(BIN / info[:command]).to_s]
       if info[:command].eql?(Aspera::Cli::Info::CMD_NAME)
         command_line.push("--home=#{PATH_CLI_HOME}")
         command_line.push('-Pjns') if defined?(JRUBY_VERSION)
       end
-      command_line = (RUBY_WRAPPER + command_line).map(&:to_s)
       # ensure that config file is there (a copy)
       if info[:args][0..1].eql?(%w[config wizard]) || tags[:tmp_conf]
         PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
@@ -318,7 +334,7 @@ namespace TEST_CASE_NS do
       end
       command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
       command_line += ["--output=#{out_file(name)}"] if tags[:save_output]
-      command_line += ['--format=csv'] if tags[:save_output] && !full_args.find{ |i| i.start_with?('--format=')}
+      command_line += ['--format=csv'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=')}
       run_options = {}
       if tags[:noblock]
         run_options[:mode] = :background
@@ -334,7 +350,7 @@ namespace TEST_CASE_NS do
       # This test case can potentially be executed repeatedly, e.g. if we wait for a value
       # Loop for possible `redo`
       loop do
-        run(*command_line, env: info[:env], **run_options)
+        run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
         # Give time to start
         if tags[:noblock]
           sleep(1)

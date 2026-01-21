@@ -33,8 +33,8 @@ module Aspera
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
 
       class << self
-        # @return :success if all sessions statuses returned by "start" are success
-        # else return the first error exception object
+        # @return [:success]  if all sessions statuses returned by "start" are success
+        # @return [Exception] if one sessions statuses returned by "start" is failed
         def session_status(statuses)
           error_statuses = statuses.reject{ |i| i.eql?(:success)}
           return :success if error_statuses.empty?
