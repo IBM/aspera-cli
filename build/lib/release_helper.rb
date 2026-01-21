@@ -11,6 +11,7 @@ module ReleaseHelper
 
   class << self
     # Extract the latest changelog section (everything between first ## and second ##)
+    # Strips the version heading and release date lines
     # @return [String] The changelog content for the latest version
     def extract_latest_changelog
       content = CHANGELOG_FILE.read
@@ -18,7 +19,9 @@ module ReleaseHelper
       match = content.match(/^(## .+?)(?=^## |\z)/m)
       return '' unless match
 
-      match[1].strip
+      section = match[1].strip
+      # Remove the version heading (## X.Y.Z) and Released: line
+      section.sub(/\A## .+\n+Released: .+\n*/, '').strip
     end
 
     # Update CHANGELOG.md for release:

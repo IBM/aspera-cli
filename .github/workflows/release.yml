@@ -113,7 +113,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           gh release create "v${{ steps.version.outputs.release_version }}" \
-            --title "v${{ steps.version.outputs.release_version }}" \
+            --title "Aspera CLI v${{ steps.version.outputs.release_version }}" \
             --notes-file release_notes.md
 
       - name: Update version.rb for next development cycle
