@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.0.pre"
+subtitle: "ascli 4.25.0"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.0.pre
+Version : 4.25.0
 
 Laurent/2016-2026
 
@@ -139,7 +139,7 @@ ascli --version
 ```
 
 ```text
-4.25.0.pre
+4.25.0
 ```
 
 > [!NOTE]
@@ -806,11 +806,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.0 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.0-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.0.pre-gems aspera-cli-4.25.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.0-gems aspera-cli-4.25.0-gems.tgz
 ```
 
 #### Unix-like
@@ -955,7 +955,7 @@ ascli -v
 ```
 
 ```text
-4.25.0.pre
+4.25.0
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4664,7 +4664,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ascli -h
 WARN No config file found. New configuration file: /home/runner/.aspera/ascli/config.yaml
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
