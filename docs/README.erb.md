@@ -3244,41 +3244,41 @@ It provides the following commands for `ascp` sub-command:
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
-Option: `ascp_path` is used to specify the location of `ascp`.
+Option: `sdk_folder` is used to specify the location of `ascp`.
 The default value is: `product:FIRST`.
 By default, <%=tool%> uses any found local product with `ascp`, including Transfer Daemon (SDK).
 
-To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
+To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
-For a permanent change, the command `config ascp use` sets the same option for the global default.
+For a permanent change, set a global default.
 
 Using a POSIX shell:
 
 ```shell
-<%=cmd%> config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
+<%=cmd%> config preset set GLOBAL sdk_folder ~/my_install_dir
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
+Updated: global_common_defaults: sdk_folder <- /Users/laurent/my_install_dir
 Saved to default global preset global_common_defaults
 ```
 
 Windows:
 
 ```text
-<%=cmd%> config ascp use C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
+<%=cmd%> config preset set GLOBAL sdk_folder C:\Users\admin\.aspera\<%=cmd%>\sdk
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
+Updated: global_common_defaults: sdk_folder <- C:\Users\admin\.aspera\<%=cmd%>\sdk
 Saved to default global preset global_common_defaults
 ```
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-A special value `product:<product name>` can be used for option `ascp_path`.
+A special value `product:<product name>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first found.
 
@@ -3289,29 +3289,23 @@ Locally installed Aspera products can be listed with:
 ```
 
 ```text
-+---------------------------------------+----------------------------------------+
-| name                                  | app_root                               |
-+---------------------------------------+----------------------------------------+
-| IBM Aspera SDK                        | /Users/laurent/.aspera/<%=cmd%>/sdk       |
-| Aspera Connect                        | /Applications/Aspera Connect.app       |
-| IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
-| IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
-+---------------------------------------+----------------------------------------+
+╭───────────────────────────────────────┬──────────────────────────────────────╮
+│ name                                  │ app_root                             │
+╞═══════════════════════════════════════╪══════════════════════════════════════╡
+│ IBM Aspera Transfer SDK               │ /Users/laurent/.aspera/sdk           │
+│ IBM Aspera for Desktop                │ /Applications/IBM Aspera.app         │
+│ IBM Aspera Connect                    │ /Applications/IBM Aspera Connect.app │
+│ IBM Aspera High-Speed Transfer Server │ /Library/Aspera                      │
+╰───────────────────────────────────────┴──────────────────────────────────────╯
 ```
 
 To permanently use the `ascp` of a product:
 
 ```shell
-<%=cmd%> config ascp products use 'IBM Aspera Connect'
+<%=cmd%> config preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 Updated: default: config <- global_common_defaults
-Updated: global_common_defaults: ascp_path <- product:IBM Aspera Connect
+Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
 Saving config file.
-```
-
-It is the same as executing:
-
-```shell
-<%=cmd%> config preset set GLOBAL ascp_path 'product:IBM Aspera Connect'
 ```
 
 To show the path of currently used `ascp`:

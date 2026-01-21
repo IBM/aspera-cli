@@ -145,9 +145,8 @@ module Aspera
           options.declare(:sdk_url, 'Ascp: URL to get Aspera Transfer Executables', default: SpecialValues::DEF)
           options.parse_options!
           set_sdk_dir
-          options.declare(:ascp_path, 'Ascp: Path to ascp (or product with "product:")', handler: {o: Ascp::Installation.instance, m: :ascp_path}, default: "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{Ascp::Installation::FIRST_FOUND}")
           options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
-          options.declare(:sdk_folder, 'Ascp: SDK installation folder path', handler: {o: Products::Transferd, m: :sdk_directory})
+          options.declare(:sdk_folder, 'Ascp: Path to folder with ascp (or product with "product:")', handler: {o: Products::Transferd, m: :sdk_directory})
           options.declare(:progress_bar, 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
           # Email options
           options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash)
@@ -307,10 +306,7 @@ module Aspera
             if @option_warn_insecure_cert
               base_url = "https://#{address}:#{port}"
               if !@ssl_warned_urls.include?(base_url)
-                formatter.display_message(
-                  :error,
-                  "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production."
-                )
+                Log.log.warn{"Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production."}
                 @ssl_warned_urls.push(base_url)
               end
             end
@@ -416,7 +412,7 @@ module Aspera
           raise Cli::Error, "Preset already exists: #{preset_name}  (use --override=yes or provide alternate name on command line)" \
             if !option_override && @config_presets.key?(preset_name)
           if option_default
-            formatter.display_status("Setting config preset as default for #{plugin_name}")
+            Log.log.info("Setting config preset as default for #{plugin_name}")
             @config_presets[CONF_PRESET_DEFAULTS][plugin_name.to_s] = preset_name
           end
           @config_presets[preset_name] = preset_values
@@ -439,7 +435,7 @@ module Aspera
             Log.log.warn{"overwriting value for #{param_name}: #{selected_preset[param_name]}"}
           end
           selected_preset[param_name] = param_value
-          formatter.display_status("Updated: #{preset}: #{param_name} <- #{param_value}")
+          Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
           nil
         end
 
@@ -591,24 +587,16 @@ module Aspera
         end
 
         def install_transfer_sdk
-          # Reset to default location, if older default was used
-          Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME) if @sdk_default_location
           asked_version = options.get_next_argument('transferd version', mandatory: false)
           name, version, folder = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: asked_version)
           return Main.result_status("Installed #{name} version #{version} in #{folder}")
         end
 
         def execute_action_ascp
-          command = options.get_next_command(%i[connect use show products info install spec schema errors])
+          command = options.get_next_command(%i[connect show products info install spec schema errors])
           case command
           when :connect
             return execute_connect_action
-          when :use
-            ascp_path = options.get_next_argument('path to ascp')
-            Ascp::Installation.instance.ascp_path = ascp_path
-            formatter.display_status("ascp version: #{Ascp::Installation.instance.get_ascp_version(ascp_path)}")
-            set_global_default(:ascp_path, ascp_path)
-            return Main.result_nothing
           when :show
             return Main.result_text(Ascp::Installation.instance.path(:ascp))
           when :info
@@ -622,17 +610,10 @@ module Aspera
             SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
             return Main.result_single_object(data)
           when :products
-            command = options.get_next_command(%i[list use])
+            command = options.get_next_command(%i[list])
             case command
             when :list
               return Main.result_object_list(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
-            when :use
-              default_product = options.get_next_argument('product name')
-              product_spec = "#{Ascp::Installation::USE_PRODUCT_PREFIX}#{default_product}"
-              # Test it is ok
-              Ascp::Installation.instance.sdk_folder = (product_spec)
-              set_global_default(:ascp_path, product_spec)
-              return Main.result_nothing
             end
           when :install
             return install_transfer_sdk
@@ -850,7 +831,7 @@ module Aspera
             file_url = options.get_next_argument('source URL').chomp
             file_dest = options.get_next_argument('file path', mandatory: false)
             file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
-            formatter.display_status("Downloading: #{file_url}")
+            Log.log.info("Downloading: #{file_url}")
             Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
             return Main.result_status("Saved to: #{file_dest}")
           when :tokens
@@ -1049,8 +1030,7 @@ module Aspera
           return false if @config_checksum_on_disk.eql?(current_checksum)
           FileUtils.mkdir_p(@main_folder)
           Environment.restrict_file_access(@main_folder)
-          Log.log.info{"Writing #{@option_config_file}"}
-          formatter.display_status('Saving config file.')
+          Log.log.info{"Saving config file: #{@option_config_file}"}
           Environment.write_file_restricted(@option_config_file, force: true){@config_presets.to_yaml}
           @config_checksum_on_disk = current_checksum
           return true

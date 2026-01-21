@@ -26,7 +26,7 @@ module Aspera
     # Singleton that tells where to find ascp and other local resources (keys..) , using the "path(:name)" method.
     # It is used by object : AgentDirect to find necessary resources
     # By default it takes the first Aspera product found
-    # The user can specify ascp location by calling: `sdk_folder=` method
+    # The user can specify `ascp` location by calling: `sdk_folder=` method
     class Installation
       include Singleton
 
@@ -55,7 +55,7 @@ module Aspera
       # - Full path to folder where `ascp` executable is located
       # - "product:PRODUCT_NAME" to use ascp from named product
       # - "product:FIRST" to use ascp from first found product
-      def ascp_path=(ascp_location)
+      def sdk_folder=(ascp_location)
         Aspera.assert_type(ascp_location, String){'ascp_location'}
         Aspera.assert(!ascp_location.empty?){'ascp location cannot be empty: check your config file'}
         folder =
@@ -74,12 +74,10 @@ module Aspera
           end
         Log.log.debug{"ascp_folder=#{folder}"}
         Products::Transferd.sdk_directory = folder
-        # NOTE: that there might be a .exe at the end
-        # @ascp_path.gsub('ascp', k.to_s)
         return
       end
 
-      def ascp_path
+      def sdk_folder
         path(:ascp)
       end
 
