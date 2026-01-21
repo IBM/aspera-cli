@@ -77,8 +77,19 @@ jobs:
 
       - name: Update version.rb for release
         run: |
-          sed -i "s/VERSION = '.*'/VERSION = '${{ steps.version.outputs.release_version }}'/" lib/aspera/cli/version.rb
+          ruby build/lib/release_helper.rb update-version "${{ steps.version.outputs.release_version }}"
           cat lib/aspera/cli/version.rb
+
+      - name: Update CHANGELOG.md for release
+        run: |
+          ruby build/lib/release_helper.rb update-changelog "${{ steps.version.outputs.release_version }}"
+
+      - name: Extract release notes
+        id: changelog
+        run: |
+          # Extract changelog and save to file for GitHub release
+          ruby build/lib/release_helper.rb extract-changelog > release_notes.md
+          cat release_notes.md
 
       - name: Build documentation
         run: |
@@ -97,13 +108,25 @@ jobs:
           git tag -a "v${{ steps.version.outputs.release_version }}" -m "Version ${{ steps.version.outputs.release_version }}"
           git push origin "v${{ steps.version.outputs.release_version }}"
 
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.release_version }}" \
+            --title "Aspera CLI v${{ steps.version.outputs.release_version }}" \
+            --notes-file release_notes.md
+
       - name: Update version.rb for next development cycle
         run: |
-          sed -i "s/VERSION = '.*'/VERSION = '${{ steps.version.outputs.next_version }}.pre'/" lib/aspera/cli/version.rb
+          ruby build/lib/release_helper.rb update-version "${{ steps.version.outputs.next_version }}.pre"
           cat lib/aspera/cli/version.rb
+
+      - name: Add new CHANGELOG section for next development cycle
+        run: |
+          ruby build/lib/release_helper.rb add-changelog-section "${{ steps.version.outputs.next_version }}"
 
       - name: Commit next development version
         run: |
-          git add lib/aspera/cli/version.rb
+          git add -A
           git commit -m "Prepare for next development cycle (${{ steps.version.outputs.next_version }}.pre)"
           git push origin main

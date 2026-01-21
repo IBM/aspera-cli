@@ -4,15 +4,30 @@
 
 ## 4.26.0.pre
 
+Released: [Place date of release here]
+
+### New Features
+
+### Issues Fixed
+
 ### Breaking Changes
 
 * `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
 * `config`: Removed command `ascp use`, instead do: `ascli conf preset set GLOBAL sdk_folder <path>`.
 * `config`: Removed command `ascp products use`, instead do: `ascli conf preset set GLOBAL sdk_folder product:<path>`.
 
-## 4.25.0.pre
+## 4.25.1
 
-Released: [Place date of release here]
+Released: 2026-01-21
+
+### Issues Fixed
+
+* `build`: Fixed deploy workflow to use global rake instead of bundle exec.
+* `build`: Made rspec require conditional in test.rake for deploy environment.
+
+## 4.25.0
+
+Released: 2026-01-21
 
 ### New Features
 
