@@ -8,7 +8,6 @@ gemspec
 # Optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
-  gem('marcel', '~> 1.1') # for preview
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?
   gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # remove from standard gems
