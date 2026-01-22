@@ -11,6 +11,7 @@ PANDOC_META_END
 <!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
 <!-- markdownlint-disable MD028 -->
+<!-- markdownlint-disable MD024 -->
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
@@ -18,7 +19,7 @@ PANDOC_META_END
 
 ## Introduction
 
-![Hootput the Owl](docs/ascli-impersonation.svg)
+![Hootput the Owl](docs/mascot.svg)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
@@ -232,18 +233,16 @@ Then, follow the section relative to the product you want to interact with (Aspe
 
 ## Installation
 
-It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a [container](#container) (`docker`, `podman`, `singularity`).
+There are several possibilities to install `ascli`:
 
-The direct installation is recommended and consists in installing:
-
-- [Ruby language](#ruby)
-- [aspera-cli](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
-- [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp)
-
-Ruby version: >= 3.1.
-
-> [!WARNING]
-> The minimum Ruby version will be 3.2 in a future version.
+- As a [single file executable](#single-file-executable),
+- Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
+  This is the most generic method.
+  It consists in installing:
+  - The [Ruby language](#ruby),
+  - Then [aspera-cli](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
+  - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
+- As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections provide information on the various installation methods.
 
@@ -254,22 +253,23 @@ If you don't have internet for the installation, refer to section [Installation 
 
 > [!CAUTION]
 > This is a Beta feature.
+> Only on a limited number of platforms.
 
 `ascli` is available as a single **platform-dependent executable**.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-Installation:
+#### Installation
+
+> [!NOTE]
+> Replace the URL with the one for your platform.
+> Installation of `ascp` is still required separately.
+> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
 curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.24.1.osx-arm64
 chmod a+x ascli
 ./ascli conf transferd install
 ```
-
-> [!NOTE]
-> Replace the URL with the one for your platform.
-> Installation of `ascp` is still required separately.
-> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 #### Linux: GLIBC version
 
@@ -314,13 +314,13 @@ Required Ruby version: >= 3.1.
 
 **In priority**, refer to the official Ruby documentation:
 
-- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 - [Official Ruby Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-Latest version of `ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If only an older Ruby version must be used due to system constraints, then use an older version of `ascli` that supports it.
+`ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+If only an older Ruby version must be used due to system constraints, then use an older version of `ascli` that supports it, refer to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
 #### Windows: Installer
 
@@ -373,12 +373,10 @@ This installs a recent Ruby suitable for `ascli`.
 To add PATH to Ruby on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
-export PATH="$(brew --prefix ruby)/bin:$PATH"
-export PATH="$(gem env gemdir)/bin:$PATH"
+PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
 ```
 
 > [!NOTE]
-> Two separate lines are needed because the second one depends on the first one.
 > This is what is displayed at the end of the installation of the ruby tap,
 > same as message from: `brew info ruby`
 
@@ -386,7 +384,7 @@ export PATH="$(gem env gemdir)/bin:$PATH"
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems
+**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems:
 
 - Check available Ruby versions:
 
@@ -2547,11 +2545,11 @@ ascli config preset set GLOBAL version_check_days 0
 If the default global Option Preset is not set, and you want to use a different name:
 
 ```shell
-ascli config preset set GLOBAL version_check_days 0
+ascli config preset set default config my_common_defaults
 ```
 
 ```shell
-ascli config preset set default config my_common_defaults
+ascli config preset set GLOBAL version_check_days 0
 ```
 
 #### Tested commands for `config`
@@ -3685,7 +3683,7 @@ The communication is done through a JSON file that shall be created in `ascli`'s
 ascli config folder
 ```
 
-The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
+The name of the file shall be: `send_<PID>`, where `<PID>` is the process ID of the running `ascli`.
 
 If there is only one `ascli` running, one can get the PID like this:
 
