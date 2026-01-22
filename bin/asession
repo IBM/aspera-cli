@@ -8,23 +8,27 @@ require 'aspera/products/transferd'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
-# Extended transfer spec parameter (only used in asession)
-PARAM_SPEC = 'spec'
-# Log level
-PARAM_LOG_LEVEL = 'loglevel'
-# Transfer agent options
-PARAM_AGENT = 'agent'
-# By default go to /tmp/username.filelist
-PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
-PARAM_SDK = 'sdk'
-SDK_DEFAULT_DIR = File.join(Dir.home, '.aspera', 'sdk')
-# Place transfer spec in that
-SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
-SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
-STDIN_INPUT = '@json:@stdin:'
+
 class UsageError < StandardError; end
 
-class ASession
+class SimpleTransferManager
+  # First level parameters in session spec
+  # - Extended transfer spec parameter (only used in asession)
+  PARAM_SPEC = 'spec'
+  # - Log level
+  PARAM_LOG_LEVEL = 'loglevel'
+  # - Transfer agent options
+  PARAM_AGENT = 'agent'
+  # - By default go to /tmp/username.filelist
+  PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
+  # - SDK location
+  PARAM_SDK = 'sdk'
+  # Default SDK location
+  SDK_DEFAULT_DIR = File.join(Dir.home, '.aspera', 'sdk')
+  # Place transfer spec in that
+  SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
+  SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
+  STDIN_INPUT = '@json:@stdin:'
   class << self
     # Assert usage condition, otherwise display usage message and exit
     # @param assertion [Boolean] Assertion to verify
@@ -69,7 +73,7 @@ class ASession
     # Anyway expect only one argument: session information
     Aspera.assert(args.length.eql?(1), 'exactly one argument is expected', type: UsageError)
     if ['-h', '--help'].include?(args.first)
-      ASession.usage
+      SimpleTransferManager.usage
       exit(0)
     end
     # Parse transfer spec
@@ -101,11 +105,9 @@ class ASession
         @client.send_command(data)
       end
     rescue => e
-      puts 'WWWWW'
       Aspera::Log.log.error("Error reading commands from stdin: #{e.message}")
       Process.exit(1)
     end
-    sleep(10)
     # No exit code: status is success (0)
     @client.wait_for_transfers_completion
     @client.shutdown
@@ -113,9 +115,9 @@ class ASession
 end
 
 begin
-  ASession.new(ARGV).start
+  SimpleTransferManager.new(ARGV).start
 rescue UsageError => e
   Aspera::Log.log.error(e.message)
-  ASession.usage
+  SimpleTransferManager.usage
   exit(1)
 end

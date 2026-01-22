@@ -97,12 +97,12 @@ if __FILE__ == $PROGRAM_NAME
     ReleaseHelper.update_version_file(version)
     puts "Updated version.rb to #{version}"
   else
-    warn "Usage: #{$PROGRAM_NAME} <command> [args]"
-    warn 'Commands:'
-    warn '  extract-changelog              - Print latest changelog section'
-    warn '  update-changelog <version>     - Update changelog for release'
-    warn '  add-changelog-section <version> - Add new .pre section'
-    warn '  update-version <version>       - Update version.rb'
-    exit 1
+    warn("Usage: #{$PROGRAM_NAME} <command> [args]")
+    warn('Commands:')
+    warn('  extract-changelog              - Print latest changelog section')
+    warn('  update-changelog <version>     - Update changelog for release')
+    warn('  add-changelog-section <version> - Add new .pre section')
+    warn('  update-version <version>       - Update version.rb')
+    exit(1)
   end
 end

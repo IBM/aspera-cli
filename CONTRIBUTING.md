@@ -260,7 +260,7 @@ The workflow automatically:
 2. Rebuilds documentation (PDF manual, README)
 3. Commits the changes
 4. Creates and pushes the release tag
-5. Triggers the deploy workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
+5. Triggers the `deploy` workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
 6. Updates `version.rb` to the next development version with `.pre` suffix
 7. Commits and pushes the version bump
 
@@ -292,9 +292,9 @@ This will trigger the action `.github/workflows/deploy.yml`, which builds the ge
 
 - After release, update `version.rb` to the next development version with `.pre` suffix
 
-## Long‑Term Implementation and Delivery Improvements
+## Future Improvements
 
-- Replace custom REST and OAuth classes with standard Ruby gems:
+- Replace custom REST and OAuth classes with standard Ruby gems ?
   - <https://github.com/rest-client/rest-client>
   - <https://github.com/oauth-xx/oauth2>
 - Use the `thor` gem <http://whatisthor.com/> (or other standard Ruby CLI manager)
