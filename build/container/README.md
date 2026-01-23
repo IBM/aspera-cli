@@ -21,50 +21,50 @@ bundle exec rake container:repo
 
 To build the image for a released version:
 
-- Check that version out using the version tag:
+Check out that version using the version tag:
 
-  ```shell
-  git checkout v4.23.0
-  ```
+```shell
+git checkout v4.23.0
+```
 
-- Prepare ruby environment:
+Prepare the Ruby environment:
 
-  ```shell
-  bundle config set without optional:special
-  bundle config set disable_shared_gems true
-  bundle install
-  ```
+```shell
+bundle config set without optional:special
+bundle config set disable_shared_gems true
+bundle install
+```
 
-- Check the version:
+Check the version:
 
-  ```shell
-  bundle exec rake tools:version
-  ```
+```shell
+bundle exec rake tools:version
+```
 
-- Build the container image:
+Build the container image:
 
-  ```shell
-  bundle exec rake container:build
-  ```
+```shell
+bundle exec rake container:build
+```
 
-  This command performs the following steps:
+This command performs the following steps:
 
-  - Uses the version specified in the current repository.
-  - Builds the container image using this version of the gem retrieved from <rubygems.org>. This creates the `Dockerfile` from the template.
-  - Tags the image with both the specific version and `latest`.
+- Uses the version specified in the current repository.
+- Builds the container image using this version of the gem retrieved from <rubygems.org>. This creates the `Dockerfile` from the template.
+- Tags the image with both the specific version and `latest`.
 
-- Push to the image registry (both tags: version and `latest`):
+Push to the image registry (both tags: version and `latest`):
 
-  ```shell
-  bundle exec rake container:push
-  ```
+```shell
+bundle exec rake container:push
+```
 
 ## Image build using current branch
 
 The task `container:build` takes two optional arguments:
 
-- `source` : `local` (use local gem file) or `remote` (download from <rubygems.org>)
-- `version` : Version number
+- `source`: `local` (use local gem file) or `remote` (download from <rubygems.org>)
+- `version`: Version number
 
 Example: Build using local version and sources
 
@@ -81,7 +81,7 @@ bundle exec rake container:build'[remote,4.24.2]'
 > [!NOTE]
 > When using a version argument, other tasks will use the same version. (memory).
 
-To push a beta version built previously:
+To push a version built previously:
 
 ```shell
 bundle exec rake container:push

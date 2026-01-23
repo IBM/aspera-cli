@@ -10,6 +10,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* Fixed build of container and Windows archive
+
 ### Breaking Changes
 
 * `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
@@ -23,7 +25,7 @@ Released: 2026-01-21
 ### Issues Fixed
 
 * `build`: Fixed deploy workflow to use global rake instead of bundle exec.
-* `build`: Made rspec require conditional in test.rake for deploy environment.
+* `build`: Made `rspec` require conditional in `test.rake` for deploy environment.
 
 ## 4.25.0
 
