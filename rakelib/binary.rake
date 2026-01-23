@@ -17,7 +17,9 @@ TEBAKO_VERSION = '0.13.4'
 TEBAKO_LINUX_CONTAINER_IMAGE = 'ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4'
 PATH_WORKDIR = Paths::TMP / 'tebako'
 
+# Build environment
 TBK_PREFIX_DIRNAME = 'env'
+# Place gem files there
 TBK_ROOT_DIRNAME = 'root'
 
 def install_gem(name, into)
@@ -28,14 +30,17 @@ namespace :binary do
   desc 'Build the single executable'
   task :build, [:version] do |_t, args|
     gem_version_build = args[:version] || Aspera::Cli::VERSION
+
+    log.info('Creating tebako environment')
     # Final destination folder
     Paths::RELEASE.mkpath
     # Temp folders
+    PATH_WORKDIR.rmtree
     [TBK_PREFIX_DIRNAME, TBK_ROOT_DIRNAME].each{ |sub| (PATH_WORKDIR / sub).mkpath}
     ENV['TMPDIR'] = PATH_WORKDIR.realpath.to_s
 
     log.info('Installing gems into staging area')
-    install_tmp = PATH_WORKDIR / 'install'
+    install_tmp = Paths::TMP / 'extract_gems'
     install_tmp.mkpath
     install_gem("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", install_tmp)
     # gems_in_group(Paths::GEMFILE, :optional).each{ |spec| install_gem(spec, install_tmp)}
