@@ -2,13 +2,11 @@
 
 require 'date'
 require 'pathname'
+require_relative 'paths'
+include Paths
 
 # Helper for release automation
 module ReleaseHelper
-  TOP = Pathname.new(__dir__).parent.parent
-  CHANGELOG_FILE = TOP / 'CHANGELOG.md'
-  VERSION_FILE = TOP / 'lib/aspera/cli/version.rb'
-
   class << self
     # Extract the latest changelog section (everything between first ## and second ##)
     # Strips the version heading and release date lines

@@ -81,7 +81,7 @@ module Aspera
       # - :background -> Process.spawn, return pid
       # - :capture    -> Open3.capture3, return stdout
       #
-      # @param cmd [Array<String>] Executable and arguments
+      # @param cmd [Array<String>] Executable and arguments (mapped "to_s")
       # @param mode [:execute,:background,:capture] Execution mode
       # @param kwargs [Hash] Additional arguments to underlying method
       # @option kwargs [Hash] :env Environment variables

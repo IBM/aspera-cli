@@ -20,7 +20,7 @@ require 'yaml'
 require 'erb'
 require 'English'
 require 'pathname'
-require_relative 'build_tools'
+require_relative 'test_env'
 require_relative 'paths'
 
 # Format special values to markdown
@@ -298,7 +298,7 @@ class DocHelper
   def all_test_commands_by_plugin
     return @commands unless @commands.nil?
     @commands = {}
-    all_tests = BuildTools.read_test_definitions
+    all_tests = TestEnv.descriptions
     all_tests.select{ |_, v| v[:command] && !v[:tags].include?('nodoc') && v[:plugin]}.each_value do |test|
       # Cleanup command line
       line = test[:args].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|

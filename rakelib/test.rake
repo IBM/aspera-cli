@@ -86,7 +86,7 @@ PATH_TMP_STATES.mkpath
 %w[1 2 3 sub/1 sub/2].each do |f|
   (PATH_TST_LCL_FOLDER / f).write('Some sample file')
 end
-ALL_TESTS = read_test_definitions
+ALL_TESTS = TestEnv.descriptions
 
 # tests state is saved here
 PATH_TESTS_STATES = TMP / 'state.yml'
@@ -111,7 +111,7 @@ end
 # @param path [String] Dot-separated path in config
 # @return [Object] Value found at given path
 def conf_data(path)
-  @param_config_cache = TestEnv.test_configuration if @param_config_cache.nil?
+  @param_config_cache = TestEnv.configuration if @param_config_cache.nil?
   current = @param_config_cache
   path.split('.').each do |k|
     current = current[k]
@@ -319,10 +319,10 @@ namespace TEST_CASE_NS do
       end
       # ensure that config file is there (a copy)
       if info[:args][0..1].eql?(%w[config wizard]) || tags[:tmp_conf]
-        PATH_TEST_CONFIG.write(TestEnv.test_configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
+        PATH_TEST_CONFIG.write(TestEnv.configuration.to_yaml) unless PATH_TEST_CONFIG.exist?
         command_line += ["--config-file=#{PATH_TEST_CONFIG}"]
       else
-        PATH_CONF_FILE.write(TestEnv.test_configuration.to_yaml) unless PATH_CONF_FILE.exist?
+        PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
       command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
       command_line += ["--output=#{out_file(name)}"] if tags[:save_output]

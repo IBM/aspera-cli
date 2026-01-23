@@ -28,4 +28,6 @@ module Paths
   GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{GEM_VERSION}.gem"
   # Definition of cmmand line tests
   TEST_DEFS = TST / 'tests.yml'
+  CHANGELOG_FILE = TOP / 'CHANGELOG.md'
+  VERSION_FILE = TOP / 'lib/aspera/cli/version.rb'
 end

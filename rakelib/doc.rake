@@ -9,9 +9,9 @@ require_relative '../build/lib/test_env'
 include BuildTools
 
 # Update signature file if configuration has changed
-if Paths::CONF_SIGNATURE.exist? && TestEnv.test_configuration.any?
+if Paths::CONF_SIGNATURE.exist? && TestEnv.configuration.any?
   stored = Paths::CONF_SIGNATURE.read
-  current = Digest::SHA1.hexdigest(JSON.generate(TestEnv.test_configuration))
+  current = Digest::SHA1.hexdigest(JSON.generate(TestEnv.configuration))
   if current != stored
     puts current
     puts stored
@@ -71,7 +71,7 @@ namespace :doc do
   pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
 
   file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths::CONF_SIGNATURE] do
-    DocHelper.config_to_template(TestEnv.test_configuration, PATH_TMPL_CONF_FILE)
+    DocHelper.config_to_template(TestEnv.configuration, PATH_TMPL_CONF_FILE)
   end
 
   file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do

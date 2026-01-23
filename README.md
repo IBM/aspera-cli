@@ -592,7 +592,6 @@ See [Gemfile](Gemfile):
 | name | version | comment |
 |----------------------|----------|-----------------------------------------------------|
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
-| marcel | ~> 1.1 | for preview |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 | base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
@@ -619,7 +618,6 @@ Install like this:
 
 ```shell
 gem install grpc -v '~> 1.71'
-gem install marcel -v '~> 1.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
 gem install base64 -v '~> 0.3'
