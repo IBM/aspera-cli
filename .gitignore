@@ -8,3 +8,5 @@
 .idea
 .vscode
 .bundle
+# temporary file generated during release workflow
+/release_notes.md
