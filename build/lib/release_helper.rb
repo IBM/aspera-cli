@@ -73,6 +73,7 @@ module ReleaseHelper
       content.sub!(/VERSION = '[^']+'/, "VERSION = '#{version}'")
       VERSION_FILE.write(content)
     end
+
   end
 end
 

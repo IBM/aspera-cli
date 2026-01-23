@@ -20,11 +20,15 @@ module BuildTools
   # Execute the command line (not in shell)
   # @see `Aspera::Environment#secure_execute`
   def run(*cmd, **kwargs)
-    Aspera::Environment.secure_execute(*cmd, **kwargs)
+    dry_run = ENV['DRY_RUN'] == '1'
+    log.info("#{dry_run ? 'Would run' : 'Executing'}: #{cmd.map(&:to_s).join(' ')}")
+    Aspera::Environment.secure_execute(*cmd, **kwargs) unless dry_run
   end
 
+  # Extract gem specifications in a given group from the Gemfile
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
+  # @return [Array<String>] List of gem specifications in the group
   def gems_in_group(gemfile, group_name_sym)
     Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil).dependencies.filter_map do |dep|
       next unless dep.groups.include?(group_name_sym)
@@ -32,6 +36,7 @@ module BuildTools
     end
   end
 
+  # Download the transfer.proto file into a temporary folder
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
   def download_proto_file(tmp_proto_folder)
     require 'aspera/ascp/installation'
@@ -41,6 +46,10 @@ module BuildTools
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
+  # Determine release versions
+  # @param release_version [String] Release version (empty to use current version without .pre)
+  # @param next_version [String] Next development version (empty to auto-increment minor)
+  # @return [Hash<Symbol,String>] Versions: :current, :release, :next, :dev
   def release_versions(release_version, next_version)
     versions = {}
     versions[:current] = Aspera::Cli::VERSION
@@ -61,5 +70,18 @@ module BuildTools
     return versions
   end
 
-  module_function :log, :run, :gems_in_group, :download_proto_file
+  # Version that is currently being built
+  # Use this instead of Aspera::Cli::VERSION to account for beta builds
+  def specific_version
+    return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
+    VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise('VERSION not found in version file')
+  end
+
+  def use_specific_version(version)
+    Aspera.assert(!version.to_s.empty?){'Version argument is required for beta task'}
+    OVERRIDE_VERSION_FILE.write(version)
+    log.info("Version set to: #{BuildTools.specific_version}")
+  end
+
+  module_function :log, :run, :gems_in_group, :download_proto_file, :release_versions, :specific_version
 end

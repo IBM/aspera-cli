@@ -39,7 +39,7 @@ namespace :release do
     # Build documentation
     #----------------------------------------------------------------------
 
-    run(*%w{bundle exec rake doc:build}, env: {'GEM_VERSION' => versions[:release]})
+    Rake::Task['doc:build'].invoke(versions[:release])
 
     #----------------------------------------------------------------------
     # Commit release

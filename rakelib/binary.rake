@@ -12,10 +12,6 @@ require 'aspera/cli/version'
 require_relative '../build/lib/build_tools'
 include BuildTools
 
-CLI_EXEC_FILENAME = "#{Aspera::Cli::Info::CMD_NAME}.#{GEM_VERSION}.#{Aspera::Environment.instance.architecture}"
-PATH_CLI_EXEC = Paths::RELEASE / CLI_EXEC_FILENAME
-CLI_GEM_VERS_SPEC = "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}"
-# TEBAKO_VERSION = '0.14.0'
 TEBAKO_VERSION = '0.13.4'
 TEBAKO_LINUX_CONTAINER_IMAGE = 'ghcr.io/tamatebako/tebako-ubuntu-20.04:0.13.4'
 TEBAKO_TMP   = Paths::TMP / 'tebako'
@@ -26,44 +22,35 @@ def install_gem(name, into)
   run('gem', 'install', name, '--no-document', '--install-dir', into)
 end
 
-# clean   : Remove any temporary products.
-CLEAN.push(TEBAKO_TMP)
-# clobber : Remove any generated file.
-CLOBBER.push(PATH_CLI_EXEC)
-
 namespace :binary do
   desc 'Build the single executable'
-  task build: [PATH_CLI_EXEC]
-
-  file PATH_CLI_EXEC do
+  task :build, [:version] do |_t, args|
+    gem_version_build = args[:version] || Aspera::Cli::VERSION
+    path_cli_exec = Paths::RELEASE / "#{Aspera::Cli::Info::CMD_NAME}.#{gem_version_build}.#{Aspera::Environment.instance.architecture}"
+    # Final destination
     Paths::RELEASE.mkpath
+    # Temp folders
     [TEBAKO_TMP, TEBAKO_ENV, TEBAKO_ROOT].each(&:mkpath)
     ENV['TMPDIR'] = TEBAKO_TMP.realpath.to_s
 
-    ##########################################################
-    # Install gems into staging area
-    ##########################################################
+    log.info('Installing gems into staging area')
     install_tmp = TEBAKO_TMP / 'install'
     install_tmp.mkpath
-    install_gem(CLI_GEM_VERS_SPEC, install_tmp)
+    install_gem("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", install_tmp)
     # gems_in_group(Paths::GEMFILE, :optional).each{ |spec| install_gem(spec, install_tmp)}
     Dir.glob(install_tmp / 'cache/*.gem').each do |gem_file|
       FileUtils.mv(gem_file, TEBAKO_ROOT)
     end
     install_tmp.rmtree
 
-    ##########################################################
     # Tebako container config
-    ##########################################################
     tebako_container_workdir = Pathname.new('/mnt/w')
     tebako_cmd_pre = []
     tebako_cmd_post = []
-    tebako_output = PATH_CLI_EXEC
+    tebako_output = path_cli_exec
     puts "Building executable: #{tebako_output}"
 
-    ##########################################################
     # OS handling
-    ##########################################################
     case Aspera::Environment.instance.os
     when Aspera::Environment::OS_MACOS
       run(*%W[brew bundle install --file=#{Paths::TOP / 'build/binary/Brewfile'}])
@@ -83,10 +70,7 @@ namespace :binary do
       raise "Unsupported OS: #{Aspera::Environment.instance.os}"
     end
 
-    ##########################################################
     # Tebako build execution
-    ##########################################################
-
     run(*(
       tebako_cmd_pre +
       [
@@ -100,10 +84,8 @@ namespace :binary do
       tebako_cmd_post
     ))
 
-    ##########################################################
     # Move artifact back if using container path
-    ##########################################################
-    FileUtils.mv(TEBAKO_ROOT / tebako_output.relative_path_from(tebako_container_workdir), PATH_CLI_EXEC) if tebako_output != PATH_CLI_EXEC
-    puts "✔ Build finished: #{PATH_CLI_EXEC}"
+    FileUtils.mv(TEBAKO_ROOT / tebako_output.relative_path_from(tebako_container_workdir), path_cli_exec) if tebako_output != path_cli_exec
+    puts "Build finished: #{path_cli_exec}"
   end
 end

@@ -112,8 +112,6 @@ A few macros and environment variables control certain aspects of the build:
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
 | `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
 | `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
-| `GEM_VERSION`               | Override gem version for builds.                    |
-
 These can be set either as environment variables or directly on the `rake` command line.
 
 > [!NOTE]
@@ -168,12 +166,6 @@ If you don't want to install optional gems:
 
 ```bash
 bundle config set without optional
-```
-
-To build a beta version:
-
-```bash
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 ```
 
 ### Signed gem
@@ -236,7 +228,6 @@ bundle exec rake test:run
 - Verify that the container builds successfully (using the beta version):
 
 ```bash
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 bundle exec rake container:build
 bundle exec rake container:test
 ```

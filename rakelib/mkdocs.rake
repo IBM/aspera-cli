@@ -4,7 +4,7 @@ require_relative '../build/lib/build_tools'
 include BuildTools
 
 DIR_MKDOC = Paths::DOC / 'mkdoc'
-DIR_MKDOCS = Paths::DOC / 'mkdoc' / 'docs'
+DIR_MKDOC_TARGET = Paths::TMP / 'mkdoc'
 VENV_DIR = Paths::TMP / '.venv_mkdocs'
 VENV_FLAG = VENV_DIR / 'bin/activate'
 
@@ -16,11 +16,6 @@ def run_venv(venv, *args)
   run(*args, env: nenwenv)
 end
 
-# clean   : Remove any temporary products.
-CLEAN.push(DIR_MKDOCS.to_s)
-# clobber : Remove any generated file.
-CLOBBER.push(VENV_DIR.to_s)
-
 namespace :doc do
   file VENV_FLAG => [] do
     VENV_DIR.mkdir
@@ -30,8 +25,8 @@ namespace :doc do
 
   desc 'ok'
   task mkdocs: [VENV_FLAG] do
-    DIR_MKDOCS.mkdir
-    File.cp(TOP / 'README.md', DIR_MKDOCS / 'index.md')
+    DIR_MKDOC_TARGET.mkdir
+    File.cp(TOP / 'README.md', DIR_MKDOC_TARGET / 'index.md')
     run_venv(VENV_DIR, 'serve')
   end
 end

@@ -25,8 +25,6 @@ end
 include Paths
 include BuildTools
 
-CLOBBER.push(Paths::GEMFILE_LOCK)
-
 # -----------------
 # Used in tests.yml
 # override $HOME/.aspera/ascli

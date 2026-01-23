@@ -8,7 +8,7 @@ The `Dockerfile.tmpl.erb` template enables building the container image using ei
 Available tasks:
 
 ```bash
-rake -T ^container
+bundle exec rake -T ^container
 ```
 
 The repository can be displayed with:
@@ -25,6 +25,14 @@ To build the image for a released version:
 
   ```shell
   git checkout v4.23.0
+  ```
+
+- Prepare ruby environment:
+
+  ```shell
+  bundle config set without optional:special
+  bundle config set disable_shared_gems true
+  bundle install
   ```
 
 - Check the version:
@@ -53,30 +61,28 @@ To build the image for a released version:
 
 ## Image build using current branch
 
-To build a specific version outside that version branch:
-Set the env var `GEM_VERSION`:
+The task `container:build` takes two optional arguments:
+
+- `source` : `local` (use local gem file) or `remote` (download from <rubygems.org>)
+- `version` : Version number
+
+Example: Build using local version and sources
 
 ```shell
-export GEM_VERSION=4.23.0
-bundle exec rake container:build
+bundle exec rake container:build'[local]'
+```
+
+Example: Build using another remote version
+
+```shell
+bundle exec rake container:build'[remote,4.24.2]'
+```
+
+> [!NOTE]
+> When using a version argument, other tasks will use the same version. (memory).
+
+To push a beta version built previously:
+
+```shell
 bundle exec rake container:push
 ```
-
-> [!NOTE]
-> This does not use the locally generated gem file.
-> Only the local build file and Makefile versions are used.
-> The gem is installed from <rubygems.org>.
-> This also sets the `latest` tag.
-
-## Image build for development version
-
-To build/push a beta/development container:
-
-```shell
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
-bundle exec rake container:build
-bundle exec rake container:build
-```
-
-> [!NOTE]
-> It does not create the `latest` tag, it uses the gem file generated locally with a special version number.

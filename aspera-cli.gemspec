@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
     Aspera::Cli::Info::GEM_NAME.eql?(File.basename(gemspec_file, GEMSPEC_EXT).downcase)
   # the base name of this file shall be the gem name
   spec.name          = Aspera::Cli::Info::GEM_NAME
-  spec.version       = ENV.fetch('GEM_VERSION', Aspera::Cli::VERSION)
+  spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'Execute actions using command line on IBM Aspera Server products: ' \

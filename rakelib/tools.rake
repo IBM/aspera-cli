@@ -4,9 +4,6 @@ require_relative '../build/lib/build_tools'
 include BuildTools
 include Paths
 
-CLEAN.push(TMP)
-CLEAN.push(TOP / 'coverage', TOP / 'simplecov.log')
-
 namespace :tools do
   desc 'Show changes since latest tag'
   task changes: [] do
@@ -62,14 +59,21 @@ namespace :tools do
 
   ###################################
   ## in case of problem on released gem version, it can be deleted from rubygems
-  ## gem yank -v $(GEM_VERSION) $(GEM_NAME)
+  ## gem yank -v $(Aspera::Cli::VERSION) $(GEM_NAME)
 
   task :check_signature do
     run('gem', 'specification', Paths::GEM_PACK_FILE, 'signing_key', 'cert_chain', 'version')
   end
 
-  desc 'Show gem version'
+  desc 'Show gem build version'
   task :version do
-    puts GEM_VERSION
+    puts BuildTools.specific_version
+  end
+
+  desc 'Prepare beta version'
+  task :version_override, [:version] do |_t, args|
+    Aspera.assert(!args[:version].to_s.empty?){'Version argument is required for beta task'}
+    OVERRIDE_VERSION_FILE.write(args[:version])
+    puts("Beta version set to: #{BuildTools.specific_version}")
   end
 end
