@@ -46,29 +46,6 @@ module BuildTools
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
-  # Determine release versions
-  # @param release_version [String] Release version (empty to use current version without .pre)
-  # @param next_version [String] Next development version (empty to auto-increment minor)
-  # @return [Hash<Symbol,String>] Versions: :current, :release, :next, :dev
-  def release_versions(release_version, next_version)
-    versions = {}
-    versions[:current] = Aspera::Cli::VERSION
-    versions[:release] =
-      if release_version.to_s.empty?
-        Aspera::Cli::VERSION.sub(/\.pre$/, '')
-      else
-        release_version
-      end
-    versions[:next] =
-      if next_version.to_s.empty? == false
-        major, minor, _patch = versions[:release].split('.').map(&:to_i)
-        [major, minor + 1, 0].map(&:to_s).join('.')
-      else
-        next_version
-      end
-    versions[:dev] = "#{versions[:next]}.pre"
-    return versions
-  end
 
   # Version that is currently being built
   # Use this instead of Aspera::Cli::VERSION to account for beta builds
@@ -83,5 +60,5 @@ module BuildTools
     log.info("Version set to: #{BuildTools.specific_version}")
   end
 
-  module_function :log, :run, :gems_in_group, :download_proto_file, :release_versions, :specific_version
+  module_function :log, :run, :gems_in_group, :download_proto_file, :specific_version
 end

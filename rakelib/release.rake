@@ -3,9 +3,8 @@
 require 'pathname'
 require 'tmpdir'
 require_relative '../build/lib/release_helper'
-require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
-include BuildTools
+include ReleaseHelper
 
 namespace :release do
   desc 'Create a new release: args: release_version, next_version'
@@ -23,17 +22,17 @@ namespace :release do
     # Release version + changelog
     #--------------------------------------------------------------------------
 
-    ReleaseHelper.update_version_file(versions[:release])
-    log.info(Paths::VERSION_FILE.read)
-    ReleaseHelper.update_changelog_for_release(versions[:release])
+    update_version_file(versions[:release])
+    log.info{"Version file:#{Paths::VERSION_FILE.read}"}
+    update_changelog_for_release(versions[:release])
 
     #--------------------------------------------------------------------------
     # Extract release notes (temporary, not committed)
     #--------------------------------------------------------------------------
 
-    notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
-    notes_path.write(ReleaseHelper.extract_latest_changelog)
-    log.info(notes_path.read)
+    release_notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
+    release_notes_path.write(extract_latest_changelog)
+    log.info(release_notes_path.read)
 
     #----------------------------------------------------------------------
     # Build documentation
@@ -60,7 +59,7 @@ namespace :release do
     #----------------------------------------------------------------------
 
     run(
-      'gh', 'release', 'create', release_tag, '--title', "Aspera CLI #{release_tag}", '--notes-file', notes_path,
+      'gh', 'release', 'create', release_tag, '--title', "Aspera CLI #{release_tag}", '--notes-file', release_notes_path,
       env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
     )
 
@@ -68,13 +67,13 @@ namespace :release do
     # Prepare next development cycle
     #--------------------------------------------------------------------------
 
-    ReleaseHelper.update_version_file(versions[:dev])
+    update_version_file(versions[:dev])
     log.info(Paths::VERSION_FILE.read)
 
-    ReleaseHelper.add_next_changelog_section(versions[:next])
+    add_next_changelog_section(versions[:next])
 
     run(*%w{git add -A})
-    run %Q(git commit -m "Prepare for next development cycle (#{versions[:dev]})")
+    run('git', 'commit', '-m', "Prepare for next development cycle (#{versions[:dev]})")
     run(*%w{git push origin main})
 
     log.info("✔ Release #{versions[:release]} completed")
