@@ -95,6 +95,11 @@ def update_version_file(version)
   content.sub!(/VERSION = '[^']+'/, "VERSION = '#{version}'")
   VERSION_FILE.write(content)
 end
+
+def gem_file(version)
+  Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
+end
+
 namespace :release do
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
@@ -124,10 +129,11 @@ namespace :release do
     log.info(release_notes_path.read)
 
     #----------------------------------------------------------------------
-    # Build documentation
+    # Build documentation and signed gem
     #----------------------------------------------------------------------
 
     Rake::Task['doc:build'].invoke(versions[:release])
+    Rake::Task['signed'].invoke
 
     #----------------------------------------------------------------------
     # Commit release: CHANGELOG.md README.md version.rb
@@ -149,7 +155,11 @@ namespace :release do
     #----------------------------------------------------------------------
 
     run(
-      'gh', 'release', 'create', release_tag, '--title', "Aspera CLI #{release_tag}", '--notes-file', release_notes_path,
+      'gh', 'release', 'create', release_tag,
+      '--title', "Aspera CLI #{release_tag}",
+      '--notes-file', release_notes_path,
+      Paths::PDF_MANUAL,
+      gem_file(versions[:release]),
       env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
     )
 

@@ -40,7 +40,6 @@ def pdf_rule(pdf, md = nil)
 end
 
 PATH_MD_MANUAL = Paths::TOP / 'README.md'
-PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
 PATH_TMPL_CONF_FILE = Paths::DOC / 'test_env.conf'
 TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
 TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
@@ -68,7 +67,7 @@ namespace :doc do
     pdf_rule(t.name, t.source)
   end
 
-  pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
+  pdf_rule(Paths::PDF_MANUAL, PATH_MD_MANUAL)
 
   file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths::CONF_SIGNATURE] do
     DocHelper.config_to_template(TestEnv.configuration, PATH_TMPL_CONF_FILE)
@@ -86,10 +85,10 @@ namespace :doc do
   end
 
   desc 'Generate PDF Manual'
-  task pdf: PATH_PDF_MANUAL
+  task pdf: Paths::PDF_MANUAL
 
   desc 'Generate All Docs'
-  task build: [PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL, PATH_PDF_MANUAL]
+  task build: [PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL, Paths::PDF_MANUAL]
 
   file PATH_UML_PNG => PATH_TMP_DOT do
     Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}
