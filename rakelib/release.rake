@@ -1,181 +1,175 @@
 # frozen_string_literal: true
 
-require 'pathname'
-require 'tmpdir'
+require 'date'
 require_relative '../build/lib/paths'
+require_relative '../build/lib/build_tools'
+include BuildTools
 
-# Pre-release
-PRE_SUFFIX = '.pre'
-DATE_PLACE_HOLDER = 'Released: [Place date of release here]'
-
-# Determine release versions
-# @param release_version [String] Release version (empty to use current version without .pre)
-# @param next_version [String] Next development version (empty to auto-increment minor)
-# @return [Hash<Symbol,String>] Versions: :current, :release, :next, :dev
-def release_versions(release_version, next_version)
-  versions = {}
-  versions[:current] = Aspera::Cli::VERSION
-  versions[:release] =
-    if release_version.to_s.empty?
-      Aspera::Cli::VERSION.delete_suffix(PRE_SUFFIX)
-    else
-      release_version
-    end
-  versions[:next] =
-    if next_version.to_s.empty?
-      major, minor, _patch = versions[:release].split('.').map(&:to_i)
-      [major, minor + 1, 0].map(&:to_s).join('.')
-    else
-      next_version
-    end
-  versions[:dev] = "#{versions[:next]}#{PRE_SUFFIX}"
-  return versions
-end
-
-# Extract the latest changelog section (everything between first ## and second ##)
-# Strips the version heading and release date lines
-# @return [String] The changelog content for the latest version
-def extract_latest_changelog
-  content = CHANGELOG_FILE.read
-  # Match from first ## heading to the next ## heading (or end of file)
-  match = content.match(/^(## .+?)(?=^## |\z)/m)
-  raise 'Missing changelog' unless match
-
-  section = match[1].strip
-  # Remove the version heading (## X.Y.Z) and Released: line
-  section.sub(/\A## .+\n+Released: .+\n*/, '').strip
-end
-
-# Update `CHANGELOG.md` for release:
-# - Replace current version with release version
-# - Replace date placeholder with today's date
-# @param current_version [String] The current version (with `.pre`)
-# @param release_version [String] The release version (without `.pre`)
-def update_changelog_for_release(current_version, release_version)
-  content = CHANGELOG_FILE.read
-  today = Date.today.strftime('%Y-%m-%d')
-
-  # Replace the .pre version heading with release version
-  content.sub!("\n## #{current_version}\n", "\n## #{release_version}\n")
-
-  # Replace the date placeholder
-  content.sub!(DATE_PLACE_HOLDER, "Released: #{today}")
-
-  CHANGELOG_FILE.write(content)
-end
-
-# Add a new development section to `CHANGELOG.md` for the next version
-# @param next_version_dev [String] The next version (with .pre suffix)
-def add_next_changelog_section(next_version_dev)
-  content = CHANGELOG_FILE.read
-
-  new_section = <<~SECTION
-    ## #{next_version_dev}
-
-    #{DATE_PLACE_HOLDER}
-
-    ### New Features
-
-    ### Issues Fixed
-
-    ### Breaking Changes
-
-  SECTION
-
-  # Insert before the first section
-  content.sub!("\n## ", "\n#{new_section}## ")
-
-  CHANGELOG_FILE.write(content)
-end
-
-# Update version.rb with a new version
-# @param version [String] The new version string
-def update_version_file(version)
-  content = VERSION_FILE.read
-  content.sub!(/VERSION = '[^']+'/, "VERSION = '#{version}'")
-  VERSION_FILE.write(content)
-end
-
-def gem_file(version)
-  Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
-end
-
+# Release automation tasks
 namespace :release do
-  desc 'Create a new release: args: release_version, next_version'
-  task :run, %i[release_version next_version] do |_t, args|
-    #--------------------------------------------------------------------------
-    # Determine versions
-    #--------------------------------------------------------------------------
+  CHANGELOG_FILE = Paths::TOP / 'CHANGELOG.md'
+  VERSION_FILE = Paths::TOP / 'lib/aspera/cli/version.rb'
+  RELEASE_NOTES_FILE = Paths::TOP / 'release_notes.md'
 
-    versions = release_versions(args[:release_version], args[:next_version])
-    log.info("Current version in version.rb: #{versions[:current]}")
-    log.info("Release version: #{versions[:release]}")
-    log.info("Next development version: #{versions[:dev]}")
+  # Read current version from version.rb
+  def current_version
+    VERSION_FILE.read[/VERSION = '([^']+)'/, 1]
+  end
 
-    #--------------------------------------------------------------------------
-    # Release version + changelog
-    #--------------------------------------------------------------------------
+  # Extract the latest changelog section (everything between first ## and second ##)
+  # Strips the version heading and release date lines
+  def extract_latest_changelog
+    content = CHANGELOG_FILE.read
+    # Match from first ## heading to the next ## heading (or end of file)
+    match = content.match(/^(## .+?)(?=^## |\z)/m)
+    return '' unless match
 
-    update_version_file(versions[:release])
-    log.info{"Version file:#{Paths::VERSION_FILE.read}"}
-    update_changelog_for_release(versions[:current], versions[:release])
+    section = match[1].strip
+    # Remove the version heading (## X.Y.Z) and Released: line
+    section.sub(/\A## .+\n+Released: .+\n*/, '').strip
+  end
 
-    #--------------------------------------------------------------------------
-    # Extract release notes (temporary, not committed)
-    #--------------------------------------------------------------------------
+  # Update CHANGELOG.md for release:
+  # - Replace version.pre with version
+  # - Replace date placeholder with today's date
+  def update_changelog_for_release(version)
+    content = CHANGELOG_FILE.read
+    today = Date.today.strftime('%Y-%m-%d')
 
-    release_notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
-    release_notes_path.write(extract_latest_changelog)
-    log.info(release_notes_path.read)
+    # Replace the .pre version heading with release version
+    content.sub!(/^## #{Regexp.escape(version)}\.pre$/, "## #{version}")
 
-    #----------------------------------------------------------------------
-    # Build documentation and signed gem
-    #----------------------------------------------------------------------
+    # Replace the date placeholder
+    content.sub!(/^Released: \[Place date of release here\]$/, "Released: #{today}")
 
-    Rake::Task['doc:build'].invoke(versions[:release])
-    Rake::Task['signed'].invoke
+    CHANGELOG_FILE.write(content)
+  end
 
-    #----------------------------------------------------------------------
-    # Commit release: CHANGELOG.md README.md version.rb
-    #----------------------------------------------------------------------
+  # Add a new development section to CHANGELOG.md for the next version
+  def add_next_changelog_section(next_version)
+    content = CHANGELOG_FILE.read
 
-    release_tag = "v#{versions[:release]}"
-    run(*%w{git add -A})
-    run('git', 'commit', '-m', "Release #{release_tag}")
+    new_section = <<~SECTION
+      ## #{next_version}.pre
 
-    #----------------------------------------------------------------------
-    # Tag + push
-    #----------------------------------------------------------------------
+      Released: [Place date of release here]
 
-    run('git', 'tag', '-a', release_tag, '-m', "Version #{versions[:release]}")
-    run('git', 'push', 'origin', release_tag)
+      ### New Features
 
-    #----------------------------------------------------------------------
-    # GitHub release
-    #----------------------------------------------------------------------
+      ### Issues Fixed
 
-    run(
-      'gh', 'release', 'create', release_tag,
-      '--title', "Aspera CLI #{release_tag}",
-      '--notes-file', release_notes_path,
-      Paths::PDF_MANUAL,
-      gem_file(versions[:release]),
-      env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
+      ### Breaking Changes
+
+    SECTION
+
+    # Insert after the header comment block (after the markdownlint line)
+    content.sub!(
+      /^(# Changes \(Release notes\)\n\n<!-- markdownlint-configure-file .+? -->\n)\n/,
+      "\\1\n#{new_section}"
     )
 
-    #--------------------------------------------------------------------------
-    # Prepare next development cycle
-    #--------------------------------------------------------------------------
+    CHANGELOG_FILE.write(content)
+  end
 
-    update_version_file(versions[:dev])
-    log.info(Paths::VERSION_FILE.read)
+  # Update version.rb with a new version
+  def update_version_file(version)
+    content = VERSION_FILE.read
+    content.sub!(/VERSION = '[^']+'/, "VERSION = '#{version}'")
+    VERSION_FILE.write(content)
+  end
 
-    add_next_changelog_section(versions[:dev])
+  # Calculate next development version (increment minor version)
+  def calculate_next_version(release_version)
+    parts = release_version.split('.')
+    major, minor, _patch = parts[0].to_i, parts[1].to_i, parts[2].to_i
+    "#{major}.#{minor + 1}.0"
+  end
 
-    run(*%w{git add -A})
-    run('git', 'commit', '-m', "Prepare for next development cycle (#{versions[:dev]})")
-    run(*%w{git push origin main})
+  desc 'Extract latest changelog section to release_notes.md'
+  task :extract_changelog do
+    notes = extract_latest_changelog
+    RELEASE_NOTES_FILE.write(notes)
+    puts "Extracted changelog to #{RELEASE_NOTES_FILE}"
+    puts notes
+  end
 
-    log.info("Release #{versions[:release]} completed")
+  desc 'Update CHANGELOG.md for release (remove .pre, set date)'
+  task :update_changelog, [:version] do |_t, args|
+    version = args[:version] || raise('Missing version argument')
+    update_changelog_for_release(version)
+    puts "Updated CHANGELOG.md for release #{version}"
+  end
+
+  desc 'Add new .pre section to CHANGELOG.md'
+  task :add_changelog_section, [:version] do |_t, args|
+    version = args[:version] || raise('Missing version argument')
+    add_next_changelog_section(version)
+    puts "Added new section for #{version}.pre to CHANGELOG.md"
+  end
+
+  desc 'Update version.rb'
+  task :update_version, [:version] do |_t, args|
+    version = args[:version] || raise('Missing version argument')
+    update_version_file(version)
+    puts "Updated version.rb to #{version}"
+  end
+
+  desc 'Show current version'
+  task :version do
+    puts current_version
+  end
+
+  desc 'Full release: update files, build docs, commit, tag, and create GitHub release'
+  task :create, [:version, :next_version] do |_t, args|
+    # Determine release version
+    release_version = args[:version] || current_version.sub(/\.pre$/, '')
+    next_version = args[:next_version] || calculate_next_version(release_version)
+
+    puts "Release version: #{release_version}"
+    puts "Next development version: #{next_version}.pre"
+
+    # Update version.rb for release
+    Rake::Task['release:update_version'].invoke(release_version)
+
+    # Update CHANGELOG.md for release
+    Rake::Task['release:update_changelog'].invoke(release_version)
+
+    # Extract release notes
+    Rake::Task['release:extract_changelog'].invoke
+
+    # Build documentation
+    ENV['GEM_VERSION'] = release_version
+    Rake::Task['doc:build'].invoke
+
+    # Build gem
+    Rake::Task['build'].invoke
+
+    # Git operations
+    run('git', 'add', '-A')
+    run('git', 'commit', '-m', "Release v#{release_version}")
+    run('git', 'tag', '-a', "v#{release_version}", '-m', "Version #{release_version}")
+    run('git', 'push', 'origin', "v#{release_version}")
+
+    # Create GitHub release with artifacts
+    pdf_file = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{release_version}.pdf"
+    gem_file = Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{release_version}.gem"
+
+    run('gh', 'release', 'create', "v#{release_version}",
+        '--title', "Aspera CLI v#{release_version}",
+        '--notes-file', RELEASE_NOTES_FILE.to_s,
+        pdf_file.to_s,
+        gem_file.to_s)
+
+    # Prepare for next development cycle
+    Rake::Task['release:update_version'].reenable
+    Rake::Task['release:update_version'].invoke("#{next_version}.pre")
+
+    Rake::Task['release:add_changelog_section'].invoke(next_version)
+
+    run('git', 'add', '-A')
+    run('git', 'commit', '-m', "Prepare for next development cycle (#{next_version}.pre)")
+    run('git', 'push', 'origin', 'main')
+
+    puts "\nRelease v#{release_version} complete!"
   end
 end
