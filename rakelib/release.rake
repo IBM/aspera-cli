@@ -23,16 +23,16 @@ namespace :release do
     # Release version + changelog
     #--------------------------------------------------------------------------
 
-    update_version_file(versions[:release])
+    ReleaseHelper.update_version_file(versions[:release])
     log.info(Paths::VERSION_FILE.read)
-    update_changelog_for_release(versions[:release])
+    ReleaseHelper.update_changelog_for_release(versions[:release])
 
     #--------------------------------------------------------------------------
     # Extract release notes (temporary, not committed)
     #--------------------------------------------------------------------------
 
-    notes_path = Pathname(dir) / 'release_notes.md'
-    notes_path.write(extract_changelog)
+    notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
+    notes_path.write(ReleaseHelper.extract_latest_changelog)
     log.info(notes_path.read)
 
     #----------------------------------------------------------------------
@@ -68,10 +68,10 @@ namespace :release do
     # Prepare next development cycle
     #--------------------------------------------------------------------------
 
-    update_version_file(versions[:dev])
+    ReleaseHelper.update_version_file(versions[:dev])
     log.info(Paths::VERSION_FILE.read)
 
-    add_next_changelog_section(versions[:next])
+    ReleaseHelper.add_next_changelog_section(versions[:next])
 
     run(*%w{git add -A})
     run %Q(git commit -m "Prepare for next development cycle (#{versions[:dev]})")
