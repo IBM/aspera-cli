@@ -7,6 +7,10 @@ include Paths
 
 # Helper for release automation
 module ReleaseHelper
+  # Pre-release
+  PRE_SUFFIX = '.pre'
+  DATE_PLACE_HOLDER = 'Released: [Place date of release here]'
+
   # Determine release versions
   # @param release_version [String] Release version (empty to use current version without .pre)
   # @param next_version [String] Next development version (empty to auto-increment minor)
@@ -16,7 +20,7 @@ module ReleaseHelper
     versions[:current] = Aspera::Cli::VERSION
     versions[:release] =
       if release_version.to_s.empty?
-        Aspera::Cli::VERSION.sub(/\.pre$/, '')
+        Aspera::Cli::VERSION.delete_suffix(PRE_SUFFIX)
       else
         release_version
       end
@@ -27,7 +31,7 @@ module ReleaseHelper
       else
         next_version
       end
-    versions[:dev] = "#{versions[:next]}.pre"
+    versions[:dev] = "#{versions[:next]}#{PRE_SUFFIX}"
     return versions
   end
 
@@ -46,31 +50,32 @@ module ReleaseHelper
   end
 
   # Update `CHANGELOG.md` for release:
-  # - Replace version.pre with version
+  # - Replace current version with release version
   # - Replace date placeholder with today's date
-  # @param version [String] The release version (without `.pre`)
-  def update_changelog_for_release(version)
+  # @param current_version [String] The current version (with `.pre`)
+  # @param release_version [String] The release version (without `.pre`)
+  def update_changelog_for_release(current_version, release_version)
     content = CHANGELOG_FILE.read
     today = Date.today.strftime('%Y-%m-%d')
 
     # Replace the .pre version heading with release version
-    content.sub!(/^## #{Regexp.escape(version)}\.pre$/, "## #{version}")
+    content.sub!("\n## #{current_version}\n", "\n## #{release_version}\n")
 
     # Replace the date placeholder
-    content.sub!(/^Released: \[Place date of release here\]$/, "Released: #{today}")
+    content.sub!(DATE_PLACE_HOLDER, "Released: #{today}")
 
     CHANGELOG_FILE.write(content)
   end
 
-  # Add a new development section to CHANGELOG.md for the next version
-  # @param next_version [String] The next version (without .pre suffix)
-  def add_next_changelog_section(next_version)
+  # Add a new development section to `CHANGELOG.md` for the next version
+  # @param next_version_dev [String] The next version (with .pre suffix)
+  def add_next_changelog_section(next_version_dev)
     content = CHANGELOG_FILE.read
 
     new_section = <<~SECTION
-      ## #{next_version}.pre
+      ## #{next_version_dev}
 
-      Released: [Place date of release here]
+      #{DATE_PLACE_HOLDER}
 
       ### New Features
 
@@ -80,11 +85,8 @@ module ReleaseHelper
 
     SECTION
 
-    # Insert after the header comment block (after the markdownlint line)
-    content.sub!(
-      /^(# Changes \(Release notes\)\n\n<!-- markdownlint-configure-file .+? -->\n)\n/,
-      "\\1\n#{new_section}"
-    )
+    # Insert before the first section
+    content.sub!("\n## ", "\n#{new_section}## ")
 
     CHANGELOG_FILE.write(content)
   end

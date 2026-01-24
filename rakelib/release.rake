@@ -24,7 +24,7 @@ namespace :release do
 
     update_version_file(versions[:release])
     log.info{"Version file:#{Paths::VERSION_FILE.read}"}
-    update_changelog_for_release(versions[:release])
+    update_changelog_for_release(versions[:current], versions[:release])
 
     #--------------------------------------------------------------------------
     # Extract release notes (temporary, not committed)
@@ -41,8 +41,9 @@ namespace :release do
     Rake::Task['doc:build'].invoke(versions[:release])
 
     #----------------------------------------------------------------------
-    # Commit release
+    # Commit release: CHANGELOG.md README.md version.rb
     #----------------------------------------------------------------------
+
     release_tag = "v#{versions[:release]}"
     run(*%w{git add -A})
     run('git', 'commit', '-m', "Release #{release_tag}")
@@ -70,12 +71,12 @@ namespace :release do
     update_version_file(versions[:dev])
     log.info(Paths::VERSION_FILE.read)
 
-    add_next_changelog_section(versions[:next])
+    add_next_changelog_section(versions[:dev])
 
     run(*%w{git add -A})
     run('git', 'commit', '-m', "Prepare for next development cycle (#{versions[:dev]})")
     run(*%w{git push origin main})
 
-    log.info("✔ Release #{versions[:release]} completed")
+    log.info("Release #{versions[:release]} completed")
   end
 end
