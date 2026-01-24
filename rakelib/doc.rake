@@ -40,7 +40,7 @@ def pdf_rule(pdf, md = nil)
 end
 
 PATH_MD_MANUAL = Paths::TOP / 'README.md'
-PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{Aspera::Cli::VERSION}.pdf"
+PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
 PATH_TMPL_CONF_FILE = Paths::DOC / 'test_env.conf'
 TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
 TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
