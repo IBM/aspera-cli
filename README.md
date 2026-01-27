@@ -144,11 +144,11 @@ ascli --version
 ```
 
 > [!NOTE]
-> All command line examples provided in sections named **Tested commagit add nds for `_plugin_name_`** are tested during version validation.
+> All command line examples provided in sections named **Tested commands for `_plugin_name_`** are tested during version validation.
 
 ### First use
 
-Once installation is completed, you can proceed tos the first use with a demo server:
+Once installation is completed, you can proceed to the first use with a demo server:
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
 
