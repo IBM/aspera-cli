@@ -112,8 +112,6 @@ A few macros and environment variables control certain aspects of the build:
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
 | `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
 | `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
-| `GEM_VERSION`               | Override gem version for builds.                    |
-
 These can be set either as environment variables or directly on the `rake` command line.
 
 > [!NOTE]
@@ -168,12 +166,6 @@ If you don't want to install optional gems:
 
 ```bash
 bundle config set without optional
-```
-
-To build a beta version:
-
-```bash
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 ```
 
 ### Signed gem
@@ -236,7 +228,6 @@ bundle exec rake test:run
 - Verify that the container builds successfully (using the beta version):
 
 ```bash
-export GEM_VERSION=$(env -u GEM_VERSION rake tools:version).$(date +%Y%m%d%H%M)
 bundle exec rake container:build
 bundle exec rake container:test
 ```
@@ -260,7 +251,7 @@ The workflow automatically:
 2. Rebuilds documentation (PDF manual, README)
 3. Commits the changes
 4. Creates and pushes the release tag
-5. Triggers the deploy workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
+5. Triggers the `deploy` workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
 6. Updates `version.rb` to the next development version with `.pre` suffix
 7. Commits and pushes the version bump
 
@@ -292,9 +283,9 @@ This will trigger the action `.github/workflows/deploy.yml`, which builds the ge
 
 - After release, update `version.rb` to the next development version with `.pre` suffix
 
-## Long‑Term Implementation and Delivery Improvements
+## Future Improvements
 
-- Replace custom REST and OAuth classes with standard Ruby gems:
+- Replace custom REST and OAuth classes with standard Ruby gems ?
   - <https://github.com/rest-client/rest-client>
   - <https://github.com/oauth-xx/oauth2>
 - Use the `thor` gem <http://whatisthor.com/> (or other standard Ruby CLI manager)

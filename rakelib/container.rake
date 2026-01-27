@@ -4,19 +4,17 @@
 require 'rake'
 require 'erb'
 require 'fileutils'
+require 'aspera/assert'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 require_relative '../build/lib/build_tools'
+include BuildTools
 
 CONTAINER_TOOL = ENV['CONTAINER_TOOL'] || 'podman'
-TAG_VERSION = "#{Aspera::Cli::Info::CONTAINER}:#{GEM_VERSION}"
-TAG_LATEST  = "#{Aspera::Cli::Info::CONTAINER}:latest"
-CONTAINER_FOLDER = Paths::TOP / 'build/container'
-TEMPLATE_DOCKERFILE = CONTAINER_FOLDER / 'Dockerfile.tmpl.erb'
 
 # Extract optional gems
 def optional_gems
-  BuildTools.gems_in_group(Paths::GEMFILE, :optional).map{ |i| "'#{i}'"}.join(' ')
+  gems_in_group(Paths::GEMFILE, :optional).map{ |i| "'#{i}'"}.join(' ')
 end
 
 # Template processing (Makefile PROCESS_TEMPLATE)
@@ -28,40 +26,48 @@ def process_template(template_path, args = {})
   ERB.new(content, trim_mode: '-').result_with_hash(args)
 end
 
+# Tag for container
+def tag(version)
+  "#{Aspera::Cli::Info::CONTAINER}:#{version}"
+end
+
 namespace :container do
-  desc 'Build the container'
-  task build: [TEMPLATE_DOCKERFILE] do
-    docker_file = TMP / 'Dockerfile'
+  desc 'Build the container, save version built for next tasks, empty or no version for current.'
+  task :build, %i[source version] => [Paths::DOCKERFILE_TEMPLATE] do |_t, args|
+    source = args[:source]&.to_sym || :remote
+    Aspera.assert_values(source, %i[local remote])
+    gem_version = args[:version].to_s.empty? ? Aspera::Cli::VERSION : args[:version]
+    use_specific_version(gem_version)
     docker_context = Paths::TOP
-    arg_gem = if GEM_BETA
-      Rake::Task['unsigned'].invoke
-      run('ls', '-al', Paths::GEM_PACK_FILE)
-      Paths::GEM_PACK_FILE.relative_path_from(docker_context).to_s
+    arg_gem = if source.equal?(:remote)
+      "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
     else
-      "#{Aspera::Cli::Info::GEM_NAME}:#{GEM_VERSION}"
+      Rake::Task['unsigned'].invoke
+      Paths::GEM_PACK_FILE.relative_path_from(docker_context).to_s
     end
+    docker_file = TMP / 'Dockerfile'
     docker_file.write(process_template(
-      TEMPLATE_DOCKERFILE,
+      Paths::DOCKERFILE_TEMPLATE,
       arg_gem: arg_gem,
       arg_opt: optional_gems
     ))
-    run(CONTAINER_TOOL, 'build', '--squash', '--tag', TAG_VERSION, '--tag', TAG_LATEST, '--file', docker_file, docker_context)
+    run(CONTAINER_TOOL, 'build', '--squash', '--tag', tag(gem_version), '--tag', tag(:latest), '--file', docker_file, docker_context)
   end
 
   desc 'Test the container'
   task :test do
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, '-v')
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', TAG_VERSION, 'config', 'ascp', 'info')
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', tag(specific_version), '-v')
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', tag(specific_version), 'config', 'ascp', 'info')
   end
 
   desc 'Push only the version tag'
   task :push_version do
-    run(CONTAINER_TOOL, 'push', TAG_VERSION)
+    run(CONTAINER_TOOL, 'push', tag(specific_version))
   end
 
   desc 'Push only the latest tag'
   task :push_latest do
-    run(CONTAINER_TOOL, 'push', TAG_LATEST)
+    run(CONTAINER_TOOL, 'push', tag(:latest))
   end
 
   desc 'Push version and latest tags'

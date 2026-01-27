@@ -10,7 +10,7 @@ RSpec.configure do |config|
   config.expect_with(:rspec) do |c|
     c.syntax = :expect
   end
-  full_config = TestEnv.test_configuration
+  full_config = TestEnv.configuration
   default_server = full_config.dig('default', 'server')
   raise 'Missing default config for server' if default_server.nil?
   server_info = full_config[default_server]

@@ -9,18 +9,24 @@ A container version is provided for [`tebako`](https://github.com/tamatebako/teb
 
 ## Usage: (non-Windows)
 
-To build a given version using the current Rakefile:
-
-```bash
-rake binary:build GEM_VERSION=4.23.0
-```
-
-To build a given version using the Rakefile of that version:
+To build a given version using the build tools of that version:
 
 ```bash
 git checkout v4.23.0
-rake binary:build
+```
 
+Else, it would use the build tools in the current folder.
+
+To build the version specified in the local folder with gem from rubygems.org:
+
+```bash
+rake binary:build
+```
+
+To build a given version:
+
+```bash
+rake binary:build'[4.23.0]'
 ```
 
 ## History

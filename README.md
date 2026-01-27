@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.25.1"
+subtitle: "ascli 4.26.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -11,6 +11,7 @@ PANDOC_META_END
 <!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
 <!-- markdownlint-disable MD028 -->
+<!-- markdownlint-disable MD024 -->
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
@@ -18,7 +19,7 @@ PANDOC_META_END
 
 ## Introduction
 
-![Hootput the Owl](docs/ascli-impersonation.svg)
+![Hootput the Owl](docs/mascot.svg)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
@@ -42,7 +43,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : 4.25.1
+Version : 4.26.0.pre
 
 Laurent/2016-2026
 
@@ -139,15 +140,15 @@ ascli --version
 ```
 
 ```text
-4.25.1
+4.26.0.pre
 ```
 
 > [!NOTE]
-> All command line examples provided in sections named **Tested commands for `_plugin_name_`** are tested during version validation.
+> All command line examples provided in sections named **Tested commagit add nds for `_plugin_name_`** are tested during version validation.
 
 ### First use
 
-Once installation is completed, you can proceed to the first use with a demo server:
+Once installation is completed, you can proceed tos the first use with a demo server:
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
 
@@ -232,18 +233,16 @@ Then, follow the section relative to the product you want to interact with (Aspe
 
 ## Installation
 
-It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a [container](#container) (`docker`, `podman`, `singularity`).
+There are several possibilities to install `ascli`:
 
-The direct installation is recommended and consists in installing:
-
-- [Ruby language](#ruby)
-- [aspera-cli](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
-- [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp)
-
-Ruby version: >= 3.1.
-
-> [!WARNING]
-> The minimum Ruby version will be 3.2 in a future version.
+- As a [single file executable](#single-file-executable),
+- Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
+  This is the most generic method.
+  It consists in installing:
+  - The [Ruby language](#ruby),
+  - Then [aspera-cli](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
+  - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
+- As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections provide information on the various installation methods.
 
@@ -254,22 +253,23 @@ If you don't have internet for the installation, refer to section [Installation 
 
 > [!CAUTION]
 > This is a Beta feature.
+> Only on a limited number of platforms.
 
 `ascli` is available as a single **platform-dependent executable**.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-Installation:
+#### Installation
+
+> [!NOTE]
+> Replace the URL with the one for your platform.
+> Installation of `ascp` is still required separately.
+> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
 curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.24.1.osx-arm64
 chmod a+x ascli
 ./ascli conf transferd install
 ```
-
-> [!NOTE]
-> Replace the URL with the one for your platform.
-> Installation of `ascp` is still required separately.
-> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 #### Linux: GLIBC version
 
@@ -314,13 +314,13 @@ Required Ruby version: >= 3.1.
 
 **In priority**, refer to the official Ruby documentation:
 
-- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 - [Official Ruby Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-Latest version of `ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If only an older Ruby version must be used due to system constraints, then use an older version of `ascli` that supports it.
+`ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+If only an older Ruby version must be used due to system constraints, then use an older version of `ascli` that supports it, refer to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
 #### Windows: Installer
 
@@ -373,12 +373,10 @@ This installs a recent Ruby suitable for `ascli`.
 To add PATH to Ruby on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
-export PATH="$(brew --prefix ruby)/bin:$PATH"
-export PATH="$(gem env gemdir)/bin:$PATH"
+PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
 ```
 
 > [!NOTE]
-> Two separate lines are needed because the second one depends on the first one.
 > This is what is displayed at the end of the installation of the ruby tap,
 > same as message from: `brew info ruby`
 
@@ -386,7 +384,7 @@ export PATH="$(gem env gemdir)/bin:$PATH"
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems
+**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems:
 
 - Check available Ruby versions:
 
@@ -594,7 +592,6 @@ See [Gemfile](Gemfile):
 | name | version | comment |
 |----------------------|----------|-----------------------------------------------------|
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
-| marcel | ~> 1.1 | for preview |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 | base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
@@ -621,7 +618,6 @@ Install like this:
 
 ```shell
 gem install grpc -v '~> 1.71'
-gem install marcel -v '~> 1.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
 gem install base64 -v '~> 0.3'
@@ -650,7 +646,7 @@ gem install solargraph -v '~> 0.48'
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```shell
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -806,11 +802,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.25.1 --no-document --install-dir temp_folder
+gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.25.1-gems
+mv temp_folder/cache aspera-cli-4.26.0.pre-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.25.1-gems aspera-cli-4.25.1-gems.tgz
+tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
 ```
 
 #### Unix-like
@@ -955,7 +951,7 @@ ascli -v
 ```
 
 ```text
-4.25.1
+4.26.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -2547,11 +2543,11 @@ ascli config preset set GLOBAL version_check_days 0
 If the default global Option Preset is not set, and you want to use a different name:
 
 ```shell
-ascli config preset set GLOBAL version_check_days 0
+ascli config preset set default config my_common_defaults
 ```
 
 ```shell
-ascli config preset set default config my_common_defaults
+ascli config preset set GLOBAL version_check_days 0
 ```
 
 #### Tested commands for `config`
@@ -2571,7 +2567,6 @@ ascp install
 ascp install --sdk-folder=sdk_test_dir
 ascp install 1.1.3
 ascp products list
-ascp products use 'IBM Aspera Connect'
 ascp schema --format=jsonpp
 ascp show
 ascp spec
@@ -2631,6 +2626,7 @@ preset delete conf_name
 preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
+preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 preset set GLOBAL vault @: type=file file=/secure/vault_file
 preset set GLOBAL vault_password _simple_one_
 preset set GLOBAL version_check_days 0
@@ -3412,41 +3408,41 @@ It provides the following commands for `ascp` sub-command:
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
-Option: `ascp_path` is used to specify the location of `ascp`.
+Option: `sdk_folder` is used to specify the location of `ascp`.
 The default value is: `product:FIRST`.
 By default, `ascli` uses any found local product with `ascp`, including Transfer Daemon (SDK).
 
-To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
+To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
-For a permanent change, the command `config ascp use` sets the same option for the global default.
+For a permanent change, set a global default.
 
 Using a POSIX shell:
 
 ```shell
-ascli config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
+ascli config preset set GLOBAL sdk_folder ~/my_install_dir
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
+Updated: global_common_defaults: sdk_folder <- /Users/laurent/my_install_dir
 Saved to default global preset global_common_defaults
 ```
 
 Windows:
 
 ```text
-ascli config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+ascli config preset set GLOBAL sdk_folder C:\Users\admin\.aspera\ascli\sdk
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+Updated: global_common_defaults: sdk_folder <- C:\Users\admin\.aspera\ascli\sdk
 Saved to default global preset global_common_defaults
 ```
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-A special value `product:<product name>` can be used for option `ascp_path`.
+A special value `product:<product name>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first found.
 
@@ -3457,29 +3453,23 @@ ascli config ascp products list
 ```
 
 ```text
-+---------------------------------------+----------------------------------------+
-| name                                  | app_root                               |
-+---------------------------------------+----------------------------------------+
-| IBM Aspera SDK                        | /Users/laurent/.aspera/ascli/sdk       |
-| Aspera Connect                        | /Applications/Aspera Connect.app       |
-| IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
-| IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
-+---------------------------------------+----------------------------------------+
+╭───────────────────────────────────────┬──────────────────────────────────────╮
+│ name                                  │ app_root                             │
+╞═══════════════════════════════════════╪══════════════════════════════════════╡
+│ IBM Aspera Transfer SDK               │ /Users/laurent/.aspera/sdk           │
+│ IBM Aspera for Desktop                │ /Applications/IBM Aspera.app         │
+│ IBM Aspera Connect                    │ /Applications/IBM Aspera Connect.app │
+│ IBM Aspera High-Speed Transfer Server │ /Library/Aspera                      │
+╰───────────────────────────────────────┴──────────────────────────────────────╯
 ```
 
 To permanently use the `ascp` of a product:
 
 ```shell
-ascli config ascp products use 'IBM Aspera Connect'
+ascli config preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 Updated: default: config <- global_common_defaults
-Updated: global_common_defaults: ascp_path <- product:IBM Aspera Connect
+Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
 Saving config file.
-```
-
-It is the same as executing:
-
-```shell
-ascli config preset set GLOBAL ascp_path 'product:IBM Aspera Connect'
 ```
 
 To show the path of currently used `ascp`:
@@ -3691,7 +3681,7 @@ The communication is done through a JSON file that shall be created in `ascli`'s
 ascli config folder
 ```
 
-The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
+The name of the file shall be: `send_<PID>`, where `<PID>` is the process ID of the running `ascli`.
 
 If there is only one `ascli` running, one can get the PID like this:
 
@@ -4662,9 +4652,8 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 
 ```text
 ascli -h
-WARN No config file found. New configuration file: /home/runner/.aspera/ascli/config.yaml
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.25.1)
+        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4695,23 +4684,23 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
+        --format=ENUM                Output format: csv, image, json, jsonpp, nagios, ruby, [table], text, yaml
         --output=VALUE               Destination for results
-        --display=ENUM               Output only some information: [info], data, error
+        --display=ENUM               Output only some information: data, error, [info]
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          (Table) Display style (Hash)
         --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
-        --multi-single=ENUM          (Table) Control how object list is displayed as single table, or multiple objects: [no], yes, single
+        --multi-single=ENUM          (Table) Control how object list is displayed as single table, or multiple objects: [no], single, yes
         --show-secrets=ENUM          Show secrets on command output: [no], yes
         --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [text], graphical
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
-        --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
+        --log-level=ENUM             Log level: debug, error, fatal, info, trace1, trace2, unknown, [warn]
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
@@ -4720,7 +4709,7 @@ OPTIONS: global
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
         --temp-folder=VALUE          Temporary folder
         --pid-file=VALUE             Write process identifier to file, delete on exit
-        --parser=ENUM                Default parser for structured parameters and options: none, json, ruby, yaml
+        --parser=ENUM                Default parser for structured parameters and options: json, none, ruby, yaml
         --home=VALUE                 Home folder for tool
         --config-file=VALUE          Path to YAML file with preset configuration
         --secret=VALUE               Secret for access keys
@@ -4738,9 +4727,8 @@ OPTIONS: global
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --key-path=VALUE             Wizard: path to private key for JWT
         --sdk-url=VALUE              Ascp: URL to get Aspera Transfer Executables
-        --ascp-path=VALUE            Ascp: Path to ascp (or product with "product:")
         --locations-url=VALUE        Ascp: URL to get download locations of Aspera Transfer Daemon
-        --sdk-folder=VALUE           Ascp: SDK installation folder path
+        --sdk-folder=VALUE           Ascp: Path to folder with ascp (or product with "product:")
         --progress-bar=ENUM          Display progress bar: [no], yes
         --smtp=VALUE                 Email: SMTP configuration (Hash)
         --notify-to=VALUE            Email: Recipient for notification of transfers
@@ -4758,34 +4746,11 @@ OPTIONS: global
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: httpgw, transferd, node, desktop, [direct], connect
+        --transfer=ENUM              Type of transfer agent: connect, desktop, [direct], httpgw, node, transferd
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
-
-
-COMMAND: httpgw
-SUBCOMMANDS: health info
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-
-
-COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
-        --client-id=VALUE            OAuth client identifier
-        --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
-        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
-        --shared-folder=VALUE        Send package with files from shared folder
-        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 
 
 COMMAND: alee
@@ -4796,27 +4761,13 @@ OPTIONS:
         --password=VALUE             User's password
 
 
-COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space spec ssync stream sync telemetry transfer transport upload watch_folder
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --default-ports=ENUM         Gen4: Use standard FASP ports (true) or get from node API (false): no, [yes]
-        --node-cache=ENUM            Gen4: Set to no to force actual file system read: no, [yes]
-        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
-        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-
-
 COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
+        --auth=ENUM                  OAuth type of authentication: boot, [jwt], web
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
@@ -4826,17 +4777,12 @@ OPTIONS:
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
         --package-folder=VALUE       Handling of reception of packages in folders (Hash)
-
-
-COMMAND: server
-SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --ssh-keys=VALUE             SSH key path list (Array)
-        --passphrase=VALUE           SSH private key passphrase
-        --ssh-options=VALUE          SSH options (Hash)
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --default-ports=ENUM         Gen4: Use standard FASP ports (true) or get from node API (false): no, [yes]
+        --node-cache=ENUM            Gen4: Set to no to force actual file system read: no, [yes]
+        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
+        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
 
 
 COMMAND: ats
@@ -4850,63 +4796,8 @@ OPTIONS:
         --region=VALUE               Cloud region
 
 
-COMMAND: preview
-SUBCOMMANDS: check events scan show test trevents
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --skip-format=ENUM           Skip this preview format: png, mp4
-        --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
-        --skip-types=VALUE           Skip generation for those types of files (Array)
-        --previews-folder=VALUE      Preview folder in storage root
-        --skip-folders=VALUE         List of folder to skip (Array)
-        --base=VALUE                 Basename of output for for test
-        --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
-        --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
-        --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
-        --overwrite=ENUM             When to overwrite result file: always, never, [mtime]
-        --file-access=ENUM           How to read and write files in repository: [local], remote
-        --max-size=VALUE             Maximum size (in bytes) of preview file
-        --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
-        --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
-        --thumb-img-size=VALUE       Png: non-video: height (and width)
-        --thumb-text-font=VALUE      Png: plaintext: font for text rendering: `magick identify -list font`
-        --video-conversion=ENUM      Mp4: method for preview generation: [reencode], blend, clips
-        --video-png-conv=ENUM        Mp4: method for thumbnail generation: [fixed], animated
-        --video-scale=VALUE          Mp4: all: video scale (ffmpeg scale argument)
-        --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
-        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
-        --blend-keyframes=VALUE      Mp4: blend: # key frames
-        --blend-pauseframes=VALUE    Mp4: blend: # pause frames
-        --blend-transframes=VALUE    Mp4: blend: # transition blend frames
-        --blend-fps=VALUE            Mp4: blend: frame per second
-        --clips-count=VALUE          Mp4: clips: number of clips
-        --clips-length=VALUE         Mp4: clips: length in seconds of each clips
-
-
-COMMAND: orchestrator
-SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --result=VALUE               Specify result value as: 'work_step:parameter'
-        --synchronous=ENUM           Wait for completion: [no], yes
-        --ret-style=ENUM             How return type is requested in api: header, [arg], ext
-        --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
-
-
 COMMAND: console
 SUBCOMMANDS: health transfer
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-
-
-COMMAND: shares
-SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
@@ -4925,18 +4816,6 @@ OPTIONS:
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
 
 
-COMMAND: faspio
-SUBCOMMANDS: bridges health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: jwt, basic
-        --client-id=VALUE            OAuth client identifier
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth JWT RSA private key passphrase
-
-
 COMMAND: faspex
 SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
@@ -4948,7 +4827,116 @@ OPTIONS:
         --remote-source=VALUE        Remote source for package send (id or %name:)
         --storage=VALUE              Faspex local storage definition (for browsing source)
         --recipient=VALUE            Use if recipient is a dropbox (with *)
-        --box=ENUM                   Package box: [inbox], archive, sent
+        --box=ENUM                   Package box: archive, [inbox], sent
+
+
+COMMAND: faspex5
+SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: boot, [jwt], web
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
+        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
+        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
+        --shared-folder=VALUE        Send package with files from shared folder
+        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
+
+
+COMMAND: faspio
+SUBCOMMANDS: bridges health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: basic, jwt
+        --client-id=VALUE            OAuth client identifier
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+
+
+COMMAND: httpgw
+SUBCOMMANDS: health info
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+
+
+COMMAND: node
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space spec ssync stream sync telemetry transfer transport upload watch_folder
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+
+
+COMMAND: orchestrator
+SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --result=VALUE               Specify result value as: 'work_step:parameter'
+        --synchronous=ENUM           Wait for completion: [no], yes
+        --ret-style=ENUM             How return type is requested in api: [arg], ext, header
+        --auth-style=ENUM            Authentication type: apikey, arg_pass, [head_basic]
+
+
+COMMAND: preview
+SUBCOMMANDS: check events scan show test trevents
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --skip-format=ENUM           Skip this preview format: mp4, png
+        --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: header, [no], read
+        --skip-types=VALUE           Skip generation for those types of files (Array)
+        --previews-folder=VALUE      Preview folder in storage root
+        --skip-folders=VALUE         List of folder to skip (Array)
+        --base=VALUE                 Basename of output for for test
+        --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
+        --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
+        --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
+        --overwrite=ENUM             When to overwrite result file: always, [mtime], never
+        --file-access=ENUM           How to read and write files in repository: [local], remote
+        --max-size=VALUE             Maximum size (in bytes) of preview file
+        --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
+        --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
+        --thumb-img-size=VALUE       Png: non-video: height (and width)
+        --thumb-text-font=VALUE      Png: plaintext: font for text rendering: `magick identify -list font`
+        --video-conversion=ENUM      Mp4: method for preview generation: blend, clips, [reencode]
+        --video-png-conv=ENUM        Mp4: method for thumbnail generation: animated, [fixed]
+        --video-scale=VALUE          Mp4: all: video scale (ffmpeg scale argument)
+        --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
+        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
+        --blend-keyframes=VALUE      Mp4: blend: # key frames
+        --blend-pauseframes=VALUE    Mp4: blend: # pause frames
+        --blend-transframes=VALUE    Mp4: blend: # transition blend frames
+        --blend-fps=VALUE            Mp4: blend: frame per second
+        --clips-count=VALUE          Mp4: clips: number of clips
+        --clips-length=VALUE         Mp4: clips: length in seconds of each clips
+
+
+COMMAND: server
+SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
+        --ssh-keys=VALUE             SSH key path list (Array)
+        --passphrase=VALUE           SSH private key passphrase
+        --ssh-options=VALUE          SSH options (Hash)
+
+
+COMMAND: shares
+SUBCOMMANDS: admin files health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+        --username=VALUE             User's identifier
+        --password=VALUE             User's password
 
 
 ```
@@ -9594,7 +9582,7 @@ USAGE
        {"type":"DONE"}
 EXAMPLES
     asession @json:'{"spec":{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
-    echo '{"spec":{"remote_host":...}}'|asession @json:@stdin
+    echo '{"spec":{"remote_host":...}}'|asession @json:@stdin:
 
 ```
 

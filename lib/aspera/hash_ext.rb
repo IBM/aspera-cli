@@ -26,6 +26,10 @@ unless Hash.method_defined?(:symbolize_keys)
     def symbolize_keys
       return transform_keys(&:to_sym)
     end
+
+    def symbolize_keys!
+      return transform_keys!(&:to_sym)
+    end
   end
 end
 
@@ -34,6 +38,10 @@ unless Hash.method_defined?(:stringify_keys)
   class Hash
     def stringify_keys
       return transform_keys(&:to_s)
+    end
+
+    def stringify_keys!
+      return transform_keys!(&:to_s)
     end
   end
 end

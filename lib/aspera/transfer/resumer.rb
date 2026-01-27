@@ -41,14 +41,14 @@ module Aspera
         Log.log.debug{"retries=#{remaining_resumes}"}
         # try to send the file until ascp is successful
         loop do
-          Log.log.debug('Transfer session starting')
+          Log.log.debug('Starting task execution')
           begin
             # Call provided block: execute transfer
             yield
             # Exit retry loop if success
             break
           rescue Error => e
-            Log.log.warn{"A transfer error occurred during transfer: #{e.message}"}
+            Log.log.warn{"An error occurred during task: #{e.message}"}
             Log.log.debug{"Retryable ? #{e.retryable?}"}
             # do not retry non-retryable
             raise unless e.retryable?

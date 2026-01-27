@@ -14,6 +14,12 @@ require 'bundler/setup'
 
 require_relative 'build/lib/paths'
 
+# clean   : Remove any temporary products.
+CLEAN.push(Paths::TMP)
+# clobber : Remove any generated file.
+CLOBBER.push(Paths::GEMFILE_LOCK)
+CLOBBER.push(Paths::RELEASE)
+
 # default gem file build tasks
 task default: [:signed]
 
@@ -21,18 +27,10 @@ desc 'Build signed gem (default)'
 task :signed do
   raise 'Please set env var: SIGNING_KEY to build a signed gem file' unless ENV.key?('SIGNING_KEY')
   Rake::Task['build'].invoke
-  # `build` generates the file with version from the code, so rename it
-  (Paths::GEM_PACK_FILE.parent / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem").rename(Paths::GEM_PACK_FILE) unless GEM_VERSION.eql?(Aspera::Cli::VERSION)
 end
 
 desc 'Build unsigned gem'
 task unsigned: [:build]
-
-desc 'Tag current version in git and push to remote'
-task :release_tag do
-  run('git', 'tag', '-a', "v#{GEM_VERSION}", '-m', "Version #{GEM_VERSION}")
-  run('git', 'push', 'origin', "v#{GEM_VERSION}")
-end
 
 desc 'Build and push gem to rubygems.org'
 task release_signed: :signed do

@@ -3,6 +3,8 @@
 require 'bundler'
 require 'yaml'
 require 'aspera/log'
+require 'aspera/environment'
+require 'aspera/cli/version'
 require_relative 'paths'
 
 # Log control
@@ -15,8 +17,18 @@ module BuildTools
     Aspera::Log.instance.logger(*args, **kwargs, &block)
   end
 
+  # Execute the command line (not in shell)
+  # @see `Aspera::Environment#secure_execute`
+  def run(*cmd, **kwargs)
+    dry_run = ENV['DRY_RUN'] == '1'
+    log.info("#{dry_run ? 'Would run' : 'Executing'}: #{cmd.map(&:to_s).join(' ')}")
+    Aspera::Environment.secure_execute(*cmd, **kwargs) unless dry_run
+  end
+
+  # Extract gem specifications in a given group from the Gemfile
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
+  # @return [Array<String>] List of gem specifications in the group
   def gems_in_group(gemfile, group_name_sym)
     Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil).dependencies.filter_map do |dep|
       next unless dep.groups.include?(group_name_sym)
@@ -24,11 +36,7 @@ module BuildTools
     end
   end
 
-  # Execute the command line (not in shell)
-  def run(*args, **kwargs)
-    Aspera::Environment.secure_execute(*args, **kwargs)
-  end
-
+  # Download the transfer.proto file into a temporary folder
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
   def download_proto_file(tmp_proto_folder)
     require 'aspera/ascp/installation'
@@ -38,44 +46,19 @@ module BuildTools
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
-  # @param node [Psych::Nodes::Node] YAML node
-  # @param parent_path [Array<String>] Path of parent keys
-  # @param duplicate_keys [Array<Hash>] Accumulated duplicate keys
-  # @return [Array<String>] List of duplicate keys with their paths and occurrences
-  def yaml_list_duplicate_keys(node, parent_path = nil, duplicate_keys = nil)
-    duplicate_keys ||= []
-    parent_path ||= []
-    return duplicate_keys unless node.respond_to?(:children)
-    if node.is_a?(Psych::Nodes::Mapping)
-      counts = Hash.new(0)
-      key_nodes = Hash.new{ |h, k| h[k] = []}
-      node.children.each_slice(2) do |key_node, value_node|
-        if key_node&.value
-          counts[key_node.value] += 1
-          key_nodes[key_node.value] << key_node
-          yaml_list_duplicate_keys(value_node, parent_path + [key_node.value], duplicate_keys)
-        end
-      end
-      counts.each do |key_str, count|
-        next if count <= 1
-        path = (parent_path + [key_str]).join('.')
-        occurrences = key_nodes[key_str].map{ |kn| kn.start_line ? kn.start_line + 1 : 'unknown'}.map(&:to_s).join(', ')
-        duplicate_keys << "#{path}: #{occurrences}"
-      end
-    else
-      node.children.to_a.each{ |child| yaml_list_duplicate_keys(child, parent_path, duplicate_keys)}
-    end
-    duplicate_keys
+
+  # Version that is currently being built
+  # Use this instead of Aspera::Cli::VERSION to account for beta builds
+  def specific_version
+    return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
+    VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise('VERSION not found in version file')
   end
 
-  # Safely load YAML content, raising an error if duplicate keys are found
-  # @param yaml [String] YAML content
-  # @return [Object] Parsed YAML content
-  # @raise [RuntimeError] If duplicate keys are found
-  def yaml_safe_load(yaml)
-    duplicate_keys = yaml_list_duplicate_keys(Psych.parse_stream(yaml))
-    raise "Duplicate keys: #{duplicate_keys.join('; ')}" unless duplicate_keys.empty?
-    YAML.safe_load(yaml)
+  def use_specific_version(version)
+    Aspera.assert(!version.to_s.empty?){'Version argument is required for beta task'}
+    OVERRIDE_VERSION_FILE.write(version)
+    log.info("Version set to: #{BuildTools.specific_version}")
   end
-  module_function :gems_in_group, :run, :download_proto_file, :yaml_safe_load, :yaml_list_duplicate_keys
+
+  module_function :log, :run, :gems_in_group, :download_proto_file, :specific_version
 end

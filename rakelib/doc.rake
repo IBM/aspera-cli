@@ -9,9 +9,9 @@ require_relative '../build/lib/test_env'
 include BuildTools
 
 # Update signature file if configuration has changed
-if Paths::CONF_SIGNATURE.exist? && TestEnv.test_configuration.any?
+if Paths::CONF_SIGNATURE.exist? && TestEnv.configuration.any?
   stored = Paths::CONF_SIGNATURE.read
-  current = Digest::SHA1.hexdigest(JSON.generate(TestEnv.test_configuration))
+  current = Digest::SHA1.hexdigest(JSON.generate(TestEnv.configuration))
   if current != stored
     puts current
     puts stored
@@ -40,7 +40,7 @@ def pdf_rule(pdf, md = nil)
 end
 
 PATH_MD_MANUAL = Paths::TOP / 'README.md'
-PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{GEM_VERSION}.pdf"
+PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{Aspera::Cli::VERSION}.pdf"
 PATH_TMPL_CONF_FILE = Paths::DOC / 'test_env.conf'
 TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
 TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
@@ -51,7 +51,7 @@ PATH_DOC_HELPER = Paths::BUILD_LIB / 'doc_helper.rb'
 # Generated PATH_MD_MANUAL uses these files
 DOC_FILES = [
   Paths::DOC / 'README.erb.md',
-  Paths::CLI_CMD,
+  Paths::BIN / Aspera::Cli::Info::CMD_NAME,
   Paths::BIN / 'asession',
   Paths::TEST_DEFS,
   Paths::GEMSPEC,
@@ -71,12 +71,12 @@ namespace :doc do
   pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
 
   file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths::CONF_SIGNATURE] do
-    DocHelper.config_to_template(TestEnv.test_configuration, PATH_TMPL_CONF_FILE)
+    DocHelper.config_to_template(TestEnv.configuration, PATH_TMPL_CONF_FILE)
   end
 
   file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do
     Aspera::Log.log.info{"Generating: #{TSPEC_JSON_SCHEMA}"}
-    run(Paths::CLI_CMD, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}")
+    run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}")
   end
 
   file PATH_MD_MANUAL => DOC_FILES + [PATH_BUILD_TOOLS, PATH_DOC_HELPER, TSPEC_YAML_SCHEMA, ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
@@ -89,7 +89,7 @@ namespace :doc do
   task pdf: PATH_PDF_MANUAL
 
   desc 'Generate All Docs'
-  task build: [PATH_MD_MANUAL, PATH_PDF_MANUAL, PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA]
+  task build: [PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL, PATH_PDF_MANUAL]
 
   file PATH_UML_PNG => PATH_TMP_DOT do
     Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}

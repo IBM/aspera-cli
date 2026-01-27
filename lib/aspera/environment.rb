@@ -58,8 +58,8 @@ module Aspera
       # @param code [String] Ruby code to execute
       # @param file [String] File name for error reporting
       # @param line [Integer] Line number for error reporting
-      def secure_eval(code, file, line)
-        Kernel.send('lave'.reverse, code, empty_binding, file, line)
+      def secure_eval(code, file, line, user_binding = nil)
+        Kernel.send('lave'.reverse, code, user_binding || empty_binding, file, line)
       end
 
       # Build argv for Process.spawn / Kernel.system (no shell)
@@ -74,18 +74,22 @@ module Aspera
         argv
       end
 
-      # Execute a process securely (no shell)
-      # mode:
-      #   :execute    -> Kernel.system, return nil
-      #   :background -> Process.spawn, return pid
-      #   :capture    -> Open3.capture3, return stdout
-      # @param cmd       [Array]     Command and arguments
-      # @param env       [Hash, nil] Environment variables
-      # @param mode      [Symbol]    Execution mode (see above)
-      # @param kwargs    [Hash]      Additional arguments to underlying method, includes:
-      #                              :exception [Boolean] for :capture mode, raise error if process fails
-      #                              :close_others [Boolean] for :background mode
-      #                              :env [Hash] for :execute mode
+      # Execute a process securely without shell.
+      #
+      # Execution `mode` can be:
+      # - :execute    -> Kernel.system, return nil
+      # - :background -> Process.spawn, return pid
+      # - :capture    -> Open3.capture3, return stdout
+      #
+      # @param cmd [Array<String>] Executable and arguments (mapped "to_s")
+      # @param mode [:execute,:background,:capture] Execution mode
+      # @param kwargs [Hash] Additional arguments to underlying method
+      # @option kwargs [Hash] :env Environment variables
+      # @option kwargs [Boolean] :exception for :capture mode, raise error if process fails
+      # @option kwargs [Boolean] :close_others for :background mode
+      # @return [nil] for :execute mode
+      # @return [Integer] pid for :background mode
+      # @return [String] stdout for :capture mode
       def secure_execute(*cmd, mode: :execute, **kwargs)
         cmd = cmd.map(&:to_s)
         Aspera.assert(cmd.size.positive?, type: ArgumentError){'executable must be present'}

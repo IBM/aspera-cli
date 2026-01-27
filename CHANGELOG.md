@@ -4,9 +4,21 @@
 
 ## 4.26.0.pre
 
+### Breaking Changes
+
 Released: [Place date of release here]
 
 ### New Features
+
+### Issues Fixed
+
+* Fixed build of container and Windows archive
+
+### Breaking Changes
+
+* `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
+* `config`: Removed command `ascp use`, instead do: `ascli conf preset set GLOBAL sdk_folder <path>`.
+* `config`: Removed command `ascp products use`, instead do: `ascli conf preset set GLOBAL sdk_folder product:<path>`.
 
 ### Issues Fixed
 
@@ -19,7 +31,7 @@ Released: 2026-01-21
 ### Issues Fixed
 
 * `build`: Fixed deploy workflow to use global rake instead of bundle exec.
-* `build`: Made rspec require conditional in test.rake for deploy environment.
+* `build`: Made `rspec` require conditional in `test.rake` for deploy environment.
 
 ## 4.25.0
 

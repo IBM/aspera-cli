@@ -35,7 +35,8 @@ module Aspera
       attr_accessor :values
 
       # @param option      [Symbol] Name of option
-      # @param allowed  [see below] Allowed values
+      # @param description [String] Description for help
+      # @param allowed  [nil,Class,Array<Class>,Array<Symbol>] Allowed values
       # @param handler       [Hash] Accessor: keys: :o(object) and :m(method)
       # @param deprecation [String] Deprecation message
       # `allowed`:
@@ -61,7 +62,7 @@ module Aspera
         else
           :setter
         end
-        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{method}"} unless @access.eql?(:local)
+        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{@read_method}"} unless @access.eql?(:local)
         @types = nil
         @values = nil
         if !allowed.nil?
@@ -600,9 +601,12 @@ module Aspera
       end
 
       # TODO: use formatter
-      # @return [String] comma separated list of values, with the current value highlighted
+      # Highlight current value in list
+      # @param list    [Array<Symbol>] List of possible values
+      # @param current [Symbol]        Current value
+      # @return [String] comma separated sorted list of values, with the current value highlighted
       def highlight_current_in_list(list, current)
-        list.map do |i|
+        list.sort.map do |i|
           if i.eql?(current)
             $stdout.isatty ? i.to_s.red.bold : "[#{i}]"
           else

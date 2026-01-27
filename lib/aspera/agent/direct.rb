@@ -16,9 +16,9 @@ require 'English'
 
 module Aspera
   module Agent
-    # executes a local "ascp", create mgt port
+    # Execute a local `ascp` and use its management port to monitor progress
     class Direct < Base
-      # ascp started locally, so listen local
+      # `ascp` started locally, so listen local
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
       # 0 means: use any available port
       SELECT_AVAILABLE_PORT = 0
@@ -48,13 +48,13 @@ module Aspera
         spawn_timeout_sec: 2,
         spawn_delay_sec:   2,
         multi_incr_udp:    nil,
-        resume:            nil,
+        resume:            {},
         monitor:           true,
         management_cb:     nil,
         **base_options
       )
         super(**base_options)
-        # Special transfer parameters provided
+        # Options that have impact on `ascp` command line generated
         @tr_opts = {
           ascp_args:       ascp_args,
           wss:             wss,
@@ -69,7 +69,6 @@ module Aspera
         @multi_incr_udp = multi_incr_udp.nil? ? Environment.instance.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
         @monitor = monitor
         @management_cb = management_cb
-        resume = {} if resume.nil?
         Aspera.assert_type(resume, Hash){'resume'}
         @resume_policy = Transfer::Resumer.new(**resume.symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
@@ -78,6 +77,7 @@ module Aspera
         @mutex = Mutex.new
         @pre_calc_sent = false
         @pre_calc_last_size = nil
+        # Check on all management messages if that file exists, and if so, read commands from it
         @command_file = File.join(config_dir || '.', "send_#{$PROCESS_ID}")
       end
 
@@ -115,7 +115,7 @@ module Aspera
             Log.log.debug('multi_session count is zero: no multi session')
             multi_session_info = nil
           elsif @multi_incr_udp # multi_session_info[:count] > 0
-            # if option not true: keep default udp port for all sessions
+            # if option not `true`: keep default UDP port for all sessions
             multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : Transfer::Spec::UDP_PORT
             # delete from original transfer spec, as we will increment values
             transfer_spec.delete('fasp_port')
@@ -225,9 +225,9 @@ module Aspera
             start_and_monitor_process(session: session, **session[:env_args])
           end
           Log.log.debug('transfer ok'.bg_green)
-        rescue StandardError => e
+        rescue => e
           session[:error] = e
-          Log.log.error{"Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red} if Log.instance.level.eql?(:debug)
+          raise if Log.log.debug? || !e.is_a?(Transfer::Error)
         end
         Log.log.debug{"EXIT (#{Thread.current[:name]})"}
       end
@@ -242,7 +242,7 @@ module Aspera
       # @param env     [Hash]   Environment variables (comes from ascp_args)
       # @param args    [Array]  Command line arguments (comes from ascp_args)
       # @return [nil] when process has exited
-      # @throw FaspError on error
+      # @raise FaspError on error
       def start_and_monitor_process(
         session:,
         name:,
@@ -251,15 +251,15 @@ module Aspera
       )
         Aspera.assert_type(session, Hash)
         notify_progress(:sessions_init, info: 'starting')
+        # Do not use `capture_stderr`
+        capture_stderr = false
+        stderr_r, stderr_w = nil
+        spawn_args = {}
+        command_pid = nil
+        # Get location of command executable (ascp, async)
+        command_path = Ascp::Installation.instance.path(name)
+        command_arguments = [command_path]
         begin
-          # do not use
-          capture_stderr = false
-          stderr_r, stderr_w = nil
-          spawn_args = {}
-          command_pid = nil
-          # get location of command executable (ascp, async)
-          command_path = Ascp::Installation.instance.path(name)
-          command_arguments = [command_path]
           if @monitor
             # we use Socket directly, instead of TCPServer, as it gives access to lower level options
             socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
@@ -353,7 +353,7 @@ module Aspera
             Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
             # collect process exit status or wait for termination
             _, status = Process.wait2(command_pid)
-            if stderr_r
+            if capture_stderr
               # process stderr of ascp
               stderr_flag = false
               stderr_r.each_line do |line|
@@ -379,6 +379,7 @@ module Aspera
 
       private
 
+      # [Array<Hash>] List of sessions, one per `ascp` process
       attr_reader :sessions
 
       # Notify progress to callback

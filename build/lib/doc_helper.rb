@@ -20,7 +20,7 @@ require 'yaml'
 require 'erb'
 require 'English'
 require 'pathname'
-require_relative 'build_tools'
+require_relative 'test_env'
 require_relative 'paths'
 
 # Format special values to markdown
@@ -296,30 +296,27 @@ class DocHelper
   ]
   # @return [Hash] all test commands with key by plugin
   def all_test_commands_by_plugin
-    if @commands.nil?
-      commands = {}
-      all_tests = BuildTools.yaml_safe_load(Paths::TEST_DEFS.read)
-      all_tests.select{ |_, v| v['command'] && !v['tags']&.include?('nodoc')}.each_value do |test|
-        line = test['command'].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
-          next cmd unless cmd.is_a?(String)
-          next "''" if cmd.empty?
-          REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
-          cmd
-        end.join(' ')
-        line = line.strip.squeeze(' ')
-        Aspera::Log.log.debug(line)
-        # plugin name shall be the first argument: command
-        plugin = line.split(' ').first
-        raise "Wrong plugin name: #{plugin}" unless plugin.match?(/^[a-z0-9]+$/)
-        commands[plugin] ||= []
-        commands[plugin].push(line.gsub(/^#{plugin} /, ''))
-      end
-      commands.each_key do |plugin|
-        commands[plugin] = commands[plugin].sort.uniq
-      end
-      @commands = commands
+    return @commands unless @commands.nil?
+    @commands = {}
+    all_tests = TestEnv.descriptions
+    all_tests.select{ |_, v| v[:command] && !v[:tags].include?('nodoc') && v[:plugin]}.each_value do |test|
+      # Cleanup command line
+      line = test[:args].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
+        next cmd unless cmd.is_a?(String)
+        next "''" if cmd.empty?
+        REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
+        cmd
+      end.join(' ')
+      line = line.strip.squeeze(' ')
+      Aspera::Log.log.debug(line)
+      plugin = test[:plugin]
+      @commands[plugin] ||= []
+      @commands[plugin].push(line.gsub(/^#{plugin} /, ''))
     end
-    return @commands
+    @commands.each_key do |plugin|
+      @commands[plugin] = @commands[plugin].sort.uniq
+    end
+    @commands
   end
 
   def sample_commands_title(plugin_name)
@@ -408,8 +405,8 @@ class DocHelper
     Aspera::Log.log.warn("Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
     # check that all test commands are included in the doc
     if !all_test_commands_by_plugin.empty?
-      Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
-      raise 'Remediate: remove from doc using EXE_NO_MAN or add section in doc'
+      Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.map{ |p| %Q{"#{p}"}}.join(', ')}".red)
+      raise 'Remediate: remove from doc using tag `nodoc` or add section in doc'
     end
     File.rename(tmp_file, @paths[:outfile])
   end

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Install all the necessary components for `ascli`:
+A ZIP file that installs all the necessary components for `ascli`:
 
 - Ruby
 - Gems
@@ -13,9 +13,10 @@ Install all the necessary components for `ascli`:
 ## Build
 
 ```bash
-rake GEM_VERSION=x.y.z
+rake windowszip:build'[x.y.z]'
 ```
 
-## Installation procedure on Windows
+Version is optional.
+If not provided, use the version specified in the current folder.
 
-Execute: `setup.cmd`
+`README.user.md` is packaged in the zip.

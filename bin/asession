@@ -6,95 +6,118 @@ require 'aspera/agent/direct'
 require 'aspera/cli/extended_value'
 require 'aspera/products/transferd'
 require 'aspera/log'
+require 'aspera/assert'
 require 'json'
-# Extended transfer spec parameter (only used in asession)
-PARAM_SPEC = 'spec'
-# Log level
-PARAM_LOG_LEVEL = 'loglevel'
-# Transfer agent options
-PARAM_AGENT = 'agent'
-# By default go to /tmp/username.filelist
-PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
-PARAM_SDK = 'sdk'
-# Place transfer spec in that
-SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
-SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
-def assert_usage(assertion, error_message)
-  return if assertion
-  # rubocop:disable Style/StderrPuts
-  $stderr.puts('ERROR: '.red.blink + error_message) if error_message
-  $stderr.puts('USAGE')
-  $stderr.puts('    asession')
-  $stderr.puts('    asession -h|--help')
-  $stderr.puts('    asession [<session spec extended value>]')
-  $stderr.puts('    ')
-  $stderr.puts('    If no argument is provided, default will be used: @json:@stdin')
-  $stderr.puts('    -h, --help display this message')
-  $stderr.puts('    <session spec extended value> a dictionary (Hash)')
-  $stderr.puts('    The value can be either:')
-  $stderr.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
-  $stderr.puts('       @json:@stdin, if the JSON is provided from stdin')
-  $stderr.puts('       @json:@file:<path>, if the JSON is provided from a file')
-  $stderr.puts('    The following keys are recognized in session spec:')
-  $stderr.puts("       #{PARAM_SPEC} : mandatory, contains the transfer spec")
-  $stderr.puts("       #{PARAM_LOG_LEVEL} : modify log level (to stderr)")
-  $stderr.puts("       #{PARAM_AGENT} : modify transfer agent parameters, e.g. ascp_args")
-  $stderr.puts("       #{PARAM_TMP_FILE_LIST_FOLDER} : location of temporary files")
-  $stderr.puts("       #{PARAM_SDK} : location of SDK (ascp)")
-  $stderr.puts('    Asynchronous commands can be provided on STDIN, examples:')
-  $stderr.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
-  $stderr.puts('       {"type":"START","source":"xx","destination":"yy"}')
-  $stderr.puts('       {"type":"DONE"}')
-  $stderr.puts('EXAMPLES')
-  $stderr.puts(%Q(    asession @json:'{"#{PARAM_SPEC}":{#{SAMPLE_DEMO},#{SAMPLE_DEMO2},"paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'))
-  $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession @json:@stdin))
-  # rubocop:enable Style/StderrPuts
-  Process.exit(0)
-end
-parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
-# By default assume JSON input on stdin if no argument
-if ARGV.empty?
-  ARGV.push('@json:@stdin')
-  parameter_source_err_msg = ' (JSON on stdin)'
-end
-# Anyway expect only one argument: session information
-assert_usage(ARGV.length.eql?(1), 'exactly one argument is expected')
-assert_usage(!['-h', '--help'].include?(ARGV.first), nil)
-# Parse transfer spec
-begin
-  session_argument = ARGV.pop
-  session_spec = Aspera::Cli::ExtendedValue.instance.evaluate(session_argument)
-rescue
-  assert_usage(false, "Cannot parse argument: #{session_argument}")
-end
-# Ensure right type for parameter
-assert_usage(session_spec.is_a?(Hash), "The value must be a Hash#{parameter_source_err_msg}")
-assert_usage(session_spec[PARAM_SPEC].is_a?(Hash), "The value must contain key #{PARAM_SPEC} with Hash value")
-# Additional debug capability
-Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL].to_sym if session_spec.key?(PARAM_LOG_LEVEL)
-# Possibly override temp folder
-Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER] if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
-session_spec[PARAM_SDK] = File.join(Dir.home, '.aspera', 'sdk') unless session_spec.key?(PARAM_SDK)
-Aspera::Products::Transferd.sdk_directory = session_spec[PARAM_SDK]
-session_spec[PARAM_AGENT] = {} unless session_spec.key?(PARAM_AGENT)
-agent_params = session_spec[PARAM_AGENT]
-agent_params['quiet'] = true
-agent_params['management_cb'] = ->(event) do
-  puts JSON.generate(Aspera::Ascp::Management.event_native_to_snake(event))
-end
-# Get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-client = Aspera::Agent::Direct.new(**agent_params.symbolize_keys)
-# Start transfer (asynchronous)
-client.start_transfer(session_spec[PARAM_SPEC])
-# commands to ascp on mgt port
-Thread.new do
-  loop do
-    data = JSON.parse($stdin.gets)
-    client.send_command(data)
+
+class UsageError < StandardError; end
+
+class SimpleTransferManager
+  # First level parameters in session spec
+  # - Extended transfer spec parameter (only used in asession)
+  PARAM_SPEC = 'spec'
+  # - Log level
+  PARAM_LOG_LEVEL = 'loglevel'
+  # - Transfer agent options
+  PARAM_AGENT = 'agent'
+  # - By default go to /tmp/username.filelist
+  PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
+  # - SDK location
+  PARAM_SDK = 'sdk'
+  # Default SDK location
+  SDK_DEFAULT_DIR = File.join(Dir.home, '.aspera', 'sdk')
+  # Place transfer spec in that
+  SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
+  SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
+  STDIN_INPUT = '@json:@stdin:'
+  class << self
+    # Assert usage condition, otherwise display usage message and exit
+    # @param assertion [Boolean] Assertion to verify
+    # @param error_message [String] Error message to display
+    def usage
+      # rubocop:disable Style/StderrPuts
+      $stderr.puts('USAGE')
+      $stderr.puts('    asession')
+      $stderr.puts('    asession -h|--help')
+      $stderr.puts('    asession [<session spec extended value>]')
+      $stderr.puts('    ')
+      $stderr.puts('    If no argument is provided, default will be used: @json:@stdin')
+      $stderr.puts('    -h, --help display this message')
+      $stderr.puts('    <session spec extended value> a dictionary (Hash)')
+      $stderr.puts('    The value can be either:')
+      $stderr.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
+      $stderr.puts('       @json:@stdin, if the JSON is provided from stdin')
+      $stderr.puts('       @json:@file:<path>, if the JSON is provided from a file')
+      $stderr.puts('    The following keys are recognized in session spec:')
+      $stderr.puts("       #{PARAM_SPEC} : mandatory, contains the transfer spec")
+      $stderr.puts("       #{PARAM_LOG_LEVEL} : modify log level (to stderr)")
+      $stderr.puts("       #{PARAM_AGENT} : modify transfer agent parameters, e.g. ascp_args")
+      $stderr.puts("       #{PARAM_TMP_FILE_LIST_FOLDER} : location of temporary files")
+      $stderr.puts("       #{PARAM_SDK} : location of SDK (ascp)")
+      $stderr.puts('    Asynchronous commands can be provided on STDIN, examples:')
+      $stderr.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
+      $stderr.puts('       {"type":"START","source":"xx","destination":"yy"}')
+      $stderr.puts('       {"type":"DONE"}')
+      $stderr.puts('EXAMPLES')
+      $stderr.puts(%Q(    asession @json:'{"#{PARAM_SPEC}":{#{SAMPLE_DEMO},#{SAMPLE_DEMO2},"paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'))
+      $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession #{STDIN_INPUT}))
+      # rubocop:enable Style/StderrPuts
+    end
   end
-rescue
-  Process.exit(1)
+  def initialize(args)
+    parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
+    # By default assume JSON input on stdin if no argument
+    if args.empty?
+      args.push(STDIN_INPUT)
+      parameter_source_err_msg = ' (JSON on stdin)'
+    end
+    # Anyway expect only one argument: session information
+    Aspera.assert(args.length.eql?(1), 'exactly one argument is expected', type: UsageError)
+    if ['-h', '--help'].include?(args.first)
+      SimpleTransferManager.usage
+      exit(0)
+    end
+    # Parse transfer spec
+    @session_spec = Aspera::Cli::ExtendedValue.instance.evaluate(args.pop, context: 'asession parameter')
+    # Ensure right type for parameter
+    Aspera.assert(@session_spec.is_a?(Hash), "The value must be a Hash#{parameter_source_err_msg}", type: UsageError)
+    Aspera.assert(@session_spec[PARAM_SPEC].is_a?(Hash), "The value must contain key #{PARAM_SPEC} with Hash value", type: UsageError)
+    # Additional debug capability
+    Aspera::Log.instance.level = @session_spec[PARAM_LOG_LEVEL].to_sym if @session_spec.key?(PARAM_LOG_LEVEL)
+    # Possibly override temp folder
+    Aspera::Transfer::Parameters.file_list_folder = @session_spec[PARAM_TMP_FILE_LIST_FOLDER] if @session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
+    Aspera::Products::Transferd.sdk_directory = @session_spec[PARAM_SDK] || SDK_DEFAULT_DIR
+    agent_params = @session_spec[PARAM_AGENT] || {}
+    agent_params['quiet'] = true
+    agent_params['management_cb'] = ->(event) do
+      puts JSON.generate(Aspera::Ascp::Management.event_native_to_snake(event))
+    end
+    # Get local agent (ascp), disable ascp output on stdout to not mix with JSON events
+    @client = Aspera::Agent::Direct.new(**agent_params.symbolize_keys)
+  end
+
+  def start
+    # Start transfer (asynchronous)
+    @client.start_transfer(@session_spec[PARAM_SPEC])
+    # commands to ascp on mgt port
+    Thread.new do
+      loop do
+        data = JSON.parse($stdin.gets)
+        @client.send_command(data)
+      end
+    rescue => e
+      Aspera::Log.log.error("Error reading commands from stdin: #{e.message}")
+      Process.exit(1)
+    end
+    # No exit code: status is success (0)
+    @client.wait_for_transfers_completion
+    @client.shutdown
+  end
 end
-# No exit code: status is success (0)
-client.wait_for_transfers_completion
-client.shutdown
+
+begin
+  SimpleTransferManager.new(ARGV).start
+rescue UsageError => e
+  Aspera::Log.log.error(e.message)
+  SimpleTransferManager.usage
+  exit(1)
+end

@@ -10,6 +10,7 @@ PANDOC_META_END
 <!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
 <!-- markdownlint-disable MD028 -->
+<!-- markdownlint-disable MD024 -->
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
@@ -17,7 +18,7 @@ PANDOC_META_END
 
 ## Introduction
 
-![Hootput the Owl](docs/ascli-impersonation.svg)
+![Hootput the Owl](docs/mascot.svg)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
@@ -228,15 +229,16 @@ Then, follow the section relative to the product you want to interact with (Aspe
 
 ## Installation
 
-It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a [container](#container) (`docker`, `podman`, `singularity`).
+There are several possibilities to install <%=tool%>:
 
-The direct installation is recommended and consists in installing:
-
-- [Ruby language](#ruby)
-- [<%=gemspec.name%>](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
-- [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp)
-
-Ruby <%=ruby_version%>.
+- As a [single file executable](#single-file-executable),
+- Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
+  This is the most generic method.
+  It consists in installing:
+  - The [Ruby language](#ruby),
+  - Then [<%=gemspec.name%>](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
+  - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
+- As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections provide information on the various installation methods.
 
@@ -247,22 +249,23 @@ If you don't have internet for the installation, refer to section [Installation 
 
 > [!CAUTION]
 > This is a Beta feature.
+> Only on a limited number of platforms.
 
 <%=tool%> is available as a single **platform-dependent executable**.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-Installation:
-
-```shell
-curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.24.1.osx-arm64
-chmod a+x ascli
-./ascli conf transferd install
-```
+#### Installation
 
 > [!NOTE]
 > Replace the URL with the one for your platform.
 > Installation of `ascp` is still required separately.
 > Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+
+```shell
+curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.4.24.1.osx-arm64
+chmod a+x <%=cmd%>
+./<%=cmd%> conf transferd install
+```
 
 #### Linux: GLIBC version
 
@@ -304,13 +307,13 @@ Required Ruby <%=ruby_version%>.
 
 **In priority**, refer to the official Ruby documentation:
 
-- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 - [Official Ruby Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+- [Official Ruby Download](https://www.ruby-lang.org/en/downloads/)
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-Latest version of <%=tool%> requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If only an older Ruby version must be used due to system constraints, then use an older version of <%=tool%> that supports it.
+<%=tool%> requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+If only an older Ruby version must be used due to system constraints, then use an older version of <%=tool%> that supports it, refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
 
 #### Windows: Installer
 
@@ -363,12 +366,10 @@ This installs a recent Ruby suitable for <%=tool%>.
 To add PATH to Ruby on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
-export PATH="$(brew --prefix ruby)/bin:$PATH"
-export PATH="$(gem env gemdir)/bin:$PATH"
+PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
 ```
 
 > [!NOTE]
-> Two separate lines are needed because the second one depends on the first one.
 > This is what is displayed at the end of the installation of the ruby tap,
 > same as message from: `brew info ruby`
 
@@ -376,7 +377,7 @@ export PATH="$(gem env gemdir)/bin:$PATH"
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems
+**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems:
 
 - Check available Ruby versions:
 
@@ -2491,11 +2492,11 @@ Set a global parameter:
 If the default global Option Preset is not set, and you want to use a different name:
 
 ```shell
-<%=cmd%> config preset set GLOBAL version_check_days 0
+<%=cmd%> config preset set default config my_common_defaults
 ```
 
 ```shell
-<%=cmd%> config preset set default config my_common_defaults
+<%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
 <%=include_commands_for_plugin(:config,4)%>
@@ -2837,7 +2838,7 @@ The file containing the private key (key pair) can optionally be protected by a 
 If the key is protected by a passphrase, then it will be prompted when used.
 Some plugins support option `passphrase`.
 
-By default, `ascli` does not support `ed25519` type, nor OpenSSH encoded keys.
+By default, <%=tool%> does not support `ed25519` type, nor OpenSSH encoded keys.
 See section: [Private key type ed25519](#private-key-type-ed25519-not-supported-by-default).
 It requires PEM encoded keys.
 To support `ed25519` and OpenSSH format (default on modern Linux), install those gems:
@@ -3244,41 +3245,41 @@ It provides the following commands for `ascp` sub-command:
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
-Option: `ascp_path` is used to specify the location of `ascp`.
+Option: `sdk_folder` is used to specify the location of `ascp`.
 The default value is: `product:FIRST`.
 By default, <%=tool%> uses any found local product with `ascp`, including Transfer Daemon (SDK).
 
-To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
+To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
-For a permanent change, the command `config ascp use` sets the same option for the global default.
+For a permanent change, set a global default.
 
 Using a POSIX shell:
 
 ```shell
-<%=cmd%> config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
+<%=cmd%> config preset set GLOBAL sdk_folder ~/my_install_dir
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
+Updated: global_common_defaults: sdk_folder <- /Users/laurent/my_install_dir
 Saved to default global preset global_common_defaults
 ```
 
 Windows:
 
 ```text
-<%=cmd%> config ascp use C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
+<%=cmd%> config preset set GLOBAL sdk_folder C:\Users\admin\.aspera\<%=cmd%>\sdk
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
+Updated: global_common_defaults: sdk_folder <- C:\Users\admin\.aspera\<%=cmd%>\sdk
 Saved to default global preset global_common_defaults
 ```
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-A special value `product:<product name>` can be used for option `ascp_path`.
+A special value `product:<product name>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first found.
 
@@ -3289,29 +3290,23 @@ Locally installed Aspera products can be listed with:
 ```
 
 ```text
-+---------------------------------------+----------------------------------------+
-| name                                  | app_root                               |
-+---------------------------------------+----------------------------------------+
-| IBM Aspera SDK                        | /Users/laurent/.aspera/<%=cmd%>/sdk       |
-| Aspera Connect                        | /Applications/Aspera Connect.app       |
-| IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
-| IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
-+---------------------------------------+----------------------------------------+
+╭───────────────────────────────────────┬──────────────────────────────────────╮
+│ name                                  │ app_root                             │
+╞═══════════════════════════════════════╪══════════════════════════════════════╡
+│ IBM Aspera Transfer SDK               │ /Users/laurent/.aspera/sdk           │
+│ IBM Aspera for Desktop                │ /Applications/IBM Aspera.app         │
+│ IBM Aspera Connect                    │ /Applications/IBM Aspera Connect.app │
+│ IBM Aspera High-Speed Transfer Server │ /Library/Aspera                      │
+╰───────────────────────────────────────┴──────────────────────────────────────╯
 ```
 
 To permanently use the `ascp` of a product:
 
 ```shell
-<%=cmd%> config ascp products use 'IBM Aspera Connect'
+<%=cmd%> config preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 Updated: default: config <- global_common_defaults
-Updated: global_common_defaults: ascp_path <- product:IBM Aspera Connect
+Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
 Saving config file.
-```
-
-It is the same as executing:
-
-```shell
-<%=cmd%> config preset set GLOBAL ascp_path 'product:IBM Aspera Connect'
 ```
 
 To show the path of currently used `ascp`:
@@ -3523,18 +3518,18 @@ The communication is done through a JSON file that shall be created in <%=tool%>
 <%=cmd%> config folder
 ```
 
-The name of the file shall be: `send_<PID>`, where `<PID>` is the process id of the running `ascli`.
+The name of the file shall be: `send_<PID>`, where `<PID>` is the process ID of the running <%=tool%>.
 
 If there is only one <%=tool%> running, one can get the PID like this:
 
 ```shell
-ps -axo pid,command|grep ascli|grep -v grep|cut -f1 -d' '
+ps -axo pid,command|grep <%=cmd%>|grep -v grep|cut -f1 -d' '
 ```
 
 Example to change the target rate:
 
 ```shell
-echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
+echo '{"type":"RATE","Rate":300000}' > ~/.aspera/<%=cmd%>/send_67470
 ```
 
 When <%=tool%> detects this file, it uses it during a transfer and then deletes it.
@@ -4510,7 +4505,7 @@ Using: Aspera on Cloud at https://_my_org_.ibmaspera.com
 Path to private RSA key (leave empty to generate):
 option: key_path>
 Using existing key:
-/home/john/.aspera/ascli/my_private_key.pem
+/home/john/.aspera/<%=cmd%>/my_private_key.pem
 Please Log in as user laurent.martin.aspera@fr.ibm.com at: https://_my_org_.ibmaspera.com
 Navigate to: (User) → Account Settings → Profile → Public Key
 Check or update the value to (including BEGIN/END lines):
@@ -4525,7 +4520,7 @@ Using global client_id.
 Preparing preset: aoc_my_org_ibmaspera_com_john_example_com
 Setting config preset as default for aoc
 You can test with:
-ascli aoc user profile show
+<%=cmd%> aoc user profile show
 Saving config file.
 ```
 

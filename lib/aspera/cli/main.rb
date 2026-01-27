@@ -228,7 +228,7 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"}
           Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
@@ -237,7 +237,7 @@ module Aspera
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
           @context.options.final_errors.each do |msg|
-            @context.formatter.display_message(:error, "#{Formatter::ERROR_FLASH} Argument: #{msg}")
+            Log.log.error{"Argument: #{msg}"}
             # Add code as exception if there is not already an error
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end
@@ -291,10 +291,7 @@ module Aspera
         @context.formatter.declare_options(@context.options)
         # Compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        @context.formatter.display_message(
-          :error,
-          "#{Formatter::WARNING_FLASH} Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"
-        ) unless current_prog_name.eql?(Info::CMD_NAME)
+        Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn){"Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"}
         # Declare and parse global options
         declare_global_options
         # Do not display config commands if help is asked

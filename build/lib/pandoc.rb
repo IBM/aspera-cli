@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require 'pathname'
-require 'aspera/environment'
-require 'aspera/log'
 require_relative 'paths'
+require_relative 'build_tools'
+
+include BuildTools
 
 PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::TOP / 'docs' / 'pandoc'
 PANDOC_DEPS = [
@@ -38,9 +39,9 @@ end
 # Get latest git change date, or else just the file's modification date
 def get_change_date(md)
   begin
-    changes = Aspera::Environment.secure_execute('git', 'status', '--porcelain', md.to_s, mode: :capture)
+    changes = run('git', 'status', '--porcelain', md, mode: :capture)
     raise changes unless changes.empty?
-    epoch = Aspera::Environment.secure_execute('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md.to_s, mode: :capture).to_i
+    epoch = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture).to_i
     Time.at(epoch)
   rescue
     Time.now
@@ -49,12 +50,13 @@ end
 
 # Generate PDF from Markdown using pandoc template
 def markdown_to_pdf(md:, pdf:)
-  Aspera::Log.log.info{"Generating: #{pdf}"}
+  log.info{"Generating: #{pdf}"}
   pdf = File.expand_path(pdf)
+  # Paths in README.md are relative to its location
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
     metadatafile = extract_metadata_file(md)
-    Aspera::Environment.secure_execute(
+    run(
       'pandoc',
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
@@ -73,7 +75,7 @@ def markdown_to_html(md:, html:)
   File.expand_path(html)
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
-    Aspera::Environment.secure_execute(
+    run(
       'pandoc',
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_html.yaml'}",

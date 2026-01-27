@@ -1,7 +1,20 @@
 # Refer to README.md for fields and tags
 # --------------------------------------
+asession:
+  command: asession
+  pre: |
+    config = conf_data(conf_data('default.server'))
+    uri = URI.parse(config['url'])
+    remote_host=uri.host
+    remote_port=uri.port
+    remote_user=config['username']
+    remote_pass=config['password']
+  args:
+    - |
+      @json:{"loglevel":"info","spec":{"remote_host":"$(remote_host)","remote_user":"$(remote_user)","ssh_port":$(remote_port),"remote_password":"$(remote_pass)","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}
 unit:
   $comment: Run spec
+  command: null
   tags:
     - nodoc
   pre: Rake::Task[:spec].invoke
@@ -9,24 +22,24 @@ unit:
 shares_health:
   tags:
     - health
-  command:
+  args:
     - shares
     - health
 shares_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - shares
     - health
     - --url=https://wrong.example.com
 shares_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:shares_admin.url"
     - shares
 shares_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:shares_admin.url"
@@ -34,34 +47,34 @@ shares_wizard:
     - --username=test
     - --password=test
 shares_admin_1:
-  command:
+  args:
     - shares
     - admin
     - node
     - list
 shares_admin_2:
-  command:
+  args:
     - shares
     - admin
     - group
     - all
     - list
 shares_admin_3:
-  command:
+  args:
     - shares
     - admin
     - user
     - all
     - list
 shares_admin_4:
-  command:
+  args:
     - shares
     - admin
     - user
     - local
     - list
 shares_admin_5:
-  command:
+  args:
     - shares
     - admin
     - user
@@ -70,7 +83,7 @@ shares_admin_5:
     - "%username:@preset:shares_admin.username"
     - show
 shares_admin_6:
-  command:
+  args:
     - shares
     - admin
     - user
@@ -80,7 +93,7 @@ shares_admin_6:
     - modify
     - '@json:{"app_login":true}'
 shares_admin_7:
-  command:
+  args:
     - shares
     - admin
     - user
@@ -89,7 +102,7 @@ shares_admin_7:
     - "%username:@preset:shares_admin.username"
     - list
 shares_admin_8:
-  command:
+  args:
     - shares
     - admin
     - user
@@ -99,7 +112,7 @@ shares_admin_8:
     - show
     - "%name:@preset:shares.share"
 shares_admin_9:
-  command:
+  args:
     - shares
     - admin
     - user
@@ -109,7 +122,7 @@ shares_admin_9:
 shares_admin_10:
   tags:
     - hide_fail
-  command:
+  args:
     - shares
     - admin
     - user
@@ -117,14 +130,14 @@ shares_admin_10:
     - add
     - the_name
 shares_admin_11:
-  command:
+  args:
     - shares
     - admin
     - share
     - list
     - --fields=DEF,-status,status_message
 shares_admin_12:
-  command:
+  args:
     - shares
     - admin
     - share
@@ -132,13 +145,13 @@ shares_admin_12:
     - "%name:@preset:shares.share"
     - list
 shares_1:
-  command:
+  args:
     - shares
     - files
     - browse
     - /
 shares_2:
-  command:
+  args:
     - shares
     - files
     - upload
@@ -147,7 +160,7 @@ shares_2:
 shares_3:
   depends_on:
     - shares_2
-  command:
+  args:
     - shares
     - files
     - download
@@ -156,7 +169,7 @@ shares_3:
 shares_4:
   depends_on:
     - shares_3
-  command:
+  args:
     - shares
     - files
     - delete
@@ -164,7 +177,7 @@ shares_4:
 shares_5:
   depends_on:
     - shares_4
-  command:
+  args:
     - shares
     - files
     - upload
@@ -174,7 +187,7 @@ shares_5:
     - --preset=no_wss
     - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
 shares_6:
-  command:
+  args:
     - shares
     - files
     - upload
@@ -184,7 +197,7 @@ shares_6:
     - --preset=no_wss
     - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}
 shares_6bis:
-  command:
+  args:
     - shares
     - files
     - upload
@@ -196,7 +209,7 @@ shares_6bis:
 shares_7:
   depends_on:
     - shares_5
-  command:
+  args:
     - shares
     - files
     - download
@@ -209,7 +222,7 @@ shares_7:
 shares_8:
   depends_on:
     - shares_7
-  command:
+  args:
     - shares
     - files
     - delete
@@ -218,7 +231,7 @@ shares_9_prep:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - shares
     - files
     - delete
@@ -226,7 +239,7 @@ shares_9_prep:
 shares_9:
   depends_on:
     - shares_9_prep
-  command:
+  args:
     - shares
     - files
     - mkdir
@@ -234,7 +247,7 @@ shares_9:
 shares_10:
   depends_on:
     - shares_9
-  command:
+  args:
     - shares
     - files
     - delete
@@ -243,7 +256,7 @@ shares_sync_prepare:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - shares
     - files
     - mkdir
@@ -251,7 +264,7 @@ shares_sync_prepare:
 shares_sync_1:
   depends_on:
     - shares_sync_prepare
-  command:
+  args:
     - shares
     - files
     - sync
@@ -262,7 +275,7 @@ shares_sync_1:
 shares_sync_2:
   depends_on:
     - shares_sync_1
-  command:
+  args:
     - shares
     - files
     - sync
@@ -271,7 +284,7 @@ shares_sync_2:
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
 # Server ------------------------------------------------------
 serv_health:
-  command:
+  args:
     - server
     - health
     - transfer
@@ -279,19 +292,19 @@ serv_health:
 serv_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - server
     - health
     - transfer
     - --url=ssh://wrong.example.com
 serv_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:server_user.url"
     - server
 serv_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:server_user.url"
@@ -301,7 +314,7 @@ serv_wizard:
 serv_wizard2:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - wizard
     - "@preset:server.address"
@@ -310,7 +323,7 @@ serv_wizard2:
     - --username=@preset:server_user.username
     - --password=@preset:server_user.password
 serv_browse:
-  command:
+  args:
     - server
     - browse
     - /
@@ -319,12 +332,12 @@ serv_browse_ed25519:
     - nodoc
   env:
     ASCLI_ENABLE_ED25519: "false"
-  command:
+  args:
     - server
     - browse
     - /
 serv_mkdir:
-  command:
+  args:
     - server
     - mkdir
     - "@preset:server.inside_folder"
@@ -334,7 +347,8 @@ serv_error1:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: failed to authenticate
+  args:
     - server
     - --preset=server2_user
     - --password=wrong
@@ -346,7 +360,8 @@ serv_error2:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: Authentication failed
+  args:
     - server
     - --preset=server2_user
     - --password=wrong
@@ -358,7 +373,8 @@ serv_error3:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: Scheme [foo] not supported
+  args:
     - server
     - -N
     - --url=foo://
@@ -369,10 +385,11 @@ serv_error4:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: No such file or directory
+  args:
     - server
     - -N
-    - --url=@preset:node_user.url
+    - --url=@preset:server_user.url
     - upload
     - wrong
     - --ts=@json:{"token":"test"}
@@ -382,24 +399,23 @@ serv_error5:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: No such file or directory
+  args:
     - server
-    - -N
-    - --url=@preset:node_user.url
     - upload
     - wrong
     - --transfer-info=@json:{"resume":{"iter_max":0}}
 serv_ls_local:
   tags:
     - nodoc
-  command:
+  args:
     - -N
     - server
     - --url=local://
     - ls
     - .
 serv_upload_simple:
-  command:
+  args:
     - server
     - upload
     - faux:///test.$(SecureRandom.uuid).bin?1k
@@ -407,7 +423,7 @@ serv_upload_simple:
 serv_upload1:
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - $(PATH_TST_LCL_FILE)
@@ -420,7 +436,7 @@ serv_upload_multi_test:
     - nodoc
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - faux:///serv_upload_multi_test?1k
@@ -433,7 +449,7 @@ serv_upload_multi_test2:
     - noblock
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - faux:///serv_upload_multi_test2?100k
@@ -448,14 +464,14 @@ serv_upload_multi_test2:
 serv_upload1b:
   depends_on:
     - serv_upload1
-  command:
+  args:
     - server
     - browse
     - "@extend:@preset:server.inside_folder@/$(FILENAME_UNICODE)"
 serv_upload2:
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - --src-type=pair
@@ -469,14 +485,14 @@ serv_upload3_prep:
     - nodoc
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - delete
     - "@extend:@preset:server.inside_folder@/other_name_3"
 serv_upload3:
   depends_on:
     - serv_upload3_prep
-  command:
+  args:
     - server
     - upload
     - --src-type=pair
@@ -488,7 +504,7 @@ serv_upload4:
     - grpc
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - --sources=@ts
@@ -497,7 +513,7 @@ serv_upload4:
 serv_upload5:
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - --src-type=pair
@@ -516,7 +532,7 @@ serv_sync_pull_args_reset:
     - serv_upload2
     - serv_upload3
     - serv_upload5
-  command:
+  args:
     - server
     - sync
     - pull
@@ -528,7 +544,7 @@ serv_sync_pull_args_status1:
     - nodoc
   depends_on:
     - serv_sync_pull_args_reset
-  command:
+  args:
     - server
     - sync
     - admin
@@ -540,7 +556,7 @@ serv_sync_pull_args_sync2:
     - nodoc
   depends_on:
     - serv_sync_pull_args_status1
-  command:
+  args:
     - server
     - sync
     - admin
@@ -552,7 +568,7 @@ serv_sync_pull_args_counters:
     - nodoc
   depends_on:
     - serv_sync_pull_args_sync2
-  command:
+  args:
     - config
     - sync
     - admin
@@ -565,7 +581,7 @@ serv_sync_pull_conf_reset:
     (PATH_TMP_SYNCS / 'serv_sync_pull_conf').mkdir
   depends_on:
     - serv_sync_pull_args_counters
-  command:
+  args:
     - server
     - sync
     - pull
@@ -577,9 +593,10 @@ serv_sync_pull_conf_status_fail:
   depends_on:
     - serv_sync_pull_conf_reset
   tags:
-    - hide_fail
+    - must_fail
     - nodoc
-  command:
+  expect: Argument path is a Hash but must be String
+  args:
     - server
     - sync
     - admin
@@ -590,7 +607,7 @@ serv_sync_pull_conf_status:
     - nodoc
   depends_on:
     - serv_sync_pull_conf_reset
-  command:
+  args:
     - server
     - sync
     - admin
@@ -600,7 +617,7 @@ serv_sync_pull_conf_status:
 serv_sync_pull_conf_sync:
   depends_on:
     - serv_sync_pull_conf_reset
-  command:
+  args:
     - server
     - sync
     - pull
@@ -610,7 +627,7 @@ serv_sync_pull_conf_sync:
 serv_sync_pull_conf_status2:
   depends_on:
     - serv_sync_pull_conf_sync
-  command:
+  args:
     - server
     - sync
     - admin
@@ -619,7 +636,7 @@ serv_sync_pull_conf_status2:
 serv_sync_pull_conf_overview:
   depends_on:
     - serv_sync_pull_conf_sync
-  command:
+  args:
     - server
     - sync
     - admin
@@ -628,7 +645,7 @@ serv_sync_pull_conf_overview:
 serv_sync_pull_conf_fileinfo:
   depends_on:
     - serv_sync_pull_conf_sync
-  command:
+  args:
     - server
     - sync
     - admin
@@ -637,7 +654,7 @@ serv_sync_pull_conf_fileinfo:
 serv_upload_ex_list:
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - --sources=@ts
@@ -646,7 +663,7 @@ serv_upload_ex_list:
 serv_upload_ex_pair:
   depends_on:
     - serv_mkdir
-  command:
+  args:
     - server
     - upload
     - --sources=@ts
@@ -654,21 +671,21 @@ serv_upload_ex_pair:
 serv_md5:
   depends_on:
     - serv_upload1
-  command:
+  args:
     - server
     - md5sum
     - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
 serv_down_lcl:
   depends_on:
     - serv_upload1
-  command:
+  args:
     - server
     - download
     - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
     - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
-  command:
+  args:
     - server
     - download
     - "@preset:server.large_file"
@@ -680,7 +697,8 @@ serv_down_from_node_fail:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "Server aborted session: No such file or directory"
+  args:
     - server
     - download
     - file_does_not_exist.random
@@ -689,7 +707,7 @@ serv_down_from_node_fail:
 serv_cp:
   depends_on:
     - serv_upload1
-  command:
+  args:
     - server
     - cp
     - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
@@ -697,7 +715,7 @@ serv_cp:
 serv_mv:
   depends_on:
     - serv_cp
-  command:
+  args:
     - server
     - mv
     - "@extend:@preset:server.upload_folder@/200KB.2"
@@ -705,7 +723,7 @@ serv_mv:
 serv_delete:
   depends_on:
     - serv_mv
-  command:
+  args:
     - server
     - delete
     - "@extend:@preset:server.upload_folder@/to.delete"
@@ -715,27 +733,27 @@ serv_cleanup1:
     - serv_down_from_node
     - serv_down_lcl
     - serv_md5
-  command:
+  args:
     - server
     - delete
     - "@preset:server.inside_folder"
 serv_info:
-  command:
+  args:
     - server
     - info
 serv_du:
-  command:
+  args:
     - server
     - du
     - /
 serv_df:
-  command:
+  args:
     - server
     - df
 serv_health_xfer_nagios:
   tags:
     - health
-  command:
+  args:
     - server
     - health
     - transfer
@@ -745,7 +763,8 @@ serv_health_xfer_nagios_fail:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: (EACCES) creating destination path
+  args:
     - server
     - health
     - transfer
@@ -755,13 +774,13 @@ serv_key_path:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - config
     - ascp
     - info
     - --fields=ssh_private_rsa
 serv_key:
-  command:
+  args:
     - server
     - browse
     - /
@@ -771,7 +790,7 @@ serv_key:
 serv_pr1:
   tags:
     - nodoc
-  command:
+  args:
     - server
     - upload
     - faux:///test1?100m
@@ -783,7 +802,7 @@ serv_pr1:
 serv_pr2:
   tags:
     - nodoc
-  command:
+  args:
     - server
     - upload
     - faux:///test1?100m
@@ -794,39 +813,39 @@ serv_pr2:
 cons_health:
   tags:
     - health
-  command:
+  args:
     - console
     - health
 cons_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - console
     - health
     - --url=https://wrong.example.com
 cons_detect:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - detect
     - "@preset:console_admin.url"
 cons_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:console_admin.url"
     - console
     - --preset=console_admin
 cons_cur_lst:
-  command:
+  args:
     - console
     - transfer
     - current
     - list
     - --query=@json:{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}
 cons_cur_lst_ex:
-  command:
+  args:
     - console
     - transfer
     - current
@@ -836,7 +855,7 @@ console_xfer_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - console
     - transfer
     - current
@@ -846,7 +865,7 @@ console_xfer_id:
 cons_cur_show_one:
   depends_on:
     - console_xfer_id
-  command:
+  args:
     - console
     - transfer
     - current
@@ -855,7 +874,7 @@ cons_cur_show_one:
 cons_cur_show_one1:
   depends_on:
     - console_xfer_id
-  command:
+  args:
     - console
     - transfer
     - current
@@ -867,14 +886,14 @@ cons_cur_show_one2:
     - nodoc
   depends_on:
     - console_xfer_id
-  command:
+  args:
     - console
     - transfer
     - current
     - resume
     - $(read_value_from('console_xfer_id').split("\n").last)
 cons_sma_lst:
-  command:
+  args:
     - console
     - transfer
     - smart
@@ -882,7 +901,7 @@ cons_sma_lst:
 cons_sma_sta:
   tags:
     - ignore_fail
-  command:
+  args:
     - console
     - transfer
     - smart
@@ -896,23 +915,23 @@ cons_sma_sta:
 nd_health:
   tags:
     - health
-  command:
+  args:
     - node
     - health
 nd_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - node
     - health
     - --url=https://wrong.example.com
 nd_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:node_user.url"
 nd_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:node_user.url"
@@ -920,40 +939,40 @@ nd_wizard:
     - --username=test
     - --password=test
 nd_info:
-  command:
+  args:
     - node
     - info
     - --fpac=function FindProxyForURL(url,host){return "DIRECT"}
 nd_lic:
-  command:
+  args:
     - node
     - license
 nd_det:
-  command:
+  args:
     - node
     - api_details
 nd_tra:
-  command:
+  args:
     - node
     - transport
 nd_spec:
-  command:
+  args:
     - node
     - spec
 nd_bro:
-  command:
+  args:
     - node
     - browse
     - /
     - --log-level=trace2
 nd_sea:
-  command:
+  args:
     - node
     - search
     - /
     - --query=@json:{"sort":"mtime"}
 nd_spa:
-  command:
+  args:
     - node
     - space
     - /
@@ -961,21 +980,21 @@ nd_del_err:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - node
     - delete
     - /a_folder
 nd_folder:
   depends_on:
     - nd_del_err
-  command:
+  args:
     - node
     - mkdir
     - "@extend:@preset:server.upload_folder@/a_folder"
 nd_folder2:
   depends_on:
     - nd_folder
-  command:
+  args:
     - node
     - mklink
     - "@extend:@preset:server.upload_folder@/a_folder"
@@ -983,7 +1002,7 @@ nd_folder2:
 nd_folder3:
   depends_on:
     - nd_folder
-  command:
+  args:
     - node
     - mkfile
     - "@extend:@preset:server.upload_folder@/a_file1"
@@ -991,7 +1010,7 @@ nd_folder3:
 nd_folder4:
   depends_on:
     - nd_folder3
-  command:
+  args:
     - node
     - rename
     - "@preset:server.upload_folder"
@@ -1003,14 +1022,14 @@ nd_folder5:
     - nd_folder2
     - nd_folder3
     - nd_folder4
-  command:
+  args:
     - node
     - delete
     - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
 nd2:
   tags:
     - nodoc
-  command:
+  args:
     - node
     - upload
     - $(PATH_TST_ASC_LCL)
@@ -1019,7 +1038,7 @@ nd2:
 nd2b:
   depends_on:
     - nd2
-  command:
+  args:
     - node
     - download
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
@@ -1027,18 +1046,18 @@ nd2b:
 nd2c:
   depends_on:
     - nd2b
-  command:
+  args:
     - node
     - delete
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd_slash:
-  command:
+  args:
     - node
     - slash
 nd2_http:
   tags:
     - nodoc
-  command:
+  args:
     - node
     - upload
     - $(PATH_TST_ASC_LCL)
@@ -1047,19 +1066,19 @@ nd2_http:
 nd2_httpb:
   depends_on:
     - nd2_http
-  command:
+  args:
     - node
     - cat
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd2_httpc:
   depends_on:
     - nd2_httpb
-  command:
+  args:
     - node
     - delete
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
 nd_2_nd_xfer:
-  command:
+  args:
     - node
     - upload
     - --to-folder=@preset:server.upload_folder
@@ -1073,7 +1092,7 @@ nd_2_nd_xferb:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - node
     - delete
     - "@extend:@preset:server.upload_folder@/10MB.2"
@@ -1081,7 +1100,7 @@ nd_service_clean:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1091,7 +1110,7 @@ nd_service_clean:
 nd_service_create:
   depends_on:
     - nd_service_clean
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1100,7 +1119,7 @@ nd_service_create:
 nd_service_list:
   depends_on:
     - nd_service_create
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1109,7 +1128,7 @@ nd_service_list:
 nd_service_delete:
   depends_on:
     - nd_service_list
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1118,7 +1137,7 @@ nd_service_delete:
 nd_service_list_del:
   depends_on:
     - nd_service_delete
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1127,7 +1146,7 @@ nd_service_list_del:
 nd_service_list_del2:
   depends_on:
     - nd_service_list_del
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
@@ -1136,19 +1155,19 @@ nd_service_list_del2:
 nd_service_list_del3:
   depends_on:
     - nd_service_list_del2
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - service
     - list
 nd_xfer_lst:
-  command:
+  args:
     - node
     - transfer
     - list
     - --query=@json:{"active_only":true}
 nd_xfer_lstb:
-  command:
+  args:
     - node
     - transfer
     - list
@@ -1160,7 +1179,7 @@ nd_xfer_lst_once1:
     - nodoc
   depends_on:
     - nd_xfer_lstb
-  command:
+  args:
     - node
     - transfer
     - list
@@ -1171,13 +1190,13 @@ nd_xfer_lst_once2:
     - nodoc
   depends_on:
     - nd_xfer_lst_once1
-  command:
+  args:
     - node
     - transfer
     - list
     - --once-only=yes
 nd_xfer_sess_lst:
-  command:
+  args:
     - node
     - transfer
     - sessions
@@ -1185,7 +1204,7 @@ nd_xfer_ops:
   tags:
     - nodoc
     - noblock
-  command:
+  args:
     - node
     - upload
     - --to-folder=@preset:server.upload_folder
@@ -1197,112 +1216,113 @@ nd_xfer_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - node
     - transfer
     - list
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
 nd_xfer_ops3:
-  command:
+  args:
     - node
     - transfer
     - show
     - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops4:
-  command:
+  args:
     - node
     - transfer
     - modify
     - $(read_value_from 'nd_xfer_id')
     - '@json:{"target_rate_kbps":10000}'
 nd_xfer_ops5:
-  command:
+  args:
     - node
     - transfer
     - show
     - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops6:
-  command:
+  args:
     - node
     - transfer
     - cancel
     - $(read_value_from 'nd_xfer_id')
 nd_xfer_ops7:
-  command:
+  args:
     - node
     - transfer
     - bandwidth_average
 nd_xfer_ops8:
-  command:
+  args:
     - node
     - transfer
     - sessions
 node_basic_token:
-  command:
+  args:
     - node
     - basic_token
 nd_browser:
-  command:
+  args:
     - node
     - asperabrowser
 nd8:
-  command:
+  args:
     - node
     - upload
     - --username=@preset:aoc.ak_name
     - --password=@preset:aoc.ak_secret
     - $(PATH_TST_ASC_LCL)
 nd_central_1:
-  command:
+  args:
     - node
     - central
     - session
     - list
 nd_central_1b:
-  command:
+  args:
     - node
     - central
     - file
     - list
 nd_central_1c:
-  command:
+  args:
     - node
     - central
     - file
     - modify
     - --validator=1
     - '@json:{"files":[]}'
-nd_watch_1:
-  command:
+nd_watch_list:
+  args:
     - node
     - watch_folder
     - list
     - --preset=node_ak_adm
 nd_watch_1b:
+  $comment: Fails because watchfolderd is not running
   tags:
     - hide_fail
     - nodoc
-  command:
+  args:
     - node
     - watch_folder
     - create
     - '@json:{"source":{"path":"/src1"},"target":{"path":"/dst1"}}'
     - --preset=node_ak_adm
 nd_stream_1:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - stream
     - list
 nd_ak:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
     - list
 nd_akb:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1312,7 +1332,7 @@ nd_akb:
     - /
     - --secret=@preset:aoc.ak_secret
 nd_akc:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1326,7 +1346,8 @@ nd_akd:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: Please provide secret
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1335,7 +1356,7 @@ nd_akd:
     - find
     - "@json:{}"
 nd_ake:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1347,7 +1368,7 @@ nd_ake:
       @ruby:->(f){f["name"].end_with?(".jpg")}
     - --secret=@preset:aoc.ak_secret
 nd_akf:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1358,7 +1379,7 @@ nd_akf:
     - '@re:\.jpg$'
     - --secret=@preset:aoc.ak_secret
 nd_akg:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1371,7 +1392,7 @@ nd_ak_mkdir:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1382,7 +1403,7 @@ nd_ak_mkdir:
     - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkdirb:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1396,7 +1417,7 @@ nd_ak_mkfile:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1407,7 +1428,7 @@ nd_ak_mkfile:
     - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfileb:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1424,7 +1445,7 @@ nd_ak_mklink:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1435,7 +1456,7 @@ nd_ak_mklink:
     - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mklinkb:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1451,7 +1472,7 @@ nd_ak_mvdir:
     - nodoc
   depends_on:
     - nd_ak_mkdir
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1462,7 +1483,7 @@ nd_ak_mvdir:
     - --node-cache=no
     - --secret=@preset:aoc.ak_secret
 nd_ak_mvdirb:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1475,7 +1496,7 @@ nd_ak_mvdirb:
 nd_ak_deldir:
   depends_on:
     - nd_ak_mvdir
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1485,7 +1506,7 @@ nd_ak_deldir:
     - /test_nd_ak2
     - --secret=@preset:aoc.ak_secret
 nd_ak3:
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1498,7 +1519,7 @@ nd_ak3:
 nd_ak3b:
   depends_on:
     - nd_ak3
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1514,7 +1535,7 @@ nd_ak3c:
     - nodoc
   depends_on:
     - nd_ak3
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1529,7 +1550,7 @@ nd_ak3d:
     - nodoc
   depends_on:
     - nd_ak3
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1543,7 +1564,7 @@ nd_ak3e:
     - nd_ak3b
     - nd_ak3c
     - nd_ak3d
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1555,7 +1576,7 @@ nd_ak3e:
 nd_ak4:
   depends_on:
     - nd_ak3e
-  command:
+  args:
     - --preset=node_ak_adm
     - node
     - access_key
@@ -1568,7 +1589,7 @@ nd_ak_bearer_reset:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - node
     - -N
     - --preset=tst_node_preview
@@ -1579,7 +1600,7 @@ nd_ak_bearer_reset:
 nd_ak_bearer_create:
   depends_on:
     - nd_ak_bearer_reset
-  command:
+  args:
     - node
     - -N
     - --preset=tst_node_preview
@@ -1590,7 +1611,7 @@ nd_ak_bearer_create:
 nd_ak_bearer_show:
   depends_on:
     - nd_ak_bearer_create
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1601,7 +1622,7 @@ nd_ak_bearer_show:
 nd_ak_bearer_set_key:
   depends_on:
     - nd_ak_bearer_create
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1616,7 +1637,7 @@ bearer_root_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1630,7 +1651,7 @@ bearer_root_id:
 nd_ak_bearerf:
   depends_on:
     - nd_ak_bearer_create
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1645,7 +1666,7 @@ nd_ak_bearerf:
 nd_ak_bearerg:
   depends_on:
     - nd_ak_bearerf
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1663,7 +1684,7 @@ node_bearer_token:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - --preset=ak_creds
@@ -1674,7 +1695,7 @@ node_bearer_token:
 nd_ak_beareri:
   depends_on:
     - nd_ak_bearer_create
-  command:
+  args:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
@@ -1688,7 +1709,7 @@ nd_ak_beareri:
 nd_ak_bearer_del_perm:
   depends_on:
     - nd_ak_beareri
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - node
@@ -1703,7 +1724,7 @@ nd_ak_bearer_del_perm:
 nd_ak_bearerk:
   depends_on:
     - nd_ak_bearer_del_perm
-  command:
+  args:
     - -N
     - --preset=tst_node_preview
     - node
@@ -1712,23 +1733,23 @@ nd_ak_bearerk:
     - "@preset:ak_creds.username"
 # AoC ------------------------------------------------------
 aoc_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:aoc.org"
     - aoc
 aoc_wizard:
-  command:
+  args:
     - config
     - tokens
     - flush
 aoc_wizardb:
-  command:
+  args:
     - config
     - tokens
     - list
 aoc_wizardc:
-  command:
+  args:
     - config
     - wizard
     - "@preset:aoc.org"
@@ -1739,7 +1760,7 @@ aoc_wizardc:
 aoc_wizard_2:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - tokens
     - flush
@@ -1748,7 +1769,8 @@ aoc_wizard_2b:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: Unknown identifier
+  args:
     - config
     - tokens
     - show
@@ -1756,7 +1778,7 @@ aoc_wizard_2b:
 aoc_wizard_2c:
   depends_on:
     - aoc_wizard_2
-  command:
+  args:
     - config
     - wizard
     - "@preset:aoc.org"
@@ -1767,7 +1789,7 @@ aoc_wizard_2c:
 aoc_faspex_gateway:
   tags:
     - noblock
-  command:
+  args:
     - aoc
     - gateway
     - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
@@ -1776,7 +1798,7 @@ aoc_faspex_gatewayb:
     - aoc_faspex_gateway
   tags:
     - nodoc
-  command:
+  args:
     - -N
     - faspex
     - --url=https://localhost:12346/aspera/faspex
@@ -1789,96 +1811,96 @@ aoc_faspex_gatewayb:
     - faux:///test1?1m
   post: stop_process 'aoc_faspex_gateway'
 aocg1:
-  command:
+  args:
     - -N
     - aoc
     - servers
 aocg1b:
-  command:
+  args:
     - -N
     - aoc
     - remind
     - --username=@preset:aoc.user_email
 aocg2:
-  command:
+  args:
     - aoc
     - bearer_token
     - --display=data
 aocg2b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - bearer_token
     - --display=data
 aocg3:
-  command:
+  args:
     - aoc
     - organization
 aocg3b:
-  command:
+  args:
     - aoc
     - organization
     - --format=image
     - --fields=background_image_url
     - --ui=text
 aocg3c:
-  command:
+  args:
     - aoc
     - tier_restrictions
 aocg4:
-  command:
+  args:
     - aoc
     - user
     - workspaces
     - list
 aoc_user_profile:
-  command:
+  args:
     - aoc
     - user
     - profile
     - show
 aocg6:
-  command:
+  args:
     - aoc
     - user
     - profile
     - modify
     - '@json:{"name":"dummy change"}'
 aocuprefshow:
-  command:
+  args:
     - aoc
     - user
     - pref
     - show
 aocuprefmod:
-  command:
+  args:
     - aoc
     - user
     - pref
     - modify
     - '@json:{"default_language":"en-us"}'
 aocucontactlist:
-  command:
+  args:
     - aoc
     - user
     - contacts
     - list
 aocg7:
-  command:
+  args:
     - aoc
     - packages
     - shared_inboxes
     - list
 aocg7b:
-  command:
+  args:
     - aoc
     - packages
     - shared_inboxes
     - show
     - "%name:@preset:aoc.shared_inbox_name"
 aocg8:
-  command:
+  args:
     - aoc
     - user
     - workspaces
@@ -1886,7 +1908,7 @@ aocg8:
 aoc_webauth:
   tags:
     - interactive
-  command:
+  args:
     - --preset=aoc_web
     - aoc
     - user
@@ -1896,7 +1918,7 @@ aoc_webauthb:
   tags:
     - interactive
     - nodoc
-  command:
+  args:
     - --preset=aoc_web
     - aoc
     - user
@@ -1904,51 +1926,51 @@ aoc_webauthb:
     - show
     - --http-options=@json:{"token_refresh_threshold":10000000000}
 aocfbr:
-  command:
+  args:
     - aoc
     - files
     - browse
     - /
 aocfbr1:
-  command:
+  args:
     - aoc
     - files
     - browse
     - "@preset:aoc.remote_folder"
 aocfbr1b:
-  command:
+  args:
     - aoc
     - files
     - browse
     - "@extend:@preset:aoc.remote_folder@/"
 aocfbr1c:
-  command:
+  args:
     - aoc
     - files
     - browse
     - "@preset:aoc.remote_file"
 aocfbt:
-  command:
+  args:
     - aoc
     - files
     - bearer_token_node
     - /
     - --cache-tokens=no
 aocffin:
-  command:
+  args:
     - aoc
     - files
     - find
     - /sample_video
 aocffinb:
-  command:
+  args:
     - aoc
     - files
     - find
     - /sample_video
     - \.partial$
 aocffinc:
-  command:
+  args:
     - aoc
     - files
     - find
@@ -1958,7 +1980,7 @@ aoc_testsrc_cleanup:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - delete
@@ -1968,7 +1990,7 @@ aoc_some_folder_cleanup:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - delete
@@ -1977,7 +1999,7 @@ aoc_testdst_cleanup:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - delete
@@ -1986,7 +2008,7 @@ aoc_testdst_cleanup:
 aoc_testsrc_create:
   depends_on:
     - aoc_testsrc_cleanup
-  command:
+  args:
     - aoc
     - files
     - mkdir
@@ -1996,7 +2018,7 @@ aoc_some_folder_create:
     - aoc_some_folder_cleanup
   tags:
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - mkdir
@@ -2010,7 +2032,7 @@ aoc_testdst_check:
     - aoc_testdst_cleanup
   tags:
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - browse
@@ -2019,7 +2041,7 @@ aoc_testdst_check:
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
-  command:
+  args:
     - aoc
     - files
     - modify
@@ -2028,7 +2050,7 @@ aoc_somefolder_mount:
 aoc_rename_testdst:
   depends_on:
     - aoc_somefolder_mount
-  command:
+  args:
     - aoc
     - files
     - rename
@@ -2037,7 +2059,7 @@ aoc_rename_testdst:
 aoc_testsrc_upload:
   depends_on:
     - aoc_testsrc_create
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2046,7 +2068,7 @@ aoc_testsrc_upload:
 aoc_testsrc_upload_2:
   depends_on:
     - aoc_testsrc_upload
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2056,7 +2078,7 @@ aoc_testsrc_upload_2:
 aoc_files_transfer:
   depends_on:
     - aoc_testsrc_upload_2
-  command:
+  args:
     - aoc
     - files
     - transfer
@@ -2069,7 +2091,7 @@ aocftrb:
     - aoc_testsrc_upload_2
   tags:
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2081,7 +2103,7 @@ aoc_files_node_info:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - node_info
@@ -2093,7 +2115,7 @@ aocndinfb:
     - nodoc
   depends_on:
     - aoc_files_node_info
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2106,13 +2128,13 @@ aocfdel:
   depends_on:
     - aoc_files_transfer
     - aoc_files_node_info
-  command:
+  args:
     - aoc
     - files
     - delete
     - /testsrc
 aocfbearnode:
-  command:
+  args:
     - aoc
     - files
     - bearer
@@ -2120,7 +2142,7 @@ aocfbearnode:
 aocfdownd:
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - download
@@ -2130,7 +2152,7 @@ aocfdownd:
 aocfdowndb:
   tags:
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - download
@@ -2143,7 +2165,7 @@ aocfdownc:
     PATH_DOWN_TST_ASC.delete rescue nil
     run('killall', 'asperaconnect', exception: false)
     sleep 1
-  command:
+  args:
     - aoc
     - files
     - download
@@ -2153,7 +2175,7 @@ aocfdowna:
   depends_on:
     - aoc_testdst_cleanup
   pre: PATH_DOWN_TST_ASC.delete rescue nil
-  command:
+  args:
     - aoc
     - files
     - download
@@ -2162,13 +2184,13 @@ aocfdowna:
 aoc_files_cat:
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - cat
     - testdst/$(FILENAME_ASCII)
 aoc_files_v3_info:
-  command:
+  args:
     - aoc
     - files
     - v3
@@ -2177,7 +2199,7 @@ aoc_sync_pull_conf_parms:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
-  command:
+  args:
     - aoc
     - files
     - sync
@@ -2186,7 +2208,7 @@ aoc_sync_pull_conf_parms:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_parmsb:
-  command:
+  args:
     - aoc
     - files
     - sync
@@ -2197,7 +2219,7 @@ aoc_sync_conf_pull_params:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
-  command:
+  args:
     - aoc
     - files
     - sync
@@ -2206,7 +2228,7 @@ aoc_sync_conf_pull_params:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_paramsb:
-  command:
+  args:
     - aoc
     - files
     - sync
@@ -2219,7 +2241,7 @@ aoc_file_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - aoc
     - files
     - br
@@ -2230,7 +2252,7 @@ aoc_file_id:
 aoc_file_id_2:
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - show
@@ -2238,7 +2260,7 @@ aoc_file_id_2:
 aoc_file_id_3:
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - show
@@ -2246,7 +2268,7 @@ aoc_file_id_3:
 aoc_file_id_4:
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - show
@@ -2257,7 +2279,7 @@ aoc_file_id_5:
     - nodoc
   depends_on:
     - aoc_files_transfer
-  command:
+  args:
     - aoc
     - files
     - mkdir
@@ -2267,7 +2289,7 @@ aoc_file_id_6:
     - nodoc
   depends_on:
     - aoc_file_id_5
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2283,7 +2305,7 @@ aoc_file_id_7:
     - nodoc
   depends_on:
     - aoc_file_id_5
-  command:
+  args:
     - aoc
     - files
     - upload
@@ -2294,7 +2316,7 @@ aoc_file_id_7:
 aoc_file_id_8:
   depends_on:
     - aoc_file_id_5
-  command:
+  args:
     - aoc
     - files
     - permission
@@ -2303,7 +2325,7 @@ aoc_file_id_8:
 aoc_file_id_9:
   depends_on:
     - aoc_file_id_6
-  command:
+  args:
     - aoc
     - files
     - thumbnail
@@ -2313,7 +2335,7 @@ aoc_file_id_10:
     - rmagick
   depends_on:
     - aoc_file_id_6
-  command:
+  args:
     - aoc
     - files
     - thumbnail
@@ -2325,7 +2347,7 @@ aoc_file_id_11:
     - rmagick
   depends_on:
     - aoc_file_id_6
-  command:
+  args:
     - aoc
     - files
     - thumbnail
@@ -2339,14 +2361,14 @@ aoc_file_id_12:
     - rmagick
   depends_on:
     - aoc_file_id_6
-  command:
+  args:
     - aoc
     - files
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
 #	 aoc files modify @preset:aoc.test_folder
 aocfpub:
-  command:
+  args:
     - -N
     - aoc
     - files
@@ -2354,7 +2376,7 @@ aocfpub:
     - /
     - --url=@preset:aoc.public_link_folder_no_pass
 aocfpubb:
-  command:
+  args:
     - -N
     - aoc
     - files
@@ -2363,7 +2385,7 @@ aocfpubb:
     - --url=@preset:aoc.public_link_folder_pass
     - --password=@preset:aoc.public_link_password
 aocfpubc:
-  command:
+  args:
     - -N
     - aoc
     - files
@@ -2372,14 +2394,14 @@ aocfpubc:
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_folder_no_pass
 aoc_lnk_priv:
-  command:
+  args:
     - aoc
     - files
     - browse
     - /
     - --url=@preset:aoc.private_link
 aocshlk2:
-  command:
+  args:
     - aoc
     - files
     - short_link
@@ -2387,7 +2409,7 @@ aocshlk2:
     - private
     - create
 aocshlk3:
-  command:
+  args:
     - aoc
     - files
     - short_link
@@ -2398,7 +2420,7 @@ aocshlk1:
   depends_on:
     - aocshlk2
     - aocshlk3
-  command:
+  args:
     - aoc
     - files
     - short_link
@@ -2406,7 +2428,7 @@ aocshlk1:
     - private
     - list
 aoc_pack_send1:
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2414,7 +2436,7 @@ aoc_pack_send1:
     - note"}'
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2422,7 +2444,7 @@ aoc_pack_send2:
     - --new-user-option=@json:{"package_contact":true}
     - $(PATH_TST_ASC_LCL)
 aocp2:
-  command:
+  args:
     - aoc
     - packages
     - list
@@ -2435,7 +2457,7 @@ package_id3:
     - save_output
     - wait_value
     - nodoc
-  command:
+  args:
     - aoc
     - packages
     - list
@@ -2446,7 +2468,7 @@ package_id3:
 aocp3b:
   depends_on:
     - aoc_pack_send1
-  command:
+  args:
     - aoc
     - packages
     - receive
@@ -2455,7 +2477,7 @@ aocp3b:
 aocp3c:
   depends_on:
     - aoc_pack_send1
-  command:
+  args:
     - aoc
     - packages
     - receive
@@ -2465,14 +2487,14 @@ aocp3c:
 aocp3d:
   depends_on:
     - aocp3c
-  command:
+  args:
     - aoc
     - packages
     - browse
     - $(read_value_from 'package_id3')
     - /
 aocp4:
-  command:
+  args:
     - aoc
     - packages
     - receive
@@ -2484,13 +2506,13 @@ aocp4:
     - --package-folder.fld.1=id
     - --package-folder.opt=true
 aocp5:
-  command:
+  args:
     - aoc
     - organization
     - -N
     - --url=@preset:aoc.public_link_recv_from_aoc_user
 aocp_send_pub_sh:
-  command:
+  args:
     - -N
     - aoc
     - packages
@@ -2499,7 +2521,7 @@ aocp_send_pub_sh:
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_shared_inbox
 aocp_send_pub_usr:
-  command:
+  args:
     - -N
     - aoc
     - packages
@@ -2509,7 +2531,7 @@ aocp_send_pub_usr:
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
 aocp_recv_init:
-  command:
+  args:
     - aoc
     - packages
     - receive
@@ -2519,7 +2541,7 @@ aocp_recv_init:
 aocp_send_shbx:
   depends_on:
     - aocp_recv_init
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2529,7 +2551,7 @@ aocp_send_shbx:
 aocp_send_sh_meta_long:
   depends_on:
     - aocp_recv_init
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2540,7 +2562,7 @@ aocp_send_sh_meta_long:
 aocp_send_sh_meta_short:
   depends_on:
     - aocp_recv_init
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2553,9 +2575,10 @@ aocp_send_sh_meta_short2:
   tags:
     - must_fail
     - nodoc
+  expect: "missing mandatory field: Project Id"
   depends_on:
     - aocp_recv_init
-  command:
+  args:
     - aoc
     - packages
     - send
@@ -2568,7 +2591,7 @@ aocp_recv_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  command:
+  args:
     - aoc
     - packages
     - receive
@@ -2583,34 +2606,34 @@ aocp_list_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  command:
+  args:
     - aoc
     - packages
     - list
     - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
 aoc_adm_authp_lst:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - auth_providers
     - list
 aoc_adm_authp_lst2:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - subscription
     - account
 aoc_adm_authp_lst3:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - subscription
     - usage
 aoc_adm_authp_lst4:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2618,14 +2641,14 @@ aoc_adm_authp_lst4:
     - usage
     - MONTH
 aoc_adm_ws_lst:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - workspace
     - list
 aoc_adm_ws_lst2:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2634,7 +2657,7 @@ aoc_adm_ws_lst2:
     - "%name:@preset:aoc.other_workspace"
     - list
 aoc_adm_ws_lst3:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2646,7 +2669,7 @@ shared_folder_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2657,7 +2680,7 @@ shared_folder_id:
     - --query.max=1
     - --fields=id
 aoc_adm_ws_lst5:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2668,7 +2691,7 @@ aoc_adm_ws_lst5:
     - $(read_value_from 'shared_folder_id')
     - list
 aoc_adm_nd_events:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2679,7 +2702,7 @@ aoc_adm_nd_events:
     - v3
     - events
 aoc_adm_ak_create:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2692,7 +2715,7 @@ aoc_adm_ak_create:
 aoc_adm_ak_browse:
   depends_on:
     - aoc_adm_ak_create
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2706,7 +2729,7 @@ aoc_adm_ak_browse:
 aoc_adm_ak_sub_ak:
   depends_on:
     - aoc_adm_ak_create
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2723,7 +2746,7 @@ aoc_adm_ak_del:
     - aoc_adm_ak_create
     - aoc_adm_ak_browse
     - aoc_adm_ak_sub_ak
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2738,7 +2761,7 @@ aoc_adm_ak_del:
 aoc_adm_ak_dir_del:
   depends_on:
     - aoc_adm_ak_del
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2749,7 +2772,7 @@ aoc_adm_ak_dir_del:
     - delete
     - /folder_sub
 aoc_adm_nd_br:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2763,7 +2786,7 @@ aoc_adm_nd_mkdir_prep:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2778,7 +2801,7 @@ aoc_adm_nd_mkdir_prep:
 aoc_adm_nd_mkdir:
   depends_on:
     - aoc_adm_nd_mkdir_prep
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2794,7 +2817,7 @@ aoc_adm_nd_brse:
     - nodoc
   depends_on:
     - aoc_adm_nd_mkdir
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2809,7 +2832,7 @@ aoc_adm_nd_rmdir:
   depends_on:
     - aoc_adm_nd_mkdir
     - aoc_adm_nd_brse
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2820,7 +2843,7 @@ aoc_adm_nd_rmdir:
     - delete
     - /folder1
 aoc_adm_wsm_lst:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2829,7 +2852,7 @@ aoc_adm_wsm_lst:
     - --fields=ALL
     - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
 aoc_adm_grm_lst:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2838,7 +2861,7 @@ aoc_adm_grm_lst:
     - --fields=ALL
     - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
 aoc15:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2850,7 +2873,7 @@ aoc15:
     - |
       --notify-template=@ruby:%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}
 aoc15bb:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2860,7 +2883,7 @@ aoc_transfer_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2872,7 +2895,7 @@ aoc_transfer_id:
 aoc_ana_files:
   depends_on:
     - aoc_transfer_id
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2882,7 +2905,7 @@ aoc_ana_files:
     - ''
     - $(read_value_from 'aoc_transfer_id')
 aoc16:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2892,28 +2915,28 @@ aoc16:
     - --once-only=yes
 #	 --preset=aoc_admin aoc admin analytics transfers nodes
 aoc_adm_res_01:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - self
     - show
 aoc_adm_res_01b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - organization
     - show
 aoc_adm_res_01c:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - user
     - list
 aoc_adm_res_01d:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2922,49 +2945,49 @@ aoc_adm_res_01d:
     - "@extend:%name:@preset:aoc.user_email@"
     - '@json:{"deactivated":false}'
 aoc_adm_res_02:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - group
     - list
 aoc_adm_res_02b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - client
     - list
 aoc_adm_res_02c:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - contact
     - list
 aoc_adm_res_02d:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - dropbox
     - list
 aoc_adm_res_03:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - node
     - list
 aoc_adm_res_03b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - operation
     - list
 aoc_adm_res_03c:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -2972,56 +2995,56 @@ aoc_adm_res_03c:
     - list
     - --http-options=@json:{"read_timeout":120.0}
 aoc_adm_res_03d:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - saml_configuration
     - list
 aoc_adm_res_04:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - dropbox_membership
     - list
 aoc_adm_res_04b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - workspace_membership
     - list
 aoc_adm_res_04c:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - short_link
     - list
 aoc_adm_res_05:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - application
     - list
 aoc_adm_res_05b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - client_access_key
     - list
 aoc_adm_res_05c:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
     - kms_profile
     - list
 aoccltreg:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3029,7 +3052,7 @@ aoccltreg:
     - create
     - '@json:{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 aoccltregb:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3039,7 +3062,7 @@ client_reg_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3050,7 +3073,7 @@ client_reg_id:
     - --display=data
     - --query.max=1
 aoccltregd:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3061,7 +3084,7 @@ aoc_adm_node_bearer:
   $comment: TODO fix this
   tags:
     - ignore_fail
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3072,7 +3095,7 @@ aocadmndcr:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3086,7 +3109,7 @@ aocadmndcrb:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3097,7 +3120,7 @@ aocadmndcrb:
     - test_shared_folder
     - --node-cache=no
 aocadmndcrc:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3109,7 +3132,7 @@ aocadmndcrc:
 aocadmndcrd:
   tags:
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3122,7 +3145,7 @@ aocadmndcrd:
 aocadmndsh1:
   depends_on:
     - aocadmndcr
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3137,7 +3160,7 @@ aocadmndsh1:
 aocadmndsh2:
   depends_on:
     - aocadmndsh1
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3152,7 +3175,7 @@ aocadmndsh2:
 aocadmndsh3:
   depends_on:
     - aocadmndsh1
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3168,7 +3191,7 @@ aocadmndsh4:
   depends_on:
     - aocadmndsh2
     - aocadmndsh3
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3178,21 +3201,21 @@ aocadmndsh4:
     - delete
     - test_shared_folder
 aocat4:
-  command:
+  args:
     - aoc
     - admin
     - ats
     - cluster
     - list
 aocat5:
-  command:
+  args:
     - aoc
     - admin
     - ats
     - cluster
     - clouds
 aocat6:
-  command:
+  args:
     - aoc
     - admin
     - ats
@@ -3201,7 +3224,7 @@ aocat6:
     - --cloud=aws
     - --region=eu-west-1
 aocat7:
-  command:
+  args:
     - aoc
     - admin
     - ats
@@ -3212,7 +3235,7 @@ aocat7:
 aocat8:
   tags:
     - ignore_fail
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3223,7 +3246,7 @@ aocat8:
 aocat8b:
   depends_on:
     - aocat8
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3236,7 +3259,7 @@ aocat8b:
 aocat9:
   tags:
     - hide_fail
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3249,7 +3272,7 @@ aocat9:
 aocat10:
   tags:
     - hide_fail
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3258,7 +3281,7 @@ aocat10:
     - list
     - --fields=name,id
 aocat11:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3273,7 +3296,7 @@ aocat13:
   tags:
     - hide_fail
     - nodoc
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - admin
@@ -3282,7 +3305,7 @@ aocat13:
     - delete
     - ak1ibmcloud
 aocauto1:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
@@ -3294,7 +3317,7 @@ wf_id:
     - save_output
   depends_on:
     - aocauto1
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
@@ -3303,14 +3326,14 @@ wf_id:
     - --select=@json:{"name":"test_workflow"}
     - --fields=id
 aocauto2:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
     - workflow
     - list
 aocauto2b:
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
@@ -3323,7 +3346,7 @@ aocauto3:
     - wf_id
   tags:
     - ignore_fail
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
@@ -3339,7 +3362,7 @@ aocauto3:
 aocauto10:
   depends_on:
     - wf_id
-  command:
+  args:
     - --preset=aoc_admin
     - aoc
     - automation
@@ -3347,15 +3370,17 @@ aocauto10:
     - delete
     - $(read_value_from 'wf_id')
 orch_health:
-  command:
+  args:
     - orchestrator
     - health
 orch_health_bad:
+  $comment: With nagios format, error goes to stdout and exit code is set.
   description: Try to use wrong URL.
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: ""
+  args:
     - orchestrator
     - health
     - --url=https://wrong.url
@@ -3363,12 +3388,12 @@ orch_health_bad:
 orch_detect:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - detect
     - "@preset:orch_user.url"
 orch_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:orch_user.url"
@@ -3376,41 +3401,41 @@ orch_wizard:
     - --username=test
     - --password=test
 orch_info:
-  command:
+  args:
     - orchestrator
     - info
 orch_wf_list:
-  command:
+  args:
     - orchestrator
     - workflow
     - list
 orch_wf_sta:
-  command:
+  args:
     - orchestrator
     - workflow
     - status
     - ALL
 orch_wf_inp:
-  command:
+  args:
     - orchestrator
     - workflow
     - inputs
     - "@preset:orch.workflow_id"
 orch_wf_sti:
-  command:
+  args:
     - orchestrator
     - workflow
     - status
     - "@preset:orch.workflow_id"
 orch_wf_str1:
-  command:
+  args:
     - orchestrator
     - workflow
     - start
     - "@preset:orch.workflow_id"
     - '@json:{"Param":"world !"}'
 orch_wf_str2:
-  command:
+  args:
     - orchestrator
     - workflow
     - start
@@ -3418,37 +3443,37 @@ orch_wf_str2:
     - '@json:{"Param":"world !"}'
     - --result=ResultStep:Complete_status_message
 orch_plugins:
-  command:
+  args:
     - orchestrator
     - plugins
 orch_processes:
-  command:
+  args:
     - orchestrator
     - processes
 orch_monitors:
-  command:
+  args:
     - orchestrator
     - monitors
 orch_wf_details:
-  command:
+  args:
     - orchestrator
     - workflow
     - details
     - "@preset:orch.workflow_id"
 orch_wf_outputs:
-  command:
+  args:
     - orchestrator
     - workflow
     - outputs
     - "@preset:orch.workflow_id"
 orch_wf_workorders:
-  command:
+  args:
     - orchestrator
     - workflow
     - workorders
     - "@preset:orch.workflow_id"
 orch_wf_export:
-  command:
+  args:
     - orchestrator
     - workflow
     - export
@@ -3456,7 +3481,7 @@ orch_wf_export:
 orch_workorder_id:
   tags:
     - save_output
-  command:
+  args:
     - orchestrator
     - workflow
     - workorders
@@ -3466,7 +3491,7 @@ orch_workorder_id:
 orch_workorder_status:
   depends_on:
     - orch_workorder_id
-  command:
+  args:
     - orchestrator
     - workorder
     - status
@@ -3474,7 +3499,7 @@ orch_workorder_status:
 orch_workorder_cancel:
   depends_on:
     - orch_workorder_id
-  command:
+  args:
     - orchestrator
     - workorder
     - cancel
@@ -3482,7 +3507,7 @@ orch_workorder_cancel:
 orch_workorder_reset:
   depends_on:
     - orch_workorder_id
-  command:
+  args:
     - orchestrator
     - workorder
     - reset
@@ -3490,7 +3515,7 @@ orch_workorder_reset:
 orch_workorder_output:
   depends_on:
     - orch_workorder_id
-  command:
+  args:
     - orchestrator
     - workorder
     - output
@@ -3499,7 +3524,7 @@ orch_workstep_status:
   $comment: TODO get some workstep id
   tags:
     - ignore_fail
-  command:
+  args:
     - orchestrator
     - workstep
     - status
@@ -3508,51 +3533,51 @@ orch_workstep_cancel:
   $comment: TODO get some workstep id
   tags:
     - ignore_fail
-  command:
+  args:
     - orchestrator
     - workstep
     - cancel
     - 1
 at4:
-  command:
+  args:
     - ats
     - cluster
     - list
 at4b:
-  command:
+  args:
     - ats
     - aws_trust_policy
     - --region=us-east-1
 at5:
-  command:
+  args:
     - ats
     - cluster
     - clouds
 at6:
-  command:
+  args:
     - ats
     - cluster
     - show
     - --cloud=aws
     - --region=eu-west-1
 at7:
-  command:
+  args:
     - ats
     - cluster
     - show
     - 1f412ae7-869a-445c-9c05-02ad16813be2
 at2:
-  command:
+  args:
     - ats
     - api_key
     - instances
 at1:
-  command:
+  args:
     - ats
     - api_key
     - list
 at3:
-  command:
+  args:
     - ats
     - api_key
     - create
@@ -3560,7 +3585,7 @@ at8_prep:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - ats
     - access_key
     - delete
@@ -3569,7 +3594,7 @@ at8_prep:
 at8b:
   depends_on:
     - at8_prep
-  command:
+  args:
     - ats
     - access_key
     - create
@@ -3580,7 +3605,7 @@ at8b:
 at8c:
   depends_on:
     - at8b
-  command:
+  args:
     - ats
     - access_key
     - show
@@ -3588,7 +3613,7 @@ at8c:
 at8d:
   depends_on:
     - at8b
-  command:
+  args:
     - ats
     - access_key
     - entitlement
@@ -3596,7 +3621,7 @@ at8d:
 at9:
   tags:
     - hide_fail
-  command:
+  args:
     - ats
     - access_key
     - create
@@ -3606,13 +3631,13 @@ at9:
 at10:
   tags:
     - hide_fail
-  command:
+  args:
     - ats
     - access_key
     - list
     - --fields=name,id
 at11:
-  command:
+  args:
     - ats
     - access_key
     - node
@@ -3621,7 +3646,7 @@ at11:
     - /
     - --secret=@preset:misc.secret_here
 at12:
-  command:
+  args:
     - ats
     - access_key
     - cluster
@@ -3630,7 +3655,7 @@ at12:
 at13:
   tags:
     - hide_fail
-  command:
+  args:
     - ats
     - access_key
     - delete
@@ -3639,7 +3664,7 @@ at14:
   tags:
     - hide_fail
     - nodoc
-  command:
+  args:
     - ats
     - access_key
     - delete
@@ -3648,7 +3673,7 @@ nd_sync_pull_conf:
   pre: |
     (PATH_TMP_SYNCS / 'nd_sync_pull_conf').rmtree
     (PATH_TMP_SYNCS / 'nd_sync_pull_conf').mkdir
-  command:
+  args:
     - node
     - sync
     - pull
@@ -3658,7 +3683,7 @@ nd_sync_pull_conf:
 nd_sync_pull_confb:
   depends_on:
     - nd_sync_pull_conf
-  command:
+  args:
     - node
     - sync
     - admin
@@ -3668,7 +3693,7 @@ nd_sync_v2:
   pre: |
     (PATH_TMP_SYNCS / 'nd_sync_v2').rmtree
     (PATH_TMP_SYNCS / 'nd_sync_v2').mkdir
-  command:
+  args:
     - node
     - sync
     - pull
@@ -3678,19 +3703,19 @@ nd_sync_v2:
 nd_sync_v2b:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - sync
     - admin
     - status
     - $(PATH_TMP_SYNCS / 'nd_sync_v2')
 nd_async_list:
-  command:
+  args:
     - node
     - async
     - list
 nd_async_show:
-  command:
+  args:
     - node
     - async
     - show
@@ -3698,7 +3723,7 @@ nd_async_show:
 nd_async_showb:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - async
     - show
@@ -3706,7 +3731,7 @@ nd_async_showb:
 nd_async_cntr:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - async
     - counters
@@ -3714,7 +3739,7 @@ nd_async_cntr:
 nd_async_bw:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - async
     - bandwidth
@@ -3722,7 +3747,7 @@ nd_async_bw:
 nd_async_files:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - async
     - files
@@ -3730,7 +3755,7 @@ nd_async_files:
 nd_async_filesb:
   depends_on:
     - nd_sync_v2
-  command:
+  args:
     - node
     - async
     - files
@@ -3743,7 +3768,7 @@ nd_async_del:
     - nd_async_bw
     - nd_async_files
     - nd_async_filesb
-  command:
+  args:
     - node
     - async
     - delete
@@ -3752,7 +3777,7 @@ sync_create_prep1:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - server
     - --preset=server2_user
     - delete
@@ -3762,7 +3787,7 @@ sync_create_prep2:
     - nodoc
   depends_on:
     - sync_create_prep1
-  command:
+  args:
     - --preset=server2_user
     - server
     - mkdir
@@ -3771,7 +3796,7 @@ sync_create_prep3:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - node
     - delete
     - "@preset:sync.local_path"
@@ -3780,14 +3805,14 @@ sync_create_prep4:
     - nodoc
   depends_on:
     - sync_create_prep3
-  command:
+  args:
     - node
     - mkdir
     - "@preset:sync.local_path"
 sync_create_prep5:
   depends_on:
     - sync_create_prep4
-  command:
+  args:
     - node
     - upload
     - 'faux:///testfile1?1m'
@@ -3796,7 +3821,7 @@ sync_create:
   depends_on:
     - sync_create_prep2
     - sync_create_prep5
-  command:
+  args:
     - node
     - ssync
     - create
@@ -3804,14 +3829,14 @@ sync_create:
 sync_create_check:
   depends_on:
     - sync_create
-  command:
+  args:
     - node
     - ssync
     - list
 sync_start_1:
   depends_on:
     - sync_create_check
-  command:
+  args:
     - node
     - ssync
     - start
@@ -3819,7 +3844,7 @@ sync_start_1:
 sync_check_1:
   depends_on:
     - sync_start_1
-  command:
+  args:
     - node
     - ssync
     - show
@@ -3828,7 +3853,7 @@ sync_check_1:
 sync_other_a:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - bandwidth
@@ -3836,7 +3861,7 @@ sync_other_a:
 sync_other_b:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - counters
@@ -3844,7 +3869,7 @@ sync_other_b:
 sync_other_c:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - files
@@ -3852,7 +3877,7 @@ sync_other_c:
 sync_other_d:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - state
@@ -3860,7 +3885,7 @@ sync_other_d:
 sync_other_e:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - stop
@@ -3868,7 +3893,7 @@ sync_other_e:
 sync_other_f:
   depends_on:
     - sync_check_1
-  command:
+  args:
     - node
     - ssync
     - summary
@@ -3881,7 +3906,7 @@ sync_other_delete:
     - sync_other_d
     - sync_other_e
     - sync_other_f
-  command:
+  args:
     - node
     - ssync
     - delete
@@ -3891,13 +3916,14 @@ sync_other_delete_fail:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: Not found
+  args:
     - node
     - ssync
     - delete
     - not_exist
 conf_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:node_user.url"
@@ -3906,29 +3932,30 @@ conf_detectb:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: No known application found
+  args:
     - config
     - detect
     - https://www.ibm.com
 conf_ascp_show:
-  command:
+  args:
     - config
     - ascp
     - show
 conf_ascp_spec:
-  command:
+  args:
     - config
     - ascp
     - spec
 conf_sync_spec:
-  command:
+  args:
     - config
     - sync
     - spec
 conf_sync_trans:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - sync
     - translate
@@ -3968,18 +3995,18 @@ conf_sync_trans:
     - -K
     - push
 conf_ascp_schema:
-  command:
+  args:
     - config
     - ascp
     - schema
     - --format=jsonpp
 conf_ascp_errors:
-  command:
+  args:
     - config
     - ascp
     - errors
 conf_ascp_2:
-  command:
+  args:
     - config
     - ascp
     - products
@@ -3987,36 +4014,39 @@ conf_ascp_2:
 conf_ascp_prod:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
-    - ascp
-    - products
-    - use
-    - 'IBM Aspera Connect'
+    - preset
+    - set
+    - GLOBAL
+    - sdk_folder
+    - 'product:IBM Aspera Connect'
 conf_ascp_use:
   tags:
     - tmp_conf
     - nodoc
-  command:
+  args:
     - config
-    - ascp
-    - use
+    - preset
+    - set
+    - GLOBAL
+    - sdk_folder
     - $(`which ascp`)
 conf_ascp_3:
-  command:
+  args:
     - config
     - ascp
     - connect
     - list
 conf_ascp_4:
-  command:
+  args:
     - config
     - ascp
     - connect
     - info
     - Aspera Connect for Windows
 conf_ascp_5:
-  command:
+  args:
     - config
     - ascp
     - connect
@@ -4024,7 +4054,7 @@ conf_ascp_5:
     - Aspera Connect for Windows
     - list
 conf_ascp_6:
-  command:
+  args:
     - config
     - ascp
     - connect
@@ -4034,7 +4064,7 @@ conf_ascp_6:
     - Windows Installer
     - --to-folder=$(TMP)
 conf_ascp_6b:
-  command:
+  args:
     - config
     - ascp
     - connect
@@ -4042,18 +4072,18 @@ conf_ascp_6b:
     - Aspera Connect for Windows
     - open
     - documentation
-conf_ascp_sdk_folder:
+conf_ascp_sdk_folder_save:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - --show-config
     - --fields=sdk_folder
 conf_ascp_install_113:
   depends_on:
-    - conf_ascp_sdk_folder
-  pre: puts(read_value_from('conf_ascp_sdk_folder'))
-  command:
+    - conf_ascp_sdk_folder_save
+  pre: puts(read_value_from('conf_ascp_sdk_folder_save'))
+  args:
     - config
     - ascp
     - install
@@ -4061,24 +4091,25 @@ conf_ascp_install_113:
 conf_ascp_install_latest:
   depends_on:
     - conf_ascp_install_113
-  command:
+  args:
     - config
     - ascp
     - install
-conf_ascp_installc:
+conf_ascp_install_in_other_folder:
+  $comment: Install in non standard folder
   pre: (TMP / 'sdk_test_dir').rmtree
-  command:
+  args:
     - config
     - ascp
     - install
     - --sdk-folder=$(TMP / 'sdk_test_dir')
 conf_ascp_installd:
-  command:
+  args:
     - config
     - transferd
     - list
 conf_transferd_install_latest:
-  command:
+  args:
     - config
     - transferd
     - install
@@ -4086,7 +4117,7 @@ conf_transferd_url:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - config
     - transferd
     - list
@@ -4097,16 +4128,15 @@ conf_ascp_installg:
     - nodoc
   depends_on:
     - conf_transferd_url
-  command:
+  args:
     - config
     - download
     - $(read_value_from 'conf_transferd_url')
     - --to-folder=$(TMP)
-conf_ascp_8:
-  $comment: Install in non standard folder
+conf_ascp_info_other_folder:
   depends_on:
-    - conf_ascp_install_113
-  command:
+    - conf_ascp_install_in_other_folder
+  args:
     - config
     - ascp
     - info
@@ -4114,7 +4144,7 @@ conf_ascp_8:
 conf_pset_1:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - set
@@ -4124,7 +4154,7 @@ conf_pset_1:
 conf_pset_1b:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - unset
@@ -4133,7 +4163,7 @@ conf_pset_1b:
 conf_pset_1c:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - preset
     - lookup
@@ -4142,7 +4172,7 @@ conf_pset_1c:
 conf_pset_2:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - show
@@ -4150,7 +4180,7 @@ conf_pset_2:
 conf_pset_3:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - set
@@ -4160,7 +4190,7 @@ conf_pset_3:
 conf_pset_4:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - delete
@@ -4168,7 +4198,7 @@ conf_pset_4:
 conf_pset_5:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - initialize
@@ -4177,7 +4207,7 @@ conf_pset_5:
 conf_pset_6:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - update
@@ -4188,27 +4218,27 @@ conf_open:
   description: open configuration file in text editor
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - open
 conf_list:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - list
 conf_over:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - overview
 conf_vers_check:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - set
@@ -4216,43 +4246,43 @@ conf_vers_check:
     - version_check_days
     - 0
 conf_gem:
-  command:
+  args:
     - config
     - gem
     - path
 conf_gemb:
-  command:
+  args:
     - config
     - gem
     - version
 conf_gemc:
-  command:
+  args:
     - config
     - gem
     - name
 conf_gemd:
-  command:
+  args:
     - config
     - folder
 conf_geme:
-  command:
+  args:
     - config
     - file
 conf_gemf:
-  command:
+  args:
     - config
     - smtp_settings
 conf_initdemo:
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - initdemo
 conf_gem_path:
   description: Test of `http_proxy` and `http_options.user_agent`
   tags:
     - nodoc
-  command:
+  args:
     - config
     - gem
     - path
@@ -4260,7 +4290,7 @@ conf_gem_path:
     - --http-options=@json:{"user_agent":"test1"}
 conf_ssl_options:
   description: Test of `ssl_options`, `cert-stores` and `insecure`
-  command:
+  args:
     - config
     - echo
     - "@uri:https://ifconfig.me/ip"
@@ -4270,7 +4300,7 @@ conf_ssl_options:
 conf_vault_macos:
   tags:
     - nodoc
-  command:
+  args:
     - -N
     - config
     - vault
@@ -4283,7 +4313,7 @@ conf_vault_macos_prepare:
     - ignore_fail
     - nodoc
     - interactive
-  command:
+  args:
     - -N
     - config
     - vault
@@ -4295,7 +4325,7 @@ conf_vault_macosc:
     - conf_vault_macos_prepare
   tags:
     - nodoc
-  command:
+  args:
     - -N
     - config
     - vault
@@ -4307,7 +4337,7 @@ conf_vault_macosd:
     - conf_vault_macosc
   tags:
     - ignore_fail
-  command:
+  args:
     - -N
     - config
     - vault
@@ -4318,7 +4348,7 @@ conf_vault_file:
   tags:
     - tmp_conf
     - sym_encryption
-  command:
+  args:
     - config
     - preset
     - set
@@ -4332,7 +4362,7 @@ conf_vault_file2:
     - conf_vault_file
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - preset
     - set
@@ -4344,7 +4374,7 @@ conf_vault_create:
     - conf_vault_file2
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - create
@@ -4357,7 +4387,7 @@ conf_vault_info:
     - conf_vault_create
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - info
@@ -4366,7 +4396,7 @@ conf_vault_list2:
     - conf_vault_create
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - list
@@ -4375,7 +4405,7 @@ conf_vault_show:
     - conf_vault_create
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - show
@@ -4385,7 +4415,7 @@ conf_preset_ask:
   tags:
     - tmp_conf
     - nodoc
-  command:
+  args:
     - config
     - preset
     - ask
@@ -4394,7 +4424,7 @@ conf_preset_secure:
   tags:
     - tmp_conf
     - nodoc
-  command:
+  args:
     - config
     - preset
     - secure
@@ -4403,7 +4433,7 @@ conf_vault_pass:
   tags:
     - tmp_conf
     - nodoc
-  command:
+  args:
     - config
     - vault
     - password
@@ -4412,7 +4442,7 @@ conf_vault_pass2:
   tags:
     - tmp_conf
     - nodoc
-  command:
+  args:
     - config
     - preset
     - set
@@ -4424,7 +4454,7 @@ conf_vault_list:
     - conf_vault_pass2
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - list
@@ -4433,7 +4463,7 @@ conf_vault_delete_label:
     - conf_vault_list
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - vault
     - delete
@@ -4443,7 +4473,7 @@ conf_echo_vault:
     - conf_preset_secure
   tags:
     - tmp_conf
-  command:
+  args:
     - config
     - echo
     - "@vault:my_preset.password"
@@ -4452,7 +4482,8 @@ conf_echo_fail1:
     - must_fail
     - tmp_conf
     - nodoc
-  command:
+  expect: vault name shall match <name>.<param>
+  args:
     - config
     - echo
     - "@vault:bad"
@@ -4461,7 +4492,8 @@ conf_echo_fail2:
     - must_fail
     - tmp_conf
     - nodoc
-  command:
+  expect: "Label not found: bad"
+  args:
     - config
     - echo
     - "@vault:bad.password"
@@ -4470,39 +4502,40 @@ conf_echo_fail3:
     - must_fail
     - tmp_conf
     - nodoc
-  command:
+  expect: "no such entry value: bad"
+  args:
     - config
     - echo
     - "@vault:my_preset.bad"
 conf_help_1:
   tags:
     - nodoc
-  command:
+  args:
     - -h
 conf_help_2:
   tags:
     - nodoc
-  command:
+  args:
     - --bash-comp
 conf_coffee_1:
-  command:
+  args:
     - config
     - coffee
 conf_coffee_2:
-  command:
+  args:
     - config
     - coffee
     - --ui=text
 conf_coffee_3:
   tags:
     - rmagick
-  command:
+  args:
     - config
     - coffee
     - --ui=text
     - --image=@json:{"text":true}
 conf_coffee_4:
-  command:
+  args:
     - config
     - coffee
     - --ui=text
@@ -4510,12 +4543,12 @@ conf_coffee_4:
 conf_image:
   tags:
     - rmagick
-  command:
+  args:
     - config
     - image
     - https://eudemo.asperademo.com/wallpaper.jpg
 conf_plugins:
-  command:
+  args:
     - config
     - plugins
     - list
@@ -4525,12 +4558,12 @@ conf_plugins1:
     LC_ALL: null
     LC_CTYPE: null
     LANG: null
-  command:
+  args:
     - config
     - plugins
     - list
 conf_plugins2:
-  command:
+  args:
     - config
     - plugins
     - create
@@ -4541,14 +4574,14 @@ conf_plugins3:
     - nodoc
   depends_on:
     - conf_plugins2
-  command:
+  args:
     - my_command
     - --plugin-folder=$(TMP)
 conf_genkey1:
   pre: |
     (TMP / 'my_key').delete rescue nil
     (TMP / 'my_key.pub').delete rescue nil
-  command:
+  args:
     - config
     - genkey
     - $(TMP / 'my_key')
@@ -4556,13 +4589,13 @@ conf_genkey2:
   pre: |
     (TMP / 'my_key').delete rescue nil
     (TMP / 'my_key.pub').delete rescue nil
-  command:
+  args:
     - config
     - genkey
     - $(TMP / 'my_key')
     - 4096
 conf_pub_key:
-  command:
+  args:
     - config
     - pubkey
     - "@file:$(TMP / 'my_key')"
@@ -4570,121 +4603,122 @@ conf_genkey_fail:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "Invalid integer: not_int"
+  args:
     - config
     - genkey
     - $(TMP / 'my_key')
     - not_int
 conf_cert:
-  command:
+  args:
     - config
     - remote_certificate
     - name
     - "@preset:node_user.url"
 conf_chain:
-  command:
+  args:
     - config
     - remote_certificate
     - chain
     - "@preset:node_user.url"
 conf_cert_only:
-  command:
+  args:
     - config
     - remote_certificate
     - only
     - "@preset:node_user.url"
 conf_smtp:
-  command:
+  args:
     - config
     - email_test
     - --notify-to=@preset:misc.email_external
 conf_pac:
-  command:
+  args:
     - config
     - proxy_check
     - --fpac=@file:$(PATH_SCRIPTS / 'proxy.pac')
     - https://eudemo.asperademo.com
     - --proxy-credentials=@list:,user,pass
 conf_check_update:
-  command:
+  args:
     - config
     - check_update
 conf_check_update2:
   depends_on:
     - conf_check_update
   pre: PATH_VERSION_CHECK_PERSIST.delete
-  command:
+  args:
     - config
     - check_update
 conf_doc:
-  command:
+  args:
     - config
     - doc
 conf_doc2:
-  command:
+  args:
     - config
     - doc
     - transfer-parameters
 conf_echo_simple:
-  command:
+  args:
     - config
     - echo
     - hello
 conf_echo_uri_file_only:
-  command:
+  args:
     - config
     - echo
     - "@uri:/etc/hosts"
 conf_echo_uri_file:
-  command:
+  args:
     - config
     - echo
     - "@uri:file:/etc/hosts"
 conf_echo_uri_http:
-  command:
+  args:
     - config
     - echo
     - "@uri:http://ifconfig.me"
 conf_echo_uri_https:
-  command:
+  args:
     - config
     - echo
     - "@uri:https://ifconfig.me"
 conf_echo_base:
-  command:
+  args:
     - config
     - echo
     - "@base64:SGVsbG8gV29ybGQK"
 conf_echo_list:
-  command:
+  args:
     - config
     - echo
     - "@list:,1,2,3"
 conf_echo_env:
-  command:
+  args:
     - config
     - echo
     - "@env:USER"
 conf_echo_raw:
-  command:
+  args:
     - config
     - echo
     - --
     - --special-string
 conf_echo_json_multi_yes:
-  command:
+  args:
     - config
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
     - --multi-single=yes
 conf_echo_json_multi_single:
-  command:
+  args:
     - config
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
     - --multi-single=single
 conf_echo_picture_svg:
-  command:
+  args:
     - config
     - echo
     - <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>
@@ -4693,7 +4727,7 @@ conf_echo_picture_svg:
 conf_echo_picture_png:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - "@base64:iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
@@ -4702,7 +4736,7 @@ conf_echo_picture_png:
 conf_echo_picture_jpg:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - "@base64:/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k="
@@ -4712,7 +4746,8 @@ conf_echo_fail2b:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: No such file or directory
+  args:
     - config
     - echo
     - "@file:no_such_file"
@@ -4720,38 +4755,39 @@ conf_echo_fail4:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: unexpected character
+  args:
     - config
     - echo
     - '@json:{"ok":1,"bad":mauvais}'
 conf_echo_stdin:
   stdin: "1\n2\n3"
-  command:
+  args:
     - config
     - echo
     - "@lines:@stdin:"
 conf_echo_stdin_bin:
   stdin: "1\n2\n3"
-  command:
+  args:
     - config
     - echo
     - "@stdin:bin"
 conf_echo_stdin_csv:
   stdin: "t1,t2,t3\na,b,d\nd,e,f"
-  command:
+  args:
     - config
     - echo
     - "@csvt:@stdin:"
 conf_echo_stdin_zlib:
   stdin: $(Zlib::Deflate.deflate("Hello World"))
-  command:
+  args:
     - config
     - echo
     - "@zlib:@stdin:"
 conf_echo_json_format_text:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4759,7 +4795,7 @@ conf_echo_json_format_text:
 conf_echo_json_format_ruby:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4767,7 +4803,7 @@ conf_echo_json_format_ruby:
 conf_echo_json_format_json:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4775,7 +4811,7 @@ conf_echo_json_format_json:
 conf_echo_json_format_jsonpp:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4783,7 +4819,7 @@ conf_echo_json_format_jsonpp:
 conf_echo_json_format_yaml:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4791,7 +4827,7 @@ conf_echo_json_format_yaml:
 conf_echo_json_format_table:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4799,7 +4835,7 @@ conf_echo_json_format_table:
 conf_echo_json_format_csv:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4807,7 +4843,7 @@ conf_echo_json_format_csv:
 conf_echo_json_a:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4816,7 +4852,7 @@ conf_echo_json_a:
 conf_echo_json_b:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4824,7 +4860,7 @@ conf_echo_json_b:
 conf_echo_json_c:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4832,7 +4868,7 @@ conf_echo_json_c:
 conf_echo_json_fields_ruby:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4840,7 +4876,7 @@ conf_echo_json_fields_ruby:
 conf_echo_json_select_ruby:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@json:[{"name":"foo","id":1},{"name":"bar","id":8}]'
@@ -4849,7 +4885,7 @@ conf_extended1:
   tags:
     - nodoc
   expect: '@file:foo'
-  command:
+  args:
     - config
     - echo
     - '@val:@file:foo'
@@ -4858,7 +4894,7 @@ conf_extended2:
   tags:
     - nodoc
   expect: 'foo'
-  command:
+  args:
     - config
     - echo
     - '@base64:Zm9v'
@@ -4867,7 +4903,7 @@ conf_extended3:
   tags:
     - nodoc
   expect: '["1", "2"]'
-  command:
+  args:
     - config
     - echo
     - '@lines:@json:"1\n2\n"'
@@ -4876,7 +4912,7 @@ conf_extended4:
   tags:
     - nodoc
   expect: '["1", "2"]'
-  command:
+  args:
     - config
     - echo
     - '@list:,1,2'
@@ -4885,7 +4921,7 @@ conf_extended5:
   tags:
     - nodoc
   expect: '["1", "2"]'
-  command:
+  args:
     - config
     - echo
     - '@json:["1","2"]'
@@ -4894,7 +4930,7 @@ conf_extended6:
   tags:
     - nodoc
   expect: '[1, 2]'
-  command:
+  args:
     - config
     - echo
     - '@yaml:@json:"- 1\n- 2\n"'
@@ -4902,7 +4938,7 @@ conf_extended6:
 conf_echo_secret:
   tags:
     - interactive
-  command:
+  args:
     - config
     - echo
     - "@secret:"
@@ -4910,7 +4946,8 @@ conf_hint:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "Rest: Signature has expired"
+  args:
     - config
     - test
     - throw
@@ -4920,7 +4957,8 @@ config_hint_a:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "Transfer: Remote host is not who weexpected"
+  args:
     - config
     - test
     - throw
@@ -4930,7 +4968,8 @@ config_hint_b:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "SSL: does not match the server certificate"
+  args:
     - config
     - test
     - throw
@@ -4940,7 +4979,8 @@ config_hint_c:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "SSL: certificate verify failed"
+  args:
     - config
     - test
     - throw
@@ -4950,38 +4990,39 @@ config_hint_d:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: "Other(OpenSSL::PKey::PKeyError): Neither PUB key nor PRIV key"
+  args:
     - config
     - test
     - throw
     - OpenSSL::PKey::RSAError
     - Neither PUB key nor PRIV key
 conf_logger:
-  command:
+  args:
     - config
     - file
     - --log-level=debug
     - --logger=syslog
 config_file_a:
-  command:
+  args:
     - config
     - file
     - --log-level=debug
     - --log-format=standard
 config_file_b:
-  command:
+  args:
     - config
     - file
     - --log-level=debug
     - --log-format=default
 config_log_trace_caller:
-  command:
+  args:
     - config
     - coffee
     - --log-level=trace2
     - --log-format=caller
 config_log_custom:
-  command:
+  args:
     - config
     - file
     - --log-level=debug
@@ -4990,38 +5031,38 @@ config_log_custom:
 config_log_all:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - echo
     - '@ruby:%i[trace2 trace1 debug info warn error fatal unknown].each{|i|Log.log.send(i,"<"*80)};"ok"'
     - --log-level=trace2
 prev_check:
-  command:
+  args:
     - preview
     - check
     - --skip-types=office
 prev_dcm:
-  command:
+  args:
     - preview
     - test
     - --base=$(TMP / 'prev_dcm')
     - "@preset:file.dcm"
 prev_dcm_mm:
-  command:
+  args:
     - preview
     - test
     - --mimemagic=yes
     - --base=$(TMP / 'prev_dcm_mm')
     - "@preset:file.dcm"
 prev_jpg_unk_mm:
-  command:
+  args:
     - preview
     - test
     - --mimemagic=yes
     - --base=$(TMP / 'prev_jpg_unk_mm')
     - "@preset:file.jpg_unk"
 prev_mxf_blend:
-  command:
+  args:
     - preview
     - test
     - --base=$(TMP / 'prev_mxf_blend')
@@ -5030,39 +5071,39 @@ prev_mxf_blend:
     - --video-conversion=blend
     - --query=@json:{"text":true,"double":true}
 prev_pdf:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_pdf')
     - "@preset:file.pdf"
 prev_txt:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_txt')
     - /etc/hosts
 prev_docx:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_docx')
     - "@preset:file.docx"
 prev_mpg_png_fix:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_png_fix')
     - "@preset:file.mpg"
     - --video-png-conv=fixed
 prev_mpg_png_ani:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_png_ani')
     - "@preset:file.mpg"
     - --video-png-conv=animated
 prev_mpg_reencode:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'prev_mpg_reencode')
@@ -5070,7 +5111,7 @@ prev_mpg_reencode:
     - mp4
     - --video-conversion=reencode
 prev_mpg_clips:
-  command:
+  args:
     - preview
     - show
     - --base=$(TMP / 'testprev_mpg_clips_name')
@@ -5078,7 +5119,7 @@ prev_mpg_clips:
     - mp4
     - --video-conversion=clips
 prev_trevents_prep:
-  command:
+  args:
     - --preset=preview_ak
     - node
     - upload
@@ -5089,14 +5130,14 @@ prev_trevents_prep:
 prev_trevents:
   depends_on:
     - prev_trevents_prep
-  command:
+  args:
     - preview
     - trevents
     - --once-only=yes
     - --skip-types=office
     - --log-level=info
 prev_events_prep:
-  command:
+  args:
     - --preset=preview_ak
     - node
     - upload
@@ -5107,14 +5148,14 @@ prev_events_prep:
 prev_events:
   depends_on:
     - prev_events_prep
-  command:
+  args:
     - preview
     - events
     - --once-only=yes
     - --skip-types=office
     - --log-level=info
 prev_scana:
-  command:
+  args:
     - preview
     - scan
     - --skip-types=office
@@ -5123,14 +5164,14 @@ prev_scana:
 prev_scanb:
   tags:
     - nodoc
-  command:
+  args:
     - preview
     - scan
     - --skip-folder=foo
     - --skip-folder=bar
     - --skip-folder=@list:,1,2
 prev_folder:
-  command:
+  args:
     - preview
     - scan
     - --scan-id=1
@@ -5142,14 +5183,14 @@ serv_hot_prep:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - server
     - delete
     - "@extend:@preset:server.upload_folder@/target_hot"
 serv_hot_prep2:
   depends_on:
     - serv_hot_prep
-  command:
+  args:
     - server
     - mkdir
     - "@extend:@preset:server.upload_folder@/target_hot"
@@ -5159,7 +5200,7 @@ serv_hot_run:
     PATH_HOT_FOLDER.rmtree
     PATH_HOT_FOLDER.mkdir
     (PATH_HOT_FOLDER / 'new_file').write('hello')
-  command:
+  args:
     - server
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
@@ -5170,7 +5211,7 @@ serv_hot_check:
   depends_on:
     - serv_hot_run
   pre: ls_l PATH_HOT_FOLDER
-  command:
+  args:
     - server
     - browse
     - "@extend:@preset:server.upload_folder@/target_hot"
@@ -5179,7 +5220,7 @@ serv_hot_run2:
   $comment: Second run transfers file
   depends_on:
     - serv_hot_check
-  command:
+  args:
     - server
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
@@ -5189,12 +5230,12 @@ serv_hot_run2:
 serv_hot_check2:
   depends_on:
     - serv_hot_run2
-  command:
+  args:
     - server
     - browse
     - "@extend:@preset:server.upload_folder@/target_hot"
 tcos_info1:
-  command:
+  args:
     - -N
     - cos
     - node
@@ -5203,7 +5244,7 @@ tcos_info1:
     - --region=@preset:icos.region
     - --service-credentials=@json:@file:@preset:file.cos_svc_cred
 tcos_info2:
-  command:
+  args:
     - -N
     - cos
     - node
@@ -5213,7 +5254,7 @@ tcos_info2:
     - --apikey=@preset:icos.api_key
     - --crn=@preset:icos.resource_instance_id
 tcos_info3:
-  command:
+  args:
     - cos
     - node
     - info
@@ -5222,14 +5263,14 @@ tcos_show:
   tags:
     - ignore_fail
     - nodoc
-  command:
+  args:
     - cos
     - node
     - access_key
     - show
     - self
 tcos_upload:
-  command:
+  args:
     - cos
     - node
     - upload
@@ -5237,7 +5278,7 @@ tcos_upload:
 tcos_download:
   depends_on:
     - tcos_upload
-  command:
+  args:
     - cos
     - node
     - download
@@ -5246,7 +5287,7 @@ tcos_download:
 f5_health:
   tags:
     - health
-  command:
+  args:
     - -N
     - faspex5
     - health
@@ -5254,7 +5295,7 @@ f5_health:
 f5_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - -N
     - faspex5
     - health
@@ -5263,20 +5304,21 @@ f5_health_nagios:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: ""
+  args:
     - -N
     - faspex5
     - health
     - --url=https://www.ibm.com
     - --format=nagios
 f5_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:faspex5_user.url"
     - faspex5
 f5_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:faspex5_user.url"
@@ -5286,7 +5328,7 @@ f5_wizard:
 f5_wizardb:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - wizard
     - "@preset:faspex5_user.url"
@@ -5297,7 +5339,7 @@ f5_wizardb:
 f5_wizardc:
   tags:
     - nodoc
-  command:
+  args:
     - config
     - wizard
     - https://eudemo.asperademo.com
@@ -5311,35 +5353,36 @@ f5_detect_fail:
   tags:
     - must_fail
     - nodoc
-  command:
+  expect: No known application found
+  args:
     - config
     - detect
     - https://eudemo.asperademo.com:22
     - faspex5
 f5_detect_ok:
-  command:
+  args:
     - -N
     - config
     - detect
     - "@preset:faspex5_user.url"
 f5_detect_okb:
-  command:
+  args:
     - config
     - detect
     - "@preset:faspex5_user.url"
 f5_version:
-  command:
+  args:
     - faspex5
     - version
 f5_pack_rcv_init:
-  command:
+  args:
     - faspex5
     - packages
     - receive
     - INIT
     - --once-only=yes
 f5_p1:
-  command:
+  args:
     - faspex5
     - packages
     - send
@@ -5347,32 +5390,32 @@ f5_p1:
     - $(PATH_TST_ASC_LCL)
     - --ts=@json:{"content_protection_password":"my_secret_here"}
 f5_pack_list:
-  command:
+  args:
     - faspex5
     - packages
     - list
     - --query=@json:{"mailbox":"inbox","status":"completed"}
 f5_pack_list_admin:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - packages
     - list
     - --box=ALL
 f5_pack_list_out:
-  command:
+  args:
     - faspex5
     - packages
     - list
     - --box=outbox
     - --fields=DEF,sender.email,recipients.0.recipient_type
 f5_sh_folder_list:
-  command:
+  args:
     - faspex5
     - shared_folders
     - list
 f5_sh_folder_br:
-  command:
+  args:
     - faspex5
     - shared_folders
     - browse
@@ -5381,7 +5424,7 @@ f5_p3a:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex5
     - packages
     - send
@@ -5394,7 +5437,7 @@ f5_p3a:
 f5_p3aa:
   depends_on:
     - f5_p3a
-  command:
+  args:
     - faspex5
     - packages
     - status
@@ -5406,7 +5449,7 @@ f5_package_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex5
     - packages
     - list
@@ -5415,7 +5458,7 @@ f5_package_id:
 f5_p3c:
   depends_on:
     - f5_package_id
-  command:
+  args:
     - faspex5
     - packages
     - show
@@ -5423,7 +5466,7 @@ f5_p3c:
 f5_p3d:
   depends_on:
     - f5_package_id
-  command:
+  args:
     - faspex5
     - packages
     - status
@@ -5431,7 +5474,7 @@ f5_p3d:
 f5_p3e:
   depends_on:
     - f5_package_id
-  command:
+  args:
     - faspex5
     - packages
     - browse
@@ -5440,7 +5483,7 @@ f5_p3e:
 f5_p3f:
   depends_on:
     - f5_package_id
-  command:
+  args:
     - faspex5
     - packages
     - receive
@@ -5450,7 +5493,7 @@ f5_p3f:
 f5_p3g:
   depends_on:
     - f5_package_id
-  command:
+  args:
     - faspex5
     - packages
     - receive
@@ -5460,13 +5503,13 @@ f5_p3g:
 f5_p3h:
   depends_on:
     - f5_p3g
-  command:
+  args:
     - faspex5
     - packages
     - delete
     - $(read_value_from 'f5_package_id')
 f5_pack_shbox:
-  command:
+  args:
     - faspex5
     - packages
     - send
@@ -5478,7 +5521,7 @@ f5_pack_shbox:
 f5_pack_shboxb:
   depends_on:
     - f5_pack_shbox
-  command:
+  args:
     - faspex5
     - packages
     - list
@@ -5489,7 +5532,7 @@ f5_pack_shboxc:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex5
     - packages
     - list
@@ -5501,7 +5544,7 @@ f5_pack_shboxc:
 f5_pack_shboxd:
   depends_on:
     - f5_pack_shboxc
-  command:
+  args:
     - faspex5
     - packages
     - show
@@ -5510,7 +5553,7 @@ f5_pack_shboxd:
 f5_pack_shboxe:
   depends_on:
     - f5_pack_shboxc
-  command:
+  args:
     - faspex5
     - packages
     - receive
@@ -5518,7 +5561,7 @@ f5_pack_shboxe:
     - $(read_value_from 'f5_pack_shboxc')
     - --to-folder=$(TMP)
 f5_pack_shbox_public:
-  command:
+  args:
     - -N
     - faspex5
     - packages
@@ -5527,7 +5570,7 @@ f5_pack_shbox_public:
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_user_public:
-  command:
+  args:
     - -N
     - faspex5
     - packages
@@ -5536,7 +5579,7 @@ f5_pack_user_public:
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_wrkgrp:
-  command:
+  args:
     - faspex5
     - packages
     - send
@@ -5546,7 +5589,7 @@ f5_pack_wrkgrp:
 f5_pack_wrkgrpb:
   depends_on:
     - f5_pack_wrkgrp
-  command:
+  args:
     - faspex5
     - packages
     - list
@@ -5558,7 +5601,7 @@ workgroup_package_id1:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex5
     - packages
     - list
@@ -5569,7 +5612,7 @@ workgroup_package_id1:
 f5_pack_wrkgrpd:
   depends_on:
     - workgroup_package_id1
-  command:
+  args:
     - faspex5
     - packages
     - show
@@ -5579,7 +5622,7 @@ f5_pack_wrkgrpd:
 f5_pack_wrkgrpe:
   depends_on:
     - workgroup_package_id1
-  command:
+  args:
     - faspex5
     - packages
     - receive
@@ -5588,58 +5631,58 @@ f5_pack_wrkgrpe:
     - $(read_value_from 'workgroup_package_id1')
     - --to-folder=$(TMP)
 f5_sh_fold:
-  command:
+  args:
     - faspex5
     - shared
     - list
 f5_sh_foldb:
-  command:
+  args:
     - faspex5
     - shared
     - browse
     - "%name:@preset:faspex4.src"
 f5_user_bearer:
-  command:
+  args:
     - faspex5
     - bearer_token
 f5_user_contacts:
-  command:
+  args:
     - faspex5
     - admin
     - contacts
     - list
 f5_admin_workgroups:
-  command:
+  args:
     - faspex5
     - admin
     - workgroups
     - list
 f5_admin_shared_inboxes:
-  command:
+  args:
     - faspex5
     - admin
     - shared_inboxes
     - list
 f5_admin_saml_configs:
-  command:
+  args:
     - faspex5
     - admin
     - saml_configs
     - list
 f5_admin_metadata_profiles:
-  command:
+  args:
     - faspex5
     - admin
     - metadata_profiles
     - list
 f5_admin_configuration:
-  command:
+  args:
     - faspex5
     - admin
     - configuration
     - show
 f5_dist_create:
-  command:
+  args:
     - faspex5
     - admin
     - distribution_lists
@@ -5649,7 +5692,7 @@ f5_dist_create:
 f5_dist_list:
   depends_on:
     - f5_dist_create
-  command:
+  args:
     - faspex5
     - admin
     - distribution_lists
@@ -5658,21 +5701,21 @@ f5_dist_list:
 f5_dist_delete:
   depends_on:
     - f5_dist_list
-  command:
+  args:
     - faspex5
     - admin
     - distribution_lists
     - delete
     - "%name:test4"
 f5_adm_acc_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - accounts
     - list
 f5_adm_job_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5681,14 +5724,14 @@ f5_adm_job_lst:
     - --query=@json:{"job_type":"email","status":"failed"}
     - --fields=id,error_desc
 f5_adm_nod_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - node
     - list
 f5_adm_nod_show:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5696,7 +5739,7 @@ f5_adm_nod_show:
     - show
     - "%name:Local"
 f5_adm_nod_br:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5704,7 +5747,7 @@ f5_adm_nod_br:
     - browse
     - "%name:Local"
 f5_adm_nod_sh_list:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5713,7 +5756,7 @@ f5_adm_nod_sh_list:
     - "%name:Local"
     - list
 f5_adm_nod_sh_show:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5723,7 +5766,7 @@ f5_adm_nod_sh_show:
     - show
     - "%name:Main"
 f5_adm_nod_sh_usr_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5734,28 +5777,28 @@ f5_adm_nod_sh_usr_lst:
     - "%name:Main"
     - list
 f5_adm_api_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - oauth_clients
     - list
 f5_adm_alternate_addresses:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - alternate_addresses
     - list
 f5_adm_email_notifications:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - email_notifications
     - list
 f5_adm_email_notif_welcome:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5763,7 +5806,7 @@ f5_adm_email_notif_welcome:
     - show
     - welcome_email
 f5_adm_email_notif_modif:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5771,14 +5814,14 @@ f5_adm_email_notif_modif:
     - modify
     - '@json:{"mfa_required":false}'
 f5_adm_reg_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - registrations
     - list
 f5_adm_sbx_lst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5786,7 +5829,7 @@ f5_adm_sbx_lst:
     - list
     - --query=@json:{"all":true}
 f5_adm_sbx_mem:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5795,7 +5838,7 @@ f5_adm_sbx_mem:
     - "@extend:%name:@preset:faspex5.shared_box_name@"
     - list
 f5_adm_sbx_cr:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5808,7 +5851,7 @@ f5_adm_sbx_cr:
 f5_adm_sbx_del:
   depends_on:
     - f5_adm_sbx_cr
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5819,7 +5862,7 @@ f5_adm_sbx_del:
     - "%name:john@example.com"
 f5_adm_evt_app:
   description: Retrieve successful login in the last hour.
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5827,14 +5870,14 @@ f5_adm_evt_app:
     - application
     - --query=@ruby:{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}
 f5_adm_evt_web:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - event
     - webhook
 f5_adm_sh_invite:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5848,7 +5891,7 @@ f5_adm_sh_members:
     - ignore_fail
   depends_on:
     - f5_adm_sh_invite
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5858,7 +5901,7 @@ f5_adm_sh_members:
     - delete
     - "%name:johnny@example.com"
 f5_clean_del:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5866,7 +5909,8 @@ f5_clean_del:
 f5_smtp:
   tags:
     - must_fail
-  command:
+  expect: This SMTP configuration already exists
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5874,7 +5918,7 @@ f5_smtp:
     - create
     - '@json:{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'
 f5_smtp_mod:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5882,14 +5926,14 @@ f5_smtp_mod:
     - modify
     - '@json:{"default_time_zone_offset":"0"}'
 f5_smtp_sh:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
     - smtp
     - show
 f5_smtp_tst:
-  command:
+  args:
     - --preset=f5_admin
     - faspex5
     - admin
@@ -5897,31 +5941,31 @@ f5_smtp_tst:
     - test
     - "@preset:misc.email_external"
 f5_user_account:
-  command:
+  args:
     - faspex5
     - user
     - account
 f5_user_account_query:
-  command:
+  args:
     - faspex5
     - user
     - account
     - --query.expand=true
 f5_user_profile_show:
-  command:
+  args:
     - faspex5
     - user
     - profile
     - show
 f5_user_profile_mod:
-  command:
+  args:
     - faspex5
     - user
     - profile
     - modify
     - '@json:{"preference":{"connect_disabled":false}}'
 f5_invite_create:
-  command:
+  args:
     - faspex5
     - invitations
     - create
@@ -5929,7 +5973,7 @@ f5_invite_create:
 f5_invite_list:
   depends_on:
     - f5_invite_create
-  command:
+  args:
     - faspex5
     - invitation
     - list
@@ -5939,7 +5983,7 @@ f5_invite_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex5
     - invitation
     - list
@@ -5950,7 +5994,7 @@ f5_invited:
     - nodoc
   depends_on:
     - f5_invite_id
-  command:
+  args:
     - faspex5
     - invitation
     - delete
@@ -5959,7 +6003,7 @@ f5_invited:
 f5_webauth:
   tags:
     - interactive
-  command:
+  args:
     - --preset=f5_web
     - faspex5
     - version
@@ -5967,7 +6011,7 @@ f5_fxgw_start:
   description: Start a faspex4->faspex5 gateway in background.
   tags:
     - noblock
-  command:
+  args:
     - faspex5
     - gateway
     - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
@@ -5977,7 +6021,7 @@ f5_fxgw_test:
     - nodoc
   depends_on:
     - f5_fxgw_start
-  command:
+  args:
     - -N
     - faspex
     - --url=https://localhost:12346/aspera/faspex
@@ -5998,14 +6042,14 @@ f5_postproc_pid:
   pre: |
     run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
     run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', 'pass:changeit')
-  command:
+  args:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
 f5_postproc_test:
   depends_on:
     - f5_postproc_pid
-  command:
+  args:
     - faspex5
     - packages
     - send
@@ -6021,10 +6065,10 @@ f5_postproc_test_with_key:
   tags:
     - noblock
     - nodoc
-  command:
+  args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8554/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key'
@@ -6032,10 +6076,10 @@ f5_postproc_test_with_key_cert:
   tags:
     - noblock
     - nodoc
-  command:
+  args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
+    - '@json:{"url":"https://localhost:8555/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
     stop_process 'f5_postproc_test_with_key_cert'
@@ -6043,7 +6087,7 @@ f5_cert_test:
   tags:
     - noblock
     - nodoc
-  command:
+  args:
     - faspex5
     - postprocessing
     - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(PATH_SCRIPTS)"}'
@@ -6054,7 +6098,7 @@ f5_cert_testb:
   tags:
     - noblock
     - nodoc
-  command:
+  args:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(PATH_SCRIPTS)"}'
@@ -6066,7 +6110,7 @@ f5_cert_testc:
     - noblock
     - nodoc
   pre: run('openssl', 'req', '-newkey', 'rsa:2048', '-x509', '-days', 365, '-nodes', '-keyout', TMP / 'private_key.pem', '-out', TMP / 'certificate.pem', '-subj', '/CN=MyCert')
-  command:
+  args:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(PATH_SCRIPTS)"}'
@@ -6078,7 +6122,7 @@ f5_cert_testd:
     - noblock
     - nodoc
   pre: run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{PKCS_P}")
-  command:
+  args:
     - faspex5
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(PATH_SCRIPTS)"}'
@@ -6086,31 +6130,31 @@ f5_cert_testd:
     sleep 2
     stop_process 'f5_cert_testd'
 httpgw_nagios:
-  command:
+  args:
     - httpgw
     - health
 httpgw_info:
-  command:
+  args:
     - httpgw
     - info
 httpgw_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:tst_httpgw.url"
     - httpgw
 faspio_health:
-  command:
+  args:
     - faspio
     - health
 faspio_detect:
-  command:
+  args:
     - config
     - detect
     - "@preset:tst_faspio.url"
     - faspio
 faspio_wizard:
-  command:
+  args:
     - config
     - wizard
     - "@preset:tst_faspio.url"
@@ -6118,12 +6162,12 @@ faspio_wizard:
     - --username=@preset:tst_faspio.username
     - --password=@preset:tst_faspio.password
 faspio_blist:
-  command:
+  args:
     - faspio
     - bridges
     - list
 faspio_bcreate:
-  command:
+  args:
     - faspio
     - bridges
     - create
@@ -6134,7 +6178,7 @@ faspio_bclean_list:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspio
     - bridges
     - list
@@ -6143,31 +6187,31 @@ faspio_bclean_list:
 faspio_bclean:
   depends_on:
     - faspio_bclean_list
-  command:
+  args:
     - faspio
     - bridges
     - delete
     - --bulk=yes
     - "@json:$(read_value_from 'faspio_bclean_list')"
 alee_nagios:
-  command:
+  args:
     - -N
     - alee
     - health
 alee_entitlement:
-  command:
+  args:
     - alee
     - entitlement
 f4_health:
   tags:
     - health
-  command:
+  args:
     - faspex
     - health
 f4_health_bad:
   tags:
     - nodoc
-  command:
+  args:
     - faspex
     - health
     - --url=https://wrong.example.com
@@ -6175,14 +6219,14 @@ f4_detect:
   tags:
     - faspex
     - nodoc
-  command:
+  args:
     - config
     - detect
     - "@preset:faspex4_user.url"
 f4_wizard:
   tags:
     - faspex
-  command:
+  args:
     - config
     - wizard
     - "@preset:faspex4_user.url"
@@ -6190,13 +6234,13 @@ f4_wizard:
     - --username=test
     - --password=test
 f4_pack_list:
-  command:
+  args:
     - faspex
     - package
     - list
     - --query.max=5
 f4_pack_send:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6209,7 +6253,7 @@ f4_package_id:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - list
@@ -6218,7 +6262,7 @@ f4_package_id:
     - --display=data
     - --format=csv
 f4_prsb:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6228,7 +6272,7 @@ f4_package_id2:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - list
@@ -6238,7 +6282,7 @@ f4_package_id2:
     - --display=data
     - --format=csv
 f4_prsd:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6249,7 +6293,7 @@ f4_package_id3:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - list
@@ -6258,7 +6302,7 @@ f4_package_id3:
     - --display=data
     - --format=csv
 f4_prib:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6267,14 +6311,14 @@ f4_prib:
 f4_prl:
   tags:
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - receive
     - --to-folder=$(TMP)
     - --link=@preset:faspex4.link_recv_from_user
 f4_prall:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6283,7 +6327,7 @@ f4_prall:
     - --to-folder=$(TMP)
     - --query.max=10
 f4_pslu:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6291,7 +6335,7 @@ f4_pslu:
     - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
     - $(PATH_TST_ASC_LCL)
 f4_psld:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6299,19 +6343,19 @@ f4_psld:
     - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
     - $(PATH_TST_ASC_LCL)
 f4_remote_src:
-  command:
+  args:
     - faspex
     - source
     - list
 f4_remote_srcb:
-  command:
+  args:
     - faspex
     - source
     - info
     - "%name:@preset:faspex4.src"
     - --storage=@preset:faspex4_storage
 f4_remote_srcc:
-  command:
+  args:
     - faspex
     - source
     - node
@@ -6320,7 +6364,7 @@ f4_remote_srcc:
     - /
     - --storage=@preset:faspex4_storage
 f4_remote_srcd:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6328,66 +6372,66 @@ f4_remote_srcd:
     - --remote-source=@extend:%name:@preset:faspex4.src
     - sample_source.txt
 f4_misc:
-  command:
+  args:
     - faspex
     - me
 f4_miscb:
-  command:
+  args:
     - faspex
     - address_book
 f4_miscc:
-  command:
+  args:
     - faspex
     - login_methods
 f4_v4:
-  command:
+  args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dropbox
     - list
 f4_v4b:
-  command:
+  args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dmembership
     - list
 f4_v4c:
-  command:
+  args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - workgroup
     - list
 f4_v4d:
-  command:
+  args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - wmembership
     - list
 f4_v4e:
-  command:
+  args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - user
     - list
 f4_v4f:
-  command:
+  args:
     - faspex
     - v4
     - metadata_profile
     - list
 f4_db1:
-  command:
+  args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
 f4_db1b:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6397,7 +6441,7 @@ f4_package_id4:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - list
@@ -6406,7 +6450,7 @@ f4_package_id4:
     - --fields=package_id
     - --query.max=1
 f4_db1d:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6414,13 +6458,13 @@ f4_db1d:
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
 f4_db1e:
-  command:
+  args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
 f4_db1f:
-  command:
+  args:
     - faspex
     - package
     - send
@@ -6431,7 +6475,7 @@ f4_package_id5:
   tags:
     - save_output
     - nodoc
-  command:
+  args:
     - faspex
     - package
     - list
@@ -6440,7 +6484,7 @@ f4_package_id5:
     - --fields=package_id
     - --query.max=1
 f4_db1h:
-  command:
+  args:
     - faspex
     - package
     - receive
@@ -6448,6 +6492,7 @@ f4_db1h:
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
 github_smoke_test:
+  command: null
   depends_on:
     - unit
     - serv_browse
