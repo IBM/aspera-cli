@@ -1,3 +1,0 @@
-current directory: /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/google-protobuf-4.33.4/ext/google/protobuf_c
-/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby -rrubygems /home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/gems/rake-13.3.1/exe/rake RUBYARCHDIR\=/home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/extensions/x86_64-linux/4.0.0/google-protobuf-4.33.4 RUBYLIBDIR\=/home/runner/work/aspera-cli/aspera-cli/vendor/bundle/ruby/4.0.0/extensions/x86_64-linux/4.0.0/google-protobuf-4.33.4
-Skipping build of FFI; `gem install ffi-compiler` to enable.
