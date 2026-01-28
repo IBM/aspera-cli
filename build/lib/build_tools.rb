@@ -3,12 +3,15 @@
 require 'bundler'
 require 'yaml'
 require 'aspera/log'
+require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'aspera/cli/version'
+require 'aspera/cli/manager'
 require_relative 'paths'
 
 # Log control
-Aspera::Log.instance.level = ENV.key?('LOG_LEVEL') ? ENV['LOG_LEVEL'].to_sym : :info
+Aspera::Log.instance.level = ENV.fetch('RAKE_LOG_LEVEL', 'info').to_sym
+Aspera::SecretHider.instance.log_secrets = Aspera::Cli::Manager.enum_to_bool(ENV.fetch('RAKE_HIDE_SECRETS', 'yes').downcase.to_sym)
 # Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 module BuildTools
@@ -46,14 +49,14 @@ module BuildTools
     Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
-
-  # Version that is currently being built
-  # Use this instead of Aspera::Cli::VERSION to account for beta builds
+  # Version that is currently being built.
+  # Use this instead of Aspera::Cli::VERSION to account for beta builds.
   def specific_version
     return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
     VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise('VERSION not found in version file')
   end
 
+  # Change version to build
   def use_specific_version(version)
     Aspera.assert(!version.to_s.empty?){'Version argument is required for beta task'}
     OVERRIDE_VERSION_FILE.write(version)
