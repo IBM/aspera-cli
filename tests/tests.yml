@@ -5900,7 +5900,8 @@ f5_adm_sh_invite:
     - invite
     - "@extend:%name:@preset:faspex5.shared_box_name@"
     - johnny@example.com
-f5_adm_sh_members:
+  post: sleep 10
+f5_adm_shbox_member_del:
   $comment: TODO check if fail is normal
   tags:
 #    - pre_cleanup

@@ -506,7 +506,7 @@ module Aspera
             )
             return Main.result_single_object(result)
           when :members, :saml_groups
-            # :shared_inboxes, :workgroups
+            # res_command := :shared_inboxes, :workgroups
             res_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             res_path = "#{res_sym}/#{res_id}/#{res_command}"
             list_key = res_command.to_s
@@ -533,6 +533,7 @@ module Aspera
               access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
               options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
+            # TODO: test SAML group
             return entity_execute(
               api: @api_v5,
               entity: res_path,
@@ -541,11 +542,11 @@ module Aspera
             ) do |field, value|
                      lookup_entity_by_field(
                        api: @api_v5,
-                       entity: 'contacts',
+                       entity: res_path,
                        field: field,
                        value: value,
                        query: Rest.php_style({type: %w[user]})
-                     )['id']
+                     )['user_id']
                    end
           when :reset_password
             # :accounts
