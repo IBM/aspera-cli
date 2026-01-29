@@ -27,8 +27,9 @@ module Aspera
     # :reek:UncommunicativeMethodName
     def do_POST(request, response)
       Log.log.debug{"request=#{request.path}"}
+      Log.log.debug{"query=#{request.query}"}
       begin
-        # only accept requests on the root
+        # Only accept requests on the root
         if !request.path.start_with?(@parameters[:root])
           response.status = 400
           response['Content-Type'] = Rest::MIME_JSON
@@ -48,16 +49,21 @@ module Aspera
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
         Log.dump(:webhook_parameters, webhook_parameters)
-        # env expects only strings
-        environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
-        post_proc_pid = Environment.secure_execute(script_path, mode: :background, env: environment)
-        Timeout.timeout(@parameters[:timeout_seconds]) do
-          # "wait" for process to avoid zombie
-          Process.wait(post_proc_pid)
-          post_proc_pid = nil
+        if request.query.key?('lambda')
+          # Code can throw exception, source code must return a lambda
+          Environment.secure_eval(File.read(script_path), __FILE__, __LINE__).call(webhook_parameters)
+        else
+          # env expects only strings
+          environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
+          post_proc_pid = Environment.secure_execute(script_path, mode: :background, env: environment)
+          Timeout.timeout(@parameters[:timeout_seconds]) do
+            # "wait" for process to avoid zombie
+            Process.wait(post_proc_pid)
+            post_proc_pid = nil
+          end
+          process_status = $CHILD_STATUS
+          raise "script #{script_path} failed with code #{process_status.exitstatus}" if !process_status.success? && @parameters[:fail_on_error]
         end
-        process_status = $CHILD_STATUS
-        raise "script #{script_path} failed with code #{process_status.exitstatus}" if !process_status.success? && @parameters[:fail_on_error]
         response.status = 200
         response.content_type = Rest::MIME_JSON
         response.body = JSON.generate({status: 'success', script: script_path, exit_code: process_status.exitstatus})
