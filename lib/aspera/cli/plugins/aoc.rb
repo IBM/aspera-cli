@@ -470,11 +470,11 @@ module Aspera
             return Main.result_success
           when :do
             command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
-            return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::SCOPE_ADMIN)
+            return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::Scope::ADMIN)
           when :bearer_token
             node_api = aoc_api.node_api_from(
               node_id: res_id,
-              scope:   options.get_next_argument('scope')
+              scope:   options.get_next_argument('scope', default: Api::Node::Scope::ADMIN)
             )
             return Main.result_text(node_api.oauth.authorization)
           when :dropbox
@@ -504,7 +504,7 @@ module Aspera
                   node_id: shared_folder['node_id'],
                   workspace_id: res_id,
                   workspace_name: nil,
-                  scope: Api::Node::SCOPE_USER
+                  scope: Api::Node::Scope::USER
                 )
                 result = node_api.read(
                   'permissions',
@@ -1052,13 +1052,13 @@ module Aspera
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
-              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::SCOPE_USER)
+              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
             end
           when :files
             command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))
             case command_repo
             when *NODE4_EXT_COMMANDS
-              return execute_nodegen4_command(command_repo, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::SCOPE_USER)
+              return execute_nodegen4_command(command_repo, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
             when :short_link
               folder_dest = options.get_next_argument('path', validation: String)
               home_node_api = aoc_api.node_api_from(

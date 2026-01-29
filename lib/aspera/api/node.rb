@@ -16,9 +16,15 @@ module Aspera
   module Api
     # Provides additional functions using node API with gen4 extensions (access keys)
     class Node < Aspera::Rest
-      # Separator between node.AK and user:all
-      SCOPE_SEPARATOR = ':'
-      SCOPE_NODE_PREFIX = 'node.'
+      # Format of node scope : node.<access key>:<scope>
+      module Scope
+        # Node sub-scopes
+        USER = 'user:all'
+        ADMIN = 'admin:all'
+        # Separator between node.AK and user:all
+        SEPARATOR = ':'
+        NODE_PREFIX = 'node.'
+      end
       # Accepted types in `file_matcher`
       MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
       # Delimiter in decoded node token
@@ -29,7 +35,7 @@ module Aspera
       REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
       # Methods of @app_info[:api]
       REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
-      private_constant :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX, :MATCH_TYPES,
+      private_constant :MATCH_TYPES,
         :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
         :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
@@ -40,9 +46,6 @@ module Aspera
       HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
-      # Node sub-scopes
-      SCOPE_USER = 'user:all'
-      SCOPE_ADMIN = 'admin:all'
       # / in cloud
       PATH_SEPARATOR = '/'
 
@@ -126,16 +129,16 @@ module Aspera
         # Node API scopes
         # @return [String] node scope
         def token_scope(access_key, scope)
-          return [SCOPE_NODE_PREFIX, access_key, SCOPE_SEPARATOR, scope].join('')
+          return [Scope::NODE_PREFIX, access_key, Scope::SEPARATOR, scope].join('')
         end
 
         # Decode node scope into access key and scope
         # @return [Hash]
         def decode_scope(scope)
-          items = scope.split(SCOPE_SEPARATOR, 2)
+          items = scope.split(Scope::SEPARATOR, 2)
           Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
-          Aspera.assert(items[0].start_with?(SCOPE_NODE_PREFIX)){"invalid scope: #{scope}"}
-          return {access_key: items[0][SCOPE_NODE_PREFIX.length..-1], scope: items[1]}
+          Aspera.assert(items[0].start_with?(Scope::NODE_PREFIX)){"invalid scope: #{scope}"}
+          return {access_key: items[0][Scope::NODE_PREFIX.length..-1], scope: items[1]}
         end
 
         # Create an Aspera Node bearer token
@@ -151,7 +154,7 @@ module Aspera
           # Manage convenience parameters
           expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
           payload.delete('_validity')
-          scope = payload['_scope'] || SCOPE_USER
+          scope = payload['_scope'] || Scope::USER
           payload.delete('_scope')
           payload['scope'] ||= token_scope(access_key, scope)
           payload['auth_type'] ||= 'access_key'

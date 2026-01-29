@@ -17,7 +17,7 @@ module Aspera
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
       SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
-      # to avoid infinite loop in pub link redirection
+      # To avoid infinite loop in pub link redirection
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
       # Well-known AoC global client apps
@@ -47,7 +47,7 @@ module Aspera
         :PERMISSIONS_CREATED,
         :ID_AK_ADMIN
 
-      # various API scopes supported
+      # Various API scopes supported
       module Scope
         SELF = 'self'
         USER = 'user:all'
@@ -394,10 +394,10 @@ module Aspera
       # @param node_id        [String] identifier of node in AoC
       # @param workspace_id   [String,nil] workspace identifier
       # @param workspace_name [String,nil] workspace name
-      # @param scope          [String,nil] e.g. Node::SCOPE_USER, or Node::SCOPE_ADMIN, or nil (requires secret)
+      # @param scope          [String,nil] e.g. Node::Scope::USER, or Node::Scope::ADMIN, or nil (requires secret)
       # @param package_info   [Hash,nil] created package information
       # @returns [Node] a node API for access key
-      def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::SCOPE_USER, package_info: nil)
+      def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::Scope::USER, package_info: nil)
         Aspera.assert_type(node_id, String)
         node_info = read("nodes/#{node_id}")
         workspace_name = read("workspaces/#{workspace_id}")['name'] if workspace_name.nil? && !workspace_id.nil?
@@ -428,7 +428,7 @@ module Aspera
           node_params[:auth] = auth_params.clone
           node_params[:auth][:params] ||= {}
           node_params[:auth][:params][:scope] = Node.token_scope(node_info['access_key'], scope)
-          node_params[:auth][:params][:owner_access] = true if scope.eql?(Node::SCOPE_ADMIN)
+          node_params[:auth][:params][:owner_access] = true if scope.eql?(Node::Scope::ADMIN)
           # Special header required for bearer token only
           node_params[:headers] = {Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
         end
