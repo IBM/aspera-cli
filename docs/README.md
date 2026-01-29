@@ -2,7 +2,7 @@
 
 `/README.md` is generated after compilation of `docs/README.erb.md`.
 
-`docs/README.erb.md` uses markdown format with embedded ruby macros (`erb`).
+`docs/README.erb.md` uses the Markdown format with embedded Ruby macros (`erb`).
 
 Those macros are basically functions defined in `doc_tools.rb`, for example:
 

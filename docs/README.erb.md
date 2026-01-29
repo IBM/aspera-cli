@@ -247,7 +247,7 @@ If you don't have internet for the installation, refer to section [Installation 
 
 ### Single file executable
 
-> [!CAUTION]
+> [!WARNING]
 > This is a Beta feature.
 > Only on a limited number of platforms.
 
@@ -269,7 +269,7 @@ chmod a+x <%=cmd%>
 
 #### Linux: GLIBC version
 
-> [!CAUTION]
+> [!WARNING]
 > On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
 
 On Linux, check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
@@ -553,7 +553,7 @@ Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> [!CAUTION]
+> [!WARNING]
 > The startup time is slightly longer using `jruby` than the native Ruby.
 > Refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
 > This can be reduced by using the `--dev` option.
@@ -930,7 +930,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-> [!CAUTION]
+> [!WARNING]
 > <%=tool%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
@@ -990,7 +990,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > [!NOTE]
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
-> [!CAUTION]
+> [!WARNING]
 > Do not use too many volumes, as the legacy `aufs` limits the number.
 > (anyway, prefer to use `overlay2`)
 
@@ -2755,7 +2755,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 #### Vault: System keychain
 
-> [!CAUTION]
+> [!WARNING]
 > **macOS only**
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
@@ -2918,7 +2918,7 @@ mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
-> [!CAUTION]
+> [!WARNING]
 > Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### Web service
@@ -6006,9 +6006,14 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 ## Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
 The `server` plugin is used for operations on Aspera HSTS using SSH authentication.
-It is the original way of accessing an Aspera Server, often used for server to server transfers.
-An SSH session is established, authenticated with either a password or an SSH private key,
-then commands `ascp` (for transfers) and `ascmd` (for file operations) are executed.
+
+It is the original way of accessing an Aspera Server, often used for **server to server** transfers.
+An SSH session is established, authenticated with either a password or an SSH private key.
+Then, commands `ascp` (for transfers) and `ascmd` (for file operations) are executed.
+
+> [!IMPORTANT]
+> If you have Node API credentials, or Access Key/Secret, use the plugin: `node`.
+> This plugin is exclusively using SSH credentials.
 
 The URL to be provided with option `url` shall be like `ssh://_server_address_:33001`, then option `username` is used to specify the transfer user, and finally either option `password` or `ssh_keys` (with one or several paths) for the authentication.
 
@@ -7855,58 +7860,20 @@ To avoid generation for some categories, specify a list using option `skip_types
 
 Each category has a specific rendering method to produce the PNG thumbnail.
 
-The mp4 video preview file is only for category `video`
-
-File type is primarily based on file extension detected by the Node API and translated info a mime type returned by the Node API.
-
-### `mimemagic`
+The mp4 video preview file is only for category `video`.
 
 By default, the Mime type used for conversion is the one returned by the Node API, based on file name extension.
 
-It is also possible to detect the mime type using option `mimemagic`.
+It is also possible to detect the MIME type using option `mimemagic`.
 To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`.
 
-This requires to manually install the `mimemagic` gem: `gem install mimemagic`.
-
-In this case the `preview` command will first analyze the file content using `mimemagic`, and if no match, will try by extension.
-
-If the `mimemagic` gem complains about missing mime info file:
-
-- Any OS:
-
-  - Examine the error message
-  - Download the file: [`freedesktop.org.xml.in`](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
-  - move and rename this file to one of the locations expected by `mimemagic` as specified in the error message
-
-- Windows:
-
-  - Download the file: [`freedesktop.org.xml.in`](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
-  - Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
-  - Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace `VV` with version) to the exact path of this file:
-
-  ```batchfile
-  SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
-  ```
-
-  - Close the `cmd` and restart a new one if needed to get refreshed env vars
-
-- Linux RHEL 8+:
-
-```shell
-dnf install shared-mime-info
-```
-
-- **macOS**:
-
-```shell
-brew install shared-mime-info
-```
+In this case the `preview` command will first analyze the file content using gem `marcel`, and if no match, will try by extension.
 
 ### Generation: Read source files and write preview
 
 Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-<%=tool%> provides 2 ways to read and write files with the option: `file_access`
+<%=tool%> provides 2 ways to read and write files with the option: `file_access`.
 
 If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
 In this case, no transfer happen, source files are directly read from the storage, and preview files are directly written to the storage.

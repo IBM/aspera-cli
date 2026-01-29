@@ -7,9 +7,10 @@ require 'aspera/yaml'
 
 # Fixed paths in project
 module TestEnv
+  # Env var with URL to get test configuration
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
 
-  # Load the full test configuration from file or other (e.g. vault)
+  # Load the full test configuration parameters (servers, credentials) from file or other (e.g. vault)
   # @return [Hash] Full test configuration parameters
   def configuration
     return @configuration if defined?(@configuration)
@@ -24,7 +25,7 @@ module TestEnv
   # Allowed keys in test defs: See tests/README.md
   ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect}.freeze
 
-  # Read and normalize test definitions from TEST_DEFS file
+  # Read and normalize test definitions from TEST_DEFS YAML file
   # @return [Hash{Symbol=>Hash}] Test definitions
   def descriptions
     tests = Aspera::Yaml.safe_load(TEST_DEFS.read)
@@ -35,11 +36,13 @@ module TestEnv
       raise "Unsupported key(s): #{unsupported_keys} in #{name}" unless unsupported_keys.empty?
       properties[:command] = Aspera::Cli::Info::CMD_NAME unless properties.key?(:command)
       properties[:args] ||= []
-      plugin = properties[:args].find{ |s| !s.start_with?('-', '@')}
-      raise "Wrong plugin name: #{plugin}" unless plugin.nil? || plugin.match?(/^[a-z0-9_]+$/)
-      properties[:plugin] = plugin unless plugin.nil?
+      plugin_sym = properties[:args].find{ |s| !s.start_with?('-', '@')}&.to_sym
+      raise "Wrong plugin name: #{plugin_sym}" unless plugin_sym.nil? || plugin_sym.match?(/^[a-z0-9_]+$/)
+      properties[:plugin] = plugin_sym unless plugin_sym.nil?
       properties[:tags] ||= []
-      properties[:tags].unshift(plugin) unless plugin.nil? || properties[:tags].include?(plugin)
+      properties[:tags].map!(&:to_sym)
+      properties[:tags].unshift(plugin_sym) unless plugin_sym.nil? || properties[:tags].include?(plugin_sym)
+      properties[:tags].push(:ats) if properties[:args].include?('ats') && !properties[:tags].include?(:ats)
       if properties[:args].include?('wizard')
         properties[:env] ||= {}
         properties[:env]['ASCLI_WIZ_TEST'] = 'yes'

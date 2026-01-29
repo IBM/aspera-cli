@@ -23,18 +23,18 @@ module Aspera
       # one of CONVERSION_TYPES
       attr_reader :conversion_type
 
-      # node API mime types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
-      # the resulting preview file type is taken from destination file extension.
-      # conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>
+      # Node API MIME types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+      # The resulting preview file type is taken from destination file extension.
+      # Conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>
       #   -> conversion_type is one of FileTypes::CONVERSION_TYPES
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
-      # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
+      # The conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
       # @param src           [String]  source file path
       # @param dst           [String]  destination file path
       # @param options       [Options] All conversion options
       # @param main_temp_dir [String]  Main temp folder, sub folder will be created for generation
-      # @param api_mime_type [String,nil] Optional mime type as provided by node api (or nil)
+      # @param api_mime_type [String,nil] Optional MIME type as provided by node api (or nil)
       def initialize(src, dst, options, main_temp_dir, api_mime_type)
         @source_file_path = src
         @destination_file_path = dst
@@ -57,7 +57,7 @@ module Aspera
         Aspera.assert(respond_to?(@processing_method, true)){"no processing known for #{conversion_type} -> #{@preview_format_sym}"}
       end
 
-      # create preview as specified in constructor
+      # Create preview as specified in constructor.
       def generate
         Log.log.info{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
         begin
@@ -76,17 +76,17 @@ module Aspera
 
       private
 
-      # creates a unique temp folder for file
+      # Creates a unique temp folder for file.
       def this_tmpdir
         FileUtils.mkdir_p(@temp_folder)
         return @temp_folder
       end
 
-      # @return offset in seconds suitable for ffmpeg -ss option
       # @param duration of video
       # @param start_offset of parts
       # @param total_count of parts
       # @param index of part (start at 1)
+      # @return [Integer] offset in seconds suitable for ffmpeg -ss option
       def get_offset(duration, start_offset, total_count, index)
         Aspera.assert_type(duration, Float){'duration'}
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
