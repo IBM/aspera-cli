@@ -120,8 +120,9 @@ shares_admin_9:
     - import
     - '@json:{"id":"the_id","name_id":"the_name"}'
 shares_admin_10:
+  $comment: There is no LDAP configured on test system
   tags:
-    - hide_fail
+    - flaky
   args:
     - shares
     - admin
@@ -229,7 +230,7 @@ shares_8:
     - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
 shares_9_prep:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - shares
@@ -254,7 +255,7 @@ shares_10:
     - "@extend:@preset:shares.share_folder@/new_folder"
 shares_sync_prepare:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - shares
@@ -481,7 +482,7 @@ serv_upload2:
     - "--transfer-info.ascp_args=@list: -l 100m"
 serv_upload3_prep:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   depends_on:
     - serv_mkdir
@@ -881,9 +882,10 @@ cons_cur_show_one1:
     - files
     - $(read_value_from('console_xfer_id').split("\n").last)
 cons_cur_show_one2:
+  $comment: Gives 500 Internal Server Error
   tags:
-    - ignore_fail
     - nodoc
+    - flaky
   depends_on:
     - console_xfer_id
   args:
@@ -899,8 +901,9 @@ cons_sma_lst:
     - smart
     - list
 cons_sma_sta:
+  $comment: Smart transfer does not exist
   tags:
-    - ignore_fail
+    - flaky
   args:
     - console
     - transfer
@@ -978,12 +981,12 @@ nd_spa:
     - /
 nd_del_err:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - node
     - delete
-    - /a_folder
+    - "@extend:@preset:server.upload_folder@/a_folder"
 nd_folder:
   depends_on:
     - nd_del_err
@@ -1090,7 +1093,6 @@ nd_2_nd_xferb:
   depends_on:
     - nd_2_nd_xfer
   tags:
-    - ignore_fail
     - nodoc
   args:
     - node
@@ -1098,7 +1100,7 @@ nd_2_nd_xferb:
     - "@extend:@preset:server.upload_folder@/10MB.2"
 nd_service_clean:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=node_ak_adm
@@ -1175,7 +1177,7 @@ nd_xfer_lstb:
     - --once-only=yes
 nd_xfer_lst_once1:
   tags:
-    - ignore_fail
+    - flaky
     - nodoc
   depends_on:
     - nd_xfer_lstb
@@ -1186,7 +1188,7 @@ nd_xfer_lst_once1:
     - --once-only=yes
 nd_xfer_lst_once2:
   tags:
-    - ignore_fail
+    - flaky
     - nodoc
   depends_on:
     - nd_xfer_lst_once1
@@ -1301,7 +1303,7 @@ nd_watch_list:
 nd_watch_1b:
   $comment: Fails because watchfolderd is not running
   tags:
-    - hide_fail
+    - flaky
     - nodoc
   args:
     - node
@@ -1388,9 +1390,9 @@ nd_akg:
     - find
     - "@preset:aoc.test_folder"
     - --secret=@preset:aoc.ak_secret
-nd_ak_mkdir:
+nd_ak_mkdir_cleanup:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=node_ak_adm
@@ -1403,6 +1405,8 @@ nd_ak_mkdir:
     - --secret=@preset:aoc.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkdirb:
+  depends_on:
+    - nd_ak_mkdir_cleanup
   args:
     - --preset=node_ak_adm
     - node
@@ -1415,7 +1419,7 @@ nd_ak_mkdirb:
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=node_ak_adm
@@ -1443,7 +1447,7 @@ nd_ak_mklink:
   depends_on:
     - nd_ak_mkfile
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=node_ak_adm
@@ -1471,7 +1475,7 @@ nd_ak_mvdir:
   tags:
     - nodoc
   depends_on:
-    - nd_ak_mkdir
+    - nd_ak_mkdir_cleanup
   args:
     - --preset=node_ak_adm
     - node
@@ -1516,7 +1520,7 @@ nd_ak3:
     - 'faux:///test_nd_ak3?100k'
     - --default-ports=no
     - --secret=@preset:aoc.ak_secret
-nd_ak3b:
+node_ak_download:
   depends_on:
     - nd_ak3
   args:
@@ -1529,9 +1533,9 @@ nd_ak3b:
     - test_nd_ak3
     - --to-folder=$(TMP)
     - --secret=@preset:aoc.ak_secret
-nd_ak3c:
+node_ak_upload:
   tags:
-    - hide_fail
+#    - flaky
     - nodoc
   depends_on:
     - nd_ak3
@@ -1544,9 +1548,10 @@ nd_ak3c:
     - show
     - /test_nd_ak3
     - --secret=@preset:aoc.ak_secret
-nd_ak3d:
+node_ak_thumbnail:
+  $comment: No preview is available.
   tags:
-    - hide_fail
+    - flaky
     - nodoc
   depends_on:
     - nd_ak3
@@ -1561,9 +1566,9 @@ nd_ak3d:
     - --secret=@preset:aoc.ak_secret
 nd_ak3e:
   depends_on:
-    - nd_ak3b
-    - nd_ak3c
-    - nd_ak3d
+    - node_ak_download
+    - node_ak_upload
+    - node_ak_thumbnail
   args:
     - --preset=node_ak_adm
     - node
@@ -1587,7 +1592,7 @@ nd_ak4:
     - --secret=@preset:aoc.ak_secret
 nd_ak_bearer_reset:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - node
@@ -1978,7 +1983,7 @@ aocffinc:
     - '@ruby:->(f){f["type"].eql?("file")}'
 aoc_testsrc_cleanup:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - aoc
@@ -1988,7 +1993,7 @@ aoc_testsrc_cleanup:
   post: sleep TEMPORIZE_CREATE
 aoc_some_folder_cleanup:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - aoc
@@ -1997,7 +2002,7 @@ aoc_some_folder_cleanup:
     - /some_folder
 aoc_testdst_cleanup:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - aoc
@@ -2273,18 +2278,28 @@ aoc_file_id_4:
     - files
     - show
     - testdst/$(FILENAME_ASCII)
+aoc_testfolder_cleanup:
+  tags:
+    - pre_cleanup
+    - nodoc
+  args:
+    - aoc
+    - files
+    - delete
+    - "@preset:aoc.test_folder"
+  post: sleep TEMPORIZE_CREATE
 aoc_file_id_5:
   tags:
-    - ignore_fail
     - nodoc
   depends_on:
     - aoc_files_transfer
+    - aoc_testfolder_cleanup
   args:
     - aoc
     - files
     - mkdir
     - "@preset:aoc.test_folder"
-aoc_file_id_6:
+aoc_file_upload_video:
   tags:
     - nodoc
   depends_on:
@@ -2323,8 +2338,11 @@ aoc_file_id_8:
     - "@preset:aoc.test_folder"
     - list
 aoc_file_id_9:
+  $comment: no preview
   depends_on:
-    - aoc_file_id_6
+    - aoc_file_upload_video
+  tags:
+    - flaky
   args:
     - aoc
     - files
@@ -2334,7 +2352,7 @@ aoc_file_id_10:
   tags:
     - rmagick
   depends_on:
-    - aoc_file_id_6
+    - aoc_file_upload_video
   args:
     - aoc
     - files
@@ -2346,7 +2364,7 @@ aoc_file_id_11:
     - nodoc
     - rmagick
   depends_on:
-    - aoc_file_id_6
+    - aoc_file_upload_video
   args:
     - aoc
     - files
@@ -2360,7 +2378,7 @@ aoc_file_id_12:
   tags:
     - rmagick
   depends_on:
-    - aoc_file_id_6
+    - aoc_file_upload_video
   args:
     - aoc
     - files
@@ -2784,7 +2802,7 @@ aoc_adm_nd_br:
     - /
 aoc_adm_nd_mkdir_prep:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=aoc_admin
@@ -3083,7 +3101,6 @@ aoccltregd:
 aoc_adm_node_bearer:
   $comment: TODO fix this
   tags:
-    - ignore_fail
   args:
     - --preset=aoc_admin
     - aoc
@@ -3091,9 +3108,10 @@ aoc_adm_node_bearer:
     - node
     - bearer_token
     - "%name:@preset:aoc.node_name"
-aocadmndcr:
+    - user:all
+aoc_adm_nd_tstshrfld_cleanup:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - --preset=aoc_admin
@@ -3105,21 +3123,9 @@ aocadmndcr:
     - delete
     - test_shared_folder
     - --node-cache=no
-aocadmndcrb:
-  tags:
-    - ignore_fail
-    - nodoc
-  args:
-    - --preset=aoc_admin
-    - aoc
-    - admin
-    - node
-    - do
-    - "%name:@preset:aoc.node_name"
-    - browse
-    - test_shared_folder
-    - --node-cache=no
 aocadmndcrc:
+  depends_on:
+    - aoc_adm_nd_tstshrfld_cleanup
   args:
     - --preset=aoc_admin
     - aoc
@@ -3144,7 +3150,7 @@ aocadmndcrd:
     - --node-cache=no
 aocadmndsh1:
   depends_on:
-    - aocadmndcr
+    - aoc_adm_nd_tstshrfld_cleanup
   args:
     - --preset=aoc_admin
     - aoc
@@ -3234,7 +3240,7 @@ aocat7:
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 aocat8:
   tags:
-    - ignore_fail
+    - pre_cleanup
   args:
     - --preset=aoc_admin
     - aoc
@@ -3246,6 +3252,8 @@ aocat8:
 aocat8b:
   depends_on:
     - aocat8
+  tags:
+    - flaky
   args:
     - --preset=aoc_admin
     - aoc
@@ -3257,8 +3265,9 @@ aocat8b:
     - --region=@preset:icos.region
     - '@json:@extend:{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 aocat9:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
   args:
     - --preset=aoc_admin
     - aoc
@@ -3270,8 +3279,9 @@ aocat9:
     - --region=@preset:aws.region
     - '@json:@extend:{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
 aocat10:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
   args:
     - --preset=aoc_admin
     - aoc
@@ -3293,8 +3303,9 @@ aocat11:
     - browse
     - /
 aocat13:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
     - nodoc
   args:
     - --preset=aoc_admin
@@ -3345,7 +3356,7 @@ aocauto3:
   depends_on:
     - wf_id
   tags:
-    - ignore_fail
+    - flaky
   args:
     - --preset=aoc_admin
     - aoc
@@ -3523,7 +3534,7 @@ orch_workorder_output:
 orch_workstep_status:
   $comment: TODO get some workstep id
   tags:
-    - ignore_fail
+    - flaky
   args:
     - orchestrator
     - workstep
@@ -3532,7 +3543,7 @@ orch_workstep_status:
 orch_workstep_cancel:
   $comment: TODO get some workstep id
   tags:
-    - ignore_fail
+    - flaky
   args:
     - orchestrator
     - workstep
@@ -3583,7 +3594,7 @@ at3:
     - create
 at8_prep:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - ats
@@ -3619,8 +3630,9 @@ at8d:
     - entitlement
     - ak2ibmcloud
 at9:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
   args:
     - ats
     - access_key
@@ -3629,8 +3641,9 @@ at9:
     - --region=@preset:aws.region
     - '@json:@extend:{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
 at10:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
   args:
     - ats
     - access_key
@@ -3653,16 +3666,18 @@ at12:
     - ak2ibmcloud
     - --secret=@preset:misc.secret_here
 at13:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
   args:
     - ats
     - access_key
     - delete
     - ak2ibmcloud
 at14:
+  $comment: Fails for unknown reason on ATS side
   tags:
-    - hide_fail
+    - flaky
     - nodoc
   args:
     - ats
@@ -3775,7 +3790,7 @@ nd_async_del:
     - ALL
 sync_create_prep1:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - server
@@ -3794,7 +3809,7 @@ sync_create_prep2:
     - "@preset:sync.remote_path"
 sync_create_prep3:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - node
@@ -4310,7 +4325,7 @@ conf_vault_macos_prepare:
   depends_on:
     - conf_vault_macos
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
     - interactive
   args:
@@ -4336,7 +4351,7 @@ conf_vault_macosd:
   depends_on:
     - conf_vault_macosc
   tags:
-    - ignore_fail
+    - pre_cleanup
   args:
     - -N
     - config
@@ -5181,7 +5196,7 @@ prev_folder:
     - --ts=@json:{"target_rate_kbps":1000000}
 serv_hot_prep:
   tags:
-    - ignore_fail
+    - pre_cleanup
     - nodoc
   args:
     - server
@@ -5261,7 +5276,7 @@ tcos_info3:
     - --log-level=trace2
 tcos_show:
   tags:
-    - ignore_fail
+#    - pre_cleanup
     - nodoc
   args:
     - cos
@@ -5888,7 +5903,7 @@ f5_adm_sh_invite:
 f5_adm_sh_members:
   $comment: TODO check if fail is normal
   tags:
-    - ignore_fail
+#    - pre_cleanup
   depends_on:
     - f5_adm_sh_invite
   args:

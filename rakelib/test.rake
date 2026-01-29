@@ -33,7 +33,7 @@ PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.t
 # Package title for faspex and aoc
 PACKAGE_TITLE_BASE = Time.now.to_s
 FILENAME_ASCII = 'data_file.bin'
-# A medium sized file for testing
+# A medium sized file for testing with unicode characters in file name
 FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ"
 # Testing file generated locally
 PATH_TST_ASC_LCL = TMP / FILENAME_ASCII
@@ -90,9 +90,10 @@ ALL_TESTS = TestEnv.descriptions
 PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 
-# tags that have special meaning
-SPECIAL_TAGS = %w[ignore_fail must_fail hide_fail save_output wait_value tmp_conf noblock].freeze
-
+# tags that will (or might) fail
+EXPECTED_FAIL = %i[pre_cleanup must_fail flaky].freeze
+# all special tags with special handling
+SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output wait_value tmp_conf noblock]).freeze
 def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
     PATH_TST_ASC_LCL,
@@ -227,6 +228,7 @@ def select_test_cases(selection, &block)
     ALL_TESTS.each(&block)
   elsif list.first.eql?('tag')
     list.shift
+    list.map!(&:to_sym)
     ALL_TESTS.select{ |_, info| info[:tags].intersect?(list)}.each(&block)
   else
     list.each do |name|
@@ -240,7 +242,7 @@ end
 def percent_completed
   total = ALL_TESTS.size
   completed = STATES.count{ |_, v| SKIP_STATES.include?(v)}
-  (completed * 100) / total
+  ((completed * 100.0) / total).round(1)
 end
 
 namespace :test do
@@ -302,7 +304,8 @@ namespace TEST_CASE_NS do
         log.info("Pre: Executing: #{info[:pre]}")
         Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
       end
-      tags = SPECIAL_TAGS.to_h{ |s| [s.to_sym, info[:tags].include?(s)]}
+      # [Hash{Symbol => Boolean}] key=special tag, value=true if present
+      tags = SPECIAL_TAGS.to_h{ |s| [s, info[:tags].include?(s)]}
       tags[:save_output] ||= info[:expect] unless tags[:must_fail]
       if info[:command].nil?
         log.info("[OK]   #{name} (no command)")
@@ -337,7 +340,7 @@ namespace TEST_CASE_NS do
         run_options[:in] = stdinfile.to_s
         log.info("in: #{input}")
       end
-      if tags[:must_fail] || tags[:ignore_fail]
+      if tags[:must_fail] || tags[:pre_cleanup]
         run_options[:err] = err_file(name).to_s
         log.info("err: #{run_options[:err]}")
       end
@@ -378,10 +381,7 @@ namespace TEST_CASE_NS do
         break
       rescue RuntimeError => e
         STATES[name] = 'failed'
-        expected_fails = tags.filter_map do |k, v|
-          s = k.to_s
-          s.delete_suffix!('_fail') && v == true ? s.upcase : nil
-        end
+        expected_fails = EXPECTED_FAIL.select{ |tag| tags[tag]}
         if expected_fails.empty?
           log.error("[FAIL] #{name} : #{e.message}")
           raise
@@ -391,7 +391,7 @@ namespace TEST_CASE_NS do
           raise "Missing :expect: #{stderr}" unless info[:expect]
           raise "Expected message not found in stderr: #{info[:expect]}" unless stderr.include?(info[:expect])
         end
-        log.info("[#{expected_fails.join(' ')} FAIL] #{name}")
+        log.info("[FAIL] #{name} #{expected_fails.join(' ')}")
         STATES[name] = 'passed'
         save_state
         break
