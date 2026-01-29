@@ -22,7 +22,7 @@ PANDOC_META_END
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots-clear, precise, and always on time.
+It doesn’t chatter; it hoots—clear, precise, and always on time.
 
 Like <%=tool%>, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
@@ -42,7 +42,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version : <%=gemspec.version.to_s%>
+Version: <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
 
@@ -97,7 +97,7 @@ Using these APIs is generally more suitable for long-term development and mainte
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
 For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
-It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (See [Logging, Debugging](#logging-debugging)).
+It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
 Clarifying the CLI landscape:
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
@@ -107,15 +107,15 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 
 ### Notations, Shell, Examples
 
-Command line operations examples are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
+Examples of command-line operations are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
 Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
-Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value, and not fixed value commands.
+Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, and not fixed value commands.
 
-<%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
+<%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
 
 Some commands will start an Aspera transfer (e.g. `upload`).
-The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
+The transfer is not directly implemented in <%=tool%>; rather, <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
@@ -223,9 +223,9 @@ complete
 
 ### Going further
 
-Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
+Get familiar with configuration, options, and commands: [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
+Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...): [Application Plugins](#plugins)
 
 ## Installation
 
@@ -303,7 +303,7 @@ A Ruby interpreter is required to run <%=tool%>.
 
 Required Ruby <%=ruby_version%>.
 
-**Ruby can be installed using any method** : `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
+**Ruby can be installed using any method**: `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 
 **In priority**, refer to the official Ruby documentation:
 
@@ -313,7 +313,7 @@ Required Ruby <%=ruby_version%>.
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
 <%=tool%> requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If only an older Ruby version must be used due to system constraints, then use an older version of <%=tool%> that supports it, refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
+If only an older Ruby version must be used due to system constraints, use an older version of <%=tool%> that supports it; refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
 
 #### Windows: Installer
 
@@ -375,7 +375,7 @@ PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:
 
 #### Linux: Package
 
-If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
+If your Linux distribution provides a standard Ruby package, you can use it provided that the version is supported.
 
 **Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems:
 
@@ -470,7 +470,7 @@ One can install in another location with:
 curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+As root, make sure this will not collide with other applications using Ruby (e.g. Faspex).
 If so, one can rename the environment script so that it is not loaded by default:
 
 ```shell
@@ -495,7 +495,7 @@ RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm instal
 
 #### Unix-like: `rbenv`
 
-If you don't have root access, you can install Ruby in your home directory using `rbenv` see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
+If you don't have root access, you can install Ruby in your home directory using `rbenv`, see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
 ```shell
 curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
@@ -545,7 +545,7 @@ make install
 #### JRuby
 
 <%=tool%> can also run with the [JRuby](https://www.jruby.org/) interpreter.
-All what is needed is a JVM (Java Virtual Machine) on your system (`java`).
+All that is needed is a JVM (Java Virtual Machine) on your system (`java`).
 The JRuby package comes pre-complied and does not require compilation of native extensions.
 Use a version of JRuby compatible with Ruby version supported by <%=tool%>.
 Refer to [the Wikipedia page](https://en.wikipedia.org/wiki/JRuby) to match JRuby and Ruby versions.
@@ -849,7 +849,7 @@ podman --version
 
 #### Container: Quick start
 
-**Wanna start quickly ?** With an interactive shell ?
+**Want to start quickly?** With an interactive shell?
 
 Execute this:
 
@@ -1097,7 +1097,7 @@ To display trusted certificate store locations:
 <%=cmd%> --show-config --fields=cert_stores
 ```
 
-Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc...).
+Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc.).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
 One can display those default values:
@@ -1145,7 +1145,7 @@ Original `ascp`'s hard coded locations can be found using:
 <%=cmd%> config ascp info --fields=openssldir
 ```
 
-E.g. on macOS: `/Library/Aspera/ssl`.
+For example, on macOS: `/Library/Aspera/ssl`.
 Then trusted certificates are taken from `[OPENSSLDIR]/cert.pem` and files in `[OPENSSLDIR]/certs`.
 <%=tool%> overrides the default hard coded location used by `ascp` for WSS and uses the same locations as specified in `cert_stores` (using the `-i` option of `ascp`).
 
@@ -1247,7 +1247,7 @@ It is fully documented in the shell's documentation.
 
 On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
 A c-shell (`csh`, `tcsh`) or other shell can also be used.
-In this environment the shell parses the command line, possibly replacing variables, etc...
+In this environment the shell parses the command line, possibly replacing variables, etc.
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
 Ruby receives a list command line arguments from shell and gives it to <%=tool%>.
@@ -1296,7 +1296,7 @@ Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 
 - Space characters: split arguments (space, tab, newline)
 - Backslash: `\` escape single special character
-- Globing characters: `*?[]{}` for file globing
+- Globbing characters: `*?[]{}` for file globbing
 - Double quotes: `"`
 - Single quotes: `'`
 
@@ -1453,7 +1453,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all example, most special character handling is not specific to <%=tool%>:
-It depends on the underlying syntax: shell, JSON, etc...
+It depends on the underlying syntax: shell, JSON, etc.
 Depending on the case, a different `format` option is used to display the actual value.
 
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
@@ -1620,8 +1620,8 @@ The tokenization of the command line is typically done by the shell, refer to th
 
 <%=tool%> handles two types of command line arguments:
 
-- **Positional Arguments** : position is significant
-- **Options** : only order is significant, but not absolute position
+- **Positional Arguments**: position is significant
+- **Options**: only order is significant, but not absolute position
 
 For example:
 
@@ -1758,7 +1758,7 @@ Exceptions and Special Cases:
 - **Cumulative Hashes**:
   When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
   Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
-  This can be used to start from an empty value, and not used existing default value.
+  This can be used to start from an empty value, and not use the existing default value.
 
 Example:
 
@@ -1807,8 +1807,8 @@ By default, <%=tool%> will ask for missing mandatory options or **Command Parame
 The behavior can be controlled with:
 
 - `--interactive=<yes|no>` (default=yes if STDIN is a terminal, else no)
-  - yes : missing mandatory parameters/arguments are asked to the user
-  - no : missing mandatory parameters/arguments raise an error message
+  - yes: missing mandatory parameters/arguments are asked to the user
+  - no: missing mandatory parameters/arguments raise an error message
 - `--ask-options=<yes|no>` (default=no)
   - optional parameters/arguments are asked to user
 
@@ -1909,7 +1909,7 @@ Effective only when `format` is `table` to display `single_object` or `object_li
 
 If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
 
-If value is `yes` (default), then object are flattened, i.e. deep `Hash` are transformed into 1-level `Hash`, where keys are `.`-junction of deep keys.
+If value is `yes` (default), then objects are flattened, i.e. deep `Hash` are transformed into 1-level `Hash`, where keys are `.`-junction of deep keys.
 In this case, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
 
 Example: Result of command is a list of objects with a single object:
@@ -2074,22 +2074,22 @@ The option `display` controls the level of output:
 Depending on the command, results may include by default all fields, or only some selected fields.
 It is possible to define specific columns to be displayed, by setting the `fields` option.
 
-The `fields` option is a list that can be either a comma separated list or an extended value `Array`.
+The `fields` option is a list that can be either a comma-separated list or an extended value `Array`.
 
 Individual elements of the list can be:
 
-- **property** : add property to the current list
-- `-`**property** : remove property from the current list
-- `DEF` : default list of fields (that's the default, when not set)
-- `ALL` : all fields
-- A Ruby `RegEx` : using `@ruby:'/.../'`, or `@re:...` add those matching to the list
+- **property**: add property to the current list
+- `-`**property**: remove property from the current list
+- `DEF`: default list of fields (that's the default, when not set)
+- `ALL`: all fields
+- A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
 Examples:
 
-- `a,b,c` : the list of attributes specified as a comma separated list (overrides the all default)
-- `@json:'["a","b","c"]'` : `Array` extended value: same as above
-- `b,DEF,-a` : default property list, remove `a` and add `b` in first position
-- `@ruby:'/^server/'` : Display all fields whose name begin with `server`
+- `a,b,c`: the list of attributes specified as a comma-separated list (overrides the default)
+- `@json:'["a","b","c"]'`: `Array` extended value: same as above
+- `b,DEF,-a`: default property list, remove `a` and add `b` in first position
+- `@ruby:'/^server/'`: Display all fields whose name begins with `server`
 
 #### Option: `select`
 
@@ -2167,7 +2167,7 @@ The following decoders are supported:
 | `base64` | `String` | `String` | Decode a base64 encoded string. |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
 | `env`    | `String` | `String` | Read from a named env var name. e.g. `--password=@env:MYPASSVAR` |
-| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the users home folder). e.g. `--key=@file:~/.ssh/mykey` |
+| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). e.g. `--key=@file:~/.ssh/mykey` |
 | `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
 | `lines`  | `String` | `Array`  | Split a string in multiple lines and return an `Array`. |
 | `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
@@ -2328,7 +2328,7 @@ Although the file is a standard `YAML` file, <%=tool%> provides commands to read
 
 All options for <%=tool%> can be set on command line, or by env vars, or using [Option Preset](#option-preset) in the configuration file.
 
-A configuration file provides a way to define default values, especially for authentication options, thus avoiding to always having to specify those options on the command line.
+A configuration file provides a way to define default values, especially for authentication options, thus avoiding having to always specify those options on the command line.
 
 The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
 
@@ -2366,7 +2366,7 @@ A named [Option Preset](#option-preset) can be modified directly using <%=tool%>
 <%=cmd%> config preset set|delete|show|initialize|update <option preset>
 ```
 
-The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g. :
+The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
 
 ```shell
 <%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
@@ -2523,9 +2523,9 @@ demo_server:
 We can see here:
 
 - The configuration was created with <%=tool%> version 0.3.7
-- The default [Option Preset](#option-preset) to load for `server` plugin is : `demo_server`
+- The default [Option Preset](#option-preset) to load for `server` plugin is: `demo_server`
 - The [Option Preset](#option-preset) `demo_server` defines some options: the URL and credentials
-- The default [Option Preset](#option-preset) to load in any case is : `cli_default`
+- The default [Option Preset](#option-preset) to load in any case is: `cli_default`
 
 Two [Option Presets](#option-preset) are reserved:
 
@@ -2575,7 +2575,7 @@ To avoid loading the default [Option Preset](#option-preset) for a plugin, use: 
 
 On command line, words in option names are separated by a dash (`-`).
 In configuration file, separator is an underscore.
-E.g. `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
+For example, `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
 
 The main plugin name is `config`, so it is possible to define a default [Option Preset](#option-preset) for the main plugin with:
 
@@ -2625,7 +2625,7 @@ Options are also available for the wizard:
 | `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
 | `key_path`  | path     | Path to private key for JWT.                                        |
 
-Other plugin-specific options can be provided to the wizard, such as `--username`, etc...
+Other plugin-specific options can be provided to the wizard, such as `--username`, etc.
 They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
@@ -2805,7 +2805,7 @@ The lookup is done by comparing the service URL and username (or access key).
 
 #### Securing passwords and secrets
 
-A password can be saved in clear in an [Option Preset](#option-preset) together with other account information (URL, username, etc...).
+A password can be saved in clear in an [Option Preset](#option-preset) together with other account information (URL, username, etc.).
 Example:
 
 ```shell
@@ -3021,7 +3021,7 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 #### `log_format`
 
 Option `log_format` support a few pre-defined formatters or a custom one using `@ruby:`.
-A customer formatter is a lambda that takes 4 arguments, see: [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb) : `severity`, `time`, `progname`, `msg`.
+A custom formatter is a lambda that takes 4 arguments; see [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb): `severity`, `time`, `progname`, `msg`.
 The default formatter is:
 
 ```ruby
@@ -3058,7 +3058,7 @@ Available formatters for `log_format`:
 
 <%=tool%> uses mainly REST APIs to interact with Aspera applications.
 
-To get traces of execution, with dump of API calls, use argument : `--log-level=debug`.
+To get traces of execution, with dump of API calls, use argument: `--log-level=debug`.
 
 To display HTTP/S traffic set option `log_level` to `trace2`: `--log-level=trace2`.
 It will display the exact content of HTTP requests and responses.
@@ -3140,7 +3140,7 @@ When Ruby HTTP is used, there are two possibilities to define an HTTP proxy to b
 
 The `http_proxy` environment variable (**lower case**) can be set to the **URL** of the proxy (with optional credentials).
 Syntax is: `(http|https)://[user:password@]host:port`.
-E.g. `http://myproxy.org.net:3128`.
+For example, `http://myproxy.org.net:3128`.
 
 > [!NOTE]
 > Ruby expects a URL and `myproxy.org.net:3128` alone is **not** valid.
@@ -3794,7 +3794,7 @@ All parameters necessary for this transfer are described in a [**transfer-spec**
 - Transfer username
 - Credentials
 - File list
-- Etc...
+- Etc.
 
 <%=tool%> builds the [**transfer-spec**](#transfer-specification) internally as a `Hash`.
 It is not necessary to provide additional parameters on the command line for a transfer.
@@ -4009,7 +4009,7 @@ In the following table source folder `d3` contains 2 files: `f1` and `d4/f2`.
 | `d1/f1` `d2/f2` | `d`         | -                 | true         | `d/f1` `d/f2`               |
 | `d3`            | `d`         | -                 | true         | `d/d3/f1` `d/d3/d4/f2`      |
 
-If a file par list is provided then it is possible to rename or specify a different destination folder for each source (relative to the destination).
+If a file pair list is provided, then it is possible to rename or specify a different destination folder for each source (relative to the destination).
 
 If transfer spec has a `src_base`, it has the side effect that the simple source file list is considered as a file pair list, and so the lower structure of source folders is preserved on destination.
 
@@ -4112,7 +4112,7 @@ Example: parameter to download a Faspex package and decrypt on the fly
 
 File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
-The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
+The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc.
 
 ### Scheduler
 
@@ -4223,7 +4223,7 @@ journalctl -u my_<%=cmd%>_svc.service
 
 In some cases one needs to ensure that <%=tool%> is not executed several times in parallel.
 
-When <%=tool%> is executed automatically on a schedule basis, one generally desires that a new execution is not started if a previous execution is still running because an ongoing operation may last longer than the scheduling period:
+When <%=tool%> is executed automatically on a scheduled basis, one generally desires that a new execution is not started if a previous execution is still running because an ongoing operation may last longer than the scheduling period:
 
 - Executing instances may pile-up and kill the system
 - The same file may be transferred by multiple instances at the same time.
@@ -4791,7 +4791,7 @@ It is also possible to get the bearer token for node, as user or as admin using:
 
 The `admin` command allows several administrative tasks (and require admin privilege).
 
-It allows actions (create, update, delete) on **resources**: users, group, nodes, workspace, etc... with the `admin resource` command.
+It allows actions (create, update, delete) on **resources**: users, groups, nodes, workspace, etc. with the `admin resource` command.
 
 #### Listing resources
 
@@ -4809,7 +4809,7 @@ The following parameters are supported:
 - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
 - `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
 - `page` : native API parameter, in general do not use (added by <%=tool%>)
-- `per_page` : native API parameter, number of items par API call, in general do not use
+- `per_page`: native API parameter, number of items per API call, in general do not use
 - Other specific parameters depending on resource type.
 
 Both `max` and `pmax` are processed internally in <%=tool%>, not included in actual API call and limit the number of successive pages requested to API.
@@ -4862,7 +4862,7 @@ To execute an action on a specific resource, select it using one of those method
 
 #### Creating a resource
 
-New resources (users, groups, workspaces, etc...) can be created using a command like:
+New resources (users, groups, workspaces, etc.) can be created using a command like:
 
 ```shell
 <%=cmd%> aoc admin create <resource type> @json:'{<...parameters...>}'
@@ -4954,7 +4954,7 @@ Options:
 
 - `once_only` keep track of last date it was called, so next call will get only new events
 - `query` filter (on API call)
-- `notify` send an email as specified by template, this could be places in a file with the `@file` modifier.
+- `notify` send an email as specified by template; this can be placed in a file with the `@file` modifier.
 
 > [!NOTE]
 > This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months.
@@ -5573,7 +5573,7 @@ The general download command is:
 <%=cmd%> aoc files download <source folder path> <source filename 1> ...
 ```
 
-I.e. the first argument is the source folder, and the following arguments are the source file names in this folder.
+i.e., the first argument is the source folder, and the following arguments are the source file names in this folder.
 
 If a single file or folder is to be downloaded, then a single argument can be provided.
 
@@ -5592,7 +5592,7 @@ Shared folders can be created either:
 - by users in a workspace: they can share personal folders with other users in the same workspace: `aoc files perm`
 - by administrators: they can share a folder with users in any workspace: `aoc admin node do <node ID> perm`
 
-Technically (API), shared folder are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
+Technically (API), shared folders are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
 In both cases, it is necessary to specify a workspace.
 
 The basic payload to create a permission, i.e. a Shared Folder (last argument at creation usually specified with `@json:`) is:
@@ -5649,7 +5649,7 @@ Admin shared folders, created by administrators in a workspace, follow the synta
 > The node is identified by identifier.
 > To use an name instead, one can use the percent selector, like `%name:"my node"`.
 > The path is identifier by a path, one can specify a file id, with `%id:123`.
-> If the id is left blank: `%id:`, then if means `*`, i.e. all.
+> If the id is left blank: `%id:`, then it means `*`, i.e. all.
 
 ##### Example: List permissions on a user shared folder
 
@@ -5699,7 +5699,7 @@ To remove a password:
 > Access level cannot be customized in this version.
 
 An expiration date can be set with parameter `expires_at`, using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
-E.g. `2025-08-29T08:10:31.000Z`.
+For example, `2025-08-29T08:10:31.000Z`.
 If only a date is provided, it will be set to midnight UTC of that date.
 
 ##### Example: Create a workspace admin shared folder
@@ -5881,7 +5881,7 @@ ATS is usable either :
 
 - Or from an IBM Cloud subscription : `<%=cmd%> ats` : use IBM Cloud API key authentication
 
-### IBM Cloud ATS : Creation of API key
+### IBM Cloud ATS: Creation of API key
 
 > [!NOTE]
 > If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
@@ -6117,7 +6117,7 @@ As, most of the time, SSH is used, if a `http` scheme is provided without token,
 
 ### Examples: `server`
 
-One can test the `server` application using the well known demo server:
+One can test the `server` application using the well-known demo server:
 
 ```shell
 <%=cmd%> config initdemo
@@ -6125,7 +6125,7 @@ One can test the `server` application using the well known demo server:
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-`initdemo` creates an [Option Preset](#option-preset) `demoserver` and set it as default for plugin `server`.
+`initdemo` creates an [Option Preset](#option-preset) `demoserver` and sets it as default for plugin `server`.
 
 If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options` (for browsing) and `ts` (for transfers):
 
@@ -6140,10 +6140,10 @@ This plugin gives access to capabilities provided by the HSTS Node API.
 The authentication is `username` and `password` or `access_key` and `secret` through options: `username` and `password`.
 
 > [!NOTE]
-> Capabilities of this plugin are used in other plugins which access to the Node API, such as `aoc`, `ats`, `shares`.
+> Capabilities of this plugin are used in other plugins that access the Node API, such as `aoc`, `ats`, `shares`.
 
 > [!NOTE]
-> This plugin can be used with any type of **Aspera Node**, either on premise or ATS, provided that you have Node API credentials.
+> This plugin can be used with any type of **Aspera Node**, either on-premises or ATS, provided that you have Node API credentials.
 > Those credentials can be either Node API user or Access Key (e.g. on ATS).
 
 ### File Operations
@@ -6155,7 +6155,7 @@ It is possible to do **gen3/node user** operations:
 - `delete`
 - ...
 
-When using an access key, so called **gen4/access key** API is also supported through sub commands using `access_keys do self`.
+When using an access key, the so-called **gen4/access key** API is also supported through subcommands using `access_keys do self`.
 
 Example:
 
@@ -6174,21 +6174,21 @@ Special parameters can be placed in option `query` for "gen3" browse:
 | `max`       | Maximum number of files to list. |
 | `self`      | Offset in the list.              |
 
-Option `node_cache` can be set to `no` to avoid use of folder cache (Redis) and force actual read of file system.
+Option `node_cache` can be set to `no` to disable the folder cache (Redis) and force reading directly from the file system.
 
 ### Operation `find` on **gen4/access key**
 
 The command `find <folder> [filter_expr]` is available for **gen4/access key**, under `access_keys do self`.
 
-The argument `<folder>` is mandatory and is the root from which search is performed.
-The argument `[filter_expr]` is optional and represent the matching criteria.
+The argument `<folder>` is mandatory and is the root from which the search is performed.
+The argument `[filter_expr]` is optional and represents the matching criteria.
 
-It recursively scans storage to find files/folders matching criteria and then returns a list of matching entries.
+It recursively scans storage to find files and folders matching the criteria and returns a list of matching entries.
 
 `[filter_expr]` is either:
 
-- Optional (default) : All files and folder are selected
-- Type `String` : The expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
+- Optional (default): All files and folders are selected
+- Type `String`: The expression is similar to shell globbing; refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
 - Type `Proc` : The expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
 
 Examples of expressions:
@@ -6199,23 +6199,23 @@ Examples of expressions:
   <%=cmd%> node access_keys do self find
   ```
 
-- Find all text files `/Documents`
+- Find all text files in `/Documents`
 
   ```shell
   <%=cmd%> node access_keys do self find /Documents '*.txt'
   ```
 
-The following are examples of Ruby lambda code to be provided in the following template command:
+The following are examples of Ruby lambda code for the template command below:
 
 ```shell
  <%=cmd%> node access_keys do self find / @ruby:'->(f){[code here]}'
 ```
 
 > [!TIP]
-> Single quotes are used here above to protect the whole **Ruby** expression from the shell.
+> Single quotes are used above to protect the whole **Ruby** expression from the shell.
 > Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
 
-- Find files more recent than 100 days
+- Find files modified in the last 100 days
 
   ```ruby
   ->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100}
@@ -6239,13 +6239,13 @@ The following are examples of Ruby lambda code to be provided in the following t
   ->(f){!(f["name"].start_with?("._") or f["name"].eql?(".DS_Store"))}
   ```
 
-- Match files using a [Ruby Regex](https://ruby-doc.org/core/Regexp.html) : `\.gif$`
+- Match files using a [Ruby Regexp](https://ruby-doc.org/core/Regexp.html): `\.gif$`
 
   ```ruby
   ->(f){f["name"].match?(/\.gif$/)}
   ```
 
-<%=tool%> commands can be piped in order to combine operations, such as **find and delete**:
+<%=tool%> commands can be piped to combine operations, such as **find and delete**:
 
 ```shell
 <%=cmd%> node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' --fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
@@ -6256,18 +6256,18 @@ The following are examples of Ruby lambda code to be provided in the following t
 
 ### Listing transfer events
 
-When a transfer is run, its information is stored (typically, 1 day) in the HSTS database (Redis).
-This information can be retrieved with command: `transfer list`.
+When a transfer runs, its information is stored (typically for 1 day) in the HSTS database (Redis).
+This information can be retrieved with the command `transfer list`.
 
-If the number of transfers is too large, then the list will be retrieved using several API calls.
+If the number of transfers is large, the list is retrieved using multiple API calls.
 
-In addition, it is possible to list "only new information" using option `once_only`.
+You can also list only new information using the option `once_only`.
 
 ```shell
 <%=cmd%> node transfer list --once-only=yes
 ```
 
-The `iteration_token` that keeps memory of the latest event is stored in the persistence repository of <%=tool%>.
+The `iteration_token` that keeps track of the latest event is stored in the persistence repository of <%=tool%>.
 To reset it, add option: `--query=@json:'{"reset": true}'`.
 To list only a number of events, use the `max` parameter in query.
 Other parameters are directly transmitted to the underlying API (`GET /ops/transfers`).
@@ -6286,7 +6286,7 @@ Filtering can be applied:
 By providing the `validator` option, offline transfer validation can be done.
 
 > [!NOTE]
-> See later in this doc, refer to HSTS doc.
+> See the HSTS documentation for more details.
 
 ### Sync
 
@@ -6966,7 +6966,7 @@ To receive one, or several packages at once, use command `faspex5 packages recei
 Provide either a single package ID, or an extended value `Array` of package IDs, e.g. `@list:,1,2,3` as argument.
 
 The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
-I.e. options `box` and `query`, as well as last **Command Parameter** `Proc` (filter).
+i.e., options `box` and `query`, as well as last **Command Parameter** `Proc` (filter).
 
 Option `--once-only=yes` can be used, for "cargo-like" behavior.
 Special package ID `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
@@ -7734,7 +7734,7 @@ Like any <%=tool%> commands, options can be passed on command line or using a co
 The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
 The `xfer` user has a special protected shell: `aspshell`, so in order to update the configuration, and when changing identity, specify an alternate shell.
-E.g.:
+For example:
 
 ```shell
 su -s /bin/bash - xfer
@@ -8052,14 +8052,14 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
 
 > [!NOTE]
-> File detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
+> File detection is not based on events (`inotify`, etc.), but on a simple folder scan on source side.
 
 > [!TIP]
 > Options may be saved in an [Option Preset](#option-preset) and used with `-P`.
 
 #### Scheduling
 
-Once <%=tool%> command line arguments are defined, run the command using the OS native scheduler, e.g. every minute, or 5 minutes, etc...
+Once <%=tool%> command line arguments are defined, run the command using the OS native scheduler, e.g. every minute, or 5 minutes, etc.
 Refer to section [Scheduler](#scheduler).
 (on use of option `lock_port`)
 
