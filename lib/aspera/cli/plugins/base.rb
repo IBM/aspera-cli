@@ -40,7 +40,7 @@ module Aspera
         def initialize(context:)
           # Check presence in descendant of mandatory method and constant
           Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
-          Aspera.assert(self.class.constants.include?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
+          Aspera.assert(self.class.const_defined?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
           @context = context
           add_manual_header if @context.man_header
         end
