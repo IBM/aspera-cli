@@ -106,17 +106,12 @@ module Aspera
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
         end
 
-        # /files/id/files is normally cached in redis, but we can discard the cache
+        # /files/id/files is normally cached in Redis, but we can discard the cache
         # but /files/id is not cached
         def get_folder_entries(file_id, request_args = nil)
           headers = {'Accept' => Rest::MIME_JSON}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
-          return @api_node.call(
-            operation: 'GET',
-            subpath:   "files/#{file_id}/files",
-            headers:   headers,
-            query:     request_args
-          )
+          return @api_node.read("files/#{file_id}/files", request_args, headers: headers)
         end
 
         # old version based on folders
