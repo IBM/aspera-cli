@@ -6205,7 +6205,7 @@ Examples of expressions:
   <%=cmd%> node access_keys do self find /Documents '*.txt'
   ```
 
-The following are examples of Ruby lambda code for the template command below:
+The following examples show Ruby lambda code you can use in the template command below:
 
 ```shell
  <%=cmd%> node access_keys do self find / @ruby:'->(f){[code here]}'
@@ -6252,61 +6252,63 @@ The following are examples of Ruby lambda code for the template command below:
 ```
 
 > [!NOTE]
-> The pipe `|` character on the last line is used to chain commands.
+> The pipe character `|` on the last line chains the two commands together.
 
 ### Listing transfer events
 
-When a transfer runs, its information is stored (typically for 1 day) in the HSTS database (Redis).
-This information can be retrieved with the command `transfer list`.
+When you run a transfer, its information is stored (typically for 1 day) in the HSTS database (Redis).
+To view this information, use the command `transfer list`.
 
-If the number of transfers is large, the list is retrieved using multiple API calls.
+When you have many transfers, the list is built from multiple API calls.
 
-You can also list only new information using the option `once_only`.
+To list only new events since the last run, use the option `once_only`:
 
 ```shell
 <%=cmd%> node transfer list --once-only=yes
 ```
 
-The `iteration_token` that keeps track of the latest event is stored in the persistence repository of <%=tool%>.
-To reset it, add option: `--query=@json:'{"reset": true}'`.
-To list only a number of events, use the `max` parameter in query.
-Other parameters are directly transmitted to the underlying API (`GET /ops/transfers`).
+<%=tool%> stores an `iteration_token` in its persistence repository to track the latest event.
+To reset it, add the option `--query=@json:'{"reset": true}'`.
+To limit how many events are listed, use the `max` parameter in the query.
+Other query parameters are passed through to the underlying API (`GET /ops/transfers`).
 
 ### Central
 
-The central sub-command uses the **reliable query** API (session and file).
-It allows listing transfer sessions and transferred files.
+The `central` sub-command uses the **reliable query** API (session and file).
+Use it to list transfer sessions and transferred files.
 
-Filtering can be applied:
+To apply filtering:
 
 ```shell
 <%=cmd%> node central file list
 ```
 
-By providing the `validator` option, offline transfer validation can be done.
+To validate transfers offline, use the `validator` option.
 
 > [!NOTE]
 > See the HSTS documentation for more details.
 
 ### Sync
 
-There are three commands related to file synchronization in `node`:
+The `node` plugin provides three commands for file synchronization:
 
 | Command | `node` | `shares` | `aoc` | `server` | Description |
 |-----|-----|-----|-----|-----|-----------------------------------------------|
-| `sync`  | Yes | Yes | Yes | Yes | Perform a local sync, by executing `async` locally. |
-| `async` | Yes |     |     |     | Uses API `/async`.<%=br%>Get status on sync operation on server side, like Aspera Console. |
-| `ssync` | Yes |     |     |     | Uses API `/asyncs`.<%=br%>It can start a sync operation on the server side, and monitor only those. |
+| `sync`  | Yes | Yes | Yes | Yes | Perform a local sync by executing `async` locally. |
+| `async` | Yes |     |     |     | Uses API `/async`.<%=br%>Get status on sync operations on the server side, as in Aspera Console. |
+| `ssync` | Yes |     |     |     | Uses API `/asyncs`.<%=br%>Start a sync on the server side and monitor only those operations. |
 
-For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
+For details on the `sync` action, see [IBM Aspera Sync](#ibm-aspera-sync).
 
-`async` subcommands: `show` and `delete` accept special identifier `ALL`.
+For the `async` subcommands `show` and `delete`, you can use the special identifier `ALL`.
 
 ### FASP Stream
 
-It is possible to start a faspstream session using the Node API:
+You can start a FASP Stream session from the Node API.
 
-Use the command `<%=cmd%> node stream create --ts=@json:<value>`, with [**transfer-spec**](#transfer-specification):
+Run the following command:
+`<%=cmd%> node stream create --ts=@json:<value>`.
+with the following [**transfer-spec**](#transfer-specification):
 
 ```json
 {"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
@@ -6314,12 +6316,11 @@ Use the command `<%=cmd%> node stream create --ts=@json:<value>`, with [**transf
 
 ### Watchfolder
 
-Refer to [Aspera Server documentation](https://www.ibm.com/docs/en/ahte/4.4.x?topic=wffcl-watch-folder-json-configuration-file-reference), or [Aspera Watchfolder API Documentation](https://developer.ibm.com/apis/catalog/aspera--aspera-watch-folders-api/api/API--aspera--ibm-aspera-watch-folders-api) for watch folder creation.
+For watch folder creation, see [Aspera Server documentation](https://www.ibm.com/docs/en/ahte/4.4.x?topic=wffcl-watch-folder-json-configuration-file-reference) or [Aspera Watchfolder API Documentation](https://developer.ibm.com/apis/catalog/aspera--aspera-watch-folders-api/api/API--aspera--ibm-aspera-watch-folders-api).
 
-<%=tool%> supports remote operations through the Node API.
-Operations are:
+You can run watchfolder operations remotely through the Node API:
 
-- Start `watchd` and `watchfolderd` services running as a system user having access to files
+- Start the `watchd` and `watchfolderd` services as a system user that has access to the files
 - Configure a **Watchfolder** to define automated transfers
 
 ```shell
@@ -6330,9 +6331,9 @@ Operations are:
 
 ### Out of Transfer File Validation
 
-Follow the Aspera Transfer Server configuration to activate this feature.
+To activate this feature, follow the Aspera Transfer Server configuration.
 
-The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
+The following command lists one file that requires validation and assigns it to the unique validator identifier you provide:
 
 ```shell
 <%=cmd%> node central file list --validator=<%=cmd%> @json:'{"file_transfer_filter":{"max_result":1}}'
