@@ -46,7 +46,7 @@ module Aspera
           Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
         end
       end
-      raise RestCallError.new(call_context[:messages].join("\n"), call_context[:request], call_context[:response]) unless call_context[:messages].empty?
+      raise RestCallError.new(call_context) unless call_context[:messages].empty?
     end
 
     # add a new error handler (done at application initialization)

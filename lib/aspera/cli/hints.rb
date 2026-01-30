@@ -26,7 +26,7 @@ module Aspera
           ]
         },
         {
-          exception:   RestCallError,
+          exception:   Aspera::RestCallError,
           match:       /Signature has expired/,
           remediation: [
             'There is too much time difference between your computer and the server',
@@ -108,6 +108,13 @@ module Aspera
             'Transfer user shall have those parameters in aspera.conf set to: token',
             'authorization_transfer_in_value authorization_transfer_out_value'
           ]
+        },
+        {
+          exception:   Aspera::RestCallError,
+          match:       /invalid_grant/,
+          remediation: [
+            'Check your public key in your AoC user profile.'
+          ]
         }
       ]
       private_constant :ERROR_HINTS
@@ -129,9 +136,9 @@ module Aspera
                 next unless message.match?(m)
               else Aspera.error_unexpected_value(m)
               end
-              remediation = hint[:remediation]
-              remediation = [remediation] unless remediation.is_a?(Array)
-              remediation.each{ |r| Log.log.info{"#{'HINT:'.bg_green.gray.blink.freeze} #{r}"}}
+              hint[:remediation].each do |r|
+                Log.log.info{"#{'HINT:'.bg_green.gray.blink.freeze} #{r}"}
+              end
               break
             end
           end

@@ -3,15 +3,23 @@
 module Aspera
   # raised on error after REST call
   class RestCallError < StandardError
-    attr_reader :request, :response
+    def request
+      @context[:request]
+    end
 
-    # @param req HTTP Request object
-    # @param resp HTTP Response object
-    # @param msg Error message
-    def initialize(msg, req = nil, resp = nil)
-      @request = req
-      @response = resp
-      super(msg)
+    def response
+      @context[:response]
+    end
+
+    def data
+      @context[:data]
+    end
+
+    # @param context [Hash,String] with keys :messages, :request, :response, :data
+    def initialize(context)
+      context = {messages: [context]} if context.is_a?(String)
+      @context = context
+      super(@context[:messages].join("\n"))
     end
   end
 end

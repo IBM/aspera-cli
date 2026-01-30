@@ -333,9 +333,9 @@ module Aspera
         @cache_user_info =
           begin
             read('self')
-          rescue StandardError => e
-            raise e if exception
-            Log.log.debug{"ignoring error: #{e}"}
+          rescue Aspera::RestCallError => e
+            raise if exception || e.message.include?('invalid_grant')
+            Log.log.debug{"Ignoring error: (#{e.class}) #{e}"}
             {}
           end
         USER_INFO_FIELDS_MIN.each{ |f| @cache_user_info[f] = nil if @cache_user_info[f].nil?}
