@@ -148,6 +148,11 @@ class DocHelper
   # Container image in docker hub
   def container_image; Aspera::Cli::Info::CONTAINER; end
 
+  # Link to the provided path in repo, relative to readme
+  def link_repo(path)
+    "../#{path}".gsub('../docs/', '')
+  end
+
   def gemspec
     @gem_spec = Gem::Specification.load(@paths[:gem_spec_file]) || raise("error loading #{@paths[:gem_spec_file]}") if !@gem_spec
     @gem_spec
@@ -364,6 +369,7 @@ class DocHelper
   def check_links(file_path)
     require 'uri'
     require 'net/http'
+    file_folder = Pathname.new(file_path).parent
     File.open(file_path) do |file|
       file.each_line do |line|
         line.scan(/(?:\[(.*?)\]\((.*?)\))/) do |match|
@@ -378,7 +384,9 @@ class DocHelper
             Aspera::Rest.new(base_url: link_url, redirect_max: 5).call(operation: 'GET')
             next
           end
-          raise "Invalid link: no such file: #{link_url} (#{link_text})" unless File.exist?(link_url)
+          file_path = Pathname.new(link_url)
+          file_path = file_folder / file_path unless file_path.absolute?
+          raise "Invalid link: no such file: #{file_path} (#{link_text})" unless file_path.exist?
         end
       end
     end

@@ -15,9 +15,13 @@ Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/ge
 
 The user manual is [here](docs/README.md).
 
+A PDF version of this documentation is delivered with [releases](https://github.com/IBM/aspera-cli/releases).
+
 ## BUGS, FEATURES, CONTRIBUTION
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
 This documentation does not provide exhaustive details for all commands and options.
 Most commands correspond directly to REST API calls on Aspera products.

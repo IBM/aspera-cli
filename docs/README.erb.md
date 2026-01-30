@@ -12,13 +12,9 @@ PANDOC_META_END
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
 
-[![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
-[![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
-
 ## Introduction
 
-![Hootput the Owl](docs/mascot.svg)
+![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
@@ -57,19 +53,6 @@ Minimum required Ruby <%=ruby_version%>.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
-
-Release notes: see [CHANGELOG.md](CHANGELOG.md)
-
-A PDF version of this documentation is delivered with [releases](https://github.com/IBM/aspera-cli/releases).
-
-### BUGS, FEATURES, CONTRIBUTION
-
-Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
-
-This documentation does not provide exhaustive details for all commands and options.
-Most commands correspond directly to REST API calls on Aspera products.
-For detailed information, consult the official Aspera API documentation.
-For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
@@ -580,7 +563,7 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 Some additional gems are required for some specific features.
 Those are not installed as part of dependencies because they involve compilation of native code but concern less-used features.
 
-See [Gemfile](Gemfile):
+See [Gemfile](<%=link_repo('Gemfile')%>):
 
 <%=gem_opt_md_list%>
 
@@ -878,7 +861,7 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](build/container/Dockerfile.tmpl.erb).
+The container image is built from this [Dockerfile](<%=link_repo('build/container/Dockerfile.tmpl.erb')%>).
 The entry point is <%=tool%> and the default command is `help`.
 
 The container can be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
@@ -6549,7 +6532,7 @@ Alternatively, use the following equivalent command, as <%=tool%> kindly extract
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
 > Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
-> Code for token generation is provided in [`lib/aspera/api/node.rb`](lib/aspera/api/node.rb)
+> Code for token generation is provided in [`lib/aspera/api/node.rb`](<%=link_repo('lib/aspera/api/node.rb')%>)
 
 #### Bearer token: User side
 
