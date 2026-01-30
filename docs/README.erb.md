@@ -11,6 +11,7 @@ PANDOC_META_END
 
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD060 -->
 
 ## Introduction
 
