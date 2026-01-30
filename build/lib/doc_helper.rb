@@ -335,10 +335,10 @@ class DocHelper
     raise "Plugin #{plugin_name_sym} not found in test cases (#{all_test_commands_by_plugin.keys.join(',')})" if commands.nil?
     @undocumented_plugins.delete(plugin_name_sym)
     return [
-      Aspera::Markdown.heading(level, sample_commands_title(plugin_name_sym)),
-      Aspera::Markdown.admonition('NOTE', ["Add `#{cmd} #{plugin_name_sym}` in front of the following commands:"]),
-      commands.join("\n")
-    ].join
+      Aspera::Markdown.heading(sample_commands_title(plugin_name_sym), level: level),
+      Aspera::Markdown.admonition(["Add `#{cmd} #{plugin_name_sym}` in front of the following commands:"], type: 'NOTE'),
+      Aspera::Markdown.code(commands)
+    ].join.chomp.chomp
   end
 
   def include_commands

@@ -27,12 +27,17 @@ module Aspera
         items.map{ |i| "- #{i}"}.join("\n")
       end
 
-      def heading(level, title)
+      def heading(title, level: 1)
         "#{'#' * level} #{title}\n\n"
       end
 
-      def admonition(type, lines)
+      # type: NOTE CAUTION WARNING IMPORTANT TIP INFO
+      def admonition(lines, type: 'INFO')
         "> [!{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
+      end
+
+      def code(lines, type: 'shell')
+        "```#{type}\n#{lines.join("\n")}\n```\n\n"
       end
     end
   end

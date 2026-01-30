@@ -2538,6 +2538,7 @@ ascli config preset set GLOBAL version_check_days 0
 > [!{type}]
 > Add `ascli config` in front of the following commands:
 
+```shell
 ascp connect info 'Aspera Connect for Windows'
 ascp connect list
 ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
@@ -2700,6 +2701,7 @@ wizard https://tst.example.com/path faspio --username=my_username --password=my_
 wizard my_address server srv2 --username=my_username --password=my_password
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
+```
 
 #### Format of configuration file
 
@@ -6461,6 +6463,7 @@ For instructions, refer to section `find` for plugin `node`.
 > [!{type}]
 > Add `ascli aoc` in front of the following commands:
 
+```shell
 admin analytics application_events
 admin analytics files organization '' aoc_transfer_id
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":1}' --fields=uuid
@@ -6619,6 +6622,7 @@ user profile show
 user profile show --http-options=@json:'{"token_refresh_threshold":10000000000}'
 user workspaces current
 user workspaces list
+```
 
 ## Plugin: `ats`: IBM Aspera Transfer Service
 
@@ -6753,6 +6757,7 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 > [!{type}]
 > Add `ascli ats` in front of the following commands:
 
+```shell
 access_key cluster ak2ibmcloud --secret=my_secret_here
 access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
@@ -6770,6 +6775,7 @@ cluster clouds
 cluster list
 cluster show --cloud=aws --region=eu-west-1
 cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
+```
 
 ## Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
@@ -6800,6 +6806,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 > [!{type}]
 > Add `ascli server` in front of the following commands:
 
+```shell
 --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}'
 --password=wrong upload test_file.bin --transfer-info=@json:'{"monitor":false,"resume":{"iter_max":0}}'
 --url=foo:// ls .
@@ -6854,6 +6861,7 @@ upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{
 upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","hot_folder"]}' hot_folder
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}'
+```
 
 ### Authentication on Server with SSH session
 
@@ -7396,6 +7404,7 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > [!{type}]
 > Add `ascli node` in front of the following commands:
 
+```shell
 --url=https://tst.example.com/path --password='Bearer node_bearer_token' --root-id=bearer_root_id access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
@@ -7501,6 +7510,7 @@ upload my_mxf my_docx --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"n
 upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 watch_folder create @json:'{"source":{"path":"/src1"},"target":{"path":"/dst1"}}'
 watch_folder list
+```
 
 ### Open Telemetry
 
@@ -7740,6 +7750,7 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 > [!{type}]
 > Add `ascli faspex5` in front of the following commands:
 
+```shell
 admin accounts list
 admin alternate_addresses list
 admin clean_deleted
@@ -7828,6 +7839,7 @@ user account --query.expand=true
 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 user profile show
 version
+```
 
 Most commands correspond directly to REST API calls.
 Parameters to commands are carried through option `query`, as extended value, for `list`, or through **Command Parameter** for creation.
@@ -8417,6 +8429,7 @@ ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 > [!{type}]
 > Add `ascli faspex` in front of the following commands:
 
+```shell
 --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ --warn-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 address_book
@@ -8452,6 +8465,7 @@ v4 metadata_profile list
 v4 user list
 v4 wmembership list
 v4 workgroup list
+```
 
 ## Plugin: `shares`: IBM Aspera Shares v1
 
@@ -8494,6 +8508,7 @@ ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$u
 > [!{type}]
 > Add `ascli shares` in front of the following commands:
 
+```shell
 admin group all list
 admin node list
 admin share list --fields=DEF,-status,status_message
@@ -8521,6 +8536,7 @@ files upload --to-folder=my_share_folder test_file.bin --transfer=httpgw --trans
 files upload sendfolder --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 health
 health --url=https://wrong.example.com
+```
 
 ## Plugin: `console`: IBM Aspera Console
 
@@ -8539,6 +8555,7 @@ In addition, it is possible to place a single `query` parameter in the request t
 > [!{type}]
 > Add `ascli console` in front of the following commands:
 
+```shell
 health
 health --url=https://wrong.example.com
 transfer current files console_xfer_id
@@ -8549,6 +8566,7 @@ transfer current resume console_xfer_id
 transfer current show console_xfer_id
 transfer smart list
 transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_selected
+```
 
 ## Plugin: `orchestrator`:IBM Aspera Orchestrator
 
@@ -8557,6 +8575,7 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 > [!{type}]
 > Add `ascli orchestrator` in front of the following commands:
 
+```shell
 health
 health --url=https://wrong.url --format=nagios
 info
@@ -8580,6 +8599,7 @@ workorder reset orch_workorder_id
 workorder status orch_workorder_id
 workstep cancel 1
 workstep status 1
+```
 
 ## Plugin: `cos`: IBM Cloud Object Storage
 
@@ -8702,12 +8722,14 @@ ascli cos node upload 'faux:///sample1G?1g'
 > [!{type}]
 > Add `ascli cos` in front of the following commands:
 
+```shell
 node access_key show self
 node download test_file.bin --to-folder=.
 node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
 node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
 node info --log-level=trace2
 node upload test_file.bin
+```
 
 ## Plugin: `httpgw`: HTTP Gateway
 
@@ -8716,8 +8738,10 @@ node upload test_file.bin
 > [!{type}]
 > Add `ascli httpgw` in front of the following commands:
 
+```shell
 health
 info
+```
 
 ## Plugin: `faspio`: Faspio Gateway
 
@@ -8730,11 +8754,13 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 > [!{type}]
 > Add `ascli faspio` in front of the following commands:
 
+```shell
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
 bridges delete --bulk=yes @json:faspio_bclean_list
 bridges list
 bridges list --fields=id --format=json
 health
+```
 
 ## Plugin: `alee`: Aspera License Entitlement Engine
 
@@ -8745,8 +8771,10 @@ Retrieve information on subscription.
 > [!{type}]
 > Add `ascli alee` in front of the following commands:
 
+```shell
 entitlement
 health
+```
 
 ## Plugin: `preview`: Preview generator for AoC
 
@@ -9055,6 +9083,7 @@ If the preview generator does not have access to files on the file system (it is
 > [!{type}]
 > Add `ascli preview` in front of the following commands:
 
+```shell
 check --skip-types=office
 events --once-only=yes --skip-types=office --log-level=info
 scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
@@ -9072,6 +9101,7 @@ test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true
 test --mimemagic=yes --base=test my_dcm
 test --mimemagic=yes --base=test my_jpg_unk
 trevents --once-only=yes --skip-types=office --log-level=info
+```
 
 ## IBM Aspera Sync
 
