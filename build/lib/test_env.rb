@@ -23,14 +23,11 @@ module TestEnv
   # @return [Hash] Full test configuration parameters (frozen)
   def configuration
     return @configuration if defined?(@configuration)
-    # Warn if environment variable is not set (but continue with empty config)
     Aspera.assert(ENV.key?(ENV_VAR_REF_CONF), "Missing env var: #{ENV_VAR_REF_CONF}", type: :warn)
     @configuration =
       if ENV.key?(ENV_VAR_REF_CONF)
-        # Load YAML configuration from the URL specified in environment variable
         Aspera::Yaml.safe_load(Aspera::UriReader.read(ENV[ENV_VAR_REF_CONF]))
       else
-        # Return empty hash if no configuration URL is provided
         {}
       end.freeze
   end

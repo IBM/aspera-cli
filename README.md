@@ -1,29 +1,53 @@
-# Command Line Interface for IBM Aspera products
+# Aspera CLI
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-The `aspera-cli` Ruby gem offers a powerful command-line interface (CLI, `ascli`) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
-It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
+**`ascli`** is the command-line interface for IBM Aspera products.
+Use it from the terminal or in scripts to:
 
-Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+- Drive **Aspera on Cloud**, **Faspex**, **Shares**, **Node**, **Console**, **Orchestrator**, and **High-Speed Transfer Server**
+- Call REST APIs and run high-speed transfers (FASP)
+- Automate workflows with config, presets, and scripting
 
-Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+## Documentation
 
-## User manual
+| Resource | Link |
+|----------|------|
+| **Online manual** | [docs/README.md](docs/README.md) |
+| **PDF manual** | In [releases](https://github.com/IBM/aspera-cli/releases) |
+| **RubyGems** | [rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli) |
+| **RubyDoc** | [rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli) |
 
-The user manual is [here](docs/README.md).
+## Install
 
-A PDF version of this documentation is delivered with [releases](https://github.com/IBM/aspera-cli/releases).
+Install **Ruby** ≥ 3.1
 
-## BUGS, FEATURES, CONTRIBUTION
+```bash
+gem install aspera-cli
+ascli config transferd install
+```
 
-Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+The second command installs the FASP transfer engine (`ascp`).
+For other install methods (single executable, Docker, Chocolatey, Homebrew), see the [user manual](docs/README.md#installation).
 
-Release notes: see [CHANGELOG.md](CHANGELOG.md)
+**Quick check:**
 
-This documentation does not provide exhaustive details for all commands and options.
-Most commands correspond directly to REST API calls on Aspera products.
-For detailed information, consult the official Aspera API documentation.
-For debugging, use `--log-level=debug` to view the underlying API calls.
+```bash
+ascli -v
+```
+
+## Contributing
+
+- **Bugs & features:** [BUGS.md](BUGS.md)
+- **How to contribute:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Release notes:** [CHANGELOG.md](CHANGELOG.md)
+
+Commands map to Aspera REST APIs; see the manual for options.
+For debugging, use `--log-level=debug`.
+
+## License
+
+[Apache-2.0](LICENSE)

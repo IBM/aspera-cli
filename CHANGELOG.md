@@ -4,9 +4,9 @@
 
 ## 4.26.0.pre
 
-### Breaking Changes
-
 Released: [Place date of release here]
+
+In this release, the main documentation is moved to `docs/README.md`.
 
 ### New Features
 
@@ -19,10 +19,6 @@ Released: [Place date of release here]
 * `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
 * `config`: Removed command `ascp use`, instead do: `ascli conf preset set GLOBAL sdk_folder <path>`.
 * `config`: Removed command `ascp products use`, instead do: `ascli conf preset set GLOBAL sdk_folder product:<path>`.
-
-### Issues Fixed
-
-### Breaking Changes
 
 ## 4.25.1
 

@@ -1,8 +1,8 @@
 # Testing Environment
 
-The test environment is composed with a YAML configuration file with server addresses and secrets and a YAML file describing tests, including the command line to run.
+The test environment uses two YAML files: a configuration file (server addresses and secrets) and a test definition file that describes each test case and the command line to run.
 
-Previously it was based on Makefile, but this has been replaced for better portability to the Windows OS.
+Previously the suite was Makefile-based; it was replaced for better portability (including Windows).
 
 ## Preparation of environment
 
@@ -24,51 +24,51 @@ export ASPERA_CLI_TEST_CONF_URL=~/some_secure_folder/test_env.conf
 
 ## Test descriptions
 
-When new commands are added to the CLI, corresponding tests shall be added to the test suite in `tests/tests.yml`.
-YAML formatting rules apply.
-The command to execute is described by an array: `command`.
-It does not include any shell special character protection because it is actually not executed by a shell: it's executed by the system's `exec` call.
-Test cases are assigned some tags.
+When new commands are added to the CLI, add corresponding tests to `tests/tests.yml`.
+Standard YAML formatting rules apply.
+The executable is given by `command` (default: main CLI); the arguments are given by the `args` array.
+Commands are run via the system `exec` call, not a shell, so no shell quoting or escaping is applied.
+Test cases can be grouped and controlled with tags.
 
-The following keys are supported in test description:
+The following keys are supported in each test entry:
 
-| Field         | Type     | Description                            |
-|---------------|----------|----------------------------------------|
-| `description` | `String` | Description.                           |
-| `$comment`    | `String` | Internal comment.                      |
-| `tags`        | `Array`  | Group test cases, or special handling. |
-| `depends_on`  | `Array`  | Dependency.                            |
-| `command`     | `Array`  | Command line arguments.                |
-| `env`         | `Hash`   | Environment variables to set.          |
-| `pre`         | `String` | Ruby code to execute before test.      |
-| `post`        | `String` | Ruby code to execute after test.       |
-| `stdin`       | `String` | Input to command.                      |
-| `expect`      | `String` | Expected output.                       |
+| Field         | Type     | Description                                      |
+|---------------|----------|--------------------------------------------------|
+| `description` | `String` | Human-readable description.                      |
+| `$comment`    | `String` | Internal comment (e.g. for maintainers).         |
+| `tags`        | `Array`  | Group tests or enable special behavior.          |
+| `depends_on`  | `Array`  | Test case names that must run before this one.   |
+| `command`     | `String` | Executable name (default: `ascli`).              |
+| `args`        | `Array`  | Command-line arguments.                          |
+| `env`         | `Hash`   | Environment variables for this test.             |
+| `pre`         | `String` | Ruby code to run before the test.                |
+| `post`        | `String` | Ruby code to run after the test.                 |
+| `stdin`       | `String` | Standard input to the command.                   |
+| `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
 
-Some tags have special meaning while other tags are only a way to group test cases together (for example to skip them).
+Some tags have special meaning; others are only for grouping (e.g. to skip or select tests).
 
-| Tag           | Description                                            |
-|---------------|--------------------------------------------------------|
-| `nodoc`       | Do not include in documentation.                       |
-| `must_fail`   | Must fail case.                                        |
-| `pre_cleanup` | If it fails, ignore it, it's a cleanup.                |
-| `flaky`       | Test should work but it does not.                      |
-| `save_output` | Output is saved in a file with same name as test case. |
-| `wait_value`  | Run test until we get a value.(requires `save_output`) |
-| `tmp_conf`    | Use temporary config file (config is modified).        |
-| `noblock`     | Do not wait completion, save PID.                      |
+| Tag           | Description                                                       |
+|---------------|-------------------------------------------------------------------|
+| `nodoc`       | Do not include in generated documentation.                        |
+| `must_fail`   | Test is expected to fail (non-zero exit); `expect` matches stderr.|
+| `pre_cleanup` | If it fails, ignore it (used for cleanup steps).                  |
+| `flaky`       | Known unstable test; failure is tolerated.                        |
+| `save_output` | Save command output to a file named after the test case.          |
+| `wait_value`  | Re-run until a value is produced (requires `save_output`).        |
+| `tmp_conf`    | Use a temporary config file (config may be modified).             |
+| `noblock`     | Do not wait for completion; save PID for later stop.              |
 
-Function `read_value_from` reads a value previously saved with `save_output`.
-Function `stop_process` reads the PID value previously saved with `noblock`.
+In `pre`/`post` Ruby code, `read_value_from(name)` reads output saved by a test with `save_output`; `stop_process(name)` stops a process started with `noblock`.
 
-Values inside `$(...)` are evaluated as Ruby expressions.
-Some constants are defined in `test.rake` and can be used.
+Values inside `$(...)` in YAML strings are evaluated as Ruby expressions.
+Constants and helpers are defined in `rakelib/test.rake` and are available in `pre`/`post` and in `$(...)`.
 
 ## Running Tests
 
 This project uses a `Rakefile` for tests.
-`rake` can be executed in any folder (it will look for the `Rakefile` in one of the parent folders).
-To lists test tasks:
+You can run `rake` from any folder (it will find the `Rakefile` in a parent directory).
+To list test tasks:
 
 ```bash
 bundle exec rake -T ^test:
@@ -102,9 +102,9 @@ bundle exec rake test:run
 ```
 
 > [!NOTE]
-> `text:` rake tasks take optional argument inside `[]`.
-> If the first parameter is `tag` then next parameters are tags, else it's test case names.
-> No parameter: apply to all test cases.
+> The `test:` rake tasks take an optional argument in `[]`.
+> Use `tag &lt;name&gt;` to filter by tag; otherwise the argument is a list of test case names.
+> Omit the argument to apply the task to all test cases.
 
 ## Pre-release tests
 
@@ -117,11 +117,11 @@ To test additional Ruby version, repeat the procedure with other Ruby versions.
 
 ## Coverage
 
-A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
-Enable coverage monitoring using environment variable `ENABLE_COVERAGE`.
+A coverage report is written to `tmp/coverage` when using the `SimpleCov` gem.
+Enable it with the environment variable `ENABLE_COVERAGE`:
 
 ```bash
 bundle exec rake test:run ENABLE_COVERAGE=1
 ```
 
-Once tests are completed, or during test, consult the page: [tmp/coverage/index.html](tmp/coverage/index.html)
+Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report (during or after the run).

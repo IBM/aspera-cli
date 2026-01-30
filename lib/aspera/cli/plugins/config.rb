@@ -36,6 +36,7 @@ require 'digest'
 require 'open3'
 require 'date'
 require 'erb'
+require 'net/http'
 
 module Aspera
   module Cli
@@ -107,11 +108,7 @@ module Aspera
           )
           options.parse_options!
           Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
-          # Data persistency manager, created by config plugin, set for global object
-          context.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
-          # Set folders for plugin lookup
-          Plugins::Factory.instance.add_lookup_folder(self.class.gem_plugins_folder)
-          Plugins::Factory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
+          setup_persistency_and_plugin_folders
           # Option to set config file
           options.declare(
             :config_file, 'Path to YAML file with preset configuration',
@@ -121,12 +118,7 @@ module Aspera
           options.parse_options!
           # Read config file (set @config_presets)
           read_config_file
-          # Add preset handler (needed for smtp)
-          ExtendedValue.instance.on(EXTEND_PRESET){ |v| preset_by_name(v)}
-          ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
-          ExtendedValue.instance.on(EXTEND_ARGS){ |v| options.args_as_extended(v)}
-          # Load defaults before it can be overridden
-          add_plugin_default_preset(CONF_GLOBAL_SYM)
+          setup_extended_value_handlers
           # Vault options
           options.declare(:secret, 'Secret for access keys')
           options.declare(:vault, 'Vault for secrets', allowed: Hash)
@@ -164,17 +156,39 @@ module Aspera
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
+          setup_pac_executor
+          setup_rest_and_transfer_runtime
+        end
+
+        private
+
+        def setup_persistency_and_plugin_folders
+          context.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
+          Plugins::Factory.instance.add_lookup_folder(self.class.gem_plugins_folder)
+          Plugins::Factory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
+        end
+
+        def setup_extended_value_handlers
+          ExtendedValue.instance.on(EXTEND_PRESET){ |v| preset_by_name(v)}
+          ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
+          ExtendedValue.instance.on(EXTEND_ARGS){ |v| options.args_as_extended(v)}
+          add_plugin_default_preset(CONF_GLOBAL_SYM)
+        end
+
+        def setup_pac_executor
           pac_script = options.get_option(:fpac)
-          # Create PAC executor
-          if !pac_script.nil?
-            @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
-            proxy_user_pass = options.get_option(:proxy_credentials)
-            if !proxy_user_pass.nil?
-              Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
-              @pac_exec.proxy_user = proxy_user_pass[0]
-              @pac_exec.proxy_pass = proxy_user_pass[1]
-            end
+          return unless pac_script
+
+          @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
+          proxy_user_pass = options.get_option(:proxy_credentials)
+          if proxy_user_pass
+            Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
+            @pac_exec.proxy_user = proxy_user_pass[0]
+            @pac_exec.proxy_pass = proxy_user_pass[1]
           end
+        end
+
+        def setup_rest_and_transfer_runtime
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
           RestParameters.instance.session_cb = lambda{ |http_session| update_http_session(http_session)}
@@ -196,11 +210,13 @@ module Aspera
           keys_to_delete.each{ |k| @option_http_options.delete(k)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-          Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
-          RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
+          Transfer::Parameters.file_list_folder = File.join(@main_folder, FILELIST_FOLDERNAME)
+          RestErrorAnalyzer.instance.log_file = File.join(@main_folder, REST_EXCEPTIONS_LOG_FILENAME)
           # Register aspera REST call error handlers
           RestErrorsAspera.register_handlers
         end
+
+        public
 
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
         attr_reader :option_ignore_cert_host_port, :progress_bar
@@ -1182,6 +1198,8 @@ module Aspera
         # Folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         PERSISTENCY_FOLDER = 'persist_store'
+        FILELIST_FOLDERNAME = 'filelists'
+        REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
         TRANSFERD_APP_NAME = 'sdk'
@@ -1214,6 +1232,8 @@ module Aspera
           :CONF_PRESET_DEFAULTS,
           :CONF_PRESET_GLOBAL,
           :ASPERA_PLUGINS_FOLDERNAME,
+          :FILELIST_FOLDERNAME,
+          :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
           :DEMO_SERVER,
           :DEMO_PRESET,
