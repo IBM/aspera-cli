@@ -10,6 +10,8 @@ In this release, the main documentation is moved to `docs/README.md`.
 
 ### New Features
 
+* `aoc`: Creation of public short link allows specification of access level.
+
 ### Issues Fixed
 
 * Fixed build of container and Windows archive

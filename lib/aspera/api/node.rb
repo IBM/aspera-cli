@@ -38,8 +38,7 @@ module Aspera
       private_constant :MATCH_TYPES,
         :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
         :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
-
-      # Node API permissions
+      # Node API permissions: delete list mkdir preview read rename write
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       # Special HTTP Headers
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'

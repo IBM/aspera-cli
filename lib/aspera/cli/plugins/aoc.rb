@@ -742,9 +742,9 @@ module Aspera
         end
 
         # Create a shared link for the given entity
-        # @param purpose_public [Symbol]
+        # @param purpose_public [String] send_package_to_dropbox or view_shared_file
         # @param shared_data    [Hash] information for shared data
-        # @param block          [Proc] Optional: called on creation
+        # @param &block         [Proc] Optional: called on creation
         def short_link_command(purpose_public:, **shared_data)
           link_type = options.get_next_argument('link type', accept_list: %i[public private])
           purpose_local = case link_type
@@ -780,6 +780,7 @@ module Aspera
               }
             end
             custom_data = value_create_modify(command: command, default: {})
+            access_levels = custom_data.delete('access_levels')
             if (pass = custom_data.delete('password'))
               entity_data[:data][:url_token_data][:password] = pass
               entity_data[:password_enabled] = true
@@ -787,7 +788,7 @@ module Aspera
             entity_data.deep_merge!(custom_data)
             result_create_short_link = aoc_api.create('short_links', entity_data)
             # public: Creation: permission on node
-            yield(result_create_short_link['resource_id']) if block_given? && link_type.eql?(:public)
+            yield(result_create_short_link['resource_id'], access_levels) if block_given? && link_type.eql?(:public)
             return Main.result_single_object(result_create_short_link)
           when :list, :show
             query = if link_type.eql?(:private)
@@ -1071,17 +1072,13 @@ module Aspera
                 node_id:        shared_apfid[:api].app_info[:node_info]['id'],
                 file_id:        shared_apfid[:file_id],
                 **workspace_id_hash
-              ) do |resource_id|
-                       # TODO: merge with node permissions ?
-                       # TODO: access level as arg
-                       access_levels = Api::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
+              ) do |resource_id, access_levels|
                        perm_data = {
                          'file_id'       => shared_apfid[:file_id],
                          'access_id'     => resource_id,
                          'access_type'   => 'user',
-                         'access_levels' => access_levels,
+                         'access_levels' => Api::AoC.expand_access_levels(access_levels),
                          'tags'          => {
-                           # TODO: really just here ? not in tags.aspera.files.workspace ?
                            'url_token'        => true,
                            'folder_name'      => File.basename(folder_dest),
                            'created_by_name'  => aoc_api.current_user_info['name'],

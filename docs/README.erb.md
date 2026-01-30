@@ -5659,13 +5659,15 @@ They can be managed with commands:
 ```shell
 <%=cmd%> aoc files short_link <path to folder> private create
 <%=cmd%> aoc files short_link <path to folder> private list
+<%=cmd%> aoc files short_link <path to folder> public create @json:'{...}'
 <%=cmd%> aoc files short_link <path to folder> public list
 <%=cmd%> aoc files short_link public delete <id>
 <%=cmd%> aoc files short_link public modify <id> @json:'{...}'
 ```
 
 Only `public` short links can be modified.
-An optional payload can be provided at creation, for example to protect with a password, or set an expiry date.
+An optional payload can be provided at creation, for example to protect with a password, set an expiry date or set the access level.
+
 A password can be provided on `create` and `modify` for `public` links:
 
 ```json
@@ -5678,8 +5680,16 @@ To remove a password:
 {"password_enabled":false}
 ```
 
-> [!NOTE]
-> Access level cannot be customized in this version.
+By default access level is set to `edit`.
+Change the default access level by providing the parameter: `access_level` in payload.
+`access_levels` can be:
+
+- a single String: one of the shortcuts: `edit`, `preview`, `download`, `upload`.
+- an Array: any custom combination of: `delete`, `list`, `mkdir`, `preview`, `read`, `rename`, `write`
+
+```json
+{"access_levels":"upload"}
+```
 
 An expiration date can be set with parameter `expires_at`, using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
 For example, `2025-08-29T08:10:31.000Z`.

@@ -2434,6 +2434,8 @@ aocshlk3:
     - /testdst
     - public
     - create
+    - "@:"
+    - access_levels=upload
 aocshlk1:
   depends_on:
     - aocshlk2

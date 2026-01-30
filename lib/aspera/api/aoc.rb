@@ -195,6 +195,23 @@ module Aspera
         def workspace_access?(permission)
           permission['access_id'].start_with?("#{ID_AK_ADMIN}_WS_")
         end
+
+        # Expand access levels to full list of levels.
+        # @param levels [nil, String, Array] Access levels
+        # @return [Array] Expanded access levels
+        def expand_access_levels(levels)
+          case levels
+          when nil, 'edit' then Node::ACCESS_LEVELS
+          when 'preview' then %w[list preview]
+          when 'download' then %w[list preview read]
+          when 'upload' then %w[mkdir write]
+          when Array
+            Aspera.assert_array_all(levels, String){'access_levels'}
+            levels.each{ |level| Aspera.assert_value(level, Node::ACCESS_LEVELS){'access_level'}}
+            levels
+          else Aspera.error_unexpected_value(levels){"access_levels must be a list of #{Node::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload"}
+          end
+        end
       end
 
       attr_reader :private_link
