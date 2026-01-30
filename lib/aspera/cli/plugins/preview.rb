@@ -148,7 +148,7 @@ module Aspera
             end
             # log/persist periodically or last one
             next unless @periodic.trigger? || event.equal?(events.last)
-            Log.log.info{"Processed event #{event['id']}"}
+            Log.log.debug{"Processed event #{event['id']}"}
             # save checkpoint to avoid losing processing in case of error
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
@@ -181,7 +181,7 @@ module Aspera
             end
             # log/persist periodically or last one
             next unless @periodic.trigger? || event.equal?(events.last)
-            Log.log.info{"Processing event #{event['id']}"}
+            Log.log.debug{"Processing event #{event['id']}"}
             # save checkpoint to avoid losing processing in case of error
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
@@ -298,7 +298,7 @@ module Aspera
             #  download original file to temp folder
             do_transfer(Transfer::Spec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end
-          Log.log.info{"source: #{entry['id']}: #{entry['path']}"}
+          Log.log.debug{"source: #{entry['id']}: #{entry['path']}"}
           gen_infos.each do |gen_info|
             gen_info[:generator].generate rescue nil
           end
@@ -330,7 +330,7 @@ module Aspera
             entry = entries_to_process.shift
             # process this entry only if it is within the top_path
             entry_path_with_slash = entry['path']
-            Log.log.info{"processing entry #{entry_path_with_slash}"} if @periodic.trigger?
+            Log.log.debug{"processing entry #{entry_path_with_slash}"} if @periodic.trigger?
             entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
             if !top_path.nil? && !top_path.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(top_path)
               Log.log.debug{"#{entry['path']} folder (skip start)".bg_red}

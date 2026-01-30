@@ -30,7 +30,7 @@ module Aspera
           @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
           Log.dump(:client_version, client_info)
-          Log.log.info('Client was reached') if method_index > 0
+          Log.log.debug('Client was reached') if method_index > 0
         rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]
           method_index += 1

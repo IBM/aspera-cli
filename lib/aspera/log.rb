@@ -174,11 +174,10 @@ module Aspera
       Logger::SEVERITY_LABEL[@logger.level].downcase
     end
 
-    # Change underlying logger, but keep log level
+    # Change underlying logger, but keep log level (default: INFO)
     def logger_type=(new_log_type)
-      current_severity_integer = @logger.level unless @logger.nil?
-      current_severity_integer = ENV.fetch('AS_LOG_LEVEL', nil) if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
-      current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
+      # [Integer]
+      current_severity_integer = @logger&.level || ENV['AS_LOG_LEVEL']&.to_i || Logger::Severity::INFO
       case new_log_type
       when :stderr
         @logger = Logger.new($stderr, progname: @program_name, formatter: DEFAULT_FORMATTER)

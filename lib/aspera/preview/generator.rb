@@ -59,7 +59,7 @@ module Aspera
 
       # Create preview as specified in constructor.
       def generate
-        Log.log.info{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
+        Log.log.debug{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
         begin
           send(@processing_method)
           # check that generated size does not exceed maximum

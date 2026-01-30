@@ -35,7 +35,7 @@ module Aspera
           base_params.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state)
         )
         # here, we need a human to authorize on a web page
-        Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
+        Log.log.debug{"login_page_url=#{login_page_url}"}
         # start a web server to receive request code
         web_server = WebAuth.new(@redirect_uri, self.class.additional_info)
         # start browser on login page

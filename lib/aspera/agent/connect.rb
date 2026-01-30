@@ -32,7 +32,7 @@ module Aspera
             headers: {'Origin' => RestParameters.instance.user_agent}
           )
           connect_info = @connect_api.read('info/version')
-          Log.log.info('Connect was reached') if method_index > 0
+          Log.log.debug('Connect was reached') if method_index > 0
           Log.dump(:connect_version, connect_info)
         rescue StandardError => e # Errno::ECONNREFUSED
           Log.log.debug{"Exception: #{e}"}

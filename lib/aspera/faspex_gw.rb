@@ -80,7 +80,7 @@ module Aspera
               faspex4_send_to_faspex5(faspex_pkg_parameters)
             else Aspera.error_unexpected_value(@app_api.class.name)
             end
-          Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
+          Log.log.debug{"faspex_package_create_result=#{faspex_package_create_result}"}
           response.status = 200
           response.content_type = Rest::MIME_JSON
           response.body = JSON.generate(faspex_package_create_result)
