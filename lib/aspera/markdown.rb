@@ -26,6 +26,14 @@ module Aspera
       def list(items)
         items.map{ |i| "- #{i}"}.join("\n")
       end
+
+      def heading(level, title)
+        "#{'#' * level} #{title}\n\n"
+      end
+
+      def admonition(type, lines)
+        "> [!{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
+      end
     end
   end
 end

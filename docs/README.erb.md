@@ -3134,7 +3134,7 @@ Refer to the following sections.
 #### Proxy for REST and HTTP Gateway
 
 REST API calls and transfers based on HTTP Gateway both use Ruby's `Net::HTTP` class.
-Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
+Refer to [Ruby find proxy](https://rubyapi.org/4.0/o/uri/generic#method-i-find_proxy).
 
 When Ruby HTTP is used, there are two possibilities to define an HTTP proxy to be used.
 
@@ -6800,7 +6800,7 @@ Use this token as password and use `--auth=boot`.
 <%=cmd%> config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
-<%=include_commands_for_plugin('faspex5')%>
+<%=include_commands_for_plugin(:faspex5)%>
 
 Most commands correspond directly to REST API calls.
 Parameters to commands are carried through option `query`, as extended value, for `list`, or through **Command Parameter** for creation.
@@ -8301,10 +8301,6 @@ asession
 
 (events from FASP are not shown in above example.
 They would appear after each command)
-
-### Example of language wrapper
-
-NodeJS: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/aspera)
 
 ### Help
 

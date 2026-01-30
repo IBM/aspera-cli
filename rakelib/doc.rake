@@ -8,6 +8,8 @@ require_relative '../build/lib/doc_helper'
 require_relative '../build/lib/test_env'
 include BuildTools
 
+PATH_TMP_DOT = Paths::TMP / 'uml.dot'
+
 # Update signature file if configuration has changed
 if Paths::CONF_SIGNATURE.exist? && TestEnv.configuration.any?
   stored = Paths::CONF_SIGNATURE.read
@@ -39,61 +41,52 @@ def pdf_rule(pdf, md = nil)
   end
 end
 
-PATH_MD_MANUAL = Paths::TOP / 'README.md'
-PATH_PDF_MANUAL = Paths::RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{Aspera::Cli::VERSION}.pdf"
-PATH_TMPL_CONF_FILE = Paths::DOC / 'test_env.conf'
-TSPEC_JSON_SCHEMA = Paths::DOC / 'spec.schema.json'
-TSPEC_YAML_SCHEMA = Paths::LIB / 'aspera/transfer/spec.schema.yaml'
-ASYNC_YAML_SCHEMA = Paths::LIB / 'aspera/sync/conf.schema.yaml'
-PATH_BUILD_TOOLS = Paths::BUILD_LIB / 'build_tools.rb'
-PATH_DOC_HELPER = Paths::BUILD_LIB / 'doc_helper.rb'
-
-# Generated PATH_MD_MANUAL uses these files
+# Generated Paths::MD_MANUAL uses these files
 DOC_FILES = [
-  Paths::DOC / 'README.erb.md',
-  Paths::BIN / Aspera::Cli::Info::CMD_NAME,
-  Paths::BIN / 'asession',
+  Paths::MD_ERB,
+  Paths::COMMAND,
+  Paths::ASESSION,
   Paths::TEST_DEFS,
   Paths::GEMSPEC,
   Paths::GEMFILE
 ]
+
+# Source file that contain constants used to generate doc
 CONST_SOURCES = %w[info version manager].map{ |i| Paths::LIB / "aspera/cli/#{i}.rb"}
-# UML Diagram : requires tools: graphviz and gem xumlidot
-# on mac: `gem install xumlidot pry` and `brew install graphviz`
-PATH_UML_PNG = Paths::DOC / 'uml.png'
-PATH_TMP_DOT = Paths::TMP / 'uml.dot'
 
 namespace :doc do
   rule '.pdf' => '.md' do |t|
     pdf_rule(t.name, t.source)
   end
 
-  pdf_rule(PATH_PDF_MANUAL, PATH_MD_MANUAL)
+  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL)
 
-  file PATH_TMPL_CONF_FILE => [PATH_BUILD_TOOLS, Paths::CONF_SIGNATURE] do
-    DocHelper.config_to_template(TestEnv.configuration, PATH_TMPL_CONF_FILE)
+  file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
+    DocHelper.config_to_template(TestEnv.configuration, Paths::TMPL_CONF_FILE)
   end
 
-  file TSPEC_JSON_SCHEMA => [TSPEC_YAML_SCHEMA] do
-    Aspera::Log.log.info{"Generating: #{TSPEC_JSON_SCHEMA}"}
-    run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{TSPEC_JSON_SCHEMA}")
+  file Paths::TSPEC_JSON_SCHEMA => [Paths::TSPEC_YAML_SCHEMA] do
+    Aspera::Log.log.info{"Generating: #{Paths::TSPEC_JSON_SCHEMA}"}
+    run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{Paths::TSPEC_JSON_SCHEMA}")
   end
 
-  file PATH_MD_MANUAL => DOC_FILES + [PATH_BUILD_TOOLS, PATH_DOC_HELPER, TSPEC_YAML_SCHEMA, ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
-    Aspera::Log.log.info{"Generating: #{PATH_MD_MANUAL}"}
+  file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
+    Aspera::Log.log.info{"Generating: #{Paths::MD_MANUAL}"}
     Aspera::Environment.force_terminal_c
-    DocHelper.new([PATH_MD_MANUAL] + DOC_FILES).generate
+    DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
 
   desc 'Generate PDF Manual'
-  task pdf: PATH_PDF_MANUAL
+  task pdf: Paths::PDF_MANUAL
 
   desc 'Generate All Docs'
-  task build: [PATH_TMPL_CONF_FILE, TSPEC_JSON_SCHEMA, PATH_MD_MANUAL, PATH_PDF_MANUAL]
+  task build: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL, Paths::PDF_MANUAL]
 
-  file PATH_UML_PNG => PATH_TMP_DOT do
-    Aspera::Log.log.info{"Generating: #{PATH_UML_PNG}"}
-    run('dot', '-Tpng', PATH_TMP_DOT, out: PATH_UML_PNG.to_s)
+  # UML Diagram : requires tools: graphviz and gem xumlidot
+  # on mac: `gem install xumlidot pry` and `brew install graphviz`
+  file Paths::UML_PNG => PATH_TMP_DOT do
+    Aspera::Log.log.info{"Generating: #{Paths::UML_PNG}"}
+    run('dot', '-Tpng', PATH_TMP_DOT, out: Paths::UML_PNG.to_s)
   end
 
   file PATH_TMP_DOT => [] do
@@ -105,5 +98,5 @@ namespace :doc do
   end
 
   desc 'Generate uml'
-  task uml: PATH_UML_PNG
+  task uml: Paths::UML_PNG
 end

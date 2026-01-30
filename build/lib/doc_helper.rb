@@ -294,7 +294,7 @@ class DocHelper
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]
-  # @return [Hash] all test commands with key by plugin
+  # @return [Hash<Symbol, Array<String>>] All test commands with key by plugin
   def all_test_commands_by_plugin
     return @commands unless @commands.nil?
     @commands = {}
@@ -319,15 +319,21 @@ class DocHelper
     @commands
   end
 
-  def sample_commands_title(plugin_name)
-    "Tested commands for `#{plugin_name}`"
+  # Used in ERB doc
+  def sample_commands_title(plugin_name_sym)
+    "Tested commands for `#{plugin_name_sym}`"
   end
 
-  def include_commands_for_plugin(plugin_name, level = 3)
-    commands = all_test_commands_by_plugin.delete(plugin_name.to_s)
-    raise "plugin #{plugin_name} not found in test makefile" if commands.nil?
-    @undocumented_plugins.delete(plugin_name.to_sym)
-    return "#{'#' * level} #{sample_commands_title(plugin_name)}\n\n> [!NOTE]\n> Add `#{cmd} #{plugin_name}` in front of the following commands:\n\n```bash\n#{commands.join("\n")}\n```"
+  # Used in ERB doc
+  def include_commands_for_plugin(plugin_name_sym, level = 3)
+    commands = all_test_commands_by_plugin.delete(plugin_name_sym)
+    raise "Plugin #{plugin_name_sym} not found in test cases (#{all_test_commands_by_plugin.keys.join(',')})" if commands.nil?
+    @undocumented_plugins.delete(plugin_name_sym)
+    return [
+      Aspera::Markdown.heading(level, sample_commands_title(plugin_name_sym)),
+      Aspera::Markdown.admonition('NOTE', ["Add `#{cmd} #{plugin_name_sym}` in front of the following commands:"]),
+      commands.join("\n")
+    ].join
   end
 
   def include_commands
@@ -353,7 +359,7 @@ class DocHelper
     raise 'Check headings specified above' if error
   end
 
-  # read markdown file line by line, and check that all links are valid
+  # Read markdown file line by line, and check that all links are valid
   # ignore links starting with https:// or #, other links are considered as file paths
   def check_links(file_path)
     require 'uri'
@@ -404,6 +410,7 @@ class DocHelper
     end
     Aspera::Log.log.warn("Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
     # check that all test commands are included in the doc
+    all_test_commands_by_plugin.delete(:my_command)
     if !all_test_commands_by_plugin.empty?
       Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.map{ |p| %Q{"#{p}"}}.join(', ')}".red)
       raise 'Remediate: remove from doc using tag `nodoc` or add section in doc'

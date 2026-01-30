@@ -6,7 +6,9 @@ require_relative 'build_tools'
 
 include BuildTools
 
-PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::TOP / 'docs' / 'pandoc'
+# Path to pandoc root directory
+PATH_PANDOC_ROOT = ENV.key?('DIR_PANDOC') ? Pathname.new(ENV['DIR_PANDOC']) : Paths::PANDOC
+# List of pandoc dependencies files
 PANDOC_DEPS = [
   'defaults_common.yaml',
   'defaults_pdf.yaml',
@@ -48,7 +50,7 @@ def get_change_date(md)
   end.strftime('%Y/%m/%d')
 end
 
-# Generate PDF from Markdown using pandoc template
+# Generate PDF from Markdown using pandoc templates
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
   pdf = File.expand_path(pdf)

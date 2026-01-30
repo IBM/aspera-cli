@@ -26,6 +26,7 @@ end
 
 # Used only for development
 group :development do
+  gem('pathname', '~> 0.2') # stdlib; explicit so Solargraph can resolve require 'pathname'
   gem('debug', '~> 1.11') unless defined?(JRUBY_VERSION)
   gem('grpc-tools', '~> 1.67')
   gem('rake', '~> 13.0')
