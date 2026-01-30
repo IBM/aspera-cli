@@ -55,7 +55,7 @@ module Aspera
       assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
 
-    # Assert that all value of array are of the same specified type
+    # Assert that all value of array are of the same specified type.
     # @param array   [Array]            The array to check
     # @param klass   [Class]            The expected type of elements
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
