@@ -6,21 +6,36 @@
 
 Released: [Place date of release here]
 
-In this release, the main documentation is moved to `docs/README.md`.
-
 ### New Features
 
-* `aoc`: Creation of public short link allows specification of access level.
+* `aoc`: Public short links can now be created with an explicit access level.
 
 ### Issues Fixed
 
-* Fixed build of container and Windows archive
+* Fixed container builds and Windows archive generation.
 
 ### Breaking Changes
 
-* `config`: Removed option `ascp_path`, replaced with option `sdk_folder`.
-* `config`: Removed command `ascp use`, instead do: `ascli conf preset set GLOBAL sdk_folder <path>`.
-* `config`: Removed command `ascp products use`, instead do: `ascli conf preset set GLOBAL sdk_folder product:<path>`.
+Main documentation has moved to `docs/README.md`.
+
+* `config`: Removed option `ascp_path`, replaced by `sdk_folder`.
+* `config`: Removed command `ascp use`. Use instead:
+
+  ```shell
+  ascli conf preset set GLOBAL sdk_folder <path>
+  ```
+
+* `config`: Removed command `ascp products use`. Use instead:
+
+  ```shell
+  ascli conf preset set GLOBAL sdk_folder product:<path>
+  ```
+
+* `config`: Default `log_level` is now `info` (was `warn`). To restore the previous behavior:
+
+  ```shell
+  ascli config preset set GLOBAL log_level warn
+  ```
 
 ## 4.25.1
 
