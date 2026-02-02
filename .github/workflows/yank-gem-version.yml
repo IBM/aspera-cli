@@ -26,4 +26,8 @@ jobs:
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: |
+          mkdir -p $HOME/.gem
+          GEM_CREDS=$HOME/.gem/credentials
+          echo ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $GEM_CREDS
+          chmod 0600 $GEM_CREDS
           bundle exec rake release:yank[${{ inputs.version }}]
