@@ -4684,7 +4684,7 @@ OPTIONS: global
     -v, --version                    Display version
         --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
-        --log-level=ENUM             Log level: debug, error, fatal, info, trace1, trace2, unknown, [warn]
+        --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
