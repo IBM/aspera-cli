@@ -102,14 +102,18 @@ namespace :release do
     log.info("Version file:\n#{Paths::VERSION_FILE.read}")
   end
 
+  # @return [Pathname] Path to generated gem file
   def gem_file(version)
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
+  # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
   def dry_run
     ENV['DRY_RUN'] == '1'
   end
 
+  # Execute command only if not dry run
+  # @param git [Symbol] Name of executable
   def git(*cmd, git: :git, **kwargs)
     cmd.unshift(git.to_s)
     if dry_run
