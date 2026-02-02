@@ -77,7 +77,7 @@ module Aspera
           # status is empty sometimes with status 200...
           transfer_data = node_api_.read("ops/transfers/#{@transfer_id}") || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
-          when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)'
+          when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)', 'waiting(api error)'
             notify_progress(:sessions_init, info: transfer_data['status'])
           when 'running'
             if !session_started
