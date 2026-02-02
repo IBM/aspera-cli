@@ -109,15 +109,14 @@ namespace :release do
   end
 
   # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
-  def dry_run
+  def dry_run?
     ENV['DRY_RUN'] == '1'
   end
 
   # Execute command only if not dry run
   # @param git [Symbol] Name of executable
-  def git(*cmd, git: :git, **kwargs)
-    cmd.unshift(git.to_s)
-    if dry_run
+  def drun(*cmd, **kwargs)
+    if dry_run?
       log.info("Would execute: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
       return '' if kwargs[:mode].eql?(:capture)
     else
@@ -132,7 +131,7 @@ namespace :release do
     log.info("Current version in version.rb: #{versions[:current]}")
     log.info("Release version: #{versions[:release]}")
     log.info("Next development version: #{versions[:next_dev]}")
-    raise 'Git working tree not clean' unless git('status', '--porcelain', mode: :capture).strip.empty?
+    raise 'Git working tree not clean' unless drun('git', 'status', '--porcelain', mode: :capture).strip.empty?
     raise "Current version must end with #{PRE_SUFFIX}" unless versions[:current].end_with?(PRE_SUFFIX)
 
     # Release version + changelog
@@ -146,24 +145,24 @@ namespace :release do
 
     # Build documentation and signed gem (included in release)
     Rake::Task['doc:build'].invoke
-    Rake::Task[dry_run ? 'unsigned' : 'signed'].invoke
+    Rake::Task[dry_run? ? 'unsigned' : 'signed'].invoke
 
     # Commit release: CHANGELOG.md README.md version.rb
-    git('add', '-A')
-    git('commit', '-m', "Release #{versions[:release_tag]}")
+    drun('git', 'add', '-A')
+    drun('git', 'commit', '-m', "Release #{versions[:release_tag]}")
 
     # Tag + push
-    git('tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
-    git('push', 'origin', versions[:release_tag])
+    drun('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
+    drun('git', 'push', 'origin', versions[:release_tag])
 
     # GitHub release
-    git(
+    drun(
+      'gh',
       'release', 'create', versions[:release_tag],
       '--title', "Aspera CLI #{versions[:release_tag]}",
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
       gem_file(versions[:release]),
-      git: :gh,
       env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
     )
 
@@ -173,10 +172,17 @@ namespace :release do
     Rake::Task[Paths::MD_MANUAL].reenable
     Rake::Task[Paths::MD_MANUAL].invoke
     add_next_changelog_section(versions[:next_dev])
-    git('add', '-A')
-    git('commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")
-    git('push', 'origin', 'main')
+    drun('git', 'add', '-A')
+    drun('git', 'commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")
+    drun('git', 'push', 'origin', 'main')
 
     log.info("Release #{versions[:release]} completed")
+  end
+
+  desc 'Yank a gem version from RubyGems (arg: version)'
+  task :yank, [:version] do |_t, args|
+    version = args[:version].to_s.strip
+    raise 'Missing version (usage: rake release:yank[1.2.3])' if version.empty?
+    drun('gem', 'yank', Aspera::Cli::Info::GEM_NAME, '--version', version)
   end
 end

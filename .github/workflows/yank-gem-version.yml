@@ -1,0 +1,28 @@
+name: Yank RubyGem version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to yank (e.g. 4.26.0)"
+        required: true
+        type: string
+
+jobs:
+  yank:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: true
+
+      - name: Yank gem version
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          bundle exec rake release:yank[${{ inputs.version }}]
