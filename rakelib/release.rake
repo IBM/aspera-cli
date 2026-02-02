@@ -3,6 +3,7 @@
 require 'pathname'
 require 'tmpdir'
 require 'aspera/markdown'
+require 'aspera/environment'
 require_relative '../build/lib/paths'
 require_relative '../build/lib/build_tools'
 include BuildTools
@@ -117,7 +118,7 @@ namespace :release do
   def git(*cmd, git: :git, **kwargs)
     cmd.unshift(git.to_s)
     if dry_run
-      log.info("Would execute: #{cmd.map(&:to_s).join(' ')}")
+      log.info("Would execute: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
       return '' if kwargs[:mode].eql?(:capture)
     else
       Aspera::Environment.secure_execute(*cmd, **kwargs)

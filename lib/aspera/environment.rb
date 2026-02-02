@@ -74,6 +74,16 @@ module Aspera
         argv
       end
 
+      # like `Shellwords.shellescape`, but does not escape `=`
+      def shell_escape_pretty(str)
+        # Safe unquoted characters + '=' explicitly allowed
+        return str if str.match?(%r{\A[A-Za-z0-9_.,:/@+=-]+\z})
+        # return str if Shellwords.shellescape(str) == str
+
+        # Otherwise use single quotes
+        "'#{str.gsub("'", %q('\'\''))}'"
+      end
+
       # Execute a process securely without shell.
       #
       # Execution `mode` can be:
@@ -96,8 +106,8 @@ module Aspera
         Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError){'mode'}
         Log.log.debug do
           parts = [mode.to_s, 'command:']
-          kwargs[:env]&.each{ |k, v| parts << "#{k}=#{Shellwords.shellescape(v.to_s)}"}
-          cmd.each{ |a| parts << Shellwords.shellescape(a)}
+          kwargs[:env]&.each{ |k, v| parts << "#{k}=#{shell_escape_pretty(v.to_s)}"}
+          cmd.each{ |a| parts << shell_escape_pretty(a)}
           parts.join(' ')
         end
         case mode
