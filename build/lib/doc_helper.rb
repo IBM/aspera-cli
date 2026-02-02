@@ -357,6 +357,7 @@ class DocHelper
 
   HEADING_PATTERN = /^#[^:]*: [a-z]/
 
+  # Check that headings are capitalized
   def check_headings(file_path)
     error = false
     File.open(file_path) do |file|
@@ -370,8 +371,7 @@ class DocHelper
     raise 'Check headings specified above' if error
   end
 
-  # Read markdown file line by line, and check that all links are valid
-  # ignore links starting with https:// or #, other links are considered as file paths
+  # Read markdown file line by line, and check that all links are valid.
   def check_links(file_path)
     require 'uri'
     require 'net/http'
@@ -409,8 +409,9 @@ class DocHelper
     end
   end
 
-  # main function to generate README.md
+  # Generate README.md from README.erb.md
   def generate
+    Aspera::Log.log.warn("Generating doc for version #{build_version}")
     check_headings(@paths[:template])
     check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
     # get current plugins
