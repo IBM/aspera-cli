@@ -164,8 +164,7 @@ namespace :release do
     # Prepare next development cycle
     update_version_file(versions[:next_dev])
     Paths::MD_MANUAL.delete
-    Rake::Task['doc:md'].reenable
-    Rake::Task['doc:md'].invoke
+    Rake::Task[Paths::MD_MANUAL].invoke
     log.info("Version file:\n#{Paths::VERSION_FILE.read}")
     add_next_changelog_section(versions[:next_dev])
     git('add', '-A')
