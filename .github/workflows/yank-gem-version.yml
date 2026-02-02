@@ -11,7 +11,8 @@ on:
 jobs:
   yank:
     runs-on: ubuntu-latest
-
+    env:
+      BUNDLE_WITHOUT: optional:development:special
     steps:
       - uses: actions/checkout@v4
 
