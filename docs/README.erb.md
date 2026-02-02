@@ -2,7 +2,7 @@
 <!--
 <%=doc_warn('Yes edit this file!')%>
 PANDOC_META_BEGIN
-subtitle: "<%=cmd%> <%=gemspec.version.to_s%>"
+subtitle: "<%=cmd%> <%=build_version%>"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -39,7 +39,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version: <%=gemspec.version.to_s%>
+Version: <%=build_version%>
 
 Laurent/2016-<%=Time.new.year%>
 
@@ -120,7 +120,7 @@ Once the gem is installed, <%=tool%> shall be accessible:
 ```
 
 ```text
-<%=gemspec.version.to_s%>
+<%=build_version%>
 ```
 
 > [!NOTE]
@@ -735,11 +735,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install <%=gemspec.name%>:<%=gemspec.version%> --no-document --install-dir temp_folder
+gem install <%=gemspec.name%>:<%=build_version%> --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache <%=gemspec.name%>-<%=gemspec.version%>-gems
+mv temp_folder/cache <%=gemspec.name%>-<%=build_version%>-gems
 rm -fr temp_folder
-tar zcvf <%=gemspec.name%>-<%=gemspec.version%>-gems <%=gemspec.name%>-<%=gemspec.version%>-gems.tgz
+tar zcvf <%=gemspec.name%>-<%=build_version%>-gems <%=gemspec.name%>-<%=build_version%>-gems.tgz
 ```
 
 #### Unix-like
@@ -884,7 +884,7 @@ Then, you can execute the container like a local command:
 ```
 
 ```text
-<%=gemspec.version.to_s%>
+<%=build_version%>
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.

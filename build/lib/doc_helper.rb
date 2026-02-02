@@ -22,6 +22,7 @@ require 'English'
 require 'pathname'
 require_relative 'test_env'
 require_relative 'paths'
+require_relative 'build_tools'
 
 # Format special values to markdown
 class MarkdownFormatter
@@ -156,6 +157,11 @@ class DocHelper
   def gemspec
     @gem_spec = Gem::Specification.load(@paths[:gem_spec_file]) || raise("error loading #{@paths[:gem_spec_file]}") if !@gem_spec
     @gem_spec
+  end
+
+  # Version of gem being built
+  def build_version
+    BuildTools.specific_version
   end
 
   # If version contains other characters than digit and dot, it is pre-release

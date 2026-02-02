@@ -139,7 +139,7 @@ namespace :release do
     log.info("Release Notes:\n#{release_notes_path.read}")
 
     # Build documentation and signed gem (included in release)
-    Rake::Task['doc:build'].invoke(versions[:release])
+    Rake::Task['doc:build'].invoke
     Rake::Task[dry_run ? 'unsigned' : 'signed'].invoke
 
     # Commit release: CHANGELOG.md README.md version.rb
@@ -164,7 +164,7 @@ namespace :release do
     # Prepare next development cycle
     update_version_file(versions[:next_dev])
     Rake::Task['doc:md'].reenable
-    Rake::Task['doc:md'].invoke(versions[:next_dev])
+    Rake::Task['doc:md'].invoke
     log.info("Version file:\n#{Paths::VERSION_FILE.read}")
     add_next_changelog_section(versions[:next_dev])
     git('add', '-A')
