@@ -51,7 +51,8 @@ namespace :release do
 
     section = match[1].strip
     # Remove the version heading (## X.Y.Z) and Released: line
-    section.sub(/\A## .+\n+Released: .+\n*/, '').strip
+    # Change heading level 3 to 2
+    section.sub(/\A## .+\n+Released: .+\n*/, '').strip.gsub(/^### /, '## ')
   end
 
   # Update `CHANGELOG.md` for release:
@@ -98,6 +99,7 @@ namespace :release do
     content = VERSION_FILE.read
     content.sub!(/VERSION = '[^']+'/, "VERSION = '#{version}'")
     VERSION_FILE.write(content)
+    log.info("Version file:\n#{Paths::VERSION_FILE.read}")
   end
 
   def gem_file(version)
@@ -130,7 +132,6 @@ namespace :release do
 
     # Release version + changelog
     update_version_file(versions[:release])
-    log.info{"Version file:\n#{Paths::VERSION_FILE.read}"}
     update_changelog_for_release(versions[:current], versions[:release])
 
     # Extract release notes (temporary, not committed)
@@ -164,8 +165,8 @@ namespace :release do
     # Prepare next development cycle
     update_version_file(versions[:next_dev])
     Paths::MD_MANUAL.delete
+    Rake::Task[Paths::MD_MANUAL].reenable
     Rake::Task[Paths::MD_MANUAL].invoke
-    log.info("Version file:\n#{Paths::VERSION_FILE.read}")
     add_next_changelog_section(versions[:next_dev])
     git('add', '-A')
     git('commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")

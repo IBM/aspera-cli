@@ -411,13 +411,13 @@ class DocHelper
 
   # Generate README.md from README.erb.md
   def generate
-    Aspera::Log.log.warn("Generating doc for version #{build_version}")
+    Aspera::Log.log.info("Generating doc for version #{build_version}")
     check_headings(@paths[:template])
     check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
     # get current plugins
     plugin_manager = Aspera::Cli::Plugins::Factory.instance
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
-    plugin_manager.add_plugins_from_lookup_folders
+    plugin_manager.add_plugins_from_lookup_folders if plugin_manager.plugin_list.empty?
     @undocumented_plugins = plugin_manager.plugin_list
     tmp_file = [@paths[:outfile], 'tmp'].join('.')
     File.open(tmp_file, 'w') do |f|

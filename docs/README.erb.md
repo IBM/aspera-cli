@@ -3,7 +3,7 @@
 <%=doc_warn('Yes edit this file!')%>
 PANDOC_META_BEGIN
 subtitle: "<%=cmd%> <%=build_version%>"
-author: "Laurent MARTIN"
+author: "<%=gemspec.authors.join(', ')%>"
 PANDOC_META_END
 -->
 
@@ -41,7 +41,7 @@ Think of me as Aspera’s command-line sidekick: quick, reliable, and a little n
 
 Version: <%=build_version%>
 
-Laurent/2016-<%=Time.new.year%>
+<%=gemspec.authors.join(', ')%>/2016-<%=Time.new.year%>
 
 The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
 It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
@@ -4490,7 +4490,7 @@ Path to private RSA key (leave empty to generate):
 option: key_path>
 Using existing key:
 /home/john/.aspera/<%=cmd%>/my_private_key.pem
-Please Log in as user laurent.martin.aspera@fr.ibm.com at: https://_my_org_.ibmaspera.com
+Please Log in as user john@example.com at: https://_my_org_.ibmaspera.com
 Navigate to: (User) → Account Settings → Profile → Public Key
 Check or update the value to (including BEGIN/END lines):
 -----BEGIN PUBLIC KEY-----
