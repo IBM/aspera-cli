@@ -39,6 +39,10 @@ module Aspera
       def code(lines, type: 'shell')
         "```#{type}\n#{lines.join("\n")}\n```\n\n"
       end
+
+      def paragraph(text)
+        "#{text}\n\n"
+      end
     end
   end
 end

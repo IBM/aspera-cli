@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., x.y.z). Leave empty to use version.rb without .pre suffix'
+        description: "Release version (e.g., x.y.z). Leave empty to use version.rb without .pre suffix"
         required: false
         type: string
       next_version:
-        description: 'Next development version (e.g., x.y.z). Leave empty to auto-increment minor version. Will append .pre automatically'
+        description: "Next development version (e.g., x.y.z). Leave empty to auto-increment minor version. Will append .pre automatically"
         required: false
         type: string
 
@@ -49,12 +49,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
-          ARGS=""
-          if [ -n "${{ inputs.version }}" ]; then
-            ARGS="[${{ inputs.version }}"
-            if [ -n "${{ inputs.next_version }}" ]; then
-              ARGS="${ARGS},${{ inputs.next_version }}"
-            fi
-            ARGS="${ARGS}]"
-          fi
-          bundle exec rake "release:create${ARGS}"
+          bundle exec rake release:run'[${{ github.event.inputs.version }},${{ github.event.inputs.next_version }}]'

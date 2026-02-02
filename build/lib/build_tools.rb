@@ -23,9 +23,8 @@ module BuildTools
   # Execute the command line (not in shell)
   # @see `Aspera::Environment#secure_execute`
   def run(*cmd, **kwargs)
-    dry_run = ENV['DRY_RUN'] == '1'
-    log.info("#{dry_run ? 'Would run' : 'Executing'}: #{cmd.map(&:to_s).join(' ')}")
-    Aspera::Environment.secure_execute(*cmd, **kwargs) unless dry_run
+    log.info("Executing: #{cmd.map(&:to_s).join(' ')}")
+    Aspera::Environment.secure_execute(*cmd, **kwargs)
   end
 
   # Extract gem specifications in a given group from the Gemfile
