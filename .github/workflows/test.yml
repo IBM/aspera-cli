@@ -1,4 +1,4 @@
-name: Test
+name: Smoke Test
 
 # Trigger tests only on Ruby file changes
 on:

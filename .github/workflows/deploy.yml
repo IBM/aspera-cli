@@ -1,5 +1,5 @@
 # Action to push a gem version to RubyGems when a new tag is created
-name: Deploy
+name: Push to Rubygems
 
 on:
   push:

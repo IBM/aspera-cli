@@ -1,6 +1,6 @@
 # Workflow to create a new release
 # Triggered manually via GitHub Actions UI
-name: Release
+name: New Release on GitHub
 
 on:
   workflow_dispatch:

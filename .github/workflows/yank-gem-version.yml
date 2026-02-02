@@ -1,4 +1,4 @@
-name: Yank RubyGem version
+name: Yank RubyGems version
 
 on:
   workflow_dispatch:
