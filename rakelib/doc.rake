@@ -79,6 +79,9 @@ namespace :doc do
   desc 'Generate PDF Manual'
   task pdf: Paths::PDF_MANUAL
 
+  desc 'Generate PDF Manual'
+  task md: Paths::MD_MANUAL
+
   desc 'Generate All Docs'
   task build: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL, Paths::PDF_MANUAL]
 

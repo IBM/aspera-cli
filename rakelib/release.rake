@@ -163,6 +163,7 @@ namespace :release do
 
     # Prepare next development cycle
     update_version_file(versions[:next_dev])
+    Rake::Task['doc:md'].invoke(versions[:next_dev])
     log.info("Version file:\n#{Paths::VERSION_FILE.read}")
     add_next_changelog_section(versions[:next_dev])
     git('add', '-A')
