@@ -120,59 +120,37 @@ namespace :release do
 
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
-    #--------------------------------------------------------------------------
     # Determine versions
-    #--------------------------------------------------------------------------
-
     versions = release_versions(args[:release_version], args[:next_version])
     log.info("Current version in version.rb: #{versions[:current]}")
     log.info("Release version: #{versions[:release]}")
     log.info("Next development version: #{versions[:next_dev]}")
-
     raise 'Git working tree not clean' unless git('status', '--porcelain', mode: :capture).strip.empty?
     raise "Current version must end with #{PRE_SUFFIX}" unless versions[:current].end_with?(PRE_SUFFIX)
 
-    #--------------------------------------------------------------------------
     # Release version + changelog
-    #--------------------------------------------------------------------------
-
     update_version_file(versions[:release])
     log.info{"Version file: #{Paths::VERSION_FILE.read}"}
     update_changelog_for_release(versions[:current], versions[:release])
 
-    #--------------------------------------------------------------------------
     # Extract release notes (temporary, not committed)
-    #--------------------------------------------------------------------------
-
     release_notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
     release_notes_path.write(extract_latest_changelog)
     log.info("Release Notes:\n#{release_notes_path.read}")
 
-    #----------------------------------------------------------------------
     # Build documentation and signed gem (included in release)
-    #----------------------------------------------------------------------
-
     Rake::Task['doc:build'].invoke(versions[:release])
     Rake::Task[dry_run ? 'unsigned' : 'signed'].invoke
 
-    #----------------------------------------------------------------------
     # Commit release: CHANGELOG.md README.md version.rb
-    #----------------------------------------------------------------------
-
     git('add', '-A')
     git('commit', '-m', "Release #{versions[:release_tag]}")
 
-    #----------------------------------------------------------------------
     # Tag + push
-    #----------------------------------------------------------------------
-
     git('tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
     git('push', 'origin', versions[:release_tag])
 
-    #----------------------------------------------------------------------
     # GitHub release
-    #----------------------------------------------------------------------
-
     git(
       'release', 'create', versions[:release_tag],
       '--title', "Aspera CLI #{versions[:release_tag]}",
@@ -183,15 +161,10 @@ namespace :release do
       env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
     )
 
-    #--------------------------------------------------------------------------
     # Prepare next development cycle
-    #--------------------------------------------------------------------------
-
     update_version_file(versions[:next_dev])
-    log.info(Paths::VERSION_FILE.read)
-
+    log.info("Version file:\n#{Paths::VERSION_FILE.read}")
     add_next_changelog_section(versions[:next_dev])
-
     git('add', '-A')
     git('commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")
     git('push', 'origin', 'main')
