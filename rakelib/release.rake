@@ -104,8 +104,11 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
+  def dry_run
+    ENV['DRY_RUN'] == '1'
+  end
+
   def git(*cmd, git: :git, **kwargs)
-    dry_run = ENV['DRY_RUN'] == '1'
     cmd.unshift(git.to_s)
     if dry_run
       log.info("Would execute: #{cmd.map(&:to_s).join(' ')}")
@@ -150,7 +153,7 @@ namespace :release do
     #----------------------------------------------------------------------
 
     Rake::Task['doc:build'].invoke(versions[:release])
-    Rake::Task['signed'].invoke
+    Rake::Task[dry_run ? 'unsigned' : 'signed'].invoke
 
     #----------------------------------------------------------------------
     # Commit release: CHANGELOG.md README.md version.rb
