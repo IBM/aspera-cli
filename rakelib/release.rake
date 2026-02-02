@@ -130,7 +130,7 @@ namespace :release do
 
     # Release version + changelog
     update_version_file(versions[:release])
-    log.info{"Version file: #{Paths::VERSION_FILE.read}"}
+    log.info{"Version file:\n#{Paths::VERSION_FILE.read}"}
     update_changelog_for_release(versions[:current], versions[:release])
 
     # Extract release notes (temporary, not committed)
