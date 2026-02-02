@@ -12,6 +12,8 @@ namespace :release do
   PRE_SUFFIX = '.pre'
   DATE_PLACE_HOLDER = 'Released: [Place date of release here]'
 
+  private
+
   # Determine release versions
   # @param release_version [String] Release version (empty to use current version without .pre)
   # @param next_version [String] Next development version (empty to auto-increment minor)
@@ -102,8 +104,9 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
-  def git(*cmd, **kwargs)
+  def git(*cmd, git: :git, **kwargs)
     dry_run = ENV['DRY_RUN'] == '1'
+    cmd.unshift(git.to_s)
     if dry_run
       log.info("Would execute: #{cmd.map(&:to_s).join(' ')}")
       return '' if kwargs[:mode].eql?(:capture)
@@ -123,7 +126,7 @@ namespace :release do
     log.info("Release version: #{versions[:release]}")
     log.info("Next development version: #{versions[:next_dev]}")
 
-    raise 'Git working tree not clean' unless run(*%w{git status --porcelain}, mode: :capture).strip.empty?
+    raise 'Git working tree not clean' unless git('status', '--porcelain', mode: :capture).strip.empty?
     raise "Current version must end with #{PRE_SUFFIX}" unless versions[:current].end_with?(PRE_SUFFIX)
 
     #--------------------------------------------------------------------------
@@ -140,7 +143,7 @@ namespace :release do
 
     release_notes_path = Pathname(Dir.tmpdir) / 'release_notes.md'
     release_notes_path.write(extract_latest_changelog)
-    log.info(release_notes_path.read)
+    log.info("Release Notes:\n#{release_notes_path.read}")
 
     #----------------------------------------------------------------------
     # Build documentation and signed gem (included in release)
@@ -153,26 +156,27 @@ namespace :release do
     # Commit release: CHANGELOG.md README.md version.rb
     #----------------------------------------------------------------------
 
-    run(*%w{git add -A})
-    run('git', 'commit', '-m', "Release #{versions[:release_tag]}")
+    git('add', '-A')
+    git('commit', '-m', "Release #{versions[:release_tag]}")
 
     #----------------------------------------------------------------------
     # Tag + push
     #----------------------------------------------------------------------
 
-    run('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
-    run('git', 'push', 'origin', versions[:release_tag])
+    git('tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
+    git('push', 'origin', versions[:release_tag])
 
     #----------------------------------------------------------------------
     # GitHub release
     #----------------------------------------------------------------------
 
-    run(
-      'gh', 'release', 'create', versions[:release_tag],
+    git(
+      'release', 'create', versions[:release_tag],
       '--title', "Aspera CLI #{versions[:release_tag]}",
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
       gem_file(versions[:release]),
+      git: :gh,
       env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
     )
 
@@ -185,9 +189,9 @@ namespace :release do
 
     add_next_changelog_section(versions[:next_dev])
 
-    run(*%w{git add -A})
-    run('git', 'commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")
-    run(*%w{git push origin main})
+    git('add', '-A')
+    git('commit', '-m', "Prepare for next development cycle (#{versions[:next_dev]})")
+    git('push', 'origin', 'main')
 
     log.info("Release #{versions[:release]} completed")
   end
