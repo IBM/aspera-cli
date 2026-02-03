@@ -18,16 +18,6 @@ Released: 2026-02-03
 
 ### New Features
 
-### Issues Fixed
-
-### Breaking Changes
-
-## 4.25.2
-
-Released: 2026-02-03
-
-### New Features
-
 * `aoc`: Public short links can now be created with an explicit access level.
 
 ### Issues Fixed
