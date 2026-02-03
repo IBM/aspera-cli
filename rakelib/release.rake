@@ -127,6 +127,7 @@ namespace :release do
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
     check_gem_signing_key
+    Aspera.assert(ENV.key?('GH_TOKEN')){'Missing env var: GH_TOKEN'}
 
     # Determine versions
     versions = release_versions(args[:release_version], args[:next_version])
@@ -165,8 +166,7 @@ namespace :release do
       '--title', "Aspera CLI #{versions[:release_tag]}",
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
-      gem_file(versions[:release]),
-      env: {'GH_TOKEN' => ENV.fetch('RELEASE_TOKEN')}
+      gem_file(versions[:release])
     )
 
     # Prepare next development cycle
