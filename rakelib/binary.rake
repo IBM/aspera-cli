@@ -29,7 +29,7 @@ end
 namespace :binary do
   desc 'Build the single executable'
   task :build, [:version] do |_t, args|
-    gem_version_build = args[:version] || Aspera::Cli::VERSION
+    gem_version_build = args[:version] || specific_version
 
     log.info('Creating tebako environment')
     # Final destination folder

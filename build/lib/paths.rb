@@ -24,7 +24,8 @@ module Paths
   GEMFILE = TOP / 'Gemfile'
   GEMFILE_LOCK = TOP / 'Gemfile.lock'
   CONF_SIGNATURE = DOC / 'conf_signature.txt'
-  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{Aspera::Cli::VERSION}.gem"
+  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}.gem"
+  PDF_MANUAL = RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
   # Command-line test suite configuration.
   TEST_DEFS = TST / 'tests.yml'
   CHANGELOG_FILE = TOP / 'CHANGELOG.md'
@@ -37,7 +38,6 @@ module Paths
   UML_PNG = Paths::DOC / 'uml.png'
   MD_MANUAL = DOC / 'README.md'
   MD_ERB = DOC / 'README.erb.md'
-  PDF_MANUAL = RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}-#{Aspera::Cli::VERSION}.pdf"
   TSPEC_YAML_SCHEMA = LIB / 'aspera/transfer/spec.schema.yaml'
   ASYNC_YAML_SCHEMA = LIB / 'aspera/sync/conf.schema.yaml'
   BUILD_TOOLS = BUILD_LIB / 'build_tools.rb'

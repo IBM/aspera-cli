@@ -52,7 +52,7 @@ module BuildTools
   # Use this instead of Aspera::Cli::VERSION to account for beta builds.
   def specific_version
     return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
-    VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise('VERSION not found in version file')
+    VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise("VERSION not found in #{VERSION_FILE}")
   end
 
   # Change version to build

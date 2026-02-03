@@ -57,10 +57,6 @@ namespace :tools do
     run('grpc_tools_ruby_protoc', "--proto_path=#{PROTO_PATH}", "--ruby_out=#{GRPC_DEST}", "--grpc_out=#{GRPC_DEST}", PROTO_PATH / 'transferd.proto')
   end
 
-  ###################################
-  ## in case of problem on released gem version, it can be deleted from rubygems
-  ## gem yank -v $(Aspera::Cli::VERSION) $(GEM_NAME)
-
   task :check_signature do
     run('gem', 'specification', Paths::GEM_PACK_FILE, 'signing_key', 'cert_chain', 'version')
   end

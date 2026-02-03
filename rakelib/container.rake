@@ -36,7 +36,7 @@ namespace :container do
   task :build, %i[source version] => [Paths::DOCKERFILE_TEMPLATE] do |_t, args|
     source = args[:source]&.to_sym || :remote
     Aspera.assert_values(source, %i[local remote])
-    gem_version = args[:version].to_s.empty? ? Aspera::Cli::VERSION : args[:version]
+    gem_version = args[:version].to_s.empty? ? specific_version : args[:version]
     use_specific_version(gem_version)
     docker_context = Paths::TOP
     arg_gem = if source.equal?(:remote)

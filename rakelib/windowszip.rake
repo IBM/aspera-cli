@@ -47,7 +47,7 @@ end
 namespace :windowszip do
   desc 'Create installation archive for Windows'
   task :build, [:version] do |_t, args|
-    gem_version_build    = args[:version] || Aspera::Cli::VERSION
+    gem_version_build    = args[:version] || specific_version
     target_folder_name   = "aspera-cli-#{gem_version_build}-windows-amd64-installer"
     path_build_dir       = Paths::TMP / target_folder_name
     path_resources_dir   = path_build_dir / ARCHIVE_FOLDER_NAME
