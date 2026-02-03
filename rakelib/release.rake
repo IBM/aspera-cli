@@ -126,6 +126,8 @@ namespace :release do
 
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
+    check_gem_signing_key
+
     # Determine versions
     versions = release_versions(args[:release_version], args[:next_version])
     log.info("Current version in version.rb: #{versions[:current]}")

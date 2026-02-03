@@ -13,6 +13,7 @@ require 'bundler/gem_tasks'
 require 'bundler/setup'
 
 require_relative 'build/lib/paths'
+require_relative 'build/lib/build_tools'
 
 # clean   : Remove any temporary products.
 CLEAN.push(Paths::TMP)
@@ -25,7 +26,7 @@ task default: [:signed]
 
 desc 'Build signed gem (default)'
 task :signed do
-  raise 'Please set env var: SIGNING_KEY to build a signed gem file' unless ENV.key?('SIGNING_KEY')
+  BuildTools.check_gem_signing_key
   Rake::Task['build'].invoke
 end
 

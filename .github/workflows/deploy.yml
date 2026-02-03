@@ -24,11 +24,11 @@ jobs:
         run: gem install rake
       - name: Publish to RubyGems
         if: contains(github.ref, 'refs/tags/v')
+        env:
+          SIGNING_KEY_PEM: ${{ secrets.PRIVATE_KEY_PEM }}
         run: |
-          mkdir -p $HOME/.gem
-          export SIGNING_KEY=$HOME/.gem/signing_key.pem
-          GEM_CREDS=$HOME/.gem/credentials
-          echo "${{ secrets.PRIVATE_KEY_PEM }}" > $SIGNING_KEY
-          echo ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > $GEM_CREDS
-          chmod 0600 $SIGNING_KEY $GEM_CREDS
+          gem_conf="$HOME/.gem"
+          mkdir -p "$gem_conf"
+          install -m 600 /dev/null "$gem_conf/credentials"
+          printf ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}\n" > "$gem_conf"/credentials
           rake release_signed

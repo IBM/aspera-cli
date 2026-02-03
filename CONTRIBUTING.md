@@ -112,7 +112,11 @@ A few macros and environment variables control certain aspects of the build:
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
 | `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
 | `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
+| `SIGNING_KEY_PEM`           | PEM of signing key.                                 |
+
 These can be set either as environment variables or directly on the `rake` command line.
+
+Setting `SIGNING_KEY_PEM` creates file `$HOME/.gem/signing_key.pem` and sets `SIGNING_KEY`.
 
 > [!NOTE]
 > Environment variables `ASPERA_CLI_*` are typically set in the user’s shell profile for development.
