@@ -131,7 +131,8 @@ namespace :release do
     log.info("Current version in version.rb: #{versions[:current]}")
     log.info("Release version: #{versions[:release]}")
     log.info("Next development version: #{versions[:next_dev]}")
-    raise 'Git working tree not clean' unless drun('git', 'status', '--porcelain', mode: :capture).strip.empty?
+    porcelain_status = drun('git', 'status', '--porcelain', mode: :capture).strip
+    raise "Git working tree not clean:\n#{porcelain_status}" unless porcelain_status.empty?
     raise "Current version must end with #{PRE_SUFFIX}" unless versions[:current].end_with?(PRE_SUFFIX)
 
     # Release version + changelog
