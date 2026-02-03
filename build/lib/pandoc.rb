@@ -54,6 +54,8 @@ end
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
   pdf = File.expand_path(pdf)
+  # Ensure target folder exists for pandoc
+  FileUtils.mkdir_p(File.dirname(pdf))
   # Paths in README.md are relative to its location
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
