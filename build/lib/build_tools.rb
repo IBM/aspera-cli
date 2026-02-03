@@ -83,5 +83,10 @@ module BuildTools
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{build_version}.gem"
   end
 
-  module_function :log, :run, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key
+  # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
+  def dry_run?
+    ENV['DRY_RUN'] == '1'
+  end
+
+  module_function :log, :run, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key, :dry_run?
 end

@@ -108,11 +108,6 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
-  # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
-  def dry_run?
-    ENV['DRY_RUN'] == '1'
-  end
-
   # Execute command only if not dry run
   # @param git [Symbol] Name of executable
   def drun(*cmd, **kwargs)
