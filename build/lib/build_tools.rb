@@ -65,6 +65,7 @@ module BuildTools
   # Ensure that env var `SIGNING_KEY` (path to signing key file) is set.
   # If env var `SIGNING_KEY_PEM` is set, creates sur file in $HOME/.gem/signing_key.pem
   def check_gem_signing_key
+    return if dry_run?
     if ENV.key?('SIGNING_KEY_PEM')
       gem_conf_dir = Pathname.new(Dir.home) / '.gem'
       gem_conf_dir.mkpath

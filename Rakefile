@@ -26,7 +26,7 @@ task default: [:signed]
 
 desc 'Build signed gem (default)'
 task :signed do
-  BuildTools.check_gem_signing_key unless BuildTools.dry_run?
+  BuildTools.check_gem_signing_key
   Rake::Task['build'].invoke
 end
 
