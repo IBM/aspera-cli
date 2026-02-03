@@ -2,8 +2,8 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.26.0.pre"
-author: "Laurent MARTIN"
+subtitle: "ascli 4.25.2"
+author: "Laurent Martin"
 PANDOC_META_END
 -->
 <!-- markdownlint-disable MD033 -->
@@ -40,9 +40,9 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version: 4.26.0.pre
+Version: 4.25.2
 
-Laurent/2016-2026
+Laurent Martin/2016-2026
 
 The aspera-cli Ruby gem offers a powerful command-line interface (CLI, `ascli`) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
 It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
@@ -124,7 +124,7 @@ ascli --version
 ```
 
 ```text
-4.26.0.pre
+4.25.2
 ```
 
 > [!NOTE]
@@ -575,6 +575,17 @@ See [Gemfile](../Gemfile):
 
 | name | version | comment |
 |----------------------|----------|-----------------------------------------------------|
+| rake | ~> 13.0 |  |
+| debug | ~> 1.11 | (no jruby) |
+| grpc-tools | ~> 1.67 |  |
+| reek | ~> 6.5.0 |  |
+| rspec | ~> 3.0 |  |
+| rubocop | ~> 1.75 |  |
+| rubocop-ast | ~> 1.4 |  |
+| rubocop-performance | ~> 1.10 | (no jruby) |
+| rubocop-shopify | ~> 2.0 |  |
+| simplecov | ~> 0.22 |  |
+| solargraph | ~> 0.48 | (no jruby) |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
@@ -586,21 +597,21 @@ See [Gemfile](../Gemfile):
 | bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
-| debug | ~> 1.11 | (no jruby) |
-| grpc-tools | ~> 1.67 |  |
-| rake | ~> 13.0 |  |
-| reek | ~> 6.5.0 |  |
-| rspec | ~> 3.0 |  |
-| rubocop | ~> 1.75 |  |
-| rubocop-ast | ~> 1.4 |  |
-| rubocop-performance | ~> 1.10 | (no jruby) |
-| rubocop-shopify | ~> 2.0 |  |
-| simplecov | ~> 0.22 |  |
-| solargraph | ~> 0.48 | (no jruby) |
 
 Install like this:
 
 ```shell
+gem install rake -v '~> 13.0'
+gem install debug -v '~> 1.11'
+gem install grpc-tools -v '~> 1.67'
+gem install reek -v '~> 6.5.0'
+gem install rspec -v '~> 3.0'
+gem install rubocop -v '~> 1.75'
+gem install rubocop-ast -v '~> 1.4'
+gem install rubocop-performance -v '~> 1.10'
+gem install rubocop-shopify -v '~> 2.0'
+gem install simplecov -v '~> 0.22'
+gem install solargraph -v '~> 0.48'
 gem install grpc -v '~> 1.71'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
@@ -612,17 +623,6 @@ gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
 gem install rmagick -v '~> 6.1'
-gem install debug -v '~> 1.11'
-gem install grpc-tools -v '~> 1.67'
-gem install rake -v '~> 13.0'
-gem install reek -v '~> 6.5.0'
-gem install rspec -v '~> 3.0'
-gem install rubocop -v '~> 1.75'
-gem install rubocop-ast -v '~> 1.4'
-gem install rubocop-performance -v '~> 1.10'
-gem install rubocop-shopify -v '~> 2.0'
-gem install simplecov -v '~> 0.22'
-gem install solargraph -v '~> 0.48'
 ```
 
 ### Ruby Gem: `aspera-cli`
@@ -786,11 +786,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.2 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.2-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.2-gems aspera-cli-4.25.2-gems.tgz
 ```
 
 #### Unix-like
@@ -935,7 +935,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.25.2
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4637,7 +4637,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.2)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4682,7 +4682,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [graphical], text
+        --ui=ENUM                    Method to start browser: graphical, [text]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -5038,7 +5038,7 @@ Path to private RSA key (leave empty to generate):
 option: key_path>
 Using existing key:
 /home/john/.aspera/ascli/my_private_key.pem
-Please Log in as user laurent.martin.aspera@fr.ibm.com at: https://_my_org_.ibmaspera.com
+Please Log in as user john@example.com at: https://_my_org_.ibmaspera.com
 Navigate to: (User) → Account Settings → Profile → Public Key
 Check or update the value to (including BEGIN/END lines):
 -----BEGIN PUBLIC KEY-----
