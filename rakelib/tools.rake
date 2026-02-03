@@ -63,13 +63,13 @@ namespace :tools do
 
   desc 'Show gem build version'
   task :version do
-    puts BuildTools.specific_version
+    puts BuildTools.build_version
   end
 
   desc 'Prepare beta version'
   task :version_override, [:version] do |_t, args|
     Aspera.assert(!args[:version].to_s.empty?){'Version argument is required for beta task'}
     OVERRIDE_VERSION_FILE.write(args[:version])
-    puts("Beta version set to: #{BuildTools.specific_version}")
+    puts("Beta version set to: #{BuildTools.build_version}")
   end
 end

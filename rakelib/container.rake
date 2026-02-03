@@ -36,7 +36,7 @@ namespace :container do
   task :build, %i[source version] => [Paths::DOCKERFILE_TEMPLATE] do |_t, args|
     source = args[:source]&.to_sym || :remote
     Aspera.assert_values(source, %i[local remote])
-    gem_version = args[:version].to_s.empty? ? specific_version : args[:version]
+    gem_version = args[:version].to_s.empty? ? build_version : args[:version]
     use_specific_version(gem_version)
     docker_context = Paths::TOP
     arg_gem = if source.equal?(:remote)
@@ -56,13 +56,14 @@ namespace :container do
 
   desc 'Test the container'
   task :test do
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', tag(specific_version), '-v')
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', tag(specific_version), 'config', 'ascp', 'info')
+    image_tag = tag(build_version)
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', image_tag, '-v')
+    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', image_tag, 'config', 'ascp', 'info')
   end
 
   desc 'Push only the version tag'
   task :push_version do
-    run(CONTAINER_TOOL, 'push', tag(specific_version))
+    run(CONTAINER_TOOL, 'push', tag(build_version))
   end
 
   desc 'Push only the latest tag'

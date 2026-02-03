@@ -161,7 +161,7 @@ class DocHelper
 
   # Version of gem being built
   def build_version
-    BuildTools.specific_version
+    BuildTools.build_version
   end
 
   # If version contains other characters than digit and dot, it is pre-release

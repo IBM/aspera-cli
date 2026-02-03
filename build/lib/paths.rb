@@ -24,7 +24,6 @@ module Paths
   GEMFILE = TOP / 'Gemfile'
   GEMFILE_LOCK = TOP / 'Gemfile.lock'
   CONF_SIGNATURE = DOC / 'conf_signature.txt'
-  GEM_PACK_FILE = RELEASE / "#{Aspera::Cli::Info::GEM_NAME}.gem"
   PDF_MANUAL = RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
   # Command-line test suite configuration.
   TEST_DEFS = TST / 'tests.yml'

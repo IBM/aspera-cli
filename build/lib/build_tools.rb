@@ -50,7 +50,7 @@ module BuildTools
 
   # Version that is currently being built.
   # Use this instead of Aspera::Cli::VERSION to account for beta builds.
-  def specific_version
+  def build_version
     return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
     VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise("VERSION not found in #{VERSION_FILE}")
   end
@@ -59,7 +59,7 @@ module BuildTools
   def use_specific_version(version)
     Aspera.assert(!version.to_s.empty?){'Version argument is required for beta task'}
     OVERRIDE_VERSION_FILE.write(version)
-    log.info("Version set to: #{BuildTools.specific_version}")
+    log.info("Version set to: #{BuildTools.build_version}")
   end
 
   # Ensure that env var `SIGNING_KEY` (path to signing key file) is set.
@@ -78,5 +78,10 @@ module BuildTools
     raise 'Please set env var: SIGNING_KEY or SIGNING_KEY_PEM to build a signed gem file' unless ENV.key?('SIGNING_KEY')
   end
 
-  module_function :log, :run, :gems_in_group, :download_proto_file, :specific_version, :check_gem_signing_key
+  # .gem file built by bundler target `build`
+  def built_gem_file
+    Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{build_version}.gem"
+  end
+
+  module_function :log, :run, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key
 end
