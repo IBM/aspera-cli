@@ -27,6 +27,22 @@ module BuildTools
     Aspera::Environment.secure_execute(*cmd, **kwargs)
   end
 
+  # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
+  def dry_run?
+    ENV['DRY_RUN'] == '1'
+  end
+
+  # Execute command only if not dry run
+  # @param git [Symbol] Name of executable
+  def drun(*cmd, **kwargs)
+    if dry_run?
+      log.info("Would execute: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
+      return '' if kwargs[:mode].eql?(:capture)
+    else
+      run(*cmd, **kwargs)
+    end
+  end
+
   # Extract gem specifications in a given group from the Gemfile
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
@@ -84,10 +100,5 @@ module BuildTools
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{build_version}.gem"
   end
 
-  # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
-  def dry_run?
-    ENV['DRY_RUN'] == '1'
-  end
-
-  module_function :log, :run, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key, :dry_run?
+  module_function :log, :run, :drun, :dry_run?, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key
 end

@@ -43,7 +43,7 @@ namespace :container do
       "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
     else
       Rake::Task['unsigned'].invoke
-      Paths::GEM_PACK_FILE.relative_path_from(docker_context).to_s
+      built_gem_file.relative_path_from(docker_context).to_s
     end
     docker_file = TMP / 'Dockerfile'
     docker_file.write(process_template(

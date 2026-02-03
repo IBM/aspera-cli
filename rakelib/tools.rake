@@ -58,7 +58,7 @@ namespace :tools do
   end
 
   task :check_signature do
-    run('gem', 'specification', Paths::GEM_PACK_FILE, 'signing_key', 'cert_chain', 'version')
+    run('gem', 'specification', built_gem_file, 'signing_key', 'cert_chain', 'version')
   end
 
   desc 'Show gem build version'

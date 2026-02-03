@@ -108,16 +108,6 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
-  # Execute command only if not dry run
-  # @param git [Symbol] Name of executable
-  def drun(*cmd, **kwargs)
-    if dry_run?
-      log.info("Would execute: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
-      return '' if kwargs[:mode].eql?(:capture)
-    else
-      Aspera::Environment.secure_execute(*cmd, **kwargs)
-    end
-  end
 
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
