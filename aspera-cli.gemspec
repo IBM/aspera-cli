@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.metadata['allowed_push_host'] = 'https://rubygems.org' # push only to rubygems.org
   spec.metadata['homepage_uri']      = spec.homepage
   spec.metadata['source_code_uri']   = File.join(spec.homepage, 'tree/main/lib/aspera')
-  spec.metadata['changelog_uri']     = File.join(spec.homepage, 'CHANGELOG.md')
+  spec.metadata['changelog_uri']     = File.join(spec.homepage, 'blob/main/CHANGELOG.md')
   spec.metadata['rubygems_uri']      = Aspera::Cli::Info::GEM_URL
   spec.metadata['documentation_uri'] = Aspera::Cli::Info::DOC_URL
   spec.require_paths = ['lib']
