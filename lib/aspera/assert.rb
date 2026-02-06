@@ -93,7 +93,7 @@ module Aspera
     # The value is not one of the expected values
     # @param value  [Object]           The wrong value
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block  [Proc]             Additional description in front of message
+    # @param &block [Proc]             Additional description in front of message
     def error_unexpected_value(value, type: InternalError)
       report_error(type, "#{"#{yield}: " if block_given?}unexpected value: #{value.inspect}")
     end
