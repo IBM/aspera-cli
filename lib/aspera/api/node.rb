@@ -308,7 +308,9 @@ module Aspera
       # @param top_file_id [String] id initial file id
       # @param path [String] file or folder path (end with "/" is like setting process_last_link)
       # @param process_last_link [Boolean] if true, follow the last link
-      # @return [Hash] {.api,.file_id}
+      # @return [Hash] Result data
+      # @option return [Aspera::Rest] :api     REST client instance
+      # @option return [String]       :file_id File identifier
       def resolve_api_fid(top_file_id, path, process_last_link = false)
         Aspera.assert_type(top_file_id, String)
         Aspera.assert_type(path, String)
