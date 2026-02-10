@@ -2426,7 +2426,9 @@ aocshlk2:
     - /testdst
     - private
     - create
-aocshlk3:
+aoc_short_link_pub_create:
+  tags:
+    - save_output
   args:
     - aoc
     - files
@@ -2436,10 +2438,24 @@ aocshlk3:
     - create
     - "@:"
     - access_levels=upload
+    - --fields=id
+aoc_short_link_pub_modify:
+  depends_on:
+    - aoc_short_link_pub_create
+  args:
+    - aoc
+    - files
+    - short_link
+    - /testdst
+    - public
+    - modify
+    - $(read_value_from 'aoc_short_link_pub_create')
+    - "@:"
+    - access_levels=edit
 aocshlk1:
   depends_on:
     - aocshlk2
-    - aocshlk3
+    - aoc_short_link_pub_create
   args:
     - aoc
     - files

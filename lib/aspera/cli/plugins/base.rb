@@ -70,25 +70,25 @@ module Aspera
         # Resource identifier as positional parameter
         #
         # @param description [String] description of the identifier
-        # @param block       [Proc] block to search for identifier based on attribute value
+        # @param &block      [Proc] block to search for identifier based on attribute value
         # @return   [String, Array] identifier or list of ids
-        def instance_identifier(description: 'identifier', &block)
+        def instance_identifier(description: 'identifier')
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
           # Can be an Array
           if res_id.is_a?(String) && (m = Base.percent_selector(res_id))
-            Aspera.assert(block, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
+            Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
             res_id = yield(m[:field], m[:value])
           end
           return res_id
         end
 
         # For create and delete operations: execute one action or multiple if bulk is yes
-        # @param command   [Symbol] operation: :create, :delete, ...
-        # @param descr     [String] description of the value
-        # @param values    [Object] the value(s), or the type of value to get from user
-        # @param id_result [String] key in result hash to use as identifier
-        # @param fields    [Array]  fields to display
-        # @param &block    [Proc]   block to execute for each value
+        # @param command   [Symbol] Operation: :create, :delete, ...
+        # @param descr     [String] Description of the value
+        # @param values    [Object] Value(s), or type of value to get from user
+        # @param id_result [String] Key in result hash to use as identifier
+        # @param fields    [Array]  Fields to display
+        # @param &block    [Proc]   Block to execute for each value
         def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default)
           Aspera.assert(block_given?){'missing block'}
           is_bulk = options.get_option(:bulk)
@@ -222,7 +222,7 @@ module Aspera
           end
         end
 
-        # Query parameters in URL suitable for REST: list/GET and delete/DELETE
+        # Query parameters in URL suitable for REST: list/`GET` and delete/`DELETE`
         def query_read_delete(default: nil)
           # Dup default, as it could be frozen
           query = options.get_option(:query) || default.dup

@@ -102,7 +102,7 @@ module Aspera
 
         def set_api
           # create an API object with the same options, but with a different subpath
-          @api_v5 = new_with_options(Api::Faspex)
+          @api_v5 = Api::Faspex.new(**Oauth.args_from_options(options))
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
         end

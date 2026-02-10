@@ -327,7 +327,7 @@ namespace TEST_CASE_NS do
       end
       command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
       command_line += ["--output=#{out_file(name)}"] if tags[:save_output]
-      command_line += ['--format=csv'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=')}
+      command_line += ['--format=csv', '--display=data'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=')}
       run_options = {}
       if tags[:noblock]
         run_options[:mode] = :background
