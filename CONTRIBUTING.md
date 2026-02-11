@@ -116,7 +116,7 @@ A few macros and environment variables control certain aspects of the build:
 
 These can be set either as environment variables or directly on the `rake` command line.
 
-Setting `SIGNING_KEY_PEM` creates file `$HOME/.gem/signing_key.pem` and sets `SIGNING_KEY`.
+Setting `SIGNING_KEY_PEM` creates file `$HOME/.gem/signing_key.pem` and sets `SIGNING_KEY` to that path.
 
 > [!NOTE]
 > Environment variables `ASPERA_CLI_*` are typically set in the user’s shell profile for development.
@@ -152,6 +152,12 @@ tlmgr install fvextra selnolig lualatex-math
 To check URLs during documentation generation, set the environment variable: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
 
 To debug documentation generation, set the environment variable: `ASPERA_CLI_DOC_DEBUG=debug`.
+
+To generate documentation:
+
+```bash
+rake doc:build
+```
 
 ## Test Environment
 
@@ -192,7 +198,7 @@ Update with:
 bundle exec rake tools:grpc
 ```
 
-It downloads the latest `proto` file and then compiles it.
+It downloads the latest `proto` file and then compiles it into ruby sources included in the repo.
 
 ## Container image build
 
@@ -212,7 +218,8 @@ bundle exec rake -T ^binary:
 
 ### Branching Strategy
 
-This project uses a single `main` branch for development. During the development cycle, the version in `lib/aspera/cli/version.rb` uses a `.pre` suffix (e.g., `x.y.z.pre`) to indicate a pre-release state.
+This project uses a single `main` branch for development.
+During the development cycle, the version in `lib/aspera/cli/version.rb` uses a `.pre` suffix (e.g., `x.y.z.pre`) to indicate a pre-release state.
 
 Feature development and bug fixes can be done either:
 
@@ -252,16 +259,17 @@ To create a release:
 The workflow automatically:
 
 1. Updates `version.rb` with the release version
-2. Rebuilds documentation (PDF manual, README)
+2. Rebuilds documentation (PDF manual, Markdown README)
 3. Commits the changes
 4. Creates and pushes the release tag
 5. Triggers the `deploy` workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
 6. Updates `version.rb` to the next development version with `.pre` suffix
-7. Commits and pushes the version bump
+7. Commits and pushes the version bump in main branch.
 
 ### Manual Release Process (Alternative)
 
-If needed, releases can still be done manually:
+If needed, releases can still be done manually.
+Basically, follow the same procedure as in the GitHub action:
 
 - Update the version in `lib/aspera/cli/version.rb` (remove `.pre` suffix)
 
