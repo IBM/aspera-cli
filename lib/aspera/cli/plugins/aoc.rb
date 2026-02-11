@@ -102,7 +102,7 @@ module Aspera
           # @param destination_folder [String] Base folder
           # @param fld.               [Array]  List of fields of package
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
-            Aspera.assert_array_all(fld, String, type: Cli::BadArgument){'fld'}
+            Aspera.assert_array_all(fld, String, type: BadArgument){'fld'}
             Aspera.assert([1, 2].include?(fld.length)){'fld must have 1 or 2 elements'}
             folder = Environment.instance.sanitized_filename(package_info[fld[0]])
             if seq
@@ -181,7 +181,7 @@ module Aspera
           end
           myself = aoc_api.read('self')
           if auto_set_pub_key
-            Aspera.assert(myself['public_key'].empty?, type: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
+            Aspera.assert(myself['public_key'].empty?, type: Error){'Public key is already set in profile (use --override=yes)'} unless option_override
             formatter.display_status('Updating profile with the public key.')
             aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
           end
@@ -275,7 +275,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
-            Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only selection by name is supported'}
+            Aspera.assert(field.eql?('name'), type: BadArgument){'only selection by name is supported'}
             aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
         end
@@ -794,19 +794,7 @@ module Aspera
             # Creation: perm_block: permission on node
             yield(:create, result_create_short_link['resource_id'], access_levels) if block_given? && link_type.eql?(:public)
             return Main.result_single_object(result_create_short_link)
-          when :delete
-            one_id = instance_identifier(description: 'short_link ID')
-            aoc_api.delete("short_links/#{one_id}", {
-              edit_access: true,
-              json_query:  shared_data.to_json
-            })
-            if link_type.eql?(:public)
-              # TODO: get permission id..
-              # shared_apfid[:api].delete('permissions', {ids: })
-              yield(:delete, one_id, nil)
-            end
-            return Main.result_status('deleted')
-          when :list, :show, :modify
+          when :delete, :list, :show, :modify
             workspace_id_hash(shared_data)
             query = if link_type.eql?(:private)
               shared_data
@@ -827,19 +815,26 @@ module Aspera
             }
             short_list = aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact)
             case command
+            when :delete
+              one_id = instance_identifier(description: 'short link id')
+              if link_type.eql?(:public)
+                found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
+                raise BadIdentifier.new('Short link', one_id) if found.nil?
+                yield(:delete, found['resource_id'], nil)
+              end
+              aoc_api.delete("short_links/#{one_id}", {
+                edit_access: true,
+                json_query:  shared_data.to_json
+              })
+              return Main.result_status('deleted')
             when :list
               return Main.result_object_list(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
             when :show
               one_id = instance_identifier(description: 'short link id')
-              found = aoc_api.read_with_paging('short_links', list_params)[:items].find{ |item| item['id'].eql?(one_id)}
-              raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
+              found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
+              raise BadIdentifier.new('Short link', one_id) if found.nil?
               return Main.result_single_object(found, fields: Formatter.all_but('data'))
             when :modify
-              # 1: node api PUT /permissions with:
-              # {"access_levels":["list","preview","delete","read"]}
-              # 2: aoc api PUT short_links/id with:
-              # {"json_query":{"file_id":"146222","node_id":"8669"},"edit_access":true,"expires_at":"2026-02-17T23:00:00.000Z","password_enabled":false}
-              # {"json_query":{"file_id":"19272","node_id":"8669"},"edit_access":true,"expires_at":null,"password_enabled":true,"data":{"url_token_data":{"password":"hal0rgsh","data":{"file_id":"19272","node_id":"8669"}}}}
               one_id = instance_identifier(description: 'short link id')
               node_file = shared_data.slice(:node_id, :file_id)
               modify_payload = {
@@ -861,7 +856,7 @@ module Aspera
               if custom_data.delete('access_levels')
                 # Modification: perm_block: permission on node
                 found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
-                raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
+                raise BadIdentifier.new('Short link', one_id) if found.nil?
                 yield(:update, found['resource_id'], access_levels)
               end
               modify_payload.deep_merge!(custom_data)
@@ -1112,12 +1107,14 @@ module Aspera
                   aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apfid[:api].app_info)
                 when :update
                   # `id` is the permission_id
-                  found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false}).find{ |i| i['access_id'].eql?(id)}
-                  raise 'not found' if found.nil?
-                  shared_apfid[:api].update("permissions/#{found['id']}", Api::AoC.expand_access_levels(access_levels))
+                  found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
+                  raise Error, 'Short link not found: #{id}' if found.nil?
+                  shared_apfid[:api].update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
                 when :delete
-                  # TODO
-                  raise 'TODO'
+                  # `id` is the resource id, i.e. `access_id`
+                  found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).first
+                  raise Error, 'Short link not found: #{id}' if found.nil?
+                  shared_apfid[:api].delete("permissions/#{found['id']}")
                 else Aspera.error_unexpected_value(op)
                 end
               end

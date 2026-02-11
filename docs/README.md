@@ -4682,7 +4682,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -6230,19 +6230,25 @@ To remove a password:
 ```
 
 By default access level is set to `edit`.
-Change the default access level by providing the parameter: `access_level` in payload.
+Change the default access level by providing the parameter: `access_levels` in payload.
 `access_levels` can be:
 
-- a single String: one of the shortcuts: `edit`, `preview`, `download`, `upload`.
-- an Array: any custom combination of: `delete`, `list`, `mkdir`, `preview`, `read`, `rename`, `write`
+- a single `String`: one of the shortcuts: `edit`, `preview`, `download`, `upload`.
+- an Array: any custom combination of: `delete`, `list`, `mkdir`, `preview`, `read`, `rename`, `write`.
+
+For example:
 
 ```json
 {"access_levels":"upload"}
 ```
 
+```json
+{"access_levels":["list","rename"]}
+```
+
 An expiration date can be set with parameter `expires_at`, using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
 For example, `2025-08-29T08:10:31.000Z`.
-If only a date is provided, it will be set to midnight UTC of that date.
+If only a date is provided, for example: `2025-08-29`, it will be set to midnight UTC of that date, i.e. `2025-08-29T00:00:00.000Z`.
 
 ##### Example: Create a workspace admin shared folder
 
@@ -6509,7 +6515,8 @@ files permission my_test_folder list
 files rename /some_folder testdst
 files short_link /testdst private create
 files short_link /testdst private list
-files short_link /testdst public create @: access_levels=upload
+files short_link /testdst public create @: access_levels=upload --fields=id
+files short_link /testdst public modify aoc_short_link_pub_create @: access_levels=edit
 files show %id:aoc_file_id
 files show /
 files show testdst/test_file.bin

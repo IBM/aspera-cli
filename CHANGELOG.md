@@ -10,6 +10,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `aoc`: Public short links can now be modified.
+
 ### Breaking Changes
 
 ## 4.25.2
