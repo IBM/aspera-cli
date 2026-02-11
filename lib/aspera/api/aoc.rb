@@ -716,7 +716,7 @@ module Aspera
         # (optional). The name of the folder to be displayed to the destination user.
         # Use it if its value is different from the "share_as" field.
         event_creation['link_name'] = app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
-        create('events', event_creation)
+        create('events', event_creation, query: {admin: true})
       end
     end
   end
