@@ -144,11 +144,12 @@ module Aspera
 
         # Call `block` with same query using paging and response information.
         # Block must return a 2 element `Array` with data and http response
-        # @param query [nil, Hash] Additionnal query parameters
+        # @param query    [Hash] Additionnal query parameters
         # @param progress [nil, Object] Uses methods: `long_operation_running` and `long_operation_terminated`
-        # @return [Hash] {items: , total: }
-        def call_paging(query: nil, progress: nil)
-          query = {} if query.nil?
+        # @return [Hash] Items and total number of items
+        # @option return [Array<Hash>] :items The list of items
+        # @option return [Integer] :total The total number of items
+        def call_paging(query: {}, progress: nil)
           Aspera.assert_type(query, Hash){'query'}
           Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
