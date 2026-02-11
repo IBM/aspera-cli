@@ -759,23 +759,23 @@ module Aspera
           else
             Aspera.error_unexpected_value(shared_data.keys)
           end
-          # Add workspace id
-          workspace_id_hash(shared_data)
           command = options.get_next_command(%i[create delete list show] + (link_type.eql?(:public) ? %i[modify] : []))
           case command
           when :create
-            entity_data = {
+            # Add workspace id
+            workspace_id_hash(shared_data)
+            create_payload = {
               purpose:            short_link_purpose,
               user_selected_name: nil
             }
             case link_type
             when :private
-              entity_data[:data] = shared_data
+              create_payload[:data] = shared_data
             when :public
-              entity_data[:expires_at]       = nil
-              entity_data[:password_enabled] = false
+              create_payload[:expires_at]       = nil
+              create_payload[:password_enabled] = false
               shared_data[:name] = ''
-              entity_data[:data] = {
+              create_payload[:data] = {
                 aoc:            true,
                 url_token_data: {
                   data:    shared_data,
@@ -786,22 +786,20 @@ module Aspera
             custom_data = value_create_modify(command: command, default: {})
             access_levels = custom_data.delete('access_levels')
             if (pass = custom_data.delete('password'))
-              entity_data[:data][:url_token_data][:password] = pass
-              entity_data[:password_enabled] = true
+              create_payload[:data][:url_token_data][:password] = pass
+              create_payload[:password_enabled] = true
             end
-            entity_data.deep_merge!(custom_data)
-            result_create_short_link = aoc_api.create('short_links', entity_data)
+            create_payload.deep_merge!(custom_data)
+            result_create_short_link = aoc_api.create('short_links', create_payload)
             # Creation: perm_block: permission on node
             yield(:create, result_create_short_link['resource_id'], access_levels) if block_given? && link_type.eql?(:public)
             return Main.result_single_object(result_create_short_link)
           when :delete
-            one_id = instance_identifier
-            shared_data.delete(:workspace_id)
-            delete_params = {
+            one_id = instance_identifier(description: 'short_link ID')
+            aoc_api.delete("short_links/#{one_id}", {
               edit_access: true,
               json_query:  shared_data.to_json
-            }
-            aoc_api.delete("short_links/#{one_id}", delete_params)
+            })
             if link_type.eql?(:public)
               # TODO: get permission id..
               # shared_apfid[:api].delete('permissions', {ids: })
@@ -809,6 +807,7 @@ module Aspera
             end
             return Main.result_status('deleted')
           when :list, :show, :modify
+            workspace_id_hash(shared_data)
             query = if link_type.eql?(:private)
               shared_data
             else
@@ -843,21 +842,21 @@ module Aspera
               # {"json_query":{"file_id":"19272","node_id":"8669"},"edit_access":true,"expires_at":null,"password_enabled":true,"data":{"url_token_data":{"password":"hal0rgsh","data":{"file_id":"19272","node_id":"8669"}}}}
               one_id = instance_identifier(description: 'short link id')
               node_file = shared_data.slice(:node_id, :file_id)
-              entity_data = {
+              modify_payload = {
                 edit_access: true,
                 json_query:  node_file
               }
               custom_data = value_create_modify(command: command)
               if (pass = custom_data.delete('password'))
-                entity_data[:password_enabled] = true
-                entity_data[:data] = {
+                modify_payload[:password_enabled] = true
+                modify_payload[:data] = {
                   url_token_data: {
                     password: pass,
                     data:     node_file
                   }
                 }
               else
-                entity_data[:password_enabled] = false
+                modify_payload[:password_enabled] = false
               end
               if custom_data.delete('access_levels')
                 # Modification: perm_block: permission on node
@@ -865,8 +864,8 @@ module Aspera
                 raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
                 yield(:update, found['resource_id'], access_levels)
               end
-              entity_data.deep_merge!(custom_data)
-              aoc_api.update("short_links/#{one_id}", entity_data)
+              modify_payload.deep_merge!(custom_data)
+              aoc_api.update("short_links/#{one_id}", modify_payload)
               return Main.result_status('modified')
             end
           else Aspera.error_unexpected_value(command)
@@ -1093,6 +1092,7 @@ module Aspera
               ) do |op, id, access_levels|
                 case op
                 when :create
+                  # `id` is the resource id
                   perm_data = {
                     'file_id'       => shared_apfid[:file_id],
                     'access_id'     => id,
@@ -1104,7 +1104,7 @@ module Aspera
                       'created_by_name'  => aoc_api.current_user_info['name'],
                       'created_by_email' => aoc_api.current_user_info['email'],
                       'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
-                      'node'             => shared_apfid[:api].app_info[:node_info]['host'],
+                      'node'             => shared_apfid[:api].app_info[:node_info]['name'],
                       **workspace_id_hash(string: true, name: true)
                     }
                   }
@@ -1117,6 +1117,7 @@ module Aspera
                   shared_apfid[:api].update("permissions/#{found['id']}", Api::AoC.expand_access_levels(access_levels))
                 when :delete
                   # TODO
+                  raise 'TODO'
                 else Aspera.error_unexpected_value(op)
                 end
               end
