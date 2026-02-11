@@ -8,6 +8,7 @@ require 'rake'
 require 'uri'
 require 'zlib'
 require 'etc'
+require 'set'
 require 'fileutils'
 require 'securerandom'
 require 'yaml'
@@ -31,7 +32,7 @@ include BuildTools
 PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # Package title for faspex and aoc
-PACKAGE_TITLE_BASE = Time.now.to_s
+TIMESTEMP_TEST_RUN = Time.now.to_s
 FILENAME_ASCII = 'data_file.bin'
 # A medium sized file for testing with unicode characters in file name
 FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ"
@@ -221,20 +222,21 @@ def restart_noded
   # -ps -ef|grep aspera|grep -v grep
 end
 
-def select_test_cases(selection, &block)
-  raise 'missing block' unless block_given?
+# @return [Array<String>] List of matching test case names
+def select_test_cases(selection)
   list = selection&.split(' ')
   if list.nil?
-    ALL_TESTS.each(&block)
+    ALL_TESTS.keys
   elsif list.first.eql?('tag')
     list.shift
+    unknown = list - ALL_TESTS.each_with_object(Set.new){ |(_, i), m| m.merge(i[:tags])}.to_a
+    Aspera.assert(unknown.empty?){"Unknown tag: #{unknown.join(', ')}".red}
     list.map!(&:to_sym)
-    ALL_TESTS.select{ |_, info| info[:tags].intersect?(list)}.each(&block)
+    ALL_TESTS.filter_map{ |name, info| name if info[:tags].intersect?(list)}
   else
-    list.each do |name|
-      raise "Unknown test: #{name}" unless ALL_TESTS.key?(name)
-      yield(name, ALL_TESTS[name])
-    end
+    unknown = list - ALL_TESTS.keys
+    Aspera.assert(unknown.empty?){"Unknown test: #{unknown.join(', ')}".red}
+    list
   end
 end
 
@@ -245,35 +247,50 @@ def percent_completed
   ((completed * 100.0) / total).round(1)
 end
 
+# Set description of target when selectors are available
+def selector_desc(description)
+  desc("#{description}: all, by names, or by tags (space-sep)")
+end
+
 namespace :test do
-  desc 'List tests: all, by names, or by tags (space-sep)'
+  selector_desc 'List tests'
   task :list, [:name_list] do |_, args|
-    select_test_cases(args[:name_list]) do |name, info|
-      log.info("#{name.ljust(20)} #{info[:tags].join(', ')}")
+    select_test_cases(args[:name_list]).each do |name|
+      log.info("#{name.ljust(20)} #{ALL_TESTS[name][:tags].join(', ')}")
     end
   end
 
-  desc 'Run tests: all, by names, or by tags (space-sep)'
+  selector_desc 'Run tests'
   task :run, [:name_list] do |_, args|
-    select_test_cases(args[:name_list]) do |name, _info|
+    select_test_cases(args[:name_list]).each do |name|
       Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
     end
   end
 
-  desc 'Skip tests: all, by names, or by tags (space-sep)'
+  selector_desc 'Skip tests'
   task :skip, [:name_list] do |_, args|
-    select_test_cases(args[:name_list]) do |name, _info|
+    select_test_cases(args[:name_list]).each do |name|
       STATES[name] = 'skipped'
       log.info("[SKIP] #{name}")
     end
     save_state
   end
 
-  desc 'Reset tests: all, by names, or by tags (space-sep)'
+  selector_desc 'Reset tests'
   task :reset, [:name_list] do |_, args|
-    select_test_cases(args[:name_list]) do |name, _info|
-      STATES.delete(name)
-      log.info("[RESET] #{name}")
+    to_reset = select_test_cases(args[:name_list])
+    # find all reverse dependencies
+    loop do
+      # find tests that depend on current selection
+      revdep = ALL_TESTS.filter_map do |name, info|
+        name if info[:depends_on]&.intersect?(to_reset)
+      end
+      # end if no new dependecy
+      break if (revdep - to_reset).empty?
+      to_reset |= revdep
+    end
+    to_reset.each do |name|
+      log.info("[RESET] #{name}") if STATES.delete(name)
     end
     save_state
   end

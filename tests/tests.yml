@@ -1517,7 +1517,7 @@ nd_ak3:
     - do
     - "@preset:aoc.ak_name"
     - upload
-    - 'faux:///test_nd_ak3?100k'
+    - "faux:///test_nd_ak3?100k"
     - --default-ports=no
     - --secret=@preset:aoc.ak_secret
 node_ak_download:
@@ -1535,7 +1535,7 @@ node_ak_download:
     - --secret=@preset:aoc.ak_secret
 node_ak_upload:
   tags:
-#    - flaky
+    #- flaky
     - nodoc
   depends_on:
     - nd_ak3
@@ -2464,19 +2464,19 @@ aocshlk1:
     - private
     - list
 aoc_pack_send1:
+  $comment: Send package to normal user.
   args:
     - aoc
     - packages
     - send
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"],"note":"my
-    - note"}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc_user.username@"],"note":"some notes"}'
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
   args:
     - aoc
     - packages
     - send
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_external@"]}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_external@"]}'
     - --new-user-option=@json:{"package_contact":true}
     - $(PATH_TST_ASC_LCL)
 aocp2:
@@ -2487,8 +2487,6 @@ aocp2:
 package_id3:
   depends_on:
     - aoc_pack_send1
-  $comment: Wait for package to be seen.
-  pre: sleep 30
   tags:
     - save_output
     - wait_value
@@ -2503,16 +2501,16 @@ package_id3:
     - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
 aocp3b:
   depends_on:
-    - aoc_pack_send1
+    - package_id3
   args:
     - aoc
     - packages
     - receive
     - $(read_value_from 'package_id3')
     - --to-folder=$(TMP)
-aocp3c:
+aoc_pack_recv_id3:
   depends_on:
-    - aoc_pack_send1
+    - package_id3
   args:
     - aoc
     - packages
@@ -2522,7 +2520,7 @@ aocp3c:
     - /
 aocp3d:
   depends_on:
-    - aocp3c
+    - package_id3
   args:
     - aoc
     - packages
@@ -2553,7 +2551,7 @@ aocp_send_pub_sh:
     - aoc
     - packages
     - send
-    - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
+    - '@json:{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}'
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_shared_inbox
 aocp_send_pub_usr:
@@ -2562,7 +2560,7 @@ aocp_send_pub_usr:
     - aoc
     - packages
     - send
-    - '@json:{"name":"$(name) $(PACKAGE_TITLE_BASE)"}'
+    - '@json:{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}'
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
@@ -2573,7 +2571,7 @@ aocp_recv_init:
     - receive
     - INIT
     - --once-only=yes
-    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@"}
+    - --query.dropbox_name=@preset:aoc.shared_inbox_name
 aocp_send_shbx:
   depends_on:
     - aocp_recv_init
@@ -2582,7 +2580,7 @@ aocp_send_shbx:
     - packages
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"]}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_name@"]}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_long:
   depends_on:
@@ -2593,7 +2591,7 @@ aocp_send_sh_meta_long:
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short:
   depends_on:
@@ -2604,7 +2602,7 @@ aocp_send_sh_meta_short:
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short2:
   description: Fails because missing metadata "Project Id"
@@ -2620,7 +2618,7 @@ aocp_send_sh_meta_short2:
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(PATH_TST_ASC_LCL)
 aocp_recv_shbx:
   depends_on:
@@ -2938,7 +2936,7 @@ aoc_ana_files:
     - analytics
     - files
     - organization
-    - ''
+    - ""
     - $(read_value_from 'aoc_transfer_id')
 aoc16:
   args:
@@ -3848,7 +3846,7 @@ sync_create_prep5:
   args:
     - node
     - upload
-    - 'faux:///testfile1?1m'
+    - "faux:///testfile1?1m"
     - --to-folder=@preset:sync.local_path
 sync_create:
   depends_on:
@@ -4053,7 +4051,7 @@ conf_ascp_prod:
     - set
     - GLOBAL
     - sdk_folder
-    - 'product:IBM Aspera Connect'
+    - "product:IBM Aspera Connect"
 conf_ascp_use:
   tags:
     - tmp_conf
@@ -4387,7 +4385,7 @@ conf_vault_file:
     - set
     - GLOBAL
     - vault
-    - '@:'
+    - "@:"
     - type=file
     - file=$(PATH_VAULT_FILE)
 conf_vault_file2:
@@ -4411,7 +4409,7 @@ conf_vault_create:
     - config
     - vault
     - create
-    - '@:'
+    - "@:"
     - label=my_label
     - password=my_password_here
     - description=my secret
@@ -4586,7 +4584,7 @@ conf_plugins:
     - plugins
     - list
 conf_plugins1:
-# unset: to test like on Windows
+  $comment: "unset env var: to test like on Windows"
   env:
     LC_ALL: null
     LC_CTYPE: null
@@ -4917,20 +4915,20 @@ conf_echo_json_select_ruby:
 conf_extended1:
   tags:
     - nodoc
-  expect: '@file:foo'
+  expect: "@file:foo"
   args:
     - config
     - echo
-    - '@val:@file:foo'
+    - "@val:@file:foo"
     - --format=text
 conf_extended2:
   tags:
     - nodoc
-  expect: 'foo'
+  expect: "foo"
   args:
     - config
     - echo
-    - '@base64:Zm9v'
+    - "@base64:Zm9v"
     - --format=text
 conf_extended3:
   tags:
@@ -4948,7 +4946,7 @@ conf_extended4:
   args:
     - config
     - echo
-    - '@list:,1,2'
+    - "@list:,1,2"
     - --format=ruby
 conf_extended5:
   tags:
@@ -4962,7 +4960,7 @@ conf_extended5:
 conf_extended6:
   tags:
     - nodoc
-  expect: '[1, 2]'
+  expect: "[1, 2]"
   args:
     - config
     - echo
@@ -5294,7 +5292,7 @@ tcos_info3:
     - --log-level=trace2
 tcos_show:
   tags:
-#    - pre_cleanup
+    #    - pre_cleanup
     - nodoc
   args:
     - cos
@@ -5922,7 +5920,7 @@ f5_adm_sh_invite:
 f5_adm_shbox_member_del:
   $comment: TODO check if fail is normal
   tags:
-#    - pre_cleanup
+  #    - pre_cleanup
   depends_on:
     - f5_adm_sh_invite
   args:
@@ -6278,7 +6276,7 @@ f4_pack_send:
     - faspex
     - package
     - send
-    - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
+    - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 8
 f4_package_id:
@@ -6366,7 +6364,7 @@ f4_pslu:
     - package
     - send
     - --link=@preset:faspex4.link_send_to_user
-    - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
+    - --delivery-info=@json:{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
 f4_psld:
   args:
@@ -6374,7 +6372,7 @@ f4_psld:
     - package
     - send
     - --link=@preset:faspex4.link_send_to_dropbox
-    - --delivery-info=@json:{"title":"$(name) $(PACKAGE_TITLE_BASE)"}
+    - --delivery-info=@json:{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
 f4_remote_src:
   args:
@@ -6402,7 +6400,7 @@ f4_remote_srcd:
     - faspex
     - package
     - send
-    - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}
+    - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_internal@"]}
     - --remote-source=@extend:%name:@preset:faspex4.src
     - sample_source.txt
 f4_misc:
@@ -6469,7 +6467,7 @@ f4_db1b:
     - faspex
     - package
     - send
-    - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.dbx@]}
+    - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*@preset:faspex4.dbx@]}
     - $(PATH_TST_ASC_LCL)
 f4_package_id4:
   tags:
@@ -6502,7 +6500,7 @@ f4_db1f:
     - faspex
     - package
     - send
-    - --delivery-info=@json:@extend:{"title":"$(name) $(PACKAGE_TITLE_BASE)","recipients":[*@preset:faspex4.wkg@]}
+    - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*@preset:faspex4.wkg@]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 10
 f4_package_id5:
