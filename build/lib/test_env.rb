@@ -33,8 +33,12 @@ module TestEnv
   end
 
   # Read and normalize test definitions from tests.yml
-  # Normalization includes: converting keys to symbols, validating allowed keys, setting defaults,
-  # extracting plugin names from arguments, and managing tags
+  # Normalization includes:
+  # - converting keys to symbols
+  # - validating allowed keys
+  # - setting defaults
+  # - extracting plugin names from arguments
+  # - managing tags
   # @return [Hash{Symbol=>Hash}] Test definitions with normalized structure
   def descriptions
     tests = Aspera::Yaml.safe_load(Paths::TEST_DEFS.read)

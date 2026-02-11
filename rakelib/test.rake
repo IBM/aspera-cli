@@ -229,9 +229,9 @@ def select_test_cases(selection)
     ALL_TESTS.keys
   elsif list.first.eql?('tag')
     list.shift
+    list.map!(&:to_sym)
     unknown = list - ALL_TESTS.each_with_object(Set.new){ |(_, i), m| m.merge(i[:tags])}.to_a
     Aspera.assert(unknown.empty?){"Unknown tag: #{unknown.join(', ')}".red}
-    list.map!(&:to_sym)
     ALL_TESTS.filter_map{ |name, info| name if info[:tags].intersect?(list)}
   else
     unknown = list - ALL_TESTS.keys
@@ -242,9 +242,8 @@ end
 
 # @return [Integer] Percentage of completed tests
 def percent_completed
-  total = ALL_TESTS.size
   completed = STATES.count{ |_, v| SKIP_STATES.include?(v)}
-  ((completed * 100.0) / total).round(1)
+  ((completed * 100.0) / ALL_TESTS.size).round(1)
 end
 
 # Set description of target when selectors are available
