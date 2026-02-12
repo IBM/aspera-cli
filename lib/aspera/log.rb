@@ -65,11 +65,8 @@ module Aspera
 
     # Class methods
     class << self
-      # Applies the provided list of string decoration (colors) to the value.
-      # @param value [String]         Value to enhance.
-      # @param colors [Array(Symbol)] List of decorations
-      def apply_colors(value, colors)
-        colors.inject(value){ |s, c| s.send(c)}
+      def short_levl(level)
+        "#{level[0, 3]}#{level[-1]}"
       end
 
       # Get the logger object of singleton
@@ -226,8 +223,10 @@ module Aspera
       UNKNOWN: %i{blink}
     }.freeze
 
-    # Short levels with color
-    LVL_COLOR = LVL_DECO.map{ |k, v| [k, apply_colors("#{k[..2]}#{k[-1]}", v)]}.to_h.freeze
+    # Short (4-letters) levels with color
+    LVL_COLOR = LVL_DECO.to_h do |k, v|
+      [k, short_levl(k).apply(*v)]
+    end.freeze
 
     DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{m}\n"}
 
@@ -240,6 +239,6 @@ module Aspera
 
     FORMATTERS = FORMATTER_LAMBDAS.keys
 
-    private_constant :LVL_DECO, :LVL_COLOR, :DEFAULT_FORMATTER, :FORMATTER_LAMBDAS
+    private_constant :LVL_DECO, :DEFAULT_FORMATTER, :FORMATTER_LAMBDAS
   end
 end

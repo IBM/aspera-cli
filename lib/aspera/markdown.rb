@@ -40,6 +40,11 @@ module Aspera
         "```#{type}\n#{lines.join("\n")}\n```\n\n"
       end
 
+      # inline code
+      def icode(text)
+        "`#{text}`"
+      end
+
       def paragraph(text)
         "#{text}\n\n"
       end

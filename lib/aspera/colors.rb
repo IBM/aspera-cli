@@ -58,6 +58,13 @@ class String
     end
   end
 
+  # Applies the provided list of string decoration (colors).
+  # @param colors [Array<Symbol>] List of decorations.
+  # @return [String] Enhanced String.
+  def apply(*colors)
+    colors.reduce(self){ |s, c| s.public_send(c)}
+  end
+
   # Transform capitalized to snake case
   def capital_to_snake
     return gsub(/([a-z\d])([A-Z])/, '\1_\2')

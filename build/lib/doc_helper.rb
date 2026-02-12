@@ -156,7 +156,7 @@ class DocHelper
 
   # list of specific formatters supported
   def log_formatters
-    Aspera::Log::FORMATTERS.join(br)
+    Aspera::Log::FORMATTERS.map{ |i| Aspera::Markdown.icode(i)}.join(br)
   end
 
   def gemspec

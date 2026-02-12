@@ -3014,12 +3014,12 @@ The default formatter is:
 
 Available formatters for `log_format`:
 
-| Name      | Description                                                                      |
-|-----------|----------------------------------------------------------------------------------|
-| `default` | Default formatter: Colorized level followed by message on the same line. |
-| `standard`| Standard Ruby formatter.                                                         |
-| `caller`  | Colorized level followed by caller, and then on next line: message.      |
-| `Proc`    | Custom lambda.                                                                   |
+| Name      | Description                                                              |
+|-----------|--------------------------------------------------------------------------|
+| `default` | Default formatter: Colorized 4-letters level followed by message on the same line. |
+| `caller`  | Colorized 4-letters level followed by caller, and then on next line: message.      |
+| `standard`| Standard Ruby formatter.                                                 |
+| `Proc`    | Custom lambda.                                                           |
 
 #### Logging examples
 
