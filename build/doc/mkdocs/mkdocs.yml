@@ -13,7 +13,7 @@ theme:
     - search.share
     - toc.follow
 nav:
-  - Home: index.md  # Will point to README
+  - Home: index.md
 
 markdown_extensions:
   - admonition
@@ -27,4 +27,3 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.emoji:
       emoji_generator: !!python/name:pymdownx.emoji.to_svg
-

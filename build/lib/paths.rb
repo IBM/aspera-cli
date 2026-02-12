@@ -19,6 +19,7 @@ module Paths
   BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
   PANDOC = BUILD / 'doc' / 'pandoc'
+  MKDOCS = BUILD / 'doc' / 'mkdocs'
   # Paths to key configuration and source files.
   GEMSPEC = TOP / 'aspera-cli.gemspec'
   GEMFILE = TOP / 'Gemfile'
