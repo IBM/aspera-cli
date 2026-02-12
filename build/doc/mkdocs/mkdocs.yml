@@ -14,7 +14,6 @@ theme:
     - toc.follow
 nav:
   - Home: index.md
-
 markdown_extensions:
   - admonition
   - toc:

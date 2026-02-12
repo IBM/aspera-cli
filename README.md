@@ -9,10 +9,12 @@
 Use it from the terminal or in scripts to:
 
 - Drive **Aspera on Cloud**, **Faspex**, **Shares**, **Node**, **Console**, **Orchestrator**, and **High-Speed Transfer Server**
-- Call REST APIs and run high-speed transfers (FASP)
+- Call REST APIs and run high-speed transfers (**FASP**)
 - Automate workflows with config, presets, and scripting
 
 ## Documentation
+
+Choose what best suits you:
 
 | Resource | Link |
 |----------|------|
@@ -20,6 +22,7 @@ Use it from the terminal or in scripts to:
 | **PDF manual** | In [releases](https://github.com/IBM/aspera-cli/releases) |
 | **RubyGems** | [rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli) |
 | **RubyDoc** | [rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli) |
+| **Docsify** | [online](https://docsify-this.net/?basePath=https://raw.githubusercontent.com/IBM/aspera-cli/main/docs&homepage=README.md&sidebar=true&browser-tab-title=Aspera%20CLI%20Manual&hide-credits=true&maxLevel=4&externalLinkTarget=_blank&image-captions=true&dark-mode=auto) |
 
 ## Install
 
@@ -30,7 +33,7 @@ gem install aspera-cli
 ascli config transferd install
 ```
 
-The second command installs the FASP transfer engine (`ascp`).
+The second command installs the **FASP** transfer engine (`ascp`).
 For other install methods (single executable, Docker, Chocolatey, Homebrew), see the [user manual](docs/README.md#installation).
 
 **Quick check:**

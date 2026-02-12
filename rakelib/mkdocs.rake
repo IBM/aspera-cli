@@ -26,11 +26,17 @@ namespace :doc do
 
   desc 'ok'
   task mkdocs: [VENV_FLAG] do
+    PATH_TMP_MKDOCS.rmtree
     path_site = PATH_TMP_MKDOCS / 'site'
     path_docs = PATH_TMP_MKDOCS / 'src'
     path_site.mkpath
     path_docs.mkpath
-    FileUtils.cp(MD_MANUAL, path_docs / 'index.md')
+    File.open(path_docs / 'index.md', 'w') do |f|
+      f.write(YAML.dump_stream({'hide'=>['navigation']}))
+      f.write("---\n")
+      f.write(MD_MANUAL.read)
+    end
+    # FileUtils.cp(MD_MANUAL, path_docs / 'index.md')
     config_file = PATH_TMP_MKDOCS / 'mkdocs.yml'
     config = YAML.safe_load((Paths::MKDOCS / 'mkdocs.yml').read)
     config['docs_dir'] = path_docs.to_s
