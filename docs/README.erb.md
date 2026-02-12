@@ -2988,7 +2988,7 @@ The following options control logging:
 | `logger`      | `stdout`<%=br%>`stderr`<%=br%>`syslog` | Type of output.<%=br%>Default: `stderr` |
 | `log_level`   | `trace2`<%=br%>`trace1`<%=br%>`debug`<%=br%>`info`<%=br%>`warn`<%=br%>`error` | Minimum level displayed.<%=br%>Default: `warn` |
 | `log_secrets` | `yes`<%=br%>`no` | Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
-| `log_format`  | `Proc`<%=br%>`String` | The name of a formatter or a lambda function that formats the log (see below).<%=br%>Default: `default`<%=br%>Alternative: `standard` |
+| `log_format`  | <%=log_formatters%><%=br%>`Proc` | The name of a formatter or a lambda function that formats the log (see [below](#log_format)).<%=br%>Default: `default`<%=br%>Alternative: `standard` |
 
 Option `logger` defines the destination of logs.
 
@@ -3016,9 +3016,9 @@ Available formatters for `log_format`:
 
 | Name      | Description                                                                      |
 |-----------|----------------------------------------------------------------------------------|
-| `default` | Default formatter: Colorized 4 level level followed by message on the same line. |
+| `default` | Default formatter: Colorized level followed by message on the same line. |
 | `standard`| Standard Ruby formatter.                                                         |
-| `caller`  | Colorized 4 level level followed by caller, and then on next line: message.      |
+| `caller`  | Colorized level followed by caller, and then on next line: message.      |
 | `Proc`    | Custom lambda.                                                                   |
 
 #### Logging examples

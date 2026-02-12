@@ -154,8 +154,8 @@ module Aspera
 
     def formatter=(formatter)
       if formatter.is_a?(String)
-        raise Error, "Unknown formatter #{formatter}, use one of: #{FORMATTERS.keys.join(', ')}" unless FORMATTERS.key?(formatter.to_sym)
-        formatter = FORMATTERS[formatter.to_sym]
+        raise Error, "Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}" unless FORMATTER_LAMBDAS.key?(formatter.to_sym)
+        formatter = FORMATTER_LAMBDAS[formatter.to_sym]
       elsif !formatter.respond_to?(:call) && !formatter.is_a?(Logger::Formatter)
         raise Error, 'Formatter must be a String, a Logger::Formatter or a Proc'
       end
@@ -232,12 +232,14 @@ module Aspera
     DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{m}\n"}
 
     # pre-defined formatters
-    FORMATTERS = {
+    FORMATTER_LAMBDAS = {
       standard: Logger::Formatter.new,
       default:  DEFAULT_FORMATTER,
       caller:   ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{Log.caller_method}\n#{m}\n"}
     }.freeze
 
-    private_constant :LVL_DECO, :LVL_COLOR, :DEFAULT_FORMATTER, :FORMATTERS
+    FORMATTERS = FORMATTER_LAMBDAS.keys
+
+    private_constant :LVL_DECO, :LVL_COLOR, :DEFAULT_FORMATTER, :FORMATTER_LAMBDAS
   end
 end

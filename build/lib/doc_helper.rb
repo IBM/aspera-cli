@@ -154,6 +154,11 @@ class DocHelper
     "../#{path}".gsub('../docs/', '')
   end
 
+  # list of specific formatters supported
+  def log_formatters
+    Aspera::Log::FORMATTERS.join(br)
+  end
+
   def gemspec
     @gem_spec = Gem::Specification.load(@paths[:gem_spec_file]) || raise("error loading #{@paths[:gem_spec_file]}") if !@gem_spec
     @gem_spec

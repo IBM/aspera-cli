@@ -3151,7 +3151,7 @@ The following options control logging:
 | `logger`      | `stdout`<br/>`stderr`<br/>`syslog` | Type of output.<br/>Default: `stderr` |
 | `log_level`   | `trace2`<br/>`trace1`<br/>`debug`<br/>`info`<br/>`warn`<br/>`error` | Minimum level displayed.<br/>Default: `warn` |
 | `log_secrets` | `yes`<br/>`no` | Show or hide secrets in logs.<br/>Default: `no` (Hide) |
-| `log_format`  | `Proc`<br/>`String` | The name of a formatter or a lambda function that formats the log (see below).<br/>Default: `default`<br/>Alternative: `standard` |
+| `log_format`  | standard<br/>default<br/>caller<br/>`Proc` | The name of a formatter or a lambda function that formats the log (see [below](#log_format)).<br/>Default: `default`<br/>Alternative: `standard` |
 
 Option `logger` defines the destination of logs.
 
@@ -3179,9 +3179,9 @@ Available formatters for `log_format`:
 
 | Name      | Description                                                                      |
 |-----------|----------------------------------------------------------------------------------|
-| `default` | Default formatter: Colorized 4 level level followed by message on the same line. |
+| `default` | Default formatter: Colorized level followed by message on the same line. |
 | `standard`| Standard Ruby formatter.                                                         |
-| `caller`  | Colorized 4 level level followed by caller, and then on next line: message.      |
+| `caller`  | Colorized level followed by caller, and then on next line: message.      |
 | `Proc`    | Custom lambda.                                                                   |
 
 #### Logging examples
@@ -6538,16 +6538,16 @@ packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
+packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages receive package_id3 --to-folder=.
 packages receive package_id3 --to-folder=. /
-packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
-packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
-packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
-packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-packages send @json:'{"name":"package title","recipients":["my_email_internal"],"note":"my - note"}' test_file.bin
-packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
-packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_shared_inbox
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_name"]}' test_file.bin
+packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
+packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_username"],"note":"some notes"}' test_file.bin
+packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_shared_inbox
 packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
 remind --username=my_user_email
@@ -8323,12 +8323,12 @@ package receive f4_package_id2 --to-folder=. --box=sent
 package receive f4_package_id3 --to-folder=.
 package receive f4_package_id4 --recipient='*my_dbx' --to-folder=.
 package receive f4_package_id5 --recipient='*my_wkg' --to-folder=.
-package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal","my_username"]}' test_file.bin
-package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
-package send --delivery-info=@json:'{"title":"package title","recipients":[*my_dbx]}' test_file.bin
-package send --delivery-info=@json:'{"title":"package title","recipients":[*my_wkg]}' test_file.bin
-package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
-package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal","my_username"]}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
+package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*my_dbx]}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*my_wkg]}' test_file.bin
+package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin
+package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin
 source info %name:my_src --storage=@preset:faspex4_storage
 source list
 source node %name:my_src br / --storage=@preset:faspex4_storage
