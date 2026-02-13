@@ -56,6 +56,13 @@ module Aspera
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
     class Faspex < Aspera::Rest
+      # endpoint for authentication API
+      PATH_AUTH = 'auth'
+      PATH_API_V5 = 'api/v5'
+      PATH_HEALTH = 'configuration/ping'
+      private_constant :PATH_AUTH,
+        :PATH_API_V5,
+        :PATH_HEALTH
       RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
       PACKAGE_TERMINATED = %w[completed failed].freeze
       # list of supported mailbox types (to list packages)
@@ -219,13 +226,6 @@ module Aspera
       def auth_api
         Rest.new(**params, base_url: base_url.sub(PATH_API_V5, PATH_AUTH))
       end
-      # endpoint for authentication API
-      PATH_AUTH = 'auth'
-      PATH_API_V5 = 'api/v5'
-      PATH_HEALTH = 'configuration/ping'
-      private_constant :PATH_AUTH,
-        :PATH_API_V5,
-        :PATH_HEALTH
     end
   end
 end
