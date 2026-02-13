@@ -15,6 +15,7 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * `config`: Deprecated and removed action `ascp connect`.
+* **global**: Deprecated and removed option `property` made redundant with `@:` and dotted values. Instead of `--property=foo bar`, use `@: foo=bar`.
 
 ## 4.25.2
 

@@ -6772,7 +6772,7 @@ One can conveniently use the JSON format with prefix `@json:`.
 
 ### Faspex 5: Inbox selection
 
-By default, package operations (`send`, `receive`, `list`) are performed on the user's inbox.
+By default, package operations: `receive` and `list` are performed on the user's inbox.
 
 To select another inbox, use option `box` with one of the following values:
 
@@ -6805,6 +6805,10 @@ The `Hash` creation **Command Parameter** provided to command corresponds to the
 
 Required fields are `title` and `recipients`.
 
+> [!NOTE]
+> Option `box` does not select recipient shared inbox.
+> Use parameter `recipients` for that.
+
 Example (assuming a default preset is created for the connection information):
 
 ```shell
@@ -6836,6 +6840,12 @@ Else an exception is sent.
 
 ```json
 {"title":"some title","recipients":["user@example.com"]}
+```
+
+To send to a shared inbox, specify `recipient_type=shared_inbox`:
+
+```json
+{"title":"some title","recipients":[{"recipient_type":"shared_inbox","name":"box name"}]}
 ```
 
 If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an `Array` of values (from the list above). e.g. :

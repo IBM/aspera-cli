@@ -22,7 +22,6 @@ module Aspera
         class << self
           def declare_options(options)
             options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass])
-            options.declare(:property, 'Name of property to set (modify operation)')
             options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
             options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
           end
@@ -213,8 +212,6 @@ module Aspera
             end
           when :modify
             parameters = value_create_modify(command: command)
-            property = options.get_option(:property)
-            parameters = {property => parameters} unless property.nil?
             api.update(one_res_path, parameters)
             return Main.result_status('modified')
           else
@@ -267,7 +264,7 @@ module Aspera
         # @param entity    [String,Symbol] API endpoint of entity to list
         # @param items_key [String]        Key in the result to get the list of items (Default: same as `entity`)
         # @param query     [Hash,nil]      Additional query parameters
-        # @return [Array] items, total_count
+        # @return [Array<(Array<Hash>, Integer)>] items, total_count
         def list_entities_limit_offset_total_count(
           api:,
           entity:,
