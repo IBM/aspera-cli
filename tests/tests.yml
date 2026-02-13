@@ -947,9 +947,11 @@ nd_info:
     - info
     - --fpac=function FindProxyForURL(url,host){return "DIRECT"}
 nd_lic:
+  $comment: Requires special node ACL.
   args:
     - node
     - license
+    - --preset=node_ak_adm
 nd_det:
   args:
     - node

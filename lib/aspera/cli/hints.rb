@@ -115,6 +115,13 @@ module Aspera
           remediation: [
             'Check your public key in your AoC user profile.'
           ]
+        },
+        {
+          exception:   Aspera::RestCallError,
+          match:       /Please configure ACLs for this URI/,
+          remediation: [
+            'server must have: asnodeadmin -mu <node user> --acl-add=internal --internal'
+          ]
         }
       ]
       private_constant :ERROR_HINTS

@@ -471,9 +471,7 @@ module Aspera
             return Main.result_single_object(nd_info)
           when :license
             # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
-            node_license = @api_node.read('license')
-            Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal') if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
-            return Main.result_single_object(node_license)
+            return Main.result_single_object(@api_node.read('license'))
           when :api_details
             return Main.result_single_object({base_url: @api_node.base_url}.merge(@api_node.params))
           end
