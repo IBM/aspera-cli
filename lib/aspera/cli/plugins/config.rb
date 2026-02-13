@@ -210,7 +210,7 @@ module Aspera
           keys_to_delete.each{ |k| @option_http_options.delete(k)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-          Transfer::Parameters.file_list_folder = File.join(@main_folder, FILELIST_FOLDERNAME)
+          Transfer::Parameters.file_list_folder = File.join(@main_folder, FILE_LIST_FOLDER_NAME)
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, REST_EXCEPTIONS_LOG_FILENAME)
           # Register aspera REST call error handlers
           RestErrorsAspera.register_handlers
@@ -1159,7 +1159,7 @@ module Aspera
         # Folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         PERSISTENCY_FOLDER = 'persist_store'
-        FILELIST_FOLDERNAME = 'filelists'
+        FILE_LIST_FOLDER_NAME = 'filelists'
         REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
@@ -1193,7 +1193,7 @@ module Aspera
           :CONF_PRESET_DEFAULTS,
           :CONF_PRESET_GLOBAL,
           :ASPERA_PLUGINS_FOLDERNAME,
-          :FILELIST_FOLDERNAME,
+          :FILE_LIST_FOLDER_NAME,
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
           :DEMO_SERVER,

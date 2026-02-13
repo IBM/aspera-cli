@@ -39,14 +39,11 @@ module Aspera
       # analyze errors from provided handlers
       # note that there can be an error even if code is 2XX
       @error_handlers.each do |handler|
-        begin # rubocop:disable Style/RedundantBegin
-          # Log.log.debug{"test exception: #{handler[:name]}"}
-          handler[:block].call(handler[:name], call_context)
-        rescue StandardError => e
-          Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
-        end
+        handler[:block].call(handler[:name], call_context)
+      rescue StandardError => e
+        Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
       end
-      raise RestCallError.new(call_context) unless call_context[:messages].empty?
+      raise RestCallError, call_context unless call_context[:messages].empty?
     end
 
     # add a new error handler (done at application initialization)
@@ -61,9 +58,9 @@ module Aspera
     # add a simple error handler
     # check that key exists and is string under specified path (hash)
     # adds other keys as secondary information
-    # @param name [String] name of error handler (for logs)
-    # @param always [boolean] if true, always add error message, even if response code is 2XX
-    # @param path [Array] path to error message in response
+    # @param name   [String]  name of error handler (for logs)
+    # @param always [Boolean] if true, always add error message, even if response code is 2XX
+    # @param path   [Array]   path to error message in response
     def add_simple_handler(name:, always: false, path:)
       path.freeze
       add_handler(name) do |type, call_context|

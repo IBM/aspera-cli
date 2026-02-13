@@ -108,7 +108,6 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
-
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
     check_gem_signing_key

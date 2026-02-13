@@ -4423,6 +4423,9 @@ Aspera on Cloud API requires the use of OAuth v2 mechanism for authentication (H
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
+> [!NOTE]
+> This plugin shall be also used for Aspera Enterprise Web Apps (AEWA).
+
 ### AoC configuration: Using Wizard
 
 <%=tool%> provides a configuration [wizard](#wizard).
