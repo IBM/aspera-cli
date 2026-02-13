@@ -118,7 +118,7 @@ module Aspera
             recipient_types = [recipient_types] unless recipient_types.is_a?(Array)
           end
           parameters['recipients'].map! do |recipient_data|
-            # if just a string, make a general lookup and build expected name/type hash
+            # If just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
               matched = @api_v5.lookup_by_name('contacts', recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
               recipient_data = {
@@ -174,8 +174,8 @@ module Aspera
         # list all packages with optional filter
         def list_packages_with_filter(query: {})
           filter = options.get_next_argument('filter', mandatory: false, validation: Proc, default: ->(_x){true})
-          # translate box name to API prefix (with ending slash)
           box = options.get_option(:box)
+          # Translate box name to API prefix (with ending slash)
           entity =
             case box
             when SpecialValues::ALL then 'packages' # only admin can list all packages globally
@@ -272,6 +272,56 @@ module Aspera
           return Main.result_transfer_multiple(result_transfer)
         end
 
+        def package_send
+          parameters = value_create_modify(command: :send)
+          # autofill recipient for public url
+          if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
+            parameters['recipients'] = [{
+              name:           @api_v5.pub_link_context['name'],
+              recipient_type: @api_v5.pub_link_context['recipient_type']
+            }]
+          end
+          normalize_recipients(parameters)
+          # User specified content prot in tspec, but faspex requires in package creation
+          # `transfer_spec/upload` will set `content_protection`
+          if transfer.user_transfer_spec['content_protection'] && !parameters.key?('ear_enabled')
+            transfer.user_transfer_spec.delete('content_protection')
+            parameters['ear_enabled'] = true
+          end
+          package = @api_v5.create('packages', parameters)
+          shared_folder = options.get_option(:shared_folder)
+          if shared_folder.nil?
+            # send from local files
+            transfer_spec = @api_v5.create(
+              "packages/#{package['id']}/transfer_spec/upload",
+              {paths: transfer.source_list},
+              query: {transfer_type: Api::Faspex::TRANSFER_CONNECT}
+            )
+            # well, we asked a TS for connect, but we actually want a generic one
+            transfer_spec.delete('authentication')
+            return Main.result_transfer(transfer.start(transfer_spec))
+          else
+            # send from remote shared folder
+            if (m = Base.percent_selector(shared_folder))
+              shared_folder = lookup_entity_by_field(
+                api: @api_v5,
+                entity: 'shared_folders',
+                field: m[:field],
+                value: m[:value]
+              )['id']
+            end
+            transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
+            # start remote transfer and get first status
+            result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)
+            result['id'] = package['id']
+            unless result['status'].eql?('completed')
+              formatter.display_status("Package #{package['id']}")
+              result = wait_package_status(package['id'])
+            end
+            return Main.result_single_object(result)
+          end
+        end
+
         # Browse a folder
         # @param browse_endpoint [String] the endpoint to browse
         def browse_folder(browse_endpoint)
@@ -365,53 +415,7 @@ module Aspera
           when :receive
             return package_receive(package_id)
           when :send
-            parameters = value_create_modify(command: command)
-            # autofill recipient for public url
-            if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
-              parameters['recipients'] = [{
-                name:           @api_v5.pub_link_context['name'],
-                recipient_type: @api_v5.pub_link_context['recipient_type']
-              }]
-            end
-            normalize_recipients(parameters)
-            # User specified content prot in tspec, but faspex requires in package creation
-            # `transfer_spec/upload` will set `content_protection`
-            if transfer.user_transfer_spec['content_protection'] && !parameters.key?('ear_enabled')
-              transfer.user_transfer_spec.delete('content_protection')
-              parameters['ear_enabled'] = true
-            end
-            package = @api_v5.create('packages', parameters)
-            shared_folder = options.get_option(:shared_folder)
-            if shared_folder.nil?
-              # send from local files
-              transfer_spec = @api_v5.create(
-                "packages/#{package['id']}/transfer_spec/upload",
-                {paths: transfer.source_list},
-                query: {transfer_type: Api::Faspex::TRANSFER_CONNECT}
-              )
-              # well, we asked a TS for connect, but we actually want a generic one
-              transfer_spec.delete('authentication')
-              return Main.result_transfer(transfer.start(transfer_spec))
-            else
-              # send from remote shared folder
-              if (m = Base.percent_selector(shared_folder))
-                shared_folder = lookup_entity_by_field(
-                  api: @api_v5,
-                  entity: 'shared_folders',
-                  field: m[:field],
-                  value: m[:value]
-                )['id']
-              end
-              transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
-              # start remote transfer and get first status
-              result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)
-              result['id'] = package['id']
-              unless result['status'].eql?('completed')
-                formatter.display_status("Package #{package['id']}")
-                result = wait_package_status(package['id'])
-              end
-              return Main.result_single_object(result)
-            end
+            return package_send
           when :list
             list, total = list_packages_with_filter
             return Main.result_object_list(list, total: total, fields: %w[id title release_date total_bytes total_files created_time state])
