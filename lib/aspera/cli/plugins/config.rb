@@ -565,43 +565,6 @@ module Aspera
           raise Cli::Error, e.to_s
         end
 
-        def execute_connect_action
-          command = options.get_next_command(%i[list info version])
-          if %i[info version].include?(command)
-            connect_id = options.get_next_argument('id or title')
-            one_res = Products::Connect.instance.versions.find{ |i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
-            raise Cli::BadIdentifier.new(:connect, connect_id) if one_res.nil?
-          end
-          case command
-          when :list
-            return Main.result_object_list(Products::Connect.instance.versions, fields: %w[id title version])
-          when :info
-            one_res.delete('links')
-            return Main.result_single_object(one_res)
-          when :version
-            all_links = one_res['links']
-            command = options.get_next_command(%i[list download open])
-            if %i[download open].include?(command)
-              link_title = options.get_next_argument('title or rel')
-              one_link = all_links.find{ |i| i['title'].eql?(link_title) || i['rel'].eql?(link_title)}
-              raise "no such value: #{link_title}" if one_link.nil?
-            end
-            case command
-            when :list
-              return Main.result_object_list(all_links)
-            when :download
-              archive_path = one_link['href']
-              save_to_path = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), archive_path.gsub(%r{.*/}, ''))
-              Products::Connect.instance.cdn_api.call(operation: 'GET', subpath: archive_path, save_to_file: save_to_path)
-              return Main.result_status("Downloaded: #{save_to_path}")
-            when :open
-              Environment.instance.open_uri(one_link['href'])
-              return Main.result_status("Opened: #{one_link['href']}")
-            end
-          end
-          Aspera.error_unreachable_line
-        end
-
         def install_transfer_sdk
           asked_version = options.get_next_argument('transferd version', mandatory: false)
           name, version, folder = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: asked_version)
@@ -609,10 +572,8 @@ module Aspera
         end
 
         def execute_action_ascp
-          command = options.get_next_command(%i[connect show products info install spec schema errors])
+          command = options.get_next_command(%i[show products info install spec schema errors])
           case command
-          when :connect
-            return execute_connect_action
           when :show
             return Main.result_text(Ascp::Installation.instance.path(:ascp))
           when :info

@@ -14,6 +14,8 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `config`: Deprecated and removed action `ascp connect`.
+
 ## 4.25.2
 
 Released: 2026-02-03

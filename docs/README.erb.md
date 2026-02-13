@@ -2216,12 +2216,12 @@ toto,titi@tutu.tata
 ```
 
 ```text
-+------+---------------------+
-| name |        email        |
-+------+---------------------+
-| lolo | laurent@example.com |
-| toto | titi@tutu.tata      |
-+------+---------------------+
+╭──────┬─────────────────────╮
+│ name │ email               │
+╞══════╪═════════════════════╡
+│ lolo │ laurent@example.com │
+│ toto │ titi@tutu.tata      │
+╰──────┴─────────────────────╯
 ```
 
 Example: create a `Hash` with values coming from a preset named `config`
@@ -3314,49 +3314,6 @@ To show the path of currently used `ascp`:
 │ ascp    │ /Users/john/.aspera/sdk/ascp                     │
 ...
 ╰─────────┴──────────────────────────────────────────────────╯
-```
-
-#### Installation of Connect Client on command line
-
-```shell
-<%=cmd%> config ascp connect list
-```
-
-```text
-+-----------------------------------------------+--------------------------------------+-----------+
-| id                                            | title                                | version   |
-+-----------------------------------------------+--------------------------------------+-----------+
-| urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E | Aspera Connect for Windows           | 3.11.2.63 |
-| urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 | Aspera Connect for Windows 64-bit    | 3.11.2.63 |
-| urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E | Aspera Connect for Windows XP        | 3.11.2.63 |
-| urn:uuid:55425020-083E-11E2-892E-0800200C9A66 | Aspera Connect for Windows XP 64-bit | 3.11.2.63 |
-| urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF | Aspera Connect for Mac Intel         | 3.11.2.63 |
-| urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 | Aspera Connect for Linux 64          | 3.11.2.63 |
-+-----------------------------------------------+--------------------------------------+-----------+
-```
-
-```shell
-<%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' list
-```
-
-```text
-+-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
-| title                                     | type                     | href                                                                                    | hreflang | rel                 |
-+-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
-| Mac Intel Installer                       | application/octet-stream | bin/IBMAsperaConnectInstaller-3.11.2.63.dmg                                             | en       | enclosure           |
-| Mac Intel Installer                       | application/octet-stream | bin/IBMAsperaConnectInstallerOneClick-3.11.2.63.dmg                                     | en       | enclosure-one-click |
-| Aspera Connect for Mac HTML Documentation | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=aspera-connect-user-guide-macos   | en       | documentation       |
-| Aspera Connect for Mac Release Notes      | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=notes-release-aspera-connect-3112 | en       | release-notes       |
-+-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
-```
-
-```shell
-<%=cmd%> config ascp connect version 'Aspera Connect for Mac Intel' download enclosure --to-folder=.
-```
-
-```text
-Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
-Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
 ### Transfer Clients: Agents
@@ -5048,13 +5005,14 @@ To delete them use the same method as before
 ```
 
 ```text
-+------+----------------------------+
-|  id  |            name            |
-+------+----------------------------+
-| 16   | Engineering                |
-| 17   | Marketing                  |
-| 18   | Sales                      |
-+------+----------------------------+
+╭────────┬─────────────────────────╮
+│ id     │ name                    │
+╞════════╪═════════════════════════╡
+│ 45073  │ Engineering             │
+│ 145222 │ Marketing               │
+│ 149207 │ Sales                   │
+│ 149699 │ Secret Project          │
+╰────────┴─────────────────────────╯
 ```
 
 #### Example: Create a sub access key in a `node`

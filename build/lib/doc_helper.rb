@@ -128,7 +128,7 @@ class DocHelper
   end
   # Place warning in generated file
   def doc_warn(_)
-    'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md'
+    'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.'
   end
 
   # Line break in tables
