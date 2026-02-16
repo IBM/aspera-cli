@@ -8962,28 +8962,28 @@ Below is a simple end‑to‑end procedure to verify synchronization using the d
 
 1. Initialize the demo server configuration:
 
-```bash
-ascli config initdemo
-```
+    ```bash
+    ascli config initdemo
+    ```
 
 1. Create a local folder with a sample file to sync:
 
-```bash
-mkdir foobar
-echo hello > foobar/file1
-```
+    ```bash
+    mkdir foobar
+    echo hello > foobar/file1
+    ```
 
 1. Create the destination folder on the remote server:
 
-```bash
-ascli server -Pdemoserver mkdir /Upload/mydest1
-```
+    ```bash
+    ascli server -Pdemoserver mkdir /Upload/mydest1
+    ```
 
 1. Run the sync operation:
 
-```bash
-ascli server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
-```
+    ```bash
+    ascli server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
+    ```
 
 The following sections provide additional details on available options and configuration.
 
