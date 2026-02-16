@@ -4652,7 +4652,6 @@ OPTIONS: global
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash, Array)
-        --property=VALUE             Name of property to set (modify operation)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
@@ -4965,6 +4964,9 @@ A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node
 Aspera on Cloud API requires the use of OAuth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
+
+> [!NOTE]
+> This plugin shall be also used for Aspera Enterprise Web Apps (AEWA).
 
 ### AoC configuration: Using Wizard
 
@@ -6721,7 +6723,7 @@ sync admin status /data/local_sync
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
 upload 'faux:///test.bin?1k' --to-folder=my_upload_folder
-upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
+upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","file_list.txt"]}' --to-folder=my_inside_folder
 upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=transferd
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
@@ -7684,7 +7686,7 @@ One can conveniently use the JSON format with prefix `@json:`.
 
 ### Faspex 5: Inbox selection
 
-By default, package operations (`send`, `receive`, `list`) are performed on the user's inbox.
+By default, package operations: `receive` and `list` are performed on the user's inbox.
 
 To select another inbox, use option `box` with one of the following values:
 
@@ -7717,6 +7719,10 @@ The `Hash` creation **Command Parameter** provided to command corresponds to the
 
 Required fields are `title` and `recipients`.
 
+> [!NOTE]
+> Option `box` does not select recipient shared inbox.
+> Use parameter `recipients` for that.
+
 Example (assuming a default preset is created for the connection information):
 
 ```shell
@@ -7748,6 +7754,12 @@ Else an exception is sent.
 
 ```json
 {"title":"some title","recipients":["user@example.com"]}
+```
+
+To send to a shared inbox, specify `recipient_type=shared_inbox`:
+
+```json
+{"title":"some title","recipients":[{"recipient_type":"shared_inbox","name":"box name"}]}
 ```
 
 If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an `Array` of values (from the list above). e.g. :
@@ -8358,7 +8370,7 @@ files sync push /data/local_sync --to-folder=my_share_folder/synctst @json:'{"re
 files upload 'faux:///testfile?1m' --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share_folder test_file.bin
 files upload --to-folder=my_share_folder test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
-files upload sendfolder --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload send_folder --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 health
 ```
 
@@ -8944,15 +8956,49 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 > The Aspera Transfer Daemon 1.3+ includes this.
 
+### Quick test
+
+Below is a simple end‑to‑end procedure to verify synchronization using the demo server.
+
+1. Initialize the demo server configuration:
+
+```bash
+ascli config initdemo
+```
+
+1. Create a local folder with a sample file to sync:
+
+```bash
+mkdir foobar
+echo hello > foobar/file1
+```
+
+1. Create the destination folder on the remote server:
+
+```bash
+ascli server -Pdemoserver mkdir /Upload/mydest1
+```
+
+1. Run the sync operation:
+
+```bash
+ascli server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
+```
+
+The following sections provide additional details on available options and configuration.
+
 ### Starting a sync session
 
-To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path otherwise).
-The path on the other side is specified using option: `to_folder`.
+To start a sync session, use one of the three sync directions, followed by a folder path.
+For `push` and `bidi`, the path is a local folder.
+For `pull`, the path is a remote folder.
 
-The general syntax is:
+The corresponding path on the opposite side is provided using the `to_folder` option.
+
+**General syntax:**
 
 ```shell
-ascli ... sync <direction> <path> [<sync_info>] [--to-folder=<path>]
+ascli ... sync <direction> <path> [--to-folder=<path>] [<sync_info>]
 ```
 
 | Direction<br/>(parameter) | Path<br/>(parameter)   | `to_folder`<br/>(option) |
@@ -8961,14 +9007,20 @@ ascli ... sync <direction> <path> [<sync_info>] [--to-folder=<path>]
 | `bidi`    | Local  | Remote      |
 | `pull`    | Remote | Local       |
 
-An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` (preferred) or `args` (legacy) format.
+An optional positional `Hash` argument (`sync_info`) may be provided.
+It can be expressed in one of two formats:
 
-A single session can be specified using either formats.
+- `conf` format (recommended)
+- `args` format (legacy)
 
-If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next section.
+A single sync session must use **one format exclusively**.
 
-If argument `<sync_info>` is provided, it defines the format to use.
-If parameter `sessions` or `instance` is present, then `args` is used, else `conf` is used.
+- If `<sync_info>` is not provided, a default configuration is automatically generated in the `conf` format (details in the next section).
+
+- If argument `<sync_info>` is provided, the format is inferred:
+
+  - If the Hash contains `sessions` or `instance`, the `args` is used
+  - Otherwise, the `conf` format is used.
 
 #### `sync_info`: `conf` format
 

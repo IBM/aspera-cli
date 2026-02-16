@@ -7878,15 +7878,49 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 > The Aspera Transfer Daemon 1.3+ includes this.
 
+### Quick test
+
+Below is a simple end‑to‑end procedure to verify synchronization using the demo server.
+
+1. Initialize the demo server configuration:
+
+```bash
+<%=cmd%> config initdemo
+```
+
+1. Create a local folder with a sample file to sync:
+
+```bash
+mkdir foobar
+echo hello > foobar/file1
+```
+
+1. Create the destination folder on the remote server:
+
+```bash
+<%=cmd%> server -Pdemoserver mkdir /Upload/mydest1
+```
+
+1. Run the sync operation:
+
+```bash
+<%=cmd%> server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
+```
+
+The following sections provide additional details on available options and configuration.
+
 ### Starting a sync session
 
-To start a sync session, use one of the three sync directions followed by a folder path (remote path for `pull`, local path otherwise).
-The path on the other side is specified using option: `to_folder`.
+To start a sync session, use one of the three sync directions, followed by a folder path.
+For `push` and `bidi`, the path is a local folder.
+For `pull`, the path is a remote folder.
 
-The general syntax is:
+The corresponding path on the opposite side is provided using the `to_folder` option.
+
+**General syntax:**
 
 ```shell
-<%=cmd%> ... sync <direction> <path> [<sync_info>] [--to-folder=<path>]
+<%=cmd%> ... sync <direction> <path> [--to-folder=<path>] [<sync_info>]
 ```
 
 | Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
@@ -7895,14 +7929,20 @@ The general syntax is:
 | `bidi`    | Local  | Remote      |
 | `pull`    | Remote | Local       |
 
-An optional positional `Hash` argument (`sync_info`) can be provided in either `conf` (preferred) or `args` (legacy) format.
+An optional positional `Hash` argument (`sync_info`) may be provided.
+It can be expressed in one of two formats:
 
-A single session can be specified using either formats.
+- `conf` format (recommended)
+- `args` format (legacy)
 
-If argument `<sync_info>` is not provided, then a default configuration is generated in the `conf` format as specified in the next section.
+A single sync session must use **one format exclusively**.
 
-If argument `<sync_info>` is provided, it defines the format to use.
-If parameter `sessions` or `instance` is present, then `args` is used, else `conf` is used.
+- If `<sync_info>` is not provided, a default configuration is automatically generated in the `conf` format (details in the next section).
+
+- If argument `<sync_info>` is provided, the format is inferred:
+
+  - If the Hash contains `sessions` or `instance`, the `args` is used
+  - Otherwise, the `conf` format is used.
 
 #### `sync_info`: `conf` format
 
