@@ -9044,6 +9044,10 @@ The documentation is available in the terminal with:
 ascli config sync spec
 ```
 
+> [!NOTE]
+>  accepts the following fields within the `sync_info` Hash.
+> The option listed in the **Description** correspond to the equivalent parameters used by the low‑level `async` command.
+
 | Field | Type | Description |
 |------------------------------------------|---------|----------------------------------------------------------------------------------|
 | ascp_dir | string | Directory containing ascp executable to use. |

@@ -7966,6 +7966,10 @@ The documentation is available in the terminal with:
 <%=cmd%> config sync spec
 ```
 
+> [!NOTE]
+> <%tool%> accepts the following fields within the `sync_info` Hash.
+> The option listed in the **Description** correspond to the equivalent parameters used by the low‑level `async` command.
+
 <%=sync_conf_table%>
 
 #### `sync_info`: `args` format
