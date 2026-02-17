@@ -17,20 +17,21 @@ module Aspera
           # @return [Hash] with version, ping, api
           def health_check(url)
             result = {}
+            # Get version from main page
             result[:version] =
               begin
                 version = nil
                 login_page = Rest
                   .new(base_url: url, redirect_max: 2)
                   .read('', headers: {'Accept'=>'text/html'})
+                raise 'not Shares' unless login_page.include?('aspera-Shares')
                 if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
                   version = m[1]
                   if (m = login_page.match(/Patch level ([0-9]+)/))
-                    version = "#{result[:version]} #{m[0]}"
+                    version = "#{version} #{m[0]}"
                   end
                 end
-                raise 'no version' if version.nil?
-                version
+                version.nil? ? 'no version' : version
               rescue => e
                 e
               end
@@ -45,10 +46,15 @@ module Aspera
               end
             result[:api] =
               begin
-                resp = Rest.new(base_url: url, redirect_max: 1).read("#{NODE_API_PATH}/app", exception: false, ret: :resp)
+                data, resp = Rest
+                  .new(base_url: "#{url}/#{NODE_API_PATH}", redirect_max: 1)
+                  .read('info', exception: false, ret: :both)
                 # shall fail: shares requires auth, but we check error message
-                raise 'not found' unless resp.code.to_s.eql?('401') && resp.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-                'available'
+                if resp.code.to_s.eql?('401') && data&.dig('error', 'user_message')&.include?('authentication failed')
+                  'available'
+                else
+                  raise "not found (#{resp.code})"
+                end
               rescue => e
                 e
               end
