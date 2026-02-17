@@ -23,8 +23,16 @@ shares_health:
   tags:
     - health
   args:
+    - -N
     - shares
     - health
+    - --url=@preset:shares_admin.url
+shares_info:
+  tags:
+    - health
+  args:
+    - shares
+    - info
 shares_health_bad:
   tags:
     - nodoc

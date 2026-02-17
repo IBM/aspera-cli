@@ -94,7 +94,7 @@ module Aspera
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
         SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
-        ACTIONS = %i[health files admin].freeze
+        ACTIONS = %i[health info files admin].freeze
         # common to users and groups
         USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze
 
@@ -117,6 +117,8 @@ module Aspera
               nagios.add_critical('API', health[:api].to_s)
             end
             Main.result_object_list(nagios.status_list)
+          when :info
+            return Main.result_single_object(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
           when :files
             api_shares_node = basic_auth_api(NODE_API_PATH)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
