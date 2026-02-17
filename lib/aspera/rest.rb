@@ -143,8 +143,8 @@ module Aspera
       end
 
       # Start a HTTP/S session, also used for web sockets
-      # @param base_url [String] base url of HTTP/S session
-      # @return [Net::HTTP] a started HTTP session
+      # @param base_url [String] Base url of HTTP/S session
+      # @return [Net::HTTP] A started HTTP session
       def start_http_session(base_url)
         uri = URI.parse(base_url)
         Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
@@ -302,16 +302,16 @@ module Aspera
     # HTTP/S REST call
     # @param operation    [String] HTTP operation (GET, POST, PUT, DELETE)
     # @param subpath      [String] subpath of REST API
-    # @param query        [Hash] URL parameters
+    # @param query        [Hash{String,Symbol => Object}] URL parameters
     # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
-    # @param body       [Hash, String] body parameters
-    # @param headers      [Hash] additional headers (override Content-Type)
-    # @param save_to_file [String, nil](filepath)
-    # @param exception    [Boolean] `true`, error raise exception
-    # @param ret [:data, :resp, :both] Tell to return only data, only http response, or both
-    # @return [(HTTPResponse,Hash)] If ret is :both
-    # @return [HTTPResponse] If ret is :resp
-    # @return [Hash] If ret is :data
+    # @param body         [Hash, String, nil] Body parameters
+    # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
+    # @param save_to_file [String, nil] File path to save response body
+    # @param exception    [Boolean] Whether to raise an exception on HTTP error
+    # @param ret          [Symbol] One of :data, :resp, :both — controls return value
+    # @return [Array(Hash, Net::HTTPResponse)] When `ret` is :both
+    # @return [Net::HTTPResponse] When `ret` is :resp
+    # @return [Hash] When `ret` is :data
     # @raise [RestCallError] on error if `exception` is true
     def call(
       operation:,
