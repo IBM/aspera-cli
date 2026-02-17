@@ -450,7 +450,7 @@ module Aspera
               @api_node.call(
                 operation:    'POST',
                 subpath:      'services/soap/Transfer-201210',
-                content_type: Rest::MIME_TEXT,
+                content_type: Mime::TEXT,
                 body:         CENTRAL_SOAP_API_TEST,
                 headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
                 ret:          :resp
@@ -835,7 +835,7 @@ module Aspera
                 @api_node.call(
                   operation:    'POST',
                   subpath:      "asyncs/#{asyncs_id}/#{sync_command}",
-                  content_type: Rest::MIME_TEXT,
+                  content_type: Mime::TEXT,
                   body:         '',
                   ret:          :resp
                 ).body

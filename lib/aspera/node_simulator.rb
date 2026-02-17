@@ -328,7 +328,7 @@ module Aspera
 
     def set_json_response(request, response, json, code: 200)
       response.status = code
-      response['Content-Type'] = Rest::MIME_JSON
+      response['Content-Type'] = Mime::JSON
       response.body = json.to_json
       Log.log.trace1{Log.obj_dump("response for #{request.request_method} #{request.path}", json)}
     end

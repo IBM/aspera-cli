@@ -6027,8 +6027,8 @@ f5_fxgw_test:
     - faux:///test1?1m
   post: |
     Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
-    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
-    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Rest::MIME_TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
     stop_process 'f5_fxgw_start'
 f5_postproc_pid:
   tags:

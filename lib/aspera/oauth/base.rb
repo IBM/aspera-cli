@@ -53,7 +53,7 @@ module Aspera
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
-        return @api.create(@path_token, creation_params, content_type: Rest::MIME_WWW, ret: :resp)
+        return @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
       end
 
       # Create base parameters for token creation calls

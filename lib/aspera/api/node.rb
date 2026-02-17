@@ -65,7 +65,7 @@ module Aspera
         # Adds cache control header, as globally specified to read request
         # Use like this: read(...,**cache_control)
         def cache_control
-          headers = {'Accept' => Rest::MIME_JSON}
+          headers = {'Accept' => Mime::JSON}
           headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
           {headers: headers}
         end

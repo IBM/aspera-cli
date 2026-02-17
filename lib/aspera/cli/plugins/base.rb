@@ -177,7 +177,7 @@ module Aspera
               api.delete(
                 entity,
                 nil,
-                content_type: Rest::MIME_JSON,
+                content_type: Mime::JSON,
                 body:         {delete_style => one_res_id}
               )
               return Main.result_status('deleted')

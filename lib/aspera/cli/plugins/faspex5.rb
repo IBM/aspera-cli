@@ -255,9 +255,9 @@ module Aspera
               operation:    'POST',
               subpath:      "packages/#{pkg_id}/transfer_spec/download",
               query:        download_params,
-              content_type: Rest::MIME_JSON,
+              content_type: Mime::JSON,
               body:         param_file_list,
-              headers:      {'Accept' => Rest::MIME_JSON}
+              headers:      {'Accept' => Mime::JSON}
             )
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
@@ -350,9 +350,9 @@ module Aspera
                 operation:    'POST',
                 subpath:      browse_endpoint,
                 query:        query,
-                content_type: Rest::MIME_JSON,
+                content_type: Mime::JSON,
                 body:         {'path' => path, 'filters' => filters},
-                headers:      {'Accept' => Rest::MIME_JSON},
+                headers:      {'Accept' => Mime::JSON},
                 ret:          :both
               )
               all_items.concat(data['items'])
@@ -407,9 +407,9 @@ module Aspera
             @api_v5.call(
               operation:    'DELETE',
               subpath:      'packages',
-              content_type: Rest::MIME_JSON,
+              content_type: Mime::JSON,
               body:         {ids: ids},
-              headers:      {'Accept' => Rest::MIME_JSON}
+              headers:      {'Accept' => Mime::JSON}
             )
             return Main.result_status('Package(s) deleted')
           when :receive

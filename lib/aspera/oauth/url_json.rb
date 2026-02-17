@@ -24,9 +24,9 @@ module Aspera
           operation:    'POST',
           subpath:      path_token,
           query:        @query.merge(scope: params[:scope]), # scope is here because it may change over time (node)
-          content_type: Rest::MIME_JSON,
+          content_type: Mime::JSON,
           body:         @body,
-          headers:      {'Accept' => Rest::MIME_JSON},
+          headers:      {'Accept' => Mime::JSON},
           ret:          :resp
         )
       end

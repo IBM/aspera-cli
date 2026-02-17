@@ -52,9 +52,9 @@ module Aspera
         operation:    'POST',
         subpath:      "packages/#{package['id']}/transfer_spec/upload",
         query:        {transfer_type: Api::Faspex::TRANSFER_CONNECT},
-        content_type: Rest::MIME_JSON,
+        content_type: Mime::JSON,
         body:         {paths: [{'destination'=>'/'}]},
-        headers:      {'Accept' => Rest::MIME_JSON}
+        headers:      {'Accept' => Mime::JSON}
       )
       transfer_spec.delete('authentication')
       # but we place it in a Faspex package creation response
@@ -82,18 +82,18 @@ module Aspera
             end
           Log.log.debug{"faspex_package_create_result=#{faspex_package_create_result}"}
           response.status = 200
-          response.content_type = Rest::MIME_JSON
+          response.content_type = Mime::JSON
           response.body = JSON.generate(faspex_package_create_result)
         rescue => e
           response.status = 500
-          response['Content-Type'] = Rest::MIME_JSON
+          response['Content-Type'] = Mime::JSON
           response.body = {error: e.message, stacktrace: e.backtrace}.to_json
           Log.log.error(e.message)
           Log.log.debug{e.backtrace.join("\n")}
         end
       else
         response.status = 400
-        response['Content-Type'] = Rest::MIME_JSON
+        response['Content-Type'] = Mime::JSON
         response.body = {error: 'Unsupported endpoint'}.to_json
       end
     end

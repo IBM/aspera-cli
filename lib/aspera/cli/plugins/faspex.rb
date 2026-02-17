@@ -51,7 +51,7 @@ module Aspera
               http = api.call(
                 operation:        'POST',
                 headers:          {
-                  'Content-type' => Rest::MIME_TEXT,
+                  'Content-type' => Mime::TEXT,
                   'Accept'       => 'application/xrds+xml'
                 },
                 ret: :resp
@@ -254,7 +254,7 @@ module Aspera
           package_creation_data = api_public_link.call(
             operation:    'POST',
             subpath:      create_path,
-            content_type: Rest::MIME_JSON,
+            content_type: Mime::JSON,
             body:         package_create_params,
             headers:      {'Accept' => 'text/javascript'},
             ret:          :resp
@@ -418,9 +418,9 @@ module Aspera
                       operation:    'POST',
                       subpath:      'issue-token',
                       query:        {'direction' => 'down'},
-                      content_type: Rest::MIME_TEXT,
+                      content_type: Mime::TEXT,
                       body:         xml_payload,
-                      headers:      {'Accept' => Rest::MIME_TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
+                      headers:      {'Accept' => Mime::TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
                       ret:          :resp
                     ).body
                   end

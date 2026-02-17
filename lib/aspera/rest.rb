@@ -53,14 +53,24 @@ module Aspera
   class EntityNotFound < Error
   end
 
-  # a simple class to make HTTP calls, equivalent to rest-client
+  module Mime
+    JSON = 'application/json'
+    WWW = 'application/x-www-form-urlencoded'
+    TEXT = 'text/plain'
+    # Check if a MIME type is JSON, including parameters, e.g. application/json; charset=utf-8
+    def json?(mime)
+      JSON_LIST.include?(mime)
+    end
+    module_function :json?
+    # Content-Type that are JSON
+    JSON_LIST = [JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
+    private_constant :JSON_LIST
+  end
+
+  # Make HTTP calls, equivalent to rest-client
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    MIME_JSON = 'application/json'
-    MIME_WWW = 'application/x-www-form-urlencoded'
-    MIME_TEXT = 'text/plain'
-
     # Special query parameter: max number of items for list command
     MAX_ITEMS = 'max'
     # Special query parameter: max number of pages for list command
@@ -373,15 +383,15 @@ module Aspera
         end
         case content_type
         when nil # ignore
-        when MIME_JSON
+        when Mime::JSON
           req.body = JSON.generate(body) # , ascii_only: true
-          req['Content-Type'] = MIME_JSON
-        when MIME_WWW
+          req['Content-Type'] = Mime::JSON
+        when Mime::WWW
           req.body = URI.encode_www_form(body)
-          req['Content-Type'] = MIME_WWW
-        when MIME_TEXT
+          req['Content-Type'] = Mime::WWW
+        when Mime::TEXT
           req.body = body
-          req['Content-Type'] = MIME_TEXT
+          req['Content-Type'] = Mime::TEXT
         else Aspera.error_unexpected_value(content_type){'body type'}
         end
         # set headers
@@ -401,12 +411,12 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result_http = response
-          result_mime = self.class.parse_header(result_http['Content-Type'] || MIME_TEXT)[:type]
+          result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
           Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, mime2= #{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
               result_http.code.to_s.start_with?('2') &&
-              !JSON_DECODE.include?(result_mime)
+              !Mime.json?(result_mime)
             total_size = result_http['Content-Length']&.to_i
             Log.log.debug('before write file')
             target_file = save_to_file
@@ -439,14 +449,14 @@ module Aspera
           end
         end
         Log.log.debug{"result: code=#{result_http.code} mime=#{result_mime}"}
-        # sometimes there is a UTF8 char (e.g. (c) ), TODO : related to mime type encoding ?
+        # sometimes there is a UTF8 char (e.g. © )
+        # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}
-        case result_mime
-        when *JSON_DECODE
+        if Mine.json?(result_mime)
           result_data = JSON.parse(result_http.body) rescue result_http.body
           Log.dump(:result_data, result_data)
-        else # when MIME_TEXT
+        else # Mime::TEXT
           result_data = result_http.body
         end
         RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
@@ -526,27 +536,27 @@ module Aspera
 
     # Create: `POST`
     def create(subpath, params, **kwargs)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => Mime::JSON}, body: params, content_type: Mime::JSON, **kwargs)
     end
 
     # Read: `GET`
     def read(subpath, query = nil, **kwargs)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query, **kwargs)
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => Mime::JSON}, query: query, **kwargs)
     end
 
     # Update: `PUT`
     def update(subpath, params, **kwargs)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON, **kwargs)
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => Mime::JSON}, body: params, content_type: Mime::JSON, **kwargs)
     end
 
     # Delete: `DELETE`
     def delete(subpath, params = nil, **kwargs)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params, **kwargs)
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => Mime::JSON}, query: params, **kwargs)
     end
 
     # Cancel: `CANCEL`
     def cancel(subpath, **kwargs)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON}, **kwargs)
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => Mime::JSON}, **kwargs)
     end
 
     # Query entity by general search (read with parameter `q`)
@@ -577,11 +587,8 @@ module Aspera
       end
     end
 
-    # Content-Type that are JSON
-    JSON_DECODE = [MIME_JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
-
     UNAVAILABLE_CODES = ['503']
 
-    private_constant :JSON_DECODE, :UNAVAILABLE_CODES
+    private_constant :UNAVAILABLE_CODES
   end
 end
