@@ -453,7 +453,7 @@ module Aspera
         # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}
-        if Mine.json?(result_mime)
+        if Mime.json?(result_mime)
           result_data = JSON.parse(result_http.body) rescue result_http.body
           Log.dump(:result_data, result_data)
         else # Mime::TEXT
