@@ -94,7 +94,7 @@ module Aspera
 
         def initialize(**_)
           super
-          options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox_all')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
@@ -418,7 +418,10 @@ module Aspera
             return package_send
           when :list
             list, total = list_packages_with_filter
-            return Main.result_object_list(list, total: total, fields: %w[id title release_date total_bytes total_files created_time state])
+            fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
+            fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
+            fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
+            return Main.result_object_list(list, total: total, fields: fields)
           end
         end
 

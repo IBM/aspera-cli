@@ -4072,7 +4072,9 @@ It can be configured:
 
 - Using `taskschd.msc` (UI)
 
-#### Unix-like Scheduler
+#### SystemD Scheduler
+
+#### Cron Scheduler
 
 Unix-like systems (Linux, ...) provide `cron`, configured using a [`crontab`](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
 
@@ -4082,12 +4084,12 @@ For example, on Linux it is convenient to create a wrapping script, e.g. `cron_<
 
 ```shell
 #!/bin/bash
-# load the Ruby environment
+# Load the Ruby environment, e.g. if using rvm:
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
-# set a timeout protection, just in case <%=cmd%> is frozen 
+# Set a timeout protection, just in case <%=cmd%> is frozen 
 tmout=30m
-# forward arguments to <%=cmd%>
+# Forward arguments to <%=cmd%>
 exec timeout ${tmout} <%=cmd%> "${@}"
 ```
 
@@ -6772,56 +6774,63 @@ One can conveniently use the JSON format with prefix `@json:`.
 
 ### Faspex 5: Inbox selection
 
-By default, package operations: `receive` and `list` are performed on the user's inbox.
+By default, package operations: `receive` and `list` are performed on the user's inbox (**My packages**).
 
 To select another inbox, use option `box` with one of the following values:
 
-| `box`               | Comment |
-|---------------------|----------------------------------------------------------------------|
-| `inbox`             | Default |
-| `inbox_history`     | |
-| `inbox_all`         | |
-| `inbox_all_history` | |
-| `outbox`            | |
-| `outbox_history`    | |
-| `pending`           | |
-| `pending_history`   | |
-| `all`               | |
-| `ALL`               | All inboxes of all users. **admin only**. |
-| Open value          | If `group_type` is `shared_inboxes`: name of a shared inbox (default)<%=br%>If `group_type` is `workgroups`: workgroup name |
+| `box`               | Comment                                  |
+|---------------------|------------------------------------------|
+| `inbox_all`         | All packages (not archived) **Default**. |
+| `inbox_all_history` | All archived packages.                   |
+| `inbox`             | My packages. (not archived)              |
+| `inbox_history`     | My archived packages.                    |
+| `outbox`            | Sent packages.                           |
+| `outbox_history`    | Archived sent packages.                  |
+| `pending`           | Pending packages.                        |
+| `pending_history`   | Archived pending packages.               |
+| `all`               | All boxes accessible by current user.    |
+| `ALL`               | All boxes of all users. **admin only**.  |
+| `<name>`            | Name of shared ibox or workgroup.<%=br%>If option `group_type` is `shared_inboxes`: name of a shared inbox (default).<%=br%>If `group_type` is `workgroups`: name of workgroup. |
 
 > [!NOTE]
 > In case the name of the `box` is an open value, use option `group_type` set to either `shared_inboxes` or `workgroups`.
+> A `submit_only` user cannot list packages in a shared inbox.
 
 ### Faspex 5: Send a package
 
-A package can be sent with the command:
+Use the following command to send a package:
 
 ```shell
 <%=cmd%> faspex5 packages send [extended value: Hash with package info] [files...]
 ```
 
-The `Hash` creation **Command Parameter** provided to command corresponds to the Faspex 5 API: `POST /packages` (refer to the API reference for a full list of parameters, or look at request in browser).
+The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint `POST /packages`.
+Refer to the API reference for a full list of supported fields, or inspect such request when interacting with a browser.
 
-Required fields are `title` and `recipients`.
+The following fields are required:
+
+- `title` - the package title
+- `recipients` - the intended recipients
 
 > [!NOTE]
-> Option `box` does not select recipient shared inbox.
-> Use parameter `recipients` for that.
+> The `box` option does not select a recipient shared inbox.
+> Use parameter `recipients` to send a package to a specific shared inbox.
 
-Example (assuming a default preset is created for the connection information):
+Basic example (assuming a default preset has been configured for connection information):
 
 ```shell
 <%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybigfile1
 ```
 
-Longer example for the payload of `@json:`:
+#### Specifying Recipients
+
+The Faspex 5 API expects recipients to be an `Array` of `Hash`, each containing a `name` field and an optional `recipient_type` field:
 
 ```json
 {"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}
 ```
 
-`recipient_type` is one of (Refer to API):
+Valid values for `recipient_type` are (API):
 
 - `user`
 - `workgroup`
@@ -6829,32 +6838,41 @@ Longer example for the payload of `@json:`:
 - `distribution_list`
 - `shared_inbox`
 
-<%=tool%> adds some convenience:
-The API expects the field `recipients` to be an `Array` of `Hash`, each with field `name` and optionally `recipient_type`.
-<%=tool%> also accepts an `Array` of `String`, with simply a recipient name.
-Then, <%=tool%> will look up existing contacts among all possible types, use it if a single match is found, and set the `name` and `recipient_type` accordingly.
-Else an exception is sent.
+#### Simplified recipient format
 
-> [!NOTE]
-> The lookup is case-insensitive and on partial matches.
+As a convenience, <%=tool%> also accepts plain `String`s in the recipients `Array` rather than `Hash`es:
 
 ```json
 {"title":"some title","recipients":["user@example.com"]}
 ```
 
-To send to a shared inbox, specify `recipient_type=shared_inbox`:
+When `Strings` are provided, <%=tool%> automatically looks up the contact across all recipient types.
+If exactly one match is found, the `name` and `recipient_type` fields are resolved automatically.
+If no match or multiple matches are found, an exception is raised.
+
+> [!NOTE]
+> The lookup is case-insensitive and on partial matches.
+
+#### Sending to a shared inbox
+
+To address a shared inbox, set `recipient_type` to `shared_inbox`:
 
 ```json
 {"title":"some title","recipients":[{"recipient_type":"shared_inbox","name":"box name"}]}
 ```
 
-If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an `Array` of values (from the list above). e.g. :
+#### Restricting the lookup to specific recipient types
+
+To limit automatic contact lookup to one or more specific types, include the `recipient_types` field with either a single value or an `Array` of values:
 
 ```json
 {"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
 ```
 
-To enable content protection (CSEAR), set parameter `ear_enabled` to `true` in the package creation payload (refer to Faspex package creation API).
+#### Content Protection (Encryption at Rest)
+
+To enable content protection (CSEAR), set parameter `ear_enabled` to `true` in the package creation payload.
+Refer to the Faspex package creation API for full details.
 
 The following error is returned by Faspex, if CSEAR was not specified in the package creation and if it is configured as mandatory on the server:
 
@@ -6862,16 +6880,15 @@ The following error is returned by Faspex, if CSEAR was not specified in the pac
 the provided encryption value (no) does not match the expected server side encryption value (yes)
 ```
 
-### Faspex 5: Send a package with metadata
+#### Package with metadata
 
-It's the same as sending a package, but with an extra field `metadata` in the package info.
+To attach metadata to a package, include the `metadata` field in the package creation payload.
+Refer to the API documentation.
+Each key corresponds to a metadata field name, and its value is the metadata value:
 
 ```json
 {"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
 ```
-
-Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
-(Refer to API documentation for more details).
 
 ### Faspex 5: List packages
 
@@ -6879,14 +6896,14 @@ Option `box` can be used to list packages from a specific box (see [Inbox Select
 
 Option `query` can be used to filter the list of packages, based on native API parameters, directly sent to [Faspex 5 API `GET /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#getAllPackages).
 
-| Parameter | Type  | Description |
-|---------|---------|-----------------------------------------------------------------------|
-| `offset`| Native  | Managed by <%=tool%>: Offset of first package. Default: 0 |
-| `limit` | Native  | Managed by <%=tool%>: # of packages per API call. Default: 100 |
-| `q`     | Native  | General search string<%=br%>case-insensitive, matches if value is contained in several fields |
-| ...     | Native  | Other native parameters are supported (Refer to API documentation) |
-| `max`   | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
-| `pmax`  | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
+| Parameter | Type  | Description                                       |
+|---------|---------|---------------------------------------------------|
+| `offset`| Native  | Managed by <%=tool%>: Offset of first package.<%=br%>Default: `0` |
+| `limit` | Native  | Managed by <%=tool%>: # of packages per API call.<%=br%>Default: `100` |
+| `q`     | Native  | General search string, case-insensitive.<%=br%>Matches if value is contained in one of several fields. |
+| ...     | Native  | Other native parameters are supported.<%=br%>Refer to API documentation. |
+| `max`   | Special | Maximum number of **items** to retrieve<%=br%>Stop pages when the maximum is passed. |
+| `pmax`  | Special | Maximum number of **pages** to request.<%=br%>Stop pages when the maximum is passed. |
 
 A **Command Parameter** in last position, of type `Proc`, can be used to filter the list of packages.
 This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
