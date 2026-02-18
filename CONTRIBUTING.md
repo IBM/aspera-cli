@@ -237,10 +237,10 @@ When preparing for a new release, do the following:
 bundle exec rake test:run
 ```
 
-- Verify that the container builds successfully (using the beta version):
+- Verify that the container builds successfully (using the local gem file):
 
 ```bash
-bundle exec rake container:build
+bundle exec rake container:build'[local]'
 bundle exec rake container:test
 ```
 
