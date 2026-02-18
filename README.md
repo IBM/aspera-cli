@@ -17,7 +17,7 @@ Use it from the terminal or in scripts to:
 Choose what best suits you:
 
 | Resource | Link |
-|----------|------|
+| -------- | ---- |
 | **Online manual** | [docs/README.md](docs/README.md) |
 | **PDF manual** | In [releases](https://github.com/IBM/aspera-cli/releases) |
 | **RubyGems** | [rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli) |
