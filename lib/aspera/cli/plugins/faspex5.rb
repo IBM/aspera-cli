@@ -684,7 +684,7 @@ module Aspera
                 @api_v5.create(invitation_endpoint, params)
               end
             when :resend
-              @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend")
+              @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend", nil)
               return Main.result_status('Invitation resent')
             else
               return entity_execute(

@@ -6031,6 +6031,7 @@ f5_user_profile_mod:
     - modify
     - '@json:{"preference":{"connect_disabled":false}}'
 f5_invite_create:
+  $comment: public invitation
   args:
     - faspex5
     - invitations
@@ -6055,11 +6056,32 @@ f5_invite_id:
     - list
     - --fields=id
     - --format=csv
-f5_invited:
+f5_invite_show:
   tags:
     - nodoc
   depends_on:
     - f5_invite_id
+  args:
+    - faspex5
+    - invitation
+    - show
+    - $(read_value_from(:f5_invite_id).split("\n").first)
+f5_invite_resend:
+  tags:
+    - nodoc
+  depends_on:
+    - f5_invite_id
+  args:
+    - faspex5
+    - invitation
+    - resend
+    - $(read_value_from(:f5_invite_id).split("\n").first)
+f5_invite_delete:
+  tags:
+    - nodoc
+  depends_on:
+    - f5_invite_show
+    - f5_invite_resend
   args:
     - faspex5
     - invitation
