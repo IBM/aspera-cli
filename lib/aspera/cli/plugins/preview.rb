@@ -90,8 +90,8 @@ module Aspera
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             values = if opt.key?(:values)
               opt[:values]
-            elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
-              Allowed::TYPES_BOOLEAN
+            elsif BoolValue.symbol?(opt[:default])
+              BoolValue::TYPES
             end
             options.declare(opt[:name], opt[:description].capitalize, allowed: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
           end

@@ -12,6 +12,37 @@ require 'optparse'
 
 module Aspera
   module Cli
+    module BoolValue
+      # boolean options are set to true/false from the following values
+      YES_SYM = :yes
+      NO_SYM = :no
+      FALSE_VALUES = [NO_SYM, false].freeze
+      TRUE_VALUES = [YES_SYM, true].freeze
+      private_constant :YES_SYM, :NO_SYM, :FALSE_VALUES, :TRUE_VALUES
+      # Boolean values
+      # @return [Array<true, false, :yes, :no>]
+      ALL = (TRUE_VALUES + FALSE_VALUES).freeze
+      TYPES = [FalseClass, TrueClass].freeze
+      SYMBOLS = [NO_SYM, YES_SYM].freeze
+      # @return `true` if value is a value for `true` in ALL
+      def true?(enum)
+        Aspera.assert_values(enum, ALL){'boolean'}
+        return TRUE_VALUES.include?(enum)
+      end
+
+      # @return [:yes, :no]
+      def to_sym(enum)
+        Aspera.assert_values(enum, ALL){'boolean'}
+        return TRUE_VALUES.include?(enum) ? YES_SYM : NO_SYM
+      end
+
+      # @return `true` if value is a value for `true` or `false` in ALL
+      def symbol?(sym)
+        return ALL.include?(sym)
+      end
+      module_function :true?, :to_sym, :symbol?
+    end
+
     # Constants to be used as parameter `allowed:` for `OptionValue`
     module Allowed
       # This option can be set to a single string or array, multiple times, and gives Array of String
@@ -20,7 +51,7 @@ module Aspera
       TYPES_SYMBOL_ARRAY = [Array, Symbol].freeze
       # Value will be coerced to int
       TYPES_INTEGER = [Integer].freeze
-      TYPES_BOOLEAN = [FalseClass, TrueClass].freeze
+      TYPES_BOOLEAN = BoolValue::TYPES
       # no value at all, it's a switch
       TYPES_NONE = [].freeze
       TYPES_ENUM = [Symbol].freeze
@@ -74,7 +105,7 @@ module Aspera
             @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..-1]
           elsif allowed.all?(Class)
             @types = allowed
-            @values = Manager::BOOLEAN_VALUES if allowed.eql?(Allowed::TYPES_BOOLEAN)
+            @values = BoolValue::ALL if allowed.eql?(Allowed::TYPES_BOOLEAN)
             # Default value for array
             @object ||= [] if @types.first.eql?(Array) && !@types.include?(NilClass)
             @object ||= {} if @types.first.eql?(Hash) && !@types.include?(NilClass)
@@ -110,7 +141,7 @@ module Aspera
         Aspera.assert(!@deprecation, type: warn){"Option #{@option} is deprecated: #{@deprecation}"}
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
         Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
-        new_value = Manager.enum_to_bool(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
+        new_value = BoolValue.true?(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
         new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
         new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
         # Setting a Hash to null set an empty hash
@@ -142,20 +173,7 @@ module Aspera
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
     class Manager
-      BOOLEAN_SIMPLE = %i[no yes].freeze
       class << self
-        # @return `true` if value is a value for `true` in BOOLEAN_VALUES
-        def enum_to_bool(enum)
-          Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
-          return TRUE_VALUES.include?(enum)
-        end
-
-        # @return :yes ot :no
-        def enum_to_yes_no(enum)
-          Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
-          return TRUE_VALUES.include?(enum) ? BOOL_YES : BOOL_NO
-        end
-
         # Find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
@@ -165,7 +183,7 @@ module Aspera
           matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
           Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values), type: BadArgument)
           Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching), type: BadArgument)
-          return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
+          return BoolValue.true?(matching.first) if allowed_values.eql?(BoolValue::ALL)
           return matching.first
         end
 
@@ -279,11 +297,11 @@ module Aspera
         case option_attrs.types
         when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN
           # This option value must be a symbol (or array of symbols)
-          set_option(option_symbol, Manager.enum_to_bool(default), where: 'default') if option_attrs.values.eql?(BOOLEAN_VALUES) && !default.nil?
+          set_option(option_symbol, BoolValue.true?(default), where: 'default') if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
           value = get_option(option_symbol)
           help_values =
             if option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
-              highlight_current_in_list(BOOLEAN_SIMPLE, self.class.enum_to_yes_no(value))
+              highlight_current_in_list(BoolValue::SYMBOLS, BoolValue.to_sym(value))
             else
               highlight_current_in_list(option_attrs.values, value)
             end
@@ -636,12 +654,6 @@ module Aspera
           unprocessed_options.delete(k)
         end
       end
-      # boolean options are set to true/false from the following values
-      BOOL_YES = BOOLEAN_SIMPLE.last
-      BOOL_NO = BOOLEAN_SIMPLE.first
-      FALSE_VALUES = [BOOL_NO, false].freeze
-      TRUE_VALUES = [BOOL_YES, true].freeze
-      BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
 
       # Option name separator on command line, e.g. in --option-blah, third "-"
       OPTION_SEP_LINE = '-'
@@ -655,7 +667,7 @@ module Aspera
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
 
-      private_constant :BOOL_YES, :BOOL_NO, :FALSE_VALUES, :TRUE_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
+      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
     end
   end
 end

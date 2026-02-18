@@ -110,6 +110,7 @@ A few macros and environment variables control certain aspects of the build:
 | `ASPERA_CLI_TEST_CONF_URL`  | URL for configuration file with secrets for tests.  |
 | `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.      |
 | `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
+| `LOG_SECRETS`               | Change log secrets in `rake` tasks.                   |
 | `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
 | `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
 | `SIGNING_KEY_PEM`           | PEM of signing key.                                 |
