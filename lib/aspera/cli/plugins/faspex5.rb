@@ -236,17 +236,12 @@ module Aspera
           rescue Cli::BadArgument
             # paths is optional
           end
+          box = options.get_option(:box)
           download_params = {
-            type:          'received',
+            type:          Api::Faspex.box_type(box),
             transfer_type: Api::Faspex::TRANSFER_CONNECT
           }
-          box = options.get_option(:box)
-          case box
-          when /outbox/ then download_params[:type] = 'sent'
-          when *Api::Faspex::API_LIST_MAILBOX_TYPES then nil # nothing to do
-          else # shared inbox / workgroup
-            download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id']
-          end
+          download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
           packages.each do |package|
             pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
@@ -389,12 +384,7 @@ module Aspera
           when :show
             return Main.result_single_object(@api_v5.read("packages/#{package_id}"))
           when :browse
-            location = case options.get_option(:box)
-            when 'inbox' then 'received'
-            when 'outbox' then 'sent'
-            else raise BadArgument, 'Browse only available for inbox and outbox'
-            end
-            return browse_folder("packages/#{package_id}/files/#{location}")
+            return browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}")
           when :status
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             status = wait_package_status(package_id, status_list: status_list)

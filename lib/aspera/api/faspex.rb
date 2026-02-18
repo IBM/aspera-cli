@@ -66,7 +66,8 @@ module Aspera
       RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
       PACKAGE_TERMINATED = %w[completed failed].freeze
       # list of supported mailbox types (to list packages)
-      API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
+      SENT_MAILBOX_TYPES = %w[outbox outbox_history].freeze
+      API_LIST_MAILBOX_TYPES = (%w[inbox inbox_history inbox_all inbox_all_history pending pending_history all] + SENT_MAILBOX_TYPES).freeze
       # PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
       # Faspex API v5: get transfer spec for connect
       TRANSFER_CONNECT = 'connect'
@@ -125,6 +126,12 @@ module Aspera
         # @return true if the URL is a public link
         def public_link?(url)
           url.include?('?context=')
+        end
+
+        # Depending on box, the package files are either: `received` or `sent`
+        # @return [:sent, :received] the type of mailbox
+        def box_type(box)
+          SENT_MAILBOX_TYPES.include?(box) || box == 'ALL' ? :sent : :received
         end
       end
       attr_reader :pub_link_context

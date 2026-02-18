@@ -17,6 +17,7 @@ Released: [Place date of release here]
 * `config`: Deprecated and removed action `ascp connect`.
 * **global**: Deprecated and removed option `property` made redundant with `@:` and dotted values. Instead of `--property=foo bar`, use `@: foo=bar`.
 * `faspex5`: Default value for option `box` is now `inbox_all` to match web UI, previously: `inbox`.
+* `faspex5`: Package browsing now available for all inbox types.
 
 ## 4.25.2
 
