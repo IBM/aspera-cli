@@ -843,7 +843,7 @@ serv_key:
     - /
     - "--password=@none:"
     - --ssh-options=@json:{"number_of_password_prompts":0}
-    - --ssh-keys=$(read_value_from 'serv_key_path')
+    - --ssh-keys=$(read_value_from :serv_key_path)
 serv_pr1:
   tags:
     - nodoc
@@ -1287,26 +1287,26 @@ nd_xfer_ops3:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from :nd_xfer_id)
 nd_xfer_ops4:
   args:
     - node
     - transfer
     - modify
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from :nd_xfer_id)
     - '@json:{"target_rate_kbps":10000}'
 nd_xfer_ops5:
   args:
     - node
     - transfer
     - show
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from :nd_xfer_id)
 nd_xfer_ops6:
   args:
     - node
     - transfer
     - cancel
-    - $(read_value_from 'nd_xfer_id')
+    - $(read_value_from :nd_xfer_id)
 nd_xfer_ops7:
   args:
     - node
@@ -1723,7 +1723,7 @@ nd_ak_bearerf:
     - do
     - self
     - permission
-    - "%id:$(read_value_from 'bearer_root_id')"
+    - "%id:$(read_value_from :bearer_root_id)"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearerg:
@@ -1762,8 +1762,8 @@ nd_ak_beareri:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
-    - --password=Bearer $(read_value_from 'node_bearer_token')
-    - --root-id=$(read_value_from 'bearer_root_id')
+    - --password=Bearer $(read_value_from :node_bearer_token)
+    - --root-id=$(read_value_from :bearer_root_id)
     - access_key
     - do
     - self
@@ -1872,7 +1872,7 @@ aoc_faspex_gatewayb:
     - send
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
-  post: stop_process 'aoc_faspex_gateway'
+  post: stop_process :aoc_faspex_gateway
 aocg1:
   args:
     - -N
@@ -2319,7 +2319,7 @@ aoc_file_id_2:
     - aoc
     - files
     - show
-    - "%id:$(read_value_from 'aoc_file_id')"
+    - "%id:$(read_value_from :aoc_file_id)"
 aoc_file_id_3:
   depends_on:
     - aoc_files_transfer
@@ -2507,7 +2507,7 @@ aoc_short_link_pub_modify:
     - /testdst
     - public
     - modify
-    - $(read_value_from 'aoc_short_link_pub_create')
+    - $(read_value_from :aoc_short_link_pub_create)
     - "@:"
     - access_levels=edit
 aocshlk1:
@@ -2564,7 +2564,7 @@ aocp3b:
     - aoc
     - packages
     - receive
-    - $(read_value_from 'package_id3')
+    - $(read_value_from :package_id3)
     - --to-folder=$(TMP)
 aoc_pack_recv_id3:
   depends_on:
@@ -2573,7 +2573,7 @@ aoc_pack_recv_id3:
     - aoc
     - packages
     - receive
-    - $(read_value_from 'package_id3')
+    - $(read_value_from :package_id3)
     - --to-folder=$(TMP)
     - /
 aocp3d:
@@ -2583,7 +2583,7 @@ aocp3d:
     - aoc
     - packages
     - browse
-    - $(read_value_from 'package_id3')
+    - $(read_value_from :package_id3)
     - /
 aocp4:
   args:
@@ -2780,7 +2780,7 @@ aoc_adm_ws_lst5:
     - shared_folder
     - "%name:@preset:aoc.other_workspace"
     - member
-    - $(read_value_from 'shared_folder_id')
+    - $(read_value_from :shared_folder_id)
     - list
 aoc_adm_nd_events:
   args:
@@ -2982,7 +2982,7 @@ aoc_transfer_id:
     - analytics
     - transfers
     - organization
-    - --query=@json:{"status":"completed","direction":"receive","limit":1}
+    - --query=@json:{"status":"completed","direction":"send","limit":1}
     - --fields=uuid
 aoc_ana_files:
   depends_on:
@@ -2995,7 +2995,7 @@ aoc_ana_files:
     - files
     - organization
     - ""
-    - $(read_value_from 'aoc_transfer_id')
+    - $(read_value_from :aoc_transfer_id)
 aoc16:
   args:
     - --preset=aoc_admin
@@ -3171,7 +3171,7 @@ aoccltregd:
     - admin
     - client_registration_token
     - delete
-    - $(read_value_from 'client_reg_id')
+    - $(read_value_from :client_reg_id)
 aoc_adm_node_bearer:
   $comment: TODO fix this
   tags:
@@ -3437,7 +3437,7 @@ aocauto3:
     - automation
     - workflow
     - action
-    - $(read_value_from 'wf_id')
+    - $(read_value_from :wf_id)
     - create
     - '@json:{"name":"toto"}'
 #		| tee action.info
@@ -3453,7 +3453,7 @@ aocauto10:
     - automation
     - workflow
     - delete
-    - $(read_value_from 'wf_id')
+    - $(read_value_from :wf_id)
 orch_health:
   args:
     - orchestrator
@@ -3580,7 +3580,7 @@ orch_workorder_status:
     - orchestrator
     - workorder
     - status
-    - $(read_value_from 'orch_workorder_id')
+    - $(read_value_from :orch_workorder_id)
 orch_workorder_cancel:
   depends_on:
     - orch_workorder_id
@@ -3588,7 +3588,7 @@ orch_workorder_cancel:
     - orchestrator
     - workorder
     - cancel
-    - $(read_value_from 'orch_workorder_id')
+    - $(read_value_from :orch_workorder_id)
 orch_workorder_reset:
   depends_on:
     - orch_workorder_id
@@ -3596,7 +3596,7 @@ orch_workorder_reset:
     - orchestrator
     - workorder
     - reset
-    - $(read_value_from 'orch_workorder_id')
+    - $(read_value_from :orch_workorder_id)
 orch_workorder_output:
   depends_on:
     - orch_workorder_id
@@ -3604,7 +3604,7 @@ orch_workorder_output:
     - orchestrator
     - workorder
     - output
-    - $(read_value_from 'orch_workorder_id')
+    - $(read_value_from :orch_workorder_id)
 orch_workstep_status:
   $comment: TODO get some workstep id
   tags:
@@ -4196,7 +4196,7 @@ conf_ascp_installg:
   args:
     - config
     - download
-    - $(read_value_from 'conf_transferd_url')
+    - $(read_value_from :conf_transferd_url)
     - --to-folder=$(TMP)
 conf_ascp_info_other_folder:
   depends_on:
@@ -5506,7 +5506,7 @@ f5_p3aa:
     - faspex5
     - packages
     - status
-    - $(read_value_from 'f5_p3a')
+    - $(read_value_from :f5_p3a)
     - "@list:,failed,completed"
 f5_package_id:
   depends_on:
@@ -5527,7 +5527,7 @@ f5_p3c:
     - faspex5
     - packages
     - show
-    - $(read_value_from 'f5_package_id')
+    - $(read_value_from :f5_package_id)
 f5_p3d:
   depends_on:
     - f5_package_id
@@ -5535,7 +5535,7 @@ f5_p3d:
     - faspex5
     - packages
     - status
-    - $(read_value_from 'f5_package_id')
+    - $(read_value_from :f5_package_id)
 f5_p3e:
   depends_on:
     - f5_package_id
@@ -5543,7 +5543,7 @@ f5_p3e:
     - faspex5
     - packages
     - browse
-    - $(read_value_from 'f5_package_id')
+    - $(read_value_from :f5_package_id)
     - --query=@json:{"recursive":true}
 f5_p3f:
   depends_on:
@@ -5552,7 +5552,7 @@ f5_p3f:
     - faspex5
     - packages
     - receive
-    - $(read_value_from 'f5_package_id')
+    - $(read_value_from :f5_package_id)
     - --to-folder=$(TMP)
     - --ts=@json:{"content_protection_password":"my_secret_here"}
 f5_p3g:
@@ -5572,7 +5572,7 @@ f5_p3h:
     - faspex5
     - packages
     - delete
-    - $(read_value_from 'f5_package_id')
+    - $(read_value_from :f5_package_id)
 f5_pack_shbox:
   args:
     - faspex5
@@ -5614,7 +5614,7 @@ f5_pack_shboxd:
     - packages
     - show
     - --box=@preset:faspex5.shared_box_name
-    - $(read_value_from 'f5_pack_shboxc')
+    - $(read_value_from :f5_pack_shboxc)
 f5_pack_shboxe:
   depends_on:
     - f5_pack_shboxc
@@ -5623,7 +5623,7 @@ f5_pack_shboxe:
     - packages
     - receive
     - --box=@preset:faspex5.shared_box_name
-    - $(read_value_from 'f5_pack_shboxc')
+    - $(read_value_from :f5_pack_shboxc)
     - --to-folder=$(TMP)
 f5_pack_shbox_public:
   args:
@@ -5683,7 +5683,7 @@ f5_pack_wrkgrpd:
     - show
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(read_value_from 'workgroup_package_id1')
+    - $(read_value_from :workgroup_package_id1)
 f5_pack_wrkgrpe:
   depends_on:
     - workgroup_package_id1
@@ -5693,7 +5693,7 @@ f5_pack_wrkgrpe:
     - receive
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(read_value_from 'workgroup_package_id1')
+    - $(read_value_from :workgroup_package_id1)
     - --to-folder=$(TMP)
 f5_sh_fold:
   args:
@@ -6065,7 +6065,7 @@ f5_invited:
     - invitation
     - delete
     - --bulk=yes
-    - "@lines:@file:$(out_file 'f5_invite_id')"
+    - "@lines:@file:$(out_file :f5_invite_id)"
 f5_webauth:
   tags:
     - interactive
@@ -6101,7 +6101,7 @@ f5_fxgw_test:
     Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
     Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
     Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
-    stop_process 'f5_fxgw_start'
+    stop_process :f5_fxgw_start
 f5_postproc_pid:
   tags:
     - noblock
@@ -6126,7 +6126,7 @@ f5_postproc_test:
     Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
     Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
     sleep 20
-    stop_process 'f5_postproc_pid'
+    stop_process :f5_postproc_pid
 f5_postproc_test_with_key:
   tags:
     - noblock
@@ -6137,7 +6137,7 @@ f5_postproc_test_with_key:
     - '@json:{"url":"https://localhost:8554/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
-    stop_process 'f5_postproc_test_with_key'
+    stop_process :f5_postproc_test_with_key
 f5_postproc_test_with_key_cert:
   tags:
     - noblock
@@ -6148,7 +6148,7 @@ f5_postproc_test_with_key_cert:
     - '@json:{"url":"https://localhost:8555/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
   post: |
     sleep 5
-    stop_process 'f5_postproc_test_with_key_cert'
+    stop_process :f5_postproc_test_with_key_cert
 f5_cert_test:
   tags:
     - noblock
@@ -6159,7 +6159,7 @@ f5_cert_test:
     - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
-    stop_process 'f5_cert_test'
+    stop_process :f5_cert_test
 f5_cert_testb:
   tags:
     - noblock
@@ -6170,7 +6170,7 @@ f5_cert_testb:
     - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
-    stop_process 'f5_cert_testb'
+    stop_process :f5_cert_testb
 f5_cert_testc:
   tags:
     - noblock
@@ -6182,7 +6182,7 @@ f5_cert_testc:
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
-    stop_process 'f5_cert_testc'
+    stop_process :f5_cert_testc
 f5_cert_testd:
   tags:
     - noblock
@@ -6194,7 +6194,7 @@ f5_cert_testd:
     - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
-    stop_process 'f5_cert_testd'
+    stop_process :f5_cert_testd
 httpgw_nagios:
   args:
     - httpgw
@@ -6258,7 +6258,7 @@ faspio_bclean:
     - bridges
     - delete
     - --bulk=yes
-    - "@json:$(read_value_from 'faspio_bclean_list')"
+    - "@json:$(read_value_from :faspio_bclean_list)"
 alee_nagios:
   args:
     - -N
@@ -6332,7 +6332,7 @@ f4_prsb:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_package_id')
+    - $(read_value_from :f4_package_id)
     - --to-folder=$(TMP)
 f4_package_id2:
   tags:
@@ -6352,7 +6352,7 @@ f4_prsd:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_package_id2')
+    - $(read_value_from :f4_package_id2)
     - --to-folder=$(TMP)
     - --box=sent
 f4_package_id3:
@@ -6372,7 +6372,7 @@ f4_prib:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_package_id3')
+    - $(read_value_from :f4_package_id3)
     - --to-folder=$(TMP)
 f4_prl:
   tags:
@@ -6520,7 +6520,7 @@ f4_db1d:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_package_id4')
+    - $(read_value_from :f4_package_id4)
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
 f4_db1e:
@@ -6554,7 +6554,7 @@ f4_db1h:
     - faspex
     - package
     - receive
-    - $(read_value_from 'f4_package_id5')
+    - $(read_value_from :f4_package_id5)
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
 github_smoke_test:
