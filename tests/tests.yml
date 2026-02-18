@@ -60,13 +60,47 @@ shares_admin_1:
     - admin
     - node
     - list
-shares_admin_2:
+shares_admin_group_list:
   args:
     - shares
     - admin
     - group
     - all
     - list
+shares_admin_group_id:
+  tags:
+    - nodoc
+    - save_output
+  args:
+    - shares
+    - admin
+    - group
+    - all
+    - list
+    - --fields=id
+shares_admin_group_users:
+  tags:
+    - nodoc
+  args:
+    - shares
+    - admin
+    - group
+    - all
+    - users
+    - $(read_value_from('shares_admin_group_id').split("\n").first)
+    - list
+shares_admin_group_ldap:
+  tags:
+    - nodoc
+  args:
+    - shares
+    - admin
+    - group
+    - ldap
+    - add
+    - "@list:,foo,bar"
+    - --bulk=yes
+    - --bfail=no
 shares_admin_3:
   args:
     - shares
@@ -153,6 +187,21 @@ shares_admin_12:
     - user_permissions
     - "%name:@preset:shares.share"
     - list
+shares_admin_xfer_settings:
+  args:
+    - shares
+    - admin
+    - transfer_settings
+    - show
+    - --format=json
+shares_admin_xfer_set_chg:
+  args:
+    - shares
+    - admin
+    - transfer_settings
+    - modify
+    - "@:"
+    - min_connect_version=3.6.1
 shares_1:
   args:
     - shares
@@ -311,7 +360,6 @@ serv_detect:
     - config
     - detect
     - "@preset:server_user.url"
-    - server
 serv_wizard:
   args:
     - config
@@ -3964,10 +4012,14 @@ sync_other_delete_fail:
     - delete
     - not_exist
 conf_detect:
+  pre: |
+    config = conf_data(conf_data('default.server'))
+    uri = URI.parse(config['url'])
+    remote_host=uri.host
   args:
     - config
     - detect
-    - "@preset:node_user.url"
+    - $(remote_host)
 conf_detectb:
   description: No Aspera app there.
   tags:
@@ -4072,7 +4124,19 @@ conf_ascp_use:
     - set
     - GLOBAL
     - sdk_folder
-    - $(`which ascp`)
+    - $(Pathname.new(`which ascp`).parent)
+conf_ascp_get:
+  depends_on:
+    - conf_ascp_use
+  tags:
+    - tmp_conf
+    - nodoc
+  args:
+    - config
+    - preset
+    - get
+    - GLOBAL
+    - sdk_folder
 conf_ascp_sdk_folder_save:
   tags:
     - save_output
