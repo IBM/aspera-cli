@@ -4059,7 +4059,24 @@ The same progress bar is used for any type of transfer, using `ascp`, server to 
 
 It is useful to configure automated scheduled execution.
 <%=tool%> does not provide an internal scheduler.
-Instead, use the service provided by the Operating system:
+Instead, use the service provided by the Operating system as described in the following sections.
+
+#### Wrapping script
+
+For example, on Linux it is convenient to create a wrapping script, e.g. `/home/xfer/bin/<%=cmd%>_tool` that will set up the environment (e.g. Ruby) to properly start <%=tool%>:
+
+```shell
+#!/bin/bash
+# Load the Ruby environment, e.g. if using rvm:
+. /etc/profile.d/rvm.sh
+rvm use 2.6 --quiet
+# Set a timeout protection, just in case <%=cmd%> is frozen 
+tmout=30m
+# Forward arguments to <%=cmd%>
+exec timeout ${tmout} <%=cmd%> "${@}"
+```
+
+On Windows, a `cmd` or PowerShell script...
 
 #### Windows Scheduler
 
@@ -4074,31 +4091,76 @@ It can be configured:
 
 #### SystemD Scheduler
 
+SystemD based systems (most major Linux distributions) allow scheduling services with the [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) unit.
+
+1. Create a one-shot service: `/etc/systemd/system/my_<%=cmd%>_job.service`
+
+    ```ini
+    [Unit]
+    Description=Run <%=cmd%> preview scan
+
+    [Service]
+    Type=oneshot
+    ExecStart=/home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --display=error
+    User=xfer
+    Group=xfer
+    ```
+
+1. Create the timer: `/etc/systemd/system/my_<%=cmd%>_job.timer` (same base name)
+
+    ```ini
+    [Unit]
+    Description=Hourly execution of my_<%=cmd%>_job
+
+    [Timer]
+    OnCalendar=hourly
+    AccuracySec=1min
+    Persistent=true
+
+    [Install]
+    WantedBy=timers.target
+    ```
+
+1. Reload systemd:
+
+    ```shell
+    sudo systemctl daemon-reload
+    ```
+
+1. Enable the timer on boot
+
+    ```shell
+    sudo systemctl enable --now my_<%=cmd%>_job.timer
+    ```
+
+Check status:
+
+```shell
+systemctl status my_<%=cmd%>_job.timer
+```
+
+```shell
+systemctl list-timers | grep my_<%=cmd%>_job
+```
+
+Run service once to test:
+
+```shell
+sudo systemctl start my_<%=cmd%>_job.service
+```
+
 #### Cron Scheduler
 
 Unix-like systems (Linux, ...) provide `cron`, configured using a [`crontab`](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
 
 Linux also provides `anacron`, if tasks are hourly or daily.
 
-For example, on Linux it is convenient to create a wrapping script, e.g. `cron_<%=cmd%>` that will set up the environment (e.g. Ruby) to properly start <%=tool%>:
-
-```shell
-#!/bin/bash
-# Load the Ruby environment, e.g. if using rvm:
-. /etc/profile.d/rvm.sh
-rvm use 2.6 --quiet
-# Set a timeout protection, just in case <%=cmd%> is frozen 
-tmout=30m
-# Forward arguments to <%=cmd%>
-exec timeout ${tmout} <%=cmd%> "${@}"
-```
-
 Example of cronjob created for user `xfer`.
 
 ```shell
 crontab<<EOF
-0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
+0    * * * *  /home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/bin/<%=cmd%>_tool preview trev --logger=syslog --display=error
 EOF
 ```
 
