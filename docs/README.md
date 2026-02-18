@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_META_BEGIN
-subtitle: "ascli 4.26.0.pre"
+subtitle: "ascli 4.25.3"
 author: "Laurent Martin"
 PANDOC_META_END
 -->
@@ -40,7 +40,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version: 4.26.0.pre
+Version: 4.25.3
 
 Laurent Martin/2016-2026
 
@@ -124,7 +124,7 @@ ascli --version
 ```
 
 ```text
-4.26.0.pre
+4.25.3
 ```
 
 > [!NOTE]
@@ -786,11 +786,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```bash
 mkdir temp_folder
-gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.3 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.3-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.3-gems aspera-cli-4.25.3-gems.tgz
 ```
 
 #### Unix-like
@@ -935,7 +935,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.25.3
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4654,7 +4654,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.3)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4699,7 +4699,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [graphical], text
+        --ui=ENUM                    Method to start browser: graphical, [text]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -4842,7 +4842,7 @@ OPTIONS:
         --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
         --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
+        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, pending, pending_history, all, outbox, outbox_history or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 
@@ -6446,7 +6446,7 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```shell
 admin analytics application_events
-admin analytics files organization '' aoc_transfer_id
+admin analytics files organization '' '$(read_value_from :aoc_transfer_id)'
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application list
@@ -6464,7 +6464,7 @@ admin bearer_token --display=data
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-admin client_registration_token delete client_reg_id
+admin client_registration_token delete '$(read_value_from :client_reg_id)'
 admin client_registration_token list
 admin contact list
 admin dropbox list
@@ -6502,12 +6502,12 @@ admin user modify %name:my_user_email @json:'{"deactivated":false}'
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
-admin workspace shared_folder %name:my_other_workspace member shared_folder_id list
+admin workspace shared_folder %name:my_other_workspace member '$(read_value_from :shared_folder_id)' list
 admin workspace_membership list
 admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-automation workflow action wf_id create @json:'{"name":"toto"}'
+automation workflow action '$(read_value_from :wf_id)' create @json:'{"name":"toto"}'
 automation workflow create @json:'{"name":"test_workflow"}'
-automation workflow delete wf_id
+automation workflow delete '$(read_value_from :wf_id)'
 automation workflow list
 automation workflow list --query=@json:'{"show_org_workflows":"true"}'
 automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id
@@ -6536,8 +6536,8 @@ files rename /some_folder testdst
 files short_link /testdst private create
 files short_link /testdst private list
 files short_link /testdst public create @: access_levels=upload --fields=id
-files short_link /testdst public modify aoc_short_link_pub_create @: access_levels=edit
-files show %id:aoc_file_id
+files short_link /testdst public modify '$(read_value_from :aoc_short_link_pub_create)' @: access_levels=edit
+files show '%id:$(read_value_from :aoc_file_id)'
 files show /
 files show testdst/test_file.bin
 files sync admin status /data/local_sync
@@ -6553,14 +6553,14 @@ gateway @json:'{"url":"https://localhost:12346/aspera/faspex"}'
 organization
 organization --format=image --fields=background_image_url --ui=text
 organization --url=my_public_link_recv_from_aoc_user
-packages browse package_id3 /
+packages browse '$(read_value_from :package_id3)' /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+packages receive '$(read_value_from :package_id3)' --to-folder=.
+packages receive '$(read_value_from :package_id3)' --to-folder=. /
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
-packages receive package_id3 --to-folder=.
-packages receive package_id3 --to-folder=. /
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_name"]}' test_file.bin
@@ -6765,7 +6765,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ```shell
 browse /
-browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=serv_key_path
+browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys='$(read_value_from :serv_key_path)'
 browse my_inside_folder/test_file.bin
 browse my_upload_folder/target_hot
 cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
@@ -7340,7 +7340,7 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > Add `ascli node` in front of the following commands:
 
 ```shell
---url=https://tst.example.com/path --password='Bearer node_bearer_token' --root-id=bearer_root_id access_key do self browse /
+--url=https://tst.example.com/path --password='Bearer $(read_value_from :node_bearer_token)' --root-id='$(read_value_from :bearer_root_id)' access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
 access_key do my_ak_name browse / --secret=my_ak_secret
@@ -7358,7 +7358,7 @@ access_key do my_ak_name node_info / --secret=my_ak_secret
 access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=my_ak_secret
 access_key do my_ak_name show %id:1 --secret=my_ak_secret
 access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no --secret=my_ak_secret
-access_key do self permission %id:bearer_root_id create @json:'{"access_type":"user","access_id":"666"}'
+access_key do self permission '%id:$(read_value_from :bearer_root_id)' create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / show 1
 access_key list
@@ -7413,12 +7413,12 @@ sync admin status /data/local_sync
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_sync_session_name","reset":true}'
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"reset":true}'
 transfer bandwidth_average
-transfer cancel nd_xfer_id
+transfer cancel '$(read_value_from :nd_xfer_id)'
 transfer list --query=@json:'{"active_only":true}'
 transfer list --query=@json:'{"reset":true}' --once-only=yes
-transfer modify nd_xfer_id @json:'{"target_rate_kbps":10000}'
+transfer modify '$(read_value_from :nd_xfer_id)' @json:'{"target_rate_kbps":10000}'
 transfer sessions
-transfer show nd_xfer_id
+transfer show '$(read_value_from :nd_xfer_id)'
 transport
 upload 'faux:///testfile1?1m' --to-folder=my_local_path
 upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
@@ -7707,29 +7707,29 @@ gateway @json:'{"url":"https://localhost:12346/aspera/faspex"}'
 health --url=https://faspex5.example.com/path
 invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
-packages browse f5_package_id --query=@json:'{"recursive":true}'
-packages delete f5_package_id
+packages browse '$(read_value_from :f5_package_id)' --query=@json:'{"recursive":true}'
+packages delete '$(read_value_from :f5_package_id)'
 packages list --box=ALL
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
 packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
-packages receive --box=my_shared_box_name f5_pack_shboxc --to-folder=.
-packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
+packages receive '$(read_value_from :f5_package_id)' --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
+packages receive --box=my_shared_box_name '$(read_value_from :f5_pack_shboxc)' --to-folder=.
+packages receive --box=my_workgroup --group-type=workgroups '$(read_value_from :workgroup_package_id1)' --to-folder=.
 packages receive ALL --once-only=yes --to-folder=.
 packages receive INIT --once-only=yes
-packages receive f5_package_id --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
-packages show --box=my_shared_box_name f5_pack_shboxc
-packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
-packages show f5_package_id
-packages status f5_p3a @list:,failed,completed
-packages status f5_package_id
+packages show '$(read_value_from :f5_package_id)'
+packages show --box=my_shared_box_name '$(read_value_from :f5_pack_shboxc)'
+packages show --box=my_workgroup --group-type=workgroups '$(read_value_from :workgroup_package_id1)'
+packages status '$(read_value_from :f5_p3a)' @list:,failed,completed
+packages status '$(read_value_from :f5_package_id)'
 postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
 shared browse %name:my_src
 shared list
@@ -8362,12 +8362,12 @@ health
 login_methods
 me
 package list --query.max=5
+package receive '$(read_value_from :f4_package_id)' --to-folder=.
+package receive '$(read_value_from :f4_package_id2)' --to-folder=. --box=sent
+package receive '$(read_value_from :f4_package_id3)' --to-folder=.
+package receive '$(read_value_from :f4_package_id4)' --recipient='*my_dbx' --to-folder=.
+package receive '$(read_value_from :f4_package_id5)' --recipient='*my_wkg' --to-folder=.
 package receive ALL --once-only=yes --to-folder=. --query.max=10
-package receive f4_package_id --to-folder=.
-package receive f4_package_id2 --to-folder=. --box=sent
-package receive f4_package_id3 --to-folder=.
-package receive f4_package_id4 --recipient='*my_dbx' --to-folder=.
-package receive f4_package_id5 --recipient='*my_wkg' --to-folder=.
 package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal","my_username"]}' test_file.bin
 package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
 package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*my_dbx]}' test_file.bin
@@ -8508,10 +8508,10 @@ workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
 workflow workorders my_workflow_id --fields=id --query.max_results=1
-workorder cancel orch_workorder_id
-workorder output orch_workorder_id
-workorder reset orch_workorder_id
-workorder status orch_workorder_id
+workorder cancel '$(read_value_from :orch_workorder_id)'
+workorder output '$(read_value_from :orch_workorder_id)'
+workorder reset '$(read_value_from :orch_workorder_id)'
+workorder status '$(read_value_from :orch_workorder_id)'
 workstep cancel 1
 workstep status 1
 ```
@@ -8670,7 +8670,7 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 
 ```shell
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
-bridges delete --bulk=yes @json:faspio_bclean_list
+bridges delete --bulk=yes @json:'$(read_value_from :faspio_bclean_list)'
 bridges list
 health
 ```
