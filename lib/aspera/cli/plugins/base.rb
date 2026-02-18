@@ -208,14 +208,14 @@ module Aspera
               return Main.result_object_list(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
               return Main.result_value_list(data)
             else
-              raise "An error occurred: unexpected result type for list: #{data.class}"
+              Aspera.error_unexpected_value(data.class.name){'list type'}
             end
           when :modify
             parameters = value_create_modify(command: command)
             api.update(one_res_path, parameters)
             return Main.result_status('modified')
           else
-            raise "unknown action: #{command}"
+            Aspera.error_unexpected_value(command){'command'}
           end
         end
 
