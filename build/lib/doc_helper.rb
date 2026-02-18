@@ -416,7 +416,7 @@ class DocHelper
 
   # Generate README.md from README.erb.md
   def generate
-    Aspera::Log.log.info("Generating doc for version #{build_version}")
+    Aspera::Log.log.info("Generating markdown doc for version #{build_version}")
     check_headings(@paths[:template])
     check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
     # get current plugins
@@ -424,6 +424,7 @@ class DocHelper
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
     plugin_manager.add_plugins_from_lookup_folders if plugin_manager.plugin_list.empty?
     @undocumented_plugins = plugin_manager.plugin_list
+    Aspera::Log.log.info{"Generating: #{@paths[:outfile]}"}
     tmp_file = [@paths[:outfile], 'tmp'].join('.')
     File.open(tmp_file, 'w') do |f|
       f.puts(ERB.new(File.read(@paths[:template]).sub("-->\n", "-->\n<!-- markdownlint-disable MD033 -->\n")).result(binding))

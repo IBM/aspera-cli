@@ -71,7 +71,6 @@ namespace :doc do
   end
 
   file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
-    Aspera::Log.log.info{"Generating: #{Paths::MD_MANUAL}"}
     Aspera::Environment.force_terminal_c
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
