@@ -252,7 +252,7 @@ If you don't have internet for the installation, refer to section [Installation 
 ```shell
 curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.24.1.osx-arm64
 chmod a+x ascli
-./ascli conf transferd install
+./ascli config transferd install
 ```
 
 #### Linux: GLIBC version
@@ -1258,16 +1258,16 @@ Refer to sections: [Usage](#usage).
 
 ### `ascp` command line
 
-If you want to use `ascp` directly as a command line, refer to IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) where [a section on `ascp` can be found](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
+To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
 
-Using `ascli` with plugin `server` for command line gives advantages over `ascp`:
+Using `ascli` with the `server` plugin instead of raw `ascp` provides several advantages:
 
 - Automatic resume on error
-- Configuration file
+- Configuration file support
 - Choice of transfer agents
-- Integrated support of multi-session
+- Built-in multi-session support
 
-All `ascp` options are supported either through transfer spec parameters (listed with `conf ascp spec`) and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`ascp_args` in `transfer_info`).
+All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
 
 ### Command line parsing, Special Characters
 
@@ -1414,7 +1414,7 @@ ascli config echo @json:'{"""k""":"""v""","""x""":true}'
 
 ```powershell
 $var="v"
-ascli conf echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
+ascli config echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
 ```
 
 ##### PowerShell 7
@@ -1447,14 +1447,14 @@ ascli config echo @json:'{"k":"v","x":true}'
 
 ```powershell
 $var="v"
-ascli conf echo  $('@json:{"k":"' + $var + '","x":true}')
+ascli config echo  $('@json:{"k":"' + $var + '","x":true}')
 ```
 
 - Use PowerShell structure and then convert to JSON string:
 
 ```powershell
 $var="v"
-ascli conf echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
+ascli config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
 ```
 
 #### Extended Values (JSON, Ruby, ...)
@@ -1676,10 +1676,12 @@ The value of **Options** and **Positional Arguments** is evaluated with the [Ext
 
 **Positional Arguments** are either:
 
-- **Commands**, typically at the beginning
-- **Command Parameters**, mandatory arguments, e.g. creation data or entity identifier
+- [**Commands**](#commands), typically at the beginning
+- [**Command Parameters**](#command-parameters), mandatory arguments, e.g. creation data or entity identifier
 
 When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a significant, pre-defined order.
+
+#### Commands
 
 **Commands** are typically entity types (e.g. `users`) or verbs (e.g. `create`) to act on those entities.
 Its value is a `String` that must belong to a fixed list of values in a given context.
@@ -1697,12 +1699,14 @@ ascli config ascp info
 
 Typically, **Commands** are located at the **beginning** of the command line.
 The provided command must match one of the supported commands in the given context.
-If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
+If a wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
-Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
+Standard entity **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional commands, especially to select sub-entities.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
 For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do <node_id> browse /`: `browse` is a sub-command of `node`.
+
+#### Command Parameters
 
 **Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
@@ -1710,35 +1714,13 @@ For example sub-commands appear after entity selection (identifier), e.g. `ascli
 > It could also have been designed as an option.
 > But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
 > The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
-> The disadvantage is that it is not possible to define a default value in a configuration file or environment variable using an option value.
-> Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
+> [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
 
 If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-A special Extended Value `@:` has the following meaning:
-
-- Take all remaining positional arguments
-- Expect each of them to have the format: `<path>=<value>`
-- `<path>` designates a path in a complex structure such as Hash or Array.
-  `.` is the path separator.
-  Each segment separated by a dot represents a key in a nested structure.
-  Integer index denote Array, and other denote Hash index.
-- `ascli` tries to convert `<value>` to the simplest type (bool, int, float, string).
-  If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
-  For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
-  This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
-
-Example:
-
-```bash
-ascli conf echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
-```
-
-```json
-{"a":{"b":1,"c":2,"d":["hello","world"]}}
-```
+The Extended Value `@:` takes all remaining positional arguments and expects each of them to use [dot-path notation](#dot-path-notation).
 
 The general structure of positional arguments is:
 
@@ -1774,23 +1756,21 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
 
 Exceptions and Special Cases:
 
-- **Short Forms**:
+- **Short Forms**
+
   Some options have short forms.
   For example, `-Ptoto` is equivalent to `--preset=toto`.
   Refer to the manual or `-h` for details.
-- **Flags**:
+- **Flags**
+
   Certain options are flags and do not require a value (e.g., `-N`).
-- **Option Terminator**:
+- **Option Terminator**
+
   The special option `--` ends option parsing.
   All subsequent arguments, including those starting with `-`, are treated as positional arguments.
-- **Dot Notation for Hash and Array**:
-  If an option name contains a dot (`.`), it is interpreted as a `Hash`.
-  Each segment separated by a dot represents a key in a nested structure.
-  `ascli` tries to convert the value to the simplest type (bool, int, float, string).
-  If a specific type is required, it can be specified using the `@json:` or `@ruby:` syntax.
-  For example, `--a.b.c=1` is equivalent to `--a=@json'{"b":{"c":1}}'`.
-  This allows specifying nested keys directly on the command line using a concise **dot-separated** syntax.
-- **Cumulative Hashes**:
+- [**dot-path notation**](#dot-path-notation)
+- **Cumulative Hashes**
+
   When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
   Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
   This can be used to start from an empty value, and not use the existing default value.
@@ -1944,8 +1924,11 @@ Effective only when `format` is `table` to display `single_object` or `object_li
 
 If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
 
-If value is `yes` (default), then objects are flattened, i.e. deep `Hash` are transformed into 1-level `Hash`, where keys are `.`-junction of deep keys.
-In this case, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+If value is `yes` (default), then objects are "flattened" using [dot-path notation](#dot-path-notation) with a variation:
+
+- final arrays are displayed as comma separated list of values
+- `Array` of `Hash` with only `name` keys are displayed as comma separated list of values
+- `Array` of `Hash` with only `name` and `value` keys are displayed like a `Hash` with value of `name` as key.
 
 Example: Result of command is a list of objects with a single object:
 
@@ -1967,10 +1950,7 @@ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","
 ╰────────┴───────╯
 ```
 
-```shell
-ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","value":"b2"}],"C":[{"C1":"c1"},{"C2":"c2"}],"D":{"D1":"d1","D2":"d2"}}' -
--flat=no
-```
+For the same command, adding option `--flat=no`:
 
 ```text
 ╭───────┬────────────────────────────────────────────────────────────────────────╮
@@ -2119,9 +2099,12 @@ Individual elements of the list can be:
 - `ALL`: all fields
 - A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
+To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path notation](#dot-path-notation).
+
 Examples:
 
 - `a,b,c`: the list of attributes specified as a comma-separated list (overrides the default)
+- `@list:,a,b,c`: `Array` extended value: same as above
 - `@json:'["a","b","c"]'`: `Array` extended value: same as above
 - `b,DEF,-a`: default property list, remove `a` and add `b` in first position
 - `@ruby:'/^server/'`: Display all fields whose name begins with `server`
@@ -2160,7 +2143,7 @@ Option `select` applies the filter after a possible "flattening" with option: `f
 
 ### Percent selector
 
-The percent selector allows identification of an entity by another unique identifier other than the native identifier.
+The percent selector allows identification of an entity by another unique identifier other than the native identifier (typically: `id`).
 
 Syntax: `%<field>:<value>`
 
@@ -2179,6 +2162,56 @@ For example, if the name of the user is `john` and a field for this entity named
 ascli aoc admin user show %name:john
 ```
 
+### Dot-path Notation
+
+`ascli` uses a unified **dot-path notation** in several places on the command line and in output.
+Understanding this concept once makes it immediately usable everywhere it appears.
+
+**Dot-path** notation is used in four distinct places in `ascli`:
+
+| Surface                   | Syntax                | in/out | read/write |
+|---------------------------|-----------------------|--------|------------|
+| [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
+| [Positional arguments](#positional-arguments) | `@: key.sub=value`      | Input | write |
+| [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
+| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
+
+A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
+
+- A **string segment** designates a key in a `Hash` (associative array).
+- An **integer segment** designates an index in an `Array`.
+
+For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
+
+When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
+When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+
+Example: dot-path to JSON output
+
+```bash
+ascli config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
+```
+
+```json
+{"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
+
+Example: JSON to dot-path output
+
+```bash
+ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
+```
+
+```text
+╭───────┬─────────────╮
+│ field │ value       │
+╞═══════╪═════════════╡
+│ a.b   │ 1           │
+│ a.c   │ 2           │
+│ a.d   │ hello,world │
+╰───────┴─────────────╯
+```
+
 ### Extended Value Syntax
 
 Most options and arguments are specified by a simple string (e.g. `username` or `url`).
@@ -2189,11 +2222,15 @@ The **Extended Value** Syntax allows to specify such values and even read values
 
 The syntax is:
 
-```shell
+```text
 <0 or more decoders><some text value or nothing>
 ```
 
 Decoders act like a function with its parameter on right-hand side and are recognized by the prefix: `@` and suffix `:`
+
+```text
+@<name>:
+```
 
 The following decoders are supported:
 
@@ -2208,7 +2245,7 @@ The following decoders are supported:
 | `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
 | `none`   | None     | Nil      | A `null` value. |
 | `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). e.g. `--config-file=@path:~/sample_config.yml` |
-| `preset` | `String` | `Hash`   | Get whole option preset value by name. Sub-values can also be used, using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
+| `preset` | `String` | `Hash`   | Get value from configuration file using [dot-path notation](#dot-path-notation). |
 | `extend` | `String` | `String` | Evaluates embedded extended value syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
@@ -2218,7 +2255,7 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `p`      | None     | Any      | Parses remaining arguments as `Hash` or `Array`. |
+| `<empty>`| None     | Any      | Parses remaining arguments as `Hash` or `Array`. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
@@ -3714,7 +3751,7 @@ For example, let's assume we want to replace illegal character: `|` with an unde
 1. First, locate the configuration file with:
 
 ```shell
-ascli conf ascp info --fields=aspera_conf
+ascli config ascp info --fields=aspera_conf
 ```
 
 Typically, it is located at `$HOME/sdk/aspera.conf`
@@ -4699,7 +4736,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -7558,7 +7595,7 @@ For more information on the JWT method, refer to the section below.
 If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
 
 ```shell
-ascli faspex5 --show-config --show-secrets=yes --fields=private_key | ascli conf pubkey @stdin: --show-secrets=yes
+ascli faspex5 --show-config --show-secrets=yes --fields=private_key | ascli config pubkey @stdin: --show-secrets=yes
 ```
 
 ### Faspex 5 JWT authentication
