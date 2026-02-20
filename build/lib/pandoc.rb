@@ -23,7 +23,7 @@ PANDOC_DEPS = [
 
 # Extract pandoc metadata from markdown comment
 def extract_metadata_file(md)
-  metadata_file = TMP / 'pandoc_meta'
+  metadata_file = TMP / 'pandoc_meta.yaml'
   inside = false
   File.open(metadata_file, 'w') do |out|
     File.foreach(md.to_s) do |line|
@@ -50,6 +50,14 @@ def get_change_date(md)
   end.strftime('%Y/%m/%d')
 end
 
+# Generate a LaTeX file with \graphicspath for pandoc to find graphics
+def generate_gfx_paths_latex(paths)
+  result = TMP / 'pandoc_add.tex'
+  # https://latexref.xyz/_005cgraphicspath.html
+  result.write("\\graphicspath{#{paths.map{ |p| "{#{p}}"}.join('')}}\n")
+  result
+end
+
 # Generate PDF from Markdown using pandoc templates
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
@@ -60,17 +68,19 @@ def markdown_to_pdf(md:, pdf:)
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
     metadatafile = extract_metadata_file(md)
+    gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT])
     run(
       'pandoc',
+      "--include-in-header=#{gfx_paths_latex}",
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
       "--variable=date:#{get_change_date(md)}",
       "--metadata-file=#{metadatafile}",
       "--output=#{pdf}",
-      md,
-      env: {'GFX_DIR'=> PATH_PANDOC_ROOT.to_s}
+      md
     )
-    File.delete(metadatafile)
+    metadatafile.delete
+    gfx_paths_latex.delete
   end
 end
 

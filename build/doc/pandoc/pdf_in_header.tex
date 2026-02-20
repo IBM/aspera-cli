@@ -17,9 +17,8 @@
   highlightcolor=lightgray,
   fontsize=\small
 }
-% use env var GFX_DIR for graphics location
+% https://ctan.org/pkg/graphicx
 \usepackage{graphicx}
-\graphicspath{{\directlua{tex.sprint(os.getenv('GFX_DIR'))}}}
 % https://ctan.org/pkg/eso-pic
 \usepackage{eso-pic}
 \AddToShipoutPictureBG*{
