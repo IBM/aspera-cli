@@ -330,7 +330,7 @@ module Aspera
 
       # @param descr       [String] description for help
       # @param mandatory   [Boolean] if true, raise error if option not set
-      # @param multiple    [Boolean] if true, return remaining arguments (Array)
+      # @param multiple    [Boolean] if true, return remaining arguments (Array) unil END
       # @param accept_list [Array, NilClass] list of allowed values (Symbol)
       # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
@@ -345,10 +345,19 @@ module Aspera
         descr = "#{descr} (#{validation.join(', ')})" unless validation.nil? || validation.eql?(Allowed::TYPES_STRING)
         result =
           if !@unprocessed_cmd_line_arguments.empty?
-            how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
-            values = @unprocessed_cmd_line_arguments.shift(how_many)
+            if multiple
+              index = @unprocessed_cmd_line_arguments.index(SpecialValues::EOA)
+              if index.nil?
+                values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
+              else
+                values = @unprocessed_cmd_line_arguments.shift(index)
+                @unprocessed_cmd_line_arguments.shift # remove EOA
+              end
+            else
+              values = [@unprocessed_cmd_line_arguments.shift]
+            end
             values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation)}
-            # if expecting list and only one arg of type array : it is the list
+            # If expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
               allowed_values = [].concat(accept_list)

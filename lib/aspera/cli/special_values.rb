@@ -8,6 +8,7 @@ module Aspera
       INIT = 'INIT'
       ALL = 'ALL'
       DEF = 'DEF'
+      EOA = 'END'
     end
   end
 end

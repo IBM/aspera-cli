@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+**general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
+
 ### Issues Fixed
 
 ### Breaking Changes

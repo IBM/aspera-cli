@@ -1670,6 +1670,8 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
 The Extended Value `@:` takes all remaining positional arguments and expects each of them to use [dot-path notation](#dot-path-notation).
+The optional special marker `END` can be used to stop the arguments caught by `@:`.
+This is useful, for example, if `@:` is used to specify a payload, and a file list is also placed on command line.
 
 The general structure of positional arguments is:
 
