@@ -4520,29 +4520,48 @@ A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node
 
 ## Plugin: `aoc`: IBM Aspera on Cloud
 
-Aspera on Cloud API requires the use of OAuth v2 mechanism for authentication (HTTP Basic authentication is not supported).
-
-It is recommended to use the wizard to set it up, although manual configuration is also possible.
+The `aoc` plugin enables integration with IBM Aspera on Cloud.
+Because the Aspera on Cloud API requires **OAuth 2.0** for authentication, HTTP Basic authentication is **not** supported.
 
 > [!NOTE]
-> This plugin shall be also used for Aspera Enterprise Web Apps (AEWA).
+> This plugin is also used for Aspera Enterprise Web Apps (AEWA).
 
 ### AoC configuration: Using Wizard
 
-<%=tool%> provides a configuration [wizard](#wizard).
+<%=tool%> includes an interactive configuration [wizard](#wizard) to simplify the OAuth setup.
+While manual configuration is possible, using the wizard is the recommended method for most deployments.
 
-The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
+#### Prerequisites
 
-The first optional argument is the URL of your Aspera on Cloud instance or simply the organization name, i.e. one of those :
+To complete the setup, you must have:
 
-- `_your_organization_`
-- `_your_organization_.ibmaspera.com`
-- `https://_your_organization_.ibmaspera.com`
+- **The URL or organization name** of your Aspera on Cloud instance:
 
-The second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
-If optional arguments are not provided, the wizard will ask interactively and try to detect the application.
+  - `_your_organization_`
+  - `_your_organization_.ibmaspera.com`
+  - `https://_your_organization_.ibmaspera.com`
 
-Here is a sample invocation :
+- **User Credentials**: Access to the Aspera on Cloud web interface to update your Public Key.
+
+#### Wizard Invocation
+
+The wizard accepts two optional positional arguments:
+
+- **Organization/URL**: The organization name or the full FQDN.
+
+- **Plugin Name**: Specify `aoc` to bypass automatic application detection.
+
+If the URL omitted, the wizard will prompt for it interactively.
+
+#### Example: Standard Configuration
+
+During the process, the wizard generates or identifies a PEM-formatted Public Key.
+You must copy this key (including the `BEGIN` and `END` headers) and paste it into the **Public Key** field in the Aspera on Cloud UI.
+Once saved in the UI, return to the terminal and press Enter.
+
+> [!IMPORTANT]
+> In the following example, replace `https://_my_org_.ibmaspera.com` with your actual organization URL.
+> `(User)` represents the user menu on the top right of the page.
 
 ```console
 $ <%=cmd%> config wizard
@@ -4569,26 +4588,32 @@ You can test with:
 Saving config file.
 ```
 
-> [!NOTE]
-> In above example, replace `https://_my_org_.ibmaspera.com` with your actual AoC URL.
+#### Advanced Options
 
-Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
-For this, specify the option: `--use-generic-client=no`.
+- **Custom Client Identification**:
+  By default, <%=tool%> uses a pre-registered global client ID.
+  To create and use an organization-specific integration, use the `--use-generic-client=no` flag.
 
-If you already know the application, and want to limit the detection to it, provide URL and plugin name:
+- **Direct Plugin Targeting**: To limit detection to the `aoc` plugin and skip discovery, provide both the URL and plugin name:
+
+  ```shell
+  <%=cmd%> config wizard _my_org_ aoc
+  ```
+
+#### Verifying the Configuration
+
+Upon successful completion, the wizard creates a configuration preset and assigns it as the default for the `aoc` plugin.
+
+To verify the current configuration presets, execute:
 
 ```shell
-<%=cmd%> config wizard _my_org_ aoc
+<%=cmd%> config preset list
 ```
 
-> [!NOTE]
-> In above example, replace `_my_org_` with the first part of your actual AoC URL: `https://_my_org_.ibmaspera.com`.
-
-After successful completion of the wizard, a new configuration preset is created, and set as default for the `aoc` plugin.
-This can be verified with command:
+To test the connection and display your profile information:
 
 ```shell
-<%=cmd%> config preset over
+<%=cmd%> aoc user profile show
 ```
 
 ### AoC configuration: Using manual setup
@@ -4598,29 +4623,28 @@ This can be verified with command:
 
 #### AoC manual configuration: Details
 
-Several types of OAuth authentication are supported:
+IBM Aspera on Cloud (AoC) supports several OAuth 2.0 authentication mechanisms to secure API interactions.
+The method used is determined by the `auth` option.
 
-- JSON Web Token (JWT) : authentication is secured by a private key (recommended)
-- Web based authentication : authentication is made by user using a browser
-- URL Token : external user's authentication with URL tokens (public links)
+Supported Authentication Methods:
 
-The authentication method is controlled by option `auth`.
+| Method         | `auth` | Description |
+|----------------|--------|-------------|
+| JSON Web Token | `jwt`  | **Recommended**. Uses a private RSA key for secure, headless authentication.<%=br%>Ideal for automation and scripts. |
+| Web-based      | `web`  | Redirects the user to a browser for interactive login.<%=br%>Suitable for manual operations on local workstations. |
+| URL Token      | -      | Facilitates authentication for external users via public link tokens. |
 
-For a **quick start**, follow the mandatory and sufficient section: [API Client Registration](#api-client-registration) (auth=web) as well as [[Option Preset](#option-preset) for Aspera on Cloud](#configuration-for-aspera-on-cloud).
-
-For a more convenient, browser-less, experience follow the [JWT](#authentication-with-private-key) section (`auth=jwt`) in addition to Client Registration.
-
-In OAuth, a **Bearer** token is generated to authenticate REST calls.
-Bearer tokens are valid for a period of time defined (by the AoC app, configurable by admin) at its creation.
-<%=tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
+<%=tool%> automatically manages the lifecycle of Bearer tokens.
+Once a token is generated, it is cached in the local configuration folder (option `cache_tokens`).
+The tool reuses valid tokens and automatically triggers a refresh or regeneration when they expire, according to the expiration policy defined by the AoC administrator.
 
 #### API Client Registration
 
-> **Optional**
+> [!NOTE]
+> If you use the pre-registered `client_id` and `client_secret`, skip this and do not set them in next section.
 
-If you use the built-in `client_id` and `client_secret`, skip this and do not set them in next section.
-
-Else you can use a specific OAuth API `client_id`, the first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
+You can use a specific OAuth API `client_id`.
+The first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
 ([AoC documentation: Registering an API Client](https://ibmaspera.com/help/admin/organization/registering_an_api_client)).
 
@@ -4628,7 +4652,7 @@ Let's start by a registration with web based authentication (auth=web):
 
 - Open a web browser, log to your instance: e.g. `https://_my_org_.ibmaspera.com/`
   (use your actual AoC instance URL)
-- Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
+- Go to (Apps) &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click **Create New**
   - **Client Name**: <%=tool%>
   - **Redirect URIs**: `http://localhost:12345`
@@ -4638,8 +4662,8 @@ Let's start by a registration with web based authentication (auth=web):
 - **Save**
 
 > [!NOTE]
-> For web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there.
-> For <%=tool%>, HTTP is required, and 12345 is the default port.
+> For web based authentication, <%=tool%> listens on a local port (e.g. specified by the `redirect_uri` parameter, in this example: `12345`), and the browser will provide the OAuth code there.
+> For <%=tool%>, HTTP is required, and `12345` is the default port.
 
 Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
 
@@ -4723,7 +4747,7 @@ modified
 #### User key registration
 
 The public key must be assigned to your user.
-This can be done in two manners:
+This can be done in two manners as follows.
 
 ##### Graphically
 
@@ -4752,8 +4776,8 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 ╰─────────┴────────────────┴────────────────────╯
 ```
 
-```ruby
-<%=cmd%> aoc user profile modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/my_private_key.pub"))}'
+```shell
+<%=cmd%> aoc user profile modify @: public_key=@file:~/.aspera/<%=cmd%>/my_private_key.pub
 ```
 
 ```text
@@ -4849,38 +4873,39 @@ Values are directly sent to the API call and used as a filter on server side.
 
 The following parameters are supported:
 
-- `q` : a filter on name of resource (case-insensitive, matches if value is contained in name)
-- `sort`: name of fields to sort results, prefix with `-` for reverse order.
-- `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
-- `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
-- `page` : native API parameter, in general do not use (added by <%=tool%>)
-- `per_page`: native API parameter, number of items per API call, in general do not use
-- Other specific parameters depending on resource type.
+| Parameter | Source | Description                                        |
+|-----------|--------|----------------------------------------------------|
+| `q`       | Native | A filter on name of resource.<%=br%>(case-insensitive, matches if value is contained in name) |
+| `sort`    | Native | Name of fields to sort results, prefix with `-` for reverse order. |
+| `page`    | Native | Do not use.<%=br%>Managed by <%=tool%>. |
+| `per_page`| Native | Do not use.<%=br%>Managed by <%=tool%>. |
+| `max`     | <%=tool%> | Maximum number of items to retrieve. |
+| `pmax`    | <%=tool%> | Maximum number of pages to request.  |
+| other     | Native | Other specific parameters depending on resource type. |
 
-Both `max` and `pmax` are processed internally in <%=tool%>, not included in actual API call and limit the number of successive pages requested to API.
-<%=tool%> will return all values using paging if not provided.
-
-Other parameters are directly sent as parameters to the GET request on API.
-
-`page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000.
+> [!INFO]
+> Both `max` and `pmax` are processed internally in <%=tool%>, not included in actual API call and limit the number of successive pages requested to API.
+> <%=tool%> will return all values using paging if not provided.
+> `page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000.
 (AoC allows a maximum page size of 1000).
+> Other parameters depend on the type of entity (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
+> Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
-`q` and `sort` are available on most resource types.
-
-Other parameters depend on the type of entity (refer to AoC API).
+> [!TIP]
+> The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).
 
 Examples:
 
 - List users with `laurent` in name:
 
 ```shell
-<%=cmd%> aoc admin user list --query=@json:'{"q":"laurent"}'
+<%=cmd%> aoc admin user list --query.q=laurent
 ```
 
 - List users who logged-in before a date:
 
 ```shell
-<%=cmd%> aoc admin user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
+<%=cmd%> aoc admin user list --query.q='last_login_at:<2018-05-28'
 ```
 
 - List external users and sort in reverse alphabetical order using name:
@@ -4888,11 +4913,6 @@ Examples:
 ```shell
 <%=cmd%> aoc admin user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
-
-Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
-
-> [!TIP]
-> The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).
 
 #### Selecting a resource
 
@@ -4950,7 +4970,7 @@ Well, remove the offending parameters and try again.
 
 #### Access Key secrets
 
-In order to access some administrative actions on **nodes** (in fact, access keys), the associated secret is required.
+In order to access some administrative actions on **nodes** (in fact, access keys), the associated secret may be required.
 The secret is provided using the `secret` option.
 For example in a command like:
 
@@ -5096,11 +5116,11 @@ Current Workspace: Default (default)
 
 #### Example: Find deactivated users since more than 2 years
 
-```ruby
+```shell
 <%=cmd%> aoc admin user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
 ```
 
-To delete them use the same method as before
+To delete them use the same method as before.
 
 #### Example: Display current user's workspaces
 
@@ -5393,14 +5413,14 @@ Refer to section [File list](#list-of-files-for-transfers).
 
 ### Packages app
 
-The web-mail-like application.
+The Aspera on Cloud **Packages** app lets you assemble copies of any number of files and folders into a digital "package" and send the package to others, pretty much like a web-mail application.
 
 #### Send a Package
 
 General syntax:
 
 ```shell
-<%=cmd%> aoc packages send [package extended value] [other parameters such as options and file list]
+<%=cmd%> aoc packages send <package extended value> <options> <file list>
 ```
 
 Package creation parameter are sent as **Command Parameter**.
@@ -5415,13 +5435,13 @@ List allowed shared inbox destinations with:
 Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
 
 - Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"_my_shibox_id_"}]`
-- or just names: `"recipients":[{"The Dest"}]`.
+- or just names: `"recipients":["The Dest"]`.
 
 <%=cmd%> will resolve the list of email addresses and dropbox names to the expected type/ID list, based on case-insensitive partial match.
 
 If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and:
 
-- if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
+- if the option `new_user_option` is `@json:{"package_contact":true}` (**default**), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
 ##### Example: Send a package with one file to two users, using their email
