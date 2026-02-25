@@ -109,11 +109,12 @@ The transfer is not directly implemented in <%=tool%>; rather, <%=tool%> uses on
 
 ## Quick Start
 
-This section guides you from installation to first use and advanced use.
+This section walks you through installation, your first transfer, and next steps.
 
-First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
+### Prerequisites
 
-Once the gem is installed, <%=tool%> shall be accessible:
+Before continuing, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get <%=tool%> set up on your system.
+Once installed, confirm <%=tool%> is accessible by checking its version:
 
 ```shell
 <%=cmd%> --version
@@ -124,19 +125,23 @@ Once the gem is installed, <%=tool%> shall be accessible:
 ```
 
 > [!NOTE]
-> All command line examples provided in sections named **<%=sample_commands_title(:_plugin_name_)%>** are tested during version validation.
+> All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
 
-### First use
+### Option A - Test with the Aspera Demo Server
 
-Once installation is completed, you can proceed to the first use with a demo server:
-
-If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
-
-To test with Aspera demo transfer server, set up the environment and then test:
+- Run the following two commands to initialize the demo environment:
 
 ```shell
 <%=cmd%> config initdemo
 ```
+
+- Check the configuration:
+
+```shell
+<%=cmd%> config preset overview
+```
+
+- Browse the remote file system:
 
 ```shell
 <%=cmd%> server browse /
@@ -153,22 +158,35 @@ To test with Aspera demo transfer server, set up the environment and then test:
 ╰────────────┴──────┴───────────┴───────┴───────────────────────────┴───────────────────────╯
 ```
 
-If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define an [Option Preset](#option-preset) for the server's authentication options.
-The following example will:
-
-- Create an [Option Preset](#option-preset)
-- Define it as default for the `server` plugin
-- List files in a folder
-- Download a file
+- Download a file:
 
 ```shell
-<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
+<%=cmd%> server download /aspera-test-dir-small/10MB.1
+```
+
+```text
+Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
+complete
+```
+
+### Option B - Connecting to Your Own HSTS
+
+To use <%=tool%> with a server of your own, it's recommended to save its connection details as an [Option Preset](#option-preset).
+This avoids repeating credentials on every command.
+The steps below create a preset, set it as the default for the server plugin, browse a remote directory, and download a file:
+
+- Create a preset with your server's connection details:
+
+```shell
+<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
 ```
 
 ```text
 Updated: myserver
 Saving config file.
 ```
+
+- Set the preset as the default for the server plugin:
 
 ```shell
 <%=cmd%> config preset set default server myserver
@@ -179,49 +197,32 @@ Updated: default: server <- myserver
 Saving config file.
 ```
 
-```shell
-<%=cmd%> server browse /aspera-test-dir-large
-```
+- Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
 
-```text
-╭────────────┬──────┬───────────┬─────────────┬───────────────────────────┬───────╮
-│ zmode      │ zuid │ zgid      │ size        │ mtime                     │ name  │
-╞════════════╪══════╪═══════════╪═════════════╪═══════════════════════════╪═══════╡
-│ -rw-r--r-- │ xfer │ demousers │ 5368709120  │ 2014-11-05 16:01:56 +0100 │ 5GB   │
-│ -rw-r--r-- │ xfer │ demousers │ 524288000   │ 2014-11-05 16:01:56 +0100 │ 500MB │
-│ -rw-r--r-- │ xfer │ demousers │ 209715200   │ 2014-11-05 16:01:56 +0100 │ 200MB │
-│ -rw-r--r-- │ xfer │ demousers │ 1048576000  │ 2014-11-05 16:01:56 +0100 │ 1GB   │
-│ -rw-r--r-- │ xfer │ demousers │ 104857600   │ 2014-11-05 16:01:56 +0100 │ 100MB │
-│ -rw-r--r-- │ xfer │ demousers │ 10737418240 │ 2014-11-05 16:01:56 +0100 │ 10GB  │
-╰────────────┴──────┴───────────┴─────────────┴───────────────────────────┴───────╯
-```
+### Option C — Test with Aspera on Cloud
 
-```shell
-<%=cmd%> server download /aspera-test-dir-large/200MB
-```
+If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](#aoc-configuration-using-wizard) section.
 
-```text
-Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
-complete
-```
+### Next Steps
 
-### Going further
+- Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
 
-Get familiar with configuration, options, and commands: [Command Line Interface](#command-line-interface).
-
-Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...): [Application Plugins](#plugins)
+- Explore plugins: Jump to the section for the product you're working with — Aspera on Cloud, Faspex, and more — under [Application Plugins](#plugins).
 
 ## Installation
 
 There are several possibilities to install <%=tool%>:
 
-- As a [single file executable](#single-file-executable),
 - Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
+
   This is the most generic method.
   It consists in installing:
   - The [Ruby language](#ruby),
   - Then [<%=gemspec.name%>](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
   - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
+- As a [single file executable](#single-file-executable)
+
+  This is easy, but only a limited number of platforms is supported.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections provide information on the various installation methods.
@@ -232,11 +233,9 @@ If you don't have internet for the installation, refer to section [Installation 
 ### Single file executable
 
 > [!WARNING]
-> This is a Beta feature.
 > Only on a limited number of platforms.
 
-<%=tool%> is available as a single **platform-dependent executable**.
-[Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
+<%=tool%> is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
 
 #### Installation
 
@@ -733,7 +732,7 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 Necessary gems can be packed in a `tar.gz` like this:
 
-```bash
+```shell
 mkdir temp_folder
 gem install <%=gemspec.name%>:<%=build_version%> --no-document --install-dir temp_folder
 find temp_folder
@@ -2139,7 +2138,7 @@ When a specific type is required for the value, the [Extended Value Syntax](#ext
 
 Example: dot-path to JSON output
 
-```bash
+```shell
 <%=cmd%> config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
@@ -2149,7 +2148,7 @@ Example: dot-path to JSON output
 
 Example: JSON to dot-path output
 
-```bash
+```shell
 ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
 ```
 
@@ -8022,26 +8021,26 @@ Below is a simple end‑to‑end procedure to verify synchronization using the d
 
 1. Initialize the demo server configuration:
 
-    ```bash
+    ```shell
     <%=cmd%> config initdemo
     ```
 
 1. Create a local folder with a sample file to sync:
 
-    ```bash
+    ```shell
     mkdir foobar
     echo hello > foobar/file1
     ```
 
 1. Create the destination folder on the remote server:
 
-    ```bash
+    ```shell
     <%=cmd%> server -Pdemoserver mkdir /Upload/mydest1
     ```
 
 1. Run the sync operation:
 
-    ```bash
+    ```shell
     <%=cmd%> server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
     ```
 
