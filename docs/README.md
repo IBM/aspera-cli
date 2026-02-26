@@ -113,11 +113,12 @@ The transfer is not directly implemented in `ascli`; rather, `ascli` uses one of
 
 ## Quick Start
 
-This section guides you from installation to first use and advanced use.
+This section walks you through installation, your first transfer, and next steps.
 
-First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start using `ascli`.
+### Prerequisites
 
-Once the gem is installed, `ascli` shall be accessible:
+Before continuing, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get `ascli` set up on your system.
+Once installed, confirm `ascli` is accessible by checking its version:
 
 ```shell
 ascli --version
@@ -128,19 +129,23 @@ ascli --version
 ```
 
 > [!NOTE]
-> All command line examples provided in sections named **Tested commands for `_plugin_name_`** are tested during version validation.
+> All command line examples in sections titled **Tested commands for `_plugin_name_`** are verified during version validation.
 
-### First use
+### Option A - Test with the Aspera Demo Server
 
-Once installation is completed, you can proceed to the first use with a demo server:
-
-If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard).
-
-To test with Aspera demo transfer server, set up the environment and then test:
+- Run the following two commands to initialize the demo environment:
 
 ```shell
 ascli config initdemo
 ```
+
+- Check the configuration:
+
+```shell
+ascli config preset overview
+```
+
+- Browse the remote file system:
 
 ```shell
 ascli server browse /
@@ -157,22 +162,35 @@ ascli server browse /
 ╰────────────┴──────┴───────────┴───────┴───────────────────────────┴───────────────────────╯
 ```
 
-If you want to use `ascli` with another server, and in order to make further calls more convenient, it is advised to define an [Option Preset](#option-preset) for the server's authentication options.
-The following example will:
-
-- Create an [Option Preset](#option-preset)
-- Define it as default for the `server` plugin
-- List files in a folder
-- Download a file
+- Download a file:
 
 ```shell
-ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
+ascli server download /aspera-test-dir-small/10MB.1
+```
+
+```text
+Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
+complete
+```
+
+### Option B - Connecting to Your Own HSTS
+
+To use `ascli` with a server of your own, it's recommended to save its connection details as an [Option Preset](#option-preset).
+This avoids repeating credentials on every command.
+The steps below create a preset, set it as the default for the server plugin, browse a remote directory, and download a file:
+
+- Create a preset with your server's connection details:
+
+```shell
+ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
 ```
 
 ```text
 Updated: myserver
 Saving config file.
 ```
+
+- Set the preset as the default for the server plugin:
 
 ```shell
 ascli config preset set default server myserver
@@ -183,49 +201,32 @@ Updated: default: server <- myserver
 Saving config file.
 ```
 
-```shell
-ascli server browse /aspera-test-dir-large
-```
+- Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
 
-```text
-╭────────────┬──────┬───────────┬─────────────┬───────────────────────────┬───────╮
-│ zmode      │ zuid │ zgid      │ size        │ mtime                     │ name  │
-╞════════════╪══════╪═══════════╪═════════════╪═══════════════════════════╪═══════╡
-│ -rw-r--r-- │ xfer │ demousers │ 5368709120  │ 2014-11-05 16:01:56 +0100 │ 5GB   │
-│ -rw-r--r-- │ xfer │ demousers │ 524288000   │ 2014-11-05 16:01:56 +0100 │ 500MB │
-│ -rw-r--r-- │ xfer │ demousers │ 209715200   │ 2014-11-05 16:01:56 +0100 │ 200MB │
-│ -rw-r--r-- │ xfer │ demousers │ 1048576000  │ 2014-11-05 16:01:56 +0100 │ 1GB   │
-│ -rw-r--r-- │ xfer │ demousers │ 104857600   │ 2014-11-05 16:01:56 +0100 │ 100MB │
-│ -rw-r--r-- │ xfer │ demousers │ 10737418240 │ 2014-11-05 16:01:56 +0100 │ 10GB  │
-╰────────────┴──────┴───────────┴─────────────┴───────────────────────────┴───────╯
-```
+### Option C — Test with Aspera on Cloud
 
-```shell
-ascli server download /aspera-test-dir-large/200MB
-```
+If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](#aoc-configuration-using-wizard) section.
 
-```text
-Time: 00:00:02 ====================================== 100% 100 Mbps Time: 00:00:00
-complete
-```
+### Next Steps
 
-### Going further
+- Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
 
-Get familiar with configuration, options, and commands: [Command Line Interface](#command-line-interface).
-
-Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...): [Application Plugins](#plugins)
+- Explore plugins: Jump to the section for the product you're working with — Aspera on Cloud, Faspex, and more — under [Application Plugins](#plugins).
 
 ## Installation
 
 There are several possibilities to install `ascli`:
 
-- As a [single file executable](#single-file-executable),
 - Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
+
   This is the most generic method.
   It consists in installing:
   - The [Ruby language](#ruby),
   - Then [aspera-cli](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
   - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
+- As a [single file executable](#single-file-executable)
+
+  This is easy, but only a limited number of platforms is supported.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections provide information on the various installation methods.
@@ -236,11 +237,9 @@ If you don't have internet for the installation, refer to section [Installation 
 ### Single file executable
 
 > [!WARNING]
-> This is a Beta feature.
 > Only on a limited number of platforms.
 
-`ascli` is available as a single **platform-dependent executable**.
-[Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
+`ascli` is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
 
 #### Installation
 
@@ -784,7 +783,7 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 Necessary gems can be packed in a `tar.gz` like this:
 
-```bash
+```shell
 mkdir temp_folder
 gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
 find temp_folder
@@ -1928,7 +1927,7 @@ If value is `no`, then object's `field` names are only the first level keys of t
 
 If value is `yes` (default), then objects are "flattened" using [dot-path notation](#dot-path-notation) with a variation:
 
-- final arrays are displayed as comma separated list of values
+- Final arrays are displayed as comma separated list of values
 - `Array` of `Hash` with only `name` keys are displayed as comma separated list of values
 - `Array` of `Hash` with only `name` and `value` keys are displayed like a `Hash` with value of `name` as key.
 
@@ -2190,7 +2189,7 @@ When a specific type is required for the value, the [Extended Value Syntax](#ext
 
 Example: dot-path to JSON output
 
-```bash
+```shell
 ascli config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
@@ -2200,7 +2199,7 @@ ascli config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 
 Example: JSON to dot-path output
 
-```bash
+```shell
 ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
 ```
 
@@ -5905,7 +5904,66 @@ ascli aoc admin client_registration_token list --fields=id --format=csv|ascli ao
 +-----+---------+
 ```
 
-#### Example: Create a Node
+#### Example: Create a tethered Node
+
+Follow these steps to configure a new HSTS and link it to your existing Aspera on Cloud (AoC) organization.
+
+1. Retrieve the Organization Public Key
+
+    First, obtain the public key from an existing node.
+    This key is used to verify bearer tokens generated by your organization.
+
+    > [!TIP]
+    > This key remains constant for the lifetime of your Organization.
+    > You can reuse it for all subsequent node tethering.
+
+    ```shell
+    ascli aoc admin node do %name:'my_existing_node_name' v3 access_keys show self --fields=token_verification_key --show-secrets=yes --output=mypubkey.pem
+    ```
+
+1. Create an Access Key on the Self-Managed HSTS
+
+    Create the local credentials on your High-Speed Transfer Server (HSTS).
+
+    > [!NOTE]
+    > The `id` and `secret` parameters are optional.
+    > If you omit them, you must add `--show-secrets=yes` to the command.
+    > Record the generated secret immediately; it cannot be retrieved later, only reset.
+
+    ```shell
+    ascli node access_key create @: id=my_ak_test secret=_my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
+    ```
+
+1. Register the Node in AoC
+
+    Now, register the physical server as a node object within the Aspera on Cloud administration interface.
+
+    ```shell
+    ascli aoc admin node create @: url=https://aspera.example.com access_key=my_ak_test name=testnode1
+    ```
+
+1. Configure Access Key Permissions
+
+    Assign the necessary permissions to the root file ID for your new access key.
+    This ensures the system and node owner have the correct authorization.
+
+    ```shell
+    ascli node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id='F4 System'
+    ```
+
+    ```shell
+    ascli node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id=NODE_OWNER
+    ```
+
+1. Optional next Steps
+
+    To register an Aspera Event Journal (AEJ) as described in the HSTS manual, please refer to:
+
+    - [Create a registration key for a tethered node](#example-create-registration-key-to-register-a-tethered-node)
+
+    - [The Aspera HSTS Operations GitHub repository](https://github.com/laurent-martin/aspera-hsts-operations/blob/main/README.md#create-a-node-registration-token).
+
+#### Example: Create an ATS Node
 
 AoC nodes as actually composed with two related entities:
 
@@ -9104,26 +9162,26 @@ Below is a simple end‑to‑end procedure to verify synchronization using the d
 
 1. Initialize the demo server configuration:
 
-    ```bash
+    ```shell
     ascli config initdemo
     ```
 
 1. Create a local folder with a sample file to sync:
 
-    ```bash
+    ```shell
     mkdir foobar
     echo hello > foobar/file1
     ```
 
 1. Create the destination folder on the remote server:
 
-    ```bash
+    ```shell
     ascli server -Pdemoserver mkdir /Upload/mydest1
     ```
 
 1. Run the sync operation:
 
-    ```bash
+    ```shell
     ascli server -Pdemoserver sync push foobar --to-folder=/Upload/mydest1
     ```
 
