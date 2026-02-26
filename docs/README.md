@@ -5879,14 +5879,6 @@ Then, transfer between those:
 ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
-#### Example: Create registration key to register a tethered node
-
-The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
-
-```shell
-ascli aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
-```
-
 #### Example: Delete all registration keys
 
 ```shell
@@ -5925,7 +5917,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 
     Create the local credentials on your High-Speed Transfer Server (HSTS).
 
-    > [!NOTE]
+    > [!TIP]
     > The `id` and `secret` parameters are optional.
     > If you omit them, you must add `--show-secrets=yes` to the command.
     > Record the generated secret immediately; it cannot be retrieved later, only reset.
@@ -5962,6 +5954,14 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
     - [Create a registration key for a tethered node](#example-create-registration-key-to-register-a-tethered-node)
 
     - [The Aspera HSTS Operations GitHub repository](https://github.com/laurent-martin/aspera-hsts-operations/blob/main/README.md#create-a-node-registration-token).
+
+#### Example: Create registration key to register a tethered node
+
+The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
+
+```shell
+ascli aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
+```
 
 #### Example: Create an ATS Node
 
