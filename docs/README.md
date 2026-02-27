@@ -6106,36 +6106,39 @@ By default, all files in the package are downloaded, i.e. `.` is used as the fil
 
 ##### Option `package_folder`
 
-The option `package_folder` (Hash) allows downloading packages in sub-folders of the `to_folder` path (see description earlier).
-If this option is not specified (or Hash is empty), then packages are downloaded in the folder specified by the `to_folder` option.
+The `package_folder` option (`Hash`) controls how downloaded packages are organized into subfolders under the path specified by `to_folder`.
 
-The following fields are supported to define the name of the sub-folder:
+- If `package_folder` is not specified or is an empty `Hash`, packages are downloaded directly into the folder defined by `to_folder`.
+- If specified, packages are stored in dynamically generated subfolders.
+
+**Supported Fields**:
 
 | Field | Type    | Description                                                               |
 |-------|---------|---------------------------------------------------------------------------|
-| none  | -       | (Default) No subfolder.                                                   |
-| `fld` | `Array` | The package's specified fields (`.`-joined). (max size: 2)                |
-| `seq` | `Bool`  | If `true`, add an incrementing number to the folder name starting at `1`. |
-| `opt` | `Bool`  | If `false` (default), then all fields are used.<br/>Else, only if the folder does not already exist. |
-| `inf` | `Bool`  | If `true`, then a file is created (`<ID>.info.json`) with package information (metadata, same information as sidecar file). |
+| none  | -       | (Default) No subfolder. Packages are downloaded directly into `to_folder`.|
+| `fld` | `Array` | List of package fields used to build the subfolder name.<br/>Field values are joined with `.`.<br/>Maximum size: 2. |
+| `seq` | `Bool`  | If `true`, appends an incrementing number (starting at `1`) to the folder name when needed. |
+| `opt` | `Bool`  | If `false` (default), all fields in `fld` are always used.<br/>If `true`, the first field is used unless the folder already exists. |
+| `inf` | `Bool`  | If `true`, creates a file named `<ID>.info.json` inside the folder containing package metadata (same content as the sidecar file). |
 
-Examples (JSON):
+**Examples**:
 
-- `{"fields":["id"]}` :
-  Subfolder is the package ID.
-  If the same package is downloaded several times, it will always be placed in the same folder.
-- `{"fields":["name"]}` :
-  Subfolder is the package name.
-  If two packages with the same name are downloaded, they will be combined in the same folder.
-- `{"fields":["name","id"]}` :
-  Subfolder is the combination of package name and ID.
-- `{"fields":["name","id"],"opt":true}` :
-  Subfolder is the package's name is created, unless it already exists.
-  If it exists, then the combination of both fields joined with `.` is used.
-- `{"fields":["name"],"seq":true,"opt":true}` :
-  Subfolder is the package's name, unless it already exists.
-  If it exists, then the combination of name and sequence number.
-  If the same package is downloaded multiple times, it will be placed in different folders with a sequence number.
+- `{"fld":["id"]}`
+  - The subfolder name is the unique package ID.
+  - Downloading the same package (same ID) multiple times places it in the same folder.
+- `{"fld":["name"]}`
+  - The subfolder name is the package name.
+  - If multiple packages share the same name, their contents are downloaded into the same folder.
+- `{"fld":["name","id"]}`
+  - The subfolder name is `<name>.<id>`.
+  - This guarantees uniqueness when package names are identical.
+- `{"fld":["name","id"],"opt":true}`
+  - The subfolder name is initially the package name.
+  - If a folder with that name already exists, the name and ID (`<name>.<id>`) are used instead.
+- `{"fld":["name"],"seq":true,"opt":true}`
+  - The subfolder name is the package name if it does not already exist.
+  - If it exists, a sequence number is appended (e.g., `<name>.1`, `<name>.2`, etc.).
+  - Downloading the same package multiple times results in different folders when a conflict occurs.
 
 ##### Example: Receive all packages from a given shared inbox
 
