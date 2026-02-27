@@ -5375,12 +5375,13 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
   Create the local credentials on your High-Speed Transfer Server (HSTS).
 
 > [!TIP]
+> In this command, "master node credentials" allowing access key creation are used.
 > The `id` and `secret` parameters are optional.
 > If you omit them, you must add `--show-secrets=yes` to the command.
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
-<%=cmd%> node access_key create @: id=my_ak_test secret=_my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
+<%=cmd%> node access_key create @: id=my_ak_test secret=my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
 ```
 
 - Register the Node in AoC
@@ -5396,12 +5397,16 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
   Assign the necessary permissions to the root file ID for your new access key.
   This ensures the system and node owner have the correct authorization.
 
+> [!TIP]
+> The following two commands are executed using access key credentials.
+> If the node is configured for admin user, then add options: `--username=my_ak_test --password=my_secret`.
+
 ```shell
-<%=cmd%> node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id='F4 System'
+<%=cmd%> node access_key do self permission / create @: access_type=user access_id='F4 System'
 ```
 
 ```shell
-<%=cmd%> node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id=NODE_OWNER
+<%=cmd%> node access_key do self permission / create @: access_type=user access_id=NODE_OWNER
 ```
 
 - Optional next Steps

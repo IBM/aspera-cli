@@ -5918,6 +5918,7 @@ ascli aoc admin node do %name:'my_existing_node_name' v3 access_keys show self -
   Create the local credentials on your High-Speed Transfer Server (HSTS).
 
 > [!TIP]
+> In this command, "master node credentials" allowing access key creation are used.
 > The `id` and `secret` parameters are optional.
 > If you omit them, you must add `--show-secrets=yes` to the command.
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
@@ -5939,12 +5940,16 @@ ascli aoc admin node create @: url=https://aspera.example.com access_key=my_ak_t
   Assign the necessary permissions to the root file ID for your new access key.
   This ensures the system and node owner have the correct authorization.
 
+> [!TIP]
+> The following two commands are executed using access key credentials.
+> If the node is configured for admin user, then add options: `--username=my_ak_test --password=_my_secret`.
+
 ```shell
-ascli node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id='F4 System'
+ascli node access_key do self permission / create @: access_type=user access_id='F4 System'
 ```
 
 ```shell
-ascli node --username=my_ak_test --password=_my_secret access_key do self permission / create @: access_type=user access_id=NODE_OWNER
+ascli node access_key do self permission / create @: access_type=user access_id=NODE_OWNER
 ```
 
 - Optional next Steps
