@@ -179,7 +179,7 @@ module Aspera
           # special handling of some options
           case option_symbol
           when :format
-            @options[:display] = value.eql?(:table) ? 'info' : 'data'
+            @options[:display] = value.eql?(:table) ? :info : :data
           when :output
             $stdout = if value.eql?('-')
               STDOUT # rubocop:disable Style/GlobalStdStream
@@ -199,7 +199,7 @@ module Aspera
         nil
       end
 
-      # main output method
+      # Main output method
       # data: for requested data, not displayed if level==error
       # info: additional info, displayed if level==info
       # error: always displayed on stderr
