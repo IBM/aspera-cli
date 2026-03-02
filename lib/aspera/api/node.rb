@@ -45,6 +45,7 @@ module Aspera
       HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
+      HEADER_X_VERSION = 'Accept-Version'
       # / in cloud
       PATH_SEPARATOR = '/'
 
@@ -63,8 +64,8 @@ module Aspera
         attr_reader :use_dynamic_key
 
         # Adds cache control header, as globally specified to read request
-        # Use like this: read(...,**cache_control)
-        def cache_control
+        # Use like this: read(...,**headers_json_cache_control)
+        def headers_json_cache_control
           headers = {'Accept' => Mime::JSON}
           headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
           {headers: headers}
@@ -248,6 +249,14 @@ module Aspera
         return false
       end
 
+      def read_folder_content(file_id, query = nil, exception: true, path: nil)
+        read("files/#{file_id}/files", query, **self.class.headers_json_cache_control)
+      rescue StandardError => e
+        raise e if exception
+        Log.log.warn{"#{path}: #{e.class} #{e.message}"}
+        []
+      end
+
       # Recursively browse in a folder (with non-recursive method)
       # Entries of folders are processed if the processing method returns true
       # Links are processed on the respective node
@@ -267,14 +276,7 @@ module Aspera
           current_item = folders_to_explore.shift
           Log.log.debug{"Exploring #{current_item[:path]}".bg_green}
           # Get folder content
-          folder_contents =
-            begin
-              # TODO: use header
-              read("files/#{current_item[:id]}/files", query, **self.class.cache_control)
-            rescue StandardError => e
-              Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
-              []
-            end
+          folder_contents = read_folder_content(current_item[:id], query, exception: false, path: current_item[:path])
           Log.dump(:folder_contents, folder_contents)
           folder_contents.each do |entry|
             if entry.key?('error')
