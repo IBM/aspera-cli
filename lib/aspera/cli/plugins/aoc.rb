@@ -256,7 +256,10 @@ module Aspera
         # @param hash   [Hash,nil] Optional base `Hash` (modified)
         # @param string [Boolean] `true` to set key as `String`, else as `Symbol`
         # @param name   [Boolean] Include name
-        # @return [Hash] with key `workspace_[id,name]` (symbol or string) only if defined
+        # @return [Hash{Symbol, String => String}] the modified hash containing:
+        #   * `workspace_id` [String] the unique identifier.
+        #   * `workspace_name` [String] (optional) the name, included if +name+ is true.
+        # @note The key type (String or Symbol) depends on the +string+ parameter.
         def workspace_id_hash(hash = nil, string: false, name: false)
           info = aoc_api.workspace
           hash = {} if hash.nil?
