@@ -150,9 +150,9 @@ module Aspera
         else
           {}
         end
+        options.declare(:display, 'Output only some information', allowed: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :data)
         options.declare(:format, 'Output format', allowed: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
         options.declare(:output, 'Destination for results', handler: {o: self, m: :option_handler})
-        options.declare(:display, 'Output only some information', allowed: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
         options.declare(
           :fields, "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", handler: {o: self, m: :option_handler},
           allowed: [String, Array, Regexp, Proc],
@@ -178,6 +178,8 @@ module Aspera
           @options[option_symbol] = value
           # special handling of some options
           case option_symbol
+          when :format
+            @options[:display] = value.eql?(:table) ? 'info' : 'data'
           when :output
             $stdout = if value.eql?('-')
               STDOUT # rubocop:disable Style/GlobalStdStream

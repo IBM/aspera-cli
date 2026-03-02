@@ -8,7 +8,8 @@ Released: [Place date of release here]
 
 ### New Features
 
-**general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
+* **general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
+* `format`: `display` defaults to `info` only if `format` is set to `table`, else defaults to `data`.
 
 ### Issues Fixed
 

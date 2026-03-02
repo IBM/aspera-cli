@@ -447,6 +447,8 @@ module Aspera
             res_id_query = {'all': true}
           when :nodes
             available_commands += %i[shared_folders browse]
+          when :jobs
+            exec_args[:display_fields] = %w[id job_name job_type status]
           end
           res_command = options.get_next_command(available_commands)
           return Main.result_value_list(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
