@@ -5924,7 +5924,7 @@ ascli aoc admin node do %name:'my_existing_node_name' v3 access_keys show self -
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
-ascli node access_key create @: id=my_ak_test secret=_my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
+ascli node access_key create @: id=my_ak_test secret=my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
 ```
 
 - Register the Node in AoC
@@ -5942,7 +5942,7 @@ ascli aoc admin node create @: url=https://aspera.example.com access_key=my_ak_t
 
 > [!TIP]
 > The following two commands are executed using access key credentials.
-> If the node is configured for admin user, then add options: `--username=my_ak_test --password=_my_secret`.
+> If the node is configured for admin user, then add options: `--username=my_ak_test --password=my_secret`.
 
 ```shell
 ascli node access_key do self permission / create @: access_type=user access_id='F4 System'
@@ -6260,19 +6260,26 @@ ascli aoc files download <single file path>
 
 #### Shared folders
 
-Like in AoC web UI, **Shared Folders** can be created and shared with either **Private** or **Public** links.
-**Private** links require the collaborator to log in to access the shared folder.
-**Public** links include a passcode that enables the user to access the shared folder without login-in.
+In Aspera on Cloud (AoC), Shared Folders allow users to collaborate on content via Private or Public links.
 
-Shared folders can be created either:
+- **Private links**: Require the collaborator to log in to access the folder.
+- **Public links**: Include a passcode that allows access without an account or login.
 
-- by users in a workspace: they can share personal folders with other users in the same workspace: `aoc files perm`
-- by administrators: they can share a folder with users in any workspace: `aoc admin node do <node ID> perm`
+##### Management Scopes
 
-Technically (API), shared folders are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
-In both cases, it is necessary to specify a workspace.
+Shared folders can be managed through two primary administrative scopes:
 
-The basic payload to create a permission, i.e. a Shared Folder (last argument at creation usually specified with `@json:`) is:
+- User Shared Folders: Users share personal folders with others in the same workspace using `aoc files permission`.
+- Admin Shared Folders: Administrators share folders from any node in a workspace using `aoc admin node do <node_ID> permission`.
+
+Technically, shared folders are managed as [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on a specific node.
+When a permission is created, AoC generates a link in the recipient's home folder to that shared folder.
+
+##### Permission Payloads
+
+When creating a Shared Folder, `ascli` expects a `Hash` payload (typically passed via `@json:` or `@:`) similar to the one used at API level.
+
+**API-level Payload Example**:
 
 ```json
 {
@@ -6284,12 +6291,13 @@ The basic payload to create a permission, i.e. a Shared Folder (last argument at
 }
 ```
 
-`ascli` expects the same payload for creation.
-`ascli` automatically populates some payload fields and provides convenient additional fields that generate native fields:
+**Field Mapping & Helper Fields**:
+
+`ascli` automatically populates (Auto) several native fields and provides helper fields to simplify the process:
 
 | Field           | Type     | Description                                                          |
 |-----------------|----------|----------------------------------------------------------------------|
-| `file_id`       | Native<br/>Auto     | ID of the folder to share, as specified in the command line by path. |
+| `file_id`       | Native<br/>Auto     | The ID of the folder, automatically resolved from the path provided in the command. |
 | `access_levels` | Native<br/>Optional | List of access levels to set for the shared folder.<br/>Defaults to full access. |
 | `tags`          | Native<br/>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
 | `access_type`   | Native<br/>Required | Type of access, such as `user`, `group`, or `workspace`.<br/>Can be set with parameter `with`. |

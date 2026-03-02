@@ -388,7 +388,7 @@ module Aspera
           when :transport
             return Main.result_single_object(@api_node.transport_params)
           when :spec
-            return Main.result_single_object(@api_node.base_spec)
+            return Main.result_single_object(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))
           end
           Aspera.error_unreachable_line
         end

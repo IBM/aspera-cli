@@ -25,6 +25,7 @@ module Aspera
       TRANSPORT_FIELDS = (%w[remote_host] + AK_TSPEC_BASE.keys + WSS_FIELDS).freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
+      SPECIFIC = %w{token paths direction source_root destination_root}.freeze
       class << self
         # wrong def in transferd
         POLICY_FIX = {
