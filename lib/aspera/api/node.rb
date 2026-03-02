@@ -64,11 +64,10 @@ module Aspera
         attr_reader :use_dynamic_key
 
         # Adds cache control header, as globally specified to read request
-        # Use like this: read(...,**headers_json_cache_control)
-        def headers_json_cache_control
-          headers = {'Accept' => Mime::JSON}
+        # Use like this: read(...,headers: add_cache_control)
+        def add_cache_control(headers = {})
           headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
-          {headers: headers}
+          headers
         end
 
         # Set private key to be used
@@ -250,7 +249,7 @@ module Aspera
       end
 
       def read_folder_content(file_id, query = nil, exception: true, path: nil)
-        read("files/#{file_id}/files", query, **self.class.headers_json_cache_control)
+        read("files/#{file_id}/files", query, headers: self.class.add_cache_control)
       rescue StandardError => e
         raise e if exception
         Log.log.warn{"#{path}: #{e.class} #{e.message}"}

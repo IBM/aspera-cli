@@ -523,7 +523,7 @@ module Aspera
             return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
-            file_info = apifid[:api].read("files/#{apifid[:file_id]}", **Api::Node.headers_json_cache_control)
+            file_info = apifid[:api].read("files/#{apifid[:file_id]}", headers: Api::Node.add_cache_control)
             unless file_info['type'].eql?('folder')
               # a single file
               return Main.result_object_list([file_info], fields: GEN4_LS_FIELDS)
