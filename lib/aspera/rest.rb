@@ -536,27 +536,39 @@ module Aspera
 
     # Create: `POST`
     def create(subpath, params, **kwargs)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => Mime::JSON}, body: params, content_type: Mime::JSON, **kwargs)
+      kwargs[:headers] ||= {}
+      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
+      kwargs[:content_type] = Mime::JSON unless kwargs.key?(:content_type)
+      return call(operation: 'POST', subpath: subpath, body: params, **kwargs)
     end
 
     # Read: `GET`
     def read(subpath, query = nil, **kwargs)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => Mime::JSON}, query: query, **kwargs)
+      kwargs[:headers] ||= {}
+      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
+      return call(operation: 'GET', subpath: subpath, query: query, **kwargs)
     end
 
     # Update: `PUT`
     def update(subpath, params, **kwargs)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => Mime::JSON}, body: params, content_type: Mime::JSON, **kwargs)
+      kwargs[:headers] ||= {}
+      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
+      kwargs[:content_type] = Mime::JSON unless kwargs.key?(:content_type)
+      return call(operation: 'PUT', subpath: subpath, body: params, **kwargs)
     end
 
     # Delete: `DELETE`
     def delete(subpath, params = nil, **kwargs)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => Mime::JSON}, query: params, **kwargs)
+      kwargs[:headers] ||= {}
+      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
+      return call(operation: 'DELETE', subpath: subpath, query: params, **kwargs)
     end
 
     # Cancel: `CANCEL`
     def cancel(subpath, **kwargs)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => Mime::JSON}, **kwargs)
+      kwargs[:headers] ||= {}
+      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
+      return call(operation: 'CANCEL', subpath: subpath, **kwargs)
     end
 
     # Query entity by general search (read with parameter `q`)
