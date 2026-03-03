@@ -56,12 +56,14 @@ shares_wizard:
     - --password=test
 shares_admin_1:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - node
     - list
 shares_admin_group_list:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - group
@@ -72,6 +74,7 @@ shares_admin_group_id:
     - nodoc
     - save_output
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - group
@@ -82,6 +85,7 @@ shares_admin_group_users:
   tags:
     - nodoc
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - group
@@ -93,6 +97,7 @@ shares_admin_group_ldap:
   tags:
     - nodoc
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - group
@@ -103,6 +108,7 @@ shares_admin_group_ldap:
     - --bfail=no
 shares_admin_3:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -110,6 +116,7 @@ shares_admin_3:
     - list
 shares_admin_4:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -117,6 +124,7 @@ shares_admin_4:
     - list
 shares_admin_5:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -126,6 +134,7 @@ shares_admin_5:
     - show
 shares_admin_6:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -136,6 +145,7 @@ shares_admin_6:
     - '@json:{"app_login":true}'
 shares_admin_7:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -145,6 +155,7 @@ shares_admin_7:
     - list
 shares_admin_8:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -155,6 +166,7 @@ shares_admin_8:
     - "%name:@preset:shares.share"
 shares_admin_9:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -166,6 +178,7 @@ shares_admin_10:
   tags:
     - flaky
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - user
@@ -174,6 +187,7 @@ shares_admin_10:
     - the_name
 shares_admin_11:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - share
@@ -181,6 +195,7 @@ shares_admin_11:
     - --fields=DEF,-status,status_message
 shares_admin_12:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - share
@@ -189,6 +204,7 @@ shares_admin_12:
     - list
 shares_admin_xfer_settings:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - transfer_settings
@@ -196,6 +212,7 @@ shares_admin_xfer_settings:
     - --format=json
 shares_admin_xfer_set_chg:
   args:
+    - --preset=shares_admin
     - shares
     - admin
     - transfer_settings
@@ -407,8 +424,7 @@ serv_error1:
   expect: failed to authenticate
   args:
     - server
-    - --preset=server2_user
-    - --password=wrong
+    - --preset=server3_user
     - upload
     - $(PATH_TST_ASC_LCL)
     - --transfer-info=@json:{"monitor":false,"resume":{"iter_max":0}}
@@ -420,8 +436,7 @@ serv_error2:
   expect: Authentication failed
   args:
     - server
-    - --preset=server2_user
-    - --password=wrong
+    - --preset=server3_user
     - browse
     - /
     - --ssh-options=@json:{"number_of_password_prompts":0}
