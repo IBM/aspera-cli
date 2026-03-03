@@ -91,7 +91,7 @@ module Aspera
 
       # Build URI from URL and parameters and check it is `http` or `https`.
       # Check if php style is specified.
-      # Remove nil values from query.
+      # `nil` values in query result in key without value, e.g. `?a`, while empty string values result in `?a=`.
       # @param url   [String]            The URL without query.
       # @param query [Hash,Array,String] The query.
       def build_uri(url, query)
@@ -104,10 +104,10 @@ module Aspera
           when String
             query
           when Hash
-            URI.encode_www_form(h_to_query_array(query.compact))
+            URI.encode_www_form(h_to_query_array(query))
           when Array
             Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays of 2 elements'}
-            URI.encode_www_form(query.reject{ |pair| pair[1].nil?}) # remove nil values
+            URI.encode_www_form(query) # remove nil values
           else Aspera.error_unexpected_value(query.class){'query type'}
           end.gsub('%5B%5D=', '[]=')
         # [] is allowed in url parameters

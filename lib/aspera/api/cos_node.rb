@@ -10,6 +10,7 @@ module Aspera
     class CosNode < Node
       IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
       TOKEN_FIELD = 'delegated_refresh_token'
+      FASP_INFO_KEYS = %w[ATSEndpoint AccessKey].freeze
       class << self
         def parameters_from_svc_credentials(service_credentials, bucket_region)
           # check necessary contents
@@ -60,6 +61,9 @@ module Aspera
         ).body
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
         Log.dump(:ats_info, ats_info)
+        Aspera.assert_hash_all(ats_info, String, nil){'ats_info'}
+        Aspera.assert((FASP_INFO_KEYS - ats_info.keys).empty?){'ats_info missing required keys'}
+        Aspera.assert_hash_all(ats_info['AccessKey'], String, String){'ats_info'}
         @storage_credentials = {
           'type'  => 'token',
           'token' => {TOKEN_FIELD => nil}
