@@ -457,7 +457,8 @@ module Aspera
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}
         result_data = result_http.body
-        result_data = JSON.parse(result_data) if Mime.json?(result_mime)
+        Log.dump(:result_data_raw, result_data, level: :trace1)
+        result_data = JSON.parse(result_data) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
         Log.dump(:result_data, result_data)
         RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
         unless file_saved || save_to_file.nil?
