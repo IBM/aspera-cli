@@ -261,6 +261,13 @@ module Aspera
         return false
       end
 
+      # if `Accept-Version: 4.0` is not specified:
+      #     if `page` and `per_page` are not specified, then all entries are returned.
+      #     if either `page` or `per_page` is specified, then both are required, else 400
+      # if `Accept-Version: 4.0` is specified:
+      #     those queries are not available: page (not mentioned), sort, min_size, max_size, min_modified_time, max_modified_time, target_id, target_node_id, files_prefetch_count, page, name_iglob : either ignored or result in API error 400.
+      #     query include is accepted, but seems to do nothing as access_levels and recursive_counts are already included in results.
+      #     query `iteration_token` is accepted and allows to get paginated results, with `X-Aspera-Next-Iteration-Token` header in response to get next page token. `X-Aspera-Total-Count` header gives total count of entries.
       def read_folder_content(file_id, query = nil, exception: true, path: nil)
         Aspera.assert(!self.class.api_options[:accept_v4]){'Not implemented'}
         headers = {}
