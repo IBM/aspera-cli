@@ -1542,7 +1542,7 @@ nd_ak_mvdir:
     - "@preset:aoc.ak_name"
     - browse
     - /
-    - --node-cache=no
+    - --node-api.cache=false
     - --secret=@preset:aoc.ak_secret
 nd_ak_mvdirb:
   args:
@@ -1576,7 +1576,7 @@ nd_ak3:
     - "@preset:aoc.ak_name"
     - upload
     - "faux:///test_nd_ak3?100k"
-    - --default-ports=no
+    - --node-api.standard_ports=false
     - --secret=@preset:aoc.ak_secret
 node_ak_download:
   depends_on:
@@ -2100,7 +2100,7 @@ aoc_testdst_check:
     - files
     - browse
     - /
-    - --node-cache=no
+    - --node-api.cache=false
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
@@ -2817,7 +2817,7 @@ aoc_adm_ak_browse:
     - --secret=@preset:aoc.ak_secret
     - browse
     - /folder_sub
-    - --node-cache=no
+    - --node-api.cache=false
 aoc_adm_ak_sub_ak:
   depends_on:
     - aoc_adm_ak_create
@@ -2888,7 +2888,7 @@ aoc_adm_nd_mkdir_prep:
     - --secret=@preset:aoc.ak_secret
     - delete
     - /folder1
-    - --node-cache=no
+    - --node-api.cache=false
   post: sleep 4
 aoc_adm_nd_mkdir:
   depends_on:
@@ -2919,7 +2919,7 @@ aoc_adm_nd_brse:
     - --secret=@preset:aoc.ak_secret
     - browse
     - /
-    - --node-cache=no
+    - --node-api.cache=false
 aoc_adm_nd_rmdir:
   depends_on:
     - aoc_adm_nd_mkdir
@@ -3196,7 +3196,7 @@ aoc_adm_nd_tstshrfld_cleanup:
     - "%name:@preset:aoc.node_name"
     - delete
     - test_shared_folder
-    - --node-cache=no
+    - --node-api.cache=false
 aocadmndcrc:
   depends_on:
     - aoc_adm_nd_tstshrfld_cleanup
@@ -3221,7 +3221,7 @@ aocadmndcrd:
     - "%name:@preset:aoc.node_name"
     - browse
     - test_shared_folder
-    - --node-cache=no
+    - --node-api.cache=false
 aocadmndsh1:
   depends_on:
     - aoc_adm_nd_tstshrfld_cleanup

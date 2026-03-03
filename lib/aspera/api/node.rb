@@ -53,20 +53,33 @@ module Aspera
       OAuth::Factory.instance.register_decoder(lambda{ |token| Node.decode_bearer_token(token)})
 
       # Class instance variable, access with accessors on class
-      @use_standard_ports = true
-      @use_node_cache = true
+      @api_options = {
+        # Set to false to read transfer parameters from download_setup
+        standard_ports: true,
+        # Set to false to bypass cache in redis
+        cache:          true,
+        accept_v4:      false
+      }
+      OPTIONS = @api_options.keys.freeze
 
       class << self
-        # Set to false to read transfer parameters from download_setup
-        attr_accessor :use_standard_ports
-        # Set to false to bypass cache in redis
-        attr_accessor :use_node_cache
+        attr_reader :api_options
         attr_reader :use_dynamic_key
 
-        # Adds cache control header, as globally specified to read request
-        # Use like this: read(...,headers: add_cache_control)
+        def api_options=(h)
+          Aspera.assert_type(h, Hash)
+          h.each do |k, v|
+            Aspera.assert(@api_options.key?(k.to_sym)){"unknown api option: #{k} (#{OPTIONS.join(', ')})"}
+            Aspera.assert_type(v, TrueClass, FalseClass){"api options value for #{k} should be boolean"}
+            @api_options[k.to_sym] = v
+          end
+        end
+
+        # Adds cache control header for node API /files/:id
+        # as globally specified to read request
+        # Use like this: read(..., headers: add_cache_control)
         def add_cache_control(headers = {})
-          headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
+          headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless api_options[:cache]
           headers
         end
 
@@ -249,7 +262,10 @@ module Aspera
       end
 
       def read_folder_content(file_id, query = nil, exception: true, path: nil)
-        read("files/#{file_id}/files", query, headers: self.class.add_cache_control)
+        Aspera.assert(!self.class.api_options[:accept_v4]){'Not implemented'}
+        headers = {}
+        self.class.add_cache_control(headers)
+        read("files/#{file_id}/files", query, headers: headers)
       rescue StandardError => e
         raise e if exception
         Log.log.warn{"#{path}: #{e.class} #{e.message}"}
@@ -446,7 +462,7 @@ module Aspera
         # Add application specific tags (AoC)
         @app_info[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: @app_info) unless @app_info.nil?
         # Add remote host info
-        if self.class.use_standard_ports
+        if self.class.api_options[:standard_ports]
           # Get default TCP/UDP ports and transfer user
           transfer_spec.merge!(Transfer::Spec::AK_TSPEC_BASE)
           # By default: same address as node API

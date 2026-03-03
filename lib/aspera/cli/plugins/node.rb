@@ -93,12 +93,9 @@ module Aspera
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(
-              :default_ports, 'Gen4: Use standard FASP ports (true) or get from node API (false)', allowed: Allowed::TYPES_BOOLEAN, default: true,
-              handler: {o: Api::Node, m: :use_standard_ports}
-            )
-            options.declare(
-              :node_cache, 'Gen4: Set to no to force actual file system read', allowed: Allowed::TYPES_BOOLEAN,
-              handler: {o: Api::Node, m: :use_node_cache}
+              :node_api, 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
+              allowed: Hash,
+              handler: {o: Api::Node, m: :api_options}
             )
             options.declare(:root_id, 'Gen4: File id of top folder when using access key (override AK root id)')
             options.declare(:dynamic_key, 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key})

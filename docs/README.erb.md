@@ -5026,12 +5026,6 @@ Options:
 > This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months.
 The period is `[date of previous execution]..[now]`.
 
-#### Transfer: Using specific transfer ports
-
-By default, transfer nodes are expected to use ports TCP/UDP 33001.
-The web UI enforces that.
-The option `default_ports` ([yes]/no) allows <%=tool%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
-
 #### Using ATS
 
 Refer to section **Examples** of [ATS](#plugin-ats-ibm-aspera-transfer-service) and substitute command `ats` with `aoc admin ats`.
@@ -6322,17 +6316,32 @@ Example:
 
 #### Browse
 
+##### Gen 3
+
+This is when executing `browse` in `node` plugin or `v3`.
+
 Native API parameters can be placed in option `query`.
 
 Special parameters can be placed in option `query` for "gen3" browse:
 
-| Parameter   | Description                      |
-|-------------|----------------------------------|
-| `recursive` | Recursively list files.          |
-| `max`       | Maximum number of files to list. |
-| `self`      | Offset in the list.              |
+| Parameter   | Description                        |
+|-------------|------------------------------------|
+| `recursive` | Recursively list files.            |
+| `max`       | Maximum number of files to list.   |
+| `self`      | Show folder metadata, not content. |
+| `skip`      | Single API call.                   |
 
-Option `node_cache` can be set to `no` to disable the folder cache (Redis) and force reading directly from the file system.
+##### Gen 4
+
+This is when executing `browse` in `aoc files` or in `access_key`.
+
+Option `node_api` (`Hash`) controls some options of API used, with the following parameters:
+
+| Parameter| Default | Description |
+|----------|---------|-------------|
+| `cache`  | `true`  | `true` Folder content retrieved from Redis database (faster).<%=br%>`false` Folder content retrieved from storage. |
+| `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<%=br%>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
+| `accept_v4` | `false` | `true` uses API header: `Accept-Version: 4.0` |
 
 ### Operation `find` on **gen4/access key**
 

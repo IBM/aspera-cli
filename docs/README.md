@@ -4723,9 +4723,9 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
+        --display=ENUM               Output only some information: [data], error, info
         --format=ENUM                Output format: csv, image, json, jsonpp, nagios, ruby, [table], text, yaml
         --output=VALUE               Destination for results
-        --display=ENUM               Output only some information: data, error, [info]
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          (Table) Display style (Hash)
@@ -4817,8 +4817,7 @@ OPTIONS:
         --package-folder=VALUE       Handling of reception of packages in folders (Hash)
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --default-ports=ENUM         Gen4: Use standard FASP ports (true) or get from node API (false): no, [yes]
-        --node-cache=ENUM            Gen4: Set to no to force actual file system read: no, [yes]
+        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
         --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
         --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
 
@@ -5568,12 +5567,6 @@ Options:
 > [!NOTE]
 > This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months.
 The period is `[date of previous execution]..[now]`.
-
-#### Transfer: Using specific transfer ports
-
-By default, transfer nodes are expected to use ports TCP/UDP 33001.
-The web UI enforces that.
-The option `default_ports` ([yes]/no) allows `ascli` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 #### Using ATS
 
@@ -6607,7 +6600,7 @@ admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,
 admin kms_profile list
 admin node bearer_token %name:my_node_name user:all
 admin node do %name:my_node_name --secret=my_ak_secret browse /
-admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-cache=no
+admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-api.cache=false
 admin node do %name:my_node_name --secret=my_ak_secret delete /folder1
 admin node do %name:my_node_name --secret=my_ak_secret delete /folder_sub
 admin node do %name:my_node_name --secret=my_ak_secret mkdir /folder1
@@ -7066,17 +7059,32 @@ Example:
 
 #### Browse
 
+##### Gen 3
+
+This is when executing `browse` in `node` plugin or `v3`.
+
 Native API parameters can be placed in option `query`.
 
 Special parameters can be placed in option `query` for "gen3" browse:
 
-| Parameter   | Description                      |
-|-------------|----------------------------------|
-| `recursive` | Recursively list files.          |
-| `max`       | Maximum number of files to list. |
-| `self`      | Offset in the list.              |
+| Parameter   | Description                        |
+|-------------|------------------------------------|
+| `recursive` | Recursively list files.            |
+| `max`       | Maximum number of files to list.   |
+| `self`      | Show folder metadata, not content. |
+| `skip`      | Single API call.                   |
 
-Option `node_cache` can be set to `no` to disable the folder cache (Redis) and force reading directly from the file system.
+##### Gen 4
+
+This is when executing `browse` in `aoc files` or in `access_key`.
+
+Option `node_api` (`Hash`) controls some options of API used, with the following parameters:
+
+| Parameter| Default | Description |
+|----------|---------|-------------|
+| `cache`  | `true`  | `true` Folder content retrieved from Redis database (faster).<br/>`false` Folder content retrieved from storage. |
+| `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<br/>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
+| `accept_v4` | `false` | `true` uses API header: `Accept-Version: 4.0` |
 
 ### Operation `find` on **gen4/access key**
 
@@ -7490,7 +7498,7 @@ access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.tx
 access_key do my_ak_name node_info / --secret=my_ak_secret
 access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=my_ak_secret
 access_key do my_ak_name show %id:1 --secret=my_ak_secret
-access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no --secret=my_ak_secret
+access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --node-api.standard_ports=false --secret=my_ak_secret
 access_key do self permission '%id:$(read_value_from :bearer_root_id)' create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / show 1

@@ -10,10 +10,13 @@ Released: [Place date of release here]
 
 * **general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
 * `format`: `display` defaults to `info` only if `format` is set to `table`, else defaults to `data`.
+* `node`: Option `node_api.accept_v4` allows using gen4 browsing with `Accept-Version: 4.0`.
 
 ### Issues Fixed
 
 ### Breaking Changes
+
+* `node`: Options `node_cache` and `default_ports` are replaced with `Hash` option: `node_api` with keys: `cache` and `standard_ports`.
 
 ## 4.25.3
 
