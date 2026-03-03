@@ -2989,6 +2989,7 @@ aoc15bb:
 aoc_transfer_id:
   tags:
     - save_output
+    - wait_value
     - nodoc
   args:
     - --preset=aoc_admin
