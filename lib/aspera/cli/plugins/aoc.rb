@@ -233,8 +233,7 @@ module Aspera
             defaults:      {workspace: nil},
             scope:         @scope,
             subpath:       aoc_base_path,
-            secret_finder: config,
-            progress_disp: formatter
+            secret_finder: config
           ))
         end
 

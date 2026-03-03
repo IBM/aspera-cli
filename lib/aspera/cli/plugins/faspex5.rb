@@ -164,10 +164,10 @@ module Aspera
           loop do
             result = @api_v5.read("jobs/#{job_id}", {type: :formatted})
             break unless Api::Faspex::JOB_RUNNING.include?(result['status'])
-            formatter.long_operation_running(result['status'])
+            RestParameters.instance.spinner_cb.call(result['status'])
             sleep(0.5)
           end
-          formatter.long_operation_terminated
+          RestParameters.instance.spinner_cb.call(action: :success)
           return result
         end
 
@@ -357,7 +357,7 @@ module Aspera
               end
               folders_to_process.concat(data['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
               if use_paging
-                iteration_token = http[Api::Faspex::HEADER_ITERATION_TOKEN]
+                iteration_token = http[Api::Faspex::HEADER_X_NEXT_ITER_TOKEN]
                 break if iteration_token.nil? || iteration_token.empty?
                 query['iteration_token'] = iteration_token
               else
@@ -365,12 +365,11 @@ module Aspera
                 break if data['item_count'].eql?(0)
                 query['offset'] += data['item_count']
               end
-              formatter.long_operation_running(all_items.count)
+              RestParameters.instance.spinner_cb.call(all_items.count)
             end
             query.delete('iteration_token')
           end
-          formatter.long_operation_terminated
-
+          RestParameters.instance.spinner_cb.call(action: :success)
           return Main.result_object_list(all_items, total: total_count)
         end
 

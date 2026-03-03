@@ -128,20 +128,34 @@ module Aspera
         @spinner = nil
       end
 
-      # call this after REST calls if several api calls are expected
-      def long_operation_running(title = '')
+      def long_operation(title = nil, action: :spin)
         return unless Environment.terminal?
-        if @spinner.nil?
+        return if %i[error data].include?(@options[:display])
+
+        # Handle the "delayed start" state
+        return @spinner = :starting if action == :spin && @spinner.nil?
+
+        # Cleanup if we try to stop a spinner that never actually started
+        @spinner = nil if action != :spin && @spinner == :starting
+        return if @spinner.nil?
+
+        # Initialize the real TTY object if it's currently just the :starting symbol
+        if @spinner == :starting
           @spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
+          @spinner.update(title: '')
           @spinner.start
         end
-        @spinner.update(title: title)
-        @spinner.spin
-      end
 
-      def long_operation_terminated
-        @spinner&.stop
-        @spinner = nil
+        @spinner.update(title: title) if title
+
+        case action
+        when :spin
+          @spinner.spin
+        when :success, :fail
+          action == :success ? @spinner.success : @spinner.error
+          @spinner.stop
+          @spinner = nil
+        end
       end
 
       def declare_options(options)

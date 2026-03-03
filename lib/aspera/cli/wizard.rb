@@ -62,7 +62,7 @@ module Aspera
           detection_info = nil
           begin
             Log.log.debug{"detecting #{plugin_name_sym} at #{app_url}"}
-            formatter.long_operation_running("#{plugin_name_sym}\r")
+            RestParameters.instance.spinner_cb.call(plugin_name_sym.to_s)
             detection_info = plugin_klass.detect(app_url)
           rescue OpenSSL::SSL::SSLError => e
             Log.log.warn(e.message)
@@ -78,6 +78,7 @@ module Aspera
           # If there is a redirect, then the detector can override the url.
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
+        RestParameters.instance.spinner_cb.call(action: :success)
         raise "No known application found at #{app_url}" if found_apps.empty?
         Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)})
         return found_apps

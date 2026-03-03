@@ -10,7 +10,7 @@ Released: [Place date of release here]
 
 * **general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
 * `format`: `display` defaults to `info` only if `format` is set to `table`, else defaults to `data`.
-* `node`: Option `node_api.accept_v4` allows using gen4 browsing with `Accept-Version: 4.0`.
+* `node`: Parameter `accept_v4` of option `node_api` (defaults to `true`) allows using gen4 browsing with `Accept-Version: 4.0` for best performance when there are thousands of files.
 
 ### Issues Fixed
 

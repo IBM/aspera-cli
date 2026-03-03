@@ -6316,7 +6316,7 @@ Example:
 
 #### Browse
 
-##### Gen 3
+##### Gen3
 
 This is when executing `browse` in `node` plugin or `v3`.
 
@@ -6331,7 +6331,7 @@ Special parameters can be placed in option `query` for "gen3" browse:
 | `self`      | Show folder metadata, not content. |
 | `skip`      | Single API call.                   |
 
-##### Gen 4
+##### Gen4
 
 This is when executing `browse` in `aoc files` or in `access_key`.
 
@@ -6341,7 +6341,8 @@ Option `node_api` (`Hash`) controls some options of API used, with the following
 |----------|---------|-------------|
 | `cache`  | `true`  | `true` Folder content retrieved from Redis database (faster).<%=br%>`false` Folder content retrieved from storage. |
 | `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<%=br%>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
-| `accept_v4` | `false` | `true` uses API header: `Accept-Version: 4.0` |
+| `accept_v4` | `true` | `true` (default) uses API header: `Accept-Version: 4.0`.<%=br%>`false` uses legacy method (refer to node API). |
+| `per_page` | - | Requested number of items per API call.<%=br%>Set to `nil` (`@none:`) to deactivate paging.<%=br%>Default: `1000` when `accept_v4` is `true`. |
 
 ### Operation `find` on **gen4/access key**
 

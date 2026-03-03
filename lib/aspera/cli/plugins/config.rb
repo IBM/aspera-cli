@@ -191,7 +191,8 @@ module Aspera
         def setup_rest_and_transfer_runtime
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
-          RestParameters.instance.session_cb = lambda{ |http_session| update_http_session(http_session)}
+          RestParameters.instance.session_cb = ->(http_session){update_http_session(http_session)}
+          RestParameters.instance.spinner_cb = ->(title = nil, action: :spin){formatter.long_operation(title, action: action)}
           # Check http options that are global
           keys_to_delete = []
           @option_http_options.each do |k, v|

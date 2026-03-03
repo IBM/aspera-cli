@@ -239,14 +239,14 @@ module Aspera
               break if all_items.count >= total_count
               offset += items.count
               query['skip'] = offset
-              formatter.long_operation_running(all_items.count)
+              RestParameters.instance.spinner_cb.call(all_items.count)
             end
             query.delete('skip')
           end
           @prefixer&.remove_in_object_list!(all_items)
           return Main.result_object_list(all_items)
         ensure
-          formatter.long_operation_terminated
+          RestParameters.instance.spinner_cb.call(action: :success)
         end
 
         # Create async transfer spec request from direction and folders

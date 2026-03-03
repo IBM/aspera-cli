@@ -6,16 +6,16 @@ require 'aspera/oauth'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
-require 'zlib'
 require 'base64'
 require 'openssl'
 require 'pathname'
+require 'zlib'
 require 'net/ssh/buffer'
 
 module Aspera
   module Api
     # Provides additional functions using node API with gen4 extensions (access keys)
-    class Node < Aspera::Rest
+    class Node < Rest
       # Format of node scope : node.<access key>:<scope>
       module Scope
         # Node sub-scopes
@@ -42,10 +42,10 @@ module Aspera
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       # Special HTTP Headers
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
-      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
+      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
-      HEADER_X_VERSION = 'Accept-Version'
+      HEADER_ACCEPT_VERSION = 'Accept-Version'
       # / in cloud
       PATH_SEPARATOR = '/'
 
@@ -58,7 +58,7 @@ module Aspera
         standard_ports: true,
         # Set to false to bypass cache in redis
         cache:          true,
-        accept_v4:      false
+        accept_v4:      true
       }
       OPTIONS = @api_options.keys.freeze
 
@@ -78,6 +78,8 @@ module Aspera
         # Adds cache control header for node API /files/:id
         # as globally specified to read request
         # Use like this: read(..., headers: add_cache_control)
+        # @param headers [Hash] optional initial headers to add to
+        # @return [Hash] headers with cache control header added if needed
         def add_cache_control(headers = {})
           headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless api_options[:cache]
           headers
@@ -193,8 +195,8 @@ module Aspera
             Aspera.assert(!access_key.nil?)
           end
           return {
-            Node::HEADER_X_ASPERA_ACCESS_KEY => access_key,
-            'Authorization'                  => bearer_auth
+            HEADER_X_ASPERA_ACCESS_KEY => access_key,
+            'Authorization'            => bearer_auth
           }
         end
       end
@@ -261,6 +263,7 @@ module Aspera
         return false
       end
 
+      # Read folder content, with pagination management for gen4, not recursive
       # if `Accept-Version: 4.0` is not specified:
       #     if `page` and `per_page` are not specified, then all entries are returned.
       #     if either `page` or `per_page` is specified, then both are required, else 400
@@ -269,14 +272,39 @@ module Aspera
       #     query include is accepted, but seems to do nothing as access_levels and recursive_counts are already included in results.
       #     query `iteration_token` is accepted and allows to get paginated results, with `X-Aspera-Next-Iteration-Token` header in response to get next page token. `X-Aspera-Total-Count` header gives total count of entries.
       def read_folder_content(file_id, query = nil, exception: true, path: nil)
-        Aspera.assert(!self.class.api_options[:accept_v4]){'Not implemented'}
-        headers = {}
-        self.class.add_cache_control(headers)
-        read("files/#{file_id}/files", query, headers: headers)
-      rescue StandardError => e
-        raise e if exception
-        Log.log.warn{"#{path}: #{e.class} #{e.message}"}
-        []
+        folder_items = []
+        begin
+          query ||= {}
+          headers = self.class.add_cache_control
+          use_v4 = self.class.api_options[:accept_v4]
+          return read("files/#{file_id}/files", query, headers: headers) unless use_v4 || query.key?('page') || query.key?('per_page')
+          if use_v4
+            headers[HEADER_ACCEPT_VERSION] = '4.0'
+            query['per_page'] = 1000 unless query.key?('per_page')
+          elsif query.key?('per_page') && !query.key?('page')
+            query['page'] = 0
+          end
+          loop do
+            RestParameters.instance.spinner_cb.call(folder_items.count)
+            data, http = read("files/#{file_id}/files", query, headers: headers, ret: :both)
+            folder_items.concat(data)
+            if use_v4
+              iteration_token = http[HEADER_X_NEXT_ITER_TOKEN]
+              break if iteration_token.nil? || iteration_token.empty?
+              query['iteration_token'] = iteration_token
+            else
+              break if data['item_count'].eql?(0)
+              query['offset'] += data['item_count']
+            end
+          end
+        rescue StandardError => e
+          raise e if exception
+          Log.log.warn{"#{path}: #{e.class} #{e.message}"}
+          Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
+        ensure
+          RestParameters.instance.spinner_cb.call(folder_items.count, action: :success)
+        end
+        folder_items
       end
 
       # Recursively browse in a folder (with non-recursive method)
@@ -333,7 +361,7 @@ module Aspera
       # @param path [String] file or folder path (end with "/" is like setting process_last_link)
       # @param process_last_link [Boolean] if true, follow the last link
       # @return [Hash] Result data
-      # @option return [Aspera::Rest] :api     REST client instance
+      # @option return [Rest] :api     REST client instance
       # @option return [String]       :file_id File identifier
       def resolve_api_fid(top_file_id, path, process_last_link = false)
         Aspera.assert_type(top_file_id, String)

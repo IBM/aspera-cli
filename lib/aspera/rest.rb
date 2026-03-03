@@ -33,7 +33,7 @@ module Aspera
   class RestParameters
     include Singleton
 
-    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_on_timeout, :retry_on_unavailable, :retry_max, :retry_sleep, :session_cb, :progress_bar
+    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_on_timeout, :retry_on_unavailable, :retry_max, :retry_sleep, :session_cb, :progress_bar, :spinner_cb
 
     private
 
@@ -47,6 +47,7 @@ module Aspera
       @retry_sleep = 4
       @session_cb = nil
       @progress_bar = nil
+      @spinner_cb = nil
     end
   end
 
@@ -88,8 +89,9 @@ module Aspera
         query
       end
 
-      # Build URI from URL and parameters and check it is http or https
-      # Check iof php style is specified
+      # Build URI from URL and parameters and check it is `http` or `https`.
+      # Check if php style is specified.
+      # Remove nil values from query.
       # @param url   [String]            The URL without query.
       # @param query [Hash,Array,String] The query.
       def build_uri(url, query)
@@ -102,21 +104,22 @@ module Aspera
           when String
             query
           when Hash
-            URI.encode_www_form(h_to_query_array(query))
+            URI.encode_www_form(h_to_query_array(query.compact))
           when Array
             Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays of 2 elements'}
-            URI.encode_www_form(query)
+            URI.encode_www_form(query.reject{ |pair| pair[1].nil?}) # remove nil values
           else Aspera.error_unexpected_value(query.class){'query type'}
           end.gsub('%5B%5D=', '[]=')
         # [] is allowed in url parameters
         uri
       end
 
+      # Support array for query parameter, there is no standard.
+      # Either p=1&p=2 (default)
+      # or p[]=1&p[]=2 (if `:x_array_php_style` is set to true in query)
       # @param query [Hash] HTTP query as hash
       def h_to_query_array(query)
         Aspera.assert_type(query, Hash)
-        # Support array for query parameter, there is no standard.
-        # Either p[]=1&p[]=2, or p=1&p=2
         suffix = query.delete(:x_array_php_style) ? '[]' : nil
         query.each_with_object([]) do |(k, v), query_array|
           case v
@@ -412,7 +415,7 @@ module Aspera
         http_session.request(req) do |response|
           result_http = response
           result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
-          Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, mime2= #{response['Content-Type']}"}
+          Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
               result_http.code.to_s.start_with?('2') &&
@@ -453,12 +456,9 @@ module Aspera
         # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}
-        if Mime.json?(result_mime)
-          result_data = JSON.parse(result_http.body) rescue result_http.body
-          Log.dump(:result_data, result_data)
-        else # Mime::TEXT
-          result_data = result_http.body
-        end
+        result_data = result_http.body
+        result_data = JSON.parse(result_data) if Mime.json?(result_mime)
+        Log.dump(:result_data, result_data)
         RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
         unless file_saved || save_to_file.nil?
           FileUtils.mkdir_p(File.dirname(save_to_file))

@@ -300,9 +300,9 @@ module Aspera
             remain_pages -= 1 unless remain_pages.nil?
             break if remain_pages == 0
             offset += page_result[items_key].length
-            formatter.long_operation_running
+            RestParameters.instance.spinner_cb.call("#{result.length} / #{total_count || '?'}")
           end
-          formatter.long_operation_terminated
+          RestParameters.instance.spinner_cb.call(action: :success)
           return result, total_count
         end
 

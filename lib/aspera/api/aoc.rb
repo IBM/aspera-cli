@@ -145,11 +145,10 @@ module Aspera
         # Call `block` with same query using paging and response information.
         # Block must return a 2 element `Array` with data and http response
         # @param query    [Hash] Additionnal query parameters
-        # @param progress [nil, Object] Uses methods: `long_operation_running` and `long_operation_terminated`
         # @return [Hash] Items and total number of items
         # @option return [Array<Hash>] :items The list of items
         # @option return [Integer] :total The total number of items
-        def call_paging(query: {}, progress: nil)
+        def call_paging(query: {})
           Aspera.assert_type(query, Hash){'query'}
           Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
@@ -177,9 +176,9 @@ module Aspera
             break if !max_items.nil? && item_list.count >= max_items
             break if !max_pages.nil? && page_count >= max_pages
             break if total_count&.<=(item_list.count)
-            progress&.long_operation_running("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
+            RestParameters.instance.spinner_cb.call("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
           end
-          progress&.long_operation_terminated
+          RestParameters.instance.spinner_cb.call(action: :success)
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
           return {items: item_list, total: total_count}
         end
@@ -232,8 +231,7 @@ module Aspera
         username: nil,
         password: nil,
         workspace: nil,
-        secret_finder: nil,
-        progress_disp: nil
+        secret_finder: nil
       )
         # Test here because link may set url
         Aspera.assert(url, 'Missing mandatory option: url', type: ParameterError)
@@ -244,7 +242,6 @@ module Aspera
         # key: access key
         # value: associated secret
         @secret_finder = secret_finder
-        @progress_disp = progress_disp
         @workspace_name = workspace
         @cache_user_info = nil
         @cache_url_token_info = nil
@@ -309,7 +306,7 @@ module Aspera
       # @param query [nil, Hash] Additional query
       # @return [Hash] {items: , total: }
       def read_with_paging(subpath, query = nil)
-        return self.class.call_paging(query: query, progress: @progress_disp) do |paged_query|
+        return self.class.call_paging(query: query) do |paged_query|
           read(subpath, query: paged_query, ret: :both)
         end
       end

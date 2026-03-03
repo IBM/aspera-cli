@@ -91,7 +91,7 @@ module Aspera
       JOB_RUNNING = %w[queued working].freeze
       PATH_STANDARD_ROOT = '/aspera/faspex'
       PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
-      HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
+      HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
       HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
       EMAIL_NOTIF_LIST = %w[
         welcome_email
@@ -136,6 +136,15 @@ module Aspera
       end
       attr_reader :pub_link_context
 
+      # @param url             Faspex URL, can be a public link
+      # @param auth            Authentication method: :boot (token in header), :web (open browser), :jwt (client_id + private key), :public_link (context in URL)
+      # @param password        For :boot auth, the token copied directly from browser in developer mode
+      # @param client_id       For :web and :jwt auth, the client_id of web UI application
+      # @param client_secret   For :web auth, the client_secret of web UI application (not needed for :jwt)
+      # @param redirect_uri    For :web auth, the redirect_uri of web UI application (must be the same as in application configuration)
+      # @param username        For :jwt auth, the username of the user to impersonate
+      # @param private_key     For :jwt auth, the private key to sign JWT token
+      # @param passphrase      For :jwt auth, the passphrase of the private key
       def initialize(
         url:,
         auth:,
