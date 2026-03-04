@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_META_BEGIN
-subtitle: "ascli 4.26.0.pre"
+subtitle: "ascli 4.25.4"
 author: "Laurent Martin"
 PANDOC_META_END
 -->
@@ -40,7 +40,7 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version: 4.26.0.pre
+Version: 4.25.4
 
 Laurent Martin/2016-2026
 
@@ -125,7 +125,7 @@ ascli --version
 ```
 
 ```text
-4.26.0.pre
+4.25.4
 ```
 
 > [!NOTE]
@@ -785,11 +785,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.4 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.4-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.4-gems aspera-cli-4.25.4-gems.tgz
 ```
 
 #### Unix-like
@@ -934,7 +934,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.25.4
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4692,7 +4692,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.4)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4737,7 +4737,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [graphical], text
+        --ui=ENUM                    Method to start browser: graphical, [text]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
