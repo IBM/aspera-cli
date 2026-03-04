@@ -192,6 +192,16 @@ module Aspera
           return list.select(&filter), total
         end
 
+        # Build query to get package recipients based on package info in case of shared inbox or workgroup recipient
+        # @param package_id [String] the package id to get info from
+        def recipient_query(package_id)
+          package_info = @api_v5.read("packages/#{package_id}")
+          base_query = {}
+          base_query['recipient_workgroup_id'] = package_info['recipients'].first['id'] if WORKGROUP_TYPES.include?(package_info['recipients'].first['recipient_type'])
+          base_query['recipient_user_id'] = package_info['recipients'].first['id'] if package_info['recipients'].first['recipient_type'].eql?('user')
+          base_query
+        end
+
         def package_receive(package_ids)
           # prepare persistency if needed
           skip_ids_persistency = nil
@@ -241,7 +251,7 @@ module Aspera
             type:          Api::Faspex.box_type(box),
             transfer_type: Api::Faspex::TRANSFER_CONNECT
           }
-          download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
+          # download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
           packages.each do |package|
             pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
@@ -249,7 +259,7 @@ module Aspera
             transfer_spec = @api_v5.call(
               operation:    'POST',
               subpath:      "packages/#{pkg_id}/transfer_spec/download",
-              query:        download_params,
+              query:        download_params.merge(recipient_query(pkg_id)),
               content_type: Mime::JSON,
               body:         param_file_list,
               headers:      {'Accept' => Mime::JSON}
@@ -319,9 +329,9 @@ module Aspera
 
         # Browse a folder
         # @param browse_endpoint [String] the endpoint to browse
-        def browse_folder(browse_endpoint)
+        def browse_folder(browse_endpoint, base_query = {})
           folders_to_process = [options.get_next_argument('folder path', default: '/')]
-          query = query_read_delete(default: {})
+          query = base_query.merge(query_read_delete(default: {}))
           filters = query.delete('filters'){{}}
           Aspera.assert_type(filters, Hash)
           filters['basenames'] ||= []
@@ -383,7 +393,7 @@ module Aspera
           when :show
             return Main.result_single_object(@api_v5.read("packages/#{package_id}"))
           when :browse
-            return browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}")
+            return browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
           when :status
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             status = wait_package_status(package_id, status_list: status_list)
@@ -720,7 +730,8 @@ module Aspera
         end
         SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
-        CONTACT_TYPES = %w{workgroup shared_inbox distribution_list user external_user}.freeze
+        WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze
+        CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
         private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES
       end
     end
