@@ -4381,6 +4381,7 @@ conf_ssl_options:
 conf_vault_macos:
   tags:
     - nodoc
+    - interactive
   args:
     - -N
     - config
@@ -4406,6 +4407,7 @@ conf_vault_macosc:
     - conf_vault_macos_prepare
   tags:
     - nodoc
+    - interactive
   args:
     - -N
     - config
