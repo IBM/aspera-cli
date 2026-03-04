@@ -418,7 +418,7 @@ class DocHelper
   def generate
     Aspera::Log.log.info("Generating markdown doc for version #{build_version}")
     check_headings(@paths[:template])
-    check_links(@paths[:template]) if ENV['ASPERA_CLI_DOC_CHECK_LINKS']
+    check_links(@paths[:template]) if BuildTools.env_var_true?('ASPERA_CLI_DOC_CHECK_LINKS')
     # get current plugins
     plugin_manager = Aspera::Cli::Plugins::Factory.instance
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)

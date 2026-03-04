@@ -9,11 +9,6 @@ require 'aspera/cli/version'
 require 'aspera/cli/manager'
 require_relative 'paths'
 
-# Log control for rake
-Aspera::Log.instance.level = ENV.fetch('LOG_LEVEL', 'info').to_sym
-Aspera::SecretHider.instance.log_secrets = Aspera::Cli::BoolValue.true?(ENV.fetch('LOG_SECRETS', 'no').downcase.to_sym)
-# Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
-
 module BuildTools
   # @see Aspera::Log#logger
   def log(*args, **kwargs, &block)
@@ -100,5 +95,14 @@ module BuildTools
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{build_version}.gem"
   end
 
-  module_function :log, :run, :drun, :dry_run?, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key
+  def env_var_true?(var_name, default: 'no')
+    Aspera::Cli::BoolValue.true?(ENV.fetch(var_name, default).downcase.to_sym)
+  end
+
+  module_function :log, :run, :drun, :dry_run?, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key, :built_gem_file, :use_specific_version, :env_var_true?
 end
+
+# Log control for rake
+Aspera::Log.instance.level = ENV.fetch('LOG_LEVEL', 'info').to_sym
+Aspera::SecretHider.instance.log_secrets = BuildTools.env_var_true?('LOG_SECRETS')
+# Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}

@@ -105,15 +105,15 @@ The build system uses Ruby's `rake`.
 
 A few macros and environment variables control certain aspects of the build:
 
-| Environment variable        | Description                                         |
-|-----------------------------|-----------------------------------------------------|
-| `ASPERA_CLI_TEST_CONF_URL`  | URL for configuration file with secrets for tests.  |
-| `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.      |
-| `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
-| `LOG_SECRETS`               | Change log secrets in `rake` tasks.                   |
-| `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
-| `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
-| `SIGNING_KEY_PEM`           | PEM of signing key.                                 |
+| Environment variable        | Contents    | Description                                          |
+|-----------------------------|-------------| -----------------------------------------------------|
+| `ASPERA_CLI_TEST_CONF_URL`  | URL         | URL for configuration file with secrets for tests.   |
+| `ASPERA_CLI_DOC_CHECK_LINKS`| yes, no     |  Check links still exist during doc generation.      |
+| `LOG_SECRETS`               | yes, no     |  Change log secrets in `rake` tasks.                 |
+| `LOG_LEVEL`                 | debug, ...  |  Change log level in `rake` tasks.                   |
+| `ENABLE_COVERAGE`           | set/not set |  Enable test coverage analysis when set.             |
+| `SIGNING_KEY`               | path        |  Path to the signing key used to build the gem file. |
+| `SIGNING_KEY_PEM`           | PEM value   |  PEM of signing key.                                 |
 
 These can be set either as environment variables or directly on the `rake` command line.
 
