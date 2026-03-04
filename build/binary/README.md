@@ -20,13 +20,13 @@ Else, it would use the build tools in the current folder.
 To build the version specified in the local folder with gem from rubygems.org:
 
 ```bash
-rake binary:build
+bundle exec rake binary:build
 ```
 
 To build a given version:
 
 ```bash
-rake binary:build'[4.23.0]'
+bundle exec rake binary:build'[4.23.0]'
 ```
 
 ## History

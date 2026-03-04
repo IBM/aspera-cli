@@ -21,27 +21,36 @@ bundle exec rake container:repo
 
 To build the image for a released version:
 
-Check out that version using the version tag:
+- Check out that version using the version tag:
 
 ```shell
 git checkout v4.23.0
 ```
 
-Prepare the Ruby environment:
+- Cleanup the current environment:
 
 ```shell
-bundle config set without optional:special
+ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|while read p;do gem uninstall -axI $p;done
+rm -fr $(gem env gemdir)/gems/*
+rm -f Gemfile.lock
+rm -fr .bundle
+```
+
+- Prepare the Ruby environment:
+
+```shell
+bundle config set without optional:special:development
 bundle config set disable_shared_gems true
 bundle install
 ```
 
-Check the version:
+- Check the version:
 
 ```shell
 bundle exec rake tools:version
 ```
 
-Build the container image:
+- Build the container image:
 
 ```shell
 bundle exec rake container:build
@@ -53,7 +62,13 @@ This command performs the following steps:
 - Builds the container image using this version of the gem retrieved from <rubygems.org>. This creates the `Dockerfile` from the template.
 - Tags the image with both the specific version and `latest`.
 
-Push to the image registry (both tags: version and `latest`):
+- Perform a smoke test:
+
+```shell
+bundle exec rake container:test
+```
+
+- Push to the image registry (both tags: version and `latest`):
 
 ```shell
 bundle exec rake container:push

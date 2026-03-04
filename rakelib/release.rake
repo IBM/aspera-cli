@@ -108,10 +108,16 @@ namespace :release do
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{version}.gem"
   end
 
+  # Check if the user has access to GitHub
+  # Raises an error if not authenticated or does not have access
+  def check_github_access
+    drun('gh', 'api', 'user', out: File::NULL, err: File::NULL)
+  end
+
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
     check_gem_signing_key
-    Aspera.assert(ENV.key?('GH_TOKEN')){'Missing env var: GH_TOKEN'}
+    check_github_access
 
     # Determine versions
     versions = release_versions(args[:release_version], args[:next_version])
@@ -135,11 +141,9 @@ namespace :release do
     Rake::Task['doc:build'].invoke
     Rake::Task[dry_run? ? 'unsigned' : 'signed'].invoke
 
-    # Commit release: CHANGELOG.md README.md version.rb
+    # Commit, Tag, Push release: CHANGELOG.md README.md version.rb
     drun('git', 'add', '-A')
     drun('git', 'commit', '-m', "Release #{versions[:release_tag]}")
-
-    # Tag + push
     drun('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
     drun('git', 'push', 'origin', versions[:release_tag])
 
