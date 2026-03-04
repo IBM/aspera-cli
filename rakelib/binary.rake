@@ -26,6 +26,11 @@ def install_gem(name, into)
   run('gem', 'install', name, '--no-document', '--install-dir', into)
 end
 
+# @return path to the built executable for a given version
+def built_exec_path(version)
+  Paths::RELEASE / "#{Aspera::Cli::Info::CMD_NAME}-#{version}-#{Aspera::Environment.instance.architecture}"
+end
+
 namespace :binary do
   desc 'Build the single executable'
   task :build, [:version] do |_t, args|
@@ -97,8 +102,16 @@ namespace :binary do
 
     # Move artifact to release folder
     # Target file path
-    path_exec_target = Paths::RELEASE / "#{Aspera::Cli::Info::CMD_NAME}.#{gem_version_build}.#{Aspera::Environment.instance.architecture}"
+    path_exec_target = built_exec_path(gem_version_build)
     FileUtils.mv(PATH_WORKDIR / Aspera::Cli::Info::CMD_NAME, path_exec_target)
     puts "Build finished: #{path_exec_target}"
+  end
+
+  # Release on guthub
+  desc 'Release the executable on GitHub: args: version'
+  task :release, [:version] do |_t, args|
+    version = args[:version] || build_version
+    asset_path = built_exec_path(version)
+    run('gh', 'release', 'upload', "v#{version}", asset_path)
   end
 end
