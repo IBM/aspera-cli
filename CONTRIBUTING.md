@@ -2,22 +2,23 @@
 
 ## Reporting Issues and Vulnerabilities
 
-If you encounter a problem or a security vulnerability, please report it on [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
+If you encounter a bug or a security vulnerability, please report it via [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
 
-Before submitting a new issue:
+Before submitting a new report:
 
-- Search existing issues to see if your problem has already been reported or resolved.
+- **Search existing issues** to determine if the problem has already been documented or resolved.
 
-To help us assist you efficiently, include the following in your report:
+To help us diagnose and resolve the issue efficiently, please include the following in your report:
 
-- The version of `ascli` you are using:
+- The `ascli` version you are using:
 
   ```bash
-  ascli version
+  ascli -v
   ```
 
-- Confirmation that you are using the latest version (update it if needed).
-- Your Ruby version information:
+- **Update confirmation**: Verify that you are running the latest version.
+
+- **Your Ruby environment details**:
 
   ```bash
   ruby -v
@@ -29,7 +30,7 @@ We welcome contributions to improve the `aspera-cli` project!
 
 ### Getting Started
 
-Clone the repository and navigate to the project's root directory:
+Clone the repository to initialize the development environment:
 
 ```bash
 git clone https://github.com/IBM/aspera-cli.git
@@ -38,55 +39,55 @@ bundle install
 bundle exec rake -T
 ```
 
-For testing instructions, refer to [Running Tests](#running-tests).
+For detailed testing instructions, please refer to [Running Tests](#running-tests).
 
 ### How to Contribute
 
-To submit a contribution:
+To submit a contribution, follow these steps:
 
 1. **Fork** the repository on GitHub.
 
-1. **Create a feature branch** for your changes.
+1. **Create a feature branch** specifically for your changes.
 
 1. **Implement** your feature or bug fix.
 
 1. **Write tests** to ensure your changes are robust and prevent regressions.
 
-1. Run `rubocop` to ensure your code follows the Ruby style guide.
+1. **Run** `rubocop` to ensure your code adheres to the Ruby style guide.
 
-1. Update `CHANGELOG.md` with a summary of your changes.
+1. **Update** `CHANGELOG.md` with a concise summary of your changes.
 
-1. Submit a **pull request** with a clear description of your contribution.
+1. **Submit a pull request** with a detailed description of your work.
 
 > [!TIP]
-> Make sure your pull request is focused and includes only relevant changes.
+> Keep pull requests focused; include only changes relevant to the specific feature or fix.
 
 ## Architecture
 
-The overall architecture of `aspera-cli` is modular and extensible.
+The `aspera-cli` architecture is designed to be modular and extensible.
 
 ![Architecture](docs/architecture.png)
 
 ### Structure Highlights
 
-- Entry Point:
+- **Entry Point**:
 
-  `lib/aspera/cli/main.rb`, CLI startup logic.
+  `lib/aspera/cli/main.rb` contains the core CLI startup logic.
 
-- Plugins:
+- **Plugins**:
 
-  Located in `lib/aspera/cli/plugins`; plugins extend CLI functionality and encapsulate specific features.
+  Located in `lib/aspera/cli/plugins`, these extend CLI functionality and encapsulate specific features.
 
-- Transfer Agents:
+- **Transfer Agents**:
 
-  Found in `lib/aspera/agent`, these handle data transfer operations.
+  Located in `lib/aspera/agent`, these components manage data transfer operations.
 
-Class diagrams are provided in <docs/uml.png>
+Detailed class diagrams are available in <docs/uml.png>
 
 ## Ruby Environment
 
-`aspera-cli` is written in Ruby.
-You can install Ruby using any method you prefer (e.g., `rbenv`, `rvm`, system package manager).
+`aspera-cli` is built with Ruby.
+You can manage your Ruby installation using your preferred tool (e.g., `rbenv`, `rvm`, or a system package manager).
 
 To start with a clean state and remove all installed gems:
 
@@ -95,35 +96,34 @@ bundle exec rake tools:clean_gems
 ```
 
 > [!TIP]
-> This is especially useful before testing across different Ruby versions or preparing for a release.
+> This is particularly useful when testing across different Ruby versions or preparing for a new release.
 
 ## Toolchain
 
-The build system uses Ruby's `rake`.
+The build system is powered by Ruby's `rake`.
 
-### Environment
+### Environment Configuration
 
-A few macros and environment variables control certain aspects of the build:
+The following environment variables and macros control specific build behaviors:
 
-| Environment variable        | Description                                         |
-|-----------------------------|-----------------------------------------------------|
-| `ASPERA_CLI_TEST_CONF_URL`  | URL for configuration file with secrets for tests.  |
-| `ASPERA_CLI_DOC_CHECK_LINKS`| Check links still exist during doc generation.      |
-| `LOG_LEVEL`                 | Change log level in `rake` tasks.                   |
-| `LOG_SECRETS`               | Change log secrets in `rake` tasks.                   |
-| `ENABLE_COVERAGE`           | Enable test coverage analysis when set.             |
-| `SIGNING_KEY`               | Path to the signing key used to build the gem file. |
-| `SIGNING_KEY_PEM`           | PEM of signing key.                                 |
+| Environment variable        | Contents   | Description                                                  |
+|-----------------------------|------------| -------------------------------------------------------------|
+| `ASPERA_CLI_TEST_CONF_URL`  | URL        | URL for the configuration file containing secrets for tests. |
+| `ASPERA_CLI_DOC_CHECK_LINKS`| yes/no     | Validates that links exist during documentation generation.  |
+| `LOG_SECRETS`               | yes/no     | Toggles the logging of secrets in `rake` tasks.              |
+| `LOG_LEVEL`                 | debug, ... | Sets the logging verbosity for `rake` tasks.                 |
+| `ENABLE_COVERAGE`           | set/unset  | Enables test coverage analysis when defined.                 |
+| `SIGNING_KEY`               | File path  | Path to the signing key used for building the gem file.      |
+| `SIGNING_KEY_PEM`           | PEM Value  | The PEM content of the signing key.                          |
 
-These can be set either as environment variables or directly on the `rake` command line.
+These values can be set as standard environment variables or passed directly to the `rake` command.
 
-Setting `SIGNING_KEY_PEM` creates file `$HOME/.gem/signing_key.pem` and sets `SIGNING_KEY` to that path.
+Setting `SIGNING_KEY_PEM` automatically generates a file at `$HOME/.gem/signing_key.pem` and sets the `SIGNING_KEY` variable accordingly.
 
 > [!NOTE]
-> Environment variables `ASPERA_CLI_*` are typically set in the user’s shell profile for development.
-> Others are intended for use on the command line.
+> `ASPERA_CLI_*` variables are typically defined in your shell profile for development, while others are intended for ad-hoc command-line use.
 
-To use the CLI directly from the development environment, add this to your shell profile (adapt the real path):
+To run the CLI directly from your source directory, add the following to your shell profile (adjust the path as necessary):
 
 ```bash
 dev_ascli=$HOME/github/aspera-cli
@@ -135,26 +135,27 @@ export RUBYLIB=$dev_ascli/lib:$RUBYLIB
 
 Documentation is generated with `pandoc` and `LaTeX`.
 
-The IBM `Plex` font is used; for installation instructions, see [IBM Plex](https://www.ibm.com/plex/).
+The project utilizes the **IBM Plex font**.
+Installation instructions can be found at [IBM Plex](https://www.ibm.com/plex/).
 
-On macOS, to install `lualatex` and all packages:
+On macOS, install `lualatex` and required packages via Homebrew:
 
 ```bash
 brew install texlive
 ```
 
-If `lualatex` is installed using another method, ensure that the following packages are installed:
+If using an alternative installation method, ensure the following packages are present:
 
 ```bash
 tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
-To check URLs during documentation generation, set the environment variable: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
+- To validate URLs during generation: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
 
-To debug documentation generation, set the environment variable: `ASPERA_CLI_DOC_DEBUG=debug`.
+- To debug the generation process: `ASPERA_CLI_DOC_DEBUG=debug`.
 
-To generate documentation:
+- To build the documentation:
 
 ```bash
 rake doc:build
@@ -162,18 +163,18 @@ rake doc:build
 
 ## Test Environment
 
-Refer to <tests/README.md>.
+Detailed testing information can be found in <tests/README.md>.
 
 ## Build
 
-The unsigned gem is built with:
+To build an unsigned gem:
 
 ```bash
 bundle install
 bundle exec rake unsigned
 ```
 
-If you don't want to install optional gems:
+To exclude optional gems from the installation:
 
 ```bash
 bundle config set without optional
@@ -181,35 +182,34 @@ bundle config set without optional
 
 ### Signed gem
 
-A private key is required to generate a signed gem.
-Its path must be set using environment variable `SIGNING_KEY`.
-The gem is signed with the public certificate found in `certs` and the private key specified by `SIGNING_KEY` (kept secret by the maintainer).
+Generating a signed gem requires a **private key**, specified via the `SIGNING_KEY` environment variable.
+The gem is signed using the public certificate in `certs` and the **private key**.
 
 ```bash
 bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
-Refer to <certs/README.md>.
+For more details, see <certs/README.md>.
 
-### gRPC stubs for transfer SDK
+### gRPC stubs for Transfer SDK
 
-Update with:
+To update the stubs:
 
 ```bash
 bundle exec rake tools:grpc
 ```
 
-It downloads the latest `proto` file and then compiles it into ruby sources included in the repo.
+This task downloads the latest `.proto` files and compiles them into the Ruby source files included in the repository.
 
 ## Container image build
 
-See [Container build](./container/README.md).
+Refer to the [Container build guide](./container/README.md).
 
 ## Single executable build
 
-See [Executable build](build/binary/README.md).
+Refer to the [Executable build guide](build/binary/README.md).
 
-To list operations:
+To list related `rake` tasks:
 
 ```bash
 bundle exec rake -T ^binary:
@@ -219,25 +219,26 @@ bundle exec rake -T ^binary:
 
 ### Branching Strategy
 
-This project uses a single `main` branch for development.
-During the development cycle, the version in `lib/aspera/cli/version.rb` uses a `.pre` suffix (e.g., `x.y.z.pre`) to indicate a pre-release state.
+This project maintains a single `main` branch.
+During development, the version in `lib/aspera/cli/version.rb` includes a `.pre` suffix (e.g., `x.y.z.pre`).
 
-Feature development and bug fixes can be done either:
+Contributions are handled as follows:
 
-- Directly on `main` for small changes
-- Via feature branches with pull requests for larger changes
+- **Direct commits** to `main`: Permitted for minor changes.
 
-### Checklist Before a New Release
+- **Feature branches**: Required for significant changes via pull requests.
 
-When preparing for a new release, do the following:
+### Pre-Release Checklist
 
-- Run the test suite:
+Before a new release, ensure the following:
+
+- **Pass all tests**:
 
 ```bash
 bundle exec rake test:run
 ```
 
-- Verify that the container builds successfully (using the local gem file):
+- **Verify container builds** (using the local gem):
 
 ```bash
 bundle exec rake container:build'[local]'
@@ -246,60 +247,61 @@ bundle exec rake container:test
 
 ### Automated Release Process
 
-Releases are triggered via the GitHub Actions UI using the **Release** workflow (`.github/workflows/release.yml`).
+Releases are managed through the GitHub Actions UI via the **New Release on GitHub** workflow (`.github/workflows/release.yml`).
 
-To create a release:
+1. Navigate to **Actions** > **New Release on GitHub**
+2. Select **Run workflow**
+3. (Optionally) Specify:
+   - **Release version**: Defaults to the current `version.rb` value (minus the `.pre` suffix).
 
-1. Navigate to **Actions** > **Release** in the GitHub repository
-2. Click **Run workflow**
-3. Optionally specify:
-   - **Release version**: The version to release. If left empty, uses the current version from `version.rb` without the `.pre` suffix.
-   - **Next development version**: The next version to prepare for. If left empty, auto-increments the minor version. The `.pre` suffix is added automatically.
+     e.g. current `a.b.c.pre` &rarr; `a.b.c`.
+   - **Next development version**: Defaults to an incremented minor version with the `.pre` suffix.
+
+     e.g. release `a.b.c` &rarr; `a.(b+1).0.pre`.
 4. Click **Run workflow**
 
-The workflow automatically:
+The automated workflow performs the following:
 
-1. Updates `version.rb` with the release version
-2. Rebuilds documentation (PDF manual, Markdown README)
+1. Updates `version.rb` to the release version
+2. Rebuilds all documentation (PDF and Markdown)
 3. Commits the changes
 4. Creates and pushes the release tag
 5. Triggers the `deploy` workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
-6. Updates `version.rb` to the next development version with `.pre` suffix
-7. Commits and pushes the version bump in main branch.
+6. Increments `version.rb` to the next development version.
+7. Commits and pushes the version bump to `main`.
 
 ### Manual Release Process (Alternative)
 
-If needed, releases can still be done manually.
-Basically, follow the same procedure as in the GitHub action:
+If necessary, you can mirror the automated process manually:
 
 - Update the version in `lib/aspera/cli/version.rb` (remove `.pre` suffix)
 
-- Build the PDF manual in `pkg`:
+- Build the PDF manual:
 
 ```shell
 bundle exec rake doc:build
 ```
 
-- Build the signed `.gem` in `pkg`:
+- Build the signed gem:
 
 ```shell
 bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
-- Create the release version tag and push it to GitHub:
+- Tag the release and push to GitHub:
 
 ```shell
 bundle exec rake release_tag
 ```
 
-This will trigger the action `.github/workflows/deploy.yml`, which builds the gem file and pushes it to RubyGems.
+This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
 
-- After release, update `version.rb` to the next development version with `.pre` suffix
+- Update `version.rb` to the next `.pre` development version.
 
 ## Future Improvements
 
-- Replace custom REST and OAuth classes with standard Ruby gems ?
-  - <https://github.com/rest-client/rest-client>
-  - <https://github.com/oauth-xx/oauth2>
-- Use the `thor` gem <http://whatisthor.com/> (or other standard Ruby CLI manager)
-- Look at <https://github.com/phusion/traveling-ruby>
+- Evaluate replacing custom REST and OAuth implementations with standard gems:
+  - [rest-client](https://github.com/rest-client/rest-client)
+  - [oauth2](https://github.com/oauth-xx/oauth2)
+- Integrate `thor` <http://whatisthor.com/> or another standard Ruby CLI framework.
+- Explore [Traveling Ruby](https://github.com/phusion/traveling-ruby) for distribution.

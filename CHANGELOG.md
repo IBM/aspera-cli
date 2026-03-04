@@ -10,13 +10,15 @@ Released: [Place date of release here]
 
 * **general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
 * `format`: `display` defaults to `info` only if `format` is set to `table`, else defaults to `data`.
-* `node`: Parameter `accept_v4` of option `node_api` (defaults to `true`) allows using gen4 browsing with `Accept-Version: 4.0` for best performance when there are thousands of files.
+* `node`: Parameter `accept_v4` of option `node_api` (boolean, defaults to `true`) allows using gen4 browsing with `Accept-Version: 4.0` for best performance when there are thousands of files.
 
 ### Issues Fixed
 
+* `faspex5`: Listing content, or receiving a package requires API parameter: `recipient_user_id` or `recipient_workgroup_id`, else error `Not authorized` is returned.
+
 ### Breaking Changes
 
-* `node`: Options `node_cache` and `default_ports` are replaced with `Hash` option: `node_api` with keys: `cache` and `standard_ports`.
+* `node`: Options `node_cache` and `default_ports` are replaced with option: `node_api` (`Hash`) with boolean parameters (keys): `cache` and `standard_ports` with default value `true`.
 
 ## 4.25.3
 
