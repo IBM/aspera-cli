@@ -96,6 +96,8 @@ module Aspera
         end
 
         # Display image for that URL or directly blob
+        #
+        # @param url_or_blob [String] URL or blob to display as image
         def result_image(url_or_blob)
           return {type: :image, data: url_or_blob}
         end
@@ -111,6 +113,9 @@ module Aspera
         end
 
         # A list of values
+        #
+        # @param data [Array] The list of values
+        # @param name [String] The name of the list (used for display)
         def result_value_list(data, name: 'id')
           Aspera.assert_type(data, Array)
           Aspera.assert_type(name, String)

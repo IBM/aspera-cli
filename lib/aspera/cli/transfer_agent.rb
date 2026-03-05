@@ -33,6 +33,9 @@ module Aspera
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
 
       class << self
+        # Analyze transfer session statuses and return a global status
+        #
+        # @param statuses [Array] list of session status, each status is :success or an error message string
         # @return [:success]  if all sessions statuses returned by "start" are success
         # @return [Exception] if one sessions statuses returned by "start" is failed
         def session_status(statuses)
