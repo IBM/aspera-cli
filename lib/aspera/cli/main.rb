@@ -17,13 +17,27 @@ module Aspera
   module Cli
     # Global objects shared with plugins
     class Context
+      # @!attribute [rw] options
+      #   @return [Manager] the command line options manager
+      # @!attribute [rw] transfer
+      #   @return [TransferAgent] the transfer agent, used by transfer plugins
+      # @!attribute [rw] config
+      #   @return [Plugins::Config] the configuration plugin, used by plugins to get configuration values and presets
+      # @!attribute [rw] formatter
+      #   @return [Formatter] the formatter, used by plugins to display results and messages
+      # @!attribute [rw] persistency
+      #   @return [Object] # whatever the type is
+      # @!attribute [rw] man_header
+      #   @return [Boolean] whether to display the manual header in plugin help
       MEMBERS = %i[options transfer config formatter persistency man_header].freeze
       attr_accessor(*MEMBERS)
 
+      # Initialize all members to nil, so that they are defined and can be validated later
       def initialize
-        @man_header = true
+        MEMBERS.each{ |i| instance_variable_set(:"@#{i}", nil)}
       end
 
+      # Validate that all members are set, raise exception if not
       def validate
         MEMBERS.each do |i|
           Aspera.assert(instance_variable_defined?(:"@#{i}"))
@@ -35,7 +49,7 @@ module Aspera
         transfer.eql?(:only_manual)
       end
 
-      def only_manual
+      def only_manual!
         @transfer = :only_manual
       end
     end
@@ -160,7 +174,9 @@ module Aspera
         execute_command = true
         # Catch exceptions
         begin
-          init_agents_options_plugins
+          init_agents_and_options
+          # Find plugins, shall be after parse! ?
+          Plugins::Factory.instance.add_plugins_from_lookup_folders
           # Help requested without command ? (plugins must be known here)
           show_usage if @option_help && @context.options.command_or_arg_empty?
           generate_bash_completion if @bash_completion
@@ -258,17 +274,11 @@ module Aspera
         return
       end
 
-      def init_agents_options_plugins
-        init_agents_and_options
-        # Find plugins, shall be after parse! ?
-        Plugins::Factory.instance.add_plugins_from_lookup_folders
-      end
-
       def show_usage(all: true, exit: true)
         # Display main plugin options (+config)
         @context.formatter.display_message(:error, @context.options.parser)
         if all
-          @context.only_manual
+          @context.only_manual!
           # List plugins that have a "require" field, i.e. all but main plugin
           Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
             # Config was already included in the global options
@@ -288,6 +298,7 @@ module Aspera
 
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
       def init_agents_and_options
+        @context.man_header = true
         # Create formatter, in case there is an exception, it is used to display.
         @context.formatter = Formatter.new
         # Create command line manager with arguments

@@ -258,15 +258,8 @@ class DocHelper
     return message
   end
 
-  # generate help for the given command
-  # @paths varname name of tool
+  # Generate help for the given command
   def generate_help(tool_name)
-    # if tool_name.eql?(:ascli)
-    #  tool = Aspera::Cli::Main.new({})
-    #  tool.init_agents_options_plugins
-    #  tool.show_usage(exit: false)
-    #  return
-    # end
     raise "missing #{tool_name}" unless @paths.key?(tool_name)
     exec_path = @paths[tool_name]
     # Add library path for Ruby CLI execution
