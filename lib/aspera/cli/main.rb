@@ -12,6 +12,8 @@ require 'aspera/cli/hints'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
+require 'net/ssh/errors'
+require 'openssl'
 
 module Aspera
   module Cli
