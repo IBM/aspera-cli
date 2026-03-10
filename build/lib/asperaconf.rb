@@ -11,9 +11,9 @@ module Aspera
     # Comment anatomy in aspera.conf:
     #
     #   <level>log</level>
-    #     <❗-- Logging Level: Lookup disable, log, dbg1 or dbg2 -->   ← primary
-    #     <❗-- asconfigurator -x "set_logging_data;level,<value>" -->  ← tool hint (skip)
-    #     <❗-- Amount of detail in logging. -->                        ← description
+    #     <ǃ-- Logging Level: Lookup disable, log, dbg1 or dbg2 -->    ← primary
+    #     <ǃ-- asconfigurator -x "set_logging_data;level,<value>" -->  ← tool hint (skip)
+    #     <ǃ-- Amount of detail in logging. -->                        ← description
     #
     # The primary comment encodes:
     #   - Optional marker  : "Not defined by default."
@@ -329,7 +329,7 @@ module Aspera
       # ── Build version ─────────────────────────────────────────────────────
       #
       # The first child comment of <conf> carries the build version:
-      #   <❗-- Build version 4.4.7.2228 -->
+      #   <ǃ-- Build version 4.4.7.2228 -->
       def extract_version
         @doc.root.children.each do |node|
           next unless node.is_a?(Nokogiri::XML::Comment)
