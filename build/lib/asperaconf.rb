@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'nokogiri'
-
 module Aspera
   module Conf
     # ═════════════════════════════════════════════════════════════════════════════
@@ -312,6 +310,7 @@ module Aspera
       REPEATING = %w[trunk log_setting path rule filter opt command restriction].freeze
 
       def initialize(xml_string)
+        require 'nokogiri'
         @doc     = Nokogiri::XML(xml_string){ |c| c.default_xml.noblanks}
         @version = extract_version
         @xsd     = XSDWriter.new
