@@ -6,6 +6,7 @@ require_relative '../build/lib/build_tools'
 require_relative '../build/lib/pandoc'
 require_relative '../build/lib/doc_helper'
 require_relative '../build/lib/test_env'
+require_relative '../build/lib/asperaconf'
 include BuildTools
 
 PATH_TMP_DOT = Paths::TMP / 'uml.dot'
@@ -68,6 +69,11 @@ namespace :doc do
   file Paths::TSPEC_JSON_SCHEMA => [Paths::TSPEC_YAML_SCHEMA] do
     Aspera::Log.log.info{"Generating: #{Paths::TSPEC_JSON_SCHEMA}"}
     run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{Paths::TSPEC_JSON_SCHEMA}")
+  end
+
+  desc 'Generate XSD for aspera.conf'
+  task :aspera_conf_xsd do
+    ASPERA_CONF_XSD.write(Aspera::Conf::Generator.new(%x{asuserdata -+}).generate)
   end
 
   file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do

@@ -24,7 +24,6 @@ module Paths
   GEMSPEC = TOP / 'aspera-cli.gemspec'
   GEMFILE = TOP / 'Gemfile'
   GEMFILE_LOCK = TOP / 'Gemfile.lock'
-  CONF_SIGNATURE = DOC / 'conf_signature.txt'
   PDF_MANUAL = RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
   # Command-line test suite configuration.
   TEST_DEFS = TST / 'tests.yml'
@@ -33,8 +32,10 @@ module Paths
   DOCKERFILE_TEMPLATE = BUILD / 'container/Dockerfile.tmpl.erb'
   OVERRIDE_VERSION_FILE = TMP / 'container_beta_version.txt'
   WIN_ZIP_SRC = BUILD / 'windowszip'
+  CONF_SIGNATURE = DOC / 'conf_signature.txt'
   TMPL_CONF_FILE = DOC / 'test_env.conf'
   TSPEC_JSON_SCHEMA = DOC / 'spec.schema.json'
+  ASPERA_CONF_XSD = DOC / 'aspera.conf.xsd'
   UML_PNG = Paths::DOC / 'uml.png'
   MD_MANUAL = DOC / 'README.md'
   MD_ERB = DOC / 'README.erb.md'
