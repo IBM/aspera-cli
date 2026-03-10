@@ -17,16 +17,6 @@ PANDOC_META_END
 
 ![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
 
-Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
-Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
-
-Like <%=tool%>, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
-Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
-When you hear Hootput’s call, you know your data is already in flight.
-
----
-
 "Hey, I’m <%=tool%> - your data’s personal courier.
 I don’t do flashy dashboards; I’m happiest in a terminal window.
 Hand me a command, and I’ll zip your files across the network faster than you thought possible.
@@ -39,8 +29,6 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Version: <%=build_version%>
-
 <%=gemspec.authors.join(', ')%>/2016-<%=Time.new.year%>
 
 The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
@@ -52,8 +40,7 @@ Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['docu
 
 Minimum required Ruby <%=ruby_version%>.
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
-[Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
+[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 ### When to use and when not to use
 
@@ -94,6 +81,9 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 Examples of command-line operations are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
 Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
+> [!NOTE]
+> All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
+
 Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, and not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
@@ -109,23 +99,39 @@ The transfer is not directly implemented in <%=tool%>; rather, <%=tool%> uses on
 
 ## Quick Start
 
-This section walks you through installation, your first transfer, and next steps.
+This section walks you through your first interaction with <%=tool%> on Linux.
 
 ### Prerequisites
 
-Before continuing, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get <%=tool%> set up on your system.
-Once installed, confirm <%=tool%> is accessible by checking its version:
+- Get the <%=tool%> binary for Linux (.tgz) in the [release section of the GitHub repository](https://github.com/IBM/aspera-cli/releases).
+
+- Decompress to get the executable:
 
 ```shell
-<%=cmd%> --version
+mkdir -p $HOME/bin
+tar zxvf <%=cmd%>.<%=build_version%>.linux-x86_64.tgz
+mv <%=cmd%>.<%=build_version%>.linux-x86_64 $HOME/bin/<%=cmd%>
+export PATH=$PATH:$HOME/bin
+```
+
+> [!NOTE]
+> For other OSes, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get <%=tool%> set up on your system.
+
+- Once installed, confirm <%=tool%> is accessible by checking its version:
+
+```shell
+<%=cmd%> -v
 ```
 
 ```text
 <%=build_version%>
 ```
 
-> [!NOTE]
-> All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
+- Install the Aspera transfer runtime:
+
+```shell
+<%=cmd%> config transferd install
+```
 
 ### Option A - Test with the Aspera Demo Server
 
@@ -1072,7 +1078,8 @@ gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINES
 
 ### SSL CA certificate bundle
 
-SSL certificates are validated using a certificate store, by default it is the one of the system's `openssl` library.
+SSL certificates are validated using a certificate store.
+By default, it is the one of the system's `openssl` library.
 
 To display trusted certificate store locations:
 
@@ -1668,10 +1675,6 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-The Extended Value `@:` takes all remaining positional arguments and expects each of them to use [dot-path notation](#dot-path-notation).
-The optional special marker `END` can be used to stop the arguments caught by `@:`.
-This is useful, for example, if `@:` is used to specify a payload, and a file list is also placed on command line.
-
 The general structure of positional arguments is:
 
 ```text
@@ -1936,7 +1939,7 @@ The display of result is as follows:
 | Result          | `no`       | `yes`       | `single`                            |
 |-----------------|------------|-------------|-------------------------------------|
 | `single_object` | Simple     | Simple      | Simple                              |
-| `object_list`   | Transposed | Simple<%=br%>(Multiple objects) | Simple if 1 object,<%=br%>transposed if 2+ objects |
+| `object_list`   | Transposed | Simple<%=br%>(Multiple objects) | Simple if 1 object.<%=br%>transposed if 2+ objects. |
 
 This parameter can be set as a global default with:
 
@@ -2122,7 +2125,7 @@ Understanding this concept once makes it immediately usable everywhere it appear
 | Surface                   | Syntax                | in/out | read/write |
 |---------------------------|-----------------------|--------|------------|
 | [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
-| [Positional arguments](#positional-arguments) | `@: key.sub=value`      | Input | write |
+| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
 | [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
 
@@ -2161,6 +2164,42 @@ Example: JSON to dot-path output
 │ a.d   │ hello,world │
 ╰───────┴─────────────╯
 ```
+
+#### Positional Arguments with Dot-path
+
+The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
+It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
+
+**Usage and Syntax**:
+
+The general syntax for this argument is:
+
+```text
+@: <dot-path>=<value> [<dot-path>=<value>] ... [END]
+```
+
+- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
+
+- `<dot-path>=<value>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+
+- `END`: An optional marker that terminates the `@:` parsing session.
+
+  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+
+  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+
+> [!IMPORTANT]
+> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
+> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
+
+**Example**: Sending a package with a file list using `@:` for package information.
+
+```shell
+<%=cmd%> aoc packages send @: name="my title" recipients.0=user@example.com END file1.dat file2.dat
+```
+
+> [!CAUTION]
+> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
 
 ### Extended Value Syntax
 
@@ -2205,11 +2244,13 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | Parses remaining arguments as `Hash` or `Array`. |
+| `<empty>`| None     | Any      | Parses remaining positional arguments as a `Hash` or `Array` using [dot-path notation](#dot-path-notation).<%=br%>Use `END` to stop collection when further positional arguments must follow. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
 > For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` parameter named `i`.
+
+**Chaining rule**: When multiple decoders are combined, they are applied right-to-left: the rightmost decoder runs first on the literal string, and each decoder to its left receives the output of the one to its right.
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -2352,181 +2393,16 @@ All options for <%=tool%> can be set on command line, or by env vars, or using [
 
 A configuration file provides a way to define default values, especially for authentication options, thus avoiding having to always specify those options on the command line.
 
-The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `config_file`).
 
 The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
 Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
 
-### Invalid Filename Characters
-
-Some commands of <%=tool%> may create files or folders based on input that may contain invalid characters for the local file system.
-The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
-
-The first character specifies the replacement character, and the following characters are the invalid ones.
-This is used when a folder or file is created from a value that potentially contains invalid characters.
-For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
-The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
-
-> [!NOTE]
-> This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
-
-### Temporary files
-
-Some temporary files may be needed during runtime.
-The temporary folder may be specified with option: `temp_folder`.
-Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
-By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
-A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
-
-#### Option Preset
-
-An [Option Preset](#option-preset) is a collection of options and their associated values in a named section in the configuration file.
-
-A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file :
-
-```shell
-<%=cmd%> config preset set|delete|show|initialize|update <option preset>
-```
-
-The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
-
-```shell
-<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
-```
-
-- This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
-
-The command `set` allows setting individual options in an [Option Preset](#option-preset).
-
-```shell
-<%=cmd%> config preset set demo_server password my_password_here
-```
-
-The command `initialize`, like `update` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
-
-```shell
-<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
-```
-
-A full terminal based overview of the configuration can be displayed using:
-
-```shell
-<%=cmd%> config preset over
-```
-
-A list of [Option Preset](#option-preset) can be displayed using:
-
-```shell
-<%=cmd%> config preset list
-```
-
-A good practice is to not manually edit the configuration file and use modification commands instead.
-If necessary, the configuration file can be opened in a text editor with:
-
-```shell
-<%=cmd%> config open
-```
-
-> [!NOTE]
-> This starts the editor specified by env var `EDITOR` if defined.
-
-The former format for commands is still supported:
-
-```shell
-<%=cmd%> config preset set|delete|show|initialize|update <name>
-<%=cmd%> config preset over
-<%=cmd%> config preset list
-```
-
-It is possible to load an [Option Preset](#option-preset) from within another [Option Preset](#option-preset) using the `preset` option.
-For example if `pcommon` is a preset with common options, and `pspecific` is a preset with specific options, then `pspecific` can load `pcommon` using:
-
-```shell
-<%=cmd%> config preset set pspecific preset pcommon
-```
-
-When `pspecific` is loaded, then cumulative option `preset` will be set, and it will also load `pcommon`.
-
-#### Special Option Preset: `config`
-
-This preset name is reserved and contains a single key: `version`.
-This is the version of <%=tool%> which created the file.
-
-#### Special Option Preset: `default`
-
-This preset name is reserved and contains an array of key-value, where the key is the name of a plugin, and the value is the name of another preset.
-
-When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
-
-> [!NOTE]
-> Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
-
-Operations on this preset are done using regular `config` operations:
-
-```shell
-<%=cmd%> config preset set default _plugin_name_ _default_preset_for_plugin_
-```
-
-```shell
-<%=cmd%> config preset get default _plugin_name_
-```
-
-```json
-"_default_preset_for_plugin_"
-```
-
-### Plugin: `config`: Configuration
-
-Plugin `config` provides general commands for <%=tool%>:
-
-- Option Preset operations (configuration file)
-- `wizard`
-- `vault`
-- `ascp`
-- `transferd`
-
-The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
-When <%=tool%> starts, it looks for the `default` Option Preset and checks the value for `config`.
-If set, it loads the options independently of the plugin used.
-
-> [!NOTE]
-> If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
-
-> [!TIP]
-> If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
-
-Show current default (global) Option Preset (`config` plugin):
-
-```shell
-<%=cmd%> config preset get default config
-```
-
-```text
-global_common_defaults
-```
-
-Set a global parameter:
-
-```shell
-<%=cmd%> config preset set GLOBAL version_check_days 0
-```
-
-If the default global Option Preset is not set, and you want to use a different name:
-
-```shell
-<%=cmd%> config preset set default config my_common_defaults
-```
-
-```shell
-<%=cmd%> config preset set GLOBAL version_check_days 0
-```
-
-<%=include_commands_for_plugin(:config,4)%>
-
 #### Format of configuration file
 
 The configuration file is a `Hash` in a YAML file.
-Example:
+
+**Example**:
 
 ```yaml
 config:
@@ -2577,6 +2453,193 @@ my_aoc_org:
 ```
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
+
+> [!NOTE]
+> The main use of the configuration file is to store collections of options.
+> Nevertheless, it can be used to store any type of information, not only option values.
+> For example, the special preset: [`default`](#special-option-preset-default).
+
+#### Option Preset
+
+An [Option Preset](#option-preset) is a collection of options and their associated values in a named section in the configuration file.
+
+A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file:
+
+```text
+<%=cmd%> config preset <set|delete|show|initialize|update> <preset name>
+```
+
+The command `initialize` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
+
+```shell
+<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
+```
+
+One can also use [positional arguments with dot-path](#positional-arguments-with-dot-path):
+
+```shell
+<%=cmd%> config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=my_pass_here ts.precalculate_job_size=true
+```
+
+The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
+
+```shell
+<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
+```
+
+This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
+
+The command `set` allows setting individual options in an [Option Preset](#option-preset):
+
+```text
+<%=cmd%> config preset set <preset name> <parameter name> <parameter value>
+```
+
+Example:
+
+```shell
+<%=cmd%> config preset set demo_server password my_password_here
+```
+
+A full terminal based overview of the configuration can be displayed using:
+
+```shell
+<%=cmd%> config preset over
+```
+
+A list of [Option Preset](#option-preset) can be displayed using:
+
+```shell
+<%=cmd%> config preset list
+```
+
+A good practice is to not manually edit the configuration file and use modification commands instead.
+If necessary, the configuration file can be opened in a text editor with:
+
+```shell
+<%=cmd%> config open
+```
+
+> [!NOTE]
+> This starts the editor specified by env var `EDITOR` if defined.
+
+The former format for commands is still supported:
+
+```shell
+<%=cmd%> config preset set|delete|show|initialize|update <name>
+<%=cmd%> config preset over
+<%=cmd%> config preset list
+```
+
+It is possible to load an [Option Preset](#option-preset) from within another [Option Preset](#option-preset) using the `preset` option.
+For example if `pcommon` is a preset with common options, and `pspecific` is a preset with specific options, then `pspecific` can load `pcommon` using:
+
+```shell
+<%=cmd%> config preset set pspecific preset pcommon
+```
+
+When `pspecific` is loaded, then cumulative option `preset` will be set, and it will also load `pcommon`.
+
+#### Special Option Preset: `config`
+
+This preset name is reserved and contains a single key: `version`.
+This is the version of <%=tool%> which created the file.
+
+#### Special Option Preset: `default`
+
+This preset name is reserved and contains an array of key-value, where the key is the name of a plugin, and the value is the name of another preset.
+Usually, [Option presets](#option-preset) are used to contain pre-defined options and values, but this preset contains names of presets to be used by default for plugins.
+
+When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
+
+> [!NOTE]
+> Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+
+Operations on this preset are done using regular `config` operations:
+
+```shell
+<%=cmd%> config preset set default _plugin_name_ _default_preset_for_plugin_
+```
+
+> [!NOTE]
+> `default` is not a command, it is simply the name of the special preset.
+
+```shell
+<%=cmd%> config preset get default _plugin_name_
+```
+
+```json
+"_default_preset_for_plugin_"
+```
+
+### Invalid Filename Characters
+
+Some commands of <%=tool%> may create files or folders based on input that may contain invalid characters for the local file system.
+The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
+
+The first character specifies the replacement character, and the following characters are the invalid ones.
+This is used when a folder or file is created from a value that potentially contains invalid characters.
+For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
+The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
+
+> [!NOTE]
+> This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
+
+### Temporary files
+
+Some temporary files may be needed during runtime.
+The temporary folder may be specified with option: `temp_folder`.
+Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
+By default, (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
+A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
+
+### Plugin: `config`: Configuration
+
+Plugin `config` provides general commands for <%=tool%>:
+
+- Option Preset operations (configuration file)
+- `wizard`
+- `vault`
+- `ascp`
+- `transferd`
+
+The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
+When <%=tool%> starts, it looks for the `default` Option Preset and checks the value for `config`.
+If set, it loads the options independently of the plugin used.
+
+> [!NOTE]
+> If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
+
+> [!TIP]
+> If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
+
+Show current default (global) Option Preset (`config` plugin):
+
+```shell
+<%=cmd%> config preset get default config
+```
+
+```text
+global_common_defaults
+```
+
+Set a global parameter:
+
+```shell
+<%=cmd%> config preset set GLOBAL version_check_days 0
+```
+
+If the default global Option Preset is not set, and you want to use a different name:
+
+```shell
+<%=cmd%> config preset set default config my_common_defaults
+```
+
+```shell
+<%=cmd%> config preset set GLOBAL version_check_days 0
+```
+
+<%=include_commands_for_plugin(:config,4)%>
 
 #### Evaluation order of options
 
@@ -2657,7 +2720,7 @@ The simplest invocation is:
 ```
 
 If the application requires a private key, the user can either provide the path to it with option `key_path`.
-The user is told where to place the associated public pey PEM in the application.
+The user is told where to place the associated public key PEM in the application.
 
 #### Example of configuration for a plugin
 
@@ -2703,7 +2766,7 @@ or
 <%=cmd%> config preset overview
 ```
 
-- Execute a command on the **Shares** application using default options
+- Execute a command on the **Shares'** application using default options
 
 ```shell
 <%=cmd%> shares repo browse /
@@ -2769,7 +2832,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 |-----------|-------------------------|---------------------------------------------------------------------|
 | `type`    | `vault`                 | The type of the vault |
 | `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
-| `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
+| `token`   | `dev-only-token`        | The token for the vault.<%=br%>By default uses parameter `vault_password` |
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
@@ -2941,7 +3004,7 @@ Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
 > [!WARNING]
-> Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
+> Private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### Web service
 
@@ -3875,7 +3938,13 @@ Possible values for option `sources` are:
 
 - `@args` : (default) the list of files (or file pair) is directly provided on the command line (after commands): unused arguments (not starting with `-`) are considered as source files.
 So, by default, the list of files to transfer will be simply specified on the command line.
-Example:
+
+> [!IMPORTANT]
+> When using `@:` to build a command parameter and `--sources=@args` (default),
+> the `END` marker is required between the `@:` block and the file list.
+> See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path).
+
+**Example**:
 
   ```shell
   <%=cmd%> server upload ~/first.file secondfile
@@ -5833,7 +5902,7 @@ To remove a password:
 {"password_enabled":false}
 ```
 
-By default access level is set to `edit`.
+By default, access level is set to `edit`.
 Change the default access level by providing the parameter: `access_levels` in payload.
 `access_levels` can be:
 
@@ -6183,7 +6252,7 @@ Typically:
 
 ### Authentication on Server with SSH session
 
-If SSH is the session protocol (by default i.e. not WSS), then following session authentication methods are supported:
+If SSH is the session protocol (by default, i.e. not WSS), then following session authentication methods are supported:
 
 - `password`: SSH password
 - `ssh_keys`: SSH keys (Multiple SSH key paths can be provided.)
@@ -8232,7 +8301,7 @@ gem install sqlite3
 In order to use the `admin` commands, the user must provide the path to the database folder:
 
 - i.e. a folder containing a subfolder named `.private-asp`.
-- By default it is the local synchronized folder.
+- By default, it is the local synchronized folder.
 - If an alternate folder is specified for the database, then specify it.
 - If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
 - Else, the user must specify a session name in the optional `Hash`, in the `name` key.
@@ -8556,36 +8625,6 @@ Main components:
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
 
-## History
-
-When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
-Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
-Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
-Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
-
-There were a few pitfalls:
-
-- <%=tool%> was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
-- <%=tool%> was only for transfers, but not able to call other products APIs
-
-So, it evolved into <%=tool%>:
-
-- Portable: works on platforms supporting `ruby` (and `ascp`)
-- Easy to install with the `gem` utility
-- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable, more standard)
-- `ruby` is consistent with other Aspera products
-
-Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
-It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
-
-Enjoy a coffee on me:
-
-```shell
-<%=cmd%> config coffee --ui=text
-<%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
-<%=cmd%> config coffee
-```
-
 ## Common problems
 
 <%=tool%> detects common problems and provides hints to solve them.
@@ -8710,3 +8749,47 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 > [!NOTE]
 > If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers.
 > Use `flock` instead.
+
+## About
+
+### Houtput, the mascot
+
+![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
+
+Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
+Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
+It doesn’t chatter; it hoots—clear, precise, and always on time.
+
+Like <%=tool%>, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
+Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
+When you hear Hootput’s call, you know your data is already in flight.
+
+### History
+
+When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
+Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
+Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
+Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
+
+There were a few pitfalls:
+
+- <%=tool%> was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
+- <%=tool%> was only for transfers, but not able to call other products APIs
+
+So, it evolved into <%=tool%>:
+
+- Portable: works on platforms supporting `ruby` (and `ascp`)
+- Easy to install with the `gem` utility
+- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable, more standard)
+- `ruby` is consistent with other Aspera products
+
+Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
+It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
+
+Enjoy a coffee on me:
+
+```shell
+<%=cmd%> config coffee --ui=text
+<%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
+<%=cmd%> config coffee
+```

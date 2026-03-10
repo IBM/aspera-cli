@@ -18,16 +18,6 @@ PANDOC_META_END
 
 ![Hootput the Owl](mascot.svg)
 
-Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
-Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
-
-Like `ascli`, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
-Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
-When you hear Hootput’s call, you know your data is already in flight.
-
----
-
 "Hey, I’m `ascli` - your data’s personal courier.
 I don’t do flashy dashboards; I’m happiest in a terminal window.
 Hand me a command, and I’ll zip your files across the network faster than you thought possible.
@@ -39,8 +29,6 @@ Need to integrate? I’ve got APIs on speed-dial.
 Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
-
-Version: 4.26.0.pre
 
 Laurent Martin/2016-2026
 
@@ -56,8 +44,7 @@ Minimum required Ruby version: >= 3.1.
 > [!WARNING]
 > The minimum Ruby version will be 3.2 in a future version.
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
-[Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
+[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 ### When to use and when not to use
 
@@ -98,6 +85,9 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 Examples of command-line operations are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
 Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
+> [!NOTE]
+> All command line examples in sections titled **Tested commands for `_plugin_name_`** are verified during version validation.
+
 Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, and not fixed value commands.
 
 `ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
@@ -113,23 +103,39 @@ The transfer is not directly implemented in `ascli`; rather, `ascli` uses one of
 
 ## Quick Start
 
-This section walks you through installation, your first transfer, and next steps.
+This section walks you through your first interaction with `ascli` on Linux.
 
 ### Prerequisites
 
-Before continuing, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get `ascli` set up on your system.
-Once installed, confirm `ascli` is accessible by checking its version:
+- Get the `ascli` binary for Linux (.tgz) in the [release section of the GitHub repository](https://github.com/IBM/aspera-cli/releases).
+
+- Decompress to get the executable:
 
 ```shell
-ascli --version
+mkdir -p $HOME/bin
+tar zxvf ascli.4.26.0.pre.linux-x86_64.tgz
+mv ascli.4.26.0.pre.linux-x86_64 $HOME/bin/ascli
+export PATH=$PATH:$HOME/bin
+```
+
+> [!NOTE]
+> For other OSes, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get `ascli` set up on your system.
+
+- Once installed, confirm `ascli` is accessible by checking its version:
+
+```shell
+ascli -v
 ```
 
 ```text
 4.26.0.pre
 ```
 
-> [!NOTE]
-> All command line examples in sections titled **Tested commands for `_plugin_name_`** are verified during version validation.
+- Install the Aspera transfer runtime:
+
+```shell
+ascli config transferd install
+```
 
 ### Option A - Test with the Aspera Demo Server
 
@@ -1123,7 +1129,8 @@ gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINES
 
 ### SSL CA certificate bundle
 
-SSL certificates are validated using a certificate store, by default it is the one of the system's `openssl` library.
+SSL certificates are validated using a certificate store.
+By default, it is the one of the system's `openssl` library.
 
 To display trusted certificate store locations:
 
@@ -1719,10 +1726,6 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-The Extended Value `@:` takes all remaining positional arguments and expects each of them to use [dot-path notation](#dot-path-notation).
-The optional special marker `END` can be used to stop the arguments caught by `@:`.
-This is useful, for example, if `@:` is used to specify a payload, and a file list is also placed on command line.
-
 The general structure of positional arguments is:
 
 ```text
@@ -1987,7 +1990,7 @@ The display of result is as follows:
 | Result          | `no`       | `yes`       | `single`                            |
 |-----------------|------------|-------------|-------------------------------------|
 | `single_object` | Simple     | Simple      | Simple                              |
-| `object_list`   | Transposed | Simple<br/>(Multiple objects) | Simple if 1 object,<br/>transposed if 2+ objects |
+| `object_list`   | Transposed | Simple<br/>(Multiple objects) | Simple if 1 object.<br/>transposed if 2+ objects. |
 
 This parameter can be set as a global default with:
 
@@ -2173,7 +2176,7 @@ Understanding this concept once makes it immediately usable everywhere it appear
 | Surface                   | Syntax                | in/out | read/write |
 |---------------------------|-----------------------|--------|------------|
 | [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
-| [Positional arguments](#positional-arguments) | `@: key.sub=value`      | Input | write |
+| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
 | [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
 
@@ -2212,6 +2215,42 @@ ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
 │ a.d   │ hello,world │
 ╰───────┴─────────────╯
 ```
+
+#### Positional Arguments with Dot-path
+
+The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
+It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
+
+**Usage and Syntax**:
+
+The general syntax for this argument is:
+
+```text
+@: <dot-path>=<value> [<dot-path>=<value>] ... [END]
+```
+
+- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
+
+- `<dot-path>=<value>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+
+- `END`: An optional marker that terminates the `@:` parsing session.
+
+  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+
+  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+
+> [!IMPORTANT]
+> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
+> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
+
+**Example**: Sending a package with a file list using `@:` for package information.
+
+```shell
+ascli aoc packages send @: name="my title" recipients.0=user@example.com END file1.dat file2.dat
+```
+
+> [!CAUTION]
+> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
 
 ### Extended Value Syntax
 
@@ -2256,11 +2295,13 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | Parses remaining arguments as `Hash` or `Array`. |
+| `<empty>`| None     | Any      | Parses remaining positional arguments as a `Hash` or `Array` using [dot-path notation](#dot-path-notation).<br/>Use `END` to stop collection when further positional arguments must follow. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
 > For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` parameter named `i`.
+
+**Chaining rule**: When multiple decoders are combined, they are applied right-to-left: the rightmost decoder runs first on the literal string, and each decoder to its left receives the output of the one to its right.
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -2403,40 +2444,92 @@ All options for `ascli` can be set on command line, or by env vars, or using [Op
 
 A configuration file provides a way to define default values, especially for authentication options, thus avoiding having to always specify those options on the command line.
 
-The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
+The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `config_file`).
 
 The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
 Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
 
-### Invalid Filename Characters
+#### Format of configuration file
 
-Some commands of `ascli` may create files or folders based on input that may contain invalid characters for the local file system.
-The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
+The configuration file is a `Hash` in a YAML file.
 
-The first character specifies the replacement character, and the following characters are the invalid ones.
-This is used when a folder or file is created from a value that potentially contains invalid characters.
-For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
-The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
+**Example**:
+
+```yaml
+config:
+  version: 0.3.7
+default:
+  config: cli_default
+  server: demo_server
+cli_default:
+  interactive: no
+demo_server:
+  url: ssh://demo.asperasoft.com:33001
+  username: asperaweb
+  password: my_password_here
+```
+
+We can see here:
+
+- The configuration was created with `ascli` version 0.3.7
+- The default [Option Preset](#option-preset) to load for `server` plugin is: `demo_server`
+- The [Option Preset](#option-preset) `demo_server` defines some options: the URL and credentials
+- The default [Option Preset](#option-preset) to load in any case is: `cli_default`
+
+Two [Option Presets](#option-preset) are reserved:
+
+- `config` contains a single value: `version` showing the version used to create the configuration file.
+  It is used to check compatibility.
+- `default` is reserved to define the default [Option Preset](#option-preset) name used for known plugins.
+
+The user may create as many [Option Preset](#option-preset) as needed.
+For instance, a particular [Option Preset](#option-preset) can be created for a particular application instance and contain URL and credentials.
+
+Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
 
 > [!NOTE]
-> This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
+> If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
 
-### Temporary files
+Example:
 
-Some temporary files may be needed during runtime.
-The temporary folder may be specified with option: `temp_folder`.
-Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
-By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
-A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
+```shell
+ascli config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/ascli/my_private_key"
+```
+
+This creates the [Option Preset](#option-preset):
+
+```yaml
+my_aoc_org:
+  private_key: "@file:/Users/laurent/.aspera/ascli/my_private_key"
+```
+
+So, the key file will be read only at execution time, but not be embedded in the configuration file.
+
+> [!NOTE]
+> The main use of the configuration file is to store collections of options.
+> Nevertheless, it can be used to store any type of information, not only option values.
+> For example, the special preset: [`default`](#special-option-preset-default).
 
 #### Option Preset
 
 An [Option Preset](#option-preset) is a collection of options and their associated values in a named section in the configuration file.
 
-A named [Option Preset](#option-preset) can be modified directly using `ascli`, which will update the configuration file :
+A named [Option Preset](#option-preset) can be modified directly using `ascli`, which will update the configuration file:
+
+```text
+ascli config preset <set|delete|show|initialize|update> <preset name>
+```
+
+The command `initialize` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
 
 ```shell
-ascli config preset set|delete|show|initialize|update <option preset>
+ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
+```
+
+One can also use [positional arguments with dot-path](#positional-arguments-with-dot-path):
+
+```shell
+ascli config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=my_pass_here ts.precalculate_job_size=true
 ```
 
 The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
@@ -2445,18 +2538,18 @@ The command `update` allows the easy creation of [Option Preset](#option-preset)
 ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
 ```
 
-- This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
+This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
 
-The command `set` allows setting individual options in an [Option Preset](#option-preset).
+The command `set` allows setting individual options in an [Option Preset](#option-preset):
+
+```text
+ascli config preset set <preset name> <parameter name> <parameter value>
+```
+
+Example:
 
 ```shell
 ascli config preset set demo_server password my_password_here
-```
-
-The command `initialize`, like `update` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
-
-```shell
-ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
@@ -2506,6 +2599,7 @@ This is the version of `ascli` which created the file.
 #### Special Option Preset: `default`
 
 This preset name is reserved and contains an array of key-value, where the key is the name of a plugin, and the value is the name of another preset.
+Usually, [Option presets](#option-preset) are used to contain pre-defined options and values, but this preset contains names of presets to be used by default for plugins.
 
 When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
 
@@ -2518,6 +2612,9 @@ Operations on this preset are done using regular `config` operations:
 ascli config preset set default _plugin_name_ _default_preset_for_plugin_
 ```
 
+> [!NOTE]
+> `default` is not a command, it is simply the name of the special preset.
+
 ```shell
 ascli config preset get default _plugin_name_
 ```
@@ -2525,6 +2622,27 @@ ascli config preset get default _plugin_name_
 ```json
 "_default_preset_for_plugin_"
 ```
+
+### Invalid Filename Characters
+
+Some commands of `ascli` may create files or folders based on input that may contain invalid characters for the local file system.
+The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
+
+The first character specifies the replacement character, and the following characters are the invalid ones.
+This is used when a folder or file is created from a value that potentially contains invalid characters.
+For example, using the option `package_folder`, a package name may contain characters not allowed, such as `/`.
+The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
+
+> [!NOTE]
+> This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
+
+### Temporary files
+
+Some temporary files may be needed during runtime.
+The temporary folder may be specified with option: `temp_folder`.
+Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
+By default, (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
+A special value of `@env` will set the folder to Ruby `Dir.tmpdir` which uses regular env var to set the temp folder.
 
 ### Plugin: `config`: Configuration
 
@@ -2682,61 +2800,6 @@ wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-gener
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
 ```
 
-#### Format of configuration file
-
-The configuration file is a `Hash` in a YAML file.
-Example:
-
-```yaml
-config:
-  version: 0.3.7
-default:
-  config: cli_default
-  server: demo_server
-cli_default:
-  interactive: no
-demo_server:
-  url: ssh://demo.asperasoft.com:33001
-  username: asperaweb
-  password: my_password_here
-```
-
-We can see here:
-
-- The configuration was created with `ascli` version 0.3.7
-- The default [Option Preset](#option-preset) to load for `server` plugin is: `demo_server`
-- The [Option Preset](#option-preset) `demo_server` defines some options: the URL and credentials
-- The default [Option Preset](#option-preset) to load in any case is: `cli_default`
-
-Two [Option Presets](#option-preset) are reserved:
-
-- `config` contains a single value: `version` showing the version used to create the configuration file.
-  It is used to check compatibility.
-- `default` is reserved to define the default [Option Preset](#option-preset) name used for known plugins.
-
-The user may create as many [Option Preset](#option-preset) as needed.
-For instance, a particular [Option Preset](#option-preset) can be created for a particular application instance and contain URL and credentials.
-
-Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
-
-> [!NOTE]
-> If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
-
-Example:
-
-```shell
-ascli config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/ascli/my_private_key"
-```
-
-This creates the [Option Preset](#option-preset):
-
-```yaml
-my_aoc_org:
-  private_key: "@file:/Users/laurent/.aspera/ascli/my_private_key"
-```
-
-So, the key file will be read only at execution time, but not be embedded in the configuration file.
-
 #### Evaluation order of options
 
 Some options are global, some options are available only for some plugins.
@@ -2816,7 +2879,7 @@ ascli config wizard
 ```
 
 If the application requires a private key, the user can either provide the path to it with option `key_path`.
-The user is told where to place the associated public pey PEM in the application.
+The user is told where to place the associated public key PEM in the application.
 
 #### Example of configuration for a plugin
 
@@ -2862,7 +2925,7 @@ ascli config preset set default shares shares06
 ascli config preset overview
 ```
 
-- Execute a command on the **Shares** application using default options
+- Execute a command on the **Shares'** application using default options
 
 ```shell
 ascli shares repo browse /
@@ -2928,7 +2991,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 |-----------|-------------------------|---------------------------------------------------------------------|
 | `type`    | `vault`                 | The type of the vault |
 | `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
-| `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
+| `token`   | `dev-only-token`        | The token for the vault.<br/>By default uses parameter `vault_password` |
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
@@ -3100,7 +3163,7 @@ Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
 > [!WARNING]
-> Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
+> Private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### Web service
 
@@ -4134,7 +4197,13 @@ Possible values for option `sources` are:
 
 - `@args` : (default) the list of files (or file pair) is directly provided on the command line (after commands): unused arguments (not starting with `-`) are considered as source files.
 So, by default, the list of files to transfer will be simply specified on the command line.
-Example:
+
+> [!IMPORTANT]
+> When using `@:` to build a command parameter and `--sources=@args` (default),
+> the `END` marker is required between the `@:` block and the file list.
+> See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path).
+
+**Example**:
 
   ```shell
   ascli server upload ~/first.file secondfile
@@ -4737,7 +4806,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -6375,7 +6444,7 @@ To remove a password:
 {"password_enabled":false}
 ```
 
-By default access level is set to `edit`.
+By default, access level is set to `edit`.
 Change the default access level by providing the parameter: `access_levels` in payload.
 `access_levels` can be:
 
@@ -6926,7 +6995,7 @@ upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3
 
 ### Authentication on Server with SSH session
 
-If SSH is the session protocol (by default i.e. not WSS), then following session authentication methods are supported:
+If SSH is the session protocol (by default, i.e. not WSS), then following session authentication methods are supported:
 
 - `password`: SSH password
 - `ssh_keys`: SSH keys (Multiple SSH key paths can be provided.)
@@ -9446,7 +9515,7 @@ gem install sqlite3
 In order to use the `admin` commands, the user must provide the path to the database folder:
 
 - i.e. a folder containing a subfolder named `.private-asp`.
-- By default it is the local synchronized folder.
+- By default, it is the local synchronized folder.
 - If an alternate folder is specified for the database, then specify it.
 - If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
 - Else, the user must specify a session name in the optional `Hash`, in the `name` key.
@@ -9795,36 +9864,6 @@ Main components:
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
 
-## History
-
-When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
-Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
-Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
-Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
-
-There were a few pitfalls:
-
-- `ascli` was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
-- `ascli` was only for transfers, but not able to call other products APIs
-
-So, it evolved into `ascli`:
-
-- Portable: works on platforms supporting `ruby` (and `ascp`)
-- Easy to install with the `gem` utility
-- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable, more standard)
-- `ruby` is consistent with other Aspera products
-
-Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
-It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
-
-Enjoy a coffee on me:
-
-```shell
-ascli config coffee --ui=text
-ascli config coffee --ui=text --image=@json:'{"text":true}'
-ascli config coffee
-```
-
 ## Common problems
 
 `ascli` detects common problems and provides hints to solve them.
@@ -9949,3 +9988,47 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 > [!NOTE]
 > If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers.
 > Use `flock` instead.
+
+## About
+
+### Houtput, the mascot
+
+![Hootput the Owl](mascot.svg)
+
+Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
+Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
+It doesn’t chatter; it hoots—clear, precise, and always on time.
+
+Like `ascli`, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
+Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
+When you hear Hootput’s call, you know your data is already in flight.
+
+### History
+
+When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
+Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
+Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
+Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
+
+There were a few pitfalls:
+
+- `ascli` was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
+- `ascli` was only for transfers, but not able to call other products APIs
+
+So, it evolved into `ascli`:
+
+- Portable: works on platforms supporting `ruby` (and `ascp`)
+- Easy to install with the `gem` utility
+- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable, more standard)
+- `ruby` is consistent with other Aspera products
+
+Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
+It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
+
+Enjoy a coffee on me:
+
+```shell
+ascli config coffee --ui=text
+ascli config coffee --ui=text --image=@json:'{"text":true}'
+ascli config coffee
+```
