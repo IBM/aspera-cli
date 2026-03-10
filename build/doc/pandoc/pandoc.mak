@@ -18,17 +18,19 @@ $(DIR_PANDOC)pandoc.mak
 define markdown_to_pdf
 $(2): $(1) $$(PANDOC_DEPS)
 	-sed -n '/PANDOC_META_BEGIN/,/PANDOC_META_END/p' $$< | grep -v PANDOC_META > $$<.pandoc_meta
+	echo '\\graphicspath{{$(DIR_PANDOC)}}' > $$<.pandoc_add.tex
 	set -x &&\
 	if git status --porcelain $$< > /dev/null 2>&1 && test -z "$$$$(git status --porcelain $$<)";then \
 	  ref="-r $$$$(git log -1 --pretty="format:%cd" --date=unix $$<)";fi &&\
-	GFX_DIR=$$(DIR_PANDOC) pandoc \
+	  pandoc \
+	    --include-in-header=$$<.pandoc_add.tex \
 		--defaults=$$(DEF_COMMON) \
 		--defaults=$$(DEF_PDF) \
 		--variable=date:"$$$$(/bin/date $$$$ref '+%Y/%m/%d')" \
 	    --metadata-file=$$<.pandoc_meta \
 		--output=$$@ \
 		$$<
-	rm -f $$<.pandoc_meta
+	rm -f $$<.pandoc_meta $$<.pandoc_add.tex
 endef
 
 define markdown_to_html
