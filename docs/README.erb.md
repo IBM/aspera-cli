@@ -4333,33 +4333,42 @@ journalctl -u my_<%=cmd%>_svc.service
 
 ### Locking for exclusive execution
 
-In some cases one needs to ensure that <%=tool%> is not executed several times in parallel.
+Sometimes it’s necessary to ensure that <%=tool%> does not run multiple times in parallel.
 
-When <%=tool%> is executed automatically on a scheduled basis, one generally desires that a new execution is not started if a previous execution is still running because an ongoing operation may last longer than the scheduling period:
+This is especially important when <%=tool%> is executed on a schedule.
+If a new execution starts while a previous one is still running, problems can arise:
 
-- Executing instances may pile-up and kill the system
-- The same file may be transferred by multiple instances at the same time.
-- `preview` may generate the same files in multiple instances.
+- Multiple instances may accumulate and overload the system.
+
+- The same file could be transferred by more than one instance simultaneously.
+
+- `preview` operations may generate duplicate files across instances.
 
 #### Option: `lock_port`
 
-<%=tool%> natively supports a locking mechanism with option `lock_port`.
-`lock_port` prevents concurrent executions of the same command.
-If another instance is already running and holding the port, the new execution exits immediately.
+<%=tool%> provides a built-in locking mechanism via the `lock_port` option.
 
-Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock.
-Lock is released when process exits.
-When using <%=tool%> in a container, this does not work with other containers, as each container have its own network.
+- `lock_port` prevents concurrent executions of the same command.
 
-Testing <%=tool%> locking:
+- If another instance is already running and holding the specified port, the new execution exits immediately.
 
-Run this same command in two separate terminals within less than 30 seconds:
+Under the hood, this works by opening a local TCP server port.
+If the port is already in use, the process fails, effectively acting as a local lock.
+The lock is released automatically when the process exits.
+
+> [!NOTE]
+> When using <%=tool%> in containers, `lock_port` only works within the same container.
+> Each container has its own network namespace, so the lock does not apply across containers.
+
+Example: Test <%=tool%> locking by running this command in two separate terminals within 30 seconds:
 
 ```shell
 <%=cmd%> config echo @ruby:'sleep 30' --lock-port=12345
 ```
 
-The first instance will sleep 30 seconds, the second one will immediately exit like this:
+- The first instance will sleep for 30 seconds.
+
+- The second instance will exit immediately with:
 
 ```shell
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
@@ -4367,13 +4376,26 @@ WARN -- : Another instance is already running (Address already in use - bind(2) 
 
 #### OS-based concurrency protection
 
-Usually the OS native scheduler already provides some sort of protection against parallel execution:
+Most OS schedulers provide some level of protection against parallel execution:
 
-- The Windows scheduler does this by default
-- Linux `cron` can leverage the utility [`flock`](https://man.cx/flock%281%29) to do the same:
+- Windows Task Scheduler prevents concurrent runs by default.
+- Linux `cron` can leverage [`flock`](https://man.cx/flock%281%29) to achieve the same effect:
 
 ```shell
 /usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
+```
+
+- Linux systemd can prevent overlapping executions natively: define the service as `oneshot`:
+
+```ini
+[Unit]
+Description=My <%=cmd%> daemon
+...
+
+[Service]
+ExecStart=/usr/local/bin/start_my_<%=cmd%>_svc.sh
+Type=oneshot
+...
 ```
 
 ### "Proven&ccedil;al"
