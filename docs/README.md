@@ -4421,45 +4421,69 @@ File transfer operations are monitored, and a progress bar is displayed on the t
 
 The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc.
 
-### Scheduler
+### Daemon and Scheduler
 
-It is useful to configure automated scheduled execution.
-`ascli` does not provide an internal scheduler.
-Instead, use the service provided by the Operating system as described in the following sections.
+#### Automated Execution
+
+`ascli` does not include a built-in scheduler.
+Automated execution should therefore rely on operating system facilities.
+
+Two common execution modes are supported:
+
+- Scheduled execution – run `ascli` commands periodically.
+
+- Daemon/service mode – run `ascli` continuously as a server.
 
 #### Wrapping script
 
-For example, on Linux it is convenient to create a wrapping script, e.g. `/home/xfer/bin/ascli_tool` that will set up the environment (e.g. Ruby) to properly start `ascli`:
+Before configuring scheduling or services, it is often useful to create a wrapper script that prepares the environment and optionally enforces execution limits.
+
+This script may:
+
+- configure environment variables (PATH, Ruby, etc.)
+
+- enforce a maximum runtime
+
+- centralize command options
+
+**Example: (Linux)**
 
 ```shell
 #!/bin/bash
-# Load the Ruby environment, e.g. if using rvm:
-. /etc/profile.d/rvm.sh
-rvm use 2.6 --quiet
-# Set a timeout protection, just in case ascli is frozen 
-tmout=30m
-# Forward arguments to ascli
-exec timeout ${tmout} ascli "${@}"
+# Load the Ruby environment if required
+# Forward arguments to ascli and ensure it does not exceed 30 min execution
+exec timeout 30m ascli "${@}"
 ```
 
-On Windows, a `cmd` or PowerShell script...
+Save as:
 
-#### Windows Scheduler
+```
+/home/xfer/bin/ascli_tool
+```
+
+and make it executable.
+
+#### Windows: Scheduler
 
 Windows provides the [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page).
-It can be configured:
 
-- Using utility [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
+Tasks can be configured using:
 
-- Using PowerShell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
+- [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
 
-- Using `taskschd.msc` (UI)
+- PowerShell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
 
-#### SystemD Scheduler
+- `taskschd.msc` (UI)
 
-SystemD based systems (most major Linux distributions) allow scheduling services with the [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) unit.
+By default, Windows Task Scheduler prevents overlapping executions.
 
-1. Create a one-shot service: `/etc/systemd/system/my_ascli_job.service`
+#### Linux: `systemd` Timer
+
+Most modern Linux distributions use `systemd` which provides scheduling via [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) units.
+
+1. Create the service
+
+    `/etc/systemd/system/my_ascli_job.service`
 
     ```ini
     [Unit]
@@ -4472,7 +4496,9 @@ SystemD based systems (most major Linux distributions) allow scheduling services
     Group=xfer
     ```
 
-1. Create the timer: `/etc/systemd/system/my_ascli_job.timer` (same base name)
+1. Create the timer (same base name)
+
+    `/etc/systemd/system/my_ascli_job.timer`
 
     ```ini
     [Unit]
@@ -4487,15 +4513,10 @@ SystemD based systems (most major Linux distributions) allow scheduling services
     WantedBy=timers.target
     ```
 
-1. Reload systemd:
+1. Enable the timer
 
     ```shell
     sudo systemctl daemon-reload
-    ```
-
-1. Enable the timer on boot
-
-    ```shell
     sudo systemctl enable --now my_ascli_job.timer
     ```
 
@@ -4515,13 +4536,11 @@ Run service once to test:
 sudo systemctl start my_ascli_job.service
 ```
 
-#### Cron Scheduler
+#### Linux: `cron` Scheduler
 
-Unix-like systems (Linux, ...) provide `cron`, configured using a [`crontab`](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
+Unix-like systems also provide [`cron`](https://www.man7.org/linux/man-pages/man5/crontab.5.html).
 
-Linux also provides `anacron`, if tasks are hourly or daily.
-
-Example of cronjob created for user `xfer`.
+Example of `crontab` for user `xfer`.
 
 ```shell
 crontab<<EOF
@@ -4530,36 +4549,23 @@ crontab<<EOF
 EOF
 ```
 
+Linux may also provide anacron for daily or hourly jobs that must run even if the system was previously offline.
+
 > [!NOTE]
-> Logging options are kept here in the `cron` file instead of configuration file to allow execution on command line with output on command line.
+> Logging options are specified directly in the `cron` entry so command output remains visible when running the command manually.
 
-### Running as service
+#### Running as system service (Daemon mode)
 
-Some commands result in `ascli` running as a server, listening on a port.
-In this case, it is usually desirable to run `ascli` as a service.
-On Linux, typically, [`systemd`](https://systemd.io/) is used.
+Some commands run continuously (for example, listening on a network port).
+In this case it is recommended to run `ascli` as a system service.
 
-A convenient way is to write a startup script, and run this script as a service.
+On Linux this is typically done using [`systemd`](https://systemd.io/).
 
-Let's give a base name for our service: `my_ascli_svc`
+A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_my_ascli_svc.sh`:
 
-The startup script can be simply the `ascli` command line, for example: `/usr/local/bin/start_my_ascli_svc.sh`:
+**Service Definition**
 
-```shell
-#!/bin/bash
-set -e
-echo "Starting my_ascli_svc at $(date)"
-# set PATH to find ascli, and other environment setup
-exec ascli .....
-```
-
-And make this script executable:
-
-```shell
-chmod a+x /usr/local/bin/start_my_ascli_svc.sh
-```
-
-Create a startup file: `/etc/systemd/system/my_ascli_svc.service` :
+`/etc/systemd/system/my_ascli_svc.service`
 
 ```ini
 [Unit]
@@ -4581,7 +4587,7 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-Then enable and start with:
+Enable and start:
 
 ```shell
 sudo systemctl daemon-reload
@@ -4590,20 +4596,19 @@ systemctl status my_ascli_svc.service
 journalctl -u my_ascli_svc.service
 ```
 
-### Locking for exclusive execution
+#### Preventing Concurrent Execution
 
-Sometimes it’s necessary to ensure that `ascli` does not run multiple times in parallel.
+When running scheduled jobs, it may be necessary to ensure that only one instance of `ascli` runs at a time.
 
-This is especially important when `ascli` is executed on a schedule.
-If a new execution starts while a previous one is still running, problems can arise:
+This avoids situations such as:
 
-- Multiple instances may accumulate and overload the system.
+- multiple instances accumulating and overloading the system
 
-- The same file could be transferred by more than one instance simultaneously.
+- duplicate transfers
 
-- `preview` operations may generate duplicate files across instances.
+- duplicate `preview` outputs
 
-#### Option: `lock_port`
+##### Option: `lock_port`
 
 `ascli` provides a built-in locking mechanism via the `lock_port` option.
 
@@ -4633,9 +4638,9 @@ ascli config echo @ruby:'sleep 30' --lock-port=12345
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
 ```
 
-#### OS-based concurrency protection
+##### OS-based concurrency protection
 
-Most OS schedulers provide some level of protection against parallel execution:
+Operating system schedulers also provide protection against overlapping runs.
 
 - Windows Task Scheduler prevents concurrent runs by default.
 - Linux `cron` can leverage [`flock`](https://man.cx/flock%281%29) to achieve the same effect:
@@ -4644,7 +4649,7 @@ Most OS schedulers provide some level of protection against parallel execution:
 /usr/bin/flock -w 0 /var/cron.lock ascli ...
 ```
 
-- Linux systemd can prevent overlapping executions natively: define the service as `oneshot`:
+- `systemd` avoids overlaps when scheduling a `Type=oneshot` service.
 
 ```ini
 [Unit]
@@ -4654,8 +4659,12 @@ Description=My ascli daemon
 [Service]
 ExecStart=/usr/local/bin/start_my_ascli_svc.sh
 Type=oneshot
+RemainAfterExit=yes
 ...
 ```
+
+> [!NOTE]
+> Systemd timers can schedule this service and ensure no overlapping runs occur.
 
 ### "Proven&ccedil;al"
 
