@@ -59,7 +59,7 @@ module Aspera
         ts_tags = transfer_spec['tags']
         ts_tags[Transfer::Spec::TAG_RESERVED]['xfer_retry'] ||= 150 if ts_tags.is_a?(Hash) && ts_tags[Transfer::Spec::TAG_RESERVED].is_a?(Hash)
         # Optimization in case of sending to the same node
-        # TODO: probably remove this, as /etc/hosts shall be used for that
+        # TODO: probably remove this, as /etc/hosts shall be used for that on server side.
         transfer_spec['remote_host'] = '127.0.0.1' if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.base_url).host)
         resp = node_api_.create('ops/transfers', transfer_spec)
         @transfer_id = resp['id']

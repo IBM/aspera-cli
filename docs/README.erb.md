@@ -31,14 +31,14 @@ Think of me as Aspera’s command-line sidekick: quick, reliable, and a little n
 
 <%=gemspec.authors.join(', ')%>/2016-<%=Time.new.year%>
 
-The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, facilitating seamless interaction with Aspera APIs and enabling high-performance file transfers.
-It also serves as an excellent resource for developers seeking to explore and understand the Aspera API ecosystem.
+The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, enabling seamless interaction with Aspera APIs and high-performance file transfers.
+It also serves as a useful resource for developers who want to explore and understand the Aspera API ecosystem.
 
-Ruby Gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
+Ruby gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
 
 Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['documentation_uri']%>)
 
-Minimum required Ruby <%=ruby_version%>.
+Minimum required Ruby version is <%=ruby_version%>.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)
 
@@ -48,8 +48,8 @@ Minimum required Ruby <%=ruby_version%>.
 > If you are scripting or automating transfers from the command line, <%=tool%> is the right choice.
 > If you are developing an application, prefer the APIs or SDKs instead.
 
-The <%=tool%> tool is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform file transfers efficiently.
-It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or cron).
+<%=tool%> is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform high-performance file transfers.
+It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or `cron`).
 
 Internally, <%=tool%> integrates several components:
 
@@ -58,19 +58,20 @@ Internally, <%=tool%> integrates several components:
 - REST API calls, including OAuth (like `curl`)
 - Aspera’s `ascp` for high-speed file transfers
 
-For programmatic integration in languages such as C/C++, Go, Python, NodeJS, and others, it is recommended to use the [Aspera APIs](https://ibm.biz/aspera_api) directly.
+For programmatic integration with languages such as C/C++, Go, Python, NodeJS, and others, it is recommended to use the [Aspera APIs](https://ibm.biz/aspera_api) directly.
 These include:
 
 - REST APIs for products like Aspera on Cloud (AoC), Faspex, and Node
 - The Transfer Daemon with gRPC interfaces and language-specific stubs (C/C++, Python, .NET/C#, Java, Go, Ruby, Rust, etc.)
 
-Using these APIs is generally more suitable for long-term development and maintenance.
+These APIs are generally more suitable for long-term development and maintenance.
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
 For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
-Clarifying the CLI landscape:
+**CLI landscape overview**
+
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
 Every Aspera transfer involves an `ascp` process on both the client and server sides.
 While `ascp` can be used directly, it is limited to basic send/receive operations and lacks features like configuration management, automatic resume, and remote file listing.
@@ -84,18 +85,18 @@ Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 > [!NOTE]
 > All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
 
-Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, and not fixed value commands.
+Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
 
 Some commands will start an Aspera transfer (e.g. `upload`).
-The transfer is not directly implemented in <%=tool%>; rather, <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
+The transfer is not implemented directly in <%=tool%>; rather, <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
 > It can be local, or remote.
 > For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
-> i.e. using option `--transfer=node`
+> i.e. using the option `--transfer=node`
 
 ## Quick Start
 
@@ -105,7 +106,7 @@ This section walks you through your first interaction with <%=tool%> on Linux.
 
 - Get the <%=tool%> binary for Linux (.tgz) in the [release section of the GitHub repository](https://github.com/IBM/aspera-cli/releases).
 
-- Decompress to get the executable:
+- Decompress the archive to get the executable:
 
 ```shell
 mkdir -p $HOME/bin
@@ -115,7 +116,7 @@ export PATH=$PATH:$HOME/bin
 ```
 
 > [!NOTE]
-> For other OSes, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get <%=tool%> set up on your system.
+> For other operating systems, complete the [Installation](#installation) section (Ruby, Gem, FASP) to get <%=tool%> set up on your system.
 
 - Once installed, confirm <%=tool%> is accessible by checking its version:
 
@@ -135,7 +136,7 @@ export PATH=$PATH:$HOME/bin
 
 ### Option A - Test with the Aspera Demo Server
 
-- Run the following two commands to initialize the demo environment:
+- Run the following command to initialize the demo environment:
 
 ```shell
 <%=cmd%> config initdemo
@@ -217,29 +218,29 @@ If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](
 
 ## Installation
 
-There are several possibilities to install <%=tool%>:
+There are several ways to install <%=tool%>:
 
 - Using a Ruby environment directly on the host operating system (Linux, macOS, Windows).
 
-  This is the most generic method.
-  It consists in installing:
+  This is the most general method.
+  It consists of installing:
   - The [Ruby language](#ruby),
   - Then [<%=gemspec.name%>](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
   - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
 - As a [single file executable](#single-file-executable)
 
-  This is easy, but only a limited number of platforms is supported.
+  This method is simple, but only a limited number of platforms are supported.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
-The following sections provide information on the various installation methods.
+The following sections describe the various installation methods.
 
 An internet connection is required for the installation.
-If you don't have internet for the installation, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
+If you do not have internet access, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
 
 ### Single file executable
 
 > [!WARNING]
-> Only on a limited number of platforms.
+> Available only on a limited number of platforms.
 
 <%=tool%> is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
 
@@ -261,7 +262,7 @@ chmod a+x <%=cmd%>
 > [!WARNING]
 > On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
 
-On Linux, check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+On Linux, you can check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
 ```shell
 ldd --version | head -n1
@@ -290,9 +291,9 @@ The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS
 
 A Ruby interpreter is required to run <%=tool%>.
 
-Required Ruby <%=ruby_version%>.
+Required Ruby version is <%=ruby_version%>.
 
-**Ruby can be installed using any method**: `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
+**Ruby can be installed using any of the following methods**: `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 
 **In priority**, refer to the official Ruby documentation:
 
@@ -310,11 +311,11 @@ Manual installation:
 
 - Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
 - Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
-- Execute the installer which installs by default in: `C:\RubyVV-x64` (`VV` is the version number)
+- Execute the installer, which installs by default in: `C:\RubyVV-x64` (`VV` is the version number)
 - At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and `mingw`)
 - Then install the `aspera-cli` gem and Aspera Transfer Daemon (see next sections)
 
-Automated installation, with internet access:
+Automated installation (with internet access):
 
 The Ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
 
@@ -352,7 +353,7 @@ brew install ruby
 
 This installs a recent Ruby suitable for <%=tool%>.
 
-To add PATH to Ruby on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
+To add Ruby to your `PATH` on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
 PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
@@ -360,7 +361,7 @@ PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:
 
 > [!NOTE]
 > This is what is displayed at the end of the installation of the ruby tap,
-> same as message from: `brew info ruby`
+> same as the message from: `brew info ruby`
 
 #### Linux: Package
 
@@ -535,7 +536,7 @@ make install
 
 <%=tool%> can also run with the [JRuby](https://www.jruby.org/) interpreter.
 All that is needed is a JVM (Java Virtual Machine) on your system (`java`).
-The JRuby package comes pre-complied and does not require compilation of native extensions.
+The JRuby package comes pre-compiled and does not require compilation of native extensions.
 Use a version of JRuby compatible with Ruby version supported by <%=tool%>.
 Refer to [the Wikipedia page](https://en.wikipedia.org/wiki/JRuby) to match JRuby and Ruby versions.
 Choose the latest version from:
@@ -579,7 +580,7 @@ Install like this:
 <%=gem_opt_cmd%>
 ```
 
-### Ruby Gem: `<%=gemspec.name%>`
+### Ruby gem: `<%=gemspec.name%>`
 
 Once you have Ruby and rights to install gems, install the `<%=gemspec.name%>` gem and its dependencies:
 
@@ -605,7 +606,7 @@ To check if a new version is available (independently of `version_check_days`):
 #### Gem installation with signature verification
 
 The gem is signed with a private key, and the public certificate is available in the GitHub repository (`certs/aspera-cli-public-cert.pem`).
-When installing the gem, the signature can be optionally verified.
+When installing the gem, the signature may optionally be verified.
 
 For [secure installation](https://guides.rubygems.org/security/#using-gems), one can install the gem with the public key:
 
@@ -615,7 +616,7 @@ Import the verification certificate:
 gem cert --add <(curl -Ls https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem)
 ```
 
-The user installs the gem with `HighSecurity` or `MediumSecurity`: this will succeed only of the gem is trusted:
+The user installs the gem with `HighSecurity` or `MediumSecurity`: this will succeed only if the gem is trusted:
 
 ```shell
 gem install -P MediumSecurity <%=gemspec.name%>
@@ -699,7 +700,7 @@ To download it, pipe to `config download`:
 <%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
 ```
 
-If installation from a local file preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+If installation from a local file is preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```shell
 <%=cmd%> config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
@@ -824,7 +825,7 @@ gem install --force --local *.gem
 ```
 
 > [!NOTE]
-> A beta version of a packaged installed is available.
+> A beta version of a packaged installer is available.
 
 ### Container
 
@@ -980,7 +981,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
 > [!WARNING]
-> Do not use too many volumes, as the legacy `aufs` limits the number.
+> Do not use too many volumes, as the legacy `aufs` driver limits their number.
 > (anyway, prefer to use `overlay2`)
 
 #### Container: Offline installation
@@ -1129,7 +1130,7 @@ For example, on Linux to force the use the system's certificate store:
 `ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of **SSH**).
 
 By default,`ascp` uses a hard coded root location `OPENSSLDIR`.
-Original `ascp`'s hard coded locations can be found using:
+Original `ascp`'s hard-coded locations can be found using:
 
 ```shell
 <%=cmd%> config ascp info --fields=openssldir
@@ -1280,7 +1281,7 @@ It's up to the program to split arguments:
 - [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
 - [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
 
-<%tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
+<%=tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 (See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
 
@@ -4162,9 +4163,7 @@ File transfer operations are monitored, and a progress bar is displayed on the t
 
 The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc.
 
-### Daemon and Scheduler
-
-#### Automated Execution
+### Scheduler
 
 <%=tool%> does not include a built-in scheduler.
 Automated execution should therefore rely on operating system facilities.
@@ -4187,7 +4186,7 @@ This script may:
 
 - centralize command options
 
-**Example: (Linux)**
+**Example** (Linux)
 
 ```shell
 #!/bin/bash
@@ -4198,7 +4197,7 @@ exec timeout 30m <%=cmd%> "${@}"
 
 Save as:
 
-```
+```shell
 /home/xfer/bin/<%=cmd%>_tool
 ```
 
@@ -5890,9 +5889,9 @@ Admin shared folders, created by administrators in a workspace, follow the synta
 
 > [!TIP]
 > The node is identified by identifier.
-> To use an name instead, one can use the percent selector, like `%name:"my node"`.
-> The path is identifier by a path, one can specify a file id, with `%id:123`.
-> If the id is left blank: `%id:`, then it means `*`, i.e. all.
+> To use a name instead, one can use the percent selector, like `%name:"my node"`.
+> The path is identifier by a path, one can specify a file ID, with `%id:123`.
+> If the ID is left blank: `%id:`, then it means `*`, i.e. all.
 
 ##### Example: List permissions on a user shared folder
 
@@ -6056,10 +6055,10 @@ To list members:
 ╰─────────────┴──────────────────────────────────┴──────────────┴──────────────────────╯
 ```
 
-If you have the node id of the shared folder, than it is equivalent to:
+If you have the node ID of the shared folder, then it is equivalent to:
 
 ```shell
-<%=cmd%> aoc admin node do 8669 perm /project1 list --query=@json:'{"tag":"aspera.files.workspace.id=<workspace_id>"}'
+<%=cmd%> aoc admin node do 8669 permission /project1 list --query=@json:'{"tag":"aspera.files.workspace.id=<workspace_id>"}'
 ```
 
 ##### Example: List all workspace admin shared folder on a node
@@ -6074,12 +6073,12 @@ First get the workspace identifier:
 <workspace_id>
 ```
 
-Then, identify the node id on which to list, see previous section.
+Then, identify the node ID on which to list, see previous section.
 
 Finally, list all shared folders, as permissions:
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> perm %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_<workspace_id>"}'
+<%=cmd%> aoc admin node do <node_id> permission %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_<workspace_id>"}'
 ```
 
 > [!NOTE]
@@ -8296,7 +8295,7 @@ The documentation is available in the terminal with:
 ```
 
 > [!NOTE]
-> <%tool%> accepts the following fields within the `sync_info` Hash.
+> <%=tool%> accepts the following fields within the `sync_info` Hash.
 > The option listed in the **Description** correspond to the equivalent parameters used by the low‑level `async` command.
 
 <%=sync_conf_table%>
