@@ -12,7 +12,7 @@ To help us diagnose and resolve the issue efficiently, please include the follow
 
 - The `ascli` version you are using:
 
-  ```bash
+  ```shell
   ascli -v
   ```
 
@@ -20,7 +20,7 @@ To help us diagnose and resolve the issue efficiently, please include the follow
 
 - **Your Ruby environment details**:
 
-  ```bash
+  ```shell
   ruby -v
   ```
 
@@ -32,7 +32,7 @@ We welcome contributions to improve the `aspera-cli` project!
 
 Clone the repository to initialize the development environment:
 
-```bash
+```shell
 git clone https://github.com/IBM/aspera-cli.git
 cd aspera-cli
 bundle install
@@ -91,7 +91,7 @@ You can manage your Ruby installation using your preferred tool (e.g., `rbenv`, 
 
 To start with a clean state and remove all installed gems:
 
-```bash
+```shell
 bundle exec rake tools:clean_gems
 ```
 
@@ -121,11 +121,11 @@ These values can be set as standard environment variables or passed directly to 
 Setting `SIGNING_KEY_PEM` automatically generates a file at `$HOME/.gem/signing_key.pem` and sets the `SIGNING_KEY` variable accordingly.
 
 > [!NOTE]
-> `ASPERA_CLI_*` variables are typically defined in your shell profile for development, while others are intended for ad-hoc command-line use.
+> `ASPERA_CLI_TEST_CONF_URL` is typically defined in your shell profile for development, while others are usually for ad-hoc command-line use.
 
 To run the CLI directly from your source directory, add the following to your shell profile (adjust the path as necessary):
 
-```bash
+```shell
 dev_ascli=$HOME/github/aspera-cli
 export PATH=$dev_ascli/bin:$PATH
 export RUBYLIB=$dev_ascli/lib:$RUBYLIB
@@ -140,24 +140,24 @@ Installation instructions can be found at [IBM Plex](https://www.ibm.com/plex/).
 
 On macOS, install `lualatex` and required packages via Homebrew:
 
-```bash
+```shell
 brew install texlive
 ```
 
 If using an alternative installation method, ensure the following packages are present:
 
-```bash
+```shell
 tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
-- To validate URLs during generation: `ASPERA_CLI_DOC_CHECK_LINKS=1`.
+- Validate URLs during generation: `ASPERA_CLI_DOC_CHECK_LINKS=yes`.
 
-- To debug the generation process: `ASPERA_CLI_DOC_DEBUG=debug`.
+- Debug the generation process: `ASPERA_CLI_DOC_DEBUG=debug`.
 
-- To build the documentation:
+- Build the documentation:
 
-```bash
+```shell
 rake doc:build
 ```
 
@@ -169,14 +169,14 @@ Detailed testing information can be found in <tests/README.md>.
 
 To build an unsigned gem:
 
-```bash
+```shell
 bundle install
 bundle exec rake unsigned
 ```
 
 To exclude optional gems from the installation:
 
-```bash
+```shell
 bundle config set without optional
 ```
 
@@ -185,7 +185,7 @@ bundle config set without optional
 Generating a signed gem requires a **private key**, specified via the `SIGNING_KEY` environment variable.
 The gem is signed using the public certificate in `certs` and the **private key**.
 
-```bash
+```shell
 bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
@@ -195,7 +195,7 @@ For more details, see <certs/README.md>.
 
 To update the stubs:
 
-```bash
+```shell
 bundle exec rake tools:grpc
 ```
 
@@ -211,7 +211,7 @@ Refer to the [Executable build guide](build/binary/README.md).
 
 To list related `rake` tasks:
 
-```bash
+```shell
 bundle exec rake -T ^binary:
 ```
 
@@ -234,15 +234,21 @@ Before a new release, ensure the following:
 
 - **Pass all tests**:
 
-```bash
+```shell
 bundle exec rake test:run
 ```
 
 - **Verify container builds** (using the local gem):
 
-```bash
+```shell
 bundle exec rake container:build'[local]'
 bundle exec rake container:test
+```
+
+- **Check documentation links**:
+
+```shell
+bundle exec rake doc:build ASPERA_CLI_DOC_CHECK_LINKS=yes
 ```
 
 ### Automated Release Process

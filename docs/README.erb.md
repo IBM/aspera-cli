@@ -4341,16 +4341,12 @@ When <%=tool%> is executed automatically on a scheduled basis, one generally des
 - The same file may be transferred by multiple instances at the same time.
 - `preview` may generate the same files in multiple instances.
 
-Usually the OS native scheduler already provides some sort of protection against parallel execution:
-
-- The Windows scheduler does this by default
-- Linux `cron` can leverage the utility [`flock`](https://man.cx/flock%281%29) to do the same:
-
-```shell
-/usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
-```
+#### Option: `lock_port`
 
 <%=tool%> natively supports a locking mechanism with option `lock_port`.
+`lock_port` prevents concurrent executions of the same command.
+If another instance is already running and holding the port, the new execution exits immediately.
+
 Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock.
 Lock is released when process exits.
 When using <%=tool%> in a container, this does not work with other containers, as each container have its own network.
@@ -4360,13 +4356,24 @@ Testing <%=tool%> locking:
 Run this same command in two separate terminals within less than 30 seconds:
 
 ```shell
-<%=cmd%> config echo @ruby:'sleep(30)' --lock-port=12345
+<%=cmd%> config echo @ruby:'sleep 30' --lock-port=12345
 ```
 
 The first instance will sleep 30 seconds, the second one will immediately exit like this:
 
 ```shell
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
+```
+
+#### OS-based concurrency protection
+
+Usually the OS native scheduler already provides some sort of protection against parallel execution:
+
+- The Windows scheduler does this by default
+- Linux `cron` can leverage the utility [`flock`](https://man.cx/flock%281%29) to do the same:
+
+```shell
+/usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
 ```
 
 ### "Proven&ccedil;al"
@@ -8373,7 +8380,7 @@ Refer to section [Scheduler](#scheduler).
 ### Example: Upload hot folder
 
 ```shell
-<%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
+<%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than":-8,"src_base":"source_hot"}'
 ```
 
 The local folder (here, relative path: `source_hot`) is sent (upload) to an Aspera server.
