@@ -128,7 +128,7 @@ export PATH=$PATH:$HOME/bin
 <%=build_version%>
 ```
 
-- Install the Aspera transfer runtime:
+- Install the latest Aspera transfer runtime, as it is not included in the <%=tool%> package:
 
 ```shell
 <%=cmd%> config transferd install
@@ -225,7 +225,7 @@ There are several ways to install <%=tool%>:
   This is the most general method.
   It consists of installing:
   - The [Ruby language](#ruby),
-  - Then [<%=gemspec.name%>](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
+  - The [<%=gemspec.name%>](#ruby-gem-aspera-cli) Ruby gem,<!-- markdownlint-disable-line -->
   - [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp).
 - As a [single file executable](#single-file-executable)
 
@@ -243,6 +243,7 @@ If you do not have internet access, refer to section [Installation without inter
 > Available only on a limited number of platforms.
 
 <%=tool%> is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
+This executable includes the Ruby runtime.
 
 #### Installation
 
@@ -252,7 +253,7 @@ If you do not have internet access, refer to section [Installation without inter
 > Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
-curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.4.24.1.osx-arm64
+curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.<%=build_version%>.osx-arm64
 chmod a+x <%=cmd%>
 ./<%=cmd%> config transferd install
 ```
@@ -261,6 +262,7 @@ chmod a+x <%=cmd%>
 
 > [!WARNING]
 > On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
+> If the minimuim version is not met, then executables (`ascp`, `transferd`) will exit with error.
 
 On Linux, you can check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
@@ -515,13 +517,13 @@ If your Unix does not provide a pre-built Ruby, you can get it using one of thos
 For instance to build from source and install in `/opt/ruby` :
 
 ```shell
-wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+wget https://cache.ruby-lang.org/pub/ruby/x.y/ruby-x.y.z.tar.gz
 
-gzip -d ruby-2.7.2.tar.gz
+gzip -d ruby-x.y.z.tar.gz
 
-tar xvf ruby-2.7.2.tar
+tar xvf ruby-x.y.z.tar
 
-cd ruby-2.7.2
+cd ruby-x.y.z
 
 ./configure --prefix=/opt/ruby
 
@@ -567,7 +569,8 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 
 #### Optional gems
 
-Some additional gems are required for some specific features.
+Some additional gems are required for either development, or some runtime specific features.
+For JRuby, some replacement gems are proposed, or are nor available at all.
 Those are not installed as part of dependencies because they involve compilation of native code but concern less-used features.
 
 See [Gemfile](<%=link_repo('Gemfile')%>):
@@ -656,12 +659,6 @@ Install it using <%=tool%> (for the current platform) with:
 <%=cmd%> config transferd install
 ```
 
-or
-
-```shell
-<%=cmd%> config ascp install
-```
-
 The installation of the transfer binaries follows those steps:
 
 - **Select the SDK package to use**. Check the `sdk_url` option:
@@ -685,7 +682,7 @@ Available Transfer Daemon versions available from `locations_url` can be listed 
 To install a specific version, e.g. 1.1.3:
 
 ```shell
-<%=cmd%> config ascp install 1.1.3
+<%=cmd%> config transferd install 1.1.3
 ```
 
 To get the download URL for a specific platform and version:
@@ -703,7 +700,7 @@ To download it, pipe to `config download`:
 If installation from a local file is preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```shell
-<%=cmd%> config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+<%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -775,7 +772,7 @@ tar zxvf rvm-<%=cmd%>.tgz
 
 source ~/.rvm/scripts/rvm
 
-<%=cmd%> config ascp install --sdk-url=file:///[SDK archive file path]
+<%=cmd%> config transferd install --sdk-url=file:///[SDK archive file path]
 ```
 
 - Add those lines to shell environment (`.profile`)
@@ -821,11 +818,8 @@ gem install --force --local *.gem
 - Install the Aspera Transfer Daemon SDK
 
 ```shell
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+<%=cmd%> config transferd install --sdk-url=file:///sdk.zip
 ```
-
-> [!NOTE]
-> A beta version of a packaged installer is available.
 
 ### Container
 
@@ -906,22 +900,22 @@ Add options:
 >
 > container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
-As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
-you can change the entry point, add option:
+As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available, you can change the entry point, add option:
 
 ```shell
 --entrypoint bash
 ```
 
+> [!WARNING]
+> <%=tool%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
+
 You may also probably want that files downloaded in the container are directed to the host.
+For example, files transfered with <%=tool%> through folder `/xferfiles` (right hand side) would be available on host in `$HOME/xferdir`.
 In this case you need also to specify the shared transfer folder as a volume:
 
 ```shell
 --volume $HOME/xferdir:/xferfiles
 ```
-
-> [!WARNING]
-> <%=tool%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
 
@@ -3075,7 +3069,7 @@ Some actions may require the use of a graphical tool:
 - A text editor for configuration file edition
 
 By default, <%=tool%> assumes that a graphical environment is available on Windows, and on other systems, rely on the presence of the `DISPLAY` environment variable.
-It is also possible to force the graphical mode with option `--ui` :
+It is also possible to force the graphical mode with option `ui` :
 
 - `--ui=graphical` forces a graphical environment, a browser will be opened for URLs or a text editor for file edition.
 - `--ui=text` forces a text environment, the URL or file path to open is displayed on terminal.
@@ -3317,7 +3311,7 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 By default, it uses the `direct` agent, which is basically a local `ascp`.
 Nevertheless, <%=tool%> does not come with `ascp` installed.
-This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`<%=cmd%> config ascp install`).
+This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`<%=cmd%> config transferd install`).
 
 By default, <%=tool%> uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
 
@@ -3402,7 +3396,7 @@ To show the path of currently used `ascp`:
 ```
 
 ```text
-/Users/laurent/.aspera/<%=cmd%>/sdk/ascp
+/Users/laurent/.aspera/sdk/ascp
 ```
 
 ```shell
