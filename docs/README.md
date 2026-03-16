@@ -189,22 +189,22 @@ The steps below create a preset, set it as the default for the server plugin, br
 - Create a preset with your server's connection details:
 
 ```shell
-ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
+ascli config preset update <SERVER_PRESET_NAME> --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
 ```
 
 ```text
-Updated: myserver
+Updated: <SERVER_PRESET_NAME>
 Saving config file.
 ```
 
 - Set the preset as the default for the server plugin:
 
 ```shell
-ascli config preset set default server myserver
+ascli config preset set default server <SERVER_PRESET_NAME>
 ```
 
 ```text
-Updated: default: server <- myserver
+Updated: default: server <- <SERVER_PRESET_NAME>
 Saving config file.
 ```
 
@@ -1206,7 +1206,7 @@ Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_F
 To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```shell
-ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
+ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=<SERVER_PRESET_NAME>.pem
 ```
 
 > [!NOTE]
@@ -1215,7 +1215,7 @@ ascli config remote_certificate chain https://localhost:9092 --insecure=yes --ou
 Then, use this file as certificate store (e.g. here, Node API):
 
 ```shell
-ascli config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
+ascli config echo @uri:https://localhost:9092/ping --cert-stores=<SERVER_PRESET_NAME>.pem
 ```
 
 ## Command Line Interface
@@ -2241,7 +2241,7 @@ The general syntax for this argument is:
 **Example**: Sending a package with a file list using `@:` for package information.
 
 ```shell
-ascli aoc packages send @: name="my title" recipients.0=user@example.com END file1.dat file2.dat
+ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file1.dat file2.dat
 ```
 
 > [!CAUTION]
@@ -2442,7 +2442,7 @@ A configuration file provides a way to define default values, especially for aut
 The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `config_file`).
 
 The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
-Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
+Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `<PRESET_NAME>`) using the option `preset`: `--preset=<PRESET_NAME>` or its shortcut: `-P<PRESET_NAME>`.
 
 #### Format of configuration file
 
@@ -3034,7 +3034,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```shell
-ascli config vault create @json:'{"label":"mylabel","password":"<PASSWORD>","description":"for this account"}'
+ascli config vault create @json:'{"label":"<NAME>","password":"<PASSWORD>","description":"for this account"}'
 ```
 
 #### Configuration Finder
@@ -3049,17 +3049,17 @@ A password can be saved in clear in an [Option Preset](#option-preset) together 
 Example:
 
 ```shell
-ascli config preset update myconf --url=... --username=... --password=...
+ascli config preset update <PRESET_NAME> --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
 ```shell
-ascli config preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+ascli config preset update <PRESET_NAME> --url=... --username=... --password=@val:@vault:<VAULT_LABEL>.password
 ```
 
 ```shell
-ascli config vault create @json:'{"label":"myconf","password":"<PASSWORD>"}'
+ascli config vault create @json:'{"label":"<VAULT_LABEL>","password":"<PASSWORD>"}'
 ```
 
 > [!NOTE]
@@ -3492,28 +3492,17 @@ By default, `ascli` uses any found local product with `ascp`, including Transfer
 To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
 For a permanent change, set a global default.
+For example, `<INSTALL_DIR>` could be `~/my_install_dir` on Linux, or `C:\Users\admin\.aspera\ascli\sdk` on Windows.
 
 Using a POSIX shell:
 
 ```shell
-ascli config preset set GLOBAL sdk_folder ~/my_install_dir
+ascli config preset set GLOBAL sdk_folder <INSTALL_DIR>
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: sdk_folder <- /Users/laurent/my_install_dir
-Saved to default global preset global_common_defaults
-```
-
-Windows:
-
-```text
-ascli config preset set GLOBAL sdk_folder C:\Users\admin\.aspera\ascli\sdk
-```
-
-```text
-ascp version: 4.0.0.182279
-Updated: global_common_defaults: sdk_folder <- C:\Users\admin\.aspera\ascli\sdk
+Updated: global_common_defaults: sdk_folder <- <INSTALL_DIR>
 Saved to default global preset global_common_defaults
 ```
 
@@ -3521,7 +3510,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 
 A special value `product:<PRODUCT_NAME>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
-A special value for product name is `FIRST`, which means: use the first found.
+A special value for product name is `FIRST`, which means: use the first product found in the internal list.
 
 Locally installed Aspera products can be listed with:
 
@@ -4474,7 +4463,7 @@ By default, Windows Task Scheduler prevents overlapping executions.
 #### Linux: `systemd` Timer
 
 Most modern Linux distributions use `systemd` which provides scheduling via [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) units.
-Define a name for the server, for example: `my_ascli_job` as `<NAME>` below.
+Define a name for the server, for example: `ascli_job` as `<NAME>` below.
 
 1. Create the service
 
@@ -4556,7 +4545,7 @@ In this case it is recommended to run `ascli` as a system service.
 
 On Linux this is typically done using [`systemd`](https://systemd.io/).
 
-For example, below `<NAME>` is `my_ascli_svc`.
+For example, below `<NAME>` is `ascli_svc`.
 
 A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_<NAME>.sh`:
 
@@ -5377,14 +5366,14 @@ Items: 4/4
 │ id         │ name                │
 ╞════════════╪═════════════════════╡
 │ oXPUyJ7JpQ │ PRI Sydney          │
-│ TaoAmAG8Rg │ ascli_test_web      │
+│ <NAME> │ ascli_test_web      │
 │ TDNl2bLZqw │ ascli_web           │
 │ VTh92i5OfQ │ shannon             │
 ╰────────────┴─────────────────────╯
 ```
 
 ```shell
-ascli aoc admin client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin client modify <NAME> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```text
@@ -5901,10 +5890,10 @@ ascli aoc admin user list --fields=email --select=@json:'{"member_of_any_workspa
 - Create the group and take note of `id`
 
 ```shell
-ascli aoc admin group create @json:'{"name":"group 1","description":"my super group"}'
+ascli aoc admin group create @json:'{"name":"group 1","description":"<DESCRIPTION>"}'
 ```
 
-Group: `11111`
+Group: `<GROUP_ID>`
 
 - Get the workspace ID
 
@@ -5912,12 +5901,12 @@ Group: `11111`
 ascli aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
 ```
 
-Workspace: 22222
+Workspace: <WORKSPACE_ID>
 
 - Add group to workspace
 
 ```shell
-ascli aoc admin workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
+ascli aoc admin workspace_membership create @json:'{"workspace_id":<WORKSPACE_ID>,"member_type":"user","member_id":<GROUP_ID>}'
 ```
 
 - Get a user's ID
@@ -5926,12 +5915,12 @@ ascli aoc admin workspace_membership create @json:'{"workspace_id":22222,"member
 ascli aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
 ```
 
-User: 33333
+User: <USER_ID>
 
 - Add user to group
 
 ```shell
-ascli aoc admin group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
+ascli aoc admin group_membership create @json:'{"group_id":<GROUP_ID>,"member_type":"user","member_id":<USER_ID>}'
 ```
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders
@@ -6152,19 +6141,19 @@ If a user recipient (email) is not already registered and the workspace allows e
 ##### Example: Send a package with one file to two users, using their email
 
 ```shell
-ascli aoc packages send @json:'{"name":"my title","note":"my note","recipients":["someuser@example.com","other@example.com"]}' my_file.dat
+ascli aoc packages send @json:'{"name":"<TITLE>","note":"<NOTE>","recipients":["someuser@example.com","other@example.com"]}' <FILE_PATH>
 ```
 
 ##### Example: Send a package to a shared inbox with metadata
 
 ```shell
-ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"<TITLE>","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```shell
-ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"<TITLE>","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 ##### Example: Send a package with files from the Files app
@@ -6268,10 +6257,11 @@ Typically, one would execute this command on a regular basis, using the method o
 
 Some `node` operations are available for a package, such as `browse` and `find`.
 
-To list the content of a package, use command `packages browse <PACKAGE_ID> <FOLDER>`:
+To list the content of a package, use command `packages browse <PACKAGE_ID> <FOLDER>`.
+Example:
 
 ```shell
-ascli aoc package browse my5CnbeWng /
+ascli aoc package browse xx5CnbeWng /
 ```
 
 Use command `find` to list recursively.
@@ -6429,7 +6419,7 @@ ascli aoc admin node do <NODE_ID> permission --workspace=<WORKSPACE_NAME> <PATH_
 
 > [!TIP]
 > The node is identified by identifier.
-> To use a name instead, one can use the percent selector, like `%name:"my node"`.
+> To use a name instead, one can use the percent selector, like `%name:"<NODE_NAME>"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
 > If the ID is left blank: `%id:`, then it means `*`, i.e. "all".
 
@@ -6652,13 +6642,13 @@ Although optional, the creation of [Option Preset](#option-preset) is recommende
 Procedure to send a file from org1 to org2:
 
 - Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#wizard)
-- Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
+- Check that access works and locate the source file e.g. `<SOURCE_FILE>`, e.g. using command `files browse`
 - Get access to Organization 2 and create an [Option Preset](#option-preset): e.g. `org2`
-- Check that access works and locate the destination folder `mydestfolder`
+- Check that access works and locate the destination folder `<DEST_FOLDER>`
 - Execute the following:
 
 ```shell
-ascli -Porg1 aoc files node_info /mydestfolder --format=json --display=data | ascli -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
+ascli -Porg1 aoc files node_info <DEST_FOLDER> --format=json --display=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --transfer=node --transfer-info=@json:@stdin:
 ```
 
 Explanation:
@@ -6666,12 +6656,12 @@ Explanation:
 - `ascli` is the command to execute by the shell
 - `-Porg1` load options for preset `org1` (url and credentials)
 - `aoc` use Aspera on Cloud plugin
-- `files node_info /mydestfolder` generate transfer information including Node API credential and root ID, suitable for the next command
+- `files node_info /<DEST_FOLDER>` generate transfer information including Node API credential and root ID, suitable for the next command
 - `--format=json` format the output in JSON (instead of default text table)
 - `--display=data` display only the result, and remove other information, such as workspace name
 - `|` the standard output of the first command is fed into the second one
 - `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
-- `files upload mysourcefile` upload the file named `mysourcefile` (located in `org2`) to `org1`
+- `files upload <SOURCE_FILE>` upload the file named `<SOURCE_FILE>` (located in `org2`) to `org1`
 - `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agent-direct)
 - `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. Node API credentials, those are expected in JSON format and read from standard input
 
@@ -6682,7 +6672,7 @@ The command `aoc files find` allows searching for files in a given workspace.
 It works also on `node` resource using the `v4` command:
 
 ```shell
-ascli aoc admin node --name='my node name' --secret='<SECRET>' v4 find ...
+ascli aoc admin node --name='<NODE_NAME> name' --secret='<SECRET>' v4 find ...
 ```
 
 For instructions, refer to section `find` for plugin `node`.
@@ -6850,17 +6840,17 @@ First get your IBM Cloud API key.
 For instance, it can be created using the IBM Cloud web interface, or using command line:
 
 ```shell
-ibmcloud iam api-key-create mykeyname -d 'my sample key'
+ibmcloud iam api-key-create <KEY_NAME> -d '<DESCRIPTION>'
 ```
 
 ```text
 OK
-API key mykeyname was created
+API key <KEY_NAME> was created
 
 Please preserve the API key! It cannot be retrieved after it's created.
 
-Name          mykeyname
-Description   my sample key
+Name          <KEY_NAME>
+Description   <DESCRIPTION>
 Created At    2019-09-30T12:17+0000
 API Key       <SECRET>_api_key_here
 Locked        false
@@ -6932,13 +6922,13 @@ ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"sto
 Example: create access key on AWS:
 
 ```shell
-ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<SECRET>"},"path":"/laurent"}}'
+ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<SECRET>"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
 ```shell
-ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
 > [!NOTE]
@@ -6947,7 +6937,7 @@ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":
 Example: create access key on Azure:
 
 ```shell
-ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"<ACCESS_KEY>","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
 delete all my access keys:
@@ -7357,9 +7347,9 @@ You can run watchfolder operations remotely through the Node API:
 - Configure a **Watchfolder** to define automated transfers
 
 ```shell
-ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
-ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
+ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"<USERNAME>"}}'
+ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"<USERNAME>"}}'
+ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"<USERNAME>","pass":"<PASSWORD>"}}'
 ```
 
 ### Out of Transfer File Validation
@@ -7376,7 +7366,7 @@ ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"
 +--------------+--------------+------------+--------------------------------------+
 | session_uuid |    file_id   |   status   |              path                    |
 +--------------+--------------+------------+--------------------------------------+
-| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
+| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - <TITLE>/200KB.1 |
 +--------------+--------------+------------+--------------------------------------+
 ```
 
@@ -7438,7 +7428,7 @@ ascli aoc files thumbnail /preview_samples/Aspera.mpg
 ### Create access key
 
 ```shell
-ascli node access_key create @json:'{"id":"myaccesskey","secret":"<SECRET>","storage":{"type":"local","path":"/data/mydir"}}'
+ascli node access_key create @json:'{"id":"<ACCESS_KEY>","secret":"<SECRET>","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 > [!TIP]
@@ -7873,9 +7863,9 @@ Typically, users create a preset so they don’t have to enter these options eac
 Example:
 
 ```shell
-ascli config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=<SECRET> --username=_username_here_ --private-key=@file:.../path/to/key.pem
+ascli config preset update <F5_PRESET> --auth=jwt --client-id=_client_id_here_ --client-secret=<SECRET> --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
-ascli config preset set default faspx5 myf5
+ascli config preset set default faspex5 <F5_PRESET>
 
 ascli faspex5 user profile show
 ```
@@ -8060,7 +8050,7 @@ The following fields are required:
 Basic example (assuming a default preset has been configured for connection information):
 
 ```shell
-ascli faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybigfile1
+ascli faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' <FILE_PATH>
 ```
 
 #### Specifying Recipients
@@ -8128,7 +8118,7 @@ Refer to the API documentation.
 Each key corresponds to a metadata field name, and its value is the metadata value:
 
 ```json
-{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
+{"title":"test title","recipients":["<SH_INBOX_NAME>"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
 ```
 
 ### Faspex 5: List packages
@@ -8531,7 +8521,7 @@ The content of `delivery_info` is directly the contents of the `send` v3 [API of
 Example:
 
 ```shell
-ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
+ascli faspex package send --delivery-info=@json:'{"title":"<TITLE>","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
@@ -8809,8 +8799,8 @@ If you already have these parameters, provide the following options to `ascli`:
 Example: Create a Default Configuration
 
 ```shell
-ascli config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-ascli config preset set default cos mycos
+ascli config preset update <COS_PRESET_NAME> --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+ascli config preset set default cos <COS_PRESET_NAME>
 ```
 
 Once configured, proceed to the [transfer example](#operations-transfers).
@@ -8879,8 +8869,8 @@ The required options for this method are:
 Example: Create a Default Configuration
 
 ```shell
-ascli config preset update mycos --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-ascli config preset set default cos mycos
+ascli config preset update <COS_PRESET_NAME> --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+ascli config preset set default cos <COS_PRESET_NAME>
 ```
 
 ### Operations, transfers
@@ -9114,9 +9104,9 @@ For example:
 ```shell
 su -s /bin/bash - xfer
 
-ascli config preset update mypreviewconf --url=https://localhost:9092 --username=<ACCESS_KEY> --password=<SECRET> --skip-types=office --lock-port=12346
+ascli config preset update <PREVIEW_PRESET_NAME> --url=https://localhost:9092 --username=<ACCESS_KEY> --password=<SECRET> --skip-types=office --lock-port=12346
 
-ascli config preset set default preview mypreviewconf
+ascli config preset set default preview <PREVIEW_PRESET_NAME>
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.

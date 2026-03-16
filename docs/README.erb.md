@@ -185,22 +185,22 @@ The steps below create a preset, set it as the default for the server plugin, br
 - Create a preset with your server's connection details:
 
 ```shell
-<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
+<%=cmd%> config preset update <%=ph :server_preset_name%> --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
 ```
 
 ```text
-Updated: myserver
+Updated: <%=ph :server_preset_name%>
 Saving config file.
 ```
 
 - Set the preset as the default for the server plugin:
 
 ```shell
-<%=cmd%> config preset set default server myserver
+<%=cmd%> config preset set default server <%=ph :server_preset_name%>
 ```
 
 ```text
-Updated: default: server <- myserver
+Updated: default: server <- <%=ph :server_preset_name%>
 Saving config file.
 ```
 
@@ -1155,7 +1155,7 @@ Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_F
 To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```shell
-<%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
+<%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --output=<%=ph :server_preset_name%>.pem
 ```
 
 > [!NOTE]
@@ -1164,7 +1164,7 @@ To trust a specific certificate (e.g. self-signed), **provided that the `CN` is 
 Then, use this file as certificate store (e.g. here, Node API):
 
 ```shell
-<%=cmd%> config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
+<%=cmd%> config echo @uri:https://localhost:9092/ping --cert-stores=<%=ph :server_preset_name%>.pem
 ```
 
 ## Command Line Interface
@@ -2190,7 +2190,7 @@ The general syntax for this argument is:
 **Example**: Sending a package with a file list using `@:` for package information.
 
 ```shell
-<%=cmd%> aoc packages send @: name="my title" recipients.0=user@example.com END file1.dat file2.dat
+<%=cmd%> aoc packages send @: name="<%=ph :title%>" recipients.0=user@example.com END file1.dat file2.dat
 ```
 
 > [!CAUTION]
@@ -2391,7 +2391,7 @@ A configuration file provides a way to define default values, especially for aut
 The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `config_file`).
 
 The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
-Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
+Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `<%=ph :preset_name%>`) using the option `preset`: `--preset=<%=ph :preset_name%>` or its shortcut: `-P<%=ph :preset_name%>`.
 
 #### Format of configuration file
 
@@ -2875,7 +2875,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```shell
-<%=cmd%> config vault create @json:'{"label":"mylabel","password":"<%=ph :password%>","description":"for this account"}'
+<%=cmd%> config vault create @json:'{"label":"<%=ph :name%>","password":"<%=ph :password%>","description":"for this account"}'
 ```
 
 #### Configuration Finder
@@ -2890,17 +2890,17 @@ A password can be saved in clear in an [Option Preset](#option-preset) together 
 Example:
 
 ```shell
-<%=cmd%> config preset update myconf --url=... --username=... --password=...
+<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
 ```shell
-<%=cmd%> config preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph :vault_label%>.password
 ```
 
 ```shell
-<%=cmd%> config vault create @json:'{"label":"myconf","password":"<%=ph :password%>"}'
+<%=cmd%> config vault create @json:'{"label":"<%=ph :vault_label%>","password":"<%=ph :password%>"}'
 ```
 
 > [!NOTE]
@@ -3333,28 +3333,17 @@ By default, <%=tool%> uses any found local product with `ascp`, including Transf
 To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
 For a permanent change, set a global default.
+For example, `<%=ph :install_dir%>` could be `~/my_install_dir` on Linux, or `C:\Users\admin\.aspera\<%=cmd%>\sdk` on Windows.
 
 Using a POSIX shell:
 
 ```shell
-<%=cmd%> config preset set GLOBAL sdk_folder ~/my_install_dir
+<%=cmd%> config preset set GLOBAL sdk_folder <%=ph :install_dir%>
 ```
 
 ```text
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: sdk_folder <- /Users/laurent/my_install_dir
-Saved to default global preset global_common_defaults
-```
-
-Windows:
-
-```text
-<%=cmd%> config preset set GLOBAL sdk_folder C:\Users\admin\.aspera\<%=cmd%>\sdk
-```
-
-```text
-ascp version: 4.0.0.182279
-Updated: global_common_defaults: sdk_folder <- C:\Users\admin\.aspera\<%=cmd%>\sdk
+Updated: global_common_defaults: sdk_folder <- <%=ph :install_dir%>
 Saved to default global preset global_common_defaults
 ```
 
@@ -3362,7 +3351,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 
 A special value `product:<%=ph :product_name%>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
-A special value for product name is `FIRST`, which means: use the first found.
+A special value for product name is `FIRST`, which means: use the first product found in the internal list.
 
 Locally installed Aspera products can be listed with:
 
@@ -4215,7 +4204,7 @@ By default, Windows Task Scheduler prevents overlapping executions.
 #### Linux: `systemd` Timer
 
 Most modern Linux distributions use `systemd` which provides scheduling via [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) units.
-Define a name for the server, for example: `my_<%=cmd%>_job` as `<%=ph :name%>` below.
+Define a name for the server, for example: `<%=cmd%>_job` as `<%=ph :name%>` below.
 
 1. Create the service
 
@@ -4297,7 +4286,7 @@ In this case it is recommended to run <%=tool%> as a system service.
 
 On Linux this is typically done using [`systemd`](https://systemd.io/).
 
-For example, below `<%=ph :name%>` is `my_<%=cmd%>_svc`.
+For example, below `<%=ph :name%>` is `<%=cmd%>_svc`.
 
 A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_<%=ph :name%>.sh`:
 
@@ -4835,14 +4824,14 @@ Items: 4/4
 │ id         │ name                │
 ╞════════════╪═════════════════════╡
 │ oXPUyJ7JpQ │ PRI Sydney          │
-│ TaoAmAG8Rg │ ascli_test_web      │
+│ <%=ph :name%> │ ascli_test_web      │
 │ TDNl2bLZqw │ ascli_web           │
 │ VTh92i5OfQ │ shannon             │
 ╰────────────┴─────────────────────╯
 ```
 
 ```shell
-<%=cmd%> aoc admin client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+<%=cmd%> aoc admin client modify <%=ph :name%> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```text
@@ -5359,10 +5348,10 @@ e- Add members to second workspace
 - Create the group and take note of `id`
 
 ```shell
-<%=cmd%> aoc admin group create @json:'{"name":"group 1","description":"my super group"}'
+<%=cmd%> aoc admin group create @json:'{"name":"group 1","description":"<%=ph :description%>"}'
 ```
 
-Group: `11111`
+Group: `<%=ph :group_id%>`
 
 - Get the workspace ID
 
@@ -5370,12 +5359,12 @@ Group: `11111`
 <%=cmd%> aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
 ```
 
-Workspace: 22222
+Workspace: <%=ph :workspace_id%>
 
 - Add group to workspace
 
 ```shell
-<%=cmd%> aoc admin workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
+<%=cmd%> aoc admin workspace_membership create @json:'{"workspace_id":<%=ph :workspace_id%>,"member_type":"user","member_id":<%=ph :group_id%>}'
 ```
 
 - Get a user's ID
@@ -5384,12 +5373,12 @@ Workspace: 22222
 <%=cmd%> aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
 ```
 
-User: 33333
+User: <%=ph :user_id%>
 
 - Add user to group
 
 ```shell
-<%=cmd%> aoc admin group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
+<%=cmd%> aoc admin group_membership create @json:'{"group_id":<%=ph :group_id%>,"member_type":"user","member_id":<%=ph :user_id%>}'
 ```
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders
@@ -5610,19 +5599,19 @@ If a user recipient (email) is not already registered and the workspace allows e
 ##### Example: Send a package with one file to two users, using their email
 
 ```shell
-<%=cmd%> aoc packages send @json:'{"name":"my title","note":"my note","recipients":["someuser@example.com","other@example.com"]}' my_file.dat
+<%=cmd%> aoc packages send @json:'{"name":"<%=ph :title%>","note":"<%=ph :note%>","recipients":["someuser@example.com","other@example.com"]}' <%=ph :file_path%>
 ```
 
 ##### Example: Send a package to a shared inbox with metadata
 
 ```shell
-<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"<%=ph :title%>","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```shell
-<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"<%=ph :title%>","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 ##### Example: Send a package with files from the Files app
@@ -5726,10 +5715,11 @@ Typically, one would execute this command on a regular basis, using the method o
 
 Some `node` operations are available for a package, such as `browse` and `find`.
 
-To list the content of a package, use command `packages browse <%=ph :package_id%> <%=ph :folder%>`:
+To list the content of a package, use command `packages browse <%=ph :package_id%> <%=ph :folder%>`.
+Example:
 
 ```shell
-<%=cmd%> aoc package browse my5CnbeWng /
+<%=cmd%> aoc package browse xx5CnbeWng /
 ```
 
 Use command `find` to list recursively.
@@ -5887,7 +5877,7 @@ Admin shared folders, created by administrators in a workspace, follow the synta
 
 > [!TIP]
 > The node is identified by identifier.
-> To use a name instead, one can use the percent selector, like `%name:"my node"`.
+> To use a name instead, one can use the percent selector, like `%name:"<%=ph :node_name%>"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
 > If the ID is left blank: `%id:`, then it means `*`, i.e. "all".
 
@@ -6110,13 +6100,13 @@ Although optional, the creation of [Option Preset](#option-preset) is recommende
 Procedure to send a file from org1 to org2:
 
 - Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#wizard)
-- Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
+- Check that access works and locate the source file e.g. `<%=ph :source_file%>`, e.g. using command `files browse`
 - Get access to Organization 2 and create an [Option Preset](#option-preset): e.g. `org2`
-- Check that access works and locate the destination folder `mydestfolder`
+- Check that access works and locate the destination folder `<%=ph :dest_folder%>`
 - Execute the following:
 
 ```shell
-<%=cmd%> -Porg1 aoc files node_info /mydestfolder --format=json --display=data | <%=cmd%> -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
+<%=cmd%> -Porg1 aoc files node_info <%=ph :dest_folder%> --format=json --display=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --transfer=node --transfer-info=@json:@stdin:
 ```
 
 Explanation:
@@ -6124,12 +6114,12 @@ Explanation:
 - <%=tool%> is the command to execute by the shell
 - `-Porg1` load options for preset `org1` (url and credentials)
 - `aoc` use Aspera on Cloud plugin
-- `files node_info /mydestfolder` generate transfer information including Node API credential and root ID, suitable for the next command
+- `files node_info /<%=ph :dest_folder%>` generate transfer information including Node API credential and root ID, suitable for the next command
 - `--format=json` format the output in JSON (instead of default text table)
 - `--display=data` display only the result, and remove other information, such as workspace name
 - `|` the standard output of the first command is fed into the second one
 - `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
-- `files upload mysourcefile` upload the file named `mysourcefile` (located in `org2`) to `org1`
+- `files upload <%=ph :source_file%>` upload the file named `<%=ph :source_file%>` (located in `org2`) to `org1`
 - `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agent-direct)
 - `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. Node API credentials, those are expected in JSON format and read from standard input
 
@@ -6140,7 +6130,7 @@ The command `aoc files find` allows searching for files in a given workspace.
 It works also on `node` resource using the `v4` command:
 
 ```shell
-<%=cmd%> aoc admin node --name='my node name' --secret='<%=ph :secret%>' v4 find ...
+<%=cmd%> aoc admin node --name='<%=ph :node_name%> name' --secret='<%=ph :secret%>' v4 find ...
 ```
 
 For instructions, refer to section `find` for plugin `node`.
@@ -6167,17 +6157,17 @@ First get your IBM Cloud API key.
 For instance, it can be created using the IBM Cloud web interface, or using command line:
 
 ```shell
-ibmcloud iam api-key-create mykeyname -d 'my sample key'
+ibmcloud iam api-key-create <%=ph :key_name%> -d '<%=ph :description%>'
 ```
 
 ```text
 OK
-API key mykeyname was created
+API key <%=ph :key_name%> was created
 
 Please preserve the API key! It cannot be retrieved after it's created.
 
-Name          mykeyname
-Description   my sample key
+Name          <%=ph :key_name%>
+Description   <%=ph :description%>
 Created At    2019-09-30T12:17+0000
 API Key       <%=ph :secret%>_api_key_here
 Locked        false
@@ -6249,13 +6239,13 @@ Example: create access key on IBM Cloud (Softlayer):
 Example: create access key on AWS:
 
 ```shell
-<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<%=ph :secret%>"},"path":"/laurent"}}'
+<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"<%=ph :access_key%>","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<%=ph :secret%>"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
 ```shell
-<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<%=ph :access_key%>","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
 > [!NOTE]
@@ -6264,7 +6254,7 @@ Example: create access key on Azure SAS:
 Example: create access key on Azure:
 
 ```shell
-<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<%=ph :access_key%>","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"<%=ph :access_key%>","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
 delete all my access keys:
@@ -6614,9 +6604,9 @@ You can run watchfolder operations remotely through the Node API:
 - Configure a **Watchfolder** to define automated transfers
 
 ```shell
-<%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
-<%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-<%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
+<%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"<%=ph :username%>"}}'
+<%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"<%=ph :username%>"}}'
+<%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"<%=ph :username%>","pass":"<%=ph :password%>"}}'
 ```
 
 ### Out of Transfer File Validation
@@ -6633,7 +6623,7 @@ The following command lists one file that requires validation and assigns it to 
 +--------------+--------------+------------+--------------------------------------+
 | session_uuid |    file_id   |   status   |              path                    |
 +--------------+--------------+------------+--------------------------------------+
-| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
+| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - <%=ph :title%>/200KB.1 |
 +--------------+--------------+------------+--------------------------------------+
 ```
 
@@ -6695,7 +6685,7 @@ Previews are mainly used in AoC, this also works with AoC:
 ### Create access key
 
 ```shell
-<%=cmd%> node access_key create @json:'{"id":"myaccesskey","secret":"<%=ph :secret%>","storage":{"type":"local","path":"/data/mydir"}}'
+<%=cmd%> node access_key create @json:'{"id":"<%=ph :access_key%>","secret":"<%=ph :secret%>","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 > [!TIP]
@@ -7039,9 +7029,9 @@ Typically, users create a preset so they don’t have to enter these options eac
 Example:
 
 ```shell
-<%=cmd%> config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=<%=ph :secret%> --username=_username_here_ --private-key=@file:.../path/to/key.pem
+<%=cmd%> config preset update <%=ph :f5_preset%> --auth=jwt --client-id=_client_id_here_ --client-secret=<%=ph :secret%> --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
-<%=cmd%> config preset set default faspx5 myf5
+<%=cmd%> config preset set default faspex5 <%=ph :f5_preset%>
 
 <%=cmd%> faspex5 user profile show
 ```
@@ -7146,7 +7136,7 @@ The following fields are required:
 Basic example (assuming a default preset has been configured for connection information):
 
 ```shell
-<%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybigfile1
+<%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' <%=ph :file_path%>
 ```
 
 #### Specifying Recipients
@@ -7214,7 +7204,7 @@ Refer to the API documentation.
 Each key corresponds to a metadata field name, and its value is the metadata value:
 
 ```json
-{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
+{"title":"test title","recipients":["<%=ph :sh_inbox_name%>"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
 ```
 
 ### Faspex 5: List packages
@@ -7617,7 +7607,7 @@ The content of `delivery_info` is directly the contents of the `send` v3 [API of
 Example:
 
 ```shell
-<%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
+<%=cmd%> faspex package send --delivery-info=@json:'{"title":"<%=ph :title%>","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
@@ -7787,8 +7777,8 @@ If you already have these parameters, provide the following options to <%=tool%>
 Example: Create a Default Configuration
 
 ```shell
-<%=cmd%> config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-<%=cmd%> config preset set default cos mycos
+<%=cmd%> config preset update <%=ph :cos_preset_name%> --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+<%=cmd%> config preset set default cos <%=ph :cos_preset_name%>
 ```
 
 Once configured, proceed to the [transfer example](#operations-transfers).
@@ -7857,8 +7847,8 @@ The required options for this method are:
 Example: Create a Default Configuration
 
 ```shell
-<%=cmd%> config preset update mycos --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-<%=cmd%> config preset set default cos mycos
+<%=cmd%> config preset update <%=ph :cos_preset_name%> --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+<%=cmd%> config preset set default cos <%=ph :cos_preset_name%>
 ```
 
 ### Operations, transfers
@@ -8055,9 +8045,9 @@ For example:
 ```shell
 su -s /bin/bash - xfer
 
-<%=cmd%> config preset update mypreviewconf --url=https://localhost:9092 --username=<%=ph :access_key%> --password=<%=ph :secret%> --skip-types=office --lock-port=12346
+<%=cmd%> config preset update <%=ph :preview_preset_name%> --url=https://localhost:9092 --username=<%=ph :access_key%> --password=<%=ph :secret%> --skip-types=office --lock-port=12346
 
-<%=cmd%> config preset set default preview mypreviewconf
+<%=cmd%> config preset set default preview <%=ph :preview_preset_name%>
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.
