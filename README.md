@@ -18,8 +18,8 @@ Choose what best suits you:
 
 | Resource | Link |
 | -------- | ---- |
-| **Online manual** | [docs/README.md](docs/README.md) |
-| **PDF manual** | In [releases](https://github.com/IBM/aspera-cli/releases) |
+| **Online manual** | [GitHub docs/README.md](https://github.com/IBM/aspera-cli/blob/main/docs/README.md) |
+| **PDF manual** | In [GitHub Releases](https://github.com/IBM/aspera-cli/releases) |
 | **RubyGems** | [rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli) |
 | **RubyDoc** | [rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli) |
 | **Docsify** | [online](https://docsify-this.net/?basePath=https://raw.githubusercontent.com/IBM/aspera-cli/main/docs&homepage=README.md&sidebar=true&browser-tab-title=Aspera%20CLI%20Manual&hide-credits=true&maxLevel=4&externalLinkTarget=_blank&image-captions=true&dark-mode=auto) |
@@ -34,7 +34,7 @@ ascli config transferd install
 ```
 
 The second command installs the **FASP** transfer engine (`ascp`).
-For other install methods (single executable, Docker, Chocolatey, Homebrew), see the [user manual](docs/README.md#installation).
+For other install methods (single executable, Docker, Chocolatey, Homebrew), see the [user manual](https://github.com/IBM/aspera-cli/blob/main/docs/README.md#installation).
 
 **Quick check:**
 
@@ -44,13 +44,13 @@ ascli -v
 
 ## Contributing
 
-- **Bugs & features:** [BUGS.md](BUGS.md)
-- **How to contribute:** [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Release notes:** [CHANGELOG.md](CHANGELOG.md)
+- **Bugs & features:** [BUGS.md](https://github.com/IBM/aspera-cli/blob/main/BUGS.md)
+- **How to contribute:** [CONTRIBUTING.md](https://github.com/IBM/aspera-cli/blob/main/CONTRIBUTING.md)
+- **Release notes:** [CHANGELOG.md](https://github.com/IBM/aspera-cli/blob/main/CHANGELOG.md)
 
 Commands map to Aspera REST APIs; see the manual for options.
 For debugging, use `--log-level=debug`.
 
 ## License
 
-[Apache-2.0](LICENSE)
+[Apache-2.0](https://github.com/IBM/aspera-cli/blob/main/LICENSE)
