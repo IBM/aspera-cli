@@ -126,6 +126,7 @@ class DocHelper
       template.write(configuration.to_yaml)
     end
   end
+
   # Place warning in generated file
   def doc_warn(_)
     'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.'
@@ -133,6 +134,10 @@ class DocHelper
 
   # Line break in tables
   def br; Aspera::Markdown::HTML_BREAK; end
+
+  # Place Holder
+  # @param name name or description of parameter
+  def ph(name); "<#{name.upcase}>"; end
 
   # To the power of
   def pow(value); "<sup>#{value}</sup>"; end
@@ -144,7 +149,7 @@ class DocHelper
   def tool; "`#{cmd}`"; end
 
   # Env var for option
-  def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
+  def opt_env(option); "#{cmd.upcase}_#{option.upcase}"; end
 
   # Container image in docker hub
   def container_image; Aspera::Cli::Info::CONTAINER; end

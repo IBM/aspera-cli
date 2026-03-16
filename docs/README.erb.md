@@ -85,7 +85,7 @@ Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 > [!NOTE]
 > All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
 
-Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided values, not fixed value commands.
+Command line arguments like `<%=ph :name%>` in examples, represent user-provided values, not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
 
@@ -703,7 +703,7 @@ If installation from a local file is preferred (air-gapped installation) instead
 <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
-The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+The format is: `file:///<%=ph :path%>`, where `<%=ph :path%>` can be either a relative path (not starting with `/`), or an absolute path.
 
 Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
@@ -892,7 +892,7 @@ To enable write access, a possibility is to run as `root` in the container (and 
 Add options:
 
 ```shell
---user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
+--user root --env <%=opt_env :home%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
 > [!NOTE]
@@ -920,7 +920,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 And if you want all the above, simply use all the options:
 
 ```shell
-alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
+alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=opt_env :home%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
 ```
 
 ```shell
@@ -944,12 +944,12 @@ Some environment variables can be set for this script to adapt its behavior:
 
 | env var        | Description                        | Default                  | Example                  |
 |----------------|------------------------------------|--------------------------|--------------------------|
-| `<%=opt_env(%Q`home`)%>` | Configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
+| `<%=opt_env :home%>` | Configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
 | `docker_args`  | Additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
 | `image`        | Container image name               | `<%=container_image%>`   | n/a                      |
 | `version`      | Container image version            | Latest                   | `4.8.0.pre`              |
 
-The wrapping script maps the folder `$<%=opt_env(%Q`home`)%>` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
+The wrapping script maps the folder `$<%=opt_env :home%>` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
 (value expected in the container).
 This allows having persistent configuration on the host.
 
@@ -1654,7 +1654,7 @@ If a wrong, or no command is provided when expected, an error message is display
 Standard entity **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional commands, especially to select sub-entities.
 When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do <node_id> browse /`: `browse` is a sub-command of `node`.
+For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
 
 #### Command Parameters
 
@@ -1673,13 +1673,13 @@ A few **Command Parameters** are optional, they are always located at the end of
 The general structure of positional arguments is:
 
 ```text
-<%=cmd%> <plugin> <entity> <command> [<ID>] [<parameters>]
+<%=cmd%> <%=ph :plugin%> <%=ph :entity%> <%=ph :command%> [<%=ph :ID%>] [<%=ph :parameters%>]
 ```
 
 If a sub-entity is used:
 
 ```text
-<%=cmd%> <plugin> <entity1> <sub-entity> [<ID>1] <command2> [<ID2>] [<parameters>]
+<%=cmd%> <%=ph :plugin%> <%=ph :entity1%> <%=ph :sub_entity%> [<%=ph :ID%>1] <%=ph :command2%> [<%=ph :ID2%>] [<%=ph :parameters%>]
 ```
 
 #### Options
@@ -1750,7 +1750,7 @@ The value for **any** options can come from the following locations (in this ord
 - Environment variable
 - Command line
 
-Environment variable starting with prefix: <%=opt_env('')%> are taken as option values, e.g. `<%=opt_env('option_name')%>` is for `--option-name`.
+Environment variable starting with prefix: <%=opt_env ''%> are taken as option values, e.g. `<%=opt_env :option_name%>` is for `--option-name`.
 
 Option `show_config` dry runs the configuration, and then returns currently set values for options.
 
@@ -1947,7 +1947,7 @@ Examples:
 Simulate a result by executing this command:
 
 ```shell
-<%=cmd%> config echo @json:'<json value here>' --multi-single=<no|yes|single>
+<%=cmd%> config echo @json:'<%=ph :json_value%>' --multi-single=<no|yes|single>
 ```
 
 Example 1: A list of one object
@@ -2093,13 +2093,13 @@ Option `select` applies the filter after a possible "flattening" with option: `f
 
 The percent selector allows identification of an entity by another unique identifier other than the native identifier (typically: `id`).
 
-Syntax: `%<field>:<value>`
+Syntax: `%<%=ph :field%>:<%=ph :value%>`
 
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
-For example, in the following command, `_my_user_id_` is the user's identifier:
+For example, in the following command, `<%=ph :user_id%>` is the user's identifier:
 
 ```shell
-<%=cmd%> aoc admin user show _my_user_id_
+<%=cmd%> aoc admin user show <%=ph :user_id%>
 ```
 
 Some commands provide the following capability:
@@ -2170,12 +2170,12 @@ It allows you to construct complex parameters (`Hash`es and `Array`s) directly f
 The general syntax for this argument is:
 
 ```text
-@: <dot-path>=<value> [<dot-path>=<value>] ... [END]
+@: <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [END]
 ```
 
 - `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
 
-- `<dot-path>=<value>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+- `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
 
 - `END`: An optional marker that terminates the `@:` parsing session.
 
@@ -2213,7 +2213,7 @@ The syntax is:
 Decoders act like a function with its parameter on right-hand side and are recognized by the prefix: `@` and suffix `:`
 
 ```text
-@<name>:
+@<%=ph :name%>:
 ```
 
 The following decoders are supported:
@@ -2363,7 +2363,7 @@ The configuration folder can be displayed using :
 Example (Windows):
 
 ```batchfile
-set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
+set <%=opt_env :home%>=C:\Users\Kenji\.aspera\<%=cmd%>
 
 <%=cmd%> config folder
 
@@ -2410,7 +2410,7 @@ cli_default:
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: my_password_here
+  password: <%=ph :password%>
 ```
 
 We can see here:
@@ -2437,14 +2437,14 @@ Values in the configuration also follow the [Extended Value Syntax](#extended-va
 Example:
 
 ```shell
-<%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
+<%=cmd%> config preset set <%=ph :aoc_org%> private_key @val:@file:"$HOME/.aspera/<%=cmd%>/<%=ph :pkey_name%>"
 ```
 
 This creates the [Option Preset](#option-preset):
 
 ```yaml
-my_aoc_org:
-  private_key: "@file:/Users/laurent/.aspera/<%=cmd%>/my_private_key"
+<%=ph :aoc_org%>:
+  private_key: "@file:/Users/laurent/.aspera/<%=cmd%>/<%=ph :pkey_name%>"
 ```
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
@@ -2461,25 +2461,25 @@ An [Option Preset](#option-preset) is a collection of options and their associat
 A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file:
 
 ```text
-<%=cmd%> config preset <set|delete|show|initialize|update> <preset name>
+<%=cmd%> config preset <set|delete|show|initialize|update> <%=ph :preset_name%>
 ```
 
 The command `initialize` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
 
 ```shell
-<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
+<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<%=ph :password%>","ts":{"precalculate_job_size":true}}'
 ```
 
 One can also use [positional arguments with dot-path](#positional-arguments-with-dot-path):
 
 ```shell
-<%=cmd%> config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=my_pass_here ts.precalculate_job_size=true
+<%=cmd%> config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<%=ph :password%> ts.precalculate_job_size=true
 ```
 
 The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
 
 ```shell
-<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
+<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=<%=ph :password%> --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
@@ -2487,13 +2487,13 @@ This creates an [Option Preset](#option-preset) `demo_server` with all provided 
 The command `set` allows setting individual options in an [Option Preset](#option-preset):
 
 ```text
-<%=cmd%> config preset set <preset name> <parameter name> <parameter value>
+<%=cmd%> config preset set <%=ph :preset_name%> <%=ph :parameter_name%> <%=ph :parameter_value%>
 ```
 
 Example:
 
 ```shell
-<%=cmd%> config preset set demo_server password my_password_here
+<%=cmd%> config preset set demo_server password <%=ph :password%>
 ```
 
 A full terminal based overview of the configuration can be displayed using:
@@ -2521,7 +2521,7 @@ If necessary, the configuration file can be opened in a text editor with:
 The former format for commands is still supported:
 
 ```shell
-<%=cmd%> config preset set|delete|show|initialize|update <name>
+<%=cmd%> config preset set|delete|show|initialize|update <%=ph :name%>
 <%=cmd%> config preset over
 <%=cmd%> config preset list
 ```
@@ -2627,7 +2627,7 @@ Set a global parameter:
 If the default global Option Preset is not set, and you want to use a different name:
 
 ```shell
-<%=cmd%> config preset set default config my_common_defaults
+<%=cmd%> config preset set default config <%=ph :global_options_name%>
 ```
 
 ```shell
@@ -2645,9 +2645,10 @@ Options are loaded using this algorithm:
 
 - If option `--no-default` (or `-N`) is specified, then no default value is loaded for the plugin
 - Else it looks for the name of the plugin as key in section `default`, the value is the name of the default [Option Preset](#option-preset) for it, and loads it.
-- If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the [Option Preset](#option-preset) specified from the configuration file, or if the value is a `Hash`, it uses it as options values.
-- Environment variables are evaluated
-- Command line options are evaluated
+- If option `--preset=<%=ph :name%>` is specified (or `-P<%=ph :name%>`), this reads the [Option Preset](#option-preset) specified from the configuration file by name.
+- If option `--preset=<%=ph :extended_value_hash%>`, it uses it as options values (`Hash` of option/value pairs).
+- Environment variables are evaluated.
+- Command line options are evaluated.
 
 Options are evaluated in the order of command line.
 
@@ -2676,13 +2677,13 @@ An [Option Preset](#option-preset) value can be removed with `unset`:
 Example: Define options using command line:
 
 ```shell
-<%=cmd%> -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config
+<%=cmd%> -N --url=_url_here_ --password=<%=ph :password%> --username=_name_here_ node --show-config
 ```
 
 Example: Define options using a `Hash`:
 
 ```shell
-<%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
+<%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"<%=ph :password%>","username":"_name_here_"}' node --show-config
 ```
 
 #### Wizard
@@ -2724,7 +2725,7 @@ only username/password and URL are required (either on command line, or from con
 Those can be usually provided on the command line:
 
 ```shell
-<%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=my_password_here
+<%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=<%=ph :password%>
 ```
 
 This can also be provisioned in a configuration file:
@@ -2734,19 +2735,19 @@ This can also be provisioned in a configuration file:
 ```shell
 <%=cmd%> config preset set shares06 url https://10.25.0.6
 <%=cmd%> config preset set shares06 username john
-<%=cmd%> config preset set shares06 password my_password_here
+<%=cmd%> config preset set shares06 password <%=ph :password%>
 ```
 
 This can also be done with one single command:
 
 ```shell
-<%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"my_password_here"}'
+<%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<%=ph :password%>"}'
 ```
 
 or
 
 ```shell
-<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=my_password_here
+<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=<%=ph :password%>
 ```
 
 - Define this [Option Preset](#option-preset) as the default [Option Preset](#option-preset) for the specified plugin (`shares`)
@@ -2784,11 +2785,11 @@ Terminal output (command result) secret removal is controlled by option `show_se
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
 It is possible to use extended value `@secret:[name]` to ask for a secret interactively.
-It is also possible to enter an option as an environment variable, e.g. `<%=opt_env(%Q`password`)%>` for option `password` and read the env var like this:
+It is also possible to enter an option as an environment variable, e.g. `<%=opt_env :password%>` for option `password` and read the env var like this:
 
 ```shell
-read -s <%=opt_env(%Q`password`)%>
-export <%=opt_env(%Q`password`)%>
+read -s <%=opt_env :password%>
+export <%=opt_env :password%>
 ```
 
 Another possibility is to retrieve values from a secret vault.
@@ -2807,8 +2808,8 @@ Although it can be specified on command line, for security reason you should avo
 For example, it can be securely specified on command line like this:
 
 ```shell
-read -s <%=opt_env(%Q`vault_password`)%>
-export <%=opt_env(%Q`vault_password`)%>
+read -s <%=opt_env :vault_password%>
+export <%=opt_env :vault_password%>
 ```
 
 #### Vault: IBM HashiCorp Vault
@@ -2860,7 +2861,7 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 | Parameter | Example      | Description                                                        |
 |-----------|--------------|--------------------------------------------------------------------|
 | `type`    | `file`       | The type of the vault.                                             |
-| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env(%Q`home`)%>`. |
+| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env :home%>`. |
 
 #### Vault: Operations
 
@@ -2874,7 +2875,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```shell
-<%=cmd%> config vault create @json:'{"label":"mylabel","password":"my_password_here","description":"for this account"}'
+<%=cmd%> config vault create @json:'{"label":"mylabel","password":"<%=ph :password%>","description":"for this account"}'
 ```
 
 #### Configuration Finder
@@ -2899,7 +2900,7 @@ For a more secure storage one can do:
 ```
 
 ```shell
-<%=cmd%> config vault create @json:'{"label":"myconf","password":"my_password_here"}'
+<%=cmd%> config vault create @json:'{"label":"myconf","password":"<%=ph :password%>"}'
 ```
 
 > [!NOTE]
@@ -2933,7 +2934,7 @@ Typically, located in folder `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`.
 For example:
 
 ```shell
-KEY_PAIR_PATH=~/.aspera/<%=cmd%>/my_private_key
+KEY_PAIR_PATH=~/.aspera/<%=cmd%>/<%=ph :pkey_name%>
 ```
 
 Several methods can be used to generate a key pair.
@@ -3090,7 +3091,7 @@ Option `logger` defines the destination of logs.
 
 #### `log_level` and `log_secrets`
 
-To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
+To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env :log_level%>`, or an [Option Preset](#option-preset)).
 
 > [!NOTE]
 > When using the `direct` agent (`ascp`), additional transfer logs from `ascp` can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
@@ -3228,13 +3229,13 @@ For example, `http://myproxy.org.net:3128`.
 Credentials for proxy are optional but can also be specified:
 
 ```shell
-export http_proxy=http://my_user_here:my_pass_here@proxy.example.com:3128
+export http_proxy=http://<%=ph :username%>:<%=ph :password%>@proxy.example.com:3128
 ```
 
 Option `http_proxy` does the same (set env var) but on command line:
 
 ```shell
-<%=cmd%> --http-proxy=http://my_user_here:my_pass_here@host:port ...
+<%=cmd%> --http-proxy=http://<%=ph :username%>:<%=ph :password%>@host:port ...
 ```
 
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) JavaScript value.
@@ -3359,7 +3360,7 @@ Saved to default global preset global_common_defaults
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-A special value `product:<product name>` can be used for option `sdk_folder`.
+A special value `product:<%=ph :product_name%>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first found.
 
@@ -3555,7 +3556,7 @@ The communication is done through a JSON file that shall be created in <%=tool%>
 <%=cmd%> config folder
 ```
 
-The name of the file shall be: `send_<PID>`, where `<PID>` is the process ID of the running <%=tool%>.
+The name of the file shall be: `send_<%=ph :PID%>`, where `<%=ph :PID%>` is the process ID of the running <%=tool%>.
 
 If there is only one <%=tool%> running, one can get the PID like this:
 
@@ -3736,7 +3737,7 @@ Like any other option, `transfer_info` can get its value from a pre-configured [
 or be specified using the extended value syntax :
 
 ```shell
---transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'
+--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"<%=ph :password%>"}'
 ```
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
@@ -3912,9 +3913,9 @@ The destination folder is set by <%=tool%> by default to:
 - `/` for uploads
 
 It is specified by the [**transfer-spec**](#transfer-specification) parameter `destination_root`.
-As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
+As such, it can be modified with option: `--ts=@json:'{"destination_root":"<%=ph :path%>"}'`.
 The option `to_folder` provides an equivalent and convenient way to change this parameter:
-`--to-folder=<path>`.
+`--to-folder=<%=ph :path%>`.
 
 #### List of files for transfers
 
@@ -4117,7 +4118,7 @@ Activating CSEAR consists in using transfer spec parameters:
 Example: parameter to download a Faspex package and decrypt on the fly
 
 ```shell
---ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
+--ts=@json:'{"content_protection":"decrypt","content_protection_password":"<%=ph :password%>"}'
 ```
 
 > [!NOTE]
@@ -4214,10 +4215,11 @@ By default, Windows Task Scheduler prevents overlapping executions.
 #### Linux: `systemd` Timer
 
 Most modern Linux distributions use `systemd` which provides scheduling via [`timer`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) units.
+Define a name for the server, for example: `my_<%=cmd%>_job` as `<%=ph :name%>` below.
 
 1. Create the service
 
-    `/etc/systemd/system/my_<%=cmd%>_job.service`
+    `/etc/systemd/system/<%=ph :name%>.service`
 
     ```ini
     [Unit]
@@ -4232,11 +4234,11 @@ Most modern Linux distributions use `systemd` which provides scheduling via [`ti
 
 1. Create the timer (same base name)
 
-    `/etc/systemd/system/my_<%=cmd%>_job.timer`
+    `/etc/systemd/system/<%=ph :name%>.timer`
 
     ```ini
     [Unit]
-    Description=Hourly execution of my_<%=cmd%>_job
+    Description=Hourly execution of <%=ph :name%>
 
     [Timer]
     OnCalendar=hourly
@@ -4251,23 +4253,23 @@ Most modern Linux distributions use `systemd` which provides scheduling via [`ti
 
     ```shell
     sudo systemctl daemon-reload
-    sudo systemctl enable --now my_<%=cmd%>_job.timer
+    sudo systemctl enable --now <%=ph :name%>.timer
     ```
 
 Check status:
 
 ```shell
-systemctl status my_<%=cmd%>_job.timer
+systemctl status <%=ph :name%>.timer
 ```
 
 ```shell
-systemctl list-timers | grep my_<%=cmd%>_job
+systemctl list-timers | grep <%=ph :name%>
 ```
 
 Run service once to test:
 
 ```shell
-sudo systemctl start my_<%=cmd%>_job.service
+sudo systemctl start <%=ph :name%>.service
 ```
 
 #### Linux: `cron` Scheduler
@@ -4295,11 +4297,13 @@ In this case it is recommended to run <%=tool%> as a system service.
 
 On Linux this is typically done using [`systemd`](https://systemd.io/).
 
-A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_my_<%=cmd%>_svc.sh`:
+For example, below `<%=ph :name%>` is `my_<%=cmd%>_svc`.
+
+A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_<%=ph :name%>.sh`:
 
 **Service Definition**
 
-`/etc/systemd/system/my_<%=cmd%>_svc.service`
+`/etc/systemd/system/<%=ph :name%>.service`
 
 ```ini
 [Unit]
@@ -4307,7 +4311,7 @@ Description=My <%=cmd%> daemon
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/start_my_<%=cmd%>_svc.sh
+ExecStart=/usr/local/bin/start_<%=ph :name%>.sh
 Restart=on-failure
 RestartSec=15
 User=xfer
@@ -4325,9 +4329,9 @@ Enable and start:
 
 ```shell
 sudo systemctl daemon-reload
-sudo systemctl enable --now my_<%=cmd%>_svc.service
-systemctl status my_<%=cmd%>_svc.service
-journalctl -u my_<%=cmd%>_svc.service
+sudo systemctl enable --now <%=ph :name%>.service
+systemctl status <%=ph :name%>.service
+journalctl -u <%=ph :name%>.service
 ```
 
 #### Preventing Concurrent Execution
@@ -4391,7 +4395,7 @@ Description=My <%=cmd%> daemon
 ...
 
 [Service]
-ExecStart=/usr/local/bin/start_my_<%=cmd%>_svc.sh
+ExecStart=/usr/local/bin/start_<%=ph :name%>.sh
 Type=oneshot
 RemainAfterExit=yes
 ...
@@ -4430,7 +4434,7 @@ They act as a **pseudo drive**.
 The simplified format is:
 
 ```shell
-<adapter>:///<sub file path>?<arg1>=<val1>&...
+<%=ph :adapter%>:///<%=ph :sub_file_path%>?<%=ph :arg1%>=<%=ph :val1%>&...
 ```
 
 One of the adapters, used in this manual, for testing, is `faux`.
@@ -4466,7 +4470,7 @@ Very large `faux` file sizes (petabyte range and above) will likely fail due to 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
 ```shell
-faux:///dirname?<arg1>=<val1>&...
+faux:///dirname?<%=ph :arg1%>=<%=ph :val1%>&...
 ```
 
 where:
@@ -4500,7 +4504,7 @@ The sequence parameter is applied as follows:
   - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
   - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less than 8\*2<%=pow 60%>.
 
-Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
+Filenames generated are of the form: `<%=ph :file%>_<00000 ... count>_<%=ph :filesize%>`
 
 Examples:
 
@@ -4661,17 +4665,17 @@ You must copy this key (including the `BEGIN` and `END` headers) and paste it in
 Once saved in the UI, return to the terminal and press Enter.
 
 > [!IMPORTANT]
-> In the following example, replace `https://_my_org_.ibmaspera.com` with your actual organization URL.
+> In the following example, replace `https://<%=ph :org_name%>.ibmaspera.com` with your actual organization URL.
 > `(User)` represents the user menu on the top right of the page.
 
 ```console
 $ <%=cmd%> config wizard
-Using: Aspera on Cloud at https://_my_org_.ibmaspera.com
+Using: Aspera on Cloud at https://<%=ph :org_name%>.ibmaspera.com
 Path to private RSA key (leave empty to generate):
 option: key_path>
 Using existing key:
-/home/john/.aspera/<%=cmd%>/my_private_key.pem
-Please Log in as user john@example.com at: https://_my_org_.ibmaspera.com
+/home/john/.aspera/<%=cmd%>/<%=ph :pkey_name%>.pem
+Please Log in as user john@example.com at: https://<%=ph :org_name%>.ibmaspera.com
 Navigate to: (User) → Account Settings → Profile → Public Key
 Check or update the value to (including BEGIN/END lines):
 -----BEGIN PUBLIC KEY-----
@@ -4682,7 +4686,7 @@ MIICIjANBg....
 Once updated or validated, press [Enter].
 
 Using global client_id.
-Preparing preset: aoc_my_org_ibmaspera_com_john_example_com
+Preparing preset: aoc<%=ph :org_name%>ibmaspera_com_john_example_com
 Setting config preset as default for aoc
 You can test with:
 <%=cmd%> aoc user profile show
@@ -4698,7 +4702,7 @@ Saving config file.
 - **Direct Plugin Targeting**: To limit detection to the `aoc` plugin and skip discovery, provide both the URL and plugin name:
 
   ```shell
-  <%=cmd%> config wizard _my_org_ aoc
+  <%=cmd%> config wizard <%=ph :org_name%> aoc
   ```
 
 #### Verifying the Configuration
@@ -4751,7 +4755,7 @@ The first step is to declare <%=tool%> in Aspera on Cloud using the admin interf
 
 Let's start by a registration with web based authentication (auth=web):
 
-- Open a web browser, log to your instance: e.g. `https://_my_org_.ibmaspera.com/`
+- Open a web browser, log to your instance: e.g. `https://<%=ph :org_name%>.ibmaspera.com/`
   (use your actual AoC instance URL)
 - Go to (Apps) &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click **Create New**
@@ -4772,25 +4776,25 @@ Once the client is registered, a **Client ID** and **Secret** are created, these
 
 If you did not use the wizard, you can also manually create an [Option Preset](#option-preset) for <%=tool%> in its configuration file.
 
-Let's create an [Option Preset](#option-preset) called: `my_aoc_org` using `ask` for interactive input (client info from previous step):
+Let's create an [Option Preset](#option-preset) called: `<%=ph :aoc_org%>` using `ask` for interactive input (client info from previous step):
 
 ```shell
-<%=cmd%> config preset ask my_aoc_org url client_id client_secret
-option: url> https://_my_org_.ibmaspera.com/
-option: client_id> my_client_id_here
-option: client_secret> my_client_secret_here
-updated: my_aoc_org
+<%=cmd%> config preset ask <%=ph :aoc_org%> url client_id client_secret
+option: url> https://<%=ph :org_name%>.ibmaspera.com/
+option: client_id> <%=ph :client_id%>
+option: client_secret> <%=ph :client_secret%>
+updated: <%=ph :aoc_org%>
 ```
 
 > [!NOTE]
-> In above example, replace `https://_my_org_.ibmaspera.com` with your actual AoC URL.
+> In above example, replace `https://<%=ph :org_name%>.ibmaspera.com` with your actual AoC URL.
 
-(This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
+(This can also be done in one line using the command `config preset update <%=ph :aoc_org%> --url=...`)
 
 Define this [Option Preset](#option-preset) as default configuration for the `aspera` plugin:
 
 ```shell
-<%=cmd%> config preset set default aoc my_aoc_org
+<%=cmd%> config preset set default aoc <%=ph :aoc_org%>
 ```
 
 > [!NOTE]
@@ -4811,7 +4815,7 @@ This can be done in two manners:
 
 - Graphically
 
-  - Open a web browser, log to your instance: `https://_my_org_.ibmaspera.com/`
+  - Open a web browser, log to your instance: `https://<%=ph :org_name%>.ibmaspera.com/`
     (Use your actual AoC instance URL)
   - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
   - Click on the previously created application
@@ -4852,9 +4856,9 @@ This can be done in two manners as follows.
 
 ##### Graphically
 
-Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/my_private_key.pub`
+Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/<%=ph :pkey_name%>.pub`
 
-- Open a web browser, log to your instance: `https://_my_org_.ibmaspera.com/`
+- Open a web browser, log to your instance: `https://<%=ph :org_name%>.ibmaspera.com/`
   (Use your actual AoC instance URL)
 - Click on the user's icon (top right)
 - Select **Account Settings**
@@ -4878,7 +4882,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 ```
 
 ```shell
-<%=cmd%> aoc user profile modify @: public_key=@file:~/.aspera/<%=cmd%>/my_private_key.pub
+<%=cmd%> aoc user profile modify @: public_key=@file:~/.aspera/<%=cmd%>/<%=ph :pkey_name%>.pub
 ```
 
 ```text
@@ -4899,7 +4903,7 @@ To activate default use of JWT authentication for <%=tool%> using the [Option Pr
 Execute:
 
 ```shell
-<%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=someuser@example.com
+<%=cmd%> config preset update <%=ph :aoc_org%> --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/<%=ph :pkey_name%> --username=someuser@example.com
 ```
 
 > [!NOTE]
@@ -4954,7 +4958,7 @@ It is also possible to get the bearer token for node, as user or as admin using:
 ```
 
 ```shell
-<%=cmd%> aoc admin node v4 <node_id> --secret=_ak_secret_here_ bearer_token_node /
+<%=cmd%> aoc admin node v4 <%=ph :node_id%> --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -4965,7 +4969,7 @@ It allows actions (create, update, delete) on **resources**: users, groups, node
 
 #### Listing resources
 
-The command `aoc admin <type> list` lists all entities of given type.
+The command `aoc admin <%=ph :type%> list` lists all entities of given type.
 It uses paging and multiple requests if necessary.
 
 The option `query` can be optionally used.
@@ -5031,7 +5035,7 @@ To execute an action on a specific resource, select it using one of those method
 New resources (users, groups, workspaces, etc.) can be created using a command like:
 
 ```shell
-<%=cmd%> aoc admin create <resource type> @json:'{<...parameters...>}'
+<%=cmd%> aoc admin create <%=ph :resource_type%> @json:'{<...parameters...>}'
 ```
 
 Some API endpoints are described in [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22).
@@ -5076,7 +5080,7 @@ The secret is provided using the `secret` option.
 For example in a command like:
 
 ```shell
-<%=cmd%> aoc admin node 123 --secret="my_secret_here" v3 info
+<%=cmd%> aoc admin node 123 --secret="<%=ph :secret%>" v3 info
 ```
 
 It is also possible to store secrets in the [secret vault](#secret-vault) and then automatically find the related secret using the [config finder](#configuration-finder).
@@ -5461,7 +5465,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 > You can reuse it for all subsequent node tethering.
 
 ```shell
-<%=cmd%> aoc admin node do %name:'my_existing_node_name' v3 access_keys show self --fields=token_verification_key --show-secrets=yes --output=mypubkey.pem
+<%=cmd%> aoc admin node do %name:'<%=ph :node_name%>' v3 access_keys show self --fields=token_verification_key --show-secrets=yes --output=mypubkey.pem
 ```
 
 - Create an Access Key on the Self-Managed HSTS
@@ -5475,7 +5479,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
-<%=cmd%> node access_key create @: id=my_ak_test secret=my_secret storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
+<%=cmd%> node access_key create @: id=<%=ph :access_key_id%> secret=<%=ph :secret%> storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
 ```
 
 - Register the Node in AoC
@@ -5483,7 +5487,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
   Now, register the physical server as a node object within the Aspera on Cloud administration interface.
 
 ```shell
-<%=cmd%> aoc admin node create @: url=https://aspera.example.com access_key=my_ak_test name=testnode1
+<%=cmd%> aoc admin node create @: url=https://aspera.example.com access_key=<%=ph :access_key_id%> name=testnode1
 ```
 
 - Configure Access Key Permissions
@@ -5493,7 +5497,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 
 > [!TIP]
 > The following two commands are executed using access key credentials.
-> If the node is configured for admin user, then add options: `--username=my_ak_test --password=my_secret`.
+> If the node is configured for admin user, then add options: `--username=<%=ph :access_key_id%> --password=<%=ph :secret%>`.
 
 ```shell
 <%=cmd%> node access_key do self permission / create @: access_type=user access_id='F4 System'
@@ -5579,7 +5583,7 @@ The Aspera on Cloud **Packages** app lets you assemble copies of any number of f
 General syntax:
 
 ```shell
-<%=cmd%> aoc packages send <package extended value> <options> <file list>
+<%=cmd%> aoc packages send <%=ph :package_extended_value%> <%=ph :options%> <%=ph :file_list%>
 ```
 
 Package creation parameter are sent as **Command Parameter**.
@@ -5593,7 +5597,7 @@ List allowed shared inbox destinations with:
 
 Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
 
-- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"_my_shibox_id_"}]`
+- Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"<%=ph :shbox_id%>"}]`
 - or just names: `"recipients":["The Dest"]`.
 
 <%=cmd%> will resolve the list of email addresses and dropbox names to the expected type/ID list, based on case-insensitive partial match.
@@ -5612,13 +5616,13 @@ If a user recipient (email) is not already registered and the workspace allows e
 ##### Example: Send a package to a shared inbox with metadata
 
 ```shell
-<%=cmd%> aoc packages send --workspace="<workspace_name>" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```shell
-<%=cmd%> aoc packages send --workspace="<workspace_name>" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 ##### Example: Send a package with files from the Files app
@@ -5651,13 +5655,13 @@ Let's send a package with the file `10M.dat` from subfolder /src_folder in a pac
 The command to receive one or multiple packages is:
 
 ```shell
-<%=cmd%> aoc packages recv <package id> [<file> ...]
+<%=cmd%> aoc packages recv <%=ph :package_id%> [<%=ph :file%> ...]
 ```
 
-Where `<package id>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
+Where `<%=ph :package_id%>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
 Option `once_only` is supported, see below.
 
-To download only some files from the package, just add the path of the files on the command line: `[<file> ...]`, see option `sources`.
+To download only some files from the package, just add the path of the files on the command line: `[<%=ph :file%> ...]`, see option `sources`.
 By default, all files in the package are downloaded, i.e. `.` is used as the file list.
 
 ##### Option `package_folder`
@@ -5675,7 +5679,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
 | `fld` | `Array` | List of package fields used to build the subfolder name.<%=br%>Field values are joined with `.`.<%=br%>Maximum size: 2. |
 | `seq` | `Bool`  | If `true`, appends an incrementing number (starting at `1`) to the folder name when needed. |
 | `opt` | `Bool`  | If `false` (default), all fields in `fld` are always used.<%=br%>If `true`, the first field is used unless the folder already exists. |
-| `inf` | `Bool`  | If `true`, creates a file named `<ID>.info.json` inside the folder containing package metadata (same content as the sidecar file). |
+| `inf` | `Bool`  | If `true`, creates a file named `<%=ph :ID%>.info.json` inside the folder containing package metadata (same content as the sidecar file). |
 
 **Examples**:
 
@@ -5686,14 +5690,14 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
   - The subfolder name is the package name.
   - If multiple packages share the same name, their contents are downloaded into the same folder.
 - `{"fld":["name","id"]}`
-  - The subfolder name is `<name>.<id>`.
+  - The subfolder name is `<%=ph :name%>.<%=ph :id%>`.
   - This guarantees uniqueness when package names are identical.
 - `{"fld":["name","id"],"opt":true}`
   - The subfolder name is initially the package name.
-  - If a folder with that name already exists, the name and ID (`<name>.<id>`) are used instead.
+  - If a folder with that name already exists, the name and ID (`<%=ph :name%>.<%=ph :id%>`) are used instead.
 - `{"fld":["name"],"seq":true,"opt":true}`
   - The subfolder name is the package name if it does not already exist.
-  - If it exists, a sequence number is appended (e.g., `<name>.1`, `<name>.2`, etc.).
+  - If it exists, a sequence number is appended (e.g., `<%=ph :name%>.1`, `<%=ph :name%>.2`, etc.).
   - Downloading the same package multiple times results in different folders when a conflict occurs.
 
 ##### Example: Receive all packages from a given shared inbox
@@ -5722,7 +5726,7 @@ Typically, one would execute this command on a regular basis, using the method o
 
 Some `node` operations are available for a package, such as `browse` and `find`.
 
-To list the content of a package, use command `packages browse <package id> <folder>`:
+To list the content of a package, use command `packages browse <%=ph :package_id%> <%=ph :folder%>`:
 
 ```shell
 <%=cmd%> aoc package browse my5CnbeWng /
@@ -5733,7 +5737,7 @@ Use command `find` to list recursively.
 For advanced users, it's also possible to pipe node information for the package and use node operations:
 
 ```shell
-<%=cmd%> aoc package node_info <package ID here> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
+<%=cmd%> aoc package node_info <%=ph :package_id%> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
 ```
 
 #### List packages
@@ -5798,7 +5802,7 @@ Files located here are either user's files, or shared folders.
 The general download command is:
 
 ```shell
-<%=cmd%> aoc files download <source folder path> <source filename 1> ...
+<%=cmd%> aoc files download <%=ph :source_folder_path%> <%=ph :source_filename_1%> ...
 ```
 
 i.e., the first argument is the source folder, and the following arguments are the source file names in this folder.
@@ -5806,7 +5810,7 @@ i.e., the first argument is the source folder, and the following arguments are t
 If a single file or folder is to be downloaded, then a single argument can be provided.
 
 ```shell
-<%=cmd%> aoc files download <single file path>
+<%=cmd%> aoc files download <%=ph :single_file_path%>
 ```
 
 #### Shared folders
@@ -5821,7 +5825,7 @@ In Aspera on Cloud (AoC), Shared Folders allow users to collaborate on content v
 Shared folders can be managed through two primary administrative scopes:
 
 - User Shared Folders: Users share personal folders with others in the same workspace using `aoc files permission`.
-- Admin Shared Folders: Administrators share folders from any node in a workspace using `aoc admin node do <node_ID> permission`.
+- Admin Shared Folders: Administrators share folders from any node in a workspace using `aoc admin node do <%=ph :node_ID%> permission`.
 
 Technically, shared folders are managed as [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on a specific node.
 When a permission is created, AoC generates a link in the recipient's home folder to that shared folder.
@@ -5866,26 +5870,26 @@ In order to share a folder with a different, special tags are set, but this is c
 Personal shared folders, created by users in a workspace follow the syntax:
 
 ```shell
-<%=cmd%> aoc files permission --workspace=<workspace name> <path to folder> ...
+<%=cmd%> aoc files permission --workspace=<%=ph :workspace_name%> <%=ph :path_to_folder%> ...
 ```
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-> To use an identifier instead, one can use the percent selector, like `%id:_my_ws_id_`.
+> To use an identifier instead, one can use the percent selector, like `%id:<%=ph :ws_id%>`.
 
 ##### Admin Shared Folders
 
 Admin shared folders, created by administrators in a workspace, follow the syntax:
 
 ```shell
-<%=cmd%> aoc admin node do <node ID> permission --workspace=<workspace name> <path to folder>
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission --workspace=<%=ph :workspace_name%> <%=ph :path_to_folder%>
 ```
 
 > [!TIP]
 > The node is identified by identifier.
 > To use a name instead, one can use the percent selector, like `%name:"my node"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
-> If the ID is left blank: `%id:`, then it means `*`, i.e. all.
+> If the ID is left blank: `%id:`, then it means `*`, i.e. "all".
 
 ##### Example: List permissions on a user shared folder
 
@@ -5910,12 +5914,12 @@ Admin shared folders, created by administrators in a workspace, follow the synta
 They can be managed with commands:
 
 ```shell
-<%=cmd%> aoc files short_link <path to folder> private create
-<%=cmd%> aoc files short_link <path to folder> private list
-<%=cmd%> aoc files short_link <path to folder> public create @json:'{...}'
-<%=cmd%> aoc files short_link <path to folder> public list
-<%=cmd%> aoc files short_link public delete <id>
-<%=cmd%> aoc files short_link public modify <id> @json:'{...}'
+<%=cmd%> aoc files short_link <%=ph :path_to_folder%> private create
+<%=cmd%> aoc files short_link <%=ph :path_to_folder%> private list
+<%=cmd%> aoc files short_link <%=ph :path_to_folder%> public create @json:'{...}'
+<%=cmd%> aoc files short_link <%=ph :path_to_folder%> public list
+<%=cmd%> aoc files short_link public delete <%=ph :id%>
+<%=cmd%> aoc files short_link public modify <%=ph :id%> @json:'{...}'
 ```
 
 Only `public` short links can be modified.
@@ -5924,7 +5928,7 @@ An optional payload can be provided at creation, for example to protect with a p
 A password can be provided on `create` and `modify` for `public` links:
 
 ```json
-{"password":"my_password_here"}
+{"password":"<%=ph :password%>"}
 ```
 
 To remove a password:
@@ -5958,17 +5962,35 @@ If only a date is provided, for example: `2025-08-29`, it will be set to midnigh
 
 First, identify the node ID where the shared folder will be created.
 
-To get the node ID of the default node for workspace `<workspace_name>`, use the command:
+To get the node ID of the default node for workspace `<%=ph :workspace_name%>`, use the command:
 
 ```shell
-<%=cmd%> aoc admin workspace show %name:'<workspace_name>' --fields=node_id
+<%=cmd%> aoc admin workspace show %name:'<%=ph :workspace_name%>' --fields=node_id
 ```
 
-Alternatively (longer):
+> [!TIP]
+> This syntax first lists workspaces using API selector `q`,
+> and then performs an exact match on the specified field: `name`.
+
+Alternatively:
 
 ```shell
-<%=cmd%> aoc admin workspace list --select=@json:'{"name":"<workspace_name>"}' --fields=node_id
+<%=cmd%> aoc admin workspace list --select.name="<%=ph :workspace_name%>" --fields=node_id
 ```
+
+> [!TIP]
+> This syntax lists all workspaces,
+> and then performs an exact match on the specified field: `name`.
+
+Alternatively:
+
+```shell
+<%=cmd%> aoc admin workspace list --query.q="<%=ph :workspace_name%>" --fields=node_id
+```
+
+> [!TIP]
+> This syntax first lists workspaces using API selector `q`.
+> It may return several items as the query is case insensitive and made on several fields as substring.
 
 Or select a node identifier manually from the list of nodes:
 
@@ -5978,22 +6000,22 @@ Or select a node identifier manually from the list of nodes:
 
 In the following commands, replace:
 
-- `<node_id>` with the node ID, or with `%name:<node_name>`.
-- `<workspace_name>` with the workspace name, or with `%id:<workspace_id>`.
-- `<folder_path>` with the path of the folder to share on the node (e.g. `/my_folder` or simply `my_folder`). It can also be a folder deeper than level 1.
+- `<%=ph :node_id%>` with the node ID, or with `%name:<%=ph :node_name%>`.
+- `<%=ph :workspace_name%>` with the workspace name, or with `%id:<%=ph :workspace_id%>`.
+- `<%=ph :folder_path%>` with the path of the folder to share on the node (e.g. `/my_folder` or simply `my_folder`). It can also be a folder deeper than level 1.
 
 If the shared folder does not exist, then create it:
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> mkdir <folder_path>
+<%=cmd%> aoc admin node do <%=ph :node_id%> mkdir <%=ph :folder_path%>
 ```
 
-Create the shared folder in workspace `<workspace_name>` (set `with` to empty string, or do not specify it).
+Create the shared folder in workspace `<%=ph :workspace_name%>` (set `with` to empty string, or do not specify it).
 **Optionally**, use `as` to set the name of the shared folder if different from the folder name on the node.
 For other options, refer to the previous section on shared folders.
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"","as":"folder_for_users"}' --workspace="<workspace_name>"
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission <%=ph :folder_path%> create @json:'{"with":"","as":"folder_for_users"}' --workspace="<%=ph :workspace_name%>"
 ```
 
 > [!NOTE]
@@ -6004,15 +6026,15 @@ The `"with"` parameter will perform a lookup, and set fields `access_type` and `
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="<workspace_name>"
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission <%=ph :folder_path%> create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="<%=ph :workspace_name%>"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="<workspace_name>"
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission <%=ph :folder_path%> create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="<%=ph :workspace_name%>"
 ```
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> permission <folder_path> create @json:'{"with":"<workspace_name>","as":"folder_for_all_workspace"}' --workspace="<workspace_name>"
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission <%=ph :folder_path%> create @json:'{"with":"<%=ph :workspace_name%>","as":"folder_for_all_workspace"}' --workspace="<%=ph :workspace_name%>"
 ```
 
 > [!NOTE]
@@ -6021,7 +6043,7 @@ The native fields `access_type` and `access_id` can also be used, instead of `wi
 ##### Example: List all workspace admin shared folder in a workspace
 
 ```shell
-<%=cmd%> aoc admin workspace shared_folder %name:'<workspace_name>' list
+<%=cmd%> aoc admin workspace shared_folder %name:'<%=ph :workspace_name%>' list
 ```
 
 ```text
@@ -6037,7 +6059,7 @@ The native fields `access_type` and `access_id` can also be used, instead of `wi
 To list members:
 
 ```shell
-<%=cmd%> aoc admin workspace shared_folder %name:'<workspace_name>' member 198 list
+<%=cmd%> aoc admin workspace shared_folder %name:'<%=ph :workspace_name%>' member 198 list
 ```
 
 ```text
@@ -6052,7 +6074,7 @@ To list members:
 If you have the node ID of the shared folder, then it is equivalent to:
 
 ```shell
-<%=cmd%> aoc admin node do 8669 permission /project1 list --query=@json:'{"tag":"aspera.files.workspace.id=<workspace_id>"}'
+<%=cmd%> aoc admin node do 8669 permission /project1 list --query=@json:'{"tag":"aspera.files.workspace.id=<%=ph :workspace_id%>"}'
 ```
 
 ##### Example: List all workspace admin shared folder on a node
@@ -6060,11 +6082,11 @@ If you have the node ID of the shared folder, then it is equivalent to:
 First get the workspace identifier:
 
 ```shell
-<%=cmd%> aoc admin workspace list --select=@json:'{"name":"<workspace_name>"}' --fields=id
+<%=cmd%> aoc admin workspace list --select=@json:'{"name":"<%=ph :workspace_name%>"}' --fields=id
 ```
 
 ```text
-<workspace_id>
+<%=ph :workspace_id%>
 ```
 
 Then, identify the node ID on which to list, see previous section.
@@ -6072,7 +6094,7 @@ Then, identify the node ID on which to list, see previous section.
 Finally, list all shared folders, as permissions:
 
 ```shell
-<%=cmd%> aoc admin node do <node_id> permission %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_<workspace_id>"}'
+<%=cmd%> aoc admin node do <%=ph :node_id%> permission %id: list --query=@json:'{"access_type":"user","access_id":"ASPERA_ACCESS_KEY_ADMIN_WS_<%=ph :workspace_id%>"}'
 ```
 
 > [!NOTE]
@@ -6118,7 +6140,7 @@ The command `aoc files find` allows searching for files in a given workspace.
 It works also on `node` resource using the `v4` command:
 
 ```shell
-<%=cmd%> aoc admin node --name='my node name' --secret='my_secret_here' v4 find ...
+<%=cmd%> aoc admin node --name='my node name' --secret='<%=ph :secret%>' v4 find ...
 ```
 
 For instructions, refer to section `find` for plugin `node`.
@@ -6157,7 +6179,7 @@ Please preserve the API key! It cannot be retrieved after it's created.
 Name          mykeyname
 Description   my sample key
 Created At    2019-09-30T12:17+0000
-API Key       my_secret_api_key_here
+API Key       <%=ph :secret%>_api_key_here
 Locked        false
 UUID          ApiKey-05b8fadf-e7fe-abcd-93a9-6fd348c5ab1f
 ```
@@ -6174,11 +6196,11 @@ Then, to register the key by default for the `ats` plugin, create a preset.
 Execute:
 
 ```shell
-<%=cmd%> config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here
+<%=cmd%> config preset update <%=ph :preset_name%> --ibm-api-key=<%=ph :secret%>_api_key_here
 ```
 
 ```shell
-<%=cmd%> config preset set default ats my_ibm_ats
+<%=cmd%> config preset set default ats <%=ph :preset_name%>
 ```
 
 ```shell
@@ -6194,7 +6216,7 @@ Execute:
 ```
 
 ```shell
-<%=cmd%> config preset update my_ibm_ats --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+<%=cmd%> config preset update <%=ph :preset_name%> --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
@@ -6208,7 +6230,7 @@ Execute:
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
 +--------+----------------------------------------------+
-<%=cmd%> config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+<%=cmd%> config preset update <%=ph :preset_name%> --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
 ### ATS Access key creation parameters
@@ -6221,13 +6243,13 @@ Those are directly the parameters expected by the [ATS API](https://developer.ib
 Example: create access key on IBM Cloud (Softlayer):
 
 ```shell
-<%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"my_secret_here","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+<%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"<%=ph :secret%>","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```shell
-<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"my_secret_here"},"path":"/laurent"}}'
+<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<%=ph :secret%>"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
@@ -6446,9 +6468,9 @@ Option `node_api` (`Hash`) controls some options of API used, with the following
 
 ### Operation `find` on **gen4/access key**
 
-The command `find <folder> [filter_expr]` is available for **gen4/access key**, under `access_keys do self`.
+The command `find <%=ph :folder%> [filter_expr]` is available for **gen4/access key**, under `access_keys do self`.
 
-The argument `<folder>` is mandatory and is the root from which the search is performed.
+The argument `<%=ph :folder%>` is mandatory and is the root from which the search is performed.
 The argument `[filter_expr]` is optional and represents the matching criteria.
 
 It recursively scans storage to find files and folders matching the criteria and returns a list of matching entries.
@@ -6575,11 +6597,11 @@ For the `async` subcommands `show` and `delete`, you can use the special identif
 You can start a FASP Stream session from the Node API.
 
 Run the following command:
-`<%=cmd%> node stream create --ts=@json:<value>`.
+`<%=cmd%> node stream create --ts=@json:<%=ph :value%>`.
 with the following [**transfer-spec**](#transfer-specification):
 
 ```json
-{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
+{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"<%=ph :password%>"}
 ```
 
 ### Watchfolder
@@ -6673,7 +6695,7 @@ Previews are mainly used in AoC, this also works with AoC:
 ### Create access key
 
 ```shell
-<%=cmd%> node access_key create @json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
+<%=cmd%> node access_key create @json:'{"id":"myaccesskey","secret":"<%=ph :secret%>","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 > [!TIP]
@@ -6715,8 +6737,8 @@ Bearer tokens can be generated using <%=tool%> command `bearer_token`: it takes 
 | `_scope`               | `user:all`              | Special | Either `user:all` or `admin:all`      |
 | `_validity`            | 86400                   | Special | Validity in seconds from now.         |
 | `user_id`              | -                     | Mandatory | Identifier of user                    |
-| `scope`     | `node.<access_key>:<_scope>`     | Mandatory | API scope<%=br%>e.g. `node.<access_key>:<node scope>`         |
-| `expires_at`           | `now+<_validity>`     | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<%=br%>e.g. `2021-12-31T23:59:59Z` |
+| `scope`     | `node.<%=ph :access_key%>:_scope`     | Mandatory | API scope<%=br%>e.g. `node.<%=ph :access_key%>:<%=ph :node_scope%>`         |
+| `expires_at`           | `now+_validity`     | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<%=br%>e.g. `2021-12-31T23:59:59Z` |
 | `auth_type`            | `access_key`          | Optional  | `access_key`, `node_user`             |
 | `group_ids`            | -                     | Optional  | List of group IDs                     |
 | `organization_id`      | -                     | Optional  | Organization ID                       |
@@ -6764,7 +6786,7 @@ my_private_pem=./myorgkey.pem
 > It is used to sign bearer tokens.
 > Refer to section [private key](#private-key) for more details on generation.
 
-The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<id>`):
+The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<%=ph :id%>`):
 
 ```shell
 <%=cmd%> node access_key set_bearer_key self @file:$my_private_pem
@@ -6948,7 +6970,7 @@ Then, logged in as someuser@example.com go to your profile:
 redacted
 -----END PUBLIC KEY-----
 Once set, fill in the parameters:
-option: client_id> _my_key_here_
+option: client_id> <%=ph :client_id%>
 option: client_secret> ****
 Preparing preset: faspex5_example_com_user
 Setting config preset as default for faspex5
@@ -7003,7 +7025,7 @@ Then use these options:
 ```text
 --auth=jwt
 --client-id=_client_id_here_
---client-secret=my_secret_here
+--client-secret=<%=ph :secret%>
 --username=_username_here_
 --private-key=@file:.../path/to/key.pem
 ```
@@ -7017,7 +7039,7 @@ Typically, users create a preset so they don’t have to enter these options eac
 Example:
 
 ```shell
-<%=cmd%> config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
+<%=cmd%> config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=<%=ph :secret%> --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
 <%=cmd%> config preset set default faspx5 myf5
 
@@ -7039,7 +7061,7 @@ The user will use the following options:
 ```text
 --auth=web
 --client-id=_client_id_here_
---client-secret=my_secret_here
+--client-secret=<%=ph :secret%>
 --redirect-uri=https://127.0.0.1:8888
 ```
 
@@ -7095,7 +7117,7 @@ To select another inbox, use option `box` with one of the following values:
 | `pending_history`   | Archived pending packages.               |
 | `all`               | All boxes accessible by current user.    |
 | `ALL`               | All boxes of all users. **admin only**.  |
-| `<name>`            | Name of shared ibox or workgroup.<%=br%>If option `group_type` is `shared_inboxes`: name of a shared inbox (default).<%=br%>If `group_type` is `workgroups`: name of workgroup. |
+| `<%=ph :name%>`            | Name of shared ibox or workgroup.<%=br%>If option `group_type` is `shared_inboxes`: name of a shared inbox (default).<%=br%>If `group_type` is `workgroups`: name of workgroup. |
 
 > [!NOTE]
 > In case the name of the `box` is an open value, use option `group_type` set to either `shared_inboxes` or `workgroups`.
@@ -7251,7 +7273,7 @@ Option `query` is available with parameters supported by the API and <%=tool%> :
 > [!NOTE]
 > Listing content also applies to sent packages using `--box=outbox`.
 
-To list the content of a received package, use command `faspex5 packages browse <package id>`.
+To list the content of a received package, use command `faspex5 packages browse <%=ph :package_id%>`.
 Optionally, provide a folder path.
 
 ### Faspex 5: Receive a package
@@ -7341,7 +7363,7 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 ```
 
 > [!TIP]
-> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
+> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<%=ph :field%>:<%=ph :value%>`. e.g. `--shared-folder=3`
 
 ### Faspex 5: Receive all packages (cargo)
 
@@ -7549,7 +7571,7 @@ As inboxes may be large, it is possible to use the following query parameters:
 | `max`        | <%=tool%>  | Maximum number of items |
 | `pmax`       | <%=tool%>  | Maximum number of pages |
 
-(SQL query is `LIMIT <startIndex>, <count>`)
+(SQL query is `LIMIT <%=ph :startIndex%>, <%=ph :count%>`)
 
 The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under **Services (API v.3)**.
 
@@ -7559,10 +7581,10 @@ By default, `count` is `0` (`10`), it can be increased to issue less HTTP calls.
 #### Example: List packages in dropbox
 
 ```shell
-<%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
+<%=cmd%> faspex package list --box=inbox --recipient='*<%=ph :dropbox%>' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
-List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*my_dropbox`.
+List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*<%=ph :dropbox%>`.
 
 ### Receiving a Package
 
@@ -7606,7 +7628,7 @@ Additional optional parameters in mandatory option `delivery_info`:
 - Package Note: : `"note":"note this and that"`
 - Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
 
-It is possible to send from a remote source using option `remote_source`, providing either the numerical ID, or the name of the remote source using percent selector: `%name:<name>`.
+It is possible to send from a remote source using option `remote_source`, providing either the numerical ID, or the name of the remote source using percent selector: `%name:<%=ph :name%>`.
 
 Remote source can be browsed if option `storage` is provided.
 `storage` is a `Hash` extended value.
@@ -7802,14 +7824,14 @@ The service credential file consists of the following structure:
 
 ```json
 {
-  "apikey": "my_api_key_here",
+  "apikey": "<%=ph :api_key%>",
   "cos_hmac_keys": {
-    "access_key_id": "my_access_key_here",
-    "secret_access_key": "my_secret_here"
+    "access_key_id": "<%=ph :access_key%>",
+    "secret_access_key": "<%=ph :secret%>"
   },
   "endpoints": "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints",
-  "iam_apikey_description": "my_description_here",
-  "iam_apikey_name": "my_key_name_here",
+  "iam_apikey_description": "<%=ph :description%>",
+  "iam_apikey_name": "<%=ph :name%>",
   "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Writer",
   "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....",
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
@@ -8033,7 +8055,7 @@ For example:
 ```shell
 su -s /bin/bash - xfer
 
-<%=cmd%> config preset update mypreviewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+<%=cmd%> config preset update mypreviewconf --url=https://localhost:9092 --username=<%=ph :access_key%> --password=<%=ph :secret%> --skip-types=office --lock-port=12346
 
 <%=cmd%> config preset set default preview mypreviewconf
 ```
@@ -8176,7 +8198,11 @@ If the preview generator does not have access to files on the file system (it is
 
 <%=include_commands_for_plugin(:preview)%>
 
-## IBM Aspera Sync
+## Operational Utilities
+
+This section covers the specialized modules and utilities used to integrate ascli into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and asession and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
+
+### IBM Aspera Sync
 
 An interface for the `async` utility is provided in the following plugins:
 
@@ -8200,7 +8226,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 > The Aspera Transfer Daemon 1.3+ includes this.
 
-### Quick test
+#### Quick test
 
 Below is a simple end‑to‑end procedure to verify synchronization using the demo server.
 
@@ -8231,7 +8257,7 @@ Below is a simple end‑to‑end procedure to verify synchronization using the d
 
 The following sections provide additional details on available options and configuration.
 
-### Starting a sync session
+#### Starting a sync session
 
 To start a sync session, use one of the three sync directions, followed by a folder path.
 For `push` and `bidi`, the path is a local folder.
@@ -8242,7 +8268,7 @@ The corresponding path on the opposite side is provided using the `to_folder` op
 **General syntax:**
 
 ```shell
-<%=cmd%> ... sync <direction> <path> [--to-folder=<path>] [<sync_info>]
+<%=cmd%> ... sync <%=ph :direction%> <%=ph :path%> [--to-folder=<%=ph :path%>] [<%=ph :sync_info%>]
 ```
 
 | Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
@@ -8259,14 +8285,14 @@ It can be expressed in one of two formats:
 
 A single sync session must use **one format exclusively**.
 
-- If `<sync_info>` is not provided, a default configuration is automatically generated in the `conf` format (details in the next section).
+- If `<%=ph :sync_info%>` is not provided, a default configuration is automatically generated in the `conf` format (details in the next section).
 
-- If argument `<sync_info>` is provided, the format is inferred:
+- If argument `<%=ph :sync_info%>` is provided, the format is inferred:
 
   - If the Hash contains `sessions` or `instance`, the `args` is used
   - Otherwise, the `conf` format is used.
 
-#### `sync_info`: `conf` format
+##### `sync_info`: `conf` format
 
 This is the **preferred** syntax.
 It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
@@ -8294,7 +8320,7 @@ The documentation is available in the terminal with:
 
 <%=sync_conf_table%>
 
-#### `sync_info`: `args` format
+##### `sync_info`: `args` format
 
 This is the **legacy** syntax.
 <%=tool%> defines a JSON equivalent to regular `async` options.
@@ -8311,7 +8337,7 @@ The following parameters are automatically filled from mandatory arguments, and 
 
 Parameter `name` is set to a default value if not provided in `sync_info`.
 
-### Sync management and monitoring: `admin`
+#### Sync management and monitoring: `admin`
 
 The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
 (With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
@@ -8337,9 +8363,12 @@ In order to use the `admin` commands, the user must provide the path to the data
 - If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
 - Else, the user must specify a session name in the optional `Hash`, in the `name` key.
 
-## Hot folder
+### Hot folder
 
-### Requirements
+<%=tool%> does **not** have a standalone `hotfolder` command.
+Instead, you create a Hot Folder by combining the upload or download commands with specific transfer-spec parameters and an OS scheduler (like `cron` or Task Scheduler).
+
+#### Requirements
 
 <%=tool%> maybe used as a simple hot folder engine.
 A hot folder being defined as a tool that:
@@ -8352,7 +8381,7 @@ A hot folder being defined as a tool that:
 
 In addition: the detection should be made **continuously** or on specific time/date.
 
-### Setup procedure
+#### Setup procedure
 
 The general idea is to rely on :
 
@@ -8360,7 +8389,7 @@ The general idea is to rely on :
 - Take advantage of <%=tool%> configuration capabilities and server side knowledge
 - The OS scheduler for reliability and continuous operation
 
-#### `ascp` features
+##### `ascp` features
 
 Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
@@ -8385,7 +8414,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 > [!TIP]
 > Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info`.
 
-#### Server side and configuration
+##### Server side and configuration
 
 Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
 
@@ -8395,13 +8424,13 @@ Virtually any transfer on a **repository** on a regular basis might emulate a ho
 > [!TIP]
 > Options may be saved in an [Option Preset](#option-preset) and used with `-P`.
 
-#### Scheduling
+##### Scheduling
 
 Once <%=tool%> command line arguments are defined, run the command using the OS native scheduler, e.g. every minute, or 5 minutes, etc.
 Refer to section [Scheduler](#scheduler).
 (on use of option `lock_port`)
 
-### Example: Upload hot folder
+#### Example: Upload hot folder
 
 ```shell
 <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than":-8,"src_base":"source_hot"}'
@@ -8412,7 +8441,7 @@ Source files are deleted after transfer.
 Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
 If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
-### Example: Unidirectional synchronization (upload) to server
+#### Example: Unidirectional synchronization (upload) to server
 
 ```shell
 <%=cmd%> server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
@@ -8420,7 +8449,7 @@ If a transfer takes more than the execution period, then the subsequent executio
 
 This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node.
 
-### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
+#### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```shell
 <%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
@@ -8432,7 +8461,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 > [!NOTE]
 > Options `progress` and `display` limit output for headless operation (e.g. cron job)
 
-## Health check and Nagios
+### Health check and Nagios
 
 Most plugin provide a `health` command that will check the health status of the application.
 Example:
@@ -8466,7 +8495,7 @@ The output can be made compatible to Nagios with option `--format=nagios` :
 OK - [transfer:ok]
 ```
 
-## SMTP for email notifications
+### SMTP for email notifications
 
 <%=tool%> can send email, for that setup SMTP configuration.
 This is done with option `smtp`.
@@ -8482,29 +8511,29 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 | `port`       | `587`<%=br%>`465`<%=br%>`25` | `587`  | Port for service                 |
 | `domain`     | _domain of_ `server` | gmail.com      | Email domain of user             |
 | `username`   | -                  | john@example.com | User to authenticate on SMTP server<%=br%>Leave empty for open auth. |
-| `password`   | -                  | my_password_here | Password for above username      |
+| `password`   | -                  | <%=ph :password%> | Password for above username      |
 | `from_email` | username if defined|johnny@example.com| Address used if receiver replies |
 | `from_name`  | same as email      | John Wayne       | Display name of sender           |
 <!-- markdownlint-enable MD034 -->
 
-### Example of configuration
+#### Example of configuration
 
 ```shell
 <%=cmd%> config preset set smtp_google server smtp.google.com
 <%=cmd%> config preset set smtp_google username john@gmail.com
-<%=cmd%> config preset set smtp_google password my_password_here
+<%=cmd%> config preset set smtp_google password <%=ph :password%>
 ```
 
 or
 
 ```shell
-<%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"my_password_here"}'
+<%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<%=ph :password%>"}'
 ```
 
 or
 
 ```shell
-<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=my_password_here
+<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<%=ph :password%>
 ```
 
 Set this configuration as global default, for instance:
@@ -8514,7 +8543,7 @@ Set this configuration as global default, for instance:
 <%=cmd%> config preset set default config cli_default
 ```
 
-### Email templates
+#### Email templates
 
 Sent emails are built using a template that uses the [`ERB`](https://www.tutorialspoint.com/ruby/eruby.htm) syntax.
 
@@ -8528,7 +8557,7 @@ The following variables are defined by default:
 
 Other variables are defined depending on context.
 
-### Test
+#### Test
 
 Check settings with `smtp_settings` command.
 Send test email with `email_test`.
@@ -8538,7 +8567,7 @@ Send test email with `email_test`.
 <%=cmd%> config --smtp=@preset:smtp_google email --notify-to=sample.dest@example.com
 ```
 
-### Notifications for transfer status
+#### Notifications for transfer status
 
 An e-mail notification can be sent upon transfer success and failure (one email per transfer job, one job being possibly multi session, and possibly after retry).
 
@@ -8565,7 +8594,7 @@ Subject: <%='<'%>%=subject%>
 Transfer is: <%='<'%>%=status%>
 ```
 
-## Tool: `asession`
+### Tool: `asession`
 
 This gem comes with a second executable tool providing a simplified standardized interface to start a FASP session: `asession`.
 
@@ -8597,7 +8626,7 @@ Top level parameters supported by `asession`:
 | `loglevel`         | Log level of `asession`                                                |
 | `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<%=br%>Default: `[system tmp folder]/[username]_asession_filelists` |
 
-### Comparison of interfaces
+#### Comparison of interfaces
 
 | Feature/Tool | Transfer Daemon | FASPManager | `ascp` | `asession` |
 |------------|-------------|-------------|-------------|-------------|
@@ -8608,12 +8637,12 @@ Top level parameters supported by `asession`:
 | events | Poll | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
 | platforms | Like `ascp` and `transferd` | Like `ascp` and lib (if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
-### Simple session
+#### Simple session
 
 Create a file `session.json` with:
 
 ```json
-{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"my_password_here","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"<%=ph :password%>","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
 ```
 
 Then start the session:
@@ -8622,7 +8651,7 @@ Then start the session:
 asession < session.json
 ```
 
-### Asynchronous commands and Persistent session
+#### Asynchronous commands and Persistent session
 
 `asession` also supports asynchronous commands (on the management port).
 Instead of the traditional text protocol as described in `ascp` manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be **snake** style, for example: `LongParameter` &rarr; `long_parameter`
@@ -8631,7 +8660,7 @@ This is particularly useful for a persistent session (with the [**transfer-spec*
 
 ```json
 asession
-{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"my_password_here","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"<%=ph :password%>","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
 ```
@@ -8639,14 +8668,14 @@ asession
 (events from FASP are not shown in above example.
 They would appear after each command)
 
-### Help
+#### Help
 
 ```shell
 asession -h
 <%=include_asession%>
 ```
 
-## Ruby Module: `Aspera`
+### Ruby Module: `Aspera`
 
 Main components:
 
@@ -8706,7 +8735,7 @@ See https://github.com/net-ssh/net-ssh/issues/565 for more information
 ```
 
 In addition, if **JRuby** is used, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
-To activate, set env var `<%=opt_env(%Q`enable_ecdsha`)%>2` to `true`.
+To activate, set env var `<%=opt_env :enable_ecdsha2%>` to `true`.
 
 ### JRuby: `net-ssh`: Unsupported algorithm
 
