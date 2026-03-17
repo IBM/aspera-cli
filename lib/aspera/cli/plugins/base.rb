@@ -190,7 +190,7 @@ module Aspera
             return Main.result_single_object(api.read(one_res_path), fields: display_fields)
           when :list
             if tclo
-              data, total = list_entities_limit_offset_total_count(api: api, entity:, items_key: items_key, query: query_read_delete(default: list_query))
+              data, total = api.list_entities_limit_offset_total_count(entity:, items_key: items_key, query: query_read_delete(default: list_query))
               return Main.result_object_list(data, total: total, fields: display_fields)
             end
             data, http = api.read(entity, query_read_delete, ret: :both)
@@ -259,86 +259,9 @@ module Aspera
           return value
         end
 
-        # Get a (full or partial) list of all entities of a given type with query: offset/limit
-        # @param api       [Rest]          API object
-        # @param entity    [String,Symbol] API endpoint of entity to list
-        # @param items_key [String]        Key in the result to get the list of items (Default: same as `entity`)
-        # @param query     [Hash,nil]      Additional query parameters
-        # @return [Array<(Array<Hash>, Integer)>] items, total_count
-        def list_entities_limit_offset_total_count(
-          api:,
-          entity:,
-          items_key: nil,
-          query: nil
-        )
-          entity = entity.to_s if entity.is_a?(Symbol)
-          items_key = entity.split('/').last if items_key.nil?
-          query = {} if query.nil?
-          Aspera.assert_type(entity, String)
-          Aspera.assert_type(items_key, String)
-          Aspera.assert_type(query, Hash)
-          Log.log.debug{"list_entities t=#{entity} k=#{items_key} q=#{query}"}
-          result = []
-          offset = 0
-          max_items = query.delete(MAX_ITEMS)
-          remain_pages = query.delete(MAX_PAGES)
-          # Merge default parameters, by default 100 per page
-          query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
-          total_count = nil
-          loop do
-            query['offset'] = offset
-            page_result = api.read(entity, query)
-            Aspera.assert_type(page_result[items_key], Array)
-            result.concat(page_result[items_key])
-            # Reach the limit set by user ?
-            if !max_items.nil? && (result.length >= max_items)
-              result = result.slice(0, max_items)
-              break
-            end
-            total_count ||= page_result['total_count']
-            break if result.length >= total_count
-            remain_pages -= 1 unless remain_pages.nil?
-            break if remain_pages == 0
-            offset += page_result[items_key].length
-            RestParameters.instance.spinner_cb.call("#{result.length} / #{total_count || '?'}")
-          end
-          RestParameters.instance.spinner_cb.call(action: :success)
-          return result, total_count
-        end
-
-        # Lookup an entity id from its name.
-        # Uses query `q` if `query` is `:default` and `field` is `name`.
-        # @param entity    [String] Type of entity to lookup, by default it is the path, and it is also the field name in result
-        # @param value     [String] Value to lookup
-        # @param field     [String] Field to match, by default it is `'name'`
-        # @param items_key [String] Key in the result to get the list of items (override entity)
-        # @param query     [Hash]   Additional query parameters (Default: `:default`)
-        def lookup_entity_by_field(api:, entity:, value:, field: 'name', items_key: nil, query: :default)
-          if query.eql?(:default)
-            Aspera.assert(field.eql?('name')){'Default query is on name only'}
-            query = {'q'=> value}
-          end
-          lookup_entity_generic(entity: entity, field: field, value: value){list_entities_limit_offset_total_count(api: api, entity: entity, items_key: items_key, query: query).first}
-        end
-
-        # Lookup entity by field and value. Extract single result from list of result returned by block.
-        # @param entity    [String] Type of entity to lookup, by default it is the path, and it is also the field name in result
-        # @param value     [String] Value to lookup
-        # @param field     [String] Field to match, by default it is `'name'`
-        # @param block     [Proc]   Get list of entity matching query.
-        def lookup_entity_generic(entity:, value:, field: 'name', &block)
-          Aspera.assert(block_given?)
-          found = yield
-          Aspera.assert_array_all(found, Hash)
-          found = found.select{ |i| i[field].eql?(value)}
-          return found.first if found.length.eql?(1)
-          raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)
-        end
-
-        PER_PAGE_DEFAULT = 1000
         # Percent selector: select by this field for this value
         REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
-        private_constant :PER_PAGE_DEFAULT, :REGEX_LOOKUP_ID_BY_FIELD
+        private_constant :REGEX_LOOKUP_ID_BY_FIELD
       end
     end
   end

@@ -572,34 +572,6 @@ module Aspera
       return call(operation: 'CANCEL', subpath: subpath, **kwargs)
     end
 
-    # Query entity by general search (read with parameter `q`)
-    # TODO: not generic enough ? move somewhere ? inheritance ?
-    # @param subpath     [String] Path of entity in API
-    # @param search_name [String] Name of searched entity
-    # @param query       [Hash]   Additional search query parameters
-    # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
-    def lookup_by_name(subpath, search_name, query: nil)
-      query = {} if query.nil?
-      # returns entities matching the query (it matches against several fields in case insensitive way)
-      matching_items = read(subpath, query.merge({'q' => search_name}))
-      # API style: {totalcount:, ...} cspell: disable-line
-      matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
-      Aspera.assert_type(matching_items, Array)
-      case matching_items.length
-      when 1 then return matching_items.first
-      when 0 then raise EntityNotFound, %Q{No such #{subpath}: "#{search_name}"}
-      else
-        # multiple case insensitive partial matches, try case insensitive full match
-        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        name_matches = matching_items.select{ |i| i['name'].casecmp?(search_name)}
-        case name_matches.length
-        when 1 then return name_matches.first
-        when 0 then raise %Q(#{subpath}: Multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
-        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{ |i| i['name']}}"
-        end
-      end
-    end
-
     UNAVAILABLE_CODES = ['503']
 
     private_constant :UNAVAILABLE_CODES

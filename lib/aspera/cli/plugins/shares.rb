@@ -3,6 +3,8 @@
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/node'
 require 'aspera/assert'
+require 'aspera/rest_list'
+
 module Aspera
   module Cli
     module Plugins
@@ -128,7 +130,7 @@ module Aspera
           when :admin
             api_shares_admin = basic_auth_api(ADMIN_API_PATH)
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
-            lookup_share = ->(field, value){lookup_entity_generic(entity: 'share', field: field, value: value){api_shares_admin.read('data/shares')}['id']}
+            lookup_share = ->(field, value){RestList.lookup_entity_generic(entity: 'share', field: field, value: value){api_shares_admin.read('data/shares')}['id']}
             case admin_command
             when :node
               return entity_execute(api: api_shares_admin, entity: 'data/nodes')
@@ -177,7 +179,7 @@ module Aspera
                 entity_commands = %i[import].freeze
               end
               entity_verb = options.get_next_command(entity_commands)
-              lookup_block = ->(field, value){lookup_entity_generic(entity: entity_type, field: field, value: value){api_shares_admin.read(entities_path)}['id']}
+              lookup_block = ->(field, value){RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){api_shares_admin.read(entities_path)}['id']}
               case entity_verb
               when *ALL_OPS # list, show, delete, create, modify
                 display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil

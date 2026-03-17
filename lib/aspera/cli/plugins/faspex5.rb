@@ -182,13 +182,9 @@ module Aspera
             when *Api::Faspex::API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
-              "#{group_type}/#{lookup_entity_by_field(api: @api_v5, entity: group_type, value: box)['id']}/packages"
+              "#{group_type}/#{@api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
             end
-          list, total = list_entities_limit_offset_total_count(
-            api: @api_v5,
-            entity: entity,
-            query:  query_read_delete(default: query)
-          )
+          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: query_read_delete(default: query))
           return list.select(&filter), total
         end
 
@@ -251,7 +247,7 @@ module Aspera
             type:          Api::Faspex.box_type(box),
             transfer_type: Api::Faspex::TRANSFER_CONNECT
           }
-          # download_params[:recipient_workgroup_id] = lookup_entity_by_field(api: @api_v5, entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
+          # download_params[:recipient_workgroup_id] = @api_v5.lookup_entity_by_field(entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
           packages.each do |package|
             pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
@@ -308,8 +304,7 @@ module Aspera
           else
             # send from remote shared folder
             if (m = Base.percent_selector(shared_folder))
-              shared_folder = lookup_entity_by_field(
-                api: @api_v5,
+              shared_folder = @api_v5.lookup_entity_by_field(
                 entity: 'shared_folders',
                 field: m[:field],
                 value: m[:value]
@@ -464,12 +459,12 @@ module Aspera
           case res_command
           when *ALL_OPS
             return entity_execute(command: res_command, **exec_args) do |field, value|
-                     lookup_entity_by_field(api: @api_v5, entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
+                     @api_v5.lookup_entity_by_field(entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
                    end
           when :shared_folders
             # nodes
             node_id = instance_identifier do |field, value|
-              lookup_entity_by_field(api: @api_v5, entity: 'nodes', field: field, value: value)['id']
+              @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
             end
             shfld_entity = "nodes/#{node_id}/shared_folders"
             sh_command = options.get_next_command(ALL_OPS + [:user])
@@ -480,33 +475,32 @@ module Aspera
                 entity: shfld_entity,
                 command: sh_command
               ) do |field, value|
-                       lookup_entity_by_field(api: @api_v5, entity: shfld_entity, field: field, value: value)['id']
+                       @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
                      end
             when :user
               sh_id = instance_identifier do |field, value|
-                lookup_entity_by_field(api: @api_v5, entity: shfld_entity, field: field, value: value)['id']
+                @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
               end
               user_path = "#{shfld_entity}/#{sh_id}/custom_access_users"
               return entity_execute(api: @api_v5, entity: user_path, items_key: 'users') do |field, value|
-                       lookup_entity_by_field(api: @api_v5, entity: user_path, items_key: 'users', field: field, value: value)['id']
+                       @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
                      end
 
             end
           when :browse
             # nodes
             node_id = instance_identifier do |field, value|
-              lookup_entity_by_field(api: @api_v5, entity: 'nodes', value: value, field: field)['id']
+              @api_v5.lookup_entity_by_field(entity: 'nodes', value: value, field: field)['id']
             end
             return browse_folder("nodes/#{node_id}/browse")
           when :invite_external_collaborator
             # :shared_inboxes, :workgroups
-            shared_inbox_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
+            shared_inbox_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
             creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
             result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
             formatter.display_status(result['message'])
-            result = lookup_entity_by_field(
-              api: @api_v5,
+            result = @api_v5.lookup_entity_by_field(
               entity: "#{res_sym}/#{shared_inbox_id}/members",
               items_key: 'members',
               value: creation_payload['email_address'],
@@ -515,7 +509,7 @@ module Aspera
             return Main.result_single_object(result)
           when :members, :saml_groups
             # res_command := :shared_inboxes, :workgroups
-            res_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
+            res_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             res_path = "#{res_sym}/#{res_id}/#{res_command}"
             list_key = res_command.to_s
             list_key = 'groups' if res_command.eql?(:saml_groups)
@@ -526,8 +520,7 @@ module Aspera
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
                 if (m = Base.percent_selector(user))
-                  lookup_entity_by_field(
-                    api: @api_v5,
+                  @api_v5.lookup_entity_by_field(
                     entity: 'accounts',
                     field: m[:field],
                     value: m[:value],
@@ -548,8 +541,7 @@ module Aspera
               command: sub_command,
               items_key: list_key
             ) do |field, value|
-                     lookup_entity_by_field(
-                       api: @api_v5,
+                     @api_v5.lookup_entity_by_field(
                        entity: res_path,
                        field: field,
                        value: value,
@@ -558,7 +550,7 @@ module Aspera
                    end
           when :reset_password
             # :accounts
-            contact_id = instance_identifier{ |field, value| lookup_entity_by_field(api: @api_v5, entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
+            contact_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
             @api_v5.create("accounts/#{contact_id}/reset_password", {})
             return Main.result_status('password reset, user shall check email')
           end
@@ -579,16 +571,10 @@ module Aspera
             event_type = options.get_next_command(%i[application webhook])
             case event_type
             when :application
-              list, total = list_entities_limit_offset_total_count(
-                api: @api_v5,
-                entity: 'application_events',
-                query: query_read_delete
-              )
-
+              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
               return Main.result_object_list(list, total: total, fields: %w[event_type created_at application user.name])
             when :webhook
-              list, total = list_entities_limit_offset_total_count(
-                api: @api_v5,
+              list, total = @api_v5.list_entities_limit_offset_total_count(
                 entity: 'all_webhooks_events',
                 query: query_read_delete,
                 items_key: 'events'
@@ -705,7 +691,7 @@ module Aspera
                 items_key: invitation_endpoint,
                 display_fields: %w[id public recipient_type recipient_name email_address]
               ) do |field, value|
-                lookup_entity_by_field(api: @api_v5, entity: invitation_endpoint, field: field, value: value, query: {})['id']
+                @api_v5.lookup_entity_by_field(entity: invitation_endpoint, field: field, value: value, query: {})['id']
               end
             end
           when :gateway

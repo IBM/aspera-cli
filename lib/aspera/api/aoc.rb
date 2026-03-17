@@ -7,11 +7,14 @@ require 'aspera/hash_ext'
 require 'aspera/data_repository'
 require 'aspera/transfer/spec'
 require 'aspera/api/node'
+require 'aspera/rest_list'
 require 'base64'
 
 module Aspera
   module Api
     class AoC < Rest
+      include RestList
+
       PRODUCT_NAME = 'Aspera on Cloud'
       # use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''

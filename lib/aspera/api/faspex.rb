@@ -2,6 +2,7 @@
 
 require 'aspera/rest'
 require 'aspera/oauth/base'
+require 'aspera/rest_list'
 require 'digest'
 
 module Aspera
@@ -56,6 +57,8 @@ module Aspera
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
     class Faspex < Aspera::Rest
+      include RestList
+
       # endpoint for authentication API
       PATH_AUTH = 'auth'
       PATH_API_V5 = 'api/v5'
