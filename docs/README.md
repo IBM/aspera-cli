@@ -6150,7 +6150,8 @@ ascli aoc packages send @json:'{"name":"<TITLE>","note":"<NOTE>","recipients":["
 ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"<TITLE>","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
-It is also possible to use identifiers and API parameters:
+It is also possible to use identifiers and API parameters.
+For exemple, sending to a shared inbox by ID with metadata:
 
 ```shell
 ascli aoc packages send --workspace="<WORKSPACE_NAME>" @json:'{"name":"<TITLE>","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
