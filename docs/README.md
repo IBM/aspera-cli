@@ -5898,7 +5898,13 @@ Group: `<GROUP_ID>`
 - Get the workspace ID
 
 ```shell
-ascli aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
+ascli aoc admin workspace show %name:"<WORKSPACE_NAME>" --fields=id
+```
+
+Or (similar, but may return several entries, as it's a simple search):
+
+```shell
+ascli aoc admin workspace list --query.q="<WORKSPACE_NAME>" --fields=id
 ```
 
 Workspace: <WORKSPACE_ID>
@@ -9179,10 +9185,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 - `scan` : recursively scan all files under the access key&apos;s **storage root**
 - `test` : test using a local file
 
-Once candidate are selected, once candidates are selected,
-a preview is always generated if it does not exist already,
-else if a preview already exist, it will be generated
-using one of three values for the `overwrite` option:
+Once candidate are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated using one of three values for the `overwrite` option:
 
 - `always` : preview is always generated, even if it already exists and is newer than original
 - `never` : preview is generated only if it does not exist already

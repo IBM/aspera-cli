@@ -5356,7 +5356,13 @@ Group: `<%=ph :group_id%>`
 - Get the workspace ID
 
 ```shell
-<%=cmd%> aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
+<%=cmd%> aoc admin workspace show %name:"<%=ph :workspace_name%>" --fields=id
+```
+
+Or (similar, but may return several entries, as it's a simple search):
+
+```shell
+<%=cmd%> aoc admin workspace list --query.q="<%=ph :workspace_name%>" --fields=id
 ```
 
 Workspace: <%=ph :workspace_id%>
@@ -8120,10 +8126,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 - `scan` : recursively scan all files under the access key&apos;s **storage root**
 - `test` : test using a local file
 
-Once candidate are selected, once candidates are selected,
-a preview is always generated if it does not exist already,
-else if a preview already exist, it will be generated
-using one of three values for the `overwrite` option:
+Once candidate are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated using one of three values for the `overwrite` option:
 
 - `always` : preview is always generated, even if it already exists and is newer than original
 - `never` : preview is generated only if it does not exist already
