@@ -513,7 +513,7 @@ module Aspera
             # email: user, else dropbox
             entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
             begin
-              full_recipient_info = lookup_by_name(entity_type, short_recipient_info, query: {'current_workspace_id' => ws_id})
+              full_recipient_info = lookup_by_name(entity_type, short_recipient_info, query: {'workspace_id' => ws_id})
             rescue EntityNotFound
               # dropboxes cannot be created on the fly
               Aspera.assert_values(entity_type, 'contacts', type: Error){"No such shared inbox in workspace #{ws_id}"}
