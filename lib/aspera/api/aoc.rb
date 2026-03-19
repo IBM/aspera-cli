@@ -213,7 +213,7 @@ module Aspera
           when 'upload' then %w[mkdir write]
           when Array
             Aspera.assert_array_all(levels, String){'access_levels'}
-            levels.each{ |level| Aspera.assert_value(level, Node::ACCESS_LEVELS){'access_level'}}
+            levels.each{ |level| Aspera.assert_values(level, Node::ACCESS_LEVELS){'access_level'}}
             levels
           else Aspera.error_unexpected_value(levels){"access_levels must be a list of #{Node::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload"}
           end
