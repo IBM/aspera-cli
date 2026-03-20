@@ -5,31 +5,14 @@ PANDOC_DEFAULTS_BEGIN
 metadata:
   subtitle: "<%=cmd%> <%=build_version%>"
   author: "<%=gemspec.authors.join(', ')%>"
-variables:
-  include-before:
-    - ''
 PANDOC_DEFAULTS_END
 -->
 
-<!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
+<!-- Admonitions: NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
 <!-- markdownlint-disable MD060 -->
-
-![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
-
-"Hey, I’m <%=tool%> - your data’s personal courier.
-I don’t do flashy dashboards; I’m happiest in a terminal window.
-Hand me a command, and I’ll zip your files across the network faster than you thought possible.
-
-Need to automate? I’m script-friendly.
-
-Need to integrate? I’ve got APIs on speed-dial.
-
-Need to debug? I’ll show you what’s going on under the hood.
-
-Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
 ## Introduction
 

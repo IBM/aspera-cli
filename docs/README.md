@@ -5,32 +5,15 @@ PANDOC_DEFAULTS_BEGIN
 metadata:
   subtitle: "ascli 4.26.0.pre"
   author: "Laurent Martin"
-variables:
-  include-before:
-    - ''
 PANDOC_DEFAULTS_END
 -->
 <!-- markdownlint-disable MD033 -->
 
-<!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
+<!-- Admonitions: NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
 <!-- markdownlint-disable MD060 -->
-
-![Hootput the Owl](mascot.svg)
-
-"Hey, I’m `ascli` - your data’s personal courier.
-I don’t do flashy dashboards; I’m happiest in a terminal window.
-Hand me a command, and I’ll zip your files across the network faster than you thought possible.
-
-Need to automate? I’m script-friendly.
-
-Need to integrate? I’ve got APIs on speed-dial.
-
-Need to debug? I’ll show you what’s going on under the hood.
-
-Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
 ## Introduction
 
@@ -4823,7 +4806,7 @@ DESCRIPTION
         Use Aspera application to perform operations on command line.
         Documentation and examples: https://rubygems.org/gems/aspera-cli
         execute: ascli conf doc
-        or visit: https://www.rubydoc.info/gems/aspera-cli
+        or visit: https://ibm.biz/ascli-doc
         source repo: https://github.com/IBM/aspera-cli
 
 ENVIRONMENT VARIABLES
@@ -10129,6 +10112,6 @@ ascli config coffee
 
 Ruby gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
-Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+Ruby Doc: [https://ibm.biz/ascli-doc](https://ibm.biz/ascli-doc)
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)

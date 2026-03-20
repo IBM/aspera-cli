@@ -1,0 +1,2 @@
+include-before-body:
+  - .README.md.pdf.tex

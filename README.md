@@ -5,6 +5,8 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+![Hootput the Owl](docs/mascot.svg)
+
 **`ascli`** is the command-line interface for IBM Aspera products.
 Use it from the terminal or in scripts to:
 

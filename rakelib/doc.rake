@@ -105,6 +105,11 @@ namespace :doc do
     end
   end
 
+  # file Paths::MASCOT_PDF => [Paths::MASCOT_SVG] do
+  #  Aspera::Log.log.info{"Generating: #{Paths::MASCOT_PDF}"}
+  #  run('inkscape', "--export-filename=#{Paths::MASCOT_PDF}", Paths::MASCOT_SVG)
+  # end
+
   desc 'Generate uml'
   task uml: Paths::UML_PNG
 end

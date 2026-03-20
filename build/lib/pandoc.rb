@@ -60,6 +60,14 @@ def generate_gfx_paths_latex(paths)
   result
 end
 
+def check_add_defaults_file(md, format, additional)
+  add_defaults = Pathname.new(md).dirname / ".#{Pathname.new(md).basename}.#{format}.pandoc.yaml"
+  log.info{"checking defaults: #{add_defaults}"}
+  return unless add_defaults.exist?
+  log.info{"Using default pandoc defaults: #{add_defaults}"}
+  additional << add_defaults
+end
+
 # Generate PDF from Markdown using pandoc templates
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
@@ -70,19 +78,25 @@ def markdown_to_pdf(md:, pdf:)
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
     custom_defaults_file = extract_pandoc_defaults_file(md)
-    gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT])
+    gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT, '.'])
+    defaults = [
+      PATH_PANDOC_ROOT / 'defaults_common.yaml',
+      PATH_PANDOC_ROOT / 'defaults_pdf.yaml',
+      custom_defaults_file
+    ]
+    check_add_defaults_file(md, 'pdf', defaults)
     run(
       'pandoc',
       "--include-in-header=#{gfx_paths_latex}",
       "--variable=date:#{get_change_date(md)}",
-      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
-      "--defaults=#{PATH_PANDOC_ROOT / 'defaults_pdf.yaml'}",
-      "--defaults=#{custom_defaults_file}",
+      *defaults.map{ |f| "--defaults=#{f}"},
       "--output=#{pdf}",
       md
     )
     custom_defaults_file.delete
     gfx_paths_latex.delete
+    # temporary files
+    FileUtils.rm_rf('svg-inkscape')
   end
 end
 

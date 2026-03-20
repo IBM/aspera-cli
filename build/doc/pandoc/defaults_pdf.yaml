@@ -1,6 +1,8 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 to: pdf
 pdf-engine: lualatex
+pdf-engine-opts:
+  - "-shell-escape"
 variables:
   documentclass: report
   mainfont: "IBM Plex Sans"
