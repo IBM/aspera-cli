@@ -33,7 +33,7 @@ module Aspera
 
       # type: NOTE CAUTION WARNING IMPORTANT TIP INFO
       def admonition(lines, type: 'INFO')
-        "> [!{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
+        "> [!#{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
       end
 
       def code(lines, type: 'shell')
