@@ -7,6 +7,7 @@ require 'xmlsimple'
 
 module Aspera
   module Api
+    # Cloud Object Storage Node API Client
     class CosNode < Node
       IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
       TOKEN_FIELD = 'delegated_refresh_token'

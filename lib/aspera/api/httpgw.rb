@@ -11,6 +11,7 @@ require 'json'
 
 module Aspera
   module Api
+    # Aspera HTTP Gateway API client
     # Start a transfer using Aspera HTTP Gateway, using web socket secure for uploads
     # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
     # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22

@@ -6,7 +6,7 @@ require 'aspera/rest_list'
 require 'digest'
 
 module Aspera
-  # Implement OAuth for Faspex public link
+  # OAuth for Faspex public link
   class FaspexPubLink < OAuth::Base
     class << self
       attr_accessor :additional_info
@@ -56,6 +56,7 @@ module Aspera
   end
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
+    # Aspera Faspex 5 API Client
     class Faspex < Aspera::Rest
       include RestList
 

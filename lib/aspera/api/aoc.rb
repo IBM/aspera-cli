@@ -12,6 +12,7 @@ require 'base64'
 
 module Aspera
   module Api
+    # Aspera on Cloud API client
     class AoC < Rest
       include RestList
 

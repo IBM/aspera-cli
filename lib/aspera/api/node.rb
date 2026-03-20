@@ -14,7 +14,8 @@ require 'net/ssh/buffer'
 
 module Aspera
   module Api
-    # Provides additional functions using node API with gen4 extensions (access keys)
+    # Aspera Node API client
+    # with gen4 extensions (access keys)
     class Node < Rest
       # Format of node scope : node.<access key>:<scope>
       module Scope

@@ -3,6 +3,7 @@
 require 'aspera/api/aoc.rb'
 module Aspera
   module Api
+    # Aspera License Entitlement Engine API client
     class Alee < Aspera::Rest
       def initialize(entitlement_id, customer_id, api_domain: AoC::SAAS_DOMAIN_PROD, version: 'v1')
         super(
