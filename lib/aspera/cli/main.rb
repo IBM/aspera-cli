@@ -105,7 +105,7 @@ module Aspera
           status_table.each do |item|
             worst = TransferAgent.session_status(item[STATUS_FIELD])
             global_status = worst unless worst.eql?(:success)
-            item[STATUS_FIELD] = item[STATUS_FIELD].map(&:to_s).join(',')
+            item[STATUS_FIELD] = item[STATUS_FIELD].join(',')
           end
           raise global_status unless global_status.eql?(:success)
           return result_object_list(status_table)
@@ -354,7 +354,7 @@ module Aspera
           OPTIONS
           #{t}Options begin with a '-' (minus), and value is provided on command line.
           #{t}Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-          #{t}#{ExtendedValue.instance.modifiers.map(&:to_s).join(', ')}
+          #{t}#{ExtendedValue.instance.modifiers.join(', ')}
           #{t}Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
           ARGS

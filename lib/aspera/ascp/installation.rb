@@ -83,16 +83,15 @@ module Aspera
 
       # @return [Hash] with key = file name (String), and value = path to file
       def file_paths
-        return SDK_FILES.each_with_object({}) do |v, m|
-          m[v.to_s] =
-            begin
-              path(v)
-            rescue Errno::ENOENT => e
-              e.message.gsub(/.*assertion failed: /, '').gsub(/\): .*/, ')')
-            rescue => e
-              e.message
-            end
-        end
+        return SDK_FILES.to_h do |v|
+                 [v.to_s, begin
+                   path(v)
+                 rescue Errno::ENOENT => e
+                   e.message.gsub(/.*assertion failed: /, '').gsub(/\): .*/, ')')
+                 rescue => e
+                   e.message
+                 end]
+               end
       end
 
       # TODO: if using another product than SDK, should use files from there

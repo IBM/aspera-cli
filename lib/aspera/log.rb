@@ -26,7 +26,7 @@ class Logger
   # Hash
   # key   [Integer] Log level (e.g. 0 for DEBUG)
   # value [Symbol]  Uppercase log level label (e.g. :DEBUG)
-  SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
+  SEVERITY_LABEL = Severity.constants.to_h{ |name| [Severity.const_get(name), name]}
 
   # Override
   # @param severity [Integer] Log severity as int

@@ -928,10 +928,8 @@ module Aspera
                 # do not process last one
                 break if end_date.nil?
                 # init data for this period
-                period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).each_with_object({}) do |direction, h|
-                  h[direction] = dir_info.each_with_object({}) do |k2, h2|
-                    h2[k2] = 0
-                  end
+                period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).to_h do |direction|
+                  [direction, dir_info.to_h{ |k2| [k2, 0]}]
                 end
                 # find all transfers that were active at this time
                 transfers_data.each do |transfer|

@@ -32,7 +32,7 @@ namespace :release do
     versions[:next] =
       if next_version.to_s.empty?
         major, minor, _patch = versions[:release].split('.').map(&:to_i)
-        [major, minor + 1, 0].map(&:to_s).join('.')
+        [major, minor + 1, 0].join('.')
       else
         next_version
       end

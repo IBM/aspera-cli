@@ -25,7 +25,7 @@ module Aspera
         counts.each do |key_str, count|
           next if count <= 1
           path = (parent_path + [key_str]).join('.')
-          occurrences = key_nodes[key_str].map{ |kn| kn.start_line ? kn.start_line + 1 : 'unknown'}.map(&:to_s).join(', ')
+          occurrences = key_nodes[key_str].map{ |kn| kn.start_line ? kn.start_line + 1 : 'unknown'}.join(', ')
           duplicate_keys << "#{path}: #{occurrences}"
         end
       else

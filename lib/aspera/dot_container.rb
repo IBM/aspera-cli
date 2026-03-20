@@ -78,7 +78,7 @@ module Aspera
               to_insert = current.map{ |i| i['name']}
             # Array of Hashes with only 'name' and 'value' keys -> Hash of key/values
             elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
-              add_elements(path, current.each_with_object({}){ |i, h| h[i['name']] = i['value']})
+              add_elements(path, current.to_h{ |i| [i['name'], i['value']]})
             else
               add_elements(path, current.each_with_index.map{ |v, i| [i, v]})
             end
@@ -86,7 +86,7 @@ module Aspera
             to_insert = current
           end
         end
-        result[path.map(&:to_s).join(OPTION_DOTTED_SEPARATOR)] = to_insert unless to_insert.nil?
+        result[path.join(OPTION_DOTTED_SEPARATOR)] = to_insert unless to_insert.nil?
       end
       result
     end

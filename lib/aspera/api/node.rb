@@ -508,7 +508,7 @@ module Aspera
           # Get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
           # Get settings from name.value array to hash key.value
-          settings = info['settings']&.each_with_object({}){ |i, h| h[i['name']] = i['value']}
+          settings = info['settings']&.to_h{ |i| [i['name'], i['value']]}
           # Check WSS ports
           Transfer::Spec::WSS_FIELDS.each do |i|
             transfer_spec[i] = settings[i] if settings.key?(i)

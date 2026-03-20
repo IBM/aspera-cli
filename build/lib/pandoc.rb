@@ -103,11 +103,11 @@ def markdown_to_html(md:, html:)
 end
 
 # Main execution block when script is run directly
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   # Print usage information
   def print_usage
     warn(<<~USAGE)
-      Usage: #{File.basename($0)} <command> [arguments]
+      Usage: #{File.basename($PROGRAM_NAME)} <command> [arguments]
 
       Commands:
         deps                          List pandoc dependency files
@@ -115,9 +115,9 @@ if __FILE__ == $0
         html <input.md> <output.html> Convert Markdown to HTML
 
       Examples:
-        #{File.basename($0)} deps
-        #{File.basename($0)} pdf README.md output.pdf
-        #{File.basename($0)} html README.md output.html
+        #{File.basename($PROGRAM_NAME)} deps
+        #{File.basename($PROGRAM_NAME)} pdf README.md output.pdf
+        #{File.basename($PROGRAM_NAME)} html README.md output.html
     USAGE
   end
 

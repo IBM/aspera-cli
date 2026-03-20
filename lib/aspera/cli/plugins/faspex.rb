@@ -211,7 +211,7 @@ module Aspera
                 end
               # add special key
               package['items'] = package['link'].is_a?(Array) ? package['link'].length : 0
-              package['metadata'] = package['metadata']['field'].each_with_object({}){ |i, m| m[i['name']] = i['content']}
+              package['metadata'] = package['metadata']['field'].to_h{ |i| [i['name'], i['content']]}
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient

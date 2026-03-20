@@ -99,7 +99,7 @@ def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
     PATH_TST_ASC_LCL,
     File.join(conf_data('server.inside_folder'), 'other_name')
-  ].map(&:to_s).join("\n")) unless PATH_FILE_PAIR_LIST2.exist?
+  ].join("\n")) unless PATH_FILE_PAIR_LIST2.exist?
   PATH_FILE_PAIR_LIST2
 end
 

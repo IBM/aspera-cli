@@ -79,7 +79,7 @@ module Aspera
     end
 
     def current_items(persist_category)
-      current_files(persist_category).each_with_object({}){ |i, h| h[File.basename(i, FILE_SUFFIX)] = File.read(i)}
+      current_files(persist_category).to_h{ |i| [File.basename(i, FILE_SUFFIX), File.read(i)]}
     end
 
     private

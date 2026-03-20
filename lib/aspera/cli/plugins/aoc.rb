@@ -887,7 +887,7 @@ module Aspera
 
         def reject_packages_from_persistency(all_packages, skip_ids_persistency)
           return if skip_ids_persistency.nil?
-          skip_package = skip_ids_persistency.data.each_with_object({}){ |i, m| m[i] = true}
+          skip_package = skip_ids_persistency.data.to_h{ |i| [i, true]}
           all_packages.reject!{ |pkg| skip_package[pkg['id']]}
         end
 

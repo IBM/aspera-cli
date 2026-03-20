@@ -11,7 +11,7 @@ VENV_FLAG = VENV_DIR / 'bin/activate'
 
 def run_venv(*args)
   nenwenv = {
-    'PATH'        => [VENV_DIR / 'bin', ENV['PATH']].map(&:to_s).join(':'),
+    'PATH'        => [VENV_DIR / 'bin', ENV['PATH']].join(':'),
     'VIRTUAL_ENV' => VENV_DIR.to_s
   }
   run(*args, env: nenwenv)
