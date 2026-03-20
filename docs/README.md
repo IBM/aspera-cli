@@ -1,10 +1,11 @@
 # Command Line Interface for IBM Aspera products
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
-PANDOC_META_BEGIN
-subtitle: "ascli 4.26.0.pre"
-author: "Laurent Martin"
-PANDOC_META_END
+PANDOC_DEFAULTS_BEGIN
+metadata:
+  subtitle: "ascli 4.26.0.pre"
+  author: "Laurent Martin"
+PANDOC_DEFAULTS_END
 -->
 <!-- markdownlint-disable MD033 -->
 
@@ -13,8 +14,6 @@ PANDOC_META_END
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
 <!-- markdownlint-disable MD060 -->
-
-## Introduction
 
 ![Hootput the Owl](mascot.svg)
 
@@ -30,21 +29,49 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-Laurent Martin/2016-2026
+## Introduction
 
-The aspera-cli Ruby gem offers a powerful command-line interface (CLI, `ascli`) for IBM Aspera software, enabling seamless interaction with Aspera APIs and high-performance file transfers.
-It also serves as a useful resource for developers who want to explore and understand the Aspera API ecosystem.
+### Overview
 
-Ruby gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+The IBM Aspera Command Line Interface (`ascli`) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
+Designed for automation, scripting, and integration scenarios, `ascli` enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
-Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+### Key Features
 
-Minimum required Ruby version is version: >= 3.1.
+**Multi-Product Integration**
+: Unified interface supporting Aspera on Cloud, Faspex (v4 and v5), Shares, Node API, Console, Orchestrator, and High-Speed Transfer Server (HSTS).
 
-> [!WARNING]
-> The minimum Ruby version will be 3.2 in a future version.
+**Flexible Authentication**
+: Support for OAuth 2.0, JWT, Basic Authentication, and SSH key-based authentication across different Aspera products.
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)
+**Transfer Automation**
+: High-speed FASP transfers with multiple agent support (Direct, Connect, Node, HTTP Gateway, Transfer Daemon).
+
+**Configuration Management**
+: Persistent configuration presets, environment variables, and flexible option handling for streamlined operations.
+
+**Developer Friendly**
+: Comprehensive logging, debugging capabilities, and API exploration tools for development and troubleshooting.
+
+### Target Audience
+
+This manual is intended for:
+
+- **System Administrators** managing Aspera infrastructure
+- **DevOps Engineers** integrating Aspera into CI/CD pipelines
+- **Developers** building automation scripts and workflows
+- **IT Professionals** performing file transfer operations
+
+### Document Structure
+
+This manual is organized into the following sections:
+
+1. **Quick Start** - Getting started with basic operations
+1. **Installation** - Setup procedures for various platforms
+1. **Command Line Interface** - Syntax, options, and usage patterns
+1. **Plugins** - Product-specific operations and examples
+1. **Troubleshooting** - Common issues and solutions
+1. **Reference** - Technical specifications and advanced topics
 
 ### When to use and when not to use
 
@@ -86,10 +113,9 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 Examples of command-line operations are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
 Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
-> [!NOTE]
-> All command line examples in sections titled **Tested commands for `_plugin_name_`** are verified during version validation.
+Command line examples listed in sections titled **Tested commands for `_plugin_name_`** are verified during version validation.
 
-Command line arguments like `<NAME>` in examples, represent user-provided values, not fixed value commands.
+Command line arguments formatted as `<NAME>` in examples represent user-provided values, not fixed value commands.
 
 `ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
 
@@ -2687,7 +2713,7 @@ ascli config preset set GLOBAL version_check_days 0
 
 #### Tested commands for `config`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli config` in front of the following commands:
 
 ```shell
@@ -2706,7 +2732,7 @@ coffee --log-level=trace2 --log-format=caller
 coffee --ui=text
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
 coffee --ui=text --image=@json:'{"text":true}'
-detect '$(remote_host)'
+detect app.example.com
 detect https://faspex5.example.com/path
 detect https://faspex5.example.com/path faspex5
 detect https://node.example.com/path
@@ -5365,15 +5391,15 @@ Items: 4/4
 ╭────────────┬─────────────────────╮
 │ id         │ name                │
 ╞════════════╪═════════════════════╡
-│ oXPUyJ7JpQ │ PRI Sydney          │
-│ <NAME> │ ascli_test_web      │
-│ TDNl2bLZqw │ ascli_web           │
-│ VTh92i5OfQ │ shannon             │
+│ oXPUyJ7JpQ │ ALM                 │
+│ <ID> │ web_client         │
+│ TDNl2bLZqw │ jwt_client          │
+│ VTh92i5OfQ │ iPaaS               │
 ╰────────────┴─────────────────────╯
 ```
 
 ```shell
-ascli aoc admin client modify <NAME> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin client modify <ID> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```text
@@ -6686,7 +6712,7 @@ For instructions, refer to section `find` for plugin `node`.
 
 ### Tested commands for `aoc`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli aoc` in front of the following commands:
 
 ```shell
@@ -6957,7 +6983,7 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ### Tested commands for `ats`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli ats` in front of the following commands:
 
 ```shell
@@ -7005,7 +7031,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ### Tested commands for `server`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli server` in front of the following commands:
 
 ```shell
@@ -7597,7 +7623,7 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 
 ### Tested commands for `node`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli node` in front of the following commands:
 
 ```shell
@@ -7923,7 +7949,7 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 
 ### Tested commands for `faspex5`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli faspex5` in front of the following commands:
 
 ```shell
@@ -8039,10 +8065,10 @@ To select another inbox, use option `box` with one of the following values:
 Use the following command to send a package:
 
 ```shell
-ascli faspex5 packages send [extended value: Hash with package info] [files...]
+ascli faspex5 packages send <PACKAGE_DATA> <FILE_LIST> ...
 ```
 
-The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint `POST /packages`.
+The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint [`POST /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#createPackageRecord).
 Refer to the API reference for a full list of supported fields, or inspect such request when interacting with a browser.
 
 The following fields are required:
@@ -8075,6 +8101,15 @@ Valid values for `recipient_type` are (API):
 - `external_user`
 - `distribution_list`
 - `shared_inbox`
+
+Other "recipient" fields are also defined in the API and can be used:
+
+- `private_recipients`
+- `notified_on_upload`
+- `notified_on_download`
+- `notified_on_receipt`
+
+If the provided list is only an `Array` of `String`, then fields `name` and `recipient_type` are resolved automatically using the user's `contacts`.
 
 #### Simplified recipient format
 
@@ -8613,7 +8648,7 @@ ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 
 ### Tested commands for `faspex`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli faspex` in front of the following commands:
 
 ```shell
@@ -8684,7 +8719,7 @@ ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$u
 
 ### Tested commands for `shares`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli shares` in front of the following commands:
 
 ```shell
@@ -8732,7 +8767,7 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ### Tested commands for `console`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli console` in front of the following commands:
 
 ```shell
@@ -8749,7 +8784,7 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 ### Tested commands for `orchestrator`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli orchestrator` in front of the following commands:
 
 ```shell
@@ -8895,7 +8930,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 ### Tested commands for `cos`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli cos` in front of the following commands:
 
 ```shell
@@ -8910,7 +8945,7 @@ node upload test_file.bin
 
 ### Tested commands for `httpgw`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli httpgw` in front of the following commands:
 
 ```shell
@@ -8926,7 +8961,7 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 
 ### Tested commands for `faspio`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli faspio` in front of the following commands:
 
 ```shell
@@ -8942,7 +8977,7 @@ Retrieve information on subscription.
 
 ### Tested commands for `alee`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli alee` in front of the following commands:
 
 ```shell
@@ -9251,7 +9286,7 @@ If the preview generator does not have access to files on the file system (it is
 
 ### Tested commands for `preview`
 
-> [!{type}]
+> [!NOTE]
 > Add `ascli preview` in front of the following commands:
 
 ```shell
@@ -9275,7 +9310,7 @@ trevents --once-only=yes --skip-types=office --log-level=info
 
 ## Operational Utilities
 
-This section covers the specialized modules and utilities used to integrate ascli into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and asession and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
+This section covers the specialized modules and utilities used to integrate `ascli` into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and `asession` and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
 
 ### IBM Aspera Sync
 
@@ -10086,3 +10121,11 @@ ascli config coffee --ui=text
 ascli config coffee --ui=text --image=@json:'{"text":true}'
 ascli config coffee
 ```
+
+### References
+
+Ruby gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+
+Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+
+[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)

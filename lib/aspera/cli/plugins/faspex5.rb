@@ -108,16 +108,17 @@ module Aspera
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
-        def normalize_recipients(parameters)
-          return unless parameters.key?('recipients')
-          Aspera.assert_type(parameters['recipients'], Array){'recipients'}
+        def normalize_recipients(parameters, type)
+          type = type.to_s
+          return unless parameters.key?(type)
+          Aspera.assert_type(parameters[type], Array){type}
           recipient_types = Api::Faspex::RECIPIENT_TYPES
           if parameters.key?('recipient_types')
             recipient_types = parameters['recipient_types']
             parameters.delete('recipient_types')
             recipient_types = [recipient_types] unless recipient_types.is_a?(Array)
           end
-          parameters['recipients'].map! do |recipient_data|
+          parameters[type].map! do |recipient_data|
             # If just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
               matched = @api_v5.lookup_by_name('contacts', recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
@@ -282,7 +283,7 @@ module Aspera
               recipient_type: @api_v5.pub_link_context['recipient_type']
             }]
           end
-          normalize_recipients(parameters)
+          PACKAGE_RECIPIENT_TYPES.each{ |type| normalize_recipients(parameters, type)}
           # User specified content prot in tspec, but faspex requires in package creation
           # `transfer_spec/upload` will set `content_protection`
           if transfer.user_transfer_spec['content_protection'] && !parameters.key?('ear_enabled')
@@ -718,7 +719,8 @@ module Aspera
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
         WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
-        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES
+        PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
+        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES
       end
     end
   end

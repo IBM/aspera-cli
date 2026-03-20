@@ -1,10 +1,11 @@
 # Command Line Interface for IBM Aspera products
 <!--
 <%=doc_warn('Yes edit this file!')%>
-PANDOC_META_BEGIN
-subtitle: "<%=cmd%> <%=build_version%>"
-author: "<%=gemspec.authors.join(', ')%>"
-PANDOC_META_END
+PANDOC_DEFAULTS_BEGIN
+metadata:
+  subtitle: "<%=cmd%> <%=build_version%>"
+  author: "<%=gemspec.authors.join(', ')%>"
+PANDOC_DEFAULTS_END
 -->
 
 <!-- NOTE CAUTION WARNING IMPORTANT TIP INFO -->
@@ -12,8 +13,6 @@ PANDOC_META_END
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD024 -->
 <!-- markdownlint-disable MD060 -->
-
-## Introduction
 
 ![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
 
@@ -29,18 +28,49 @@ Need to debug? I’ll show you what’s going on under the hood.
 
 Think of me as Aspera’s command-line sidekick: quick, reliable, and a little no-nonsense. You bring the files; I’ll bring the horsepower."
 
-<%=gemspec.authors.join(', ')%>/2016-<%=Time.new.year%>
+## Introduction
 
-The <%=gemspec.name%> Ruby gem offers a powerful command-line interface (CLI, <%=tool%>) for IBM Aspera software, enabling seamless interaction with Aspera APIs and high-performance file transfers.
-It also serves as a useful resource for developers who want to explore and understand the Aspera API ecosystem.
+### Overview
 
-Ruby gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
+The IBM Aspera Command Line Interface (<%=tool%>) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
+Designed for automation, scripting, and integration scenarios, <%=tool%> enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
-Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['documentation_uri']%>)
+### Key Features
 
-Minimum required Ruby version is <%=ruby_version%>.
+**Multi-Product Integration**
+: Unified interface supporting Aspera on Cloud, Faspex (v4 and v5), Shares, Node API, Console, Orchestrator, and High-Speed Transfer Server (HSTS).
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)
+**Flexible Authentication**
+: Support for OAuth 2.0, JWT, Basic Authentication, and SSH key-based authentication across different Aspera products.
+
+**Transfer Automation**
+: High-speed FASP transfers with multiple agent support (Direct, Connect, Node, HTTP Gateway, Transfer Daemon).
+
+**Configuration Management**
+: Persistent configuration presets, environment variables, and flexible option handling for streamlined operations.
+
+**Developer Friendly**
+: Comprehensive logging, debugging capabilities, and API exploration tools for development and troubleshooting.
+
+### Target Audience
+
+This manual is intended for:
+
+- **System Administrators** managing Aspera infrastructure
+- **DevOps Engineers** integrating Aspera into CI/CD pipelines
+- **Developers** building automation scripts and workflows
+- **IT Professionals** performing file transfer operations
+
+### Document Structure
+
+This manual is organized into the following sections:
+
+1. **Quick Start** - Getting started with basic operations
+1. **Installation** - Setup procedures for various platforms
+1. **Command Line Interface** - Syntax, options, and usage patterns
+1. **Plugins** - Product-specific operations and examples
+1. **Troubleshooting** - Common issues and solutions
+1. **Reference** - Technical specifications and advanced topics
 
 ### When to use and when not to use
 
@@ -82,10 +112,9 @@ While `ascp` can be used directly, it is limited to basic send/receive operation
 Examples of command-line operations are shown using a shell such as: `bash` (Linux) or `zsh` (macOS).
 Using [Windows PowerShell or cmd](#shell-parsing-for-windows) is also possible.
 
-> [!NOTE]
-> All command line examples in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
+Command line examples listed in sections titled **<%=sample_commands_title(:_plugin_name_)%>** are verified during version validation.
 
-Command line arguments like `<%=ph :name%>` in examples, represent user-provided values, not fixed value commands.
+Command line arguments formatted as `<%=ph :name%>` in examples represent user-provided values, not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
 
@@ -4823,15 +4852,15 @@ Items: 4/4
 ╭────────────┬─────────────────────╮
 │ id         │ name                │
 ╞════════════╪═════════════════════╡
-│ oXPUyJ7JpQ │ PRI Sydney          │
-│ <%=ph :name%> │ ascli_test_web      │
-│ TDNl2bLZqw │ ascli_web           │
-│ VTh92i5OfQ │ shannon             │
+│ oXPUyJ7JpQ │ ALM                 │
+│ <%=ph :id%> │ web_client         │
+│ TDNl2bLZqw │ jwt_client          │
+│ VTh92i5OfQ │ iPaaS               │
 ╰────────────┴─────────────────────╯
 ```
 
 ```shell
-<%=cmd%> aoc admin client modify <%=ph :name%> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+<%=cmd%> aoc admin client modify <%=ph :id%> @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```text
@@ -7125,10 +7154,10 @@ To select another inbox, use option `box` with one of the following values:
 Use the following command to send a package:
 
 ```shell
-<%=cmd%> faspex5 packages send [extended value: Hash with package info] [files...]
+<%=cmd%> faspex5 packages send <%=ph :package_data%> <%=ph :file_list%> ...
 ```
 
-The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint `POST /packages`.
+The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint [`POST /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#createPackageRecord).
 Refer to the API reference for a full list of supported fields, or inspect such request when interacting with a browser.
 
 The following fields are required:
@@ -7161,6 +7190,15 @@ Valid values for `recipient_type` are (API):
 - `external_user`
 - `distribution_list`
 - `shared_inbox`
+
+Other "recipient" fields are also defined in the API and can be used:
+
+- `private_recipients`
+- `notified_on_upload`
+- `notified_on_download`
+- `notified_on_receipt`
+
+If the provided list is only an `Array` of `String`, then fields `name` and `recipient_type` are resolved automatically using the user's `contacts`.
 
 #### Simplified recipient format
 
@@ -8194,7 +8232,7 @@ If the preview generator does not have access to files on the file system (it is
 
 ## Operational Utilities
 
-This section covers the specialized modules and utilities used to integrate ascli into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and asession and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
+This section covers the specialized modules and utilities used to integrate <%=tool%> into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and `asession` and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
 
 ### IBM Aspera Sync
 
@@ -8847,3 +8885,11 @@ Enjoy a coffee on me:
 <%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
 <%=cmd%> config coffee
 ```
+
+### References
+
+Ruby gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
+
+Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['documentation_uri']%>)
+
+[Aspera APIs on IBM developer](https://developer.ibm.com/apis/catalog/?search=aspera)

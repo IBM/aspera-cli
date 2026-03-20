@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `faspex5`: when sending a package, recipients specified in fields `private_recipients`, `notified_on_upload`, `notified_on_download` and `notified_on_receipt` are now also expanded like field `recipients`.
+
 ### Issues Fixed
 
 ### Breaking Changes
