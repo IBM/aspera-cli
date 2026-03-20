@@ -303,6 +303,7 @@ class DocHelper
     ['$(PATH_FILE_LIST)', 'file_list.txt'],
     ['$(PATH_VAULT_FILE)', '/secure/vault_file'],
     ['$(path_file_pair_list)', 'file_pair_list.txt'],
+    ['$(remote_host)', 'app.example.com'],
     ['"my_password"', '"my_password_here"'],
     ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
     [/^--base=.*/, '--base=test'],

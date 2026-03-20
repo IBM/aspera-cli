@@ -22,7 +22,7 @@ clean:
 
 There is a default target for `%.pdf` from `%.md`.
 
-If the source and destination have different basenames or path, then it is possible to do:
+If the source and destination have different base names or path, then it is possible to do:
 
 ```makefile
 $(eval $(call markdown_to_pdf,source.md,target.pdf))
@@ -30,13 +30,14 @@ $(eval $(call markdown_to_pdf,source.md,target.pdf))
 
 1. Run `make` to generate the PDF file.
 
-The markdown file can include a section like this with `pandoc` metadata:
+The markdown file can include a section like this with `pandoc` defaults:
 
 ```xml
 <!--
-PANDOC_META_BEGIN
-subtitle: "subtitle here"
-author: "Johnny Beegood"
-PANDOC_META_END
+PANDOC_DEFAULTS_BEGIN
+metadata:
+  subtitle: "subtitle here"
+  author: "Johnny Beegood"
+PANDOC_DEFAULTS_END
 -->
 ```
