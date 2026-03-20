@@ -1,7 +1,8 @@
--- Replace raw HTML line breaks (<br/>) inside table cells with proper Pandoc
--- LineBreak elements, ensuring clean cross-format rendering of tables.
 -- luacheck: globals pandoc
 
+-- Replace raw HTML line breaks (`<br/>`) inside table cells with proper Pandoc
+-- LineBreak elements, ensuring clean cross-format rendering of tables.
+--
 -- https://pandoc.org/lua-filters.html#pandoc.Table
 function Table(tbl)
     for _, body in ipairs(tbl.bodies) do

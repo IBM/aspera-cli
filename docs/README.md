@@ -5,6 +5,9 @@ PANDOC_DEFAULTS_BEGIN
 metadata:
   subtitle: "ascli 4.26.0.pre"
   author: "Laurent Martin"
+variables:
+  include-before:
+    - ''
 PANDOC_DEFAULTS_END
 -->
 <!-- markdownlint-disable MD033 -->

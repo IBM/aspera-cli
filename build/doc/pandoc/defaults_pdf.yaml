@@ -7,8 +7,6 @@ variables:
   monofont: "IBM Plex Mono"
   urlcolor: blue
   geometry: margin=12mm
-  include-before:
-    - '\newpage'
 include-in-header:
   - pdf_in_header.tex
 include-after-body:

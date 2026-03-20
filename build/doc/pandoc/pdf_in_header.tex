@@ -1,6 +1,6 @@
-% remove creation date and other optional info, so that only change in text trigger checkin
+% Remove creation date and other optional info, so that only change in text triggers checkin.
 \pdfvariable suppressoptionalinfo 767
-% fancy verbatim
+% Fancy verbatim (code)
 % https://ctan.org/pkg/fvextra
 \usepackage{fvextra}
 \fvset{breaklines}
@@ -29,6 +29,8 @@
     \includegraphics[width=\paperwidth]{pdf_cover_bottom.png}
   }
 }
+% Underlining and emphasis
+% https://ctan.org/pkg/ulem
 \usepackage{ulem}
 % underline bold text
 \renewcommand{\textbf}[1]{\uline{#1}}
@@ -37,9 +39,9 @@
 \renewcommand{\texttt}[1]{
   \colorbox{lightgray}{\oldtexttt{#1}}
 }
-% tight box around code
+% Tight box around code.
 \fboxsep1pt
-% black border for quotes
+% Black border for quotes.
 \usepackage{framed}
 \renewenvironment{quote}
   {\def\FrameCommand{\vrule width 3pt \hspace{10pt}}
@@ -49,13 +51,16 @@
 \setlength{\parindent}{2em}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins, breakable}
+% Font Awesome 5 for icons in admonitions
 \usepackage{fontawesome5}
+% Page header and footers
+\usepackage{fancyhdr}
+% Tables
 \usepackage{longtable}
 \usepackage{booktabs}
-\usepackage{fancyhdr}
 \usepackage[table]{xcolor}
 \definecolor{table_row_color}{gray}{0.96}
-% alternate rowcolors in longtable
+% Alternate rowcolors in longtable.
 \let\oldlongtable\longtable
 \let\endoldlongtable\endlongtable
 \renewenvironment{longtable}

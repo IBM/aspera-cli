@@ -5,6 +5,9 @@ PANDOC_DEFAULTS_BEGIN
 metadata:
   subtitle: "<%=cmd%> <%=build_version%>"
   author: "<%=gemspec.authors.join(', ')%>"
+variables:
+  include-before:
+    - ''
 PANDOC_DEFAULTS_END
 -->
 
