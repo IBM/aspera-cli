@@ -250,8 +250,8 @@ There are several ways to install `ascli`:
 
 The following sections describe the various installation methods.
 
-An internet connection is required for the installation.
-If you do not have internet access, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
+An internet connection is required during installation.
+If you do not have internet access, refer to section [Installation without internet access](#installation-in-an-air-gapped-environment).
 
 ### Single file executable
 
@@ -278,7 +278,7 @@ chmod a+x ascli
 
 > [!WARNING]
 > On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
-> If the minimuim version is not met, then executables (`ascp`, `transferd`) will exit with error.
+> If the minimum version is not met, then executables (`ascp`, `transferd`) will exit with error.
 
 On Linux, you can check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
@@ -589,7 +589,7 @@ JRUBY_OPTS=--dev ascli -v
 #### Optional gems
 
 Some additional gems are required for either development, or some runtime specific features.
-For JRuby, some replacement gems are proposed, or are nor available at all.
+For JRuby, some replacement gems are proposed, or are not available at all.
 Those are not installed as part of dependencies because they involve compilation of native code but concern less-used features.
 
 See [Gemfile](../Gemfile):
@@ -790,7 +790,7 @@ Several methods are provided to start a transfer.
 Use of a local client ([`direct`](#agent-direct) transfer agent) is one of them, but other methods are available.
 Refer to section: [Transfer Agents](#transfer-clients-agents)
 
-### Installation in air gapped environment
+### Installation in an air-gapped environment
 
 > [!NOTE]
 > No pre-packaged version is provided yet.
@@ -973,8 +973,8 @@ As shown in the quick start, if you prefer to keep a running container with a sh
 > `ascli` is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 You may also probably want that files downloaded in the container are directed to the host.
-For example, files transfered with `ascli` through folder `/xferfiles` (right hand side) would be available on host in `$HOME/xferdir`.
-In this case you need also to specify the shared transfer folder as a volume:
+For example, files transferred with `ascli` through folder `/xferfiles` (right hand side) would be available on host in `$HOME/xferdir`.
+In this case you also need to specify the shared transfer folder as a volume:
 
 ```shell
 --volume $HOME/xferdir:/xferfiles
@@ -1664,7 +1664,7 @@ ascli config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
 ### Positional Arguments and Options
 
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
-The tokenization of the command line is typically done by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
+Command line tokenization is typically performed by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
 
 `ascli` handles two types of command line arguments:
 
@@ -3167,7 +3167,7 @@ mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 
 #### Using an application to generate a key pair
 
-Many applications are available, including on internet, to generate key pairs.
+Many applications are available, including on the internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
 > [!WARNING]
@@ -3176,7 +3176,7 @@ For example: <https://cryptotools.net/rsagen>
 ### Web service
 
 Some plugins start a local web server.
-This server can server HTTP or HTTPS (with certificate):
+This server can serve HTTP or HTTPS (with certificate):
 
 The following parameters are supported:
 
@@ -3347,7 +3347,7 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 | `token_cache_max_age`     | `Integer` | `1800`          | `OAuth` class |
 | `token_refresh_threshold` | `Integer` | `120`           | `OAuth` class |
 
-Time values are in set **seconds** and can be of type either `Integer` or `Float`.
+Time values are set in **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://github.com/ruby/net-http/blob/master/lib/net/http.rb).
 
@@ -3493,7 +3493,7 @@ It provides the following commands for `ascp` sub-command:
 - `show` : shows the path of `ascp` used
 - `use` : specify the `ascp` path to use
 - `products` : list Aspera transfer products available locally
-- `connect` : list and download connect client versions available on internet
+- `connect` : list and download connect client versions available on the internet
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
@@ -5531,7 +5531,7 @@ The following parameters are supported:
 | `pmax`    | `ascli` | Maximum number of pages to request.  |
 | other     | Native | Other specific parameters depending on resource type. |
 
-> [!INFO]
+> [!NOTE]
 > Both `max` and `pmax` are processed internally in `ascli`, not included in actual API call and limit the number of successive pages requested to API.
 > `ascli` will return all values using paging if not provided.
 > `page` and `per_page` are normally added by `ascli` to build successive API calls to get all values if there are more than 1000.
@@ -5682,7 +5682,7 @@ Refer to section **Examples** of [ATS](#plugin-ats-ibm-aspera-transfer-service) 
 Aspera on Cloud Shared folders are implemented through a special type of file: `link`.
 A `link` is the equivalent of a symbolic link on a file system: it points to another folder (not file).
 
-Listing a link (in terminal position of path) will information on the link itself, not the content of the folder it points to.
+Listing a link (in terminal position of path) will show information on the link itself, not the content of the folder it points to.
 To list the target folder content, add a `/` at the end of the path.
 
 Example:
@@ -5756,7 +5756,7 @@ ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --displa
 +-------+---------+
 ```
 
-#### Example: Find deactivated users since more than 2 years
+#### Example: Find deactivated users for more than 2 years
 
 ```shell
 ascli aoc admin user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
@@ -7213,7 +7213,7 @@ Option `node_api` (`Hash`) controls some options of API used, with the following
 
 | Parameter| Default | Description |
 |----------|---------|-------------|
-| `cache`  | `true`  | `true` Folder content retrieved from Redis database (faster).<br/>`false` Folder content retrieved from storage. |
+| `cache`  | `true`  | `true` Folder content is retrieved from the Redis database (faster).<br/>`false` Folder content retrieved from storage. |
 | `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<br/>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
 | `accept_v4` | `true` | `true` (default) uses API header: `Accept-Version: 4.0`.<br/>`false` uses legacy method (refer to node API). |
 | `per_page` | - | Requested number of items per API call.<br/>Set to `nil` (`@none:`) to deactivate paging.<br/>Default: `1000` when `accept_v4` is `true`. |
@@ -7910,7 +7910,7 @@ The user will use the following options:
 
 ### Faspex 5 public link authentication
 
-If all you have is a public link received by email or other, you can still do authorized actins with it.
+If all you have is a public link received by email or other, you can still do authorized actions with it.
 
 For example, for a public link to post a package:
 
@@ -9296,7 +9296,9 @@ trevents --once-only=yes --skip-types=office --log-level=info
 
 ## Operational Utilities
 
-This section covers the specialized modules and utilities used to integrate `ascli` into your broader operational infrastructure. While the core plugins handle data movement, these tools provide the "connective tissue" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and `asession` and module manage internal session states and environment configurations. Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
+This section covers the specialized modules and utilities used to integrate `ascli` into your broader operational infrastructure.
+While the core plugins handle data movement, these tools provide the "integration layer" for enterprise environments: Aspera Sync and Hot Folder enable automated, folder-based synchronization; Nagios and SMTP modules provide health monitoring and automated email alerting for transfer status; and `asession` and module manage internal session states and environment configurations.
+Together, these features transform the CLI from a manual tool into a fully integrated component of an automated, monitored data workflow.
 
 ### IBM Aspera Sync
 
@@ -9631,7 +9633,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 - Send only files not modified since the last X seconds:
   - `--exclude-newer-than` (`exclude_newer_than`)
   - `--exclude-older-than` (`exclude_older_than`)
-- Top level folder shall not be created on destination
+- Top level folder should not be created on destination
   - `--src-base` (`src_base`)
 
 > [!NOTE]
