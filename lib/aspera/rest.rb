@@ -371,8 +371,11 @@ module Aspera
       end
       result_http = nil
       result_data = nil
+      # initialize with number of initial retries allowed, nil gives zero
+      tries_remain_redirect = @redirect_max
       # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
       begin
+        Log.log.debug("send request (retries=#{tries_remain_redirect})")
         # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
         # URI.escape()
         separator = ['', '/'].include?(subpath) ? '' : '/'
@@ -406,9 +409,6 @@ module Aspera
         Log.dump(:req_body, req.body, level: :trace1)
         # we try the call, and will retry on some error types
         error_tries ||= 1 + RestParameters.instance.retry_max
-        # initialize with number of initial retries allowed, nil gives zero
-        tries_remain_redirect = @redirect_max if tries_remain_redirect.nil?
-        Log.log.debug("send request (retries=#{tries_remain_redirect})")
         result_mime = nil
         file_saved = false
         # make http request (pipelined)
