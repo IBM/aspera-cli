@@ -38,19 +38,19 @@ module Aspera
           @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
         end
 
-        # File list is provided directly with ascp arguments
-        # @columns ascp_args [Array,NilClass] ascp arguments
+        # File list is provided directly with `ascp` arguments
+        # @columns ascp_args [Array,NilClass] `ascp` arguments
         def ascp_args_file_list?(ascp_args)
           ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end
       end
 
-      # @param job_spec        [Hash]    Transfer spec
-      # @param ascp_args       [Array]   Other ascp args
-      # @param quiet           [Boolean] Remove ascp output
-      # @param trusted_certs   [Array]   Trusted certificates
-      # @param client_ssh_key  [:rsa,:dsa] :rsa or :dsa
-      # @param check_ignore_cb [Proc]    Callback
+      # @param job_spec        [Hash]          Transfer specification
+      # @param ascp_args       [Array]         Other `ascp` args
+      # @param quiet           [Boolean]       Remove `ascp` progress bar if `true`
+      # @param client_ssh_key  [:rsa,:dsa]     Type of Aspera Client SSH key to use.
+      # @param trusted_certs   [Array<String>] List of path to trusted certificates stores when using WSS
+      # @param check_ignore_cb [Proc]          Callback to check if WSS connection shall ignore certificate validity
       def initialize(
         job_spec,
         ascp_args:       nil,
