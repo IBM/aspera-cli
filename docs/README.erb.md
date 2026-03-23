@@ -86,7 +86,7 @@ Example implementations can be found at: <https://github.com/laurent-martin/aspe
 For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
-**CLI landscape overview**
+## CLI landscape overview
 
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
 Every Aspera transfer involves an `ascp` process on both the client and server sides.
