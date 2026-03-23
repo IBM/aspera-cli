@@ -49,6 +49,18 @@ module BuildTools
     end
   end
 
+  # Download gem and dependencies to folder
+  # @param gem_location [String] Path to gem file or <name>:<version>
+  # @param destination_path [Pathname] Path to folder where gems files will be stored
+  def get_dependency_gems(gem_location, destination_path)
+    tmp_install_ruby = TMP / 'gem_deps_cache'
+    run('gem', 'install', gem_location, '--no-document', '--install-dir', tmp_install_ruby)
+    (tmp_install_ruby / 'cache').each_child do |child|
+      child.rename(destination_path / child.basename)
+    end
+    tmp_install_ruby.rmtree
+  end
+
   # Download the transfer.proto file into a temporary folder
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
   def download_proto_file(tmp_proto_folder)
@@ -99,7 +111,7 @@ module BuildTools
     Aspera::Cli::BoolValue.true?(ENV.fetch(var_name, default).downcase.to_sym)
   end
 
-  module_function :log, :run, :drun, :dry_run?, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key, :built_gem_file, :use_specific_version, :env_var_true?
+  module_function :log, :run, :drun, :dry_run?, :gems_in_group, :download_proto_file, :build_version, :check_gem_signing_key, :built_gem_file, :use_specific_version, :env_var_true?, :get_dependency_gems
 end
 
 # Log control for rake

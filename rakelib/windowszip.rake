@@ -20,28 +20,30 @@ Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
 RUBY_RELEASES_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases'
 MS_VC_BASE_URL         = 'https://aka.ms/vc14'
+# "resources" sub-folder
 ARCHIVE_FOLDER_NAME    = 'resources'
 VC_REDIST_FILENAME = 'vc_redist.x64.exe'
 
-# in template binding
+# Used in install.erb.ps1 template
 def vc_redist_exe
   VC_REDIST_FILENAME
 end
 
 # Zip a directory
-# @param source_folder [String] Source folder to zip
-# @param zip_path [String] Target zip file path
+# @param source_folder [Pathname] Source folder to zip
+# @param zip_path      [Pathname] Target zip file path
 # @return [nil]
 def zip_directory(source_folder, zip_path)
-  source_folder = File.expand_path(source_folder)
-  Aspera.assert(Dir.exist?(source_folder)){"Source directory not found: #{source_folder}"}
-  File.delete(zip_path) if File.exist?(zip_path)
-  prefix_length = (source_folder.length + 1)
+  Aspera.assert(source_folder.exist?){"Source directory not found: #{source_folder}"}
+  Aspera.assert(source_folder.directory?){"Expecting directory: #{source_folder}"}
+  source_folder = source_folder.expand_path
+  zip_path.delete if zip_path.exist?
   Zip::File.open(zip_path, create: true) do |zipfile|
-    Dir.glob(File.join(source_folder, '**', '*')).each do |path|
-      zipfile.add(path[prefix_length..-1], path)
+    Pathname.glob(source_folder.join('**', '*')).each do |path|
+      zipfile.add(path.relative_path_from(source_folder), path.to_s)
     end
   end
+  nil
 end
 
 namespace :windowszip do
@@ -60,32 +62,27 @@ namespace :windowszip do
     log.info("Building in #{path_build_dir}")
 
     log.info('Getting gem dependencies')
-    tmp_install_ruby = path_build_dir / 'tmpruby'
-    run('gem', 'install', "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", '--no-document', '--install-dir', tmp_install_ruby)
-    File.rename(File.join(tmp_install_ruby, 'cache'), path_resources_dir)
-    tmp_install_ruby.rmtree
+    get_dependency_gems("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", path_resources_dir)
 
     log.info('Getting Aspera SDK')
     sdk_url  = Aspera::Ascp::Installation.instance.sdk_url_for_platform(platform: 'windows-x86_64')
     sdk_base = sdk_url.gsub(%r{/[^/]+$}, '')
     sdk_file = sdk_url.gsub(%r{^.+/}, '')
     Aspera::Rest.new(base_url: sdk_base, redirect_max: 5)
-      .read(sdk_file, save_to_file: File.join(path_resources_dir, sdk_file))
+      .read(sdk_file, save_to_file: path_resources_dir / sdk_file)
 
     log.info('Getting Ruby')
     ruby_installer_path = "download/RubyInstaller-#{install_ruby_version}/#{ruby_installer_exe}"
     Aspera::Rest.new(base_url: RUBY_RELEASES_BASE_URL, redirect_max: 5)
-      .read(ruby_installer_path, save_to_file: File.join(path_resources_dir, ruby_installer_exe))
+      .read(ruby_installer_path, save_to_file: path_resources_dir / ruby_installer_exe)
 
     log.info('Getting VC++ Redistributable')
     Aspera::Rest.new(base_url: MS_VC_BASE_URL, redirect_max: 5)
-      .read(VC_REDIST_FILENAME, save_to_file: File.join(path_resources_dir, VC_REDIST_FILENAME))
+      .read(VC_REDIST_FILENAME, save_to_file: path_resources_dir / VC_REDIST_FILENAME)
 
     log.info('Generating installer script and README')
     erb_src = (WIN_ZIP_SRC / 'install.erb.ps1').read
-    File.open(File.join(path_resources_dir, 'install.ps1'), 'w') do |f|
-      f.puts(ERB.new(erb_src).result(binding))
-    end
+    (path_resources_dir / 'install.ps1').write(ERB.new(erb_src).result(binding))
     FileUtils.cp(WIN_ZIP_SRC / 'README.user.md', path_build_dir / 'README.md')
     FileUtils.cp(WIN_ZIP_SRC / 'setup.cmd', path_build_dir)
 

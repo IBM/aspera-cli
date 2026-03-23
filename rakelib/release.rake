@@ -147,7 +147,9 @@ namespace :release do
     drun('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
     drun('git', 'push', 'origin', versions[:release_tag])
 
-    # GitHub release
+    # GitHub release: include:
+    # - PDF Manual
+    # - Signed gem
     drun(
       'gh',
       'release', 'create', versions[:release_tag],
