@@ -148,7 +148,7 @@ module Aspera
 
         # Call `block` with same query using paging and response information.
         # Block must return a 2 element `Array` with data and http response
-        # @param query    [Hash] Additionnal query parameters
+        # @param query    [Hash] Additional query parameters
         # @return [Hash] Items and total number of items
         # @option return [Array<Hash>] :items The list of items
         # @option return [Integer] :total The total number of items
@@ -496,7 +496,7 @@ module Aspera
       # in that case, the name is resolved and replaced with {type: , id: }
       # @param package_data    [Hash]   The whole package creation payload
       # @param rcpt_lst_field  [String] The field in structure, i.e. recipients or bcc_recipients
-      # @param new_user_option [Hash]   Additionnal fields for contact creation
+      # @param new_user_option [Hash]   Additional fields for contact creation
       # @return nil, `package_data` is modified
       def resolve_package_recipients(package_data, rcpt_lst_field, new_user_option)
         return unless package_data.key?(rcpt_lst_field)

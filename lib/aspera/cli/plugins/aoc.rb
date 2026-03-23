@@ -744,7 +744,7 @@ module Aspera
         # Short link entity: `short_links` have:
         # - a numerical id, e.g. `764412`
         # - a resource type, e.g. `UrlToken`
-        # - a ressource id, e.g. `scQ7uXPbvQ`
+        # - a resource id, e.g. `scQ7uXPbvQ`
         # - a short URL path, e.g. `dxyRpT9`
         # @param shared_data [Hash] Information for shared data: dropbox_id+name or file_id+node_id
         # @param &perm_block [Proc] Optional: create/modify/delete permissions on node
