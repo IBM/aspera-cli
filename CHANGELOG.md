@@ -8,9 +8,11 @@ Released: [Place date of release here]
 
 ### New Features
 
-* `faspex5`: when sending a package, recipients specified in fields `private_recipients`, `notified_on_upload`, `notified_on_download` and `notified_on_receipt` are now also expanded like field `recipients`.
+* `faspex5`: When sending a package, recipients specified in fields `private_recipients`, `notified_on_upload`, `notified_on_download` and `notified_on_receipt` are now also expanded like field `recipients`.
 
 ### Issues Fixed
+
+* `sync`: #251 in `admin` command, database path on Windows is `~private-asp` instead of `.private-asp`.
 
 ### Breaking Changes
 
@@ -313,7 +315,7 @@ Released: 2025-01-21
 
 * Internal: Basic REST calls now return data directly. (no more `data` key). For advanced calls, use `call`.
 * Internal: Transfer SDK download is now a 2-step procedure: First get the YAML file from GitHub with URLs for the various platforms and versions, and then download the archive from the official IBM repository.
-**global**: Option `format=multi` is replaced with option `multi_table=yes`.
+* **global**: Option `format=multi` is replaced with option `multi_table=yes`.
 * `faspex5`: Removed deprecated option `value` replaced with positional parameter.
   
 ## 4.19.0
@@ -1077,7 +1079,7 @@ Released: 2021-02-03
 
 ### New Features
 
-* The option `value` of command `find`, to filter on name, is not optional.
+* The option `value` of command `find` to filter on name is mandatory.
 * `find` now also reports all types (file, folder, link).
 * `find` now is able to report all fields (type, size, etc...).
 
@@ -1107,7 +1109,7 @@ Released: 2021-02-03
 ### New Features
 
 * Improved wizard (prepare for AoC global client id).
-* Preview generator: Added option : --skip-format=&lt;png,mp4&gt;.
+* Preview generator: Added option : `skip_format` with values `png`, `mp4`.
 * Removed outdated pictures from this doc.
 
 ## 0.9.19
