@@ -2447,7 +2447,7 @@ For instance, a particular [Option Preset](#option-preset) can be created for a 
 Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
 
 > [!NOTE]
-> If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
+> If the user wants to keep the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, the user shall use the `@val:` prefix.
 
 Example:
 
@@ -2498,6 +2498,9 @@ The command `update` allows the easy creation of [Option Preset](#option-preset)
 ```
 
 This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
+
+> [!NOTE]
+> `update` takes **ALL** options provided in the command line (starting with `--` with a value).
 
 The command `set` allows setting individual options in an [Option Preset](#option-preset):
 

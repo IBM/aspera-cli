@@ -7,13 +7,14 @@ module Aspera
   class DotContainer
     class << self
       # Insert extended value `value` into struct `result` at `path`
-      # @param path   [String] Dotted path in container
-      # @param value  [String] Last value to insert
-      # @param result [NilClass, Hash, Array] current value
-      # @return [Hash, Array]
+      # @param path   [Array<String>] Path in container
+      # @param value  [Object]        Value to insert in deep container
+      # @param result [nil, Hash, Array] Current container to use (or nil to create a new one)
+      # @return [Hash, Array] Container
       def dotted_to_container(path, value, result = nil)
+        Aspera.assert_array_all(path, String)
         # Typed keys
-        keys = path.split(OPTION_DOTTED_SEPARATOR).map{ |k| int_or_string(k)}
+        keys = path.map{ |k| int_or_string(k)}
         # Create, or re-use first level container
         current = (result ||= new_hash_or_array_from_key(keys.first))
         # walk the path, and create sub-containers if necessary
@@ -86,7 +87,7 @@ module Aspera
             to_insert = current
           end
         end
-        result[path.join(OPTION_DOTTED_SEPARATOR)] = to_insert unless to_insert.nil?
+        result[path.join(SEPARATOR)] = to_insert unless to_insert.nil?
       end
       result
     end
@@ -101,8 +102,7 @@ module Aspera
       nil
     end
 
-    # "."
-    OPTION_DOTTED_SEPARATOR = '.'
-    private_constant :OPTION_DOTTED_SEPARATOR
+    # Dot-path separator: `.`
+    SEPARATOR = '.'
   end
 end

@@ -194,7 +194,9 @@ module Aspera
           [error_msg, 'Use:'].concat(accept_list.map{ |c| "- #{c}"}.sort).join("\n")
         end
 
-        # change option name with dash to name with underscore
+        # Change option name with dash to name with underscore
+        # @param name [String] option name
+        # @return [String]
         def option_line_to_name(name)
           return name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
         end
@@ -211,7 +213,7 @@ module Aspera
       def initialize(program_name, argv = nil)
         # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
-        # command line values starting with '-'
+        # command line values starting with at least one '-'
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
@@ -330,7 +332,7 @@ module Aspera
 
       # @param descr       [String] description for help
       # @param mandatory   [Boolean] if true, raise error if option not set
-      # @param multiple    [Boolean] if true, return remaining arguments (Array) unil END
+      # @param multiple    [Boolean] if true, return remaining arguments (Array) until END
       # @param accept_list [Array, NilClass] list of allowed values (Symbol)
       # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
@@ -466,21 +468,17 @@ module Aspera
       # @return [Hash] options as taken from config file and command line just before command execution
       def unprocessed_options_with_value
         result = {}
-        @initial_cli_options.each do |option_value|
-          case option_value
-          when /^#{OPTION_PREFIX}([^=]+)$/o
-            # ignore
-          when /^#{OPTION_PREFIX}([^=]+)=(.*)$/o
-            name = Regexp.last_match(1)
-            value = Regexp.last_match(2)
-            name.gsub!(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
-            value = ExtendedValue.instance.evaluate(value, context: "option: #{name}")
-            Log.log.debug{"option #{name}=#{value}"}
-            result[name] = value
-            @unprocessed_cmd_line_options.delete(option_value)
-          else
-            raise Cli::BadArgument, "wrong option format: #{option_value}"
-          end
+        @initial_cli_options.each do |option_argument|
+          # ignore short options
+          next unless option_argument.start_with?(OPTION_PREFIX)
+          name, value = option_argument[OPTION_PREFIX.length..-1].split(OPTION_VALUE_SEPARATOR, 2)
+          # ignore options without value
+          next if value.nil?
+          Log.log.debug{"option #{name}=#{value}"}
+          path = name.split(DotContainer::SEPARATOR)
+          path[0] = self.class.option_line_to_name(path[0])
+          DotContainer.dotted_to_container(path, smart_convert(value), result)
+          @unprocessed_cmd_line_options.delete(option_argument)
         end
         return result
       end
@@ -516,20 +514,25 @@ module Aspera
         rescue OptionParser::InvalidOption => e
           Log.log.trace1{"InvalidOption #{e}".red}
           # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-          if (m = e.args.first.match(/^--([a-z\-]+)\.([^=]+)=(.+)$/))
-            option, path, value = m.captures
-            option_sym = self.class.option_line_to_name(option).to_sym
-            if @declared_options.key?(option_sym)
-              set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
-              retry
+          if e.args.first.start_with?(OPTION_PREFIX)
+            name, value = e.args.first[OPTION_PREFIX.length..-1].split(OPTION_VALUE_SEPARATOR, 2)
+            if !value.nil?
+              path = name.split(DotContainer::SEPARATOR)
+              option_sym = self.class.option_line_to_name(path.shift)
+              if @declared_options.key?(option_sym)
+                # it's a known option, so let's process it
+                set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
+                # resume to next
+                retry
+              end
             end
           end
-          # save for later processing
+          # Save for later processing
           unknown_options.push(e.args.first)
           retry
         end
         Log.log.trace1{"remains: #{unknown_options}"}
-        # set unprocessed options for next time
+        # Set unprocessed options for next time
         @unprocessed_cmd_line_options = unknown_options
       end
 
@@ -596,9 +599,9 @@ module Aspera
         ExtendedValue.assert_no_value(arg, :p)
         result = nil
         get_next_argument(:args, multiple: true).each do |arg|
-          Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not inlude #{OPTION_VALUE_SEPARATOR}"}
+          Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not include #{OPTION_VALUE_SEPARATOR}"}
           path, value = arg.split(OPTION_VALUE_SEPARATOR, 2)
-          result = DotContainer.dotted_to_container(path, smart_convert(value), result)
+          result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
         end
         result
       end

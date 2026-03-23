@@ -13,6 +13,7 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * `sync`: #251 in `admin` command: Fixed database path on Windows: Use `~private-asp` instead of `.private-asp`.
+* `config`: Fixed `preset update` with dot-path options.
 
 ### Breaking Changes
 
