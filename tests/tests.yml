@@ -2500,6 +2500,7 @@ aocshlk2:
     - private
     - create
 aoc_short_link_pub_create:
+  $comment: "access_levels: unit unitary levels to test unitary set."
   tags:
     - save_output
   args:
@@ -2510,7 +2511,8 @@ aoc_short_link_pub_create:
     - public
     - create
     - "@:"
-    - access_levels=upload
+    - access_levels.0=mkdir
+    - access_levels.1=write
     - --fields=id
 aoc_short_link_pub_modify:
   depends_on:
