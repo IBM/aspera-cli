@@ -12,7 +12,7 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
-* `sync`: #251 in `admin` command, database path on Windows is `~private-asp` instead of `.private-asp`.
+* `sync`: #251 in `admin` command: Fixed database path on Windows: Use `~private-asp` instead of `.private-asp`.
 
 ### Breaking Changes
 
@@ -1177,7 +1177,7 @@ Released: 2021-02-03
 
 ### New Features
 
-* `faspex`: Use option `once_only` set to `yes` to enable cargo like function. id=NEW deprecated.
+* `faspex`: Use option `once_only` set to `yes` to enable cargo like function. `id=NEW` deprecated.
 * `aoc`: Share to share transfer with command `transfer`.
 
 ## 0.9.7
@@ -1186,8 +1186,8 @@ Released: 2021-02-03
 
 * Homogeneous transfer spec for `node` and [`direct`](README.md#agt_direct) transfer agents.
 * Preview persistency goes to unique file by default.
-* Catch mxf extension in preview as video.
-* Faspex: Possibility to download all packages by specifying id=ALL.
+* Catch `mxf` extension in preview as video.
+* Faspex: Possibility to download all packages by specifying `id=ALL`.
 * Faspex: To come: Cargo-like function to download only new packages with id=NEW.
 
 ## 0.9.6
