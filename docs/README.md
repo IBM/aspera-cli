@@ -3,7 +3,7 @@
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_DEFAULTS_BEGIN
 metadata:
-  subtitle: "ascli 4.26.0.pre"
+  subtitle: "ascli 4.26.0"
   author: "Laurent Martin"
 PANDOC_DEFAULTS_END
 -->
@@ -126,8 +126,8 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar zxvf ascli.4.26.0.pre.linux-x86_64.tgz
-mv ascli.4.26.0.pre.linux-x86_64 $HOME/bin/ascli
+tar zxvf ascli.4.26.0.linux-x86_64.tgz
+mv ascli.4.26.0.linux-x86_64 $HOME/bin/ascli
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -141,7 +141,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.26.0
 ```
 
 - Install the latest Aspera transfer runtime, as it is not included in the `ascli` package:
@@ -269,7 +269,7 @@ This executable includes the Ruby runtime.
 > Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
-curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.26.0.pre.osx-arm64
+curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.26.0.osx-arm64
 chmod a+x ascli
 ./ascli config transferd install
 ```
@@ -801,11 +801,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.26.0 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.0.pre-gems
+mv temp_folder/cache aspera-cli-4.26.0-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
+tar zcvf aspera-cli-4.26.0-gems aspera-cli-4.26.0-gems.tgz
 ```
 
 #### Unix-like
@@ -947,7 +947,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.26.0
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -2495,7 +2495,7 @@ For instance, a particular [Option Preset](#option-preset) can be created for a 
 Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
 
 > [!NOTE]
-> If the user wants to use the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix.
+> If the user wants to keep the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, the user shall use the `@val:` prefix.
 
 Example:
 
@@ -2546,6 +2546,9 @@ ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --u
 ```
 
 This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
+
+> [!NOTE]
+> `update` takes **ALL** options provided in the command line (starting with `--` with a value).
 
 The command `set` allows setting individual options in an [Option Preset](#option-preset):
 
@@ -4797,7 +4800,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.26.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -6792,7 +6795,7 @@ files permission my_test_folder list
 files rename /some_folder testdst
 files short_link /testdst private create
 files short_link /testdst private list
-files short_link /testdst public create @: access_levels=upload --fields=id
+files short_link /testdst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
 files short_link /testdst public modify '$(read_value_from :aoc_short_link_pub_create)' @: access_levels=edit
 files show '%id:$(read_value_from :aoc_file_id)'
 files show /
