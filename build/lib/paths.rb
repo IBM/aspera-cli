@@ -25,6 +25,7 @@ module Paths
   GEMFILE = TOP / 'Gemfile'
   GEMFILE_LOCK = TOP / 'Gemfile.lock'
   PDF_MANUAL = RELEASE / "Manual-#{Aspera::Cli::Info::CMD_NAME}.pdf"
+  GEM_PACK = RELEASE / 'gempack.zip'
   # Command-line test suite configuration.
   TEST_DEFS = TST / 'tests.yml'
   CHANGELOG_FILE = TOP / 'CHANGELOG.md'

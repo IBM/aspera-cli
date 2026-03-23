@@ -27,7 +27,7 @@ module BuildTools
     ENV['DRY_RUN'] == '1'
   end
 
-  # Execute command only if not dry run
+  # Execute command only if not dry run (env `DRY_RUN=1`)
   # @param git [Symbol] Name of executable
   def drun(*cmd, **kwargs)
     if dry_run?

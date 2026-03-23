@@ -114,6 +114,18 @@ namespace :release do
     drun('gh', 'api', 'user', out: File::NULL, err: File::NULL)
   end
 
+  desc 'Bundle gem dependencies in a zip file'
+  task gem_pack: [Paths::GEM_PACK]
+
+  file Paths::GEM_PACK => ['build'] do
+    tmp_dir = TMP / 'build_gem_pack'
+    tmp_dir.mkpath
+    get_dependency_gems(built_gem_file, tmp_dir)
+    zip_directory(tmp_dir, Paths::GEM_PACK)
+    tmp_dir.rmtree
+    log.info("Gem pack: #{Paths::GEM_PACK}")
+  end
+
   desc 'Create a new release: args: release_version, next_version'
   task :run, %i[release_version next_version] do |_t, args|
     check_gem_signing_key
@@ -137,9 +149,12 @@ namespace :release do
     release_notes_path.write(extract_latest_changelog)
     log.info("Release Notes:\n#{release_notes_path.read}")
 
-    # Build documentation and signed gem (included in release)
+    # Build PDF Manual for release
     Rake::Task['doc:build'].invoke
+    # Build gem file
     Rake::Task[dry_run? ? 'unsigned' : 'signed'].invoke
+    # Build gem pack
+    Rake::Task['release:gem_pack'].invoke
 
     # Commit, Tag, Push release: CHANGELOG.md README.md version.rb
     drun('git', 'add', '-A')
@@ -147,9 +162,7 @@ namespace :release do
     drun('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
     drun('git', 'push', 'origin', versions[:release_tag])
 
-    # GitHub release: include:
-    # - PDF Manual
-    # - Signed gem
+    # GitHub release
     drun(
       'gh',
       'release', 'create', versions[:release_tag],
