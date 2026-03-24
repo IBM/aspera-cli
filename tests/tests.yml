@@ -3816,6 +3816,17 @@ nd_sync_v2b:
     - admin
     - status
     - $(PATH_TMP_SYNCS / 'nd_sync_v2')
+nd_async_id_error:
+  $comment: Fails because only search by namùe is supported
+  tags:
+    - must_fail
+    - nodoc
+  expect: Only search by name is supported
+  args:
+    - node
+    - async
+    - show
+    - '%foo:bar'
 nd_async_list:
   args:
     - node

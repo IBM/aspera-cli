@@ -405,7 +405,7 @@ namespace TEST_CASE_NS do
         if tags[:must_fail]
           stderr = err_file(name).read
           raise "Missing :expect: #{stderr}" unless info[:expect]
-          raise "Expected message not found in stderr: #{info[:expect]}" unless stderr.include?(info[:expect])
+          raise "Expected message not found in stderr: #{info[:expect]}\nHave: #{stderr}" unless stderr.include?(info[:expect])
         end
         log.info("[FAIL] #{name} #{expected_fails.join(' ')}")
         STATES[name] = 'passed'
