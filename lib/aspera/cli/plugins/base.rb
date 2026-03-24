@@ -134,7 +134,6 @@ module Aspera
         # @param delete_style   [String]  If set, the delete operation by array in payload
         # @param id_as_arg      [String]  If set, the id is provided as url argument ?<id_as_arg>=<id>
         # @param is_singleton   [Boolean] If `true`, entity is the full path to the resource
-        # @param tclo           [Boolean] If `true`, :list use paging with total_count, limit, offset
         # @param block          [Proc]    Block to search for identifier based on attribute value
         # @return [Hash] Result suitable for CLI result
         def entity_execute(
@@ -147,7 +146,6 @@ module Aspera
           id_as_arg: false,
           is_singleton: false,
           list_query: nil,
-          tclo: false,
           &block
         )
           command = options.get_next_command(ALL_OPS) if command.nil?
@@ -185,10 +183,6 @@ module Aspera
           when :show
             return Main.result_single_object(api.read(one_res_path), fields: display_fields)
           when :list
-            if tclo
-              data, total = api.list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query_read_delete(default: list_query))
-              return Main.result_object_list(data, total: total, fields: display_fields)
-            end
             data, http = api.read(entity, query_read_delete, ret: :both)
             return Main.result_empty if http.code == '204'
             # TODO: not generic : which application is this for ?

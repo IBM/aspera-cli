@@ -64,9 +64,6 @@ module Aspera
       PATH_AUTH = 'auth'
       PATH_API_V5 = 'api/v5'
       PATH_HEALTH = 'configuration/ping'
-      private_constant :PATH_AUTH,
-        :PATH_API_V5,
-        :PATH_HEALTH
       RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
       PACKAGE_TERMINATED = %w[completed failed].freeze
       # list of supported mailbox types (to list packages)
@@ -152,6 +149,7 @@ module Aspera
       def initialize(
         url:,
         auth:,
+        root: PATH_API_V5,
         password: nil,
         client_id: nil,
         client_secret: nil,
@@ -165,23 +163,23 @@ module Aspera
         super(**
           case auth
           when :public_link
-            # Get URL of final redirect of public link
-            redir_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
-            Log.dump(:redir_url, redir_url, level: :trace1)
-            # get context from query
-            encoded_context = Rest.query_to_h(URI.parse(redir_url).query)['context']
+            # Get URL of final redirect of provided public link
+            final_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
+            Log.dump(:final_url, final_url, level: :trace1)
+            # Get context from query
+            encoded_context = Rest.query_to_h(URI.parse(final_url).query)['context']
             raise ParameterError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (contains passcode and allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.dump(:pub_link_context, @pub_link_context, level: :trace1)
             # Get the base url, i.e. .../aspera/faspex
-            base_url = redir_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
+            base_url = final_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             # Get web UI client_id and redirect_uri
             # TODO: change this for something more reliable
             config = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET').sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
-            Log.dump(:configjs, config)
+            Log.dump(:config_js, config)
             {
-              base_url: "#{base_url}/#{PATH_API_V5}",
+              base_url: "#{base_url}/#{root}",
               auth:     {
                 type:         :oauth2,
                 base_url:     "#{base_url}/#{PATH_AUTH}",
@@ -198,7 +196,7 @@ module Aspera
             Aspera.assert(password, type: ParameterError){'Missing password'}
             # the password here is the token copied directly from browser in developer mode
             {
-              base_url: "#{url}/#{PATH_API_V5}",
+              base_url: "#{url}/#{root}",
               headers:  {'Authorization' => password}
             }
           when :web
@@ -206,7 +204,7 @@ module Aspera
             Aspera.assert(redirect_uri, type: ParameterError){'Missing redirect_uri'}
             # opens a browser and ask user to auth using web
             {
-              base_url: "#{url}/#{PATH_API_V5}",
+              base_url: "#{url}/#{root}",
               auth:     {
                 type:         :oauth2,
                 base_url:     "#{url}/#{PATH_AUTH}",
@@ -221,7 +219,7 @@ module Aspera
             Aspera.assert(client_id, type: ParameterError){'Missing client_id'}
             Aspera.assert(private_key, type: ParameterError){'Missing private_key'}
             {
-              base_url: "#{url}/#{PATH_API_V5}",
+              base_url: "#{url}/#{root}",
               auth:     {
                 type:            :oauth2,
                 base_url:        "#{url}/#{PATH_AUTH}",
@@ -241,10 +239,6 @@ module Aspera
           else Aspera.error_unexpected_value(auth, type: ParameterError){'auth'}
           end
         )
-      end
-
-      def auth_api
-        Rest.new(**params, base_url: base_url.sub(PATH_API_V5, PATH_AUTH))
       end
     end
   end

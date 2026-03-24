@@ -100,13 +100,6 @@ module Aspera
           options.parse_options!
         end
 
-        def set_api
-          # create an API object with the same options, but with a different subpath
-          @api_v5 = Api::Faspex.new(**Oauth.args_from_options(options))
-          # in case user wants to use HTTPGW tell transfer agent how to get address
-          transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
-        end
-
         # if recipient is just an email, then convert to expected API hash : name and type
         def normalize_recipients(parameters, type)
           type = type.to_s
@@ -423,8 +416,7 @@ module Aspera
         def execute_resource(res_sym)
           exec_args = {
             api:    @api_v5,
-            entity: res_sym.to_s,
-            tclo:   true
+            entity: res_sym.to_s
           }
           res_id_query = :default
           available_commands = ALL_OPS
@@ -445,7 +437,7 @@ module Aspera
             available_commands += [:reset_password]
           when :oauth_clients
             exec_args[:display_fields] = Formatter.all_but('public_key')
-            exec_args[:api] = @api_v5.auth_api
+            exec_args[:api] = Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.args_from_options(options))
             exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           when :shared_inboxes, :workgroups
             available_commands += %i[members saml_groups invite_external_collaborator]
@@ -458,10 +450,13 @@ module Aspera
           res_command = options.get_next_command(available_commands)
           return Main.result_value_list(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
           case res_command
-          when *ALL_OPS
+          when :create, :modify, :delete, :show
             return entity_execute(command: res_command, **exec_args) do |field, value|
                      @api_v5.lookup_entity_by_field(entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
                    end
+          when :list
+            data, total = exec_args[:api].list_entities_limit_offset_total_count(entity: exec_args[:entity], items_key: exec_args[:items_key], query: query_read_delete(default: exec_args[:list_query]))
+            return Main.result_object_list(data, total: total, fields: exec_args[:display_fields])
           when :shared_folders
             # nodes
             node_id = instance_identifier do |field, value|
@@ -620,7 +615,12 @@ module Aspera
 
         def execute_action
           command = options.get_next_command(ACTIONS)
-          set_api unless %i{postprocessing health}.include?(command)
+          unless %i{postprocessing health}.include?(command)
+            # create an API object with the same options, but with a different subpath
+            @api_v5 = Api::Faspex.new(**Oauth.args_from_options(options))
+            # in case user wants to use HTTPGW tell transfer agent how to get address
+            transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
+          end
           case command
           when :version
             return Main.result_single_object(@api_v5.read('version'))
