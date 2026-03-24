@@ -11,6 +11,7 @@ require 'aspera/id_generator'
 require 'aspera/api/node'
 require 'aspera/oauth'
 require 'aspera/node_simulator'
+require 'aspera/rest_list'
 require 'aspera/assert'
 require 'base64'
 require 'zlib'
@@ -166,7 +167,7 @@ module Aspera
         # @param api [Rest] an existing API object for the Node API
         # @param prefix_path [String,nil] for Faspex 4, allows browsing a package without full path in node (removes storage prefix)
         def initialize(context:, api: nil, prefix_path: nil)
-          @prefixer = prefix_path ? NodePathPrefix.new(prefix_path) : nil
+          @node_path_prefix = prefix_path ? NodePathPrefix.new(prefix_path) : nil
           super(context: context, basic_options: api.nil?)
           Node.declare_options(options)
           return if context.only_manual?
@@ -196,11 +197,11 @@ module Aspera
         # Gen3 API
         def browse_gen3
           folders_to_process = options.get_next_argument('path', validation: String)
-          folders_to_process = @prefixer.add_to_path(folders_to_process) unless @prefixer.nil?
+          folders_to_process = @node_path_prefix.add_to_path(folders_to_process) unless @node_path_prefix.nil?
           folders_to_process = [folders_to_process]
           query = options.get_option(:query) || {}
           # special parameter: max number of entries in result
-          max_items = query.delete(MAX_ITEMS)
+          max_items = query.delete(RestList::MAX_ITEMS)
           # special parameter: recursive browsing
           recursive = query.delete('recursive')
           # special parameter: only return one entry for the path, even if folder
@@ -221,7 +222,7 @@ module Aspera
               response = @api_node.create('files/browse', query)
               # 'file','symbolic_link'
               if !Node.gen3_entry_folder?(response['self']) || only_path
-                @prefixer&.remove_in_object_list!([response['self']])
+                @node_path_prefix&.remove_in_object_list!([response['self']])
                 return Main.result_single_object(response['self'])
               end
               items = response['items']
@@ -243,7 +244,7 @@ module Aspera
             end
             query.delete('skip')
           end
-          @prefixer&.remove_in_object_list!(all_items)
+          @node_path_prefix&.remove_in_object_list!(all_items)
           return Main.result_object_list(all_items)
         ensure
           RestParameters.instance.spinner_cb.call(action: :success)
@@ -286,12 +287,12 @@ module Aspera
           when :delete
             # TODO: add query for recursive
             paths_to_delete = options.get_next_argument('file list', multiple: true)
-            @prefixer&.add_to_paths!(paths_to_delete)
+            @node_path_prefix&.add_to_paths!(paths_to_delete)
             resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
             return cli_result_from_paths_response(resp, 'file deleted')
           when :search
             search_root = options.get_next_argument('search root', validation: String)
-            search_root = @prefixer.add_to_path(search_root) unless @prefixer.nil?
+            search_root = @node_path_prefix.add_to_path(search_root) unless @node_path_prefix.nil?
             parameters = {'path' => search_root}
             other_options = options.get_option(:query)
             parameters.merge!(other_options) unless other_options.nil?
@@ -300,40 +301,40 @@ module Aspera
             fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
             formatter.display_item_count(resp['item_count'], resp['total_count'])
             formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
-            @prefixer&.remove_in_object_list!(resp['items'])
+            @node_path_prefix&.remove_in_object_list!(resp['items'])
             return Main.result_object_list(resp['items'], fields: fields)
           when :space
             path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
-            @prefixer&.add_to_paths!(path_list)
+            @node_path_prefix&.add_to_paths!(path_list)
             resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
-            @prefixer&.remove_in_object_list!(resp['paths'])
+            @node_path_prefix&.remove_in_object_list!(resp['paths'])
             return Main.result_object_list(resp['paths'])
           when :mkdir
             path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
-            @prefixer&.add_to_paths!(path_list)
+            @node_path_prefix&.add_to_paths!(path_list)
             resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
             return cli_result_from_paths_response(resp, 'folder created')
           when :mklink
             target = options.get_next_argument('target', validation: String)
-            target = @prefixer.add_to_path(target) unless @prefixer.nil?
+            target = @node_path_prefix.add_to_path(target) unless @node_path_prefix.nil?
             one_path = options.get_next_argument('link path', validation: String)
-            one_path = @prefixer.add_to_path(one_path) unless @prefixer.nil?
+            one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
             resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
             return cli_result_from_paths_response(resp, 'link created')
           when :mkfile
             one_path = options.get_next_argument('file path', validation: String)
-            one_path = @prefixer.add_to_path(one_path) unless @prefixer.nil?
+            one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
             contents64 = Base64.strict_encode64(options.get_next_argument('contents'))
             resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
             return cli_result_from_paths_response(resp, 'file created')
           when :rename
             # TODO: multiple ?
             path_base = options.get_next_argument('path_base', validation: String)
-            path_base = @prefixer.add_to_path(path_base) unless @prefixer.nil?
+            path_base = @node_path_prefix.add_to_path(path_base) unless @node_path_prefix.nil?
             path_src = options.get_next_argument('path_src', validation: String)
-            path_src = @prefixer.add_to_path(path_src) unless @prefixer.nil?
+            path_src = @node_path_prefix.add_to_path(path_src) unless @node_path_prefix.nil?
             path_dst = options.get_next_argument('path_dst', validation: String)
-            path_dst = @prefixer.add_to_path(path_dst) unless @prefixer.nil?
+            path_dst = @node_path_prefix.add_to_path(path_dst) unless @node_path_prefix.nil?
             resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
             return cli_result_from_paths_response(resp, 'entry moved')
           when :browse
@@ -378,7 +379,7 @@ module Aspera
             return Main.result_transfer(transfer.start(transfer_spec))
           when :cat
             remote_path = options.get_next_argument('remote path', validation: String)
-            remote_path = @prefixer.add_to_path(remote_path) unless @prefixer.nil?
+            remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
             File.basename(remote_path)
             http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
             return Main.result_text(http.body)
@@ -882,10 +883,10 @@ module Aspera
                   iteration_persistency.save
                   return Main.result_status('Persistency reset')
                 end
+              else
+                Aspera.assert(!transfer_filter.key?('reset'), type: Cli::BadArgument){'reset only with once_only'}
               end
-              raise Cli::BadArgument, 'reset only with once_only' if transfer_filter.key?('reset') && iteration_persistency.nil?
-              max_items = transfer_filter.delete(MAX_ITEMS)
-              transfers_data = call_with_iteration(api: @api_node, operation: 'GET', subpath: 'ops/transfers', max: max_items, query: transfer_filter, iteration: iteration_persistency&.data)
+              transfers_data = @api_node.read_with_paging('ops/transfers', transfer_filter, iteration: iteration_persistency&.data)
               iteration_persistency&.save
               return Main.result_object_list(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
             when :sessions
@@ -1092,7 +1093,7 @@ module Aspera
             }
             loop do
               timestamp = Time.now
-              transfers_data = call_with_iteration(api: @api_node, operation: 'GET', subpath: 'ops/transfers', query: {active_only: true})
+              transfers_data = @api_node.read_with_paging('ops/transfers', {active_only: true})
               datapoint[:asInt] = transfers_data.length
               datapoint[:timeUnixNano] = timestamp.to_i * 1_000_000_000 + timestamp.nsec
               Log.log.info("#{datapoint[:asInt]} active transfers")
@@ -1130,49 +1131,8 @@ module Aspera
         # Translates paths results into CLI result, and removes prefix
         def cli_result_from_paths_response(response, success_msg)
           obj_list = response_to_result(response, success_msg)
-          @prefixer&.remove_in_object_list!(obj_list)
+          @node_path_prefix&.remove_in_object_list!(obj_list)
           return Main.result_object_list(obj_list, fields: %w[path result])
-        end
-
-        # Executes the provided API call in loop
-        # @param api       [Rest]    the API to call
-        # @param iteration [Array]   a single element array with the iteration token or nil
-        # @param max       [Integer] maximum number of items to return, or nil for no limit
-        # @param query     [Hash]    query parameters to use for the API call
-        # @param call_args [Hash]    additional arguments to pass to the API call
-        # @return [Array] list of items returned by the API call
-        def call_with_iteration(api:, iteration: nil, max: nil, query: nil, **call_args)
-          Aspera.assert_type(iteration, Array, NilClass){'iteration'}
-          Aspera.assert_type(query, Hash, NilClass){'query'}
-          query_token = query&.dup || {}
-          item_list = []
-          query_token[:iteration_token] = iteration[0] unless iteration.nil?
-          loop do
-            data, http = api.call(**call_args, query: query_token, ret: :both)
-            Aspera.assert_type(data, Array){"Expected data to be an Array, got: #{data.class}"}
-            # no data
-            break if data.empty?
-            # get next iteration token from link
-            next_iteration_token = nil
-            link_info = http['Link']
-            unless link_info.nil?
-              m = link_info.match(/<([^>]+)>/)
-              Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
-              next_iteration_token = Rest.query_to_h(URI.parse(m[1]).query)['iteration_token']
-            end
-            # same as last iteration: stop
-            break if next_iteration_token&.eql?(query_token[:iteration_token])
-            query_token[:iteration_token] = next_iteration_token
-            item_list.concat(data)
-            if max&.<=(item_list.length)
-              item_list = item_list.slice(0, max)
-              break
-            end
-            break if next_iteration_token.nil?
-          end
-          # save iteration token if needed
-          iteration[0] = query_token[:iteration_token] unless iteration.nil?
-          item_list
         end
       end
     end

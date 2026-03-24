@@ -14,10 +14,6 @@ module Aspera
         INSTANCE_OPS = %i[modify delete show].freeze
         # All standard operations (create list modify delete show)
         ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
-        # Special query parameter: `max`: max number of items for list command
-        MAX_ITEMS = 'max'
-        # Special query parameter: `pmax`: max number of pages for list command
-        MAX_PAGES = 'pmax'
 
         class << self
           def declare_options(options)
@@ -190,7 +186,7 @@ module Aspera
             return Main.result_single_object(api.read(one_res_path), fields: display_fields)
           when :list
             if tclo
-              data, total = api.list_entities_limit_offset_total_count(entity:, items_key: items_key, query: query_read_delete(default: list_query))
+              data, total = api.list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query_read_delete(default: list_query))
               return Main.result_object_list(data, total: total, fields: display_fields)
             end
             data, http = api.read(entity, query_read_delete, ret: :both)

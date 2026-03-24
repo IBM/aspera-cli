@@ -157,8 +157,8 @@ module Aspera
           Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           query['per_page'] = 1000 unless query.key?('per_page')
-          max_items = query.delete(Rest::MAX_ITEMS)
-          max_pages = query.delete(Rest::MAX_PAGES)
+          max_items = query.delete(RestList::MAX_ITEMS)
+          max_pages = query.delete(RestList::MAX_PAGES)
           item_list = []
           total_count = nil
           current_page = query['page']

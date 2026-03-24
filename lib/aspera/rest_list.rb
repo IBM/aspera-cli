@@ -2,8 +2,13 @@
 
 module Aspera
   # List and lookup methods for Rest
-  # include in classes inheriting Rest
+  # To be included in classes inheriting Rest that require those methods.
   module RestList
+    # `max`: special query parameter: max number of items for list command
+    MAX_ITEMS = 'max'
+    # `pmax`: special query parameter: max number of pages for list command
+    MAX_PAGES = 'pmax'
+
     # Query entity by general search (read with parameter `q`)
     #
     # @param subpath     [String] Path of entity in API

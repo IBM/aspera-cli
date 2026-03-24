@@ -521,6 +521,46 @@ module Aspera
         return transfer_spec
       end
 
+      # Executes `GET` call in loop using `iteration_token` (`/ops/transfers`)
+      # @param iteration [Array]   a single element array with the iteration token or nil
+      # @param call_args [Hash]    additional arguments to pass to `Rest.call`
+      # @return [Array] list of items returned by the API call
+      def read_with_paging(subpath, query = nil, iteration: nil, **call_args)
+        Aspera.assert_type(iteration, Array, NilClass){'iteration'}
+        Aspera.assert_type(query, Hash, NilClass){'query'}
+        Aspera.assert(!call_args.key?(:query))
+        query = {} if query.nil?
+        query[:iteration_token] = iteration[0] unless iteration.nil?
+        max = query.delete(RestList::MAX_ITEMS)
+        item_list = []
+        loop do
+          data, http = read(subpath, query, **call_args, ret: :both)
+          Aspera.assert_type(data, Array){"Expected data to be an Array, got: #{data.class}"}
+          # no data
+          break if data.empty?
+          # get next iteration token from link
+          next_iteration_token = nil
+          link_info = http['Link']
+          unless link_info.nil?
+            m = link_info.match(/<([^>]+)>/)
+            Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
+            next_iteration_token = Rest.query_to_h(URI.parse(m[1]).query)['iteration_token']
+          end
+          # same as last iteration: stop
+          break if next_iteration_token&.eql?(query[:iteration_token])
+          query[:iteration_token] = next_iteration_token
+          item_list.concat(data)
+          if max&.<=(item_list.length)
+            item_list = item_list.slice(0, max)
+            break
+          end
+          break if next_iteration_token.nil?
+        end
+        # save iteration token if needed
+        iteration[0] = query[:iteration_token] unless iteration.nil?
+        item_list
+      end
+
       private
 
       # Method called in loop for each entry for `resolve_api_fid`

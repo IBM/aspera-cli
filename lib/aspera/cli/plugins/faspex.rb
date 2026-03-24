@@ -9,6 +9,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/transfer/uri'
 require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
+require 'aspera/rest_list'
 require 'aspera/environment'
 require 'aspera/nagios'
 require 'aspera/id_generator'
@@ -31,7 +32,7 @@ module Aspera
         # allowed parameters for inbox.atom
         ATOM_PARAMS = %w[page count startIndex].freeze
         # with special parameters (from Plugin class) : max and pmax (from Plugin)
-        ATOM_EXT_PARAMS = [MAX_ITEMS, MAX_PAGES].concat(ATOM_PARAMS).freeze
+        ATOM_EXT_PARAMS = [RestList::MAX_ITEMS, RestList::MAX_PAGES].concat(ATOM_PARAMS).freeze
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
         STANDARD_PATH = '/aspera/faspex'
@@ -176,10 +177,9 @@ module Aspera
             Aspera.assert_type(mailbox_query, Hash){'query'}
             Aspera.assert((mailbox_query.keys - ATOM_EXT_PARAMS).empty?){"query: supported params: #{ATOM_EXT_PARAMS}"}
             Aspera.assert(!(mailbox_query.key?('startIndex') && mailbox_query.key?('page'))){'query: startIndex and page are exclusive'}
-            max_items = mailbox_query[MAX_ITEMS]
-            mailbox_query.delete(MAX_ITEMS)
-            max_pages = mailbox_query[MAX_PAGES]
-            mailbox_query.delete(MAX_PAGES)
+            # Extract pagination control parameters (not part of API query)
+            max_items = mailbox_query.delete(RestList::MAX_ITEMS)
+            max_pages = mailbox_query.delete(RestList::MAX_PAGES)
           end
           loop do
             # get a batch of package information
