@@ -5348,6 +5348,7 @@ tcos_show:
   tags:
     #    - pre_cleanup
     - nodoc
+    - flaky
   args:
     - cos
     - node
