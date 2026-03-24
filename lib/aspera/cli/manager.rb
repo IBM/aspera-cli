@@ -518,7 +518,7 @@ module Aspera
             name, value = e.args.first[OPTION_PREFIX.length..-1].split(OPTION_VALUE_SEPARATOR, 2)
             if !value.nil?
               path = name.split(DotContainer::SEPARATOR)
-              option_sym = self.class.option_line_to_name(path.shift)
+              option_sym = self.class.option_line_to_name(path.shift).to_sym
               if @declared_options.key?(option_sym)
                 # it's a known option, so let's process it
                 set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
