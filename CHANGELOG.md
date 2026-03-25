@@ -24,9 +24,7 @@ Released: 2026-03-25
 
 * `config`: Fixed `preset update` with dot-path options.
 * `sync`: #251 in `admin` command: Fixed database path on Windows: Use `~private-asp` instead of `.private-asp`.
-* `httpgw`: #252 HTTPGW transfer showed success even in case of error code `403`. Now raises error with message.
-
-### Breaking Changes
+* `httpgw`: #252 HTTPGW transfer showed success even when error code `403` was returned. Now raises error with message.
 
 ## 4.25.4
 
@@ -125,7 +123,7 @@ Released: 2026-01-21
 ### Issues Fixed
 
 * `aoc`: Restored command `admin workspace shared_folder :id list` which was since 4.11.0.
-* `direct`: When using `ascp4` do not set env var: `ASPERA_TEST_REDIS_DISABLE`, else it fails with: `Failed to initialize application`.
+* `direct`: When using `ascp4`, do not set env var: `ASPERA_TEST_REDIS_DISABLE`, else it fails with: `Failed to initialize application`.
 * `shares`: Properly detect using `/node_api/ping` endpoint instead of `/app`.
 
 ### Breaking Changes
@@ -204,7 +202,7 @@ Released: 2025-09-30
 * `console`: Removed options `filter_from` and `filter_to`. Use standard option `query` instead.
 * `sync`: Removed option `sync_info`. Replaced with positional parameters. Streamlined command line interface. Applies to all plugins with `sync` command.
 * `async`: Removed option `sync_name`. Replaced with percent selector `%name:`.
-* `aoc`: `files download` using gen4 API do not require anymore to provide the containing folder in first position, and then only file names. Now, directly provide the path to all files.
+* `aoc`: `files download` using gen4 API no longer requires providing the containing folder in first position, and then only file names. Now, directly provide the path to all files.
 * `logger`: Log is simplified, date is removed by default. Use `--log_format=standard` to revert to standard Ruby logger. See option `log_format` for details.
 
 ## 4.23.0
@@ -218,7 +216,7 @@ Released: 2025-08-11
 
 ### Issues Fixed
 
-* `server`: #209: missing home folder for transfer user shall not cause an error.
+* `server`: #209: a missing home folder for the transfer user shall not cause an error.
 * `direct`: #205: `kill` blocks `cmd` on Windows.
 
 ### Breaking Changes
@@ -934,7 +932,7 @@ Released: 2021-02-03
 
 ## 0.11.2
 
-* Fixes on multi-session: Progress bat and transfer spec param for "direct".
+* Fixes on multi-session: Progress bar and transfer spec param for `direct`.
 
 ## 0.11.1
 
@@ -1005,7 +1003,7 @@ Released: 2021-02-03
 
 ## 0.10.6
 
-* FaspManager: Transfer spec `authentication` no more needed for local transfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided.
+* FaspManager: Transfer spec `authentication` is no longer needed for local transfer to use Aspera public keys. Public keys will be used if there is a token and no key or password is provided.
 * Gem version requirements made more open.
 
 ## 0.10.5

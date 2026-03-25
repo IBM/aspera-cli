@@ -169,7 +169,8 @@ namespace :release do
       '--title', "Aspera CLI #{versions[:release_tag]}",
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
-      gem_file(versions[:release])
+      gem_file(versions[:release]),
+      Paths::GEM_PACK
     )
 
     # Prepare next development cycle
