@@ -225,6 +225,60 @@ Saving config file.
 
 If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](#aoc-configuration-using-wizard) section.
 
+### Leveraging AI Assistance
+
+You can significantly accelerate your workflow by using an AI assistant to generate and troubleshoot commands for <%=tool%>.
+For the best results, provide the AI with the most recent documentation as context.
+
+Recommended Workflow:
+
+- **Contextualize**: Download the project manual (this manual in Markdown format, [`docs/README.md`](https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/README.md)) from the GitHub repository.
+
+- **Upload**: Attach the file to your AI assistant's prompt to ensure it uses specific, up-to-date syntax.
+
+- **Inquire**: Use a detailed prompt that specifies your requirements and environment.
+
+> [!TIP]
+> Specify your environment.
+> Quoting rules and syntax vary significantly between shells.
+> Always mention if you are using `bash`, **PowerShell** 5 or 7, or Windows `CMD`.
+
+Example Prompt:
+
+```text
+Strictly using only the attached manual for <%=cmd%> for that version, please generate a command to send a package via Aspera on Cloud using the Bash shell.
+
+Requirements:
+
+- Set a custom title and note.
+- Define specific recipients.
+- Cap the transfer speed at 300Mbps.
+```
+
+By providing the documentation as a direct reference, you reduce "hallucinations" and receive accurate, executable commands in seconds.
+
+### Get help from a "friend"
+
+You probably have an AI Friend.
+Use it to build and ask about <%=tool%>.
+A straightforward way is to do the following:
+
+- Download the Manual as Markdown (README.md) from the GitHub repository.
+- Open your AI assistant, and attach that file to the new prompt.
+- Ask your question:
+
+> [!NOTE]
+> It's better to specify your environment, especially the shell.
+> For example, if on Windows, specify if you are using `cmd`, **PowerShell** 5, or **PowerShell** 7, as quoting rules differ.
+
+```text
+Based on the user manual of ascli, please create a command line to run on bash shell to send a package using Aspera on Cloud.
+I need to set the title, a note and recipients.
+I want also to set the speed of transfer to 300Mbps.
+```
+
+- Engage into the conversation, and you'll get results very rapidly.
+
 ### Next Steps
 
 - Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
@@ -2217,7 +2271,7 @@ Most options and arguments are specified by a simple string (e.g. `username` or 
 Sometimes it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
 Some options expect a more complex value such as `Hash` or `Array`.
 
-The **Extended Value** Syntax allows to specify such values and even read values from other sources than the command line itself.
+The **Extended Value** Syntax allows specifying such values and even reading values from other sources than the command line itself.
 
 The syntax is:
 
@@ -2254,7 +2308,7 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | Parses remaining positional arguments as a `Hash` or `Array` using [dot-path notation](#dot-path-notation).<%=br%>Use `END` to stop collection when further positional arguments must follow. |
+| `<empty>`| None     | Any      | The empty modifier, resulting as argument `@:`, parses remaining positional arguments as a `Hash` or `Array` using [dot-path notation](#dot-path-notation).<%=br%>Use `END` to stop collection when further positional arguments must follow. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
@@ -2479,7 +2533,7 @@ A named [Option Preset](#option-preset) can be modified directly using <%=tool%>
 <%=cmd%> config preset <set|delete|show|initialize|update> <%=ph :preset_name%>
 ```
 
-The command `initialize` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
+The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
 
 ```shell
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<%=ph :password%>","ts":{"precalculate_job_size":true}}'
@@ -3754,7 +3808,7 @@ It can be either the access key's root file ID, or any authorized file ID undern
 
 #### Agent: HTTP Gateway
 
-The Aspera HTTP Gateway is a service that allows to send and receive files using HTTPS.
+The Aspera HTTP Gateway is a service that allows sending and receiving files using HTTPS.
 
 By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using the Aspera HTTP Gateway.
 
@@ -7475,7 +7529,7 @@ The command `<%=cmd%> faspex5 postprocessing` emulates Faspex 4 post-processing 
 It implements a web hook for Faspex 5 and calls a script with the same environment variables as set by Faspex 4.
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 post-processing.
 
-It allows to quickly migrate workflows from Faspex 4 to Faspex 5 while preserving scripts.
+It allows quickly migrating workflows from Faspex 4 to Faspex 5 while preserving scripts.
 Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine, using Faspex 5 native web hooks or File Processing.
 
 It is invoked like this:
