@@ -169,6 +169,8 @@ module Aspera
       # get Net::HTTP underlying socket i/o
       # little hack, handy because HTTP debug, proxy, etc... will be available
       # used implement web sockets after `start_http_session`
+      # @param http_session [Net::HTTP] the session object
+      # @return [Net::BufferedIO] The underlying socket i/o
       def io_http_session(http_session)
         Aspera.assert_type(http_session, Net::HTTP)
         # Net::BufferedIO in net/protocol.rb

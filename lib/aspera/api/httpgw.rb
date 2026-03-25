@@ -10,6 +10,9 @@ require 'websocket'
 require 'base64'
 require 'json'
 
+# throw exception on error, instead of error code
+WebSocket.should_raise = true
+
 module Aspera
   module Api
     # Aspera HTTP Gateway API client
@@ -75,6 +78,15 @@ module Aspera
         end
         raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
         Log.log.trace2{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
+      end
+
+      # Check header ourself and give precise error message, as websocket will only throw error without details
+      # @param [String] Response Header
+      # @return [String] Response Header
+      def validated_ws_response_header(header)
+        first_line = header.split("\r\n").first
+        raise RestCallError.new({messages: ["Unexpected: #{first_line}", 'Expected: 101 Switching Protocols']}) unless first_line.split(/\s+/, 3)[1].eql?('101')
+        header
       end
 
       # message processing for read thread
@@ -155,8 +167,9 @@ module Aspera
         @ws_handshake = ::WebSocket::Handshake::Client.new(url: upload_url, headers: {})
         @ws_io.write(@ws_handshake.to_s)
         sleep(0.1)
-        @ws_handshake << @ws_io.readuntil("\r\n\r\n")
-        Aspera.assert(@ws_handshake.finished?){'Error in websocket handshake'}
+        # Get whole HTTP response header, Check and process
+        # no need to check `finished?` or result of `<<` (true), as we give the whole header at once
+        @ws_handshake << validated_ws_response_header(@ws_io.readuntil("\r\n\r\n"))
         Log.log.debug{"#{LOG_WS_SEND}handshake success"}
         # data shared between main thread and read thread
         @shared_info = {
@@ -234,14 +247,15 @@ module Aspera
         # throttling may have skipped last one
         @notify_cb&.call(:transfer, session_id: session_id, info: session_sent_bytes)
         @notify_cb&.call(:session_end, session_id: session_id)
-        @notify_cb&.call(:end)
         ws_send(ws_type: :close, data: nil)
         Log.log.debug("Finished upload, waiting for end of #{THR_RECV} thread.")
         @ws_read_thread.join
         Log.log.debug{'Read thread joined'}
+      ensure
         # session no more used
         @ws_io = nil
         http_session&.finish
+        @notify_cb&.call(:end)
       end
 
       def download(transfer_spec)

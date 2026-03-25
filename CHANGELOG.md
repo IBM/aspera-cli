@@ -12,8 +12,9 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
-* `sync`: #251 in `admin` command: Fixed database path on Windows: Use `~private-asp` instead of `.private-asp`.
 * `config`: Fixed `preset update` with dot-path options.
+* `sync`: #251 in `admin` command: Fixed database path on Windows: Use `~private-asp` instead of `.private-asp`.
+* `httpgw`: #252 HTTPGW transfer showed success even in case of error code `403`. Now raises error with message.
 
 ### Breaking Changes
 
