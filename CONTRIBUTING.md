@@ -109,7 +109,6 @@ The following environment variables and macros control specific build behaviors:
 | Environment variable        | Contents   | Description                                                  |
 |-----------------------------|------------| -------------------------------------------------------------|
 | `ASPERA_CLI_TEST_CONF_URL`  | URL        | URL for the configuration file containing secrets for tests. |
-| `ASPERA_CLI_DOC_CHECK_LINKS`| `yes`/`no` | Validates that links exist during documentation generation.  |
 | `LOG_SECRETS`               | `yes`/`no` | Toggles the logging of secrets in `rake` tasks.              |
 | `LOG_LEVEL`                 | `debug`, ... | Sets the logging verbosity for `rake` tasks.                 |
 | `ENABLE_COVERAGE`           | set/unset  | Enables test coverage analysis when defined.                 |
@@ -151,7 +150,11 @@ tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
-- Validate URLs during generation: `ASPERA_CLI_DOC_CHECK_LINKS=yes`.
+- Validate URLs during generation with:
+
+```shell
+rake doc:check_links
+```
 
 - Debug the generation process: `ASPERA_CLI_DOC_DEBUG=debug`.
 
@@ -248,7 +251,7 @@ bundle exec rake container:test
 - **Check documentation links**:
 
 ```shell
-bundle exec rake doc:build ASPERA_CLI_DOC_CHECK_LINKS=yes
+bundle exec rake doc:check_links
 ```
 
 ### Automated Release Process

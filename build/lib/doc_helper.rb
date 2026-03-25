@@ -376,7 +376,7 @@ class DocHelper
   end
 
   # Read markdown file line by line, and check that all links are valid.
-  def check_links(file_path)
+  def check_links_file(file_path)
     require 'uri'
     require 'net/http'
     file_folder = Pathname.new(file_path).parent
@@ -413,11 +413,14 @@ class DocHelper
     end
   end
 
+  def check_links_manual
+    check_links_file(@paths[:template])
+  end
+
   # Generate README.md from README.erb.md
   def generate
     Aspera::Log.log.info("Generating markdown doc for version #{build_version}")
     check_headings(@paths[:template])
-    check_links(@paths[:template]) if BuildTools.env_var_true?('ASPERA_CLI_DOC_CHECK_LINKS')
     # get current plugins
     plugin_manager = Aspera::Cli::Plugins::Factory.instance
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)

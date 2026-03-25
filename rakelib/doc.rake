@@ -81,6 +81,12 @@ namespace :doc do
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
 
+  desc 'Check links in manual'
+  task :check_links do
+    Aspera::Log.log.info{'Checking links in manual'}
+    DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).check_links_manual
+  end
+
   desc 'Generate PDF Manual'
   task pdf: Paths::PDF_MANUAL
 
