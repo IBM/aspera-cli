@@ -16,10 +16,11 @@ module Paths
   DOC = TOP / 'docs'
   TST = TOP / 'tests'
   BUILD = TOP / 'build'
-  BUILD_LIB = BUILD / 'lib'
   RELEASE = TOP / 'pkg'
   PANDOC = BUILD / 'doc' / 'pandoc'
   MKDOCS = BUILD / 'doc' / 'mkdocs'
+  BUILD_TOOLS = BUILD / 'lib' / 'build_tools.rb'
+  DOC_HELPER = BUILD / 'lib' / 'doc_helper.rb'
   # Paths to key configuration and source files.
   GEMSPEC = TOP / 'aspera-cli.gemspec'
   GEMFILE = TOP / 'Gemfile'
@@ -44,8 +45,6 @@ module Paths
   MD_ERB = DOC / 'README.erb.md'
   TSPEC_YAML_SCHEMA = LIB / 'aspera/transfer/spec.schema.yaml'
   ASYNC_YAML_SCHEMA = LIB / 'aspera/sync/conf.schema.yaml'
-  BUILD_TOOLS = BUILD_LIB / 'build_tools.rb'
-  DOC_HELPER = BUILD_LIB / 'doc_helper.rb'
   COMMAND = BIN / Aspera::Cli::Info::CMD_NAME
   ASESSION = BIN / 'asession'
 end

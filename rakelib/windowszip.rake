@@ -49,9 +49,9 @@ end
 namespace :windowszip do
   desc 'Create installation archive for Windows'
   task :build, [:version] do |_t, args|
-    gem_version_build    = args[:version] || build_version
-    target_folder_name   = "aspera-cli-#{gem_version_build}-windows-amd64-installer"
-    path_build_dir       = Paths::TMP / target_folder_name
+    gem_version_build = args[:version] || build_version
+    target_zip_file = "aspera-cli-#{gem_version_build}-windows-amd64-installer.zip"
+    path_build_dir       = Paths::TMP / 'build_win_zip'
     path_resources_dir   = path_build_dir / ARCHIVE_FOLDER_NAME
     install_ruby_version = '3.4.7-1'
     ruby_installer_exe   = "rubyinstaller-devkit-#{install_ruby_version}-x64.exe"
@@ -87,7 +87,7 @@ namespace :windowszip do
     FileUtils.cp(WIN_ZIP_SRC / 'setup.cmd', path_build_dir)
 
     log.info('Generating installer zip')
-    zip_target = Paths::TMP / "#{target_folder_name}.zip"
+    zip_target = Paths::RELEASE / target_zip_file
     zip_directory(path_build_dir, zip_target)
 
     log.info("Created: #{zip_target}")

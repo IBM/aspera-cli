@@ -10,7 +10,7 @@ $rubyInstaller = Join-Path $resourcesDir "<%=ruby_installer_exe%>"
 $vcRedist = Join-Path $resourcesDir "<%=vc_redist_exe%>"
 $asperaSdkZip = Join-Path $resourcesDir "<%=sdk_file%>"
 
-# User or Machine
+# Update PATH for User (or Machine)
 $installFor = "User"
 
 # Set target install directory
@@ -27,7 +27,7 @@ if (!(Test-Path -Path $targetFolder)) {
 Write-Host "Installing Ruby..."
 Start-Process -FilePath $rubyInstaller -ArgumentList "/suppressmsgboxes", "/currentuser", "/silent", "/noicons", "/dir=$targetFolder" -Wait
 
-# Add to PATH if not already present : User -> Machine
+# Add to PATH if not already present for User (or Machine)
 $sysPath = [Environment]::GetEnvironmentVariable("Path", $installFor)
 if ($sysPath -notlike "*$binFolder*") {
     Write-Host "Adding $binFolder to $installFor PATH..."
@@ -40,8 +40,8 @@ else {
 # Add path for this script for `gem` and `ascli`
 $env:Path = "$env:Path;$binFolder"
 
-# Install MSVC redistributables
-Write-Host "Installing MS Visual C++ redistributables..."
+# Install MSVC redistributable
+Write-Host "Installing MS Visual C++ redistributable..."
 Start-Process -FilePath $vcRedist -ArgumentList "/install", "/quiet" -Wait
 
 # Install all gems at once
