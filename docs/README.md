@@ -247,38 +247,14 @@ Recommended Workflow:
 Example Prompt:
 
 ```text
-Strictly using only the attached manual for ascli for that version, please generate a command to send a package via Aspera on Cloud using the Bash shell.
-
-Requirements:
-
-- Set a custom title and note.
-- Define specific recipients.
-- Cap the transfer speed at 300Mbps.
+Strictly using only the attached manual for ascli for that version.
+Generate a command to send a package via Aspera on Cloud using the Bash shell.
+Set a custom title and note.
+Define specific recipients.
+Cap the transfer speed at 300Mbps.
 ```
 
 By providing the documentation as a direct reference, you reduce "hallucinations" and receive accurate, executable commands in seconds.
-
-### Get help from a "friend"
-
-You probably have an AI Friend.
-Use it to build and ask about `ascli`.
-A straightforward way is to do the following:
-
-- Download the Manual as Markdown (README.md) from the GitHub repository.
-- Open your AI assistant, and attach that file to the new prompt.
-- Ask your question:
-
-> [!NOTE]
-> It's better to specify your environment, especially the shell.
-> For example, if on Windows, specify if you are using `cmd`, **PowerShell** 5, or **PowerShell** 7, as quoting rules differ.
-
-```text
-Based on the user manual of ascli, please create a command line to run on bash shell to send a package using Aspera on Cloud.
-I need to set the title, a note and recipients.
-I want also to set the speed of transfer to 300Mbps.
-```
-
-- Engage into the conversation, and you'll get results very rapidly.
 
 ### Next Steps
 
@@ -4899,7 +4875,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
