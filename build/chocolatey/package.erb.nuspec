@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>%=choco_package%</id>
+    <id>%=CHOCO_PACKAGE_NAME%</id>
     <version>%=nuget_version_build%</version>
     <title>Aspera CLI</title>
     <authors>Laurent Martin</authors>
     <readme>README.md</readme>
     <projectUrl>https://github.com/you/your-gem-name</projectUrl>
-    <license type="expression">MIT</license>
+    <licenseUrl>%=Aspera::Cli::Info::SRC_URL%/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Installs Ruby, VC++ Redistributable, then installs the aspera-cli gem and configures transfer daemon.</description>
     <tags>ascli aspera cli ascp ibm</tags>

@@ -334,6 +334,16 @@ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 
 The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [in this page](https://eudemo.asperademo.com/download/sdk.html).
 
+#### Windows: Chocolatey aspera-cli
+
+<%=tool%> can be directly installed using **Chocolatey**.
+
+In a PowerShell as Administrator:
+
+```pwsh
+choco install aspera-cli -y
+```
+
 ### Ruby
 
 A Ruby interpreter is required to run <%=tool%>.

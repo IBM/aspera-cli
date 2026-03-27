@@ -13,14 +13,15 @@ include BuildTools
 
 # Path to Chocolatey templates
 CHOCOLATEY_SRC = Paths::BUILD / 'chocolatey'
+# Nae of the package
+CHOCO_PACKAGE_NAME = Aspera::Cli::Info::GEM_NAME
 
 namespace :chocolatey do
   desc 'Create Chocolatey package'
   task :build, [:version] do |_t, args|
-    nuget_version_build = args[:version] || build_version
-    nuget_version_build.sub('.pre', '-pre')
-    choco_package = Aspera::Cli::Info::GEM_NAME
-    package_file_name = "aspera-cli.#{nuget_version_build}.nupkg"
+    gem_version_build = args[:version] || build_version
+    # Version of that choco package (choco requires hyphen)
+    nuget_version_build = gem_version_build.sub('.pre', '-pre')
     path_build_dir = Paths::TMP / 'build_chocolatey'
     path_tools_dir = path_build_dir / 'tools'
     gem_spec = Gem::Specification.load(GEMSPEC)
@@ -35,13 +36,13 @@ namespace :chocolatey do
     # Generate install script from template
     log.info('Generating install script from template')
     erb_src = (CHOCOLATEY_SRC / 'install.erb.ps1').read
-    install_content = ERB.new(erb_src, trim_mode: '%').result(binding)
+    install_content = ERB.new(erb_src).result(binding)
     (path_tools_dir / 'chocolateyInstall.ps1').write(install_content)
 
     # Generate uninstall script from template
     log.info('Generating uninstall script from template')
     erb_src = (CHOCOLATEY_SRC / 'uninstall.erb.ps1').read
-    uninstall_content = ERB.new(erb_src, trim_mode: '%').result(binding)
+    uninstall_content = ERB.new(erb_src).result(binding)
     (path_tools_dir / 'chocolateyUninstall.ps1').write(uninstall_content)
 
     # Copy README files
@@ -58,15 +59,17 @@ namespace :chocolatey do
     erb_src = erb_src.gsub(/%=([^%]+)%/, '<%=\1%>')
     # Use nuget_version instead of nuget_version_build for the nuspec
     nuspec_content = ERB.new(erb_src).result(binding).gsub(nuget_version_build, nuget_version)
-    (path_build_dir / "#{choco_package}.nuspec").write(nuspec_content)
+    (path_build_dir / "#{CHOCO_PACKAGE_NAME}.nuspec").write(nuspec_content)
 
     # Create the Chocolatey package using nuget
     log.info('Creating Chocolatey package with nuget')
     Paths::RELEASE.mkpath
     Dir.chdir(path_build_dir) do
-      run('nuget', 'pack', "#{choco_package}.nuspec", '-OutputDirectory', Paths::RELEASE)
+      run('nuget', 'pack', "#{CHOCO_PACKAGE_NAME}.nuspec", '-OutputDirectory', Paths::RELEASE)
     end
 
-    log.info("Created: #{package_file_name}")
+    package_path = Paths::RELEASE / "#{CHOCO_PACKAGE_NAME}.#{nuget_version_build}.nupkg"
+
+    log.info("Created: #{package_path}")
   end
 end
