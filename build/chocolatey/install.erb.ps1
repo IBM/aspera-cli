@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $gemName = '<%=Aspera::Cli::Info::GEM_NAME%>'
-$gemVersion = '<%=version_build%>'
+$gemVersion = '<%=nuget_version_build%>'
 
 Write-Host "Installing $gemName version $gemVersion..."
 

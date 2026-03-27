@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>%=choco_package%</id>
-    <version>%=version_build%</version>
+    <version>%=nuget_version_build%</version>
     <title>Aspera CLI</title>
     <authors>Laurent Martin</authors>
     <readme>README.md</readme>
