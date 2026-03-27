@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>aspera-cli</id>
-    <version>4.25.5</version>
+    <id>%=choco_package%</id>
+    <version>%=version_build%</version>
     <title>Aspera CLI</title>
     <authors>Laurent Martin</authors>
     <readme>README.md</readme>

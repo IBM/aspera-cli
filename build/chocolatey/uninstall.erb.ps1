@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$gemName = 'aspera-cli'
+$gemName = '<%=choco_package%>'
 
 Write-Host "Uninstalling $gemName..."
 

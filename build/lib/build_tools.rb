@@ -73,6 +73,7 @@ module BuildTools
 
   # Version that is currently being built.
   # Use this instead of Aspera::Cli::VERSION to account for beta builds.
+  # Default value: `VERSION` from `lib/aspera/cli/version.rb`
   def build_version
     return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
     VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise("VERSION not found in #{VERSION_FILE}")
