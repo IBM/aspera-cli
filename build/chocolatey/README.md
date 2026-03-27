@@ -1,5 +1,13 @@
 # Chocolatey
 
+## todo
+
+Packing:
+
+```shell
+nuget pack ascli.nuspec -OutputDirectory ../../pkg
+```
+
 ## Procedure
 
 Get an API Key

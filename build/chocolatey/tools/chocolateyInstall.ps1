@@ -1,19 +1,16 @@
-#!/usr/bin/env pwsh
-
 $ErrorActionPreference = 'Stop'
 
-Write-Host "Installing Ruby..."
-choco install ruby -y
+$gemName = 'aspera-cli'
+$gemVersion = '4.25.5'
 
-# Ensure Ruby bin directory is in PATH
-$rubyPath = (Get-Command ruby).Source | Split-Path
-if (-not ($env:PATH -like "*$rubyPath*")) {
-    Write-Host "Adding Ruby to PATH..."
-    $env:PATH += ";$rubyPath"
+Write-Host "Installing $gemName version $gemVersion..."
+
+# Check if already installed
+$installed = gem list -i $gemName -v $gemVersion
+
+if (-not $installed) {
+    gem install $gemName -v $gemVersion --no-document
 }
-
-Write-Host "Installing aspera-cli gem (latest)..."
-gem install aspera-cli
-
-Write-Host "Configuring transfer daemon..."
-ascli conf transferd install
+else {
+    Write-Host "$gemName $gemVersion already installed."
+}
