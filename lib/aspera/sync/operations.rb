@@ -197,7 +197,7 @@ module Aspera
               raise Error, 'Missing either local_db_dir or local_dir'
             end
           end
-          stdout = Environment.secure_execute(*arguments, mode: :capture)
+          stdout = Environment.secure_execute(*arguments, mode: :capture).first
           return parse_status(stdout)
         end
 

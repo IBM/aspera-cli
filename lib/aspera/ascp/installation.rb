@@ -178,33 +178,32 @@ module Aspera
       # Folder, PVCL, version, license information
       def ascp_info_from_log
         data = {}
+        _, stderr, status = Environment.secure_execute(path(:ascp), '-DDL-', mode: :capture, exception: false)
         # read PATHs from ascp directly, and pvcl modules as well
-        Open3.popen3(path(:ascp), '-DDL-') do |_stdin, _stdout, stderr, thread|
-          last_line = ''
-          while (line = stderr.gets)
-            line.chomp!
-            # skip lines that may have accents
-            next unless line.valid_encoding?
-            last_line = line
-            case line
-            when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
-              data[Regexp.last_match(1)] = Regexp.last_match(3)
-            when /^DBG Added module group:"(?<module>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
-              c = Regexp.last_match.named_captures.symbolize_keys
-              data[c[:interface]] ||= {}
-              data[c[:interface]][c[:module]] ||= []
-              data[c[:interface]][c[:module]].push("#{c[:scheme]} v#{c[:version]}")
-            when %r{^DBG License result \(/license/(\S+)\): (.+)$}
-              data[Regexp.last_match(1)] = Regexp.last_match(2)
-            when /^LOG (.+) version ([0-9.]+)$/
-              data['product_name'] = Regexp.last_match(1)
-              data['product_version'] = Regexp.last_match(2)
-            when /^LOG Initializing FASP version ([^,]+),/
-              data['ascp_version'] = Regexp.last_match(1)
-            end
+        last_line = ''
+        stderr.lines do |line|
+          line.chomp!
+          # Skip lines that may have accents
+          next unless line.valid_encoding?
+          last_line = line
+          case line
+          when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
+            data[Regexp.last_match(1)] = Regexp.last_match(3)
+          when /^DBG Added module group:"(?<module>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
+            c = Regexp.last_match.named_captures.symbolize_keys
+            data[c[:interface]] ||= {}
+            data[c[:interface]][c[:module]] ||= []
+            data[c[:interface]][c[:module]].push("#{c[:scheme]} v#{c[:version]}")
+          when %r{^DBG License result \(/license/(\S+)\): (.+)$}
+            data[Regexp.last_match(1)] = Regexp.last_match(2)
+          when /^LOG (.+) version ([0-9.]+)$/
+            data['product_name'] = Regexp.last_match(1)
+            data['product_version'] = Regexp.last_match(2)
+          when /^LOG Initializing FASP version ([^,]+),/
+            data['ascp_version'] = Regexp.last_match(1)
           end
-          raise last_line if !thread.value.exitstatus.eql?(1) && !data.key?('root')
         end
+        raise last_line if !status.exitstatus.eql?(1) && !data.key?('root')
         return data
       end
 

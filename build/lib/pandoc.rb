@@ -43,9 +43,9 @@ end
 # Get latest git change date, or else just the file's modification date
 def get_change_date(md)
   begin
-    changes = run('git', 'status', '--porcelain', md, mode: :capture)
+    changes = run('git', 'status', '--porcelain', md, mode: :capture).first
     raise changes unless changes.empty?
-    epoch = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture).to_i
+    epoch = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture).first.to_i
     Time.at(epoch)
   rescue
     Time.now

@@ -84,22 +84,31 @@ module Aspera
         "'#{str.gsub("'", %q('\'\''))}'"
       end
 
-      # Execute a process securely without shell.
+      # Executes a command without invoking a shell.
       #
-      # Execution `mode` can be:
-      # - :execute    -> Kernel.system, return nil
-      # - :background -> Process.spawn, return pid
-      # - :capture    -> Open3.capture3, return stdout
+      # The command is provided as an array to avoid shell interpolation and
+      # ensure safer execution.
       #
-      # @param cmd [Array<String>] Executable and arguments (mapped "to_s")
-      # @param mode [:execute,:background,:capture] Execution mode
-      # @param kwargs [Hash] Additional arguments to underlying method
-      # @option kwargs [Hash] :env Environment variables
-      # @option kwargs [Boolean] :exception for :capture mode, raise error if process fails
-      # @option kwargs [Boolean] :close_others for :background mode
-      # @return [nil] for :execute mode
-      # @return [Integer] pid for :background mode
-      # @return [String] stdout for :capture mode
+      # @param cmd [Array<#to_s>] The executable and its arguments.
+      # @param mode [:execute, :background, :capture] The execution strategy:
+      #   - `:execute`    Uses {Kernel.system}. Returns `true`, `false`, or `nil`.
+      #   - `:background` Uses {Process.spawn}. Returns the spawned process PID.
+      #   - `:capture`    Uses {Open3.capture3}. Returns captured output and status.
+      #
+      # @param kwargs [Hash] Additional options forwarded to the underlying call.
+      #
+      # @option kwargs [Hash{String => String}] :env Environment variables to set for the process.
+      # @option kwargs [Boolean] :exception (false) When `true` in `:capture` mode,
+      #   raises an error if the command exits with a non-zero status.
+      # @option kwargs [Boolean] :close_others (true) When `true` in `:background` mode,
+      #   closes all other file descriptors in the child process.
+      #
+      # @return [Boolean, nil] For `:execute` mode (`true`, `false`, or `nil`).
+      # @return [Integer] For `:background` mode (process ID).
+      # @return [Array(String, String, Process::Status)] For `:capture` mode
+      #   (`stdout`, `stderr`, `status`).
+      #
+      # @raise [RuntimeError] If `:exception` is `true` and the process fails in `:capture` mode.
       def secure_execute(*cmd, mode: :execute, **kwargs)
         cmd = cmd.map(&:to_s)
         Aspera.assert(cmd.size.positive?, type: ArgumentError){'executable must be present'}
@@ -128,11 +137,12 @@ module Aspera
           # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
           argv = [kwargs.delete(:env)].compact + cmd
           exception = kwargs.delete(:exception){true}
-          stdout, stderr, status = Open3.capture3(*argv, **kwargs)
-          Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-          Log.log.trace1{"stdout=#{stdout}"}
+          result = Open3.capture3(*argv, **kwargs)
+          Log.dump(:stdout, result[0], level: :trace1)
+          Log.dump(:stderr, result[1], level: :trace1)
+          Log.dump(:status, result[2])
           raise "Process failed: #{status.exitstatus} (#{stderr})" if exception && !status.success?
-          stdout
+          result
         else Aspera.error_unreachable_line
         end
       end

@@ -182,7 +182,7 @@ ASPERA_DAEMON_USER = 'asperadaemon'
 
 # on macOS activate sshd, restore Log folder owner and restart noded
 def reset_macos_hsts
-  result = run(*%w[sudo systemsetup -getremotelogin], mode: :capture)
+  result = run(*%w[sudo systemsetup -getremotelogin], mode: :capture).first
   run(*%w[sudo systemsetup -setremotelogin on]) if result.include?('Off')
   run(*%w[sudo systemsetup -getremotelogin])
   st = File.stat(ASPERA_LOG_PATH)

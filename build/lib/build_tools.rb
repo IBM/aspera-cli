@@ -32,7 +32,7 @@ module BuildTools
   def drun(*cmd, **kwargs)
     if dry_run?
       log.info("#{'Would execute'.red}: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
-      return '' if kwargs[:mode].eql?(:capture)
+      return [''] if kwargs[:mode].eql?(:capture)
     else
       run(*cmd, **kwargs)
     end

@@ -57,7 +57,7 @@ module Aspera
               command_args.push(v.shellescape) unless v.empty?
             end
             command_args.push(last_opt) unless last_opt.nil?
-            return Environment.secure_execute(*command_args, mode: :capture)
+            Environment.secure_execute(*command_args, mode: :capture).first
           end
 
           def key_chains(output)

@@ -51,11 +51,11 @@ module Aspera
           Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), out: File::NULL, err: File::NULL)
         end
 
-        # Execute external command and capture output
+        # Execute external command and get stdout
         # @return [String]
         def external_capture(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          return Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), mode: :capture)
+          Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), mode: :capture).first
         end
 
         def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)
