@@ -141,7 +141,7 @@ module Aspera
           Log.dump(:stdout, result[0], level: :trace1)
           Log.dump(:stderr, result[1], level: :trace1)
           Log.dump(:status, result[2])
-          raise "Process failed: #{status.exitstatus} (#{stderr})" if exception && !status.success?
+          raise "Process failed: #{result[2].exitstatus} (#{result[1]})" if exception && !result[2].success?
           result
         else Aspera.error_unreachable_line
         end
