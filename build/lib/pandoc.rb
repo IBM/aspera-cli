@@ -68,15 +68,37 @@ def check_add_defaults_file(md, format, additional)
   additional << add_defaults
 end
 
+ATTRS = %i{width height}
+
+# Convert HTML <img> to format expected in pandoc
+def convert_img_for_pandoc(content)
+  content.gsub(%r{<img\s+([^>]*?)/?>}) do
+    attrs = Regexp.last_match(1)
+    src = attrs[/src=["']([^"']*)["']/, 1]
+    alt = attrs[/alt=["']([^"']*)["']/, 1] || ''
+    # Try width/height from style= first, then plain attributes
+    style = attrs[/style=["']([^"']*)["']/, 1] || ''
+    pandoc_attrs = {}
+    ATTRS.each do |attr|
+      pandoc_attrs[attr] = style[/#{attr}\s*:\s*([\d.]+\w*)/, 1] || attrs[/#{attr}=["']?([\d.]+\w*)["']?/, 1]
+    end
+    pandoc_attrs.compact!
+    pandoc_attrs.empty? ? '' : "{ #{pandoc_attrs.map{ |k, v| "#{k}=#{v}"}.join(' ')} }"
+    "![#{alt}](#{src})"
+  end
+end
+
 # Generate PDF from Markdown using pandoc templates
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
   pdf = File.expand_path(pdf)
   # Ensure target folder exists for pandoc
   FileUtils.mkdir_p(File.dirname(pdf))
-  # Paths in README.md are relative to its location
+  # Paths in Markdown file are relative to its location
   Dir.chdir(File.dirname(md)) do
     md = File.basename(md)
+    tmp_md = Pathname.new(".tmp.#{md}")
+    tmp_md.write(convert_img_for_pandoc(File.read(md)))
     custom_defaults_file = extract_pandoc_defaults_file(md)
     gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT, '.'])
     defaults = [
@@ -91,11 +113,12 @@ def markdown_to_pdf(md:, pdf:)
       "--variable=date:#{get_change_date(md)}",
       *defaults.map{ |f| "--defaults=#{f}"},
       "--output=#{pdf}",
-      md
+      tmp_md
     )
+    # temporary files
     custom_defaults_file.delete
     gfx_paths_latex.delete
-    # temporary files
+    tmp_md.delete
     FileUtils.rm_rf('svg-inkscape')
   end
 end
@@ -120,7 +143,7 @@ end
 if __FILE__ == $PROGRAM_NAME
   # Print usage information
   def print_usage
-    warn(<<~USAGE)
+    puts(<<~USAGE)
       Usage: #{File.basename($PROGRAM_NAME)} <command> [arguments]
 
       Commands:
@@ -153,7 +176,7 @@ if __FILE__ == $PROGRAM_NAME
 
     # Handle conversion commands (pdf, html)
     if ARGV.length != 3
-      warn('Error: Conversion commands require exactly 3 arguments.')
+      puts('Error: Conversion commands require exactly 3 arguments.')
       print_usage
       exit(1)
     end
@@ -163,14 +186,14 @@ if __FILE__ == $PROGRAM_NAME
 
     # Validate format
     unless %w[pdf html].include?(command)
-      warn("Error: Invalid command '#{ARGV[0]}'. Must be 'deps', 'pdf', or 'html'.")
+      puts("Error: Invalid command '#{ARGV[0]}'. Must be 'deps', 'pdf', or 'html'.")
       print_usage
       exit(1)
     end
 
     # Check if input file exists
     unless File.exist?(input_file)
-      warn("Error: Input file '#{input_file}' not found.")
+      puts("Error: Input file '#{input_file}' not found.")
       exit(2)
     end
 
@@ -185,8 +208,8 @@ if __FILE__ == $PROGRAM_NAME
     puts "Successfully converted #{input_file} to #{output_file}"
     exit(0)
   rescue => e
-    warn("Error during conversion: #{e.message}")
-    warn(e.backtrace.join("\n")) if ENV['DEBUG']
+    puts("Error during conversion: #{e.message}")
+    puts(e.backtrace.join("\n")) if ENV['DEBUG']
     exit(3)
   end
 end
