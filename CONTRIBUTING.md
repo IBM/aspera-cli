@@ -114,6 +114,8 @@ The following environment variables and macros control specific build behaviors:
 | `ENABLE_COVERAGE`           | set/unset  | Enables test coverage analysis when defined.                 |
 | `SIGNING_KEY`               | File path  | Path to the signing key used for building the gem file.      |
 | `SIGNING_KEY_PEM`           | PEM Value  | The PEM content of the signing key.                          |
+| `DRY_RUN`                   | `1`        | Simulates execution without performing actual operations (git, gh commands). |
+| `DEBUG`                     | `1`        | Shows stack trace on errors during documentation generation. |
 
 These values can be set as standard environment variables or passed directly to the `rake` command.
 
@@ -156,7 +158,7 @@ tlmgr install fvextra selnolig lualatex-math
 rake doc:check_links
 ```
 
-- Debug the generation process: `ASPERA_CLI_DOC_DEBUG=debug`.
+- Debug the generation process: `DEBUG=1`.
 
 - Build the documentation:
 
