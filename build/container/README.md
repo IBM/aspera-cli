@@ -32,7 +32,7 @@ git checkout v4.23.0
 ```shell
 ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|while read p;do gem uninstall -axI $p;done
 rm -f Gemfile.lock
-rm -fr .bundle
+rm -fr .bundle tmp
 rm -fr $(gem env gemdir)/gems/*
 ```
 
