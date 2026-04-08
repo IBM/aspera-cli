@@ -256,6 +256,13 @@ bundle exec rake container:test
 bundle exec rake doc:check_links
 ```
 
+- **Check release procedure**:
+
+```shell
+bundle exec rake release:run DRY_RUN=1
+git restore lib/aspera/cli/version.rb CHANGELOG.md docs/README.md
+```
+
 ### Automated Release Process
 
 Releases are managed through the GitHub Actions UI via the **New Release on GitHub** workflow (`.github/workflows/release.yml`).
