@@ -530,32 +530,45 @@ module Aspera
         Aspera.assert_type(query, Hash, NilClass){'query'}
         Aspera.assert(!call_args.key?(:query))
         query = {} if query.nil?
-        query[:iteration_token] = iteration[0] unless iteration.nil?
+        query[:iteration_token] = iteration[0] unless iteration.nil? || iteration[0].nil?
         max = query.delete(RestList::MAX_ITEMS)
+        # Return empty list immediately if max is 0
+        return [] if max&.zero?
         item_list = []
         loop do
           data, http = read(subpath, query, **call_args, ret: :both)
           Aspera.assert_type(data, Array){"Expected data to be an Array, got: #{data.class}"}
           # no data
           break if data.empty?
-          # get next iteration token from link
-          next_iteration_token = nil
-          link_info = http['Link']
-          unless link_info.nil?
-            m = link_info.match(/<([^>]+)>/)
-            Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
-            next_iteration_token = Rest.query_to_h(URI.parse(m[1]).query)['iteration_token']
-          end
-          # same as last iteration: stop
-          break if next_iteration_token&.eql?(query[:iteration_token])
-          query[:iteration_token] = next_iteration_token
           item_list.concat(data)
+          # Check if we reached the max limit
           if max&.<=(item_list.length)
             item_list = item_list.slice(0, max)
             break
           end
+          # Update progress spinner
+          RestParameters.instance.spinner_cb.call(item_list.length)
+          # Parse Link header according to RFC 8288 to extract next iteration token
+          next_url = Rest.parse_link_header(http['Link'], rel: 'next')
+          next_iteration_token = nil
+          if next_url
+            begin
+              parsed_uri = URI.parse(next_url)
+              query_params = Rest.query_to_h(parsed_uri.query) if parsed_uri.query
+              next_iteration_token = query_params['iteration_token'] if query_params
+            rescue URI::InvalidURIError => e
+              Log.log.warn{"Invalid URI in Link header: #{next_url} - #{e.message}"}
+            end
+          end
+          # Stop if no next token
           break if next_iteration_token.nil?
+          # Stop if same token as current (infinite loop protection)
+          break if next_iteration_token.eql?(query[:iteration_token])
+          # Update token for next iteration
+          query[:iteration_token] = next_iteration_token
         end
+        # Signal completion
+        RestParameters.instance.spinner_cb.call(action: :success)
         # save iteration token if needed
         iteration[0] = query[:iteration_token] unless iteration.nil?
         item_list

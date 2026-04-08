@@ -10,6 +10,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `node`: #253 fix `node transfer list` infinite loop with `once_only`.
+
 ### Breaking Changes
 
 ## 4.25.5

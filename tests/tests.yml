@@ -1250,7 +1250,6 @@ nd_xfer_lstb:
     - --once-only=yes
 nd_xfer_lst_once1:
   tags:
-    - flaky
     - nodoc
   depends_on:
     - nd_xfer_lstb
@@ -1261,7 +1260,6 @@ nd_xfer_lst_once1:
     - --once-only=yes
 nd_xfer_lst_once2:
   tags:
-    - flaky
     - nodoc
   depends_on:
     - nd_xfer_lst_once1
