@@ -3,7 +3,7 @@
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_DEFAULTS_BEGIN
 metadata:
-  subtitle: "ascli 4.26.0.pre"
+  subtitle: "ascli 4.25.6"
   author: "Laurent Martin"
 PANDOC_DEFAULTS_END
 -->
@@ -126,8 +126,8 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar zxvf ascli.4.26.0.pre.linux-x86_64.tgz
-mv ascli.4.26.0.pre.linux-x86_64 $HOME/bin/ascli
+tar zxvf ascli.4.25.6.linux-x86_64.tgz
+mv ascli.4.25.6.linux-x86_64 $HOME/bin/ascli
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -141,7 +141,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.25.6
 ```
 
 - Install the latest Aspera transfer runtime, as it is not included in the `ascli` package:
@@ -299,7 +299,7 @@ This executable includes the Ruby runtime.
 > Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
-curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.26.0.pre.osx-arm64
+curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.25.6.osx-arm64
 chmod a+x ascli
 ./ascli config transferd install
 ```
@@ -334,6 +334,16 @@ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 > If `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
 The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [in this page](https://eudemo.asperademo.com/download/sdk.html).
+
+#### Windows: Chocolatey aspera-cli
+
+`ascli` can be directly installed using **Chocolatey**.
+
+In a PowerShell as Administrator:
+
+```pwsh
+choco install aspera-cli -y
+```
 
 ### Ruby
 
@@ -831,11 +841,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.26.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.25.6 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.0.pre-gems
+mv temp_folder/cache aspera-cli-4.25.6-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.0.pre-gems aspera-cli-4.26.0.pre-gems.tgz
+tar zcvf aspera-cli-4.25.6-gems aspera-cli-4.25.6-gems.tgz
 ```
 
 #### Unix-like
@@ -977,7 +987,7 @@ ascli -v
 ```
 
 ```text
-4.26.0.pre
+4.25.6
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4830,7 +4840,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.25.6)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4875,7 +4885,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [graphical], text
+        --ui=ENUM                    Method to start browser: graphical, [text]
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
