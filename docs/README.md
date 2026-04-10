@@ -87,12 +87,23 @@ Example implementations can be found at: <https://github.com/laurent-martin/aspe
 For scripting and ad-hoc command-line tasks, `ascli` is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
-## CLI landscape overview
+### CLI landscape overview: `ascp`
 
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
 Every Aspera transfer involves an `ascp` process on both the client and server sides.
 While `ascp` can be used directly, it is limited to basic send/receive operations and lacks features like configuration management, automatic resume, and remote file listing.
 `ascli` provides a higher-level interface that encompasses all `ascp` capabilities and adds significant usability improvements.
+
+To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
+
+Using `ascli` with the `server` plugin instead of raw `ascp` provides several advantages:
+
+- Automatic resume on error
+- Configuration file support
+- Choice of transfer agents
+- Built-in multi-session support
+
+All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
 
 ### Notations, Shell, Examples
 
@@ -1309,435 +1320,55 @@ Refer to sections: [Usage](#usage).
 > [!NOTE]
 > `ascli` features are not fully documented here, the user may explore commands on the command line.
 
-### `ascp` command line
-
-To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
-
-Using `ascli` with the `server` plugin instead of raw `ascp` provides several advantages:
-
-- Automatic resume on error
-- Configuration file support
-- Choice of transfer agents
-- Built-in multi-session support
-
-All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
-
-### Command line parsing, Special Characters
-
-`ascli` is typically executed in a shell, either interactively or in a script.
-`ascli` receives its arguments on the command line.
-The way arguments are parsed and provided to `ascli` depend on the Operating System and shell.
-
-#### Shell parsing for Unix-like systems: Linux, macOS, AIX
-
-Linux command line parsing is well-defined:
-It is fully documented in the shell's documentation.
-
-On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
-A c-shell (`csh`, `tcsh`) or other shell can also be used.
-In this environment the shell parses the command line, possibly replacing variables, etc.
-See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
-The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
-Ruby receives a list command line arguments from shell and gives it to `ascli`.
-Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
-
-#### Shell parsing for Windows
-
-On Windows, command line parsing first depends on the shell used (see next sections).
-MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
-
-So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
-Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
-
-As far as `ascli` is concerned: the executable is Ruby.
-It has its own parsing algorithm, close to a Linux shell parsing.
-
-Thankfully, `ascli` provides a command to check the value of an argument after parsing: `config echo`.
-One can also run `ascli` with option `--log-level=debug` to display the command line after parsing.
-
-It is also possible to display arguments received by Ruby using this command:
-
-```batchfile
-C:> ruby -e 'puts ARGV' "Hello World" 1 2
-```
-
-```text
-Hello World
-1
-2
-```
-
-> [!NOTE]
-> Use `pp` instead of `puts` to display as Ruby `Array`.
-
-Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
-(Unlike Unix-like systems where the command line is split into arguments by the shell.)
-
-It's up to the program to split arguments:
-
-- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
-
-`ascli` is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
-Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
-
-- Space characters: split arguments (space, tab, newline)
-- Backslash: `\` escape single special character
-- Globbing characters: `*?[]{}` for file globbing
-- Double quotes: `"`
-- Single quotes: `'`
-
-#### Shell parsing for Windows: `cmd.exe`
-
-The following examples give the same result on Windows using `cmd.exe`:
-
-- Single quote protects the double quote
-
-  ```batchfile
-  ascli config echo @json:'{"url":"https://..."}'
-  ```
-
-- Triple double quotes are replaced with a single double quote
-
-  ```batchfile
-  ascli config echo @json:{"""url""":"""https://..."""}
-  ```
-
-- Double quote is escaped with backslash within double quotes
-
-  ```batchfile
-  ascli config echo @json:"{\"url\":\"https://...\"}"
-  ```
-
-`cmd.exe` handles some special characters: `^"<>|%&`.
-Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
-Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
-`"` are kept and given to the program.
-
-#### Shell parsing for Windows: PowerShell
-
-For PowerShell, it actually depends on the version of it (5.1, 7.3+).
-
-A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
-If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
-
-Details can be found here:
-
-- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters)
-
-- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
-
-##### PowerShell 5
-
-- Check your powershell version:
-
-```powershell
-$psversiontable.psversion.Major
-```
-
-```text
-5
-```
-
-The following examples give the same result on Windows using PowerShell 5:
-
-```text
-╭───────┬───────╮
-│ field │ value │
-╞═══════╪═══════╡
-│ x     │ true  │
-│ k     │ v     │
-╰───────┴───────╯
-```
-
-- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
-
-```powershell
-ascli config echo  --% @json:'{"k":"v","x":true}'
-```
-
-- Triple double quotes are replaced with a single double quote in normal mode:
-
-```powershell
-ascli config echo @json:'{"""k""":"""v""","""x""":true}'
-```
-
-- To insert PowerShell variables in the JSON string, one can do:
-
-```powershell
-$var="v"
-ascli config echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
-```
-
-##### PowerShell 7
-
-- Check your PowerShell version:
-
-```powershell
-$psversiontable.psversion.Major
-```
-
-```text
-7
-```
-
-The following examples give the same result on Windows using PowerShell 7:
-
-- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
-
-```powershell
-ascli config echo  --% @json:{"k":"v","x":true}
-```
-
-- Single quote protects double quote in normal mode:
-
-```powershell
-ascli config echo @json:'{"k":"v","x":true}'
-```
-
-- To insert PowerShell variables in the JSON string, one can do:
-
-```powershell
-$var="v"
-ascli config echo  $('@json:{"k":"' + $var + '","x":true}')
-```
-
-- Use PowerShell structure and then convert to JSON string:
-
-```powershell
-$var="v"
-ascli config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
-```
-
-#### Extended Values (JSON, Ruby, ...)
-
-Some values provided to `ascli` (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
-Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
-JSON itself has some special syntax: for example `"` is used to enclose a `String`.
-
-#### Testing Extended Values
-
-In case of doubt of argument values after parsing, one can test using command `config echo`.
-`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
-Unprocessed command line arguments are shown in the error message.
-
-Example:
-The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
-
-```shell
-ascli config echo 1 2 3
-```
-
-```ruby
-"1"
-ERROR: Argument: unprocessed values: ["2", "3"]
-```
-
-`config echo` displays the value of the **first** argument using the current output `format`.
-
-> [!NOTE]
-> It gets its value after shell command line parsing and `ascli` extended value parsing.
-
-In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
-For all example, most special character handling is not specific to `ascli`:
-It depends on the underlying syntax: shell, JSON, etc.
-Depending on the case, a different `format` option is used to display the actual value.
-
-For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
-
-Double quotes are processed by the shell to create a single string argument.
-For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
-
-```shell
-ascli config echo "Hello World" --format=text
-ascli config echo 'Hello World' --format=text
-ascli config echo Hello\ World --format=text
-```
-
-```text
-Hello World
-```
-
-#### Using a shell variable, parsed by shell, in an extended value
-
-To be evaluated by shell, the shell variable must not be in single quotes.
-Even if the variable contains spaces it results only in one argument for `ascli` because word parsing is made before variable expansion by shell.
-
-> [!NOTE]
-> We use a simple shell variable in this example.
-> It does not need to be exported as an environment variable.
-
-```shell
-MYVAR="Hello World"
-ascli config echo @json:'{"title":"'$MYVAR'"}' --format=json
-ascli config echo @json:{\"title\":\"$MYVAR\"} --format=json
-```
-
-```json
-{"title":"Hello World"}
-```
-
-#### Double quote in strings in command line
-
-Double quote is a shell special character.
-Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
-
-```shell
-ascli config echo \"
-ascli config echo '"'
-```
-
-```text
-"
-```
-
-Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
-Both shell and JSON syntax allow protecting `"`, but only the shell allows protection using single quote.
-
-```shell
-ascli config echo @json:'"\""' --format=text
-ascli config echo @json:\"\\\"\" --format=text
-ascli config echo @ruby:\'\"\' --format=text
-```
-
-```text
-"
-```
-
-Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
-But as `\` is also shell special, then it is protected by another `\`.
-  
-#### Shell and JSON or Ruby special characters in extended value
-
-Construction of values with special characters is done like this:
-
-- First select a syntax to represent the extended value, e.g. JSON or Ruby
-
-- Write the expression using this syntax, for example, using JSON:
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
-or using Ruby:
-
-```ruby
-{"title"=>"Test \" ' & \\"}
-{'title'=>%q{Test " ' & \\}}
-```
-
-Both `"` and `\` are special characters for JSON and Ruby and can be protected with `\` (unless Ruby's extended single quote notation `%q` is used).
-  
-- Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
-
-```shell
-ascli config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
-ascli config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
-ascli config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
-```
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
-#### Reading special characters interactively
-
-If `ascli` is used interactively (a user typing on terminal), it is easy to require the user to type values:
-
-```shell
-ascli config echo @ruby:"{'title'=>gets.chomp}" --format=json
-```
-
-`gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
-
-#### Command line arguments from a file
-
-If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
-
-```shell
-xargs -a lines.txt -d \\n ascli config echo
-```
-
-This is equivalent to execution of:
-
-```shell
-ascli config echo [line1] [line2] [line3] ...
-```
-
-If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
-
-#### Extended value using special characters read from environmental variables or files
-
-Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
-
-```shell
-export MYTITLE='Test " '\'' & \'
-echo -n $MYTITLE > title.txt
-```
-
-Using those values will not require any escaping of characters since values do not go through shell or JSON parsing.
-
-If the value is to be assigned directly to an option of ascli, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
-
-```shell
-ascli config echo @file:title.txt --format=text
-ascli config echo @env:MYTITLE --format=text
-```
-
-```text
-Test " ' & \
-```
-
-If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var.
-In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
-
-```shell
-ascli config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
-ascli config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
-```
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
-### Positional Arguments and Options
+### Command Line Arguments
 
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
-Command line tokenization is typically performed by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
 
-`ascli` handles two types of command line arguments:
+`ascli` handles the following types of command line arguments:
 
-- **Positional Arguments**: position is significant
-- **Options**: only order is significant, but not absolute position
+- [**Options**](#options): absolute position is not important, but order is important, as a given option may be provided several times
+- [**Plugins**](#plugins) e.g. `config`, on first position
+- [**Resource Types**](#resource-types) e.g. `users`
+- [**Verbs**](#verbs) e.g. `create`, to act on those resources or plugins.
+- [**Identifiers**](#identifiers) e.g. `123`, uniquely identifying a resource
+- [**Command Parameters**](#command-parameters) arguments, e.g. creation data, can be an Extended value.
+
+Command line arguments that are not options are referred to as **Positional Arguments**.
 
 For example:
 
 ```shell
-ascli command subcommand --option-name=VAL1 VAL2
+ascli plugin command verb --option-name=VAL1 VAL2
 ```
 
-- Executes **Command** and its **Command Parameters** (**Positional Arguments**): `command subcommand VAL2`
-- With one **Option**: `option_name` and its **value**: `VAL1`
+- **Positional Arguments**: `plugin command verb VAL2`
+- one **Option**: `option_name` and its **value**: `VAL1`
 
-If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
-For example `ascli config pre ov` is the same as `ascli config preset overview`.
+Enumeration values (positional arguments and option names/values) support prefix matching.
+See [Enumerations](#enumerations) for details.
+For example `ascli config pre ov --for=c` is the same as `ascli config preset overview --format=csv`.
 
-The value of **Options** and **Positional Arguments** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
+The value of **Options** and **Command Parameters** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
 
 #### Positional Arguments
 
-**Positional Arguments** are either:
+When options (beginning with `--`) are removed from the command line, the remaining arguments are **Positional Arguments** with a significant, pre-defined order.
 
-- [**Commands**](#commands), typically at the beginning
-- [**Command Parameters**](#command-parameters), mandatory arguments, e.g. creation data or entity identifier
+**Plugins**, **Resource Types** and **Verbs** are [Enumerations](#enumerations).
 
-When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a significant, pre-defined order.
+**Identifiers** and **Command Parameters** are open values, but a given type is expected, either a simple `String` or an **Extended value**.
 
-#### Commands
+The general structure of positional arguments is:
 
-**Commands** are typically entity types (e.g. `users`) or verbs (e.g. `create`) to act on those entities.
-Its value is a `String` that must belong to a fixed list of values in a given context.
+```text
+ascli <PLUGIN> <RESOURCE> <COMMAND> [<ID>] [<PARAMETERS>]
+```
+
+If a sub-resource is used:
+
+```text
+ascli <PLUGIN> <RESOURCE1> <SUB_RESOURCE> [<ID>1] <COMMAND2> [<ID2>] [<PARAMETERS>]
+```
 
 Example:
 
@@ -1746,22 +1377,59 @@ ascli config ascp info
 ```
 
 - `ascli` is the executable executed by the shell
-- `conf` is the first level command: name of the plugin to be used
-- `ascp` is the second level command: name of the component (singleton)
-- `info` is the third level command: action to be performed (verb)
+- `config` is the name of the plugin to be used
+- `ascp` is the name of the resource (singleton, so no identifier is provided)
+- `info` is the verb to be performed (action on selected resource)
 
-Typically, **Commands** are located at the **beginning** of the command line.
-The provided command must match one of the supported commands in the given context.
-If a wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
+#### Resource types
 
-Standard entity **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
-Some entities also support additional commands, especially to select sub-entities.
-When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a sub-command of `node`.
+They identify a type of resource accessible in a given context.
+A resource type can be a singleton, or have multiple instances (identified by their identifier).
+A plugin is a kind of resource type singleton.
+A resource type can also be a grouping of other resource types, for example `admin` or `files`, like a singleton.
+
+#### Verbs
+
+Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
+Some entities also support additional verbs.
+When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
+For example sub-commands appear after resource selection (identifier), e.g. `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a sub-command of `node`.
+
+Typically, the `create` verb takes a resource creation data as a parameter.
+`show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
+`list` typically uses the `query`, `select` options.
+`list` and `show` typically use the `fields` option.
+
+#### Identifiers
+
+Identifiers uniquely identify a resource.
+They are typically located just after a verb, itself placed after the resource type.
+Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the **percent selector**.
+
+##### Percent selector
+
+Some resources provide the following capability:
+If the resource can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
+For example, if the name of the user is `john` and a field for this resource named `name` has a value `john`:
+
+```shell
+ascli aoc admin user show %name:john
+```
+
+The percent selector allows identification of a resource by another unique identifier other than the native identifier (typically: `id`).
+
+Syntax: `%<FIELD>:<VALUE>`
+
+When a command is executed on a resource, the resource is identified by a unique identifier that follows the command.
+For example, in the following command, `<USER_ID>` is the user's identifier:
+
+```shell
+ascli aoc admin user show <USER_ID>
+```
 
 #### Command Parameters
 
-**Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
+**Command Parameters** are typically mandatory values for a command, such as resource creation data.
 
 > [!NOTE]
 > It could also have been designed as an option.
@@ -1773,17 +1441,114 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-The general structure of positional arguments is:
+#### Enumerations
 
-```text
-ascli <PLUGIN> <ENTITY> <COMMAND> [<ID>] [<PARAMETERS>]
+**Enumerations** are arguments that must match a value from a predefined list in a given context.
+
+The following are enumerations:
+
+- **Plugins**, **Resource Types**, and **Verbs** (positional arguments)
+- Option names (e.g., `--log-level`)
+- Some option values (e.g., `debug` for `--log-level`)
+
+**Prefix matching**: You can use a unique prefix instead of the full value, provided it uniquely identifies the value in that context.
+
+Examples:
+
+- Positional: `ascli config pre ov --for=c` → `ascli config preset overview --format=csv`
+- Option name: `--log-l=debug` → `--log-level=debug`
+- Option value: `--format=c` → `--format=csv`
+
+> [!NOTE]
+> While prefix matching works for option names, using full names is recommended for clarity.
+
+**Error handling**: If an invalid or missing enumeration value is provided, an error message displays the list of valid values for that context.
+
+#### Dot-path Notation
+
+`ascli` uses a unified **dot-path notation** in several places on the command line and in output.
+Understanding this concept once makes it immediately usable everywhere it appears.
+
+**Dot-path** notation is used in four distinct places in `ascli`:
+
+| Surface                   | Syntax                | in/out | read/write |
+|---------------------------|-----------------------|--------|------------|
+| [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
+| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
+| [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
+| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
+
+A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
+
+- A **string segment** designates a key in a `Hash` (associative array).
+- An **integer segment** designates an index in an `Array`.
+
+For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
+
+When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
+When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+
+Example: dot-path to JSON output
+
+```shell
+ascli config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
-If a sub-entity is used:
+```json
+{"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
+
+Example: JSON to dot-path output
+
+```shell
+ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
+```
 
 ```text
-ascli <PLUGIN> <ENTITY1> <SUB_ENTITY> [<ID>1] <COMMAND2> [<ID2>] [<PARAMETERS>]
+╭───────┬─────────────╮
+│ field │ value       │
+╞═══════╪═════════════╡
+│ a.b   │ 1           │
+│ a.c   │ 2           │
+│ a.d   │ hello,world │
+╰───────┴─────────────╯
 ```
+
+##### Positional Arguments with Dot-path
+
+The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
+It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
+
+**Usage and Syntax**:
+
+The general syntax for this argument is:
+
+```text
+@: <DOT_PATH>=<VALUE> [<DOT_PATH>=<VALUE>] ... [END]
+```
+
+- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
+
+- `<DOT_PATH>=<VALUE>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+
+- `END`: An optional marker that terminates the `@:` parsing session.
+
+  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+
+  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+
+> [!IMPORTANT]
+> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
+> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
+
+**Example**: Sending a package with a file list using `@:` for package information.
+
+```shell
+ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file1.dat file2.dat
+```
+
+> [!CAUTION]
+> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
 
 #### Options
 
@@ -1798,8 +1563,7 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
 - **Values**:
   An option’s value is assigned using `=` (e.g., `--log-level=debug`).
 - **Prefix Usage**:
-  Options can be abbreviated by a unique prefix, though this is not recommended.
-  Example: `--log-l=debug` is equivalent to `--log-level=debug`.
+  Options support prefix matching (see [Enumerations](#enumerations)), though full names are recommended.
 - **Optionality**:
   Most options are optional; they either have a default value or do not require one.
 - **Order**:
@@ -2192,113 +1956,6 @@ In above example, the same result is obtained with option:
 
 Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
 
-### Percent selector
-
-The percent selector allows identification of an entity by another unique identifier other than the native identifier (typically: `id`).
-
-Syntax: `%<FIELD>:<VALUE>`
-
-When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
-For example, in the following command, `<USER_ID>` is the user's identifier:
-
-```shell
-ascli aoc admin user show <USER_ID>
-```
-
-Some commands provide the following capability:
-If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
-For example, if the name of the user is `john` and a field for this entity named `name` has a value `john`:
-
-```shell
-ascli aoc admin user show %name:john
-```
-
-### Dot-path Notation
-
-`ascli` uses a unified **dot-path notation** in several places on the command line and in output.
-Understanding this concept once makes it immediately usable everywhere it appears.
-
-**Dot-path** notation is used in four distinct places in `ascli`:
-
-| Surface                   | Syntax                | in/out | read/write |
-|---------------------------|-----------------------|--------|------------|
-| [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
-| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
-| [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
-| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
-
-A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
-
-- A **string segment** designates a key in a `Hash` (associative array).
-- An **integer segment** designates an index in an `Array`.
-
-For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
-
-When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
-When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
-
-Example: dot-path to JSON output
-
-```shell
-ascli config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
-```
-
-```json
-{"a":{"b":1,"c":2,"d":["hello","world"]}}
-```
-
-Example: JSON to dot-path output
-
-```shell
-ascli config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
-```
-
-```text
-╭───────┬─────────────╮
-│ field │ value       │
-╞═══════╪═════════════╡
-│ a.b   │ 1           │
-│ a.c   │ 2           │
-│ a.d   │ hello,world │
-╰───────┴─────────────╯
-```
-
-#### Positional Arguments with Dot-path
-
-The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
-It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
-
-**Usage and Syntax**:
-
-The general syntax for this argument is:
-
-```text
-@: <DOT_PATH>=<VALUE> [<DOT_PATH>=<VALUE>] ... [END]
-```
-
-- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
-
-- `<DOT_PATH>=<VALUE>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
-
-- `END`: An optional marker that terminates the `@:` parsing session.
-
-  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
-
-  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
-
-> [!IMPORTANT]
-> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
-> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
-
-**Example**: Sending a package with a file list using `@:` for package information.
-
-```shell
-ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file1.dat file2.dat
-```
-
-> [!CAUTION]
-> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
-
 ### Extended Value Syntax
 
 Most options and arguments are specified by a simple string (e.g. `username` or `url`).
@@ -2306,6 +1963,8 @@ Sometimes it is convenient to read a value from a file: for example read the PEM
 Some options expect a more complex value such as `Hash` or `Array`.
 
 The **Extended Value** Syntax allows specifying such values and even reading values from other sources than the command line itself.
+
+#### Syntax and Decoders
 
 The syntax is:
 
@@ -2318,6 +1977,8 @@ Decoders act like a function with its parameter on right-hand side and are recog
 ```text
 @<NAME>:
 ```
+
+##### Available Decoders
 
 The following decoders are supported:
 
@@ -2357,6 +2018,8 @@ It expects a `@` to close the embedded extended value syntax.
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
+
+#### Common Usage Examples
 
 Example: Create a `Hash` value with the convenient `@json:` decoder:
 
@@ -2432,6 +2095,48 @@ EOF
 
 ```json
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
+```
+
+#### Testing Extended Values
+
+In case of doubt of argument values after parsing, one can test using command `config echo`.
+`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
+Unprocessed command line arguments are shown in the error message.
+
+Example:
+The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+
+```shell
+ascli config echo 1 2 3
+```
+
+```ruby
+"1"
+ERROR: Argument: unprocessed values: ["2", "3"]
+```
+
+`config echo` displays the value of the **first** argument using the current output `format`.
+
+> [!NOTE]
+> It gets its value after shell command line parsing and `ascli` extended value parsing.
+In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
+For all example, most special character handling is not specific to `ascli`:
+It depends on the underlying syntax: shell, JSON, etc.
+Depending on the case, a different `format` option is used to display the actual value.
+
+For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
+
+Double quotes are processed by the shell to create a single string argument.
+For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
+
+```shell
+ascli config echo "Hello World" --format=text
+ascli config echo 'Hello World' --format=text
+ascli config echo Hello\ World --format=text
+```
+
+```text
+Hello World
 ```
 
 ### Main, configuration and Persistency Folder
@@ -5126,9 +4831,6 @@ OPTIONS:
 
 ```
 
-> [!NOTE]
-> Commands and parameter values can be written in short form.
-
 ### Bulk creation and deletion of resources
 
 Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
@@ -5208,6 +4910,342 @@ For example: `node` and `httpgw` are both plugins and transfer agents.
 
 A plugin is invoked as the first positional argument in a command line.
 A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node`).
+
+### Command line parsing, Special Characters
+
+`ascli` is typically executed in a shell, either interactively or in a script.
+`ascli` receives its arguments on the command line.
+The way arguments are parsed and provided to `ascli` depend on the Operating System and shell.
+
+#### Shell parsing for Unix-like systems: Linux, macOS, AIX
+
+Linux command line parsing is well-defined:
+It is fully documented in the shell's documentation.
+
+On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
+A c-shell (`csh`, `tcsh`) or other shell can also be used.
+In this environment the shell parses the command line, possibly replacing variables, etc.
+See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
+The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
+Ruby receives a list command line arguments from shell and gives it to `ascli`.
+Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
+
+#### Shell parsing for Windows
+
+On Windows, command line parsing first depends on the shell used (see next sections).
+MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
+
+So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
+Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
+
+As far as `ascli` is concerned: the executable is Ruby.
+It has its own parsing algorithm, close to a Linux shell parsing.
+
+Thankfully, `ascli` provides a command to check the value of an argument after parsing: `config echo`.
+One can also run `ascli` with option `--log-level=debug` to display the command line after parsing.
+
+It is also possible to display arguments received by Ruby using this command:
+
+```batchfile
+C:> ruby -e 'puts ARGV' "Hello World" 1 2
+```
+
+```text
+Hello World
+1
+2
+```
+
+> [!NOTE]
+> Use `pp` instead of `puts` to display as Ruby `Array`.
+
+Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+(Unlike Unix-like systems where the command line is split into arguments by the shell.)
+
+It's up to the program to split arguments:
+
+- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+`ascli` is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
+Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+
+- Space characters: split arguments (space, tab, newline)
+- Backslash: `\` escape single special character
+- Globbing characters: `*?[]{}` for file globbing
+- Double quotes: `"`
+- Single quotes: `'`
+
+#### Shell parsing for Windows: `cmd.exe`
+
+The following examples give the same result on Windows using `cmd.exe`:
+
+- Single quote protects the double quote
+
+  ```batchfile
+  ascli config echo @json:'{"url":"https://..."}'
+  ```
+
+- Triple double quotes are replaced with a single double quote
+
+  ```batchfile
+  ascli config echo @json:{"""url""":"""https://..."""}
+  ```
+
+- Double quote is escaped with backslash within double quotes
+
+  ```batchfile
+  ascli config echo @json:"{\"url\":\"https://...\"}"
+  ```
+
+`cmd.exe` handles some special characters: `^"<>|%&`.
+Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
+Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
+`"` are kept and given to the program.
+
+#### Shell parsing for Windows: PowerShell
+
+For PowerShell, it actually depends on the version of it (5.1, 7.3+).
+
+A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
+If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
+
+Details can be found here:
+
+- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters)
+
+- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
+
+##### PowerShell 5
+
+- Check your powershell version:
+
+```powershell
+$psversiontable.psversion.Major
+```
+
+```text
+5
+```
+
+The following examples give the same result on Windows using PowerShell 5:
+
+```text
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ x     │ true  │
+│ k     │ v     │
+╰───────┴───────╯
+```
+
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
+ascli config echo  --% @json:'{"k":"v","x":true}'
+```
+
+- Triple double quotes are replaced with a single double quote in normal mode:
+
+```powershell
+ascli config echo @json:'{"""k""":"""v""","""x""":true}'
+```
+
+- To insert PowerShell variables in the JSON string, one can do:
+
+```powershell
+$var="v"
+ascli config echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
+```
+
+##### PowerShell 7
+
+- Check your PowerShell version:
+
+```powershell
+$psversiontable.psversion.Major
+```
+
+```text
+7
+```
+
+The following examples give the same result on Windows using PowerShell 7:
+
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
+ascli config echo  --% @json:{"k":"v","x":true}
+```
+
+- Single quote protects double quote in normal mode:
+
+```powershell
+ascli config echo @json:'{"k":"v","x":true}'
+```
+
+- To insert PowerShell variables in the JSON string, one can do:
+
+```powershell
+$var="v"
+ascli config echo  $('@json:{"k":"' + $var + '","x":true}')
+```
+
+- Use PowerShell structure and then convert to JSON string:
+
+```powershell
+$var="v"
+ascli config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
+```
+
+#### Extended Values (JSON, Ruby, ...)
+
+Some values provided to `ascli` (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
+JSON itself has some special syntax: for example `"` is used to enclose a `String`.
+
+#### Using a shell variable, parsed by shell, in an extended value
+
+To be evaluated by shell, the shell variable must not be in single quotes.
+Even if the variable contains spaces it results only in one argument for `ascli` because word parsing is made before variable expansion by shell.
+
+> [!NOTE]
+> We use a simple shell variable in this example.
+> It does not need to be exported as an environment variable.
+
+```shell
+MYVAR="Hello World"
+ascli config echo @json:'{"title":"'$MYVAR'"}' --format=json
+ascli config echo @json:{\"title\":\"$MYVAR\"} --format=json
+```
+
+```json
+{"title":"Hello World"}
+```
+
+#### Double quote in strings in command line
+
+Double quote is a shell special character.
+Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
+
+```shell
+ascli config echo \"
+ascli config echo '"'
+```
+
+```text
+"
+```
+
+Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
+Both shell and JSON syntax allow protecting `"`, but only the shell allows protection using single quote.
+
+```shell
+ascli config echo @json:'"\""' --format=text
+ascli config echo @json:\"\\\"\" --format=text
+ascli config echo @ruby:\'\"\' --format=text
+```
+
+```text
+"
+```
+
+Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
+But as `\` is also shell special, then it is protected by another `\`.
+  
+#### Shell and JSON or Ruby special characters in extended value
+
+Construction of values with special characters is done like this:
+
+- First select a syntax to represent the extended value, e.g. JSON or Ruby
+
+- Write the expression using this syntax, for example, using JSON:
+
+```json
+{"title":"Test \" ' & \\"}
+```
+
+or using Ruby:
+
+```ruby
+{"title"=>"Test \" ' & \\"}
+{'title'=>%q{Test " ' & \\}}
+```
+
+Both `"` and `\` are special characters for JSON and Ruby and can be protected with `\` (unless Ruby's extended single quote notation `%q` is used).
+  
+- Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
+
+```shell
+ascli config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
+ascli config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
+ascli config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
+```
+
+```json
+{"title":"Test \" ' & \\"}
+```
+
+#### Reading special characters interactively
+
+If `ascli` is used interactively (a user typing on terminal), it is easy to require the user to type values:
+
+```shell
+ascli config echo @ruby:"{'title'=>gets.chomp}" --format=json
+```
+
+`gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
+
+#### Command line arguments from a file
+
+If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
+
+```shell
+xargs -a lines.txt -d \\n ascli config echo
+```
+
+This is equivalent to execution of:
+
+```shell
+ascli config echo [line1] [line2] [line3] ...
+```
+
+If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
+
+#### Extended value using special characters read from environmental variables or files
+
+Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
+
+```shell
+export MYTITLE='Test " '\'' & \'
+echo -n $MYTITLE > title.txt
+```
+
+Using those values will not require any escaping of characters since values do not go through shell or JSON parsing.
+
+If the value is to be assigned directly to an option of ascli, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
+
+```shell
+ascli config echo @file:title.txt --format=text
+ascli config echo @env:MYTITLE --format=text
+```
+
+```text
+Test " ' & \
+```
+
+If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var.
+In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
+
+```shell
+ascli config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
+ascli config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
+```
+
+```json
+{"title":"Test \" ' & \\"}
+```
 
 ## Plugin: `aoc`: IBM Aspera on Cloud
 
@@ -5579,7 +5617,7 @@ The following parameters are supported:
 > `ascli` will return all values using paging if not provided.
 > `page` and `per_page` are normally added by `ascli` to build successive API calls to get all values if there are more than 1000.
 (AoC allows a maximum page size of 1000).
-> Other parameters depend on the type of entity (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
+> Other parameters depend on the type of resource (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
 > Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
 > [!TIP]
@@ -6144,7 +6182,7 @@ Once executed, the access key `id` and `secret`, randomly generated by the Node 
 > Once returned by the API, the secret will not be available anymore, so store this preciously.
 > ATS secrets can only be reset by asking IBM support.
 
-- Create the AoC node entity
+- Create the AoC node resource
 
 First, Retrieve the ATS node address
 
@@ -6152,7 +6190,7 @@ First, Retrieve the ATS node address
 ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
 ```
 
-Then use the returned address for the `url` key to actually create the AoC Node entity:
+Then use the returned address for the `url` key to actually create the AoC Node resource:
 
 ```shell
 ascli aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
@@ -6615,7 +6653,7 @@ ascli aoc admin node do <NODE_ID> permission <FOLDER_PATH> create @json:'{"with"
 > [!NOTE]
 > The previous command only declares the shared folder in the workspace, but does not share it with anybody.
 
-To share with a user, group, or workspace, use the `with` parameter with the name of a entity to share with (non-empty value).
+To share with a user, group, or workspace, use the `with` parameter with the name of a resource to share with (non-empty value).
 The `"with"` parameter will perform a lookup, and set fields `access_type` and `access_id` accordingly.
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
