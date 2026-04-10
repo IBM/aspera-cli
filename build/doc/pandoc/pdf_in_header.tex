@@ -6,26 +6,27 @@
 \fvset{breaklines}
 \fvset{breaknonspaceingroup}
 \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
-  commandchars=\\\{\},
-  showtabs=false,
-  showspaces=false,
-  breaklines,
-  breaksymbolleft=\tiny\ensuremath{\hookrightarrow},
-  breaknonspaceingroup,
-  breakafter=\,.:|-\space,
-  highlightlines=1-1000,
-  highlightcolor=lightgray,
-  fontsize=\small
+commandchars=\\\{\},
+showtabs=false,
+showspaces=false,
+breaklines,
+breaksymbolleft=\tiny\ensuremath{\hookrightarrow},
+breaknonspaceingroup,
+breakafter=\,.:|-\space,
+highlightlines=1-1000,
+highlightcolor=lightgray,
+fontsize=\small
 }
 % https://ctan.org/pkg/graphicx
 \usepackage{graphicx}
-\usepackage{svg}
+% Ensure inkscape is used to preserve aspect ratio.
+\usepackage[inkscape]{svg}
 % https://ctan.org/pkg/eso-pic
 \usepackage{eso-pic}
 \AddToShipoutPictureBG*{
   \AtPageUpperLeft{\raisebox{-\height}{
-    \includegraphics[width=\paperwidth]{pdf_cover_top.png}
-  }}
+      \includegraphics[width=\paperwidth]{pdf_cover_top.png}
+    }}
   \AtPageLowerLeft{
     \includegraphics[width=\paperwidth]{pdf_cover_bottom.png}
   }
@@ -45,9 +46,9 @@
 % Black border for quotes.
 \usepackage{framed}
 \renewenvironment{quote}
-  {\def\FrameCommand{\vrule width 3pt \hspace{10pt}}
-   \MakeFramed{\advance\hsize-\width \FrameRestore}\itshape}
-  {\endMakeFramed}
+{\def\FrameCommand{\vrule width 3pt \hspace{10pt}}
+  \MakeFramed{\advance\hsize-\width \FrameRestore}\itshape}
+{\endMakeFramed}
 \usepackage{indentfirst}
 \setlength{\parindent}{2em}
 \usepackage{tcolorbox}
@@ -65,5 +66,5 @@
 \let\oldlongtable\longtable
 \let\endoldlongtable\endlongtable
 \renewenvironment{longtable}
-  {\rowcolors{2}{table_row_color}{white}\oldlongtable}
-  {\endoldlongtable}
+{\rowcolors{2}{table_row_color}{white}\oldlongtable}
+{\endoldlongtable}
