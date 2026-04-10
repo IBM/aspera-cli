@@ -4885,7 +4885,7 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
