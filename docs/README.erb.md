@@ -2051,6 +2051,48 @@ EOF
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
+#### Testing Extended Values
+
+In case of doubt of argument values after parsing, one can test using command `config echo`.
+`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
+Unprocessed command line arguments are shown in the error message.
+
+Example:
+The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+
+```shell
+<%=cmd%> config echo 1 2 3
+```
+
+```ruby
+"1"
+ERROR: Argument: unprocessed values: ["2", "3"]
+```
+
+`config echo` displays the value of the **first** argument using the current output `format`.
+
+> [!NOTE]
+> It gets its value after shell command line parsing and <%=tool%> extended value parsing.
+In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
+For all example, most special character handling is not specific to <%=tool%>:
+It depends on the underlying syntax: shell, JSON, etc.
+Depending on the case, a different `format` option is used to display the actual value.
+
+For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
+
+Double quotes are processed by the shell to create a single string argument.
+For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
+
+```shell
+<%=cmd%> config echo "Hello World" --format=text
+<%=cmd%> config echo 'Hello World' --format=text
+<%=cmd%> config echo Hello\ World --format=text
+```
+
+```text
+Hello World
+```
+
 ### Main, configuration and Persistency Folder
 
 <%=tool%> looks for configuration and persistency files (token cache, file lists, persistency files) in the folder specified using option `home`.
@@ -4525,49 +4567,6 @@ $var="v"
 Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
 Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
 JSON itself has some special syntax: for example `"` is used to enclose a `String`.
-
-#### Testing Extended Values
-
-In case of doubt of argument values after parsing, one can test using command `config echo`.
-`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
-Unprocessed command line arguments are shown in the error message.
-
-Example:
-The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
-
-```shell
-<%=cmd%> config echo 1 2 3
-```
-
-```ruby
-"1"
-ERROR: Argument: unprocessed values: ["2", "3"]
-```
-
-`config echo` displays the value of the **first** argument using the current output `format`.
-
-> [!NOTE]
-> It gets its value after shell command line parsing and <%=tool%> extended value parsing.
-
-In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
-For all example, most special character handling is not specific to <%=tool%>:
-It depends on the underlying syntax: shell, JSON, etc.
-Depending on the case, a different `format` option is used to display the actual value.
-
-For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
-
-Double quotes are processed by the shell to create a single string argument.
-For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
-
-```shell
-<%=cmd%> config echo "Hello World" --format=text
-<%=cmd%> config echo 'Hello World' --format=text
-<%=cmd%> config echo Hello\ World --format=text
-```
-
-```text
-Hello World
-```
 
 #### Using a shell variable, parsed by shell, in an extended value
 
