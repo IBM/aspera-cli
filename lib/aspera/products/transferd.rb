@@ -27,7 +27,7 @@ module Aspera
           sdk_directory
         end
 
-        # @return the path to folder where SDK is installed
+        # @return the path to folder where SDK is or should be installed
         def sdk_directory
           Aspera.assert(!@sdk_dir.nil?){'SDK path was not initialized'}
           @sdk_dir
