@@ -1,21 +1,23 @@
 ---
 include:
-  - "**/*.rb"
+- "**/*.rb"
 exclude:
-  - spec/**/*
-  - ".bundle/**/*"
+- spec/**/*
+- ".bundle/**/*"
 require: []
 domains: []
 reporters:
-  - rubocop
-  - require_not_found
-  - typecheck
+- rubocop
+- require_not_found
+- typecheck
 formatter:
   rubocop:
     cops: safe
     except: []
     only: []
     extra_args: []
+type_checker:
+  rules: {}
 require_paths: []
 plugins: []
 max_files: 5000
