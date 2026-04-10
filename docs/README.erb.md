@@ -86,12 +86,23 @@ Example implementations can be found at: <https://github.com/laurent-martin/aspe
 For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
-## CLI landscape overview
+### CLI landscape overview: `ascp`
 
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
 Every Aspera transfer involves an `ascp` process on both the client and server sides.
 While `ascp` can be used directly, it is limited to basic send/receive operations and lacks features like configuration management, automatic resume, and remote file listing.
 <%=tool%> provides a higher-level interface that encompasses all `ascp` capabilities and adds significant usability improvements.
+
+To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
+
+Using <%=tool%> with the `server` plugin instead of raw `ascp` provides several advantages:
+
+- Automatic resume on error
+- Configuration file support
+- Choice of transfer agents
+- Built-in multi-session support
+
+All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
 
 ### Notations, Shell, Examples
 
@@ -1260,19 +1271,6 @@ Refer to sections: [Usage](#usage).
 
 > [!NOTE]
 > <%=tool%> features are not fully documented here, the user may explore commands on the command line.
-
-### `ascp` command line
-
-To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
-
-Using <%=tool%> with the `server` plugin instead of raw `ascp` provides several advantages:
-
-- Automatic resume on error
-- Configuration file support
-- Choice of transfer agents
-- Built-in multi-session support
-
-All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
 
 ### Command Line Arguments
 
