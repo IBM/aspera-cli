@@ -1653,43 +1653,63 @@ In those cases, there is no character to protect because values are not parsed b
 {"title":"Test \" ' & \\"}
 ```
 
-### Positional Arguments and Options
+### Command Line Arguments
 
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
 Command line tokenization is typically performed by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
 
-<%=tool%> handles two types of command line arguments:
+<%=tool%> handles the following types of command line arguments:
 
-- **Positional Arguments**: position is significant
-- **Options**: only order is significant, but not absolute position
+- [**Options**](#options): absolute position is not important, but order is important, as a given option may be provided several times
+- [**Plugins**](#plugins) e.g. `config`, on first position
+- [**Resource Types**](#resource-types) e.g. `users`
+- [**Verbs**](#verbs) e.g. `create`, to act on those resources or plugins.
+- [**Identifiers**](#identifiers) e.g. `123`, uniquely identifying a resource
+- [**Command Parameters**](#command-parameters) arguments, e.g. creation data, can be an Extended value.
+
+Command line arguments that are not options are referred to as **Positional Arguments**.
 
 For example:
 
 ```shell
-<%=cmd%> command subcommand --option-name=VAL1 VAL2
+<%=cmd%> plugin command verb --option-name=VAL1 VAL2
 ```
 
-- Executes **Command** and its **Command Parameters** (**Positional Arguments**): `command subcommand VAL2`
-- With one **Option**: `option_name` and its **value**: `VAL1`
+- **Positional Arguments**: `plugin command verb VAL2`
+- one **Option**: `option_name` and its **value**: `VAL1`
 
-If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
-For example `<%=cmd%> config pre ov` is the same as `<%=cmd%> config preset overview`.
+Enumeration values (positional arguments and option names/values) support prefix matching.
+See [Enumerations](#enumerations) for details.
+For example `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`.
 
-The value of **Options** and **Positional Arguments** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
+The value of **Options** and **Command Parameters** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
+
+#### Resource types
+
+They identify a type of resource accessible in a given context.
+A resource type can be a singleton, or have multiple instances (identified by their identifier).
+A plugin is a kind of resource type singleton.
+A resource type can also be a grouping of other resource types, for example `admin` or `files`, like a singleton.
 
 #### Positional Arguments
 
-**Positional Arguments** are either:
+When options (beginning with `--`) are removed from the command line, the remaining arguments are **Positional Arguments** with a significant, pre-defined order.
 
-- [**Commands**](#commands), typically at the beginning
-- [**Command Parameters**](#command-parameters), mandatory arguments, e.g. creation data or entity identifier
+**Plugins**, **Resource Types** and **Verbs** are [Enumerations](#enumerations).
 
-When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a significant, pre-defined order.
+**Identifiers** and **Command Parameters** are open values, but a given type is expected, either a simple `String` or an **Extended value**.
 
-#### Commands
+The general structure of positional arguments is:
 
-**Commands** are typically entity types (e.g. `users`) or verbs (e.g. `create`) to act on those entities.
-Its value is a `String` that must belong to a fixed list of values in a given context.
+```text
+<%=cmd%> <%=ph :plugin%> <%=ph :resource%> <%=ph :command%> [<%=ph :ID%>] [<%=ph :parameters%>]
+```
+
+If a sub-resource is used:
+
+```text
+<%=cmd%> <%=ph :plugin%> <%=ph :resource1%> <%=ph :sub_resource%> [<%=ph :ID%>1] <%=ph :command2%> [<%=ph :ID2%>] [<%=ph :parameters%>]
+```
 
 Example:
 
@@ -1698,22 +1718,75 @@ Example:
 ```
 
 - <%=tool%> is the executable executed by the shell
-- `conf` is the first level command: name of the plugin to be used
-- `ascp` is the second level command: name of the component (singleton)
-- `info` is the third level command: action to be performed (verb)
+- `config` is the name of the plugin to be used
+- `ascp` is the name of the resource (singleton, so no identifier is provided)
+- `info` is the verb to be performed (action on selected resource)
 
-Typically, **Commands** are located at the **beginning** of the command line.
-The provided command must match one of the supported commands in the given context.
-If a wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
+#### Identifiers
 
-Standard entity **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
-Some entities also support additional commands, especially to select sub-entities.
-When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
+Identifiers uniquely identify a resource.
+They are typically located just after a verb, itself placed after the resource type.
+Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the **percent selector**.
+
+##### Percent selector
+
+Some resources provide the following capability:
+If the resource can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
+For example, if the name of the user is `john` and a field for this resource named `name` has a value `john`:
+
+```shell
+<%=cmd%> aoc admin user show %name:john
+```
+
+The percent selector allows identification of a resource by another unique identifier other than the native identifier (typically: `id`).
+
+Syntax: `%<%=ph :field%>:<%=ph :value%>`
+
+When a command is executed on a resource, the resource is identified by a unique identifier that follows the command.
+For example, in the following command, `<%=ph :user_id%>` is the user's identifier:
+
+```shell
+<%=cmd%> aoc admin user show <%=ph :user_id%>
+```
+
+#### Enumerations
+
+**Enumerations** are arguments that must match a value from a predefined list in a given context.
+
+The following are enumerations:
+
+- **Plugins**, **Resource Types**, and **Verbs** (positional arguments)
+- Option names (e.g., `--log-level`)
+- Some option values (e.g., `debug` for `--log-level`)
+
+**Prefix matching**: You can use a unique prefix instead of the full value, provided it uniquely identifies the value in that context.
+
+Examples:
+
+- Positional: `<%=cmd%> config pre ov --for=c` → `<%=cmd%> config preset overview --format=csv`
+- Option name: `--log-l=debug` → `--log-level=debug`
+- Option value: `--format=c` → `--format=csv`
+
+> [!NOTE]
+> While prefix matching works for option names, using full names is recommended for clarity.
+
+**Error handling**: If an invalid or missing enumeration value is provided, an error message displays the list of valid values for that context.
+
+#### Verbs
+
+Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
+Some entities also support additional verbs.
+When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
+For example sub-commands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
+
+Typically, the `create` verb takes a resource creation data as a parameter.
+`show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
+`list` typically uses the `query`, `select` options.
+`list` and `show` typically use the `fields` option.
 
 #### Command Parameters
 
-**Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
+**Command Parameters** are typically mandatory values for a command, such as resource creation data.
 
 > [!NOTE]
 > It could also have been designed as an option.
@@ -1725,17 +1798,91 @@ If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
-The general structure of positional arguments is:
+#### Dot-path Notation
 
-```text
-<%=cmd%> <%=ph :plugin%> <%=ph :entity%> <%=ph :command%> [<%=ph :ID%>] [<%=ph :parameters%>]
+<%=tool%> uses a unified **dot-path notation** in several places on the command line and in output.
+Understanding this concept once makes it immediately usable everywhere it appears.
+
+**Dot-path** notation is used in four distinct places in <%=tool%>:
+
+| Surface                   | Syntax                | in/out | read/write |
+|---------------------------|-----------------------|--------|------------|
+| [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
+| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
+| [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
+| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
+
+A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
+
+- A **string segment** designates a key in a `Hash` (associative array).
+- An **integer segment** designates an index in an `Array`.
+
+For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
+
+When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
+When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+
+Example: dot-path to JSON output
+
+```shell
+<%=cmd%> config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
 ```
 
-If a sub-entity is used:
+```json
+{"a":{"b":1,"c":2,"d":["hello","world"]}}
+```
+
+Example: JSON to dot-path output
+
+```shell
+<%=cmd%> config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
+```
 
 ```text
-<%=cmd%> <%=ph :plugin%> <%=ph :entity1%> <%=ph :sub_entity%> [<%=ph :ID%>1] <%=ph :command2%> [<%=ph :ID2%>] [<%=ph :parameters%>]
+╭───────┬─────────────╮
+│ field │ value       │
+╞═══════╪═════════════╡
+│ a.b   │ 1           │
+│ a.c   │ 2           │
+│ a.d   │ hello,world │
+╰───────┴─────────────╯
 ```
+
+##### Positional Arguments with Dot-path
+
+The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
+It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
+
+**Usage and Syntax**:
+
+The general syntax for this argument is:
+
+```text
+@: <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [END]
+```
+
+- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
+
+- `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+
+- `END`: An optional marker that terminates the `@:` parsing session.
+
+  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+
+  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+
+> [!IMPORTANT]
+> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
+> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
+
+**Example**: Sending a package with a file list using `@:` for package information.
+
+```shell
+<%=cmd%> aoc packages send @: name="<%=ph :title%>" recipients.0=user@example.com END file1.dat file2.dat
+```
+
+> [!CAUTION]
+> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
 
 #### Options
 
@@ -1750,8 +1897,7 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
 - **Values**:
   An option’s value is assigned using `=` (e.g., `--log-level=debug`).
 - **Prefix Usage**:
-  Options can be abbreviated by a unique prefix, though this is not recommended.
-  Example: `--log-l=debug` is equivalent to `--log-level=debug`.
+  Options support prefix matching (see [Enumerations](#enumerations)), though full names are recommended.
 - **Optionality**:
   Most options are optional; they either have a default value or do not require one.
 - **Order**:
@@ -2143,113 +2289,6 @@ In above example, the same result is obtained with option:
 ```
 
 Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
-
-### Percent selector
-
-The percent selector allows identification of an entity by another unique identifier other than the native identifier (typically: `id`).
-
-Syntax: `%<%=ph :field%>:<%=ph :value%>`
-
-When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
-For example, in the following command, `<%=ph :user_id%>` is the user's identifier:
-
-```shell
-<%=cmd%> aoc admin user show <%=ph :user_id%>
-```
-
-Some commands provide the following capability:
-If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
-For example, if the name of the user is `john` and a field for this entity named `name` has a value `john`:
-
-```shell
-<%=cmd%> aoc admin user show %name:john
-```
-
-### Dot-path Notation
-
-<%=tool%> uses a unified **dot-path notation** in several places on the command line and in output.
-Understanding this concept once makes it immediately usable everywhere it appears.
-
-**Dot-path** notation is used in four distinct places in <%=tool%>:
-
-| Surface                   | Syntax                | in/out | read/write |
-|---------------------------|-----------------------|--------|------------|
-| [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
-| [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
-| [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
-| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
-
-A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
-
-- A **string segment** designates a key in a `Hash` (associative array).
-- An **integer segment** designates an index in an `Array`.
-
-For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
-
-When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
-When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
-
-Example: dot-path to JSON output
-
-```shell
-<%=cmd%> config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
-```
-
-```json
-{"a":{"b":1,"c":2,"d":["hello","world"]}}
-```
-
-Example: JSON to dot-path output
-
-```shell
-<%=cmd%> config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
-```
-
-```text
-╭───────┬─────────────╮
-│ field │ value       │
-╞═══════╪═════════════╡
-│ a.b   │ 1           │
-│ a.c   │ 2           │
-│ a.d   │ hello,world │
-╰───────┴─────────────╯
-```
-
-#### Positional Arguments with Dot-path
-
-The `@:` syntax is a specialized argument type used for **in-place definition** of nested data structures.
-It allows you to construct complex parameters (`Hash`es and `Array`s) directly from the command line, serving as a readable alternative to providing a single, serialized JSON string.
-
-**Usage and Syntax**:
-
-The general syntax for this argument is:
-
-```text
-@: <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [END]
-```
-
-- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
-
-- `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
-
-- `END`: An optional marker that terminates the `@:` parsing session.
-
-  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
-
-  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
-
-> [!IMPORTANT]
-> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
-> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
-
-**Example**: Sending a package with a file list using `@:` for package information.
-
-```shell
-<%=cmd%> aoc packages send @: name="<%=ph :title%>" recipients.0=user@example.com END file1.dat file2.dat
-```
-
-> [!CAUTION]
-> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
 
 ### Extended Value Syntax
 
@@ -4587,9 +4626,6 @@ Examples:
 
 ```
 
-> [!NOTE]
-> Commands and parameter values can be written in short form.
-
 ### Bulk creation and deletion of resources
 
 Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
@@ -5040,7 +5076,7 @@ The following parameters are supported:
 > <%=tool%> will return all values using paging if not provided.
 > `page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000.
 (AoC allows a maximum page size of 1000).
-> Other parameters depend on the type of entity (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
+> Other parameters depend on the type of resource (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
 > Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
 > [!TIP]
@@ -5605,7 +5641,7 @@ Once executed, the access key `id` and `secret`, randomly generated by the Node 
 > Once returned by the API, the secret will not be available anymore, so store this preciously.
 > ATS secrets can only be reset by asking IBM support.
 
-- Create the AoC node entity
+- Create the AoC node resource
 
 First, Retrieve the ATS node address
 
@@ -5613,7 +5649,7 @@ First, Retrieve the ATS node address
 <%=cmd%> aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
 ```
 
-Then use the returned address for the `url` key to actually create the AoC Node entity:
+Then use the returned address for the `url` key to actually create the AoC Node resource:
 
 ```shell
 <%=cmd%> aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
@@ -6076,7 +6112,7 @@ For other options, refer to the previous section on shared folders.
 > [!NOTE]
 > The previous command only declares the shared folder in the workspace, but does not share it with anybody.
 
-To share with a user, group, or workspace, use the `with` parameter with the name of a entity to share with (non-empty value).
+To share with a user, group, or workspace, use the `with` parameter with the name of a resource to share with (non-empty value).
 The `"with"` parameter will perform a lookup, and set fields `access_type` and `access_id` accordingly.
 The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
