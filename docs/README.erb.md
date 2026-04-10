@@ -1274,389 +1274,9 @@ Using <%=tool%> with the `server` plugin instead of raw `ascp` provides several 
 
 All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
 
-### Command line parsing, Special Characters
-
-<%=tool%> is typically executed in a shell, either interactively or in a script.
-<%=tool%> receives its arguments on the command line.
-The way arguments are parsed and provided to <%=tool%> depend on the Operating System and shell.
-
-#### Shell parsing for Unix-like systems: Linux, macOS, AIX
-
-Linux command line parsing is well-defined:
-It is fully documented in the shell's documentation.
-
-On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
-A c-shell (`csh`, `tcsh`) or other shell can also be used.
-In this environment the shell parses the command line, possibly replacing variables, etc.
-See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
-The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
-Ruby receives a list command line arguments from shell and gives it to <%=tool%>.
-Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
-
-#### Shell parsing for Windows
-
-On Windows, command line parsing first depends on the shell used (see next sections).
-MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
-
-So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
-Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
-
-As far as <%=tool%> is concerned: the executable is Ruby.
-It has its own parsing algorithm, close to a Linux shell parsing.
-
-Thankfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
-One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
-
-It is also possible to display arguments received by Ruby using this command:
-
-```batchfile
-C:> ruby -e 'puts ARGV' "Hello World" 1 2
-```
-
-```text
-Hello World
-1
-2
-```
-
-> [!NOTE]
-> Use `pp` instead of `puts` to display as Ruby `Array`.
-
-Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
-(Unlike Unix-like systems where the command line is split into arguments by the shell.)
-
-It's up to the program to split arguments:
-
-- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
-
-<%=tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
-Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
-
-- Space characters: split arguments (space, tab, newline)
-- Backslash: `\` escape single special character
-- Globbing characters: `*?[]{}` for file globbing
-- Double quotes: `"`
-- Single quotes: `'`
-
-#### Shell parsing for Windows: `cmd.exe`
-
-The following examples give the same result on Windows using `cmd.exe`:
-
-- Single quote protects the double quote
-
-  ```batchfile
-  <%=cmd%> config echo @json:'{"url":"https://..."}'
-  ```
-
-- Triple double quotes are replaced with a single double quote
-
-  ```batchfile
-  <%=cmd%> config echo @json:{"""url""":"""https://..."""}
-  ```
-
-- Double quote is escaped with backslash within double quotes
-
-  ```batchfile
-  <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
-  ```
-
-`cmd.exe` handles some special characters: `^"<>|%&`.
-Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
-Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
-`"` are kept and given to the program.
-
-#### Shell parsing for Windows: PowerShell
-
-For PowerShell, it actually depends on the version of it (5.1, 7.3+).
-
-A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
-If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
-
-Details can be found here:
-
-- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters)
-
-- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
-
-##### PowerShell 5
-
-- Check your powershell version:
-
-```powershell
-$psversiontable.psversion.Major
-```
-
-```text
-5
-```
-
-The following examples give the same result on Windows using PowerShell 5:
-
-```text
-╭───────┬───────╮
-│ field │ value │
-╞═══════╪═══════╡
-│ x     │ true  │
-│ k     │ v     │
-╰───────┴───────╯
-```
-
-- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
-
-```powershell
-<%=cmd%> config echo  --% @json:'{"k":"v","x":true}'
-```
-
-- Triple double quotes are replaced with a single double quote in normal mode:
-
-```powershell
-<%=cmd%> config echo @json:'{"""k""":"""v""","""x""":true}'
-```
-
-- To insert PowerShell variables in the JSON string, one can do:
-
-```powershell
-$var="v"
-<%=cmd%> config echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
-```
-
-##### PowerShell 7
-
-- Check your PowerShell version:
-
-```powershell
-$psversiontable.psversion.Major
-```
-
-```text
-7
-```
-
-The following examples give the same result on Windows using PowerShell 7:
-
-- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
-
-```powershell
-<%=cmd%> config echo  --% @json:{"k":"v","x":true}
-```
-
-- Single quote protects double quote in normal mode:
-
-```powershell
-<%=cmd%> config echo @json:'{"k":"v","x":true}'
-```
-
-- To insert PowerShell variables in the JSON string, one can do:
-
-```powershell
-$var="v"
-<%=cmd%> config echo  $('@json:{"k":"' + $var + '","x":true}')
-```
-
-- Use PowerShell structure and then convert to JSON string:
-
-```powershell
-$var="v"
-<%=cmd%> config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
-```
-
-#### Extended Values (JSON, Ruby, ...)
-
-Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
-Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
-JSON itself has some special syntax: for example `"` is used to enclose a `String`.
-
-#### Testing Extended Values
-
-In case of doubt of argument values after parsing, one can test using command `config echo`.
-`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
-Unprocessed command line arguments are shown in the error message.
-
-Example:
-The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
-
-```shell
-<%=cmd%> config echo 1 2 3
-```
-
-```ruby
-"1"
-ERROR: Argument: unprocessed values: ["2", "3"]
-```
-
-`config echo` displays the value of the **first** argument using the current output `format`.
-
-> [!NOTE]
-> It gets its value after shell command line parsing and <%=tool%> extended value parsing.
-
-In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
-For all example, most special character handling is not specific to <%=tool%>:
-It depends on the underlying syntax: shell, JSON, etc.
-Depending on the case, a different `format` option is used to display the actual value.
-
-For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
-
-Double quotes are processed by the shell to create a single string argument.
-For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
-
-```shell
-<%=cmd%> config echo "Hello World" --format=text
-<%=cmd%> config echo 'Hello World' --format=text
-<%=cmd%> config echo Hello\ World --format=text
-```
-
-```text
-Hello World
-```
-
-#### Using a shell variable, parsed by shell, in an extended value
-
-To be evaluated by shell, the shell variable must not be in single quotes.
-Even if the variable contains spaces it results only in one argument for <%=tool%> because word parsing is made before variable expansion by shell.
-
-> [!NOTE]
-> We use a simple shell variable in this example.
-> It does not need to be exported as an environment variable.
-
-```shell
-MYVAR="Hello World"
-<%=cmd%> config echo @json:'{"title":"'$MYVAR'"}' --format=json
-<%=cmd%> config echo @json:{\"title\":\"$MYVAR\"} --format=json
-```
-
-```json
-{"title":"Hello World"}
-```
-
-#### Double quote in strings in command line
-
-Double quote is a shell special character.
-Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
-
-```shell
-<%=cmd%> config echo \"
-<%=cmd%> config echo '"'
-```
-
-```text
-"
-```
-
-Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
-Both shell and JSON syntax allow protecting `"`, but only the shell allows protection using single quote.
-
-```shell
-<%=cmd%> config echo @json:'"\""' --format=text
-<%=cmd%> config echo @json:\"\\\"\" --format=text
-<%=cmd%> config echo @ruby:\'\"\' --format=text
-```
-
-```text
-"
-```
-
-Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
-But as `\` is also shell special, then it is protected by another `\`.
-  
-#### Shell and JSON or Ruby special characters in extended value
-
-Construction of values with special characters is done like this:
-
-- First select a syntax to represent the extended value, e.g. JSON or Ruby
-
-- Write the expression using this syntax, for example, using JSON:
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
-or using Ruby:
-
-```ruby
-{"title"=>"Test \" ' & \\"}
-{'title'=>%q{Test " ' & \\}}
-```
-
-Both `"` and `\` are special characters for JSON and Ruby and can be protected with `\` (unless Ruby's extended single quote notation `%q` is used).
-  
-- Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
-
-```shell
-<%=cmd%> config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
-<%=cmd%> config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
-<%=cmd%> config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
-```
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
-#### Reading special characters interactively
-
-If <%=tool%> is used interactively (a user typing on terminal), it is easy to require the user to type values:
-
-```shell
-<%=cmd%> config echo @ruby:"{'title'=>gets.chomp}" --format=json
-```
-
-`gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
-
-#### Command line arguments from a file
-
-If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
-
-```shell
-xargs -a lines.txt -d \\n <%=cmd%> config echo
-```
-
-This is equivalent to execution of:
-
-```shell
-<%=cmd%> config echo [line1] [line2] [line3] ...
-```
-
-If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
-
-#### Extended value using special characters read from environmental variables or files
-
-Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
-
-```shell
-export MYTITLE='Test " '\'' & \'
-echo -n $MYTITLE > title.txt
-```
-
-Using those values will not require any escaping of characters since values do not go through shell or JSON parsing.
-
-If the value is to be assigned directly to an option of <%=cmd%>, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
-
-```shell
-<%=cmd%> config echo @file:title.txt --format=text
-<%=cmd%> config echo @env:MYTITLE --format=text
-```
-
-```text
-Test " ' & \
-```
-
-If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var.
-In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
-
-```shell
-<%=cmd%> config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
-<%=cmd%> config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
-```
-
-```json
-{"title":"Test \" ' & \\"}
-```
-
 ### Command Line Arguments
 
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
-Command line tokenization is typically performed by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
 
 <%=tool%> handles the following types of command line arguments:
 
@@ -1683,13 +1303,6 @@ See [Enumerations](#enumerations) for details.
 For example `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`.
 
 The value of **Options** and **Command Parameters** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
-
-#### Resource types
-
-They identify a type of resource accessible in a given context.
-A resource type can be a singleton, or have multiple instances (identified by their identifier).
-A plugin is a kind of resource type singleton.
-A resource type can also be a grouping of other resource types, for example `admin` or `files`, like a singleton.
 
 #### Positional Arguments
 
@@ -1722,6 +1335,25 @@ Example:
 - `ascp` is the name of the resource (singleton, so no identifier is provided)
 - `info` is the verb to be performed (action on selected resource)
 
+#### Resource types
+
+They identify a type of resource accessible in a given context.
+A resource type can be a singleton, or have multiple instances (identified by their identifier).
+A plugin is a kind of resource type singleton.
+A resource type can also be a grouping of other resource types, for example `admin` or `files`, like a singleton.
+
+#### Verbs
+
+Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
+Some entities also support additional verbs.
+When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
+For example sub-commands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
+
+Typically, the `create` verb takes a resource creation data as a parameter.
+`show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
+`list` typically uses the `query`, `select` options.
+`list` and `show` typically use the `fields` option.
+
 #### Identifiers
 
 Identifiers uniquely identify a resource.
@@ -1749,6 +1381,20 @@ For example, in the following command, `<%=ph :user_id%>` is the user's identifi
 <%=cmd%> aoc admin user show <%=ph :user_id%>
 ```
 
+#### Command Parameters
+
+**Command Parameters** are typically mandatory values for a command, such as resource creation data.
+
+> [!NOTE]
+> It could also have been designed as an option.
+> But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
+> The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
+> [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
+
+If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
+
+A few **Command Parameters** are optional, they are always located at the end of the command line.
+
 #### Enumerations
 
 **Enumerations** are arguments that must match a value from a predefined list in a given context.
@@ -1771,32 +1417,6 @@ Examples:
 > While prefix matching works for option names, using full names is recommended for clarity.
 
 **Error handling**: If an invalid or missing enumeration value is provided, an error message displays the list of valid values for that context.
-
-#### Verbs
-
-Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
-Some entities also support additional verbs.
-When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
-
-Typically, the `create` verb takes a resource creation data as a parameter.
-`show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
-`list` typically uses the `query`, `select` options.
-`list` and `show` typically use the `fields` option.
-
-#### Command Parameters
-
-**Command Parameters** are typically mandatory values for a command, such as resource creation data.
-
-> [!NOTE]
-> It could also have been designed as an option.
-> But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
-> The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
-> [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
-
-If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
-
-A few **Command Parameters** are optional, they are always located at the end of the command line.
 
 #### Dot-path Notation
 
@@ -2298,6 +1918,8 @@ Some options expect a more complex value such as `Hash` or `Array`.
 
 The **Extended Value** Syntax allows specifying such values and even reading values from other sources than the command line itself.
 
+#### Syntax and Decoders
+
 The syntax is:
 
 ```text
@@ -2309,6 +1931,8 @@ Decoders act like a function with its parameter on right-hand side and are recog
 ```text
 @<%=ph :name%>:
 ```
+
+##### Available Decoders
 
 The following decoders are supported:
 
@@ -2348,6 +1972,8 @@ It expects a `@` to close the embedded extended value syntax.
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
+
+#### Common Usage Examples
 
 Example: Create a `Hash` value with the convenient `@json:` decoder:
 
@@ -4705,6 +4331,385 @@ For example: `node` and `httpgw` are both plugins and transfer agents.
 
 A plugin is invoked as the first positional argument in a command line.
 A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node`).
+
+### Command line parsing, Special Characters
+
+<%=tool%> is typically executed in a shell, either interactively or in a script.
+<%=tool%> receives its arguments on the command line.
+The way arguments are parsed and provided to <%=tool%> depend on the Operating System and shell.
+
+#### Shell parsing for Unix-like systems: Linux, macOS, AIX
+
+Linux command line parsing is well-defined:
+It is fully documented in the shell's documentation.
+
+On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
+A c-shell (`csh`, `tcsh`) or other shell can also be used.
+In this environment the shell parses the command line, possibly replacing variables, etc.
+See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
+The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
+Ruby receives a list command line arguments from shell and gives it to <%=tool%>.
+Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
+
+#### Shell parsing for Windows
+
+On Windows, command line parsing first depends on the shell used (see next sections).
+MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
+
+So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
+Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
+
+As far as <%=tool%> is concerned: the executable is Ruby.
+It has its own parsing algorithm, close to a Linux shell parsing.
+
+Thankfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
+One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
+
+It is also possible to display arguments received by Ruby using this command:
+
+```batchfile
+C:> ruby -e 'puts ARGV' "Hello World" 1 2
+```
+
+```text
+Hello World
+1
+2
+```
+
+> [!NOTE]
+> Use `pp` instead of `puts` to display as Ruby `Array`.
+
+Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+(Unlike Unix-like systems where the command line is split into arguments by the shell.)
+
+It's up to the program to split arguments:
+
+- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+<%=tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
+Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+
+- Space characters: split arguments (space, tab, newline)
+- Backslash: `\` escape single special character
+- Globbing characters: `*?[]{}` for file globbing
+- Double quotes: `"`
+- Single quotes: `'`
+
+#### Shell parsing for Windows: `cmd.exe`
+
+The following examples give the same result on Windows using `cmd.exe`:
+
+- Single quote protects the double quote
+
+  ```batchfile
+  <%=cmd%> config echo @json:'{"url":"https://..."}'
+  ```
+
+- Triple double quotes are replaced with a single double quote
+
+  ```batchfile
+  <%=cmd%> config echo @json:{"""url""":"""https://..."""}
+  ```
+
+- Double quote is escaped with backslash within double quotes
+
+  ```batchfile
+  <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
+  ```
+
+`cmd.exe` handles some special characters: `^"<>|%&`.
+Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
+Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
+`"` are kept and given to the program.
+
+#### Shell parsing for Windows: PowerShell
+
+For PowerShell, it actually depends on the version of it (5.1, 7.3+).
+
+A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
+If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
+
+Details can be found here:
+
+- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters)
+
+- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules)
+
+##### PowerShell 5
+
+- Check your powershell version:
+
+```powershell
+$psversiontable.psversion.Major
+```
+
+```text
+5
+```
+
+The following examples give the same result on Windows using PowerShell 5:
+
+```text
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ x     │ true  │
+│ k     │ v     │
+╰───────┴───────╯
+```
+
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
+<%=cmd%> config echo  --% @json:'{"k":"v","x":true}'
+```
+
+- Triple double quotes are replaced with a single double quote in normal mode:
+
+```powershell
+<%=cmd%> config echo @json:'{"""k""":"""v""","""x""":true}'
+```
+
+- To insert PowerShell variables in the JSON string, one can do:
+
+```powershell
+$var="v"
+<%=cmd%> config echo  $('@json:{"""k""":"""' + $var + '""","""x""":true}')
+```
+
+##### PowerShell 7
+
+- Check your PowerShell version:
+
+```powershell
+$psversiontable.psversion.Major
+```
+
+```text
+7
+```
+
+The following examples give the same result on Windows using PowerShell 7:
+
+- Use PowerShell argument `--%` to place PowerShell in "stop-parsing" mode.
+
+```powershell
+<%=cmd%> config echo  --% @json:{"k":"v","x":true}
+```
+
+- Single quote protects double quote in normal mode:
+
+```powershell
+<%=cmd%> config echo @json:'{"k":"v","x":true}'
+```
+
+- To insert PowerShell variables in the JSON string, one can do:
+
+```powershell
+$var="v"
+<%=cmd%> config echo  $('@json:{"k":"' + $var + '","x":true}')
+```
+
+- Use PowerShell structure and then convert to JSON string:
+
+```powershell
+$var="v"
+<%=cmd%> config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
+```
+
+#### Extended Values (JSON, Ruby, ...)
+
+Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
+JSON itself has some special syntax: for example `"` is used to enclose a `String`.
+
+#### Testing Extended Values
+
+In case of doubt of argument values after parsing, one can test using command `config echo`.
+`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
+Unprocessed command line arguments are shown in the error message.
+
+Example:
+The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+
+```shell
+<%=cmd%> config echo 1 2 3
+```
+
+```ruby
+"1"
+ERROR: Argument: unprocessed values: ["2", "3"]
+```
+
+`config echo` displays the value of the **first** argument using the current output `format`.
+
+> [!NOTE]
+> It gets its value after shell command line parsing and <%=tool%> extended value parsing.
+
+In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
+For all example, most special character handling is not specific to <%=tool%>:
+It depends on the underlying syntax: shell, JSON, etc.
+Depending on the case, a different `format` option is used to display the actual value.
+
+For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
+
+Double quotes are processed by the shell to create a single string argument.
+For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash.
+
+```shell
+<%=cmd%> config echo "Hello World" --format=text
+<%=cmd%> config echo 'Hello World' --format=text
+<%=cmd%> config echo Hello\ World --format=text
+```
+
+```text
+Hello World
+```
+
+#### Using a shell variable, parsed by shell, in an extended value
+
+To be evaluated by shell, the shell variable must not be in single quotes.
+Even if the variable contains spaces it results only in one argument for <%=tool%> because word parsing is made before variable expansion by shell.
+
+> [!NOTE]
+> We use a simple shell variable in this example.
+> It does not need to be exported as an environment variable.
+
+```shell
+MYVAR="Hello World"
+<%=cmd%> config echo @json:'{"title":"'$MYVAR'"}' --format=json
+<%=cmd%> config echo @json:{\"title\":\"$MYVAR\"} --format=json
+```
+
+```json
+{"title":"Hello World"}
+```
+
+#### Double quote in strings in command line
+
+Double quote is a shell special character.
+Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
+
+```shell
+<%=cmd%> config echo \"
+<%=cmd%> config echo '"'
+```
+
+```text
+"
+```
+
+Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
+Both shell and JSON syntax allow protecting `"`, but only the shell allows protection using single quote.
+
+```shell
+<%=cmd%> config echo @json:'"\""' --format=text
+<%=cmd%> config echo @json:\"\\\"\" --format=text
+<%=cmd%> config echo @ruby:\'\"\' --format=text
+```
+
+```text
+"
+```
+
+Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
+But as `\` is also shell special, then it is protected by another `\`.
+  
+#### Shell and JSON or Ruby special characters in extended value
+
+Construction of values with special characters is done like this:
+
+- First select a syntax to represent the extended value, e.g. JSON or Ruby
+
+- Write the expression using this syntax, for example, using JSON:
+
+```json
+{"title":"Test \" ' & \\"}
+```
+
+or using Ruby:
+
+```ruby
+{"title"=>"Test \" ' & \\"}
+{'title'=>%q{Test " ' & \\}}
+```
+
+Both `"` and `\` are special characters for JSON and Ruby and can be protected with `\` (unless Ruby's extended single quote notation `%q` is used).
+  
+- Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
+
+```shell
+<%=cmd%> config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
+<%=cmd%> config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
+<%=cmd%> config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
+```
+
+```json
+{"title":"Test \" ' & \\"}
+```
+
+#### Reading special characters interactively
+
+If <%=tool%> is used interactively (a user typing on terminal), it is easy to require the user to type values:
+
+```shell
+<%=cmd%> config echo @ruby:"{'title'=>gets.chomp}" --format=json
+```
+
+`gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
+
+#### Command line arguments from a file
+
+If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
+
+```shell
+xargs -a lines.txt -d \\n <%=cmd%> config echo
+```
+
+This is equivalent to execution of:
+
+```shell
+<%=cmd%> config echo [line1] [line2] [line3] ...
+```
+
+If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
+
+#### Extended value using special characters read from environmental variables or files
+
+Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
+
+```shell
+export MYTITLE='Test " '\'' & \'
+echo -n $MYTITLE > title.txt
+```
+
+Using those values will not require any escaping of characters since values do not go through shell or JSON parsing.
+
+If the value is to be assigned directly to an option of <%=cmd%>, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
+
+```shell
+<%=cmd%> config echo @file:title.txt --format=text
+<%=cmd%> config echo @env:MYTITLE --format=text
+```
+
+```text
+Test " ' & \
+```
+
+If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var.
+In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
+
+```shell
+<%=cmd%> config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
+<%=cmd%> config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
+```
+
+```json
+{"title":"Test \" ' & \\"}
+```
 
 ## Plugin: `aoc`: IBM Aspera on Cloud
 
