@@ -568,7 +568,9 @@ module Aspera
 
         def install_transfer_sdk
           asked_version = options.get_next_argument('transferd version', mandatory: false)
-          name, version, folder = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: asked_version)
+          sdk_url = options.get_option(:sdk_url, mandatory: true)
+          sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
+          name, version, folder = Ascp::Installation.instance.retrieve_sdk(url: sdk_url, version: asked_version)
           return Main.result_status("Installed #{name} version #{version} in #{folder}")
         end
 

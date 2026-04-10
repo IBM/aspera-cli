@@ -241,7 +241,8 @@ module Aspera
         return info.first['url']
       end
 
-      # @param &block called with entry information
+      # @param sdk_archive_path [String] path to SDK archive
+      # @param &block called with: file path, data stream, link target if link?
       def extract_archive_files(sdk_archive_path)
         Aspera.assert(block_given?){'missing block'}
         case sdk_archive_path
@@ -275,32 +276,33 @@ module Aspera
       end
 
       # Retrieves ascp binary for current system architecture from URL or file
-      # @param url      [String]  URL to SDK archive, or SpecialValues::DEF
-      # @param folder   [String]  Destination folder path
-      # @param backup   [Boolean] If destination folder exists, then rename
-      # @param with_exe [Boolean] If false, only retrieves files, but do not generate or restrict access
-      # @param &block   [Proc]    A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
+      # @param folder  [String]      Destination folder path
+      # @param url     [nil, String] URL to SDK archive, if nil: default url for version
+      # @param version [nil, String] Specific version, if nil: latest version
+      # @param backup  [Boolean]     If destination folder exists, then rename
+      # @param &block  [nil, Proc]   A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
       # @return [Array] name, ascp version (from execution), folder
-      def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
-        url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')
-        folder = Products::Transferd.sdk_directory if folder.nil?
-        subfolder_lambda = block
-        if subfolder_lambda.nil?
-          # default files to extract directly to main folder if in selected source folders
-          subfolder_lambda = ->(name) do
-            Products::Transferd::RUNTIME_FOLDERS.any?{ |i| name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
-          end
-        end
-        FileUtils.mkdir_p(folder)
-        # rename old install
-        if backup && !Dir.empty?(folder)
+      def install_sdk(folder:, url: nil, version: nil, backup: true)
+        url ||= sdk_url_for_platform(version: version)
+        # Rename old install
+        if backup && Dir.exist?(folder) && !Dir.empty?(folder)
           Log.log.warn('Previous install exists, renaming folder.')
           File.rename(folder, "#{folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
-          # TODO: delete old archives ?
+          # TODO: cleanup old archives ?
         end
+        FileUtils.mkdir_p(folder)
+        # Security: Track extracted file paths to detect basename collisions
+        extracted_files = {}
+        # Security: Get canonical path of installation directory for boundary checks
+        install_boundary = File.realpath(folder)
         sdk_archive_path = UriReader.read_as_file(url)
         extract_archive_files(sdk_archive_path) do |entry_name, entry_stream, link_target|
-          dest_folder = subfolder_lambda.call(entry_name)
+          dest_folder = if block_given?
+            yield(entry_name)
+          else
+            # default files to extract directly to main folder if in selected source folders
+            Products::Transferd::RUNTIME_FOLDERS.any?{ |i| entry_name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
+          end
           next if dest_folder.nil?
           dest_folder = File.join(folder, dest_folder)
           if dest_folder.end_with?('/')
@@ -309,26 +311,86 @@ module Aspera
             dest_file = dest_folder
             dest_folder = File.dirname(dest_file)
           end
+          # Security: Detect basename collisions that could overwrite symlinks
+          file_basename = File.basename(dest_file)
+          if extracted_files.key?(file_basename)
+            Log.log.warn{"Rejecting file with duplicate basename: #{entry_name} (basename: #{file_basename}, previous: #{extracted_files[file_basename]})"}
+            next
+          end
+          extracted_files[file_basename] = entry_name
           FileUtils.mkdir_p(dest_folder)
           if link_target.nil?
+            # Security: Check if destination already exists
+            if File.exist?(dest_file)
+              Log.log.warn{"Rejecting write to existing file or link: #{dest_file}"}
+              next
+            end
+            # Security: Verify the resolved path stays within installation boundary
+            begin
+              # Create parent directory if needed for realpath check
+              FileUtils.mkdir_p(File.dirname(dest_file))
+              # Check where the file would resolve to (handles existing symlinks in path)
+              resolved_dest = File.realpath(File.dirname(dest_file))
+              unless resolved_dest.start_with?(install_boundary)
+                Log.log.warn{"Rejecting file outside installation directory: #{dest_file} resolves to #{resolved_dest}"}
+                next
+              end
+            rescue Errno::ENOENT
+              # Directory doesn't exist yet, verify the intended path
+              unless dest_file.start_with?(folder)
+                Log.log.warn{"Rejecting file with path outside installation directory: #{dest_file}"}
+                next
+              end
+            end
             File.open(dest_file, 'wb'){ |output_stream| IO.copy_stream(entry_stream, output_stream)}
           else
+            # Security: Validate symlink target stays within installation boundary
+            # Resolve the symlink target relative to its location
+            link_dir = File.dirname(dest_file)
+            resolved_target = if link_target.start_with?('/')
+              # Absolute symlink target
+              link_target
+            else
+              # Relative symlink target
+              File.expand_path(link_target, link_dir)
+            end
+            # Check if resolved target would be outside installation directory
+            unless resolved_target.start_with?(install_boundary)
+              Log.log.warn{"Rejecting symlink pointing outside installation directory: #{entry_name} -> #{link_target} (resolves to #{resolved_target})"}
+              next
+            end
             File.symlink(link_target, dest_file)
           end
         end
-        return unless with_exe
-        # Ensure necessary files are there, or generate them
+      end
+
+      # Retrieve SDK either from specified URL, or specified version from standard location, or latest version
+      # @param url [nil, String] URL
+      # @param version [nil, String] URL
+      def retrieve_sdk(url: nil, version: nil)
+        folder = Products::Transferd.sdk_directory
+        install_sdk(folder: folder, url: url, version: version)
+        # Ensure necessary files are there, or generate them, restrict file access on SDK executables
         SDK_FILES.each do |file_id_sym|
           file_path = path(file_id_sym)
           if file_path && EXE_FILES.include?(file_id_sym)
             Environment.restrict_file_access(file_path, mode: 0o755) if File.exist?(file_path)
           end
         end
-        sdk_ascp_version = get_ascp_version(path(:ascp))
-        transferd_version = get_exe_version(path(:transferd), 'version')
-        sdk_name = 'IBM Aspera Transfer SDK'
-        sdk_version = transferd_version || sdk_ascp_version
-        File.write(File.join(folder, Products::Other::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        # Generate meta data XML file in SDK if needed, based on actual binaries versions
+        meta_data_file = File.join(folder, Products::Other::INFO_META_FILE)
+        if File.exist?(meta_data_file)
+          # file is there, read values:
+          meta_data = File.read(meta_data_file)
+          sdk_name = meta_data.scan(%r{<name>(.*?)</name>}).flatten.first || 'unknown'
+          sdk_version = meta_data.scan(%r{<version>(.*?)</version>}).flatten.first || 'unknown'
+        else
+          sdk_ascp_version = get_ascp_version(path(:ascp))
+          transferd_version = get_exe_version(path(:transferd), 'version')
+          sdk_name = 'IBM Aspera Transfer SDK'
+          sdk_version = transferd_version || sdk_ascp_version
+          File.write(meta_data_file, "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        end
         return sdk_name, sdk_version, folder
       end
 
@@ -349,6 +411,7 @@ module Aspera
       END_OF_CONFIG_FILE
       # all executable files from SDK
       EXE_FILES = %i[ascp ascp4 async transferd].freeze
+      # IDs of files present in SDK
       SDK_FILES = %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
       # filename for ascp with optional extension (Windows)

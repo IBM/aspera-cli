@@ -68,7 +68,7 @@ module BuildTools
     require 'aspera/cli/transfer_progress'
     Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
     # Retrieve `transfer.proto` from the web
-    Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false, with_exe: false){ |name| name.end_with?('.proto') ? '/' : nil}
+    Aspera::Ascp::Installation.instance.install_sdk(folder: tmp_proto_folder, backup: false){ |name| name.end_with?('.proto') ? '/' : nil}
   end
 
   # Version that is currently being built.
