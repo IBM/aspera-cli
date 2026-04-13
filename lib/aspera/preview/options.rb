@@ -24,7 +24,7 @@ module Aspera
         {name: :video_png_conv,       default: :fixed,             description: 'mp4: method for thumbnail generation', values: VIDEO_THUMBNAIL_METHODS},
         {name: :video_scale,          default: "'min(iw,360)':-2", description: 'mp4: all: video scale (ffmpeg scale argument)'},
         {name: :video_start_sec,      default: 10,                 description: 'mp4: all: start offset (seconds) of video preview'},
-        {name: :reencode_ffmpeg,      default: {},                 description: 'mp4: reencode: options to ffmpeg'},
+        {name: :reencode_ffmpeg,      default: {},                 description: 'mp4: reencode: options to ffmpeg, keys: `in`, `out`'},
         {name: :blend_keyframes,      default: 30,                 description: 'mp4: blend: # key frames'},
         {name: :blend_pauseframes,    default: 3,                  description: 'mp4: blend: # pause frames'},
         {name: :blend_transframes,    default: 5,                  description: 'mp4: blend: # transition blend frames'},

@@ -281,7 +281,7 @@ module Aspera
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
-        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed"}
+        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
         Aspera.assert_type(handler, Hash) if handler
         Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
         option_attrs = @declared_options[option_symbol] = OptionValue.new(
