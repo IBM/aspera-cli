@@ -8113,10 +8113,29 @@ chmod a+x /usr/local/bin/magick
 
 #### Video: FFmpeg
 
-The easiest method is to download and install the latest released version of `ffmpeg` with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
+The installation of `ffmpeg` depends on the distribution of Linux.
+On Rocky Linux, you can install `ffmpeg` with:
+
+```shell
+dnf install ffmpeg-free
+```
+
+Or check which package provides it with:
+
+```shell
+dnf provides ffmpeg
+```
+
+Another method is to download and install the latest released version of `ffmpeg` with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
 
 ```shell
 curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && rm -f ffmpeg /usr/bin/{ffmpeg,ffprobe} && rm -fr ffmpeg-*-amd64-static && tar xJvf - && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
+```
+
+To uninstall above manual installation:
+
+```shell
+rm -rf /opt/ffmpeg* /usr/bin/{ffmpeg,ffprobe}
 ```
 
 #### Office: `unoconv` and LibreOffice
