@@ -146,7 +146,7 @@ module Aspera
         new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
         # Setting a Hash to null set an empty hash
         new_value = {} if new_value.eql?(nil) && @types&.first.eql?(Hash)
-        # Setting a Array to null set an empty hash
+        # Setting a Array to null set an empty array
         new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
         if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
           new_value = [new_value] if new_value.is_a?(String)

@@ -316,6 +316,7 @@ module Aspera
 
     # Replacement character for illegal filename characters
     # Can also be used as safe "join" character
+    # @return [String] One character
     def safe_filename_character
       return REPLACE_CHARACTER if @file_illegal_characters.nil? || @file_illegal_characters.empty?
       @file_illegal_characters[0]
