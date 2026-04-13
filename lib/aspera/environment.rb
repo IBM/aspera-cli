@@ -91,9 +91,9 @@ module Aspera
       #
       # @param cmd [Array<#to_s>] The executable and its arguments.
       # @param mode [:execute, :background, :capture] The execution strategy:
-      #   - `:execute`    Uses {Kernel.system}. Returns `true`, `false`, or `nil`.
+      #   - `:execute`    Uses {Kernel.system}. Returns `true`, `false`, or `nil`. (Default)
       #   - `:background` Uses {Process.spawn}. Returns the spawned process PID.
-      #   - `:capture`    Uses {Open3.capture3}. Returns captured output and status.
+      #   - `:capture`    Uses {Open3.capture3}. Returns captured out, err, and status.
       #
       # @param kwargs [Hash] Additional options forwarded to the underlying call.
       #
