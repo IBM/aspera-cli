@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore ffprobe optipng unoconv
+# cspell:ignore ffprobe optipng unoconv soffice
 require 'aspera/log'
 require 'aspera/assert'
 require 'English'
@@ -11,32 +11,30 @@ require 'open3'
 module Aspera
   module Preview
     class Utils
-      # from bash manual: meta-character need to be escaped
-      BASH_SPECIAL_CHARACTERS = "|&;()<> \t#\n"
-      # external binaries used
-      EXTERNAL_TOOLS = %i[ffmpeg ffprobe magick optipng unoconv].freeze
+      # External binaries used
+      EXTERNAL_TOOLS = %i[ffmpeg ffprobe magick optipng unoconv soffice].freeze
+      # File name format for temporary files, used by both ffmpeg and ruby(Kernel.format)
       TEMP_FORMAT = 'img%04d.jpg'
+      # default parameters for ffmpeg
       FFMPEG_DEFAULT_PARAMS = [
         '-y', # overwrite output without asking
         '-loglevel', 'error' # show only errors and up
       ].freeze
-      private_constant :BASH_SPECIAL_CHARACTERS, :EXTERNAL_TOOLS, :TEMP_FORMAT
+      private_constant :EXTERNAL_TOOLS, :TEMP_FORMAT, :FFMPEG_DEFAULT_PARAMS
 
       class << self
-        # returns string with single quotes suitable for bash if there is any bash meta-character
-        def shell_quote(argument)
-          return argument unless argument.chars.any?{ |c| BASH_SPECIAL_CHARACTERS.include?(c)}
-          # surround with single quotes, and escape single quotes
-          return %Q{'#{argument.gsub("'"){ |_s| %q{'"'"'}}}'}
-        end
-
-        # check that external tools can be executed
+        # Check that external tools can be executed
+        # @param skip_types [Array<Symbol>] list of tools to skip
+        # @return [nil]
         def check_tools(skip_types = [])
           tools_to_check = EXTERNAL_TOOLS.dup
-          tools_to_check.delete(:unoconv) if skip_types.include?(:office)
+          if skip_types.include?(:office)
+            tools_to_check.delete(:unoconv)
+            tools_to_check.delete(:soffice)
+          end
           # Check for binaries
           tools_to_check.each do |command_sym|
-            external_command(command_sym, ['-h'], out: File::NULL)
+            external_command(command_sym, ['-h'])
           rescue Errno::ENOENT => e
             raise "missing #{command_sym} binary: #{e}"
           rescue
@@ -49,6 +47,7 @@ module Aspera
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
           Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), out: File::NULL, err: File::NULL)
+          nil
         end
 
         # Execute external command and get stdout
@@ -58,6 +57,8 @@ module Aspera
           Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), mode: :capture).first
         end
 
+        # Execute `ffmpeg`
+        # @return [nil]
         def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)
           Aspera.assert_type(gl_p, Array)
           Aspera.assert_type(in_p, Array)
@@ -75,11 +76,13 @@ module Aspera
           ]).to_f
         end
 
+        # File output format, including temp folder
         def ffmpeg_fmt(temp_folder)
           return File.join(temp_folder, TEMP_FORMAT)
         end
 
         def get_tmp_num_filepath(temp_folder, file_number)
+          # Format using {Kernel.format}
           return File.join(temp_folder, format(TEMP_FORMAT, file_number))
         end
 
@@ -101,15 +104,19 @@ module Aspera
           end
         end
 
-        def video_dump_frame(input_file, offset_seconds, scale, output_file, index = nil)
-          output_file = get_tmp_num_filepath(output_file, index) unless index.nil?
+        # Dump a frame from a video file
+        # @param input_file [String] the input file path
+        # @param offset_seconds [Integer] the offset in seconds
+        # @param scale [String] the scale of the output frame
+        # @param output_file [String] the output file path
+        # @return [nil]
+        def video_dump_frame(input_file, offset_seconds, scale, output_file)
           ffmpeg(
             in_f: input_file,
             in_p: ['-ss', offset_seconds],
             out_f: output_file,
             out_p: ['-frames:v', 1, '-filter:v', "scale=#{scale}"]
           )
-          return output_file
         end
       end
     end

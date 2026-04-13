@@ -5196,6 +5196,24 @@ prev_mpg_png_ani:
     - --base=$(TMP / 'prev_mpg_png_ani')
     - "@preset:file.mpg"
     - --video-png-conv=animated
+prev_small_mp4_png_ani:
+  description: Test animated preview with short video
+  args:
+    - preview
+    - show
+    - "@preset:file.small_mp4"
+    - png
+    - --base=$(TMP / 'prev_small_mp4_png_ani')
+    - --video-png-conv=animated
+prev_small_mp4_png_fix:
+  description: Test fixed frame preview with short video
+  args:
+    - preview
+    - show
+    - "@preset:file.small_mp4"
+    - png
+    - --base=$(TMP / 'prev_small_mp4_png_fix')
+    - --video-png-conv=fixed
 prev_mpg_reencode:
   args:
     - preview

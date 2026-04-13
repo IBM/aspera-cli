@@ -17,6 +17,7 @@ module Aspera
       # values for preview_format : output format
       PREVIEW_FORMATS = %i[png mp4].freeze
 
+      # List of valid ffmpeg option keys for reencode configuration
       FFMPEG_OPTIONS_LIST = %w[in out].freeze
 
       # CLI needs to know conversion type to know if need skip it
@@ -65,28 +66,32 @@ module Aspera
           # check that generated size does not exceed maximum
           result_size = File.size(@destination_file_path)
           Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
-        rescue StandardError => e
-          Log.log.error{"Ignoring: #{e.class} #{e.message}"}
-          Log.log.debug(e.backtrace.join("\n").red)
-          FileUtils.cp(File.expand_path(@preview_format_sym.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
         ensure
           FileUtils.rm_rf(@temp_folder)
         end
       end
 
+      # Path to error image corresponding to preview type
+      # @return [String] the path to the error image
+      def error_asset
+        File.expand_path(@preview_format_sym.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__))
+      end
+
       private
 
       # Creates a unique temp folder for file.
+      # @return [String] the temporary folder path
       def this_tmpdir
         FileUtils.mkdir_p(@temp_folder)
         return @temp_folder
       end
 
-      # @param duration of video
-      # @param start_offset of parts
-      # @param total_count of parts
-      # @param index of part (start at 1)
-      # @return [Integer] offset in seconds suitable for ffmpeg -ss option
+      # Calculate offset in seconds for video frame extraction
+      # @param duration [Float] duration of video in seconds
+      # @param start_offset [Numeric] start offset of parts in seconds
+      # @param total_count [Integer] total count of parts
+      # @param index [Integer] index of part (starts at 1)
+      # @return [Float] offset in seconds suitable for ffmpeg -ss option
       def get_offset(duration, start_offset, total_count, index)
         Aspera.assert_type(duration, Float){'duration'}
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
@@ -98,9 +103,14 @@ module Aspera
         p_key_frame_count = @options.blend_keyframes.to_i
         last_keyframe = nil
         current_index = 1
+        frame_rate_hz = 30
         1.upto(p_key_frame_count) do |i|
-          offset_seconds = get_offset(p_duration, p_start_offset, p_key_frame_count, i)
-          Utils.video_dump_frame(@source_file_path, offset_seconds, @options.video_scale, this_tmpdir, current_index)
+          Utils.video_dump_frame(
+            @source_file_path,
+            get_offset(p_duration, p_start_offset, p_key_frame_count, i),
+            @options.video_scale,
+            Utils.get_tmp_num_filepath(this_tmpdir, current_index)
+          )
           Utils.video_dupe_frame(this_tmpdir, current_index, @options.blend_pauseframes)
           Utils.video_blend_frames(this_tmpdir, last_keyframe, current_index) unless last_keyframe.nil?
           # go to last dupe frame
@@ -115,7 +125,7 @@ module Aspera
           out_p: [
             '-filter:v', "scale='trunc(iw/2)*2:trunc(ih/2)*2'",
             '-codec:v', 'libx264',
-            '-r', 30,
+            '-r', frame_rate_hz,
             '-pix_fmt', 'yuv420p'
           ]
         )
@@ -198,28 +208,51 @@ module Aspera
       # thumb is 32x32
       # ffmpeg  output.png
       def convert_video_to_png_using_animated
+        p_duration = Utils.video_get_duration(@source_file_path)
+        p_start_offset = @options.video_start_sec.to_i
+        p_max_duration = @options.clips_length.to_i
+        # If video is shorter than start offset + duration, adjust to capture from start
+        if p_duration <= (p_start_offset + p_max_duration)
+          p_start_offset = 0
+          p_max_duration = p_duration
+        end
         Utils.ffmpeg(
           in_f: @source_file_path,
           in_p: [
-            '-ss', 10, # seek to input position
-            '-t', 20 # max seconds
+            '-ss', p_start_offset,
+            '-t', p_max_duration
           ],
           out_f: @destination_file_path,
           out_p: [
-            '-vf', 'fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
-            '-loop', 0,
-            '-f', 'gif'
+            '-vf', 'fps=5,scale=120:-1:flags=lanczos',
+            '-plays', 0, # loop forever (0 = infinite loop for APNG)
+            '-f', 'apng'
           ]
         )
       end
 
       def convert_office_to_png
         tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
-        Utils.external_command(:unoconv, [
-          '-f', 'pdf',
-          '-o', tmp_pdf_file,
-          @source_file_path
-        ])
+        case @options.office_conversion
+        when :unoconv
+          Utils.external_command(:unoconv, [
+            '-f', 'pdf',
+            '-o', tmp_pdf_file,
+            @source_file_path
+          ])
+        when :soffice
+          Utils.external_command(:soffice, [
+            '--headless',
+            '--convert-to', 'pdf',
+            '--outdir', File.dirname(tmp_pdf_file),
+            @source_file_path
+          ])
+          # soffice creates the file with the source name, so we need to rename it if needed
+          generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
+          FileUtils.mv(generated_pdf, tmp_pdf_file) if generated_pdf != tmp_pdf_file
+        else
+          raise "Unknown office conversion method: #{@options.office_conversion}"
+        end
         convert_pdf_to_png(tmp_pdf_file)
       end
 

@@ -300,7 +300,12 @@ module Aspera
           end
           Log.log.debug{"source: #{entry['id']}: #{entry['path']}"}
           gen_infos.each do |gen_info|
-            gen_info[:generator].generate rescue nil
+            gen_info[:generator].generate
+          rescue => e
+            Log.log.error{"Ignoring: #{e.class} #{e.message}"}
+            Log.log.debug(e.backtrace.join("\n").red)
+            # in case of any error, place a standard error image
+            FileUtils.cp(gen_info[:generator].error_asset, @destination_file_path)
           end
           if @access_remote
             # upload
@@ -316,8 +321,9 @@ module Aspera
           Log.log.debug(e.backtrace.join("\n").red)
         end
 
-        # scan all files in provided folder entry
-        # @param top_path subpath to start folder scan inside
+        # Scan all files in provided folder entry
+        # @param top_entry [Hash] the top entry to scan
+        # @param top_path  [String, nil] subpath to start folder scan inside
         def scan_folder_files(top_entry, top_path = nil)
           unless top_path.nil?
             # canonical path: start with / and ends with /
