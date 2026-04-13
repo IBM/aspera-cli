@@ -1057,14 +1057,14 @@ module Aspera
               display_fields += ['workspace_id'] if aoc_api.workspace[:id].nil?
               return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
             when :delete
-              return do_bulk_operation(command: package_command, values: instance_identifier) do |id|
-                Aspera.assert_type(id, String, Integer){'identifier'}
-                aoc_api.delete("packages/#{id}")
+              return do_bulk_operation(command: package_command, values: instance_identifier) do |package_id|
+                Aspera.assert_type(package_id, String, Integer){'identifier'}
+                aoc_api.delete("packages/#{package_id}")
               end
             when :modify
-              id = instance_identifier
+              package_id = instance_identifier
               package_data = value_create_modify(command: package_command)
-              aoc_api.update("packages/#{id}", package_data)
+              aoc_api.update("packages/#{package_id}", package_data)
               return Main.result_status('modified')
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
@@ -1110,12 +1110,12 @@ module Aspera
                 when :update
                   # `id` is the permission_id
                   found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
-                  raise Error, 'Short link not found: #{id}' if found.nil?
+                  raise Error, "Short link not found: #{id}" if found.nil?
                   shared_apfid[:api].update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
                 when :delete
                   # `id` is the resource id, i.e. `access_id`
                   found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).first
-                  raise Error, 'Short link not found: #{id}' if found.nil?
+                  raise Error, "Short link not found: #{id}" if found.nil?
                   shared_apfid[:api].delete("permissions/#{found['id']}")
                 else Aspera.error_unexpected_value(op)
                 end
