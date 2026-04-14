@@ -28,12 +28,14 @@ module Aspera
       DISPLAY_LEVELS = %i[info data error].freeze
       # column names for single object display in table
       SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
+      # Terminal: vertical separator for list of strings.
+      STR_LST_SEP_VERT = "\n"
 
-      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES
+      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
 
       class << self
         # nicer display for boolean
-        # used by spec_doc
+        # used by `spec_doc`
         def tick(yes)
           result =
             if Environment.terminal_supports_unicode?
@@ -47,14 +49,14 @@ module Aspera
 
         # Highlight special values on terminal
         # empty values are dim
-        # used by spec_doc
+        # used by `spec_doc`
         def special_format(what)
           result = "<#{what}>"
           return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
         end
 
-        # for transfer spec table, build line for display in terminal
-        # used by spec_doc
+        # For transfer spec table, build line for display in terminal
+        # used by `spec_doc`
         def check_row(row)
           row.each_key do |k|
             row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
@@ -62,7 +64,7 @@ module Aspera
         end
 
         # Give Markdown String, or matched data, return formatted string for terminal
-        # used by spec_doc
+        # used by `spec_doc`
         # @param match [MatchData,String]
         def markdown_text(match)
           if match.is_a?(String)
@@ -99,7 +101,7 @@ module Aspera
                 if value.empty?
                   current[key] = special_format('empty list')
                 elsif value.all?(String)
-                  current[key] = value.join(',')
+                  current[key] = value.join(STR_LST_SEP_VERT)
                 else
                   value.each do |item|
                     hash_to_process.push(item) if item.is_a?(Hash)
