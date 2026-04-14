@@ -12,6 +12,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `format`: In `table` format with option `flat_hash=yes`, fixed that some parameters were not shown. Moreover, (Node API: /info), if an array of hash with name/value keys is returned with one extra key, still apply simplification.
+
 ### Breaking Changes
 
 * `preview`: Removed option `file_access`, replaced with option `root_url`.

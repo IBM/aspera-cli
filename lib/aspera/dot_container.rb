@@ -61,6 +61,7 @@ module Aspera
     def to_dotted
       result = {}
       until @stack.empty?
+        # path: Array, current: Array or Hash or other
         path, current = @stack.pop
         to_insert = nil
         # empty things are left intact
@@ -78,8 +79,11 @@ module Aspera
             elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
               to_insert = current.map{ |i| i['name']}
             # Array of Hashes with only 'name' and 'value' keys -> Hash of key/values
-            elsif current.all?{ |i| i.is_a?(Hash) && i.keys.sort == %w[name value]}
-              add_elements(path, current.to_h{ |i| [i['name'], i['value']]})
+            elsif current.all?{ |i| i.is_a?(Hash) && i.key?('name') && i.key?('value') && i.length <= 3}
+              # if there is an extra key, other than 'name' and 'value', insert that key as is
+              add_elements(path, current.flat_map{ |h| h.except('name', 'value').to_a})
+              # Insert name/value pairs as Hash
+              add_elements(path, current.to_h{ |h| h.values_at('name', 'value')})
             else
               add_elements(path, current.each_with_index.map{ |v, i| [i, v]})
             end
@@ -97,7 +101,7 @@ module Aspera
     # Add elements of enumerator to the @stack, in reverse order
     def add_elements(path, enum)
       enum.reverse_each do |key, value|
-        @stack.push([path + [key], value])
+        @stack.push([path + [key.to_s], value])
       end
       nil
     end
