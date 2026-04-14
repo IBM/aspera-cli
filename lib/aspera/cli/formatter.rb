@@ -428,9 +428,10 @@ module Aspera
         end
       end
 
-      # displays a list of objects
-      # @param object_array  [Array] array of hash
-      # @param fields        [Array] list of column names
+      # Displays a list of objects
+      # @param object_array  [Array] Array of hash
+      # @param fields        [Array] List of column names
+      # @param single        [Boolean] Contains a single object to display
       def display_table(object_array, fields, single: false)
         Aspera.assert(!fields.nil?){'missing fields parameter'}
         if object_array.empty?
@@ -442,7 +443,7 @@ module Aspera
         object_array.each{ |i| self.class.replace_specific_for_terminal(i)}
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
-          Log.log.debug("display_table: single element, field: #{fields.first}")
+          Log.log.debug("single element, field: #{fields.first}")
           data = object_array.first[fields.first]
           unless data.is_a?(Array) && data.all?(Hash)
             display_message(:data, data)
