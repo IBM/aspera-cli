@@ -8305,14 +8305,17 @@ In this case the `preview` command will first analyze the file content using gem
 
 ### Generation: Read source files and write preview
 
-Standard open source tools are used to create thumbnails and video previews.
+Thumbnails and video previews are generated using standard open source tools and stored together in the storage root under the folder specified by option `previews_folder`.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-<%=tool%> provides 2 ways to read and write files with the option: `file_access`.
+Nevertheless, <%=tool%> may or not have direct file system access to the access key storage root.
 
-If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
-In this case, no transfer happen, source files are directly read from the storage, and preview files are directly written to the storage.
+<%=tool%> provides 2 ways to read and write files with the option: `root_url`.
 
-If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
+| `root_url`    | Description |
+|---------------|-------------------------------------------------------------------------------|
+| `<empty>`     | (Default) If the access key storage type is `local`, then the storage root is used as the main folder.<%=br%>This assumes that <%=tool%> runs on the same system as HSTS, or has access through a common "mount".<%=br%>Else, remote access is assumed. |
+| `aspera:`     | Source files are **downloaded** to a temporary directory, and preview files are **uploaded** to the storage.<%=br%>Two transfers are realized using Aspera. |
+| `file:///<path>` | Files are accessed from the specified path locally. |
 
 <%=include_commands_for_plugin(:preview)%>
 

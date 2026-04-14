@@ -14,6 +14,7 @@ require 'aspera/api/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
 require 'aspera/id_generator'
+require 'aspera/uri_reader'
 require 'aspera/log'
 require 'aspera/assert'
 require 'securerandom'
@@ -34,19 +35,18 @@ module Aspera
         DEFAULT_PREVIEWS_FOLDER = 'previews'
         # mark that this is used by a particular access key
         AK_MARKER_FILE = '.aspera_access_key'
-        # URL prefix for local storage
-        PVCL_LOCAL_STORAGE = 'file:///'
         LOG_LIMITER_SEC = 30.0
+        REMOTE_ACCESS = 'aspera:'
         private_constant :PREV_GEN_TAG,
           :PREVIEW_FOLDER_SUFFIX,
           :PREVIEW_BASENAME,
           :TMP_DIR_PREFIX,
           :DEFAULT_PREVIEWS_FOLDER,
-          :PVCL_LOCAL_STORAGE,
           :AK_MARKER_FILE,
-          :LOG_LIMITER_SEC
+          :LOG_LIMITER_SEC,
+          :REMOTE_ACCESS
 
-        attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
+        attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite
 
         def initialize(**_)
           super
@@ -61,6 +61,7 @@ module Aspera
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # Proc
           @filter_block = nil
+          @access_remote = true
           # link CLI options to gen_info attributes
           options.declare(
             :skip_format, 'Skip this preview format',
@@ -81,10 +82,10 @@ module Aspera
           options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: Allowed::TYPES_BOOLEAN, default: false)
           options.declare(:overwrite, 'When to overwrite result file', handler: {o: self, m: :option_overwrite}, allowed: %i[always never mtime], default: :mtime)
           options.declare(
-            :file_access, 'How to read and write files in repository',
-            allowed: %i[local remote],
-            handler: {o: self, m: :option_file_access},
-            default: :local
+            :root_url,
+            "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})",
+            allowed: Allowed::TYPES_STRING,
+            default: ''
           )
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -382,19 +383,21 @@ module Aspera
         def execute_action
           command = options.get_next_command(ACTIONS)
           unless %i[check test show].include?(command)
-            # this will use node api
+            # This will use node api
             @api_node = Api::Node.new(**basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.base_url).host
-            # get current access key
+            # Get current access key information
             @access_key_self = @api_node.read('access_keys/self')
             # TODO: check events is activated here:
             # note that docroot is good to look at as well
             node_info = @api_node.read('info')
             Log.log.debug{"root: #{node_info['docroot']}"}
-            @access_remote = @option_file_access.eql?(:remote)
+            # Default storage url to local file if not provided
+            option_root_url = options.get_option(:root_url, mandatory: true)
+            option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.empty? && @access_key_self['storage']['type'].eql?('local')
+            @access_remote = !UriReader.file?(option_root_url)
             Log.log.debug{"remote: #{@access_remote}"}
-            Log.log.debug{"access key info: #{@access_key_self}"}
-            # TODO: can the previews folder parameter be read from node api ?
+            # TODO: can the `previews` folder parameter be read from Node API ?
             @option_skip_folders.push("/#{@option_previews_folder}")
             if @access_remote
               # NOTE: the filter "name", it's why we take the first one
@@ -402,17 +405,13 @@ module Aspera
               raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
                 'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
-              Aspera.assert(@access_key_self['storage']['type'].eql?('local')){'only local storage allowed in this mode'}
-              @local_storage_root = @access_key_self['storage']['path']
-              # TODO: option to override @local_storage_root='xxx'
-              @local_storage_root = @local_storage_root[PVCL_LOCAL_STORAGE.length..-1] if @local_storage_root.start_with?(PVCL_LOCAL_STORAGE)
-              # TODO: windows could have "C:" ?
+              @local_storage_root = UriReader.file_path(option_root_url)
+              # TODO: Windows could have "C:" ?
               Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
               Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
               @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
-              raise Cli::Error, "Folder #{@local_preview_folder} does not exist locally. " \
-                'Please create it, or specify an alternate name.' unless File.directory?(@local_preview_folder)
-              # protection to avoid clash of file id for two different access keys
+              Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error){"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name."}
+              # Protection to avoid clash of file id for two different access keys
               marker_file = File.join(@local_preview_folder, AK_MARKER_FILE)
               Log.log.debug{"marker file: #{marker_file}"}
               if File.exist?(marker_file)

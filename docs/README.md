@@ -4791,17 +4791,18 @@ OPTIONS:
         --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
         --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
         --overwrite=ENUM             When to overwrite result file: always, [mtime], never
-        --file-access=ENUM           How to read and write files in repository: [local], remote
+        --root-url=VALUE             How to read and write files on storage (<empty>, aspera:, or file:///<folder>)
         --max-size=VALUE             Maximum size (in bytes) of preview file
         --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
         --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
         --thumb-img-size=VALUE       Png: non-video: height (and width)
         --thumb-text-font=VALUE      Png: plaintext: font for text rendering: `magick identify -list font`
+        --office-conversion=ENUM     Office: method for office document conversion: [soffice], unoconv
         --video-conversion=ENUM      Mp4: method for preview generation: blend, clips, [reencode]
         --video-png-conv=ENUM        Mp4: method for thumbnail generation: animated, [fixed]
         --video-scale=VALUE          Mp4: all: video scale (ffmpeg scale argument)
         --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
-        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
+        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg, keys: `in`, `out`
         --blend-keyframes=VALUE      Mp4: blend: # key frames
         --blend-pauseframes=VALUE    Mp4: blend: # pause frames
         --blend-transframes=VALUE    Mp4: blend: # transition blend frames
@@ -9169,10 +9170,29 @@ chmod a+x /usr/local/bin/magick
 
 #### Video: FFmpeg
 
-The easiest method is to download and install the latest released version of `ffmpeg` with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
+The installation of `ffmpeg` depends on the distribution of Linux.
+On Rocky Linux, you can install `ffmpeg` with:
+
+```shell
+dnf install ffmpeg-free
+```
+
+Or check which package provides it with:
+
+```shell
+dnf provides ffmpeg
+```
+
+Another method is to download and install the latest released version of `ffmpeg` with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
 
 ```shell
 curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && rm -f ffmpeg /usr/bin/{ffmpeg,ffprobe} && rm -fr ffmpeg-*-amd64-static && tar xJvf - && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
+```
+
+To uninstall above manual installation:
+
+```shell
+rm -rf /opt/ffmpeg* /usr/bin/{ffmpeg,ffprobe}
 ```
 
 #### Office: `unoconv` and LibreOffice
@@ -9342,14 +9362,17 @@ In this case the `preview` command will first analyze the file content using gem
 
 ### Generation: Read source files and write preview
 
-Standard open source tools are used to create thumbnails and video previews.
+Thumbnails and video previews are generated using standard open source tools and stored together in the storage root under the folder specified by option `previews_folder`.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-`ascli` provides 2 ways to read and write files with the option: `file_access`.
+Nevertheless, `ascli` may or not have direct file system access to the access key storage root.
 
-If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
-In this case, no transfer happen, source files are directly read from the storage, and preview files are directly written to the storage.
+`ascli` provides 2 ways to read and write files with the option: `root_url`.
 
-If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
+| `root_url`    | Description |
+|---------------|-------------------------------------------------------------------------------|
+| `<empty>`     | (Default) If the access key storage type is `local`, then the storage root is used as the main folder.<br/>This assumes that `ascli` runs on the same system as HSTS, or has access through a common "mount".<br/>Else, remote access is assumed. |
+| `aspera:`     | Source files are **downloaded** to a temporary directory, and preview files are **uploaded** to the storage.<br/>Two transfers are realized using Aspera. |
+| `file:///<path>` | Files are accessed from the specified path locally. |
 
 ### Tested commands for `preview`
 
@@ -9359,7 +9382,7 @@ If the preview generator does not have access to files on the file system (it is
 ```shell
 check --skip-types=office
 events --once-only=yes --skip-types=office --log-level=info
-scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
+scan --scan-id=1 --skip-types=office --log-level=info {"--file-access=aspera" => nil} --ts=@json:'{"target_rate_kbps":1000000}'
 scan --skip-types=office --log-level=info --skip-folder=/special/folder
 show --base=test /etc/hosts
 show --base=test my_docx
@@ -9368,6 +9391,8 @@ show --base=test my_mpg --video-png-conv=fixed
 show --base=test my_mpg mp4 --video-conversion=clips
 show --base=test my_mpg mp4 --video-conversion=reencode
 show --base=test my_pdf
+show my_small_mp4 png --base=test --video-png-conv=animated
+show my_small_mp4 png --base=test --video-png-conv=fixed
 test --base=test my_dcm
 test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 test --mimemagic=yes --base=test my_dcm

@@ -8,9 +8,13 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `preview`: New option `root_url` (replaces `file_access`), to override how to access files on storage.
+
 ### Issues Fixed
 
 ### Breaking Changes
+
+* `preview`: Removed option `file_access`, replaced with option `root_url`.
 
 ## 4.25.6
 

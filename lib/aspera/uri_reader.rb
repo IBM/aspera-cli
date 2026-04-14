@@ -14,6 +14,22 @@ module Aspera
     SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
     private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2
     class << self
+      # @return [Boolean] true if the URL is a file:// URL
+      def file?(url)
+        url.start_with?(SCHEME_FILE_PFX2)
+      end
+
+      # @return [String] a file:// URL for the given path
+      def file_url(path)
+        return "#{SCHEME_FILE_PFX2}#{path}"
+      end
+
+      # @return [String] the path of a file:// URL
+      def file_path(url)
+        Aspera.assert(file?(url)){"use format: #{file_url('<path>')}"}
+        File.expand_path(url[SCHEME_FILE_PFX2.length..-1])
+      end
+
       # Read some content from some URI, support file: , http: and https: schemes
       def read(uri_to_read)
         uri = URI.parse(uri_to_read)
@@ -41,8 +57,7 @@ module Aspera
         if url.start_with?(SCHEME_FILE_PFX1)
           # for file scheme, return directly the path
           # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
-          raise "use format: #{SCHEME_FILE_PFX2}<path>" unless url.start_with?(SCHEME_FILE_PFX2)
-          return File.expand_path(url[SCHEME_FILE_PFX2.length..-1])
+          return file_path(url)
         elsif url.start_with?('data:')
           # download to temp file
           # auto-delete on exit

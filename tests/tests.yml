@@ -5289,7 +5289,7 @@ prev_folder:
     - --scan-id=1
     - --skip-types=office
     - --log-level=info
-    - --file-access=remote
+    - --file-access=aspera:
     - --ts=@json:{"target_rate_kbps":1000000}
 serv_hot_prep:
   tags:
