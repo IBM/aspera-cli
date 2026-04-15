@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # ffmpeg options:
-# spellchecker:ignore pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
+# spellchecker:ignore soffice pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
 # spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes
 
 require 'aspera/preview/options'
@@ -12,36 +12,36 @@ require 'aspera/assert'
 
 module Aspera
   module Preview
-    # generate one preview file for one format for one file at a time
+    # Generates one preview file for one format for one file at a time.
     class Generator
-      # values for preview_format : output format
+      # Values for preview_format: output format.
       PREVIEW_FORMATS = %i[png mp4].freeze
 
-      # List of valid ffmpeg option keys for reencode configuration
+      # List of valid ffmpeg option keys for reencode configuration.
       FFMPEG_OPTIONS_LIST = %w[in out].freeze
 
-      # CLI needs to know conversion type to know if need skip it
-      # one of CONVERSION_TYPES
+      # CLI needs to know conversion type to know if need skip it.
+      # One of CONVERSION_TYPES.
       attr_reader :conversion_type
 
-      # Node API MIME types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+      # Node API MIME types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types.
       # The resulting preview file type is taken from destination file extension.
-      # Conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>
-      #   -> conversion_type is one of FileTypes::CONVERSION_TYPES
-      #   -> preview_format is one of Generator::PREVIEW_FORMATS
-      # The conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
-      #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
-      # @param src           [String]  source file path
-      # @param dst           [String]  destination file path
-      # @param options       [Options] All conversion options
-      # @param main_temp_dir [String]  Main temp folder, sub folder will be created for generation
-      # @param api_mime_type [String,nil] Optional MIME type as provided by node api (or nil)
+      # Conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>.
+      #   -> conversion_type is one of FileTypes::CONVERSION_TYPES.
+      #   -> preview_format is one of Generator::PREVIEW_FORMATS.
+      # The conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>.
+      #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS.
+      # @param src [String] Source file path.
+      # @param dst [String] Destination file path.
+      # @param options [Options] All conversion options.
+      # @param main_temp_dir [String] Main temp folder, sub folder will be created for generation.
+      # @param api_mime_type [String, nil] Optional MIME type as provided by node api (or nil).
       def initialize(src, dst, options, main_temp_dir, api_mime_type)
         @source_file_path = src
         @destination_file_path = dst
         @options = options
         @temp_folder = File.join(main_temp_dir, @source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
-        # extract preview format from extension of target file
+        # Extract preview format from extension of target file.
         @preview_format_sym = File.extname(@destination_file_path).gsub(/^\./, '').to_sym
         conversion_type = FileTypes.instance.conversion_type(@source_file_path, api_mime_type)
         @processing_method = "convert_#{conversion_type}_to_#{@preview_format_sym}"
@@ -58,12 +58,12 @@ module Aspera
         Aspera.assert(respond_to?(@processing_method, true)){"no processing known for #{conversion_type} -> #{@preview_format_sym}"}
       end
 
-      # Create preview as specified in constructor.
+      # Creates preview as specified in constructor.
       def generate
         Log.log.debug{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
         begin
           send(@processing_method)
-          # check that generated size does not exceed maximum
+          # Check that generated size does not exceed maximum.
           result_size = File.size(@destination_file_path)
           Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
         ensure
@@ -71,8 +71,8 @@ module Aspera
         end
       end
 
-      # Path to error image corresponding to preview type
-      # @return [String] the path to the error image
+      # Path to error image corresponding to preview type.
+      # @return [String] The path to the error image.
       def error_asset
         File.expand_path(@preview_format_sym.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__))
       end
@@ -80,23 +80,25 @@ module Aspera
       private
 
       # Creates a unique temp folder for file.
-      # @return [String] the temporary folder path
+      # @return [String] The temporary folder path.
       def this_tmpdir
         FileUtils.mkdir_p(@temp_folder)
         return @temp_folder
       end
 
-      # Calculate offset in seconds for video frame extraction
-      # @param duration [Float] duration of video in seconds
-      # @param start_offset [Numeric] start offset of parts in seconds
-      # @param total_count [Integer] total count of parts
-      # @param index [Integer] index of part (starts at 1)
-      # @return [Float] offset in seconds suitable for ffmpeg -ss option
+      # Calculates offset in seconds for video frame extraction.
+      # @param duration [Float] Duration of video in seconds.
+      # @param start_offset [Numeric] Start offset of parts in seconds.
+      # @param total_count [Integer] Total count of parts.
+      # @param index [Integer] Index of part (starts at 1).
+      # @return [Float] Offset in seconds suitable for ffmpeg -ss option.
       def get_offset(duration, start_offset, total_count, index)
         Aspera.assert_type(duration, Float){'duration'}
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
       end
 
+      # Converts video to MP4 using blend method.
+      # Extracts key frames and blends them with transitions.
       def convert_video_to_mp4_using_blend
         p_duration = Utils.video_get_duration(@source_file_path)
         p_start_offset = @options.video_start_sec.to_i
@@ -113,9 +115,9 @@ module Aspera
           )
           Utils.video_dupe_frame(this_tmpdir, current_index, @options.blend_pauseframes)
           Utils.video_blend_frames(this_tmpdir, last_keyframe, current_index) unless last_keyframe.nil?
-          # go to last dupe frame
+          # Go to last dupe frame.
           last_keyframe = current_index + @options.blend_pauseframes
-          # go after last dupe frame and keep space to blend
+          # Go after last dupe frame and keep space to blend.
           current_index = last_keyframe + 1 + @options.blend_transframes
         end
         Utils.ffmpeg(
@@ -131,7 +133,8 @@ module Aspera
         )
       end
 
-      # generate n clips starting at offset
+      # Converts video to MP4 using clips method.
+      # Generates n clips starting at offset and concatenates them.
       def convert_video_to_mp4_using_clips
         p_duration = Utils.video_get_duration(@source_file_path)
         file_list_file = File.join(this_tmpdir, 'clip_files.txt')
@@ -153,7 +156,7 @@ module Aspera
             f.puts("file '#{tmp_file_name}'")
           end
         end
-        # concat clips
+        # Concat clips.
         Utils.ffmpeg(
           in_f: file_list_file,
           in_p: ['-f', 'concat'],
@@ -163,7 +166,8 @@ module Aspera
         File.delete(file_list_file)
       end
 
-      # do a simple re-encoding
+      # Converts video to MP4 using re-encoding method.
+      # Performs a simple re-encoding with configurable ffmpeg options.
       def convert_video_to_mp4_using_reencode
         options = @options.reencode_ffmpeg
         Aspera.assert_type(options, Hash){'reencode_ffmpeg'}
@@ -176,7 +180,7 @@ module Aspera
           in_p: options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9],
           out_f: @destination_file_path,
           out_p: options['out'] || [
-            '-t', '60',
+            '-t', 60,
             '-codec:v', 'libx264',
             '-profile:v', 'high',
             '-pix_fmt', 'yuv420p',
@@ -194,6 +198,8 @@ module Aspera
         )
       end
 
+      # Converts video to PNG using fixed frame method.
+      # Generates a static thumbnail at a specific time offset.
       def convert_video_to_png_using_fixed
         Utils.video_dump_frame(
           @source_file_path,
@@ -203,15 +209,14 @@ module Aspera
         )
       end
 
-      # https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
-      # ffmpeg -h muxer=apng
-      # thumb is 32x32
-      # ffmpeg  output.png
+      # Converts video to animated PNG (APNG).
+      # Creates an animated thumbnail with looping.
+      # @see https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
       def convert_video_to_png_using_animated
         p_duration = Utils.video_get_duration(@source_file_path)
         p_start_offset = @options.video_start_sec.to_i
         p_max_duration = @options.clips_length.to_i
-        # If video is shorter than start offset + duration, adjust to capture from start
+        # If video is shorter than start offset + duration, adjust to capture from start.
         if p_duration <= (p_start_offset + p_max_duration)
           p_start_offset = 0
           p_max_duration = p_duration
@@ -225,12 +230,14 @@ module Aspera
           out_f: @destination_file_path,
           out_p: [
             '-vf', 'fps=5,scale=120:-1:flags=lanczos',
-            '-plays', 0, # loop forever (0 = infinite loop for APNG)
+            '-plays', 0, # Loop forever (0 = infinite loop for APNG).
             '-f', 'apng'
           ]
         )
       end
 
+      # Converts office document to PNG.
+      # First converts to PDF, then to PNG image.
       def convert_office_to_png
         tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
         case @options.office_conversion
@@ -247,15 +254,16 @@ module Aspera
             '--outdir', File.dirname(tmp_pdf_file),
             @source_file_path
           ])
-          # soffice creates the file with the source name, so we need to rename it if needed
+          # soffice creates the file with the source name, so we need to rename it if needed.
           generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
           FileUtils.mv(generated_pdf, tmp_pdf_file) if generated_pdf != tmp_pdf_file
-        else
-          raise "Unknown office conversion method: #{@options.office_conversion}"
+        else Aspera.error_unexpected_value(@options.office_conversion){'office_conversion'}
         end
         convert_pdf_to_png(tmp_pdf_file)
       end
 
+      # Converts PDF to PNG image.
+      # @param source_file_path [String, nil] Optional source file path, defaults to @source_file_path.
       def convert_pdf_to_png(source_file_path = nil)
         source_file_path ||= @source_file_path
         Utils.external_command(:magick, [
@@ -268,6 +276,8 @@ module Aspera
         ])
       end
 
+      # Converts image to PNG thumbnail.
+      # Applies auto-orientation, resizing, and optimization.
       def convert_image_to_png
         Utils.external_command(:magick, [
           'convert',
@@ -282,19 +292,20 @@ module Aspera
         Utils.external_command(:optipng, [@destination_file_path])
       end
 
-      # text to png
+      # Converts plain text to PNG image.
+      # Renders first 100 lines of text file as an image.
       def convert_plaintext_to_png
-        # get 100 first lines of text file
+        # Get 100 first lines of text file.
         first_lines = File.foreach(@source_file_path).first(100).join
         Utils.external_command(:magick, [
           'convert',
           '-size', "#{@options.thumb_img_size}x#{@options.thumb_img_size}",
-          'xc:white', # define canvas with background color (xc, or canvas) of preceding size
+          'xc:white', # Define canvas with background color (xc, or canvas) of preceding size.
           '-font', @options.thumb_text_font,
           '-pointsize', 12,
-          '-fill', 'black', # font color
+          '-fill', 'black', # Font color.
           '-annotate', '+0+0', first_lines,
-          '-trim', # avoid large blank regions
+          '-trim', # Avoid large blank regions.
           '-bordercolor', 'white',
           '-border', 8,
           '+repage',
