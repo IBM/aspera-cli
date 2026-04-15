@@ -325,7 +325,7 @@ Released: 2025-01-21
 ### New Features
 
 * `aoc`: Improved usability for creation of Admin shared folders.
-* `node`: New option `node_cache` (bool) for gen4 operations.
+* `node`: New option `node_cache` (boolean) for gen4 operations.
 * `node`: Option `root_id` now always works for node gen4, as well as `%id:` for file selection in addition to path.
 * `node`: `transfer list` now uses the `iteration_token` to retrieve all values. Option `once_only` is now supported.
 * **global**: Option `http_options` now include retry options.
@@ -429,7 +429,7 @@ Released: 2024-07-13
 
 ### Breaking Changes
 
-* `config`: Command `remote_certificate` now takes a subcommand.
+* `config`: Command `remote_certificate` now takes a sub-command.
 * **global**: Moved a few internal classes in new/renamed modules.
 * **global**: Deprecated pseudo transfer specification parameters starting with `EX_`:
   * `EX_ssh_key_paths`: Use spec `ssh_private_key` or option `transfer_info={"ascp_args":["-i","..."]}`
@@ -514,7 +514,7 @@ General: Removed many redundant options, more consistency between plugins, see b
 * **global**: Renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`.
 * **global**: Removed extended value handler `incps`, as it is never used (use `extend` instead).
 * **global**: Option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
-* **global**: Replaced option `progress` with option `progressbar` (bool).
+* **global**: Replaced option `progress` with option `progressbar` (boolean).
 * **global**: Removed option `rest_debug` and `-r`, replaced with `--log-level=trace2`.
 * **global**: The default file name for private key when using wizard is change from `aspera_aoc_key` to `my_private_key.pem`.
 * `faspex5`: Removed option and `auth` type `link`: simply provide the public link as `url`.
@@ -642,8 +642,8 @@ Released: 2023-01-26
 * **container**: Image has entry point.
 * `aoc`: `admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`.
 * Renamed options for `sync`.
-* Node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used.
-* If wss is enabled on server, use wss.
+* Node gen4 operations are moved from `aoc` plugin to node plugin but made available where gen4 is used.
+* If WSS is enabled on server, use WSS.
 * Lots of cleanup and refactoring.
 
 ## 4.10.0
@@ -693,9 +693,9 @@ Released: 2022-06-16
 ### New Features
 
 * #76 add resource `group_membership` in `aoc`.
-* Add resource `metadata_profile` in `faspex5`.
-* Add command `user profile` in `faspex5`.
-* Add config wizard for `faspex5`.
+* New resource `metadata_profile` in `faspex5`.
+* New command `user profile` in `faspex5`.
+* Config wizard for `faspex5`.
 * #75 gem is signed.
 
 ### Breaking Changes
@@ -719,7 +719,7 @@ Released: 2022-03-23
 * Option `show_secrets` to reveal secrets in command output.
 * Added and updated commands for Faspex 5.
 * Option `cache_tokens`.
-* Faspex4 dropbox packages can now be received by id.
+* Faspex4 dropbox packages can now be received by ID.
 
 ### Issues Fixed
 
@@ -729,7 +729,7 @@ Released: 2022-03-23
 
 * Command `conf gem path` replaces `conf gem_path`.
 * Option `fpac` expects a value instead of URL.
-* Option `cipher` in transfer spec must have hyphen.
+* Option `cipher` in transfer spec must be hyphened.
 * Renamed option `log_passwords` to `log_secrets`.
 * Removed plugin `shares2` as products is now EOL.
 
@@ -746,7 +746,7 @@ Released: 2022-02-04
 
 ### Issues Fixed
 
-* #60 ascli executable was not installed by default in 4.5.0.
+* #60 `ascli` executable was not installed by default in 4.5.0.
 * Add password hiding case in logs.
 
 ### Breaking Changes
@@ -765,9 +765,9 @@ Released: 2021-12-27
 ### New Features
 
 * Support transfer agent: [Transfer SDK](README.md#agt_trsdk).
-* Support [http socket options](README.md#http_options).
+* Support [HTTP socket options](README.md#http_options).
 * Logs hide passwords and secrets, option `log_passwords` to enable logging secrets.
-* `config vault` supports encrypted passwords, also macos keychain.
+* `config vault` supports encrypted passwords, also macOS keychain.
 * `config preset` command for consistency with macOS.
 * Identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`.
 
@@ -793,7 +793,7 @@ Released: 2021-11-13
 * `aoc admin res xxx list` now get all items by default #50.
 * `preset` option can specify name or hash value.
 * `node` plugin accepts bearer token and access key as credential.
-* `node` option `token_type` allows using basic token in addition to aspera type.
+* `node` option `token_type` allows using basic token in addition to Aspera type.
 
 ### Breaking Changes
 
@@ -816,14 +816,14 @@ Released: 2021-09-23
 ### New Features
 
 * `faspex package list` retrieves the whole list, not just first page.
-* Support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`.
+* Support web based auth to `aoc` and `faspex5` using HTTPS, new dependency on gem `webrick`.
 * The error "Remote host is not who we expected" displays a special remediation message.
 * `conf ascp spec` displays supported transfer spec.
 * Options `notif_to` and `notif_template` to send email notifications on transfer (and other events).
 
 ### Issues Fixed
 
-* Space character in `faspe:` url are percent encoded if needed.
+* Space character in `faspe:` URL are percent encoded if needed.
 * `preview scan`: If file_id is unknown, ignore and continue scan.
 
 ### Breaking Changes
@@ -855,7 +855,7 @@ Released: 2021-08-24
 
 * On Windows `conf ascp use` expects ascp.exe.
 * (break) multi_session_threshold is Integer, not String.
-* `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail).
+* `conf ascp install` renames `sdk` folder if it already exists (leftover shared lib may make fail).
 * Removed `replace_illegal_chars` from default `aspera.conf` causing "Error creating illegal char conversion table".
 
 ### Breaking Changes
@@ -875,8 +875,8 @@ Released: 2021-06-23
 * Added option `sdk_url` to install SDK from local file for offline install.
 * Check new gem version periodically.
 * The --fields= option, support -_field_name_ to remove a field from default fields.
-* Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens).
-* `mimemagic` is now optional, needs manual install for `preview`, compatible with version 0.4.x.
+* OAuth's tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens).
+* `mimemagic` is now optional, needs manual installation for `preview`, compatible with version 0.4.x.
 * AoC a password can be provided for a public link.
 * `conf doc` take an optional parameter to go to a section.
 * Initial support for Faspex 5 Beta 1.
@@ -898,7 +898,7 @@ Released: 2021-02-03
 ### Breaking Changes
 
 * Changed default tool name from `mlia` to `ascli`.
-* Changed `aspera` command to `aoc`.
+* Renamed `aspera` command to `aoc`.
 * Changed gem name from `asperalm` to `aspera-cli`.
 * Changed module name from `Asperalm` to `Aspera`.
 * Removed command `folder` in `preview`, merged to `scan`.
@@ -906,7 +906,7 @@ Released: 2021-02-03
 
 ## 0.11.8
 
-* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using `Xvfb`).
+* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require an X server (previously using `Xvfb`).
 
 ## 0.11.7
 
@@ -915,7 +915,7 @@ Released: 2021-02-03
 * Fixed option `lock_port` not working.
 * Generate special icon if preview failed.
 * Possibility to choose transfer progress bar type with option `progress`.
-* AoC package creation now output package id.
+* AoC package creation now output package ID.
 
 ## 0.11.6
 
@@ -932,13 +932,13 @@ Released: 2021-02-03
 * Added option `default_ports` for AoC (see manual).
 * Allow bulk delete in `aspera files` with option `bulk=yes`.
 * Fix getting connect versions.
-* Added section for Aix.
-* Support all ciphers for [`direct`](README.md#agt_direct) agent (including gcm, etc..).
-* Added transfer spec param `apply_local_docroot` for [`direct`](README.md#agt_direct).
+* Added section for AIX.
+* Support all ciphers for [`direct`](README.md#agt_direct) agent (including GCM, etc.).
+* Added transfer spec parameter `apply_local_docroot` for [`direct`](README.md#agt_direct).
 
 ## 0.11.4
 
-* Possibility to give shared inbox name when sending a package (else use id and type).
+* Possibility to give shared inbox name when sending a package (else use ID and type).
 
 ## 0.11.3
 
@@ -946,7 +946,7 @@ Released: 2021-02-03
 
 ## 0.11.2
 
-* Fixes on multi-session: Progress bar and transfer spec param for `direct`.
+* Fixes on multi-session: Progress bar and transfer spec parameter for `direct`.
 
 ## 0.11.1
 
@@ -954,7 +954,7 @@ Released: 2021-02-03
 
 ## 0.11
 
-* Add transfer spec option (agent `direct` only) to provide file list directly to ascp: `EX_file_list`.
+* Add transfer spec option (agent `direct` only) to provide file list directly to `ascp`: `EX_file_list`.
 
 ## 0.10.18
 
@@ -976,7 +976,7 @@ Released: 2021-02-03
 
 ## 0.10.14
 
-* Added missing bss plugin.
+* Added missing `bss` plugin.
 
 ## 0.10.13
 
@@ -1022,7 +1022,7 @@ Released: 2021-02-03
 
 ## 0.10.5
 
-* Fix faspex package receive command not working.
+* Fix Faspex package receive command not working.
 
 ## 0.10.4
 
@@ -1031,7 +1031,7 @@ Released: 2021-02-03
 
 ## 0.10.3
 
-* Included user name in oauth bearer token cache for AoC when JWT is used.
+* Included username in OAuth bearer token cache for AoC when JWT is used.
 
 ## 0.10.2
 
@@ -1060,7 +1060,7 @@ Released: 2021-02-03
 
 ## 0.9.34
 
-* Parser "@preset" can be used again in option "transfer_info".
+* Parser `@preset` can be used again in option `transfer_info`.
 * Some documentation re-organizing.
 
 ## 0.9.33
@@ -1075,7 +1075,7 @@ Released: 2021-02-03
 ### New Features
 
 * All Faspex public links are now supported.
-* Removed faspex operation `recv_publink`. Replaced with option `link` (consistent with AoC).
+* Removed Faspex operation `recv_publink`. Replaced with option `link` (consistent with AoC).
 
 ## 0.9.31
 
@@ -1119,7 +1119,7 @@ Released: 2021-02-03
 ### New Features
 
 * Defined REST error handlers, more error conditions detected.
-* Commands to select specific ascp location.
+* Commands to select specific `ascp` location.
 
 ## 0.9.21
 
@@ -1132,7 +1132,7 @@ Released: 2021-02-03
 
 ### New Features
 
-* Improved wizard (prepare for AoC global client id).
+* Improved wizard (prepare for AoC global client ID).
 * Preview generator: Added option : `skip_format` with values `png`, `mp4`.
 * Removed outdated pictures from this doc.
 
@@ -1146,7 +1146,7 @@ Released: 2021-02-03
 
 ### New Features
 
-* Enhanced aspera admin events to support query.
+* Enhanced Aspera admin events to support query.
 
 ## 0.9.16
 
@@ -1159,19 +1159,19 @@ Released: 2021-02-03
 
 ### New Features
 
-* New feature: "find" command in aspera files.
+* New feature: `find` command in Aspera Files.
 * Sample code for transfer API.
 
 ## 0.9.12
 
 ### New Features
 
-* Add nagios commands.
-* Support of ATS for IBM Cloud, removed old version based on aspera id.
+* Add `nagios` commands.
+* Support of ATS for IBM Cloud, removed old version based on Aspera ID.
 
 ## 0.9.11
 
-* Support of ATS for IBM Cloud, removed old version based on aspera id.
+* Support of ATS for IBM Cloud, removed old version based on Aspera ID.
 
 ### Breaking Changes
 
@@ -1185,7 +1185,7 @@ Released: 2021-02-03
 ### Breaking Changes
 
 * **global**: Parameter transfer-node becomes more generic: `transfer-info`.
-* **global**: Replaced download_mode option with http_download action.
+* **global**: Replaced `download_mode` option with `http_download` action.
 
 ## 0.9.9
 
@@ -1195,7 +1195,7 @@ Released: 2021-02-03
 
 ### Breaking Changes
 
-* **global**: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
+* **global**: `aspera package send` parameter deprecated, use the --value option instead with "recipients" value. See example.
 
 ## 0.9.8
 
@@ -1240,7 +1240,7 @@ Released: 2021-02-03
 
 ### Breaking Changes
 
-* `oncloud`: `oncloud file list` follow `--source` convention as well (plus specific case for download when first path is source folder, and other are source file names).
+* `oncloud`: `oncloud file list` follow `--source` convention as well (plus specific case for download when first path is source folder, and others are source file names).
 
 ## 0.9.3
 
@@ -1266,17 +1266,17 @@ Released: 2021-02-03
 
 ### Breaking Changes
 
-* `faspex`: Changed faspex package creation to match API, see Faspex section.
+* `faspex`: Changed Faspex package creation to match API, see Faspex section.
 
 ## 0.9
 
 ### New Features
 
-* Automatic rename and conversion of former config folder from aslmcli to ascli.
+* Automatic rename and conversion of former config folder from `aslmcli` to `ascli`.
 
 ### Breaking Changes
 
-* Renamed the CLI from aslmcli to ascli.
+* Renamed the CLI from `aslmcli` to `ascli`.
 
 ## 0.7.6
 
@@ -1295,7 +1295,7 @@ Released: 2021-02-03
 ### Breaking Changes
 
 * `aoc`: AoC `package recv` take option if for package instead of argument.
-* **global**: Rest class and Oauth class changed init parameters.
+* **global**: Rest class and OAuth class changed initialization parameters.
 
 ## 0.6.19
 
