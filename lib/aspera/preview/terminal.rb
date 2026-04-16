@@ -11,15 +11,22 @@ require 'aspera/environment'
 module Aspera
   module Preview
     module Backend
-      # provides image pixels scaled to terminal
+      # Base decoder that rescales image data to the current terminal geometry.
       class Base
+        # @param reserve [Integer] number of terminal rows reserved for non-image output
+        # @param double [Boolean] when `true`, render two image rows in one terminal row
+        # @param font_ratio [Float] terminal font aspect ratio: height divided by width
         def initialize(reserve:, double:, font_ratio:)
           @reserve = reserve
           @height_ratio = double ? 2.0 : 1.0
           @font_ratio = font_ratio
         end
         Aspera.require_method!(:terminal_pixels)
-        # compute scaling to fit terminal
+        # Compute output dimensions that fit inside the terminal while preserving aspect ratio.
+        #
+        # @param rows [Integer] source image height in pixels
+        # @param columns [Integer] source image width in pixels
+        # @return [Array<Integer>] scaled width and height for terminal rendering
         def terminal_scaling(rows, columns)
           (term_rows, term_columns) = IO.console.winsize || [24, 80]
           term_rows = [term_rows - @reserve, 2].max
@@ -29,22 +36,30 @@ module Aspera
       end
 
       class RMagick < Base
+        # Initialize the RMagick-backed decoder for a binary image payload.
+        #
+        # @param blob [String] encoded image binary content
+        # @param kwargs [Hash] forwarding options accepted by [`initialize`](lib/aspera/preview/terminal.rb:16)
         def initialize(blob, **kwargs)
           super(**kwargs)
-          # do not require statically, as the package is optional
+          # Load lazily because this dependency is optional.
           require 'rmagick' # https://rmagick.github.io/index.html
           @image = Magick::ImageList.new.from_blob(blob)
         end
 
+        # Decode the image and return RGB pixels scaled for terminal rendering.
+        #
+        # @return [Array<Array<Array<Integer>>>] rows of `[red, green, blue]` pixel triplets
         def terminal_pixels
-          # quantum depth is 8 or 16, see: `magick xc: -format "%q" info:`
+          # ImageMagick channel depth is typically 8 or 16 bits.
+          # See: `magick xc: -format "%q" info:`
           shift_for_8_bit = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
-          # get all pixel colors, adjusted for Rainbow
+          # Extract RGB values and normalize them to 8-bit channels for Rainbow.
           pixel_colors = []
           @image.scale(*terminal_scaling(@image.rows, @image.columns)).each_pixel do |pixel, col, row|
             pixel_rgb = [pixel.red, pixel.green, pixel.blue]
             pixel_rgb = pixel_rgb.map{ |color| color >> shift_for_8_bit} unless shift_for_8_bit.eql?(0)
-            # init 2-dim array
+            # Initialize the destination 2D pixel matrix row by row.
             pixel_colors[row] ||= []
             pixel_colors[row][col] = pixel_rgb
           end
@@ -53,12 +68,19 @@ module Aspera
       end
 
       class ChunkyPNG < Base
+        # Initialize the ChunkyPNG-backed decoder for a PNG payload.
+        #
+        # @param blob [String] PNG binary content
+        # @param kwargs [Hash] forwarding options accepted by [`initialize`](lib/aspera/preview/terminal.rb:16)
         def initialize(blob, **kwargs)
           super(**kwargs)
           require 'chunky_png'
           @png = ::ChunkyPNG::Image.from_blob(blob)
         end
 
+        # Resize the PNG using nearest-neighbor sampling and return RGB pixel rows.
+        #
+        # @return [Array<Array<Array<Integer>>>] rows of `[red, green, blue]` pixel triplets
         def terminal_pixels
           src_w = @png.width
           src_h = @png.height
@@ -75,7 +97,7 @@ module Aspera
               sx = (dx * x_ratio).floor
               sx = src_w - 1 if sx >= src_w
               rgba = @png.get_pixel(sx, sy)
-              # ChunkyPNG stores as 0xRRGGBBAA; extract 8-bit channels
+              # ChunkyPNG stores pixels as 0xRRGGBBAA; extract 8-bit RGB channels.
               pixel_colors[dy][dx] = %i[r g b].map{ |i| ::ChunkyPNG::Color.send(i, rgba)}
             end
           end
@@ -84,19 +106,21 @@ module Aspera
       end
     end
 
-    # Display a picture in the terminal.
-    # Either use coloured characters or iTerm2 protocol.
+    # Render an image for terminal output.
+    # Uses either colored text blocks or the iTerm2 inline-image protocol when available.
     class Terminal
-      # Rainbow only supports 8-bit colors
-      # env vars to detect terminal type
+      # Rainbow only supports 8-bit color values.
+      # Environment variables inspected to detect compatible terminal implementations.
       TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
-      # terminal names that support iTerm2 image display
+      # Terminal identifiers known to support the iTerm2 inline-image protocol.
       ITERM_NAMES = %w[iTerm WezTerm mintty].freeze
-      # TODO: retrieve terminal font ratio using some termcap ?
-      # ratio = font height / font width
+      # Fallback font aspect ratio used to estimate how many image pixels fit in a character cell.
+      # Ratio = font height / font width.
       DEFAULT_FONT_RATIO = 32.0 / 14.0
       private_constant :TERM_ENV_VARS, :ITERM_NAMES, :DEFAULT_FONT_RATIO
       class << self
+        # Render an image blob for display in the current terminal.
+        #
         # @param blob       [String]  The image as a binary string
         # @param text       [Boolean] `true` to display the image as text, `false` to use iTerm2 if supported
         # @param reserve    [Integer] Number of lines to reserve for other text than the image
@@ -124,7 +148,7 @@ module Aspera
             return iterm_display_image(blob) if iterm_supported?
             raise 'Cannot decode picture.'
           end
-          # now generate text
+          # Convert decoded pixels into terminal glyphs.
           text_pixels = []
           pixel_colors.each_with_index do |row_data, row|
             next if double && (row.odd? || row.eql?(pixel_colors.length - 1))
@@ -140,11 +164,14 @@ module Aspera
           return text_pixels.join
         end
 
-        # display image in iTerm2
+        # Build the iTerm2 inline-image escape sequence.
         # https://iterm2.com/documentation-images.html
+        #
+        # @param blob [String] image binary content
+        # @return [String] escape sequence that displays the image inline
         def iterm_display_image(blob)
           # image = Magick::ImageList.new.from_blob(blob)
-          # parameters for iTerm2 image display
+          # Parameters accepted by the iTerm2 inline-image protocol.
           arguments = {
             inline:              1,
             preserveAspectRatio: 1,
@@ -152,12 +179,15 @@ module Aspera
             # width:               image.columns,
             # height:              image.rows
           }.map{ |k, v| "#{k}=#{v}"}.join(';')
-          # \a is BEL, \e is ESC : https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
-          # escape sequence for iTerm2 image display
+          # `\a` is BEL and `\e` is ESC.
+          # See: https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
+          # Return the full escape sequence expected by iTerm2-compatible terminals.
           return "\e]1337;File=#{arguments}:#{Base64.strict_encode64(blob)}\a"
         end
 
-        # @return [Boolean] true if the terminal supports iTerm2 image display
+        # Detect whether the current terminal supports iTerm2 inline images.
+        #
+        # @return [Boolean] `true` when the current terminal advertises iTerm2 image support
         def iterm_supported?
           TERM_ENV_VARS.each do |env_var|
             return true if ITERM_NAMES.any?{ |term| ENV[env_var]&.include?(term)}

@@ -5139,62 +5139,62 @@ prev_dcm:
   args:
     - preview
     - test
-    - --base=$(TMP / 'prev_dcm')
     - "@preset:file.dcm"
+    - --base=$(TMP / 'prev_dcm')
 prev_dcm_mm:
   args:
     - preview
     - test
-    - --mimemagic=yes
-    - --base=$(TMP / 'prev_dcm_mm')
     - "@preset:file.dcm"
+    - --base=$(TMP / 'prev_dcm_mm')
+    - --mimemagic=yes
 prev_jpg_unk_mm:
   args:
     - preview
     - test
-    - --mimemagic=yes
-    - --base=$(TMP / 'prev_jpg_unk_mm')
     - "@preset:file.jpg_unk"
+    - --base=$(TMP / 'prev_jpg_unk_mm')
+    - --mimemagic=yes
 prev_mxf_blend:
   args:
     - preview
     - test
-    - --base=$(TMP / 'prev_mxf_blend')
     - "@preset:file.mxf"
     - mp4
+    - --base=$(TMP / 'prev_mxf_blend')
     - --video-conversion=blend
     - --query=@json:{"text":true,"double":true}
 prev_pdf:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_pdf')
     - "@preset:file.pdf"
+    - --base=$(TMP / 'prev_pdf')
 prev_txt:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_txt')
     - /etc/hosts
+    - --base=$(TMP / 'prev_txt')
 prev_docx:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_docx')
     - "@preset:file.docx"
+    - --base=$(TMP / 'prev_docx')
 prev_mpg_png_fix:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_mpg_png_fix')
     - "@preset:file.mpg"
+    - --base=$(TMP / 'prev_mpg_png_fix')
     - --video-png-conv=fixed
 prev_mpg_png_ani:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_mpg_png_ani')
     - "@preset:file.mpg"
+    - --base=$(TMP / 'prev_mpg_png_ani')
     - --video-png-conv=animated
 prev_small_mp4_png_ani:
   description: Test animated preview with short video
@@ -5218,17 +5218,17 @@ prev_mpg_reencode:
   args:
     - preview
     - show
-    - --base=$(TMP / 'prev_mpg_reencode')
     - "@preset:file.mpg"
     - mp4
+    - --base=$(TMP / 'prev_mpg_reencode')
     - --video-conversion=reencode
 prev_mpg_clips:
   args:
     - preview
     - show
-    - --base=$(TMP / 'testprev_mpg_clips_name')
     - "@preset:file.mpg"
     - mp4
+    - --base=$(TMP / 'testprev_mpg_clips_name')
     - --video-conversion=clips
 prev_trevents_prep:
   args:

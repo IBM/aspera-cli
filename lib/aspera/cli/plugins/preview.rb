@@ -23,17 +23,17 @@ module Aspera
   module Cli
     module Plugins
       class Preview < BasicAuth
-        # special tag to identify transfers related to generator
+        # Reserved transfer tag used to identify preview-generation transfers.
         PREV_GEN_TAG = 'preview_generator'
-        # defined by node API: suffix for folder containing previews
+        # Node API suffix for the per-file preview folder.
         PREVIEW_FOLDER_SUFFIX = '.asp-preview'
-        # basename of preview files
+        # Default basename for generated preview files.
         PREVIEW_BASENAME = 'preview'
-        # subfolder in system tmp folder
+        # Prefix for the temporary working directory created under the system temp folder.
         TMP_DIR_PREFIX = 'prev_tmp'
-        # same value as in aspera.conf
+        # Default preview root folder name, aligned with `aspera.conf`.
         DEFAULT_PREVIEWS_FOLDER = 'previews'
-        # mark that this is used by a particular access key
+        # Marker file recording which access key owns a cached preview area.
         AK_MARKER_FILE = '.aspera_access_key'
         LOG_LIMITER_SEC = 30.0
         REMOTE_ACCESS = 'aspera:'
@@ -55,14 +55,14 @@ module Aspera
           @option_previews_folder = nil
           @option_overwrite = nil
           @option_folder_reset_cache = nil
-          # options for generation
+          # Generator configuration populated from CLI options.
           @gen_options = Aspera::Preview::Options.new
-          # used to trigger periodic processing
+          # Used to rate-limit periodic progress logging and checkpoint persistence.
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
-          # Proc
+          # Optional callback used to filter entries before generation.
           @filter_block = nil
           @access_remote = true
-          # link CLI options to gen_info attributes
+          # Bind CLI options directly to generator option attributes.
           options.declare(
             :skip_format, 'Skip this preview format',
             allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
@@ -87,7 +87,7 @@ module Aspera
             allowed: Allowed::TYPES_STRING,
             default: ''
           )
-          # add other options for generator (and set default values)
+          # Declare generator-specific options and apply their default values.
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             values = if opt.key?(:values)
               opt[:values]
@@ -98,7 +98,7 @@ module Aspera
           end
 
           options.parse_options!
-          # by default generate all supported formats (clone, as altered by options)
+          # Start from the full supported format list, then remove any skipped format.
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           skip = options.get_option(:skip_format)
           @preview_formats_to_generate.delete(skip) if skip
@@ -107,22 +107,30 @@ module Aspera
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
         end
 
-        # /files/id/files is normally cached in Redis, but we can discard the cache
-        # but /files/id is not cached
+        # Retrieve the content of a folder, optionally bypassing the Node API cache.
+        #
+        # `/files/<id>/files` is usually cached by Node API, so callers can force cache bypass.
+        # `/files/<id>` itself is not cached.
+        #
+        # @param file_id [String] Node API identifier of the folder to list
+        # @param request_args [Hash, nil] optional query parameters passed to the listing endpoint
+        # @return [Array<Hash>] folder entries returned by Node API
         def get_folder_entries(file_id, request_args = nil)
           headers = {'Accept' => Mime::JSON}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
           return @api_node.read("files/#{file_id}/files", request_args, headers: headers)
         end
 
-        # old version based on folders
-        # @param iteration_persistency can be nil
+        # Process legacy transfer events and trigger preview generation for completed downloads.
+        #
+        # @param iteration_persistency [PersistencyActionOnce, nil] stores the last processed event id
+        # @return [void]
         def process_trevents(iteration_persistency)
           events_filter = {
             'access_key' => @access_key_self['id'],
             'type'       => 'download.ended'
           }
-          # optionally add iteration token from persistency
+          # Resume from the last persisted event id when available.
           events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
           begin
             events = @api_node.read('events', events_filter)
@@ -147,10 +155,10 @@ module Aspera
                 scan_folder_files(folder_entry) unless folder_entry.nil?
               end
             end
-            # log/persist periodically or last one
+            # Periodically log progress and persist the latest processed event.
             next unless @periodic.trigger? || event.equal?(events.last)
             Log.log.debug{"Processed event #{event['id']}"}
-            # save checkpoint to avoid losing processing in case of error
+            # Save a checkpoint to avoid replaying the full batch after a failure.
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
               iteration_persistency.save
@@ -158,19 +166,22 @@ module Aspera
           end
         end
 
-        # requests recent events on node api and process newly modified folders
+        # Process recent Node API file events since the last persisted checkpoint.
+        #
+        # @param iteration_persistency [PersistencyActionOnce, nil] stores the last processed event id
+        # @return [void]
         def process_events(iteration_persistency)
-          # get new file creation by access key (TODO: what if file already existed?)
+          # Restrict the event stream to file-related changes for the current access key.
           events_filter = {
             'access_key' => @access_key_self['id'],
             'type'       => 'file.*'
           }
-          # optionally add iteration token from persistency
+          # Resume from the last persisted event id when available.
           events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
           events = @api_node.read('events', events_filter)
           return if events.empty?
           events.each do |event|
-            # process only files
+            # Ignore non-file events such as folder notifications.
             if event.dig('data', 'type').eql?('file')
               file_entry = @api_node.read("files/#{event['data']['id']}") rescue nil
               if !file_entry.nil? &&
@@ -180,10 +191,10 @@ module Aspera
                 generate_preview(file_entry) if event['types'].include?('file.deleted')
               end
             end
-            # log/persist periodically or last one
+            # Periodically log progress and persist the latest processed event.
             next unless @periodic.trigger? || event.equal?(events.last)
             Log.log.debug{"Processing event #{event['id']}"}
-            # save checkpoint to avoid losing processing in case of error
+            # Save a checkpoint to avoid replaying the full batch after a failure.
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
               iteration_persistency.save
@@ -191,21 +202,34 @@ module Aspera
           end
         end
 
+        # Transfer a file to or from the configured Node storage using a tagged transfer spec.
+        #
+        # @param direction [String] transfer direction, typically from [`Transfer::Spec`](lib/aspera/transfer/spec.rb)
+        # @param folder_id [String] Node API identifier of the reference folder
+        # @param source_filename [String] relative source path inside the transfer root
+        # @param destination [String, nil] local destination root for receive operations
+        # @return [Object] transfer result returned by [`Main.result_transfer`](lib/aspera/cli/main.rb)
         def do_transfer(direction, folder_id, source_filename, destination = '/')
           Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)))
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
             'tags'  => {Transfer::Spec::TAG_RESERVED => {PREV_GEN_TAG => true}}
           })
-          # force destination, need to set this in transfer agent else it gets overwritten, do not do: t_spec['destination_root']=destination
+          # Force the destination on the transfer agent object.
+          # Setting `t_spec['destination_root']` directly would later be overwritten.
           transfer.user_transfer_spec['destination_root'] = destination
           Main.result_transfer(transfer.start(t_spec))
         end
 
+        # Populate generation metadata for a source file available on the local filesystem.
+        #
+        # @param gen_infos [Array<Hash>] preview generation descriptors to enrich
+        # @param entry [Hash] file entry containing at least the relative path
+        # @return [String] local directory where previews for this entry are stored
         def get_infos_local(gen_infos, entry)
           local_original_filepath = File.join(@local_storage_root, entry['path'])
           original_mtime = File.mtime(local_original_filepath)
-          # out
+          # Output directory for previews generated from the local source file.
           local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name(entry))
           gen_infos.each do |gen_info|
             gen_info[:src] = local_original_filepath
@@ -216,41 +240,57 @@ module Aspera
           return local_entry_preview_dir
         end
 
+        # Populate generation metadata for a source file stored remotely on Node.
+        #
+        # @param gen_infos [Array<Hash>] preview generation descriptors to enrich
+        # @param entry [Hash] remote file entry returned by Node API
+        # @return [String] temporary local directory where previews are generated
         def get_infos_remote(gen_infos, entry)
-          # store source directly here
+          # Download the source file into the temporary workspace before generating previews.
           local_original_filepath = File.join(@tmp_folder, entry['name'])
           # require 'date'
           # original_mtime=DateTime.parse(entry['modified_time'])
-          # out: where previews are generated
+          # Local directory where previews are generated before being uploaded back.
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
           file_info = @api_node.read("files/#{entry['id']}")
-          # TODO: this does not work because previews is hidden in api (gen4)
+          # TODO: This does not work with Gen4 because preview folders are hidden by the API.
           # this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
-          # TODO: use gen3 api to list files and get date
+          # TODO: Query Gen3 APIs to list preview files and retrieve timestamps.
           gen_infos.each do |gen_info|
             gen_info[:src] = local_original_filepath
             gen_info[:dst] = File.join(local_entry_preview_dir, gen_info[:base_dest])
-            # TODO: use this_preview_folder_entries (but it's hidden)
+            # TODO: Reuse `this_preview_folder_entries` once preview folders become visible.
             gen_info[:preview_exist] = file_info.key?('preview')
-            # TODO: get change time and compare, useful ?
+            # TODO: Compare source and preview modification times when remote timestamps are available.
             gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
           return local_entry_preview_dir
         end
 
-        # defined by node api
+        # Build the preview folder name for a file entry using the Node API convention.
+        #
+        # @param entry [Hash] file entry containing an `id`
+        # @return [String] preview folder name for the entry
         def entry_preview_folder_name(entry)
           "#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
         end
 
-        # Generate a file name based on basename and format (extension)
+        # Build a preview filename from a basename and target format.
+        #
+        # @param preview_format [String, Symbol] preview format used as filename extension
+        # @param base_name [String, nil] basename to use before the extension
+        # @return [String] preview filename
         def preview_filename(preview_format, base_name = nil)
           base_name ||= PREVIEW_BASENAME
           return "#{base_name}.#{preview_format}"
         end
 
-        # generate preview files for one folder entry (file) if necessary
-        # entry must contain "parent_file_id" if remote.
+        # Generate all required previews for a single file entry when regeneration is needed.
+        #
+        # Remote entries must include `parent_file_id`.
+        #
+        # @param entry [Hash] local or remote file entry to preview
+        # @return [void]
         def generate_preview(entry)
           # prepare generic information
           gen_infos = @preview_formats_to_generate.map do |preview_format|
@@ -472,7 +512,6 @@ module Aspera
             g.generate
             if command.eql?(:show)
               terminal_options = (options.get_option(:query) || {}).symbolize_keys
-              Log.log.debug{"preview: #{generated_file_path}"}
               formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
             end
             return Main.result_status("generated: #{generated_file_path}")
