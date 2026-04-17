@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Ascli
+GenericName=Command Line Interface
+Comment=Aspera CLI tool
+Exec=ascli
+Icon=ascli
+Categories=Utility;System;
+Keywords=aspera;transfer;cli;command;
+Terminal=true

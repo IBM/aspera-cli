@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Execute ascli in the appimage environment
+app_dir="$(dirname "$(readlink -f "$0")")"
+ruby="$app_dir/usr/bin/ruby --disable=gems"
+ruby_lib="$(dirname "$app_dir"/usr/lib/ruby/*/rubygems.rb)"
+export LD_LIBRARY_PATH="$app_dir/usr/lib"
+export GEM_HOME="$app_dir/usr/lib/gems"
+export GEM_PATH="$GEM_HOME"
+exec $ruby -I"$ruby_lib" -I"$ruby_lib/$($ruby -e "puts RUBY_PLATFORM")" "$GEM_HOME/bin/ascli" "$@"
