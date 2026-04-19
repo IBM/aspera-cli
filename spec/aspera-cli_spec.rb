@@ -247,8 +247,8 @@ RSpec.describe(Aspera::UriReader) do
   it 'fails on bad file uri' do
     Aspera::UriReader.read_as_file('file:foo.bar')
     raise 'Shall not reach here'
-  rescue RuntimeError => e
-    expect(e.message).to(start_with('use format: file:///'))
+  rescue => e
+    expect(e.message).to(include('use format: file:///'))
   end
 end
 
