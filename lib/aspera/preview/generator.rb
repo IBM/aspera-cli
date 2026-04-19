@@ -22,7 +22,7 @@ module Aspera
 
       # CLI needs to know conversion type to know if need skip it.
       # One of CONVERSION_TYPES.
-      attr_reader :conversion_type
+      attr_reader :conversion_type, :destination
 
       # Node API MIME types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types.
       # The resulting preview file type is taken from destination file extension.
@@ -35,15 +35,18 @@ module Aspera
       # @param dst [String] Destination file path.
       # @param options [Options] All conversion options.
       # @param main_temp_dir [String] Main temp folder, sub folder will be created for generation.
-      # @param api_mime_type [String, nil] Optional MIME type as provided by node api (or nil).
-      def initialize(src, dst, options, main_temp_dir, api_mime_type)
-        @source_file_path = src
-        @destination_file_path = dst
+      # @param mime [String, nil] Optional MIME type as provided by node api (or nil).
+      def initialize(src, dst, options, main_temp_dir, mime: nil)
+        # Source file path
+        @source = src
+        # Destination file path
+        @destination = dst
         @options = options
-        @temp_folder = File.join(main_temp_dir, @source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
+        # temp folder name based on source file
+        @temp_folder = File.join(main_temp_dir, @source.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # Extract preview format from extension of target file.
-        @preview_format_sym = File.extname(@destination_file_path).gsub(/^\./, '').to_sym
-        conversion_type = FileTypes.instance.conversion_type(@source_file_path, api_mime_type)
+        @preview_format_sym = File.extname(@destination).gsub(/^\./, '').to_sym
+        conversion_type = FileTypes.instance.conversion_type(@source, mime)
         @processing_method = "convert_#{conversion_type}_to_#{@preview_format_sym}"
         if conversion_type.eql?(:video)
           case @preview_format_sym
@@ -60,11 +63,11 @@ module Aspera
 
       # Creates preview as specified in constructor.
       def generate
-        Log.log.debug{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
+        Log.log.debug{"#{@source}->#{@destination} (#{@processing_method})"}
         begin
           send(@processing_method)
           # Check that generated size does not exceed maximum.
-          result_size = File.size(@destination_file_path)
+          result_size = File.size(@destination)
           Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
         ensure
           FileUtils.rm_rf(@temp_folder)
@@ -100,7 +103,7 @@ module Aspera
       # Converts video to MP4 using blend method.
       # Extracts key frames and blends them with transitions.
       def convert_video_to_mp4_using_blend
-        p_duration = Utils.video_get_duration(@source_file_path)
+        p_duration = Utils.video_get_duration(@source)
         p_start_offset = @options.video_start_sec.to_i
         p_key_frame_count = @options.blend_keyframes.to_i
         last_keyframe = nil
@@ -108,7 +111,7 @@ module Aspera
         frame_rate_hz = 30
         1.upto(p_key_frame_count) do |i|
           Utils.video_dump_frame(
-            @source_file_path,
+            @source,
             get_offset(p_duration, p_start_offset, p_key_frame_count, i),
             @options.video_scale,
             Utils.get_tmp_num_filepath(this_tmpdir, current_index)
@@ -123,7 +126,7 @@ module Aspera
         Utils.ffmpeg(
           in_f: Utils.ffmpeg_fmt(this_tmpdir),
           in_p: ['-framerate', @options.blend_fps],
-          out_f: @destination_file_path,
+          out_f: @destination,
           out_p: [
             '-filter:v', "scale='trunc(iw/2)*2:trunc(ih/2)*2'",
             '-codec:v', 'libx264',
@@ -136,14 +139,14 @@ module Aspera
       # Converts video to MP4 using clips method.
       # Generates n clips starting at offset and concatenates them.
       def convert_video_to_mp4_using_clips
-        p_duration = Utils.video_get_duration(@source_file_path)
+        p_duration = Utils.video_get_duration(@source)
         file_list_file = File.join(this_tmpdir, 'clip_files.txt')
         File.open(file_list_file, 'w+') do |f|
           1.upto(@options.clips_count.to_i) do |i|
             offset_seconds = get_offset(p_duration, @options.video_start_sec.to_i, @options.clips_count.to_i, i)
             tmp_file_name = format('clip%04d.mp4', i)
             Utils.ffmpeg(
-              in_f: @source_file_path,
+              in_f: @source,
               in_p: ['-ss', offset_seconds * 0.9],
               out_f: File.join(this_tmpdir, tmp_file_name),
               out_p: [
@@ -160,7 +163,7 @@ module Aspera
         Utils.ffmpeg(
           in_f: file_list_file,
           in_p: ['-f', 'concat'],
-          out_f: @destination_file_path,
+          out_f: @destination,
           out_p: ['-codec', 'copy']
         )
         File.delete(file_list_file)
@@ -176,9 +179,9 @@ module Aspera
           Aspera.assert_type(v, Array){k}
         end
         Utils.ffmpeg(
-          in_f: @source_file_path,
+          in_f: @source,
           in_p: options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9],
-          out_f: @destination_file_path,
+          out_f: @destination,
           out_p: options['out'] || [
             '-t', 60,
             '-codec:v', 'libx264',
@@ -202,10 +205,10 @@ module Aspera
       # Generates a static thumbnail at a specific time offset.
       def convert_video_to_png_using_fixed
         Utils.video_dump_frame(
-          @source_file_path,
-          Utils.video_get_duration(@source_file_path) * @options.thumb_vid_fraction,
+          @source,
+          Utils.video_get_duration(@source) * @options.thumb_vid_fraction,
           @options.thumb_vid_scale,
-          @destination_file_path
+          @destination
         )
       end
 
@@ -213,7 +216,7 @@ module Aspera
       # Creates an animated thumbnail with looping.
       # @see https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
       def convert_video_to_png_using_animated
-        p_duration = Utils.video_get_duration(@source_file_path)
+        p_duration = Utils.video_get_duration(@source)
         p_start_offset = @options.video_start_sec.to_i
         p_max_duration = @options.clips_length.to_i
         # If video is shorter than start offset + duration, adjust to capture from start.
@@ -222,12 +225,12 @@ module Aspera
           p_max_duration = p_duration
         end
         Utils.ffmpeg(
-          in_f: @source_file_path,
+          in_f: @source,
           in_p: [
             '-ss', p_start_offset,
             '-t', p_max_duration
           ],
-          out_f: @destination_file_path,
+          out_f: @destination,
           out_p: [
             '-vf', 'fps=5,scale=120:-1:flags=lanczos',
             '-plays', 0, # Loop forever (0 = infinite loop for APNG).
@@ -239,23 +242,23 @@ module Aspera
       # Converts office document to PNG.
       # First converts to PDF, then to PNG image.
       def convert_office_to_png
-        tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
+        tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source, File.extname(@source))}.pdf")
         case @options.office_conversion
         when :unoconv
           Utils.external_command(:unoconv, [
             '-f', 'pdf',
             '-o', tmp_pdf_file,
-            @source_file_path
+            @source
           ])
         when :soffice
           Utils.external_command(:soffice, [
             '--headless',
             '--convert-to', 'pdf',
             '--outdir', File.dirname(tmp_pdf_file),
-            @source_file_path
+            @source
           ])
           # soffice creates the file with the source name, so we need to rename it if needed.
-          generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source_file_path, File.extname(@source_file_path))}.pdf")
+          generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source, File.extname(@source))}.pdf")
           FileUtils.mv(generated_pdf, tmp_pdf_file) if generated_pdf != tmp_pdf_file
         else Aspera.error_unexpected_value(@options.office_conversion){'office_conversion'}
         end
@@ -263,16 +266,16 @@ module Aspera
       end
 
       # Converts PDF to PNG image.
-      # @param source_file_path [String, nil] Optional source file path, defaults to @source_file_path.
+      # @param source_file_path [String, nil] Optional source file path, defaults to @source.
       def convert_pdf_to_png(source_file_path = nil)
-        source_file_path ||= @source_file_path
+        source_file_path ||= @source
         Utils.external_command(:magick, [
           'convert',
           '-size', "x#{@options.thumb_img_size}",
           '-background', 'white',
           '-flatten',
           "#{source_file_path}[0]",
-          @destination_file_path
+          @destination
         ])
       end
 
@@ -286,17 +289,17 @@ module Aspera
           '-quality', 95,
           '+dither',
           '-posterize', 40,
-          "#{@source_file_path}[0]",
-          @destination_file_path
+          "#{@source}[0]",
+          @destination
         ])
-        Utils.external_command(:optipng, [@destination_file_path])
+        Utils.external_command(:optipng, [@destination])
       end
 
       # Converts plain text to PNG image.
       # Renders first 100 lines of text file as an image.
       def convert_plaintext_to_png
         # Get 100 first lines of text file.
-        first_lines = File.foreach(@source_file_path).first(100).join
+        first_lines = File.foreach(@source).first(100).join
         Utils.external_command(:magick, [
           'convert',
           '-size', "#{@options.thumb_img_size}x#{@options.thumb_img_size}",
@@ -309,7 +312,7 @@ module Aspera
           '-bordercolor', 'white',
           '-border', 8,
           '+repage',
-          @destination_file_path
+          @destination
         ])
       end
     end

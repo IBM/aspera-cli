@@ -5202,7 +5202,6 @@ prev_small_mp4_png_ani:
     - preview
     - show
     - "@preset:file.small_mp4"
-    - png
     - --base=$(TMP / 'prev_small_mp4_png_ani')
     - --video-png-conv=animated
 prev_small_mp4_png_fix:
@@ -5211,13 +5210,12 @@ prev_small_mp4_png_fix:
     - preview
     - show
     - "@preset:file.small_mp4"
-    - png
     - --base=$(TMP / 'prev_small_mp4_png_fix')
     - --video-png-conv=fixed
 prev_mpg_reencode:
   args:
     - preview
-    - show
+    - test
     - "@preset:file.mpg"
     - mp4
     - --base=$(TMP / 'prev_mpg_reencode')
@@ -5225,7 +5223,7 @@ prev_mpg_reencode:
 prev_mpg_clips:
   args:
     - preview
-    - show
+    - test
     - "@preset:file.mpg"
     - mp4
     - --base=$(TMP / 'testprev_mpg_clips_name')

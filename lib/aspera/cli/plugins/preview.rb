@@ -321,7 +321,7 @@ module Aspera
             end
             begin
               # need generator for further checks
-              gen_info[:generator] = Aspera::Preview::Generator.new(gen_info[:src], gen_info[:dst], @gen_options, @tmp_folder, entry['content_type'])
+              gen_info[:generator] = Aspera::Preview::Generator.new(gen_info[:src], gen_info[:dst], @gen_options, @tmp_folder, mime: entry['content_type'])
             rescue
               # no conversion supported
               next false
@@ -504,17 +504,21 @@ module Aspera
             return Main.result_status("#{command} finished")
           when :check
             return Main.result_status('Tools validated')
-          when :test, :show
+          when :test
             source = options.get_next_argument('source file')
             format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
             generated_file_path = preview_filename(format, options.get_option(:base))
-            g = Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder, nil)
-            g.generate
-            if command.eql?(:show)
-              terminal_options = (options.get_option(:query) || {}).symbolize_keys
-              formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
-            end
+            Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
             return Main.result_status("generated: #{generated_file_path}")
+          when :show
+            source = options.get_next_argument('source file')
+            # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
+            generated_file_path = preview_filename(:png, options.get_option(:base))
+            Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
+            formatter.display_status("generated: #{generated_file_path}")
+            # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
+            # return Main.result_status("generated: #{generated_file_path}")
+            return Main.result_image(UriReader.file_url(generated_file_path))
           else Aspera.error_unexpected_value(command)
           end
         ensure
