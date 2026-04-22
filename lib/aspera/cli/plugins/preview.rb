@@ -67,6 +67,7 @@ module Aspera
             :skip_format, 'Skip this preview format',
             allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
           )
+          # TODO: use the same option as in `node` plugin
           options.declare(
             :folder_reset_cache, 'Force detection of generated preview by refresh cache',
             allowed: %i[no header read],
@@ -98,6 +99,7 @@ module Aspera
           end
 
           options.parse_options!
+          Api::Node.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)
           # Start from the full supported format list, then remove any skipped format.
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           skip = options.get_option(:skip_format)
@@ -105,20 +107,6 @@ module Aspera
           @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
-        end
-
-        # Retrieve the content of a folder, optionally bypassing the Node API cache.
-        #
-        # `/files/<id>/files` is usually cached by Node API, so callers can force cache bypass.
-        # `/files/<id>` itself is not cached.
-        #
-        # @param file_id [String] Node API identifier of the folder to list
-        # @param request_args [Hash, nil] optional query parameters passed to the listing endpoint
-        # @return [Array<Hash>] folder entries returned by Node API
-        def get_folder_entries(file_id, request_args = nil)
-          headers = {'Accept' => Mime::JSON}
-          headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
-          return @api_node.read("files/#{file_id}/files", request_args, headers: headers)
         end
 
         # Process legacy transfer events and trigger preview generation for completed downloads.
@@ -254,7 +242,7 @@ module Aspera
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
           file_info = @api_node.read("files/#{entry['id']}")
           # TODO: This does not work with Gen4 because preview folders are hidden by the API.
-          # this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
+          # this_preview_folder_entries=@api_node.read_folder_content(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
           # TODO: Query Gen3 APIs to list preview files and retrieve timestamps.
           gen_infos.each do |gen_info|
             gen_info[:src] = local_original_filepath
@@ -400,7 +388,7 @@ module Aspera
                 else
                   Log.log.debug{"#{entry['path']} folder".green}
                   # get folder content
-                  folder_entries = get_folder_entries(entry['id'])
+                  folder_entries = @api_node.read_folder_content(entry['id'])
                   # process all items in current folder
                   folder_entries.each do |folder_entry|
                     # add path for older versions of ES
@@ -441,7 +429,7 @@ module Aspera
             @option_skip_folders.push("/#{@option_previews_folder}")
             if @access_remote
               # NOTE: the filter "name", it's why we take the first one
-              @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
+              @previews_folder_entry = @api_node.read_folder_content(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
               raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
                 'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
