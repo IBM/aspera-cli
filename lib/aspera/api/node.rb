@@ -264,14 +264,26 @@ module Aspera
         return false
       end
 
-      # Read folder content, with pagination management for gen4, not recursive
-      # if `Accept-Version: 4.0` is not specified:
-      #     if `page` and `per_page` are not specified, then all entries are returned.
-      #     if either `page` or `per_page` is specified, then both are required, else 400
-      # if `Accept-Version: 4.0` is specified:
-      #     those queries are not available: page (not mentioned), sort, min_size, max_size, min_modified_time, max_modified_time, target_id, target_node_id, files_prefetch_count, page, name_iglob : either ignored or result in API error 400.
-      #     query include is accepted, but seems to do nothing as access_levels and recursive_counts are already included in results.
-      #     query `iteration_token` is accepted and allows to get paginated results, with `X-Aspera-Next-Iteration-Token` header in response to get next page token. `X-Aspera-Total-Count` header gives total count of entries.
+      # Read folder content with pagination management for gen4 (non-recursive)
+      #
+      # Behavior WITHOUT `Accept-Version: 4.0`:
+      # - Without `page` and `per_page`: all entries are returned
+      # - With `page` or `per_page`: both parameters are required, otherwise returns 400 error
+      #
+      # Behavior WITH `Accept-Version: 4.0`:
+      # - Unavailable query parameters (ignored or return 400 error):
+      #   page, sort, min_size, max_size, min_modified_time, max_modified_time,
+      #   target_id, target_node_id, files_prefetch_count, name_iglob
+      # - Query parameter `include`: accepted but has no effect (access_levels and recursive_counts already included)
+      # - Query parameter `iteration_token`: enables pagination
+      #   * Response header `X-Aspera-Next-Iteration-Token`: token for next page
+      #   * Response header `X-Aspera-Total-Count`: total count of entries
+      #
+      # @param file_id [String] The folder file identifier
+      # @param query [Hash, nil] Optional query parameters for the API request
+      # @param exception [Boolean] If true, raises exceptions on errors; if false, logs warnings
+      # @param path [String, nil] Optional path for logging purposes
+      # @return [Array<Hash>] List of folder entries (files, folders, links)
       def read_folder_content(file_id, query = nil, exception: true, path: nil)
         folder_items = []
         begin
@@ -300,7 +312,7 @@ module Aspera
           end
         rescue StandardError => e
           raise e if exception
-          Log.log.warn{"#{path}: #{e.class} #{e.message}"}
+          Log.log.warn{"#{path || file_id}: #{e.class} #{e.message}"}
           Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
         ensure
           RestParameters.instance.spinner_cb.call(folder_items.count, action: :success)
