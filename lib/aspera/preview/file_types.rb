@@ -14,7 +14,7 @@ module Aspera
       # values for conversion_type : input format
       CONVERSION_TYPES = %i[image office pdf plaintext video].freeze
 
-      # special cases for mime types
+      # Special cases for MIME types
       # spellchecker:disable
       SUPPORTED_MIME_TYPES = {
         'application/json'                   => :plaintext,
