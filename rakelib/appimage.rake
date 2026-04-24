@@ -136,5 +136,3 @@ namespace :appimage do
     run('gh', 'release', 'upload', "v#{version}", asset_path)
   end
 end
-
-# Made with Bob
