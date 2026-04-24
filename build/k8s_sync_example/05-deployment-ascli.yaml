@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aspera-ascli
+  namespace: aspera  # Created in: 01-namespace.yaml
+  labels:
+    app: aspera
+    component: ascli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aspera
+      component: ascli
+  template:
+    metadata:
+      labels:
+        app: aspera
+        component: ascli
+    spec:
+      containers:
+      - name: ascli
+        image: docker.io/martinlaurent/ascli:latest
+        args:
+          - "server"
+          - "sync"
+          - "push"
+          - "@preset:data.source_pvcl"
+          - "@preset:data.conf"
+        env:
+        - name: ASCLI_HOME
+          value: "/config"
+        - name: XFER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: aspera-credentials  # Created in: 02-secret-aspera.yaml
+              key: aspera-xfer-password
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aspera-credentials  # Created in: 02-secret-aspera.yaml
+              key: aws-access-key-id
+              optional: true
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aspera-credentials  # Created in: 02-secret-aspera.yaml
+              key: aws-secret-access-key
+              optional: true
+        
+        volumeMounts:
+        - name: ascli-config  # see below
+          mountPath: /config
+        - name: aspera-data  # see below
+          mountPath: /data
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      
+      volumes:
+      - name: ascli-config  # used above
+        configMap:
+          name: aspera-ascli-config  # Created in: 03-configmap-ascli.yaml
+      - name: aspera-data  # used above
+        persistentVolumeClaim:
+          claimName: aspera-data-pvc  # Created in: 04-pvc-aspera-data.yaml
+      
+      restartPolicy: Always

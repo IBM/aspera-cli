@@ -1,0 +1,25 @@
+# Secrets - NEVER COMMIT
+*secret*.yaml
+!*secret*.yaml.template
+
+# Kubernetes temporary files
+*.kubeconfig
+kubeconfig*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak

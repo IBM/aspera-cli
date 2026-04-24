@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aspera-data-pvc
+  namespace: aspera  # Created in: 01-namespace.yaml
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod access
+  storageClassName: gp3  # AWS EBS gp3 storage class
+  resources:
+    requests:
+      storage: 100Gi  # Stores Aspera sync database (tracks transfer state and resume points)

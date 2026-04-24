@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aspera-ascli-config
+  namespace: aspera  # Created in: 01-namespace.yaml
+data:
+  # ascli configuration (YAML format)
+  ascli.yaml: |
+    # ascli configuration
+    config:
+      version: 1
+    default:
+      server: server_config
+    server_config:
+      url: ssh://eudemo.asperademo.com
+      username: aspera
+      password: "@env:XFER_PASSWORD"
+    data:
+      source_pvcl: "@extend:s3://@env:AWS_ACCESS_KEY_ID:@env:AWS_SECRET_ACCESS_KEY@s3.amazonaws.com/my-bucket/my-directory"
+      conf: # schema: lib/sync/conf.schema.yaml
+        mode: continuous
+        transport:
+          target_rate: 100000000
