@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: aspera-data-pvc
+  name: aspera-sync-db-pvc
   namespace: aspera  # Created in: 01-namespace.yaml
 spec:
   accessModes:

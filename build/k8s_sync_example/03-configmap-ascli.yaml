@@ -16,8 +16,9 @@ data:
       username: aspera
       password: "@env:XFER_PASSWORD"
     data:
-      source_pvcl: "@extend:s3://@env:AWS_ACCESS_KEY_ID:@env:AWS_SECRET_ACCESS_KEY@s3.amazonaws.com/my-bucket/my-directory"
+      source_pvcl: "s3://s3.amazonaws.com/my-bucket"
       conf: # schema: lib/sync/conf.schema.yaml
         mode: continuous
+        local_db_dir: /sync_db
         transport:
           target_rate: 100000000

@@ -51,8 +51,8 @@ spec:
         volumeMounts:
         - name: ascli-config  # see below
           mountPath: /config
-        - name: aspera-data  # see below
-          mountPath: /data
+        - name: aspera-sync-db  # see below
+          mountPath: /sync_db
         
         resources:
           requests:
@@ -66,8 +66,8 @@ spec:
       - name: ascli-config  # used above
         configMap:
           name: aspera-ascli-config  # Created in: 03-configmap-ascli.yaml
-      - name: aspera-data  # used above
+      - name: aspera-sync-db  # used above
         persistentVolumeClaim:
-          claimName: aspera-data-pvc  # Created in: 04-pvc-aspera-data.yaml
+          claimName: aspera-sync-db-pvc  # Created in: 04-pvc-aspera-sync-db.yaml
       
       restartPolicy: Always

@@ -4192,6 +4192,18 @@ The simplified format is:
 One of the adapters, used in this manual, for testing, is `faux`.
 It is a pseudo file system allowing generation of file data without actual storage (on source or destination).
 
+Other PVCL modules exist and are implemented in shared libraries.
+Those libraries are available only on HSTS.
+In order to activate a PVCL library, place the corresponding shared library in the same folder as `ascp`.
+
+Example:
+
+```bash
+cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(<%=tool%> conf ascp info --fields=root)
+```
+
+Then check available modules as shown previously (`ascp info`).
+
 ### `faux:` for testing
 
 This adapter can be used to simulate a file or a directory.
