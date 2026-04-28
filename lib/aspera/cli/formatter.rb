@@ -405,6 +405,8 @@ module Aspera
 
       # filter the list of items on the fields option
       def filter_list_on_fields(data)
+        # no filter for single element
+        return data unless data.is_a?(Array)
         # by default, keep all data intact
         return data if @options[:fields].eql?(SpecialValues::DEF) && @options[:select].nil?
         Aspera.assert_array_all(data, Hash){'filter or select'}
