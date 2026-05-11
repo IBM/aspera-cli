@@ -38,7 +38,7 @@ module Aspera
       FIRST_FOUND = 'FIRST'
 
       # Loads YAML from cloud with locations of SDK archives for all platforms
-      # @return location structure
+      # @return [Hash] location structure
       def sdk_locations
         location_url = @transferd_urls
         transferd_locations = UriReader.read(location_url)
@@ -74,7 +74,7 @@ module Aspera
           end
         Log.log.debug{"ascp_folder=#{folder}"}
         Products::Transferd.sdk_directory = folder
-        return
+        nil
       end
 
       def sdk_folder
@@ -139,6 +139,7 @@ module Aspera
       end
 
       # default bypass key phrase
+      # @return [String]
       def ssh_cert_uuid
         return DataRepository.instance.item(:uuid)
       end
