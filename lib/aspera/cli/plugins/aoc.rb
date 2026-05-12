@@ -422,7 +422,10 @@ module Aspera
             id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
             # TODO: report inconsistency: creation url is !=, and does not return id.
             resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
+            require_workspace_id = resource_type.eql?(:dropbox)
+            workspace_id = aoc_api.workspace[:id] if require_workspace_id
             return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
+              params['workspace_id'] = workspace_id if require_workspace_id && workspace_id && !params.key?('workspace_id')
               aoc_api.create(resource_class_path, params)
             end
           when :list
