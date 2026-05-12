@@ -95,7 +95,7 @@ module Aspera
             PP.pp(object, +'')
           else error_unexpected_value(instance.dump_format){'dump format'}
           end
-        "#{name.to_s.green} (#{instance.dump_format})=\n#{dump_text}"
+        "#{name.to_s.green}(#{instance.dump_format})#{object.class}=\n#{dump_text}"
       end
 
       # Capture the output of $stderr and log it at debug level
