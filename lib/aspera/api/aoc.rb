@@ -350,7 +350,10 @@ module Aspera
         return @cache_user_info
       end
 
-      # Cached workspace information
+      # Cached workspace information.
+      # Always with `:name`.
+      # If no workspace, then no `:id`
+      # @return [Hash] Workspace info.
       def workspace
         return @workspace_info unless @workspace_info.nil?
         ws_id =
@@ -376,7 +379,7 @@ module Aspera
               name: 'Shared (no workspace)'
             }
           else
-            read("workspaces/#{ws_id}").slice('id', 'name', 'home_node_id', 'home_file_id').symbolize_keys
+            read("workspaces/#{ws_id}").slice('name', 'id', 'home_node_id', 'home_file_id').symbolize_keys
           end
         Log.dump(:workspace_info, @workspace_info)
         @workspace_info
