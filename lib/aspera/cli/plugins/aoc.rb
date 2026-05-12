@@ -448,8 +448,7 @@ module Aspera
           when :show
             object = aoc_api.read(resource_instance_path)
             # default: show all, but certificate
-            fields = object.keys.reject{ |k| k.eql?('certificate')}
-            return Main.result_single_object(object, fields: fields)
+            return Main.result_single_object(object, fields: Formatter.all_but('certificate'))
           when :modify
             changes = options.get_next_argument('properties', validation: Hash)
             return do_bulk_operation(command: command, values: res_id) do |one_id|
