@@ -119,8 +119,7 @@ module Aspera
         end
 
         def all_but(list)
-          list = [list] unless list.is_a?(Array)
-          return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
+          Array(list).map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
       end
 
@@ -251,15 +250,16 @@ module Aspera
         SecretHider.instance.deep_remove_secret(data) if hide_secrets?
       end
 
-      # this method displays the results, especially the table format
-      # @param type [Symbol] type of data
-      # @param data [Object] data to display
-      # @param total [Integer] total number of items
-      # @param fields [Array<String>] list of fields to display
-      # @param name [String] name of the column to display
-      def display_results(type:, data: nil, total: nil, fields: nil, name: nil)
-        Log.log.debug{"display_results: type=#{type} class=#{data.class}"}
-        Log.log.trace1{"display_results: data=#{data}"}
+      # Display results, especially the table format
+      # @param type [Symbol] Type of data
+      # @param data [Object] Data to display
+      # @param fields [Array<String>] List of fields to display
+      # @param total [Integer] Total number of items
+      # @param name [String] Name of the column to display
+      def display_results(type:, data: nil, fields: nil, total: nil, name: nil)
+        Log.log.debug{"display_results: type=#{type}"}
+        Log.dump(:data, data, level: :trace1)
+        Log.dump(:fields, fields, level: :trace1)
         Aspera.assert_type(type, Symbol){'result must have type'}
         Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
         display_item_count(data.length, total) unless total.nil?
@@ -319,7 +319,7 @@ module Aspera
           case type
           when :single_object
             # :single_object is a Hash, where key=column name
-            Aspera.assert_type(data, Hash)
+            Aspera.assert_type(data, Hash){'result'}
             if data.empty?
               display_message(:data, self.class.special_format('empty dict'))
             else
@@ -366,6 +366,7 @@ module Aspera
       # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
+        Log.dump(:compute_fields_default, default, level: :trace1)
         # the requested list of fields, but if can contain special values
         request =
           case @options[:fields]
@@ -376,6 +377,7 @@ module Aspera
           when Proc then return all_fields(data).select{ |i| @options[:fields].call(i)}
           else Aspera.error_unexpected_value(@options[:fields])
           end
+        Aspera.assert_array_all(request, String)
         result = []
         until request.empty?
           item = request.shift
@@ -400,6 +402,7 @@ module Aspera
             end
           end
         end
+        Log.dump(:compute_fields, result, level: :trace1)
         return result
       end
 
@@ -433,11 +436,12 @@ module Aspera
       end
 
       # Displays a list of objects
-      # @param object_array  [Array] Array of hash
-      # @param fields        [Array] List of column names
-      # @param single        [Boolean] Contains a single object to display
+      # @param object_array [Array<Hash>] Array of hash
+      # @param fields [Array<String>] List of column names
+      # @param single [Boolean] Contains a single object to display
       def display_table(object_array, fields, single: false)
-        Aspera.assert(!fields.nil?){'missing fields parameter'}
+        Aspera.assert_array_all(object_array, Hash)
+        Aspera.assert_array_all(fields, String)
         if object_array.empty?
           # no  display for csv
           display_message(:info, self.class.special_format('empty')) if @options[:format].eql?(:table)
@@ -458,6 +462,7 @@ module Aspera
           single = false
         end
         Log.dump(:object_array, object_array)
+        Log.dump(:fields, fields)
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map{ |r| fields.map{ |c| r[c].to_s}}
         # remove empty rows
@@ -476,7 +481,7 @@ module Aspera
               ))
             end
           else
-            # display the table ! as single table
+            # display the table as single table
             display_message(:data, Terminal::Table.new(
               headings:  fields,
               rows:      final_table_rows,
@@ -498,6 +503,7 @@ module Aspera
         else
           raise "not expected: #{@options[:format]}"
         end
+        nil
       end
     end
   end
