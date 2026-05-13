@@ -39,6 +39,7 @@ module Aspera
       PERMISSIONS_CREATED = ['permission.created'].freeze
       # Special user identifier when creating workspace shared folders
       ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
+      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
 
       private_constant :MAX_AOC_URL_REDIRECT,
         :CLIENT_ID_PREFIX,
@@ -49,7 +50,8 @@ module Aspera
         :OAUTH_API_SUBPATH,
         :USER_INFO_FIELDS_MIN,
         :PERMISSIONS_CREATED,
-        :ID_AK_ADMIN
+        :ID_AK_ADMIN,
+        :HEADER_X_TOTAL_COUNT
 
       # Various API scopes supported
       module Scope
@@ -169,7 +171,7 @@ module Aspera
             new_query['page'] = current_page
             result_data, result_http = yield(new_query)
             Aspera.assert(result_http)
-            total_count = result_http['X-Total-Count']&.to_i
+            total_count = result_http[HEADER_X_TOTAL_COUNT]&.to_i
             page_count += 1
             current_page += 1
             add_items = result_data
