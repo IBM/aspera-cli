@@ -44,7 +44,6 @@ module Aspera
       # Special HTTP Headers
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
-      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
       HEADER_ACCEPT_VERSION = 'Accept-Version'
       # / in cloud
