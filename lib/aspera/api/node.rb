@@ -48,6 +48,7 @@ module Aspera
       HEADER_ACCEPT_VERSION = 'Accept-Version'
       # / in cloud
       PATH_SEPARATOR = '/'
+      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
 
       # Register node special token decoder
       OAuth::Factory.instance.register_decoder(lambda{ |token| Node.decode_bearer_token(token)})
@@ -583,6 +584,35 @@ module Aspera
         # save iteration token if needed
         iteration[0] = query[:iteration_token] unless iteration.nil?
         item_list
+      end
+
+      # Read resource content with pagination (page, per_page)
+      #
+      # @param subpath [String] API Path
+      # @param query [Hash, nil] Optional query parameters for the API request
+      # @param kwargs [Hash] Other parameters for Rest.read
+      #
+      # @return [Array<Hash>] List of folder entries (files, folders, links)
+      def read_with_pages(subpath, query = nil, **kwargs)
+        items = []
+        query ||= {}
+        query['per_page'] ||= 500
+        query['page'] ||= 1
+        suffix=nil
+        loop do
+          RestParameters.instance.spinner_cb.call("#{items.count}#{suffix}")
+          data, http = read(subpath, query, **kwargs, ret: :both)
+          items.concat(data)
+          break if data.length < query['per_page']
+          suffix ||= "/#{http[HEADER_X_TOTAL_COUNT]}" if http[HEADER_X_TOTAL_COUNT]
+          query['page'] += 1
+        end
+      rescue StandardError => e
+        Log.log.warn{"#{e.class} #{e.message}"}
+        Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
+      ensure
+        RestParameters.instance.spinner_cb.call(items.count, action: :success)
+        return items
       end
 
       private

@@ -629,7 +629,7 @@ module Aspera
               list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
               # NOTE: supports per_page and page and header X-Total-Count
-              items = apifid[:api].read('permissions', list_query)
+              items = apifid[:api].read_with_pages('permissions', list_query)
               return Main.result_object_list(items)
             when :show
               perm_id = instance_identifier
