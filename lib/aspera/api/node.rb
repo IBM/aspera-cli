@@ -515,8 +515,9 @@ module Aspera
           transfer_spec.merge!(Transfer::Spec::AK_TSPEC_BASE)
           # By default: same address as node API
           transfer_spec['remote_host'] = URI.parse(base_url).host
-          # AoC allows specification of other url
-          transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url'] if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
+          # AoC allows specification of other url (in UI: `Transfer endpoint (optional)`)
+          transfer_url = @app_info&.dig(:node_info, 'transfer_url').to_s
+          transfer_spec['remote_host'] = transfer_url unless transfer_url.empty?
           info = read('info')
           # Get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
@@ -598,7 +599,7 @@ module Aspera
         query ||= {}
         query['per_page'] ||= 500
         query['page'] ||= 1
-        suffix=nil
+        suffix = nil
         loop do
           RestParameters.instance.spinner_cb.call("#{items.count}#{suffix}")
           data, http = read(subpath, query, **kwargs, ret: :both)
@@ -612,7 +613,7 @@ module Aspera
         Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
       ensure
         RestParameters.instance.spinner_cb.call(items.count, action: :success)
-        return items
+        return items # rubocop:disable Lint/EnsureReturn
       end
 
       private
