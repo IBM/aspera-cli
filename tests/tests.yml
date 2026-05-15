@@ -1770,7 +1770,7 @@ nd_ak_bearer_perm_modify:
     - modify
     - 1
     - '@:'
-    - access_levels=@list:' read list'
+    - 'access_levels=@list: read list'
 node_bearer_token:
   depends_on:
     - nd_ak_bearer_create
