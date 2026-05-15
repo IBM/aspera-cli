@@ -91,7 +91,6 @@ bundle install
 bundle exec rake clobber
 
 # skip some tests
-bundle exec rake test:skip'[nd_xfer_lst_once1 nd_xfer_lst_once2]'
 bundle exec rake test:skip'[tag faspex]'
 
 # run some tests first
