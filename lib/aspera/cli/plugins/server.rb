@@ -86,21 +86,13 @@ module Aspera
 
         def initialize(**_)
           super
-          @ssh_opts = {}
           @connection_type = :ssh
           options.declare(:ssh_keys, 'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY)
           options.declare(:passphrase, 'SSH private key passphrase')
-          options.declare(:ssh_options, 'SSH options', allowed: Hash, handler: {o: self, m: :option_ssh_opts})
+          options.declare(:ssh_options, 'SSH options', allowed: Hash, default: {})
           SyncActions.declare_options(options)
           options.parse_options!
-        end
-
-        def option_ssh_opts; @ssh_opts; end
-
-        # multiple option are merged
-        def option_ssh_opts=(value)
-          Aspera.assert_type(value, Hash)
-          @ssh_opts.deep_merge!(value.compact.symbolize_keys)
+          @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end
 
         # Read command line options
