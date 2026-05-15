@@ -439,7 +439,7 @@ serv_error2:
     - --preset=server3_user
     - browse
     - /
-    - --ssh-options=@json:{"number_of_password_prompts":0}
+    - --ssh-options.number_of_password_prompts=0
 serv_error3:
   description: Try to use a wrong URL.
   tags:
