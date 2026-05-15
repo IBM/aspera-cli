@@ -21,6 +21,8 @@ module Aspera
     ALL_SECRETS = (ASCP_ENV_SECRETS + KEY_SECRETS + HTTP_SECRETS).freeze
     ALL_SECRETS2 = (KEY_SECRETS + HTTP_SECRETS).freeze
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
+    # min length of hidden secrets, use `+` or `{n,}`
+    SECRET_LENGTH = '{5,}'
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # private key values (place first)
@@ -32,7 +34,7 @@ module Aspera
       # rendered JSON or Ruby
       /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>?(?:=>|:) *")[^"]+(?<end>")/,
       # logged data
-      /(?<begin>(?:#{ALL_SECRETS2.join('|')})[ =:]+).*(?<end>$)/,
+      /(?<begin>(?:#{ALL_SECRETS2.join('|')})[ =:]+)[^ "]#{SECRET_LENGTH}(?<end>$)/,
       # cred in http dump
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
