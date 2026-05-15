@@ -1,7 +1,6 @@
 {
   "version": "0.2",
   "ignorePaths": [
-    "docs/dict/*.dict",
     ".cspell.json",
     "lib/aspera/data",
     "lib/transfer_pb.rb",
@@ -13,36 +12,26 @@
   "dictionaryDefinitions": [
     {
       "name": "aspera",
-      "path": "docs/dict/aspera.dict",
+      "path": "./docs/dict/aspera.dict",
       "addWords": true
     },
     {
       "name": "ruby",
-      "path": "docs/dict/ruby.dict",
+      "path": "./docs/dict/ruby.dict",
       "addWords": true
     },
     {
       "name": "tools",
-      "path": "docs/dict/tools.dict",
+      "path": "./docs/dict/tools.dict",
       "addWords": true
     }
   ],
   "useGitignore": true,
-  "dictionaries": [
-    "aspera",
-    "ruby",
-    "tools",
-    "technical",
-    "shell"
-  ],
+  "dictionaries": ["aspera", "ruby", "tools", "technical", "shell"],
   "words": [],
   "ignoreWords": [],
   "import": [],
-  "enableFiletypes": [
-    "makefile",
-    "markdown",
-    "shellscript"
-  ],
+  "enableFiletypes": ["makefile", "markdown", "shellscript"],
   "patterns": [
     {
       "name": "markdown_code_block",
@@ -82,9 +71,7 @@
     },
     {
       "languageId": "makefile",
-      "ignoreRegExpList": [
-        "makefile_only_comments"
-      ]
+      "ignoreRegExpList": ["makefile_only_comments"]
     }
   ],
   "overrides": [
