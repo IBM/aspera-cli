@@ -621,19 +621,20 @@ module Aspera
             return Main.result_image(http.body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
-            command_perm = options.get_next_command(%i[list show create delete])
+            command_perm = options.get_next_command(%i[list show create delete modify])
             case command_perm
+            when :modify
+              apifid[:api].update("permissions/#{instance_identifier}", value_create_modify(command: 'permission modify'))
+              return Main.result_status('Updated')
             when :list
               list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
-              # specify file to get permissions for unless not specified
+              # Specify file to get permissions for unless not specified (then, get all permissions)
               list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
-              # NOTE: supports per_page and page and header X-Total-Count
               items = apifid[:api].read_with_pages('permissions', list_query)
               return Main.result_object_list(items)
             when :show
-              perm_id = instance_identifier
-              return Main.result_single_object(apifid[:api].read("permissions/#{perm_id}"))
+              return Main.result_single_object(apifid[:api].read("permissions/#{instance_identifier}"))
             when :delete
               return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
                 apifid[:api].delete("permissions/#{one_id}")

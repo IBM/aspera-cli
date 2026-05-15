@@ -1724,7 +1724,7 @@ bearer_root_id:
     - show
     - /
     - --fields=id
-nd_ak_bearerf:
+nd_ak_bearer_perm_create:
   depends_on:
     - nd_ak_bearer_create
   args:
@@ -1739,9 +1739,9 @@ nd_ak_bearerf:
     - "%id:$(read_value_from :bearer_root_id)"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
-nd_ak_bearerg:
+nd_ak_bearer_perm_show:
   depends_on:
-    - nd_ak_bearerf
+    - nd_ak_bearer_perm_create
   args:
     - -N
     - --preset=tst_node_preview
@@ -1754,6 +1754,23 @@ nd_ak_bearerg:
     - /
     - show
     - 1
+nd_ak_bearer_perm_modify:
+  depends_on:
+    - nd_ak_bearer_perm_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - modify
+    - 1
+    - '@:'
+    - access_levels=@list:' read list'
 node_bearer_token:
   depends_on:
     - nd_ak_bearer_create

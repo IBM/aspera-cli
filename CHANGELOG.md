@@ -9,10 +9,15 @@ Released: [Place date of release here]
 ### New Features
 
 * `preview`: New option `root_url` (replaces `file_access`), to override how to access files on storage.
+* `node`: (also `aoc files`) Operation `modify` added to `permissions`.
+* `node`: (also `aoc files`) Operation `list` now uses paging.
+* `aoc`: When creating a shared inbox, the value of option `workspace` is now used as default value to set field `workspace_id`.
+* **global**: Added download URLs for `transferd` 1.1.8.
 
 ### Issues Fixed
 
 * `format`: In `table` format with option `flat_hash=yes`, fixed that some parameters were not shown. Moreover, (Node API: /info), if an array of hash with name/value keys is returned with one extra key, still apply simplification.
+* **global**: Fixed #254.
 
 ### Breaking Changes
 
