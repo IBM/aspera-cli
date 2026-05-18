@@ -1438,7 +1438,12 @@ A **dot-path** is a String where segments are separated by `.` (dot), each segme
 For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
 
 When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
-When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+
+> [!NOTE]
+> A value of `1` will be automatically converted to an `Integer`.
+> When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+> For example: `--opt.x=1` generates `{"x": 1}`.
+> To get a `String`: `--opt.x=@json:\"1\"` or `--opt.x=@ruby:%q{1}`.
 
 Example: dot-path to JSON output
 
@@ -1457,13 +1462,14 @@ Example: JSON to dot-path output
 ```
 
 ```text
-╭───────┬─────────────╮
-│ field │ value       │
-╞═══════╪═════════════╡
-│ a.b   │ 1           │
-│ a.c   │ 2           │
-│ a.d   │ hello,world │
-╰───────┴─────────────╯
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ a.b   │ 1     │
+│ a.c   │ 2     │
+│ a.d   │ hello │
+│       │ world │
+╰───────┴───────╯
 ```
 
 ##### Positional Arguments with Dot-path
