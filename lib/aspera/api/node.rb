@@ -235,7 +235,7 @@ module Aspera
         return tspec
       end
 
-      # @returns [Node] a Node Api object or nil if no App defined
+      # @returns [Node, nil] a Node Api object or nil if no App defined
       def node_id_to_node(node_id)
         if !@app_info.nil?
           return self if node_id.eql?(@app_info[:node_info]['id'])
@@ -246,6 +246,9 @@ module Aspera
           )
         end
         Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
+        return
+      rescue RestCallError => e
+        Log.log.warn{"Cannot resolve link with node id #{node_id}: #{e.message}"}
         return
       end
 
