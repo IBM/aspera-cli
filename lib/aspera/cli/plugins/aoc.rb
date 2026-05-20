@@ -527,7 +527,7 @@ module Aspera
           end
         end
 
-        ADMIN_ACTIONS = %i[ats bearer_token resource usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
+        ADMIN_ACTIONS = %i[ats bearer_token usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
         def execute_admin_action
           # change scope to admin
@@ -536,9 +536,6 @@ module Aspera
           case command_admin
           when :bearer_token
             return Main.result_text(aoc_api.oauth.authorization)
-          when :resource
-            Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
-            return execute_resource_action(options.get_next_argument('resource', accept_list: ADMIN_OBJECTS))
           when *ADMIN_OBJECTS
             return execute_resource_action(command_admin)
           when :auth_providers

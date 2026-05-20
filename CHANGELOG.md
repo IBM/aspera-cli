@@ -22,6 +22,7 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * `preview`: Removed option `file_access`, replaced with option `root_url`.
+* `aoc`: Command `resource` in `admin` is deprecated since 4.18 and is now removed. Use the same command without `resource`. Place the resource name directly after `admin`.
 
 ## 4.25.6
 
