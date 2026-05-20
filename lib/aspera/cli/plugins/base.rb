@@ -10,8 +10,10 @@ module Aspera
       class Base
         # Operations without id (create list)
         GLOBAL_OPS = %i[create list].freeze
+        # Operations without id (create list)
+        SINGLETON_OPS = %i[modify show].freeze
         # Operations with id (modify delete show)
-        INSTANCE_OPS = %i[modify delete show].freeze
+        INSTANCE_OPS = (SINGLETON_OPS + %i[delete]).freeze
         # All standard operations (create list modify delete show)
         ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
 
