@@ -96,6 +96,7 @@ module Aspera
           path:   lambda{ |i| File.expand_path(i)},
           re:     lambda{ |i| Regexp.new(i, Regexp::MULTILINE)},
           ruby:   lambda{ |i| Environment.secure_eval(i, __FILE__, __LINE__)},
+          s:      lambda{ |i| i.to_s},
           secret: lambda{ |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{ |i| ExtendedValue.read_stdin(i)},
           yaml:   lambda{ |i| YAML.load(i)},

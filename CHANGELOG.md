@@ -13,6 +13,7 @@ Released: [Place date of release here]
 * `node`: (also `aoc files`) Operation `list` now uses paging.
 * `aoc`: When creating a shared inbox, the value of option `workspace` is now used as default value to set field `workspace_id`.
 * **global**: Added download URLs for `transferd` 1.1.8.
+* **global**: New Extended Value modifier: `s` converts to `String`.
 
 ### Issues Fixed
 
@@ -22,7 +23,7 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * `preview`: Removed option `file_access`, replaced with option `root_url`.
-* `aoc`: Command `resource` in `admin` is deprecated since 4.18 and is now removed. Use the same command without `resource`. Place the resource name directly after `admin`.
+* `aoc`: Command `resource` in `admin`is now removed. It was deprecated since 4.18. Use the same command without `resource`. Place the resource name directly after `admin`.
 
 ## 4.25.6
 

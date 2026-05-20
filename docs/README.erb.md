@@ -1955,8 +1955,9 @@ The following decoders are supported:
 | `extend` | `String` | `String` | Evaluates embedded extended value syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
-| `secret` | None     | `String` | Ask password interactively (hides input). |
-| `stdin`  | None     | `String` | Read from stdin in text mode (with arg: empty, `bin` or `chomp`). |
+| `s`      | Any      | `String` | Converts argument to `String`. |
+| `secret` | `String` | `String` | Ask password interactively (hides input). Argument is the prompt. |
+| `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
 | `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
