@@ -327,9 +327,6 @@ module Aspera
           return aoc_api.read_with_paging('packages', query.compact)
         end
 
-        NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
-        private_constant :NODE4_EXT_COMMANDS
-
         # Execute a node gen4 command
         # @param command_repo [Symbol] command to execute
         # @param node_id [String] Node identifier
@@ -449,7 +446,7 @@ module Aspera
             end
             return result_list(resource_class_path, fields: default_fields, default_query: default_query)
           when :show
-            object = aoc_api.read(resource_instance_path)
+            object = aoc_api.read(resource_instance_path, query_read_delete)
             # default: show all, but certificate
             return Main.result_single_object(object, fields: Formatter.all_but('certificate'))
           when :modify
@@ -470,7 +467,7 @@ module Aspera
             aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
             return Main.result_success
           when :do
-            command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
+            command_repo = options.get_next_command(Node::COMMANDS_GEN4)
             return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::Scope::ADMIN)
           when :bearer_token
             node_api = aoc_api.node_api_from(
@@ -1074,9 +1071,9 @@ module Aspera
               return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
             end
           when :files
-            command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))
+            command_repo = options.get_next_command([:short_link].concat(Node::COMMANDS_GEN4))
             case command_repo
-            when *NODE4_EXT_COMMANDS
+            when *Node::COMMANDS_GEN4
               return execute_nodegen4_command(command_repo, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
             when :short_link
               folder_dest = options.get_next_argument('path', validation: String)

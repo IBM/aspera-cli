@@ -143,11 +143,11 @@ module Aspera
 
         SPECIAL_ACTIONS = %i[health events info slash license].freeze
 
-        # actions available in v3 in gen4
-        V3_IN_V4_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
-
-        # actions used commonly when a node is involved
+        # commands for : `execute_simple_common`: actions used commonly when a node is involved
         COMMON_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+
+        # actions available in v3 in gen4
+        V3_IN_V4_ACTIONS = %i[transfer].concat(COMMON_ACTIONS).freeze
 
         private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :V3_IN_V4_ACTIONS, :COMMON_ACTIONS
 
@@ -162,6 +162,7 @@ module Aspera
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 
+        # `browse` display fields for gen4
         GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
 
         # @param api [Rest] an existing API object for the Node API
