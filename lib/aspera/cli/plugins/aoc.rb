@@ -393,11 +393,11 @@ module Aspera
           require_workspace_id = false
           list_default_fields = %w[id name]
           list_default_query = {}
-          supported_operations = ALL_OPS
+          supported_operations = Operations::ALL
           resource_class_path = "#{resource_type}s"
           case resource_type
           when :self, :organization
-            supported_operations = SINGLETON_OPS
+            supported_operations = Operations::SINGLETON
             resource_instance_path = resource_class_path = resource_type
           when :client
             supported_operations += %i[set_pub_key]
@@ -436,7 +436,7 @@ module Aspera
           end
           command = options.get_next_command(supported_operations)
           # Require identifier for non global commands
-          if (supported_operations != SINGLETON_OPS) && !GLOBAL_OPS.include?(command)
+          if (supported_operations != Operations::SINGLETON) && !Operations::GLOBAL.include?(command)
             res_id = get_resource_id_from_args(resource_class_path)
             resource_instance_path = "#{resource_class_path}/#{res_id}"
           end
@@ -1134,9 +1134,9 @@ module Aspera
             when :instances
               return entity_execute(api: aoc_api, entity: 'workflow_instances')
             when :workflows
-              wf_command = options.get_next_command(%i[action launch].concat(ALL_OPS))
+              wf_command = options.get_next_command(%i[action launch].concat(Operations::ALL))
               case wf_command
-              when *ALL_OPS
+              when *Operations::ALL
                 return entity_execute(
                   api: automation_api,
                   entity: 'workflows',

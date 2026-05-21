@@ -398,9 +398,9 @@ module Aspera
           when *COMMANDS_GEN3
             execute_command_gen3(command)
           when :access_keys
-            ak_command = options.get_next_command(%i[do set_bearer_key].concat(ALL_OPS))
+            ak_command = options.get_next_command(%i[do set_bearer_key].concat(Operations::ALL))
             case ak_command
-            when *ALL_OPS
+            when *Operations::ALL
               return entity_execute(
                 api: @api_node,
                 entity: 'access_keys',
@@ -818,9 +818,9 @@ module Aspera
           when :async then return execute_async # former API
           when :ssync
             # Node API: /asyncs (newer)
-            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + ALL_OPS - %i[modify])
+            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + Operations::ALL - %i[modify])
             case sync_command
-            when *ALL_OPS
+            when *Operations::ALL
               return entity_execute(
                 api: @api_node,
                 entity: :asyncs,

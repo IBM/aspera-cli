@@ -8,15 +8,16 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
-        # Operations without id: `create` `list`
-        GLOBAL_OPS = %i[create list].freeze
-        # Operations on singleton: `modify` `show`
-        SINGLETON_OPS = %i[modify show].freeze
-        # Operations with id: `modify` `show` `delete`
-        INSTANCE_OPS = (SINGLETON_OPS + %i[delete]).freeze
-        # All standard operations: `create` `list` `modify` `show` `delete`
-        ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
-
+        module Operations
+          # Operations without id: `create` `list`
+          GLOBAL = %i[create list].freeze
+          # Operations on singleton: `modify` `show`
+          SINGLETON = %i[modify show].freeze
+          # Operations with id: `modify` `show` `delete`
+          INSTANCE = (SINGLETON + %i[delete]).freeze
+          # All standard operations: `create` `list` `modify` `show` `delete`
+          ALL = (GLOBAL + INSTANCE).freeze
+        end
         class << self
           def declare_options(options)
             options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass])
@@ -67,9 +68,9 @@ module Aspera
         # Resource identifier as positional parameter
         #
         # @param description [String] description of the identifier
-        # @param &block      [Proc] block to search for identifier based on attribute value
+        # @param block       [Proc] block to search for identifier based on attribute value
         # @return   [String, Array] identifier or list of ids
-        def instance_identifier(description: 'identifier')
+        def instance_identifier(description: 'identifier', &block)
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
           # Can be an Array
           if res_id.is_a?(String) && (m = Base.percent_selector(res_id))
@@ -85,8 +86,8 @@ module Aspera
         # @param values    [Object] Value(s), or type of value to get from user
         # @param id_result [String] Key in result hash to use as identifier
         # @param fields    [Array]  Fields to display
-        # @param &block    [Proc]   Block to execute for each value
-        def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default)
+        # @param block     [Proc]   Block to execute for each value
+        def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, &block)
           Aspera.assert(block_given?){'missing block'}
           is_bulk = options.get_option(:bulk)
           case values
@@ -136,7 +137,7 @@ module Aspera
         # @param delete_style   [String]  If set, the delete operation by array in payload
         # @param id_as_arg      [String]  If set, the id is provided as url argument ?<id_as_arg>=<id>
         # @param is_singleton   [Boolean] If `true`, entity is the full path to the resource
-        # @param block          [Proc]    Block to search for identifier based on attribute value
+        # @param &block         [Proc]    Block to search for identifier based on attribute value
         # @return [Hash] Result suitable for CLI result
         def entity_execute(
           api:,
@@ -150,10 +151,10 @@ module Aspera
           list_query: nil,
           &block
         )
-          command = options.get_next_command(ALL_OPS) if command.nil?
+          command = options.get_next_command(Operations::ALL) if command.nil?
           if is_singleton
             one_res_path = entity
-          elsif INSTANCE_OPS.include?(command)
+          elsif Operations::INSTANCE.include?(command)
             one_res_id = instance_identifier(&block)
             one_res_path = "#{entity}/#{one_res_id}"
             one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg

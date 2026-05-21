@@ -419,7 +419,7 @@ module Aspera
             entity: res_sym.to_s
           }
           res_id_query = :default
-          available_commands = ALL_OPS
+          available_commands = Operations::ALL
           case res_sym
           when :metadata_profiles
             exec_args[:entity] = 'configuration/metadata_profiles'
@@ -463,9 +463,9 @@ module Aspera
               @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
             end
             shfld_entity = "nodes/#{node_id}/shared_folders"
-            sh_command = options.get_next_command(ALL_OPS + [:user])
+            sh_command = options.get_next_command(Operations::ALL + [:user])
             case sh_command
-            when *ALL_OPS
+            when *Operations::ALL
               return entity_execute(
                 api: @api_v5,
                 entity: shfld_entity,
@@ -674,7 +674,7 @@ module Aspera
             return execute_admin
           when :invitations
             invitation_endpoint = 'invitations'
-            invitation_command = options.get_next_command(%i[resend].concat(ALL_OPS))
+            invitation_command = options.get_next_command(%i[resend].concat(Operations::ALL))
             case invitation_command
             when :create
               return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
