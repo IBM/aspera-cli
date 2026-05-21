@@ -8,13 +8,13 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
-        # Operations without id (create list)
+        # Operations without id: `create` `list`
         GLOBAL_OPS = %i[create list].freeze
-        # Operations without id (create list)
+        # Operations on singleton: `modify` `show`
         SINGLETON_OPS = %i[modify show].freeze
-        # Operations with id (modify delete show)
+        # Operations with id: `modify` `show` `delete`
         INSTANCE_OPS = (SINGLETON_OPS + %i[delete]).freeze
-        # All standard operations (create list modify delete show)
+        # All standard operations: `create` `list` `modify` `show` `delete`
         ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
 
         class << self

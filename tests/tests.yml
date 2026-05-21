@@ -3147,13 +3147,32 @@ aoc_adm_res_04c:
     - admin
     - short_link
     - list
-aoc_adm_res_05:
+aoc_admin_app_list_current:
+  description: List applications in user's current workspace
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - application
     - list
+aoc_admin_app_list_org:
+  description: List applications in organization
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - list
+    - --query.organization_apps=true
+aoc_admin_app_list_type:
+  description: List applications by type
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - list
+    - --query.aspera_app_type=files
 aoc_adm_res_05b:
   args:
     - --preset=aoc_admin
