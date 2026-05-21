@@ -396,9 +396,10 @@ module Aspera
           supported_operations = Operations::ALL
           resource_class_path = "#{resource_type}s"
           case resource_type
-          when :self, :organization
-            supported_operations = Operations::SINGLETON
-            resource_instance_path = resource_class_path = resource_type
+          when :application
+            list_default_query = {workspace_id: aoc_api.workspace[:id]}
+            list_default_fields = %w[id app_type available workspace_id]
+            resource_class_path = 'admin/apps_new'
           when :client
             supported_operations += %i[set_pub_key]
           when :client_access_key
@@ -406,31 +407,30 @@ module Aspera
           when :client_registration_token
             resource_class_path = "admin/#{resource_type}s"
             list_default_fields = %w[id value data.client_subject_scopes created_at]
-          when :application
-            list_default_query = {workspace_id: aoc_api.workspace[:id]}
-            list_default_fields = %w[id app_type available workspace_id]
-            resource_class_path = 'admin/apps_new'
-          when :dropbox
-            require_workspace_id = true
-            resource_class_path = "#{resource_type}es"
-          when :kms_profile
-            resource_class_path = "integrations/#{resource_type}s"
           when :contact
             list_default_fields = %w[source_type source_id name email]
             # list_default_query = {'include_only_user_personal_contacts' => true} if @scope == Api::AoC::Scope::USER
+          when :dropbox
+            require_workspace_id = true
+            resource_class_path = "#{resource_type}es"
+          when :group_membership
+            list_default_fields = %w[id group_id member_type member_id]
+          when :kms_profile
+            resource_class_path = "integrations/#{resource_type}s"
           when :node
             list_default_fields = %w[id name host access_key]
             supported_operations += %i[do bearer_token]
           when :operation
             list_default_fields = nil
+          when :organization, :self
+            supported_operations = Operations::SINGLETON
+            resource_instance_path = resource_class_path = resource_type
           when :short_link
             list_default_fields = %w[id short_url data.url_token_data.purpose]
           when :user
             list_default_fields = %w[id name email]
           when :workspace
             supported_operations += %i[shared_folder dropbox]
-          when :group_membership
-            list_default_fields = %w[id group_id member_type member_id]
           when :workspace_membership
             list_default_fields = %w[id workspace_id member_type member_id]
           end
