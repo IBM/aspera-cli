@@ -85,7 +85,7 @@ module Aspera
         end
 
         # Replace special values with a readable version on terminal
-        def replace_specific_for_terminal(input_hash)
+        def replace_specific_for_terminal(input_hash, string_list_separator)
           hash_to_process = [input_hash]
           until hash_to_process.empty?
             current = hash_to_process.pop
@@ -101,7 +101,7 @@ module Aspera
                 if value.empty?
                   current[key] = special_format('empty list')
                 elsif value.all?(String)
-                  current[key] = value.join(STR_LST_SEP_VERT)
+                  current[key] = value.join(string_list_separator)
                 else
                   value.each do |item|
                     hash_to_process.push(item) if item.is_a?(Hash)
@@ -160,11 +160,6 @@ module Aspera
       end
 
       def declare_options(options)
-        default_table_style = if Environment.terminal_supports_unicode?
-          {border: :unicode_round}
-        else
-          {}
-        end
         options.declare(:display, 'Output only some information', allowed: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :data)
         options.declare(:format, 'Output format', allowed: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
         options.declare(:output, 'Destination for results', handler: {o: self, m: :option_handler})
@@ -174,7 +169,7 @@ module Aspera
           default: SpecialValues::DEF
         )
         options.declare(:select, 'Select only some items in lists: column, value', allowed: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, '(Table) Display style', allowed: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
+        options.declare(:table_style, '(Table) Display style', allowed: [Hash], handler: {o: self, m: :option_handler}, default: {})
         options.declare(:flat_hash, '(Table) Display deep values as additional keys', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_handler}, default: true)
         options.declare(
           :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', allowed: %i[no yes single],
@@ -448,7 +443,10 @@ module Aspera
           return
         end
         filter_columns_on_select(object_array)
-        object_array.each{ |i| self.class.replace_specific_for_terminal(i)}
+        format_style = @options[:table_style].symbolize_keys
+        string_list_separator = format_style.delete(:str_lst_sep) || STR_LST_SEP_VERT
+        # convert data to string, and keep only display fields
+        object_array.each{ |i| self.class.replace_specific_for_terminal(i, string_list_separator)}
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
           Log.log.debug("single element, field: #{fields.first}")
@@ -470,6 +468,7 @@ module Aspera
         # here : fields : list of column names
         case @options[:format]
         when :table
+          format_style[:border] = :unicode_round if Environment.terminal_supports_unicode?
           if single || @options[:multi_single].eql?(:yes) ||
               (@options[:multi_single].eql?(:single) && final_table_rows.length.eql?(1))
             # display multiple objects as multiple transposed tables
@@ -477,7 +476,7 @@ module Aspera
               display_message(:data, Terminal::Table.new(
                 headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
-                style:     @options[:table_style].symbolize_keys
+                style:     format_style
               ))
             end
           else
@@ -485,15 +484,12 @@ module Aspera
             display_message(:data, Terminal::Table.new(
               headings:  fields,
               rows:      final_table_rows,
-              style:     @options[:table_style].symbolize_keys
+              style:     format_style
             ))
           end
         when :csv
-          params = @options[:table_style].symbolize_keys
-          # delete default
-          params.delete(:border)
-          add_headers = params.delete(:headers)
-          output = CSV.generate(**params) do |csv|
+          add_headers = format_style.delete(:headers)
+          output = CSV.generate(**format_style) do |csv|
             csv << fields if add_headers
             final_table_rows.each do |row|
               csv << row

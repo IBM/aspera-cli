@@ -1681,6 +1681,12 @@ For example, to display a table with thick Unicode borders:
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
+By default, is the terminal is detected to support unicode, then `border=unicode_round` is used.
+
+A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
+It defines how list of strings are displayed.
+Alternatively, set to `,`.
+
 For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a CSV with headers and quotes:

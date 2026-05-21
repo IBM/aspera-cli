@@ -1729,6 +1729,12 @@ ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
+By default, is the terminal is detected to support unicode, then `border=unicode_round` is used.
+
+A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
+It defines how list of strings are displayed.
+Alternatively, set to `,`.
+
 For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a CSV with headers and quotes:
@@ -2003,8 +2009,9 @@ The following decoders are supported:
 | `extend` | `String` | `String` | Evaluates embedded extended value syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
-| `secret` | None     | `String` | Ask password interactively (hides input). |
-| `stdin`  | None     | `String` | Read from stdin in text mode (with arg: empty, `bin` or `chomp`). |
+| `s`      | Any      | `String` | Converts argument to `String`. |
+| `secret` | `String` | `String` | Ask password interactively (hides input). Argument is the prompt. |
+| `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
 | `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
@@ -4585,7 +4592,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, yaml, zlib, extend, preset, vault, 
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, preset, vault, 
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -6810,6 +6817,8 @@ admin analytics files organization '' '$(read_value_from :aoc_transfer_id)'
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application list
+admin application list --query.aspera_app_type=files
+admin application list --query.organization_apps=true
 admin ats access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key delete ak1ibmcloud
