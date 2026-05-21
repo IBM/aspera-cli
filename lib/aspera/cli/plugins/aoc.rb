@@ -340,7 +340,7 @@ module Aspera
             scope:          scope,
             **workspace_id_hash(name: true)
           )
-          file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")['root_file_id'] if file_id.nil?
+          file_id = top_node_api.read("access_keys/#{top_node_api.app_info.node_info['access_key']}")['root_file_id'] if file_id.nil?
           node_plugin = Node.new(context: context, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
@@ -362,23 +362,23 @@ module Aspera
               server_folder = source_folder
             else Aspera.error_unreachable_line
             end
-            client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
-            server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
+            client_apifid = top_node_api.resolve_api_fid(file_id, client_folder)
+            server_apifid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
             transfer.agent_instance = Agent::Node.new(
-              url:      client_apfid[:api].base_url,
-              username: client_apfid[:api].app_info[:node_info]['access_key'],
-              password: client_apfid[:api].oauth.authorization,
-              root_id:  client_apfid[:file_id]
+              url:      client_apifid.node_api.base_url,
+              username: client_apifid.node_api.app_info.node_info['access_key'],
+              password: client_apifid.node_api.oauth.authorization,
+              root_id:  client_apifid.file_id
             )
             # additional node to node TS info
             add_ts = {
-              'remote_access_key'   => server_apfid[:api].app_info[:node_info]['access_key'],
-              'destination_root_id' => server_apfid[:file_id],
-              'source_root_id'      => client_apfid[:file_id]
+              'remote_access_key'   => server_apifid.node_api.app_info.node_info['access_key'],
+              'destination_root_id' => server_apifid.file_id,
+              'source_root_id'      => client_apifid.file_id
             }
-            return Main.result_transfer(transfer.start(server_apfid[:api].transfer_spec_gen4(
-              server_apfid[:file_id],
+            return Main.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
+              server_apifid.file_id,
               client_direction,
               add_ts
             )))
@@ -1085,16 +1085,16 @@ module Aspera
                 node_id: aoc_api.home[:node_id],
                 **workspace_id_hash(name: true)
               )
-              shared_apfid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
+              shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
               return short_link_command(
-                node_id:        shared_apfid[:api].app_info[:node_info]['id'],
-                file_id:        shared_apfid[:file_id]
+                node_id:        shared_apifid.node_api.app_info.node_info['id'],
+                file_id:        shared_apifid.file_id
               ) do |op, id, access_levels|
                 case op
                 when :create
                   # `id` is the resource id
                   perm_data = {
-                    'file_id'       => shared_apfid[:file_id],
+                    'file_id'       => shared_apifid.file_id,
                     'access_id'     => id,
                     'access_type'   => 'user',
                     'access_levels' => Api::AoC.expand_access_levels(access_levels),
@@ -1103,23 +1103,23 @@ module Aspera
                       'folder_name'      => File.basename(folder_dest),
                       'created_by_name'  => aoc_api.current_user_info['name'],
                       'created_by_email' => aoc_api.current_user_info['email'],
-                      'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
-                      'node'             => shared_apfid[:api].app_info[:node_info]['name'],
+                      'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
+                      'node'             => shared_apifid.node_api.app_info.node_info['name'],
                       **workspace_id_hash(string: true, name: true)
                     }
                   }
-                  created_data = shared_apfid[:api].create('permissions', perm_data)
-                  aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apfid[:api].app_info)
+                  created_data = shared_apifid.node_api.create('permissions', perm_data)
+                  aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
                 when :update
                   # `id` is the permission_id
-                  found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
+                  found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
                   raise Error, "Short link not found: #{id}" if found.nil?
-                  shared_apfid[:api].update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
+                  shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
                 when :delete
                   # `id` is the resource id, i.e. `access_id`
-                  found = shared_apfid[:api].read('permissions', {file_id: shared_apfid[:file_id], inherited: false, access_type: 'user', access_id: id}).first
+                  found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
                   raise Error, "Short link not found: #{id}" if found.nil?
-                  shared_apfid[:api].delete("permissions/#{found['id']}")
+                  shared_apifid.node_api.delete("permissions/#{found['id']}")
                 else Aspera.error_unexpected_value(op)
                 end
               end

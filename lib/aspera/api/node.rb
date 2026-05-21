@@ -14,6 +14,22 @@ require 'net/ssh/buffer'
 
 module Aspera
   module Api
+    # Combination of Node API with access key and file identifier on that node
+    class NodeFileId
+      # @param api [Aspera::Api::Node] API client
+      attr_reader :node_api
+      # @param id [String] File identifier
+      attr_reader :file_id
+
+      # Initialize a new instance of NodeFileId
+      # @param api [Aspera::Api::Node] API client
+      # @param id [String] File identifier in access key
+      def initialize(api, id)
+        @node_api = api
+        @file_id = id
+      end
+    end
+
     # Aspera Node API client
     # with gen4 extensions (access keys)
     class Node < Rest
@@ -32,13 +48,8 @@ module Aspera
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       # Default validity when generating a bearer token "manually"
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
-      # Fields in @app_info
-      REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
-      # Methods of @app_info[:api]
-      REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
       private_constant :MATCH_TYPES,
-        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
-        :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
+        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT
       # Node API permissions: delete list mkdir preview read rename write
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       # Special HTTP Headers
@@ -95,6 +106,7 @@ module Aspera
 
         # Adds fields `public_keys` in provided Hash, if dynamic key is set.
         # @param h [Hash] Hash to add public key to
+        # @return [Hash] Hash with public key added
         def add_public_key(h)
           if @dynamic_key
             ssh_key = Net::SSH::Buffer.from(:key, @dynamic_key)
@@ -202,13 +214,14 @@ module Aspera
         end
       end
 
+      # @return [Api::AoC::AppInfo,nil] set for AoC
       attr_reader :app_info
 
-      # @param app_info  [Hash,NilClass]   App information, typically AoC
-      # @param add_tspec [Hash,NilClass]   Additional transfer spec
-      # @param base_url  [String]          Rest parameters
-      # @param auth      [String,NilClass] Rest parameters
-      # @param headers   [String,NilClass] Rest parameters
+      # @param app_info  [Api::AoC::AppInfo,nil] App information, typically AoC
+      # @param add_tspec [Hash,nil]   Additional transfer spec
+      # @param base_url  [String]     Rest parameters
+      # @param auth      [String,nil] Rest parameters
+      # @param headers   [String,nil] Rest parameters
       def initialize(app_info: nil, add_tspec: nil, **rest_args)
         # Init Rest
         super(**rest_args)
@@ -217,14 +230,6 @@ module Aspera
         # This is added to transfer spec, for instance to add tags (COS)
         @add_tspec = add_tspec
         @std_t_spec_cache = nil
-        if !@app_info.nil?
-          REQUIRED_APP_INFO_FIELDS.each do |field|
-            Aspera.assert(@app_info.key?(field)){"app_info lacks field #{field}"}
-          end
-          REQUIRED_APP_API_METHODS.each do |method|
-            Aspera.assert(@app_info[:api].respond_to?(method)){"#{@app_info[:api].class} lacks method #{method}"}
-          end
-        end
       end
 
       # Update transfer spec with special additional tags
@@ -238,11 +243,11 @@ module Aspera
       # @returns [Node, nil] a Node Api object or nil if no App defined
       def node_id_to_node(node_id)
         if !@app_info.nil?
-          return self if node_id.eql?(@app_info[:node_info]['id'])
-          return @app_info[:api].node_api_from(
+          return self if node_id.eql?(@app_info.node_info['id'])
+          return @app_info.api.node_api_from(
             node_id: node_id,
-            workspace_id: @app_info[:workspace_id],
-            workspace_name: @app_info[:workspace_name]
+            workspace_id: @app_info.workspace_id,
+            workspace_name: @app_info.workspace_name
           )
         end
         Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
@@ -333,7 +338,7 @@ module Aspera
       # @para query [Hash, nil] optional query for `read`
       def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
-        Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
+        Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info.node_info['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # Start at top folder
         folders_to_explore = [{id: top_file_id, path: top_file_path}]
         Log.dump(:folders_to_explore, folders_to_explore)
@@ -376,26 +381,28 @@ module Aspera
       # @param top_file_id [String] id initial file id
       # @param path [String] file or folder path (end with "/" is like setting process_last_link)
       # @param process_last_link [Boolean] if true, follow the last link
-      # @return [Hash] Result data
-      # @option return [Rest] :api     REST client instance
-      # @option return [String]       :file_id File identifier
+      # @return [NodeFileId] Full reference to file on node
       def resolve_api_fid(top_file_id, path, process_last_link = false)
         Aspera.assert_type(top_file_id, String)
         Aspera.assert_type(path, String)
         process_last_link ||= path.end_with?(PATH_SEPARATOR)
         path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
-        return {api: self, file_id: top_file_id} if path_elements.empty?
+        return NodeFileId.new(self, top_file_id) if path_elements.empty?
         resolve_state = {path: path_elements, consumed: [], result: nil, process_last_link: process_last_link}
         process_folder_tree(method_sym: :process_api_fid, state: resolve_state, top_file_id: top_file_id)
         raise ParameterError, "Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}" if resolve_state[:result].nil?
-        Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result][:api].base_url} #{resolve_state[:result][:file_id]}"}
+        Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result].node_api.base_url} #{resolve_state[:result].file_id}"}
         return resolve_state[:result]
       end
 
       # Given a list of paths, finds a common root and list of sub-paths
       # @param top_file_id [String] Root file id
       # @param paths [Array(Hash)] List of paths
-      # @return [Array] size=2: apfid, paths (Array(Hash))
+      # @return [Array<(NodeFileId, Array<Hash>)>] Tuple containing the file identifier and paths
+      #   - [0] NodeFileId: Reference to the file on the node
+      #   - [1] Array<Hash>: Transfer paths, each Hash having:
+      #     - 'source' [String]: Source path
+      #     - 'destination' [String]: Destination path (optional)
       def resolve_api_fid_paths(top_file_id, paths)
         Aspera.assert_type(paths, Array)
         Aspera.assert(paths.size.positive?)
@@ -416,7 +423,7 @@ module Aspera
         # If a single item
         if source_paths.size.eql?(1)
           # Get precise info in this element
-          file_info = apifid[:api].read("files/#{apifid[:file_id]}")
+          file_info = apifid.node_api.read("files/#{apifid.file_id}")
           source_paths =
             case file_info['type']
             when 'file'
@@ -511,7 +518,7 @@ module Aspera
         add_tspec_info(transfer_spec)
         transfer_spec.deep_merge!(ts_merge) unless ts_merge.nil?
         # Add application specific tags (AoC)
-        @app_info[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: @app_info) unless @app_info.nil?
+        @app_info&.api&.add_ts_tags(transfer_spec: transfer_spec, app_info: @app_info)
         # Add remote host info
         if self.class.api_options[:standard_ports]
           # Get default TCP/UDP ports and transfer user
@@ -519,7 +526,7 @@ module Aspera
           # By default: same address as node API
           transfer_spec['remote_host'] = URI.parse(base_url).host
           # AoC allows specification of other url (in UI: `Transfer endpoint (optional)`)
-          transfer_url = @app_info&.dig(:node_info, 'transfer_url').to_s
+          transfer_url = @app_info&.node_info&.[]('transfer_url').to_s
           transfer_spec['remote_host'] = transfer_url unless transfer_url.empty?
           info = read('info')
           # Get the transfer user from info on access key
@@ -635,12 +642,12 @@ module Aspera
           raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless path_fully_consumed
           # It's terminal, we found it
           Log.log.debug{"process_api_fid: found #{path} -> #{entry['id']}"}
-          state[:result] = {api: self, file_id: entry['id']}
+          state[:result] = NodeFileId.new(self, entry['id'])
           return false
         when 'folder'
           if path_fully_consumed
             # We found it
-            state[:result] = {api: self, file_id: entry['id']}
+            state[:result] = NodeFileId.new(self, entry['id'])
             return false
           end
         when 'link'
@@ -650,10 +657,10 @@ module Aspera
               other_node = nil
               other_node = node_id_to_node(entry['target_node_id']) if entry_has_link_information(entry)
               raise Error, 'Cannot resolve link' if other_node.nil?
-              state[:result] = {api: other_node, file_id: entry['target_id']}
+              state[:result] = NodeFileId.new(other_node, entry['target_id'])
             else
               # We found it but we do not process the link
-              state[:result] = {api: self, file_id: entry['id']}
+              state[:result] = NodeFileId.new(self, entry['id'])
             end
             return false
           end

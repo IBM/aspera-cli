@@ -12,10 +12,50 @@ require 'base64'
 
 module Aspera
   module Api
+    # information relative to Files or Packages App
+
     # Aspera on Cloud API client
     class AoC < Rest
       include RestList
 
+      module AppType
+        FILES = 'files'
+        PACKAGES = 'packages'
+      end
+
+      class AppInfo
+        # @return [Aspera::Api::AoC] Rest Api object
+        attr_reader  :api
+        # @return [Hash, nil] Package information, `"files"` or `"packages"`
+        attr_reader  :package
+        # @return [Hash] Result of GET /nodes/:id
+        attr_reader  :node_info
+        # @return [String] Workspace id
+        attr_reader  :workspace_id
+        # @return [String] Workspace name
+        attr_reader  :workspace_name
+        # @return [String, nil] "Share as" link name
+        attr_accessor :opt_link_name
+
+        # @param api [Api::Aoc] Rest Api object
+        # @param package [Hash,nil] package information or nil
+        # @param node_info [Hash] Result of GET /nodes/:id
+        # @param workspace_id [String]
+        # @param workspace_name [String]
+        def initialize(api, package, node_info, workspace_id, workspace_name)
+          @api = api
+          @package = package
+          @node_info = node_info
+          @workspace_id = workspace_id
+          @workspace_name = workspace_name
+          @opt_link_name = nil
+        end
+
+        # @return ["files", "packages"] Type of application
+        def app
+          package.nil? ? AppType::FILES : AppType::PACKAGES
+        end
+      end
       PRODUCT_NAME = 'Aspera on Cloud'
       # use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
@@ -61,8 +101,6 @@ module Aspera
         ADMIN_USER = 'admin-user:all'
         ADMIN_USER_USER = "#{ADMIN_USER}+#{USER}"
       end
-      FILES_APP = 'files'
-      PACKAGES_APP = 'packages'
       API_V1 = 'api/v1'
 
       # class static methods
@@ -431,18 +469,7 @@ module Aspera
         Aspera.assert_type(node_id, String)
         node_info = read("nodes/#{node_id}")
         workspace_name = read("workspaces/#{workspace_id}")['name'] if workspace_name.nil? && !workspace_id.nil?
-        app_info = {
-          api:            self, # for callback
-          app:            package_info.nil? ? FILES_APP : PACKAGES_APP,
-          node_info:      node_info,
-          workspace_id:   workspace_id,
-          workspace_name: workspace_name
-        }
-        if PACKAGES_APP.eql?(app_info[:app])
-          Aspera.assert(!package_info.nil?){'package info required'}
-          app_info[:package_id] = package_info['id']
-          app_info[:package_name] = package_info['name']
-        end
+        app_info = AppInfo.new(self, package_info, node_info, workspace_id, workspace_name)
         node_params = {base_url: node_info['url']}
         ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'])
         # If secret is available, or no scope, use basic auth
@@ -614,13 +641,13 @@ module Aspera
         transfer_spec.deep_merge!({
           'tags' => {
             Transfer::Spec::TAG_RESERVED => {
-              'app'      => app_info[:app],
-              'usage_id' => "aspera.files.workspace.#{app_info[:workspace_id]}", # activity tracking
+              'app'      => app_info.app,
+              'usage_id' => "aspera.files.workspace.#{app_info.workspace_id}", # activity tracking
               'files'    => {
-                'node_id'               => app_info[:node_info]['id'],
-                'files_transfer_action' => "#{transfer_type}_#{app_info[:app].gsub(/s$/, '')}",
-                'workspace_name'        => app_info[:workspace_name], # activity tracking
-                'workspace_id'          => app_info[:workspace_id]
+                'node_id'               => app_info.node_info['id'],
+                'files_transfer_action' => "#{transfer_type}_#{app_info.app.gsub(/s$/, '')}",
+                'workspace_name'        => app_info.workspace_name, # activity tracking
+                'workspace_id'          => app_info.workspace_id
               }
             }
           }
@@ -628,30 +655,30 @@ module Aspera
         # Console cookie
         ################
         # we are sure that fields are not nil
-        cookie_elements = [app_info[:app], current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{ |e| Base64.strict_encode64(e)}
+        cookie_elements = [app_info.app, current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{ |e| Base64.strict_encode64(e)}
         cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
         transfer_spec['cookie'] = cookie_elements.join(':')
         # Application tags
         ##################
-        case app_info[:app]
-        when FILES_APP
+        case app_info.app
+        when AppType::FILES
           file_id = transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['node']['file_id']
           transfer_spec.deep_merge!({
             'tags' => {
               Transfer::Spec::TAG_RESERVED => {
                 'files' => {
-                  'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"
+                  'parentCwd' => "#{app_info.node_info['id']}:#{file_id}"
                 }
               }
             }
           }) unless transfer_spec.key?('remote_access_key')
-        when PACKAGES_APP
+        when AppType::PACKAGES
           transfer_spec.deep_merge!({
             'tags' => {
               Transfer::Spec::TAG_RESERVED => {
                 'files' => {
-                  'package_id'        => app_info[:package_id],
-                  'package_name'      => app_info[:package_name],
+                  'package_id'        => app_info.package['id'],
+                  'package_name'      => app_info.package['name'],
                   'package_operation' => transfer_type
                 }
               }
@@ -663,21 +690,21 @@ module Aspera
       # Callback from Plugins::Node
       # add application specific tags to permissions creation
       # @param perm_data [Hash] parameters for creating permissions
-      # @param app_info [Hash] application information
+      # @param app_info [AppInfo] application information
       def permissions_set_create_params(perm_data:, app_info:)
         defaults = {
           'tags' => {
             Transfer::Spec::TAG_RESERVED => {
               'files' => {
                 'workspace' => {
-                  'id'                => app_info[:workspace_id],
-                  'workspace_name'    => app_info[:workspace_name],
+                  'id'                => app_info.workspace_id,
+                  'workspace_name'    => app_info.workspace_name,
                   'user_name'         => current_user_info['name'],
                   'shared_by_user_id' => current_user_info['id'],
                   'shared_by_name'    => current_user_info['name'],
                   'shared_by_email'   => current_user_info['email'],
-                  'access_key'        => app_info[:node_info]['access_key'],
-                  'node'              => app_info[:node_info]['name']
+                  'access_key'        => app_info.node_info['access_key'],
+                  'node'              => app_info.node_info['name']
                 }
               }
             }
@@ -690,10 +717,10 @@ module Aspera
         when NilClass
         when ''
           # workspace shared folder
-          perm_data.merge!(self.class.workspace_access(app_info[:workspace_id]))
+          perm_data.merge!(self.class.workspace_access(app_info.workspace_id))
           tag_workspace['shared_with_name'] = perm_data['access_id']
         else
-          entity_info = lookup_by_name('contacts', shared_with, query: {'current_workspace_id' => app_info[:workspace_id]})
+          entity_info = lookup_by_name('contacts', shared_with, query: {'current_workspace_id' => app_info.workspace_id})
           perm_data['access_type'] = entity_info['source_type']
           perm_data['access_id'] = entity_info['source_id']
           tag_workspace['shared_with_name'] = entity_info['email'] # TODO: check that ???
@@ -703,26 +730,26 @@ module Aspera
           perm_data.delete('as')
         end
         # optional
-        app_info[:opt_link_name] = perm_data.delete('link_name')
+        app_info.opt_link_name = perm_data.delete('link_name')
       end
 
       # Callback from Plugins::Node
       # send shared folder event to AoC
       # @param event_data [Hash] response from permission creation
-      # @param app_info [Hash] hash with app info
+      # @param app_info [AppInfo] hash with app info
       # @param types [Array] event types
       def permissions_send_event(event_data:, app_info:, types: PERMISSIONS_CREATED)
         Aspera.assert_type(types, Array)
         Aspera.assert(!types.empty?)
         event_creation = {
           'types'        => types,
-          'node_id'      => app_info[:node_info]['id'],
-          'workspace_id' => app_info[:workspace_id],
+          'node_id'      => app_info.node_info['id'],
+          'workspace_id' => app_info.workspace_id,
           'data'         => event_data
         }
         # (optional). The name of the folder to be displayed to the destination user.
         # Use it if its value is different from the "share_as" field.
-        event_creation['link_name'] = app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
+        event_creation['link_name'] = app_info.opt_link_name unless app_info.opt_link_name.nil?
         create('events', event_creation, query: {admin: true})
       end
     end

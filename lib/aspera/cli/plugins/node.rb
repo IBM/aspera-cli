@@ -477,14 +477,14 @@ module Aspera
         end
 
         # Allows to specify a file by its path or by its id on the node in command line
-        # @return [Hash] api and main file id for given path or id in next argument
+        # @return [NodeFileId] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
           file_path = instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
-            # directly return result for method
-            return {api: @api_node, file_id: value}
+            # Directly return result for method
+            return Api::NodeFileId.new(@api_node, value)
           end
-          # there was no selector, so it is a path
+          # There was no selector, so it is a path
           return @api_node.resolve_api_fid(top_file_id, file_path)
         end
 
@@ -498,38 +498,37 @@ module Aspera
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
-            return Node.new(context: context, api: apifid[:api]).execute_action(command_legacy)
+            return Node.new(context: context, api: apifid.node_api).execute_action(command_legacy)
           when :node_info, :bearer_token_node
             apifid = apifid_from_next_arg(top_file_id)
             result = {
-              url:     apifid[:api].base_url,
-              root_id: apifid[:file_id]
+              url:     apifid.node_api.base_url,
+              root_id: apifid.file_id
             }
-            Aspera.assert_values(apifid[:api].auth_params[:type], %i[basic oauth2])
-            case apifid[:api].auth_params[:type]
+            case apifid.node_api.auth_params[:type]
             when :basic
-              result[:username] = apifid[:api].auth_params[:username]
-              result[:password] = apifid[:api].auth_params[:password]
+              result[:username] = apifid.node_api.auth_params[:username]
+              result[:password] = apifid.node_api.auth_params[:password]
             when :oauth2
-              result[:username] = apifid[:api].params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
-              result[:password] = apifid[:api].oauth.authorization
-            else Aspera.error_unreachable_line
+              result[:username] = apifid.node_api.params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
+              result[:password] = apifid.node_api.oauth.authorization
+            else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]){'Node API Auth type'}
             end
             return Main.result_single_object(result) if command_repo.eql?(:node_info)
             Log.dump(:result, result)
-            raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid[:api].auth_params[:type]})" unless apifid[:api].auth_params[:type].eql?(:oauth2)
+            raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
             Aspera.assert(OAuth::Factory.bearer_auth?(result[:password])){'Not using bearer token auth'}
             return Main.result_text(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
-            file_info = apifid[:api].read("files/#{apifid[:file_id]}", headers: Api::Node.add_cache_control)
+            file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
             # a single file
             return Main.result_object_list([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
-            return Main.result_object_list(apifid[:api].list_files(apifid[:file_id], query: query_read_delete), fields: GEN4_LS_FIELDS)
+            return Main.result_object_list(apifid.node_api.list_files(apifid.file_id, query: query_read_delete), fields: GEN4_LS_FIELDS)
           when :find
             apifid = apifid_from_next_arg(top_file_id)
             find_lambda = Api::Node.file_matcher_from_argument(options)
-            return Main.result_object_list(@api_node.find_files(apifid[:file_id], find_lambda), fields: ['path'])
+            return Main.result_object_list(@api_node.find_files(apifid.file_id, find_lambda), fields: ['path'])
           when :mkdir, :mklink, :mkfile
             containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
             apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
@@ -541,12 +540,12 @@ module Aspera
               target = query.delete('target')
               if target
                 target_apifid = @api_node.resolve_api_fid(top_file_id, target, true)
-                payload[:target_id] = target_apifid[:file_id]
+                payload[:target_id] = target_apifid.file_id
               end
               payload.merge!(query.symbolize_keys)
             end
             if check_exists
-              folder_content = apifid[:api].read("files/#{apifid[:file_id]}/files")
+              folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
               link_name = ".#{new_item}.asp-lnk"
               found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
               raise "A #{found['type']} already exists with name #{new_item}" if found
@@ -562,26 +561,23 @@ module Aspera
               payload[:type] = :file
               payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
             end
-            result = apifid[:api].create("files/#{apifid[:file_id]}/files", payload)
+            result = apifid.node_api.create("files/#{apifid.file_id}/files", payload)
             return Main.result_single_object(result)
           when :rename
             file_path = options.get_next_argument('source path')
             apifid = @api_node.resolve_api_fid(top_file_id, file_path)
             newname = options.get_next_argument('new name')
-            result = apifid[:api].update("files/#{apifid[:file_id]}", {name: newname})
+            result = apifid.node_api.update("files/#{apifid.file_id}", {name: newname})
             return Main.result_status("renamed to #{newname}")
           when :delete
             return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
               apifid = if (m = Base.percent_selector(l_path))
                 Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
-                {
-                  api:     @api_node,
-                  file_id: m[:value]
-                }
+                Api::NodeFileId.new(@api_node, m[:value])
               else
                 @api_node.resolve_api_fid(top_file_id, l_path)
               end
-              result = apifid[:api].delete("files/#{apifid[:file_id]}")
+              result = apifid.node_api.delete("files/#{apifid.file_id}")
               {'path' => l_path}
             end
           when :sync
@@ -595,67 +591,67 @@ module Aspera
               end
               # remote is specified by option: `to_folder`
               apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
-              apifid[:api].transfer_spec_gen4(apifid[:file_id], ts_direction)
+              apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
             end
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
-            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_SEND)))
+            return Main.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_SEND)))
           when :download
             apifid, source_paths = @api_node.resolve_api_fid_paths(top_file_id, transfer.ts_source_paths)
-            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+            return Main.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :cat
             apifid = apifid_from_next_arg(top_file_id)
-            http = apifid[:api].read("files/#{apifid[:file_id]}/content", ret: :resp)
+            http = apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp)
             return Main.result_text(http.body)
           when :show
             apifid = apifid_from_next_arg(top_file_id)
-            items = apifid[:api].read("files/#{apifid[:file_id]}")
+            items = apifid.node_api.read("files/#{apifid.file_id}")
             return Main.result_single_object(items)
           when :modify
             apifid = apifid_from_next_arg(top_file_id)
             update_param = options.get_next_argument('update data', validation: Hash)
-            apifid[:api].update("files/#{apifid[:file_id]}", update_param)
+            apifid.node_api.update("files/#{apifid.file_id}", update_param)
             return Main.result_status('Done')
           when :thumbnail
             apifid = apifid_from_next_arg(top_file_id)
-            http = apifid[:api].read("files/#{apifid[:file_id]}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
+            http = apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
             return Main.result_image(http.body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
             command_perm = options.get_next_command(%i[list show create delete modify])
             case command_perm
             when :modify
-              apifid[:api].update("permissions/#{instance_identifier}", value_create_modify(command: 'permission modify'))
+              apifid.node_api.update("permissions/#{instance_identifier}", value_create_modify(command: 'permission modify'))
               return Main.result_status('Updated')
             when :list
               list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
               # Specify file to get permissions for unless not specified (then, get all permissions)
-              list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
+              list_query['file_id'] = apifid.file_id unless apifid.file_id.to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
-              items = apifid[:api].read_with_pages('permissions', list_query)
+              items = apifid.node_api.read_with_pages('permissions', list_query)
               return Main.result_object_list(items)
             when :show
-              return Main.result_single_object(apifid[:api].read("permissions/#{instance_identifier}"))
+              return Main.result_single_object(apifid.node_api.read("permissions/#{instance_identifier}"))
             when :delete
               return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
-                apifid[:api].delete("permissions/#{one_id}")
+                apifid.node_api.delete("permissions/#{one_id}")
                 # notify application of deletion
-                the_app = apifid[:api].app_info
-                the_app&.[](:api)&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
+                the_app = apifid.node_api.app_info
+                the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
                 {'id' => one_id}
               end
             when :create
               create_param = options.get_next_argument('creation data', validation: Hash)
               raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
-              create_param['file_id'] = apifid[:file_id]
+              create_param['file_id'] = apifid.file_id
               create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
               # add application specific tags (AoC)
-              the_app = apifid[:api].app_info
-              the_app&.[](:api)&.permissions_set_create_params(perm_data: create_param, app_info: the_app)
+              the_app = apifid.node_api.app_info
+              the_app&.api&.permissions_set_create_params(perm_data: create_param, app_info: the_app)
               # create permission
-              created_data = apifid[:api].create('permissions', create_param)
+              created_data = apifid.node_api.create('permissions', create_param)
               # notify application of creation
-              the_app&.[](:api)&.permissions_send_event(event_data: created_data, app_info: the_app)
+              the_app&.api&.permissions_send_event(event_data: created_data, app_info: the_app)
               return Main.result_single_object(created_data)
             else Aspera.error_unreachable_line
             end
