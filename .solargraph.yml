@@ -3,13 +3,16 @@ include:
 - "**/*.rb"
 exclude:
 - spec/**/*
+- tests/**/*
 - ".bundle/**/*"
+- ".ruby-lsp/**/*"
+- ".tmp-openapi-venv/**/*"
+- "build/**/*"
+- "rakelib/**/*"
 require: []
 domains: []
 reporters:
-- rubocop
 - require_not_found
-- typecheck
 formatter:
   rubocop:
     cops: safe
@@ -21,3 +24,8 @@ type_checker:
 require_paths: []
 plugins: []
 max_files: 5000
+# Performance optimizations
+definitions: true
+references: true
+folding: true
+symbols: true
