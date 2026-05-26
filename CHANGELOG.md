@@ -12,6 +12,7 @@ Released: [Place date of release here]
 * `node`: (also `aoc files`) Operation `modify` added to `permissions`.
 * `node`: (also `aoc files`) Operation `list` now uses paging.
 * `aoc`: When creating a shared inbox, the value of option `workspace` is now used as default value to set field `workspace_id`.
+* `aoc`: Support additional operations on `admin application`, like activate/deactivate app in workspace.
 * **global**: Added download URLs for `transferd` 1.1.8.
 * **global**: New Extended Value modifier: `s` converts to `String`.
 * **global**: Parameter `str_lst_sep` or option `table_style` allows setting separator for list of strings.

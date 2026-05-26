@@ -24,7 +24,6 @@ module Aspera
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated
         ADMIN_OBJECTS = %i[
-          application
           client
           client_access_key
           client_registration_token
@@ -396,10 +395,6 @@ module Aspera
           supported_operations = Operations::ALL
           resource_class_path = "#{resource_type}s"
           case resource_type
-          when :application
-            list_default_query = {workspace_id: aoc_api.workspace[:id]}
-            list_default_fields = %w[id app_type available workspace_id]
-            resource_class_path = 'admin/apps_new'
           when :client
             supported_operations += %i[set_pub_key]
           when :client_access_key
@@ -426,7 +421,7 @@ module Aspera
             supported_operations = Operations::SINGLETON
             resource_instance_path = resource_class_path = resource_type
           when :short_link
-            list_default_fields = %w[id short_url data.url_token_data.purpose]
+            list_default_fields = %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]
           when :user
             list_default_fields = %w[id name email]
           when :workspace
@@ -534,7 +529,62 @@ module Aspera
           end
         end
 
-        ADMIN_ACTIONS = %i[ats bearer_token usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
+        def execute_application_action
+          apps_info = aoc_api.read('admin/apps')
+          all_app_types = apps_info.map{ |i| i['app_type'].to_sym}
+          command_apps = options.get_next_command(%i[types settings instance membership])
+          case command_apps
+          when :types
+            return Main.result_object_list(apps_info)
+          when :settings
+            app_type = options.get_next_command(all_app_types)
+            cmd_path = "/apps/#{app_type}/settings"
+            command_app_settings = options.get_next_command(Operations::SINGLETON)
+            case command_app_settings
+            when :show
+              return Main.result_single_object(aoc_api.read(cmd_path))
+            when :modify
+              aoc_api.update(cmd_path, options.get_next_argument('properties', validation: Hash))
+              return Main.result_status('modified')
+            end
+          when :instance
+            list_default_query = {workspace_id: aoc_api.workspace[:id]}
+            list_default_fields = %w[id app_type available workspace_id]
+            command_app_instances = options.get_next_command(%i[list] + Operations::SINGLETON)
+            resource_path = 'admin/apps_new'
+            if Operations::SINGLETON.include?(command_app_instances)
+              app_type = options.get_next_command(all_app_types)
+              resource_path = "#{resource_path}/#{app_type}/#{instance_identifier(description: "#{app_type} identifier")}"
+            end
+            case command_app_instances
+            when :list
+              return result_list(resource_path, fields: list_default_fields, default_query: list_default_query)
+            when :show
+              return Main.result_single_object(aoc_api.read(resource_path, query_read_delete))
+            when :modify
+              aoc_api.update(resource_path, options.get_next_argument('properties', validation: Hash))
+              return Main.result_status('modified')
+            end
+          when :membership
+            resource_path = 'apps/app_memberships'
+            command_app_member = options.get_next_command(%i[create list show delete])
+            resource_path = "#{resource_path}/#{instance_identifier(description: 'membership id')}" unless Operations::GLOBAL.include?(command_app_member)
+            case command_app_member
+            when :list
+              return result_list(resource_path)
+            when :delete
+              aoc_api.delete("#{resource_path}}")
+              return Main.result_status('deleted')
+            when :show
+              return Main.result_single_object(aoc_api.read(resource_path, query_read_delete))
+            when :create
+              aoc_api.update(resource_path, options.get_next_argument('membership properties', validation: Hash))
+              return Main.result_status('modified')
+            end
+          end
+        end
+
+        ADMIN_ACTIONS = %i[bearer_token application ats usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
         def execute_admin_action
           # change scope to admin
@@ -545,6 +595,8 @@ module Aspera
             return Main.result_text(aoc_api.oauth.authorization)
           when *ADMIN_OBJECTS
             return execute_resource_action(command_admin)
+          when :application
+            return execute_application_action
           when :auth_providers
             command_auth_prov = options.get_next_command(%i[list update])
             case command_auth_prov

@@ -1290,6 +1290,8 @@ nd_xfer_ops:
     - --progress=no
   post: sleep 5
 nd_xfer_id:
+  depends_on:
+    - nd_xfer_ops
   tags:
     - save_output
     - nodoc
@@ -1300,12 +1302,16 @@ nd_xfer_id:
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
 nd_xfer_ops3:
+  depends_on:
+    - nd_xfer_id
   args:
     - node
     - transfer
     - show
     - $(read_value_from :nd_xfer_id)
 nd_xfer_ops4:
+  depends_on:
+    - nd_xfer_id
   args:
     - node
     - transfer
@@ -1313,17 +1319,25 @@ nd_xfer_ops4:
     - $(read_value_from :nd_xfer_id)
     - '@json:{"target_rate_kbps":10000}'
 nd_xfer_ops5:
+  depends_on:
+    - nd_xfer_id
   args:
     - node
     - transfer
     - show
     - $(read_value_from :nd_xfer_id)
 nd_xfer_ops6:
+  depends_on:
+    - nd_xfer_id
+    - nd_xfer_ops3
+    - nd_xfer_ops4
+    - nd_xfer_ops5
   args:
     - node
     - transfer
     - cancel
     - $(read_value_from :nd_xfer_id)
+  post: stop_process :nd_xfer_ops
 nd_xfer_ops7:
   args:
     - node
@@ -1678,8 +1692,12 @@ nd_ak_bearer_reset:
     - "@preset:ak_creds.username"
   post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
+  $comment: Marked interactive as it requires to check if local node is running
   depends_on:
     - nd_ak_bearer_reset
+  tags:
+    - interactive
+  pre: system('ensure_local_node')
   args:
     - node
     - -N
@@ -1889,7 +1907,7 @@ aoc_faspex_gateway:
   args:
     - aoc
     - gateway
-    - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
+    - '@json:{"url":"https://localhost:12347/aspera/faspex"}'
 aoc_faspex_gatewayb:
   depends_on:
     - aoc_faspex_gateway
@@ -1898,7 +1916,7 @@ aoc_faspex_gatewayb:
   args:
     - -N
     - faspex
-    - --url=https://localhost:12346/aspera/faspex
+    - --url=https://localhost:12347/aspera/faspex
     - --username=_unused_
     - --password=_unused_
     - --warn-insecure=yes
@@ -3151,6 +3169,14 @@ aoc_adm_res_04c:
     - admin
     - short_link
     - list
+aoc_admin_app_types:
+  description: List applications types
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - types
 aoc_admin_app_list_current:
   description: List applications in user's current workspace
   args:
@@ -3158,6 +3184,7 @@ aoc_admin_app_list_current:
     - aoc
     - admin
     - application
+    - instance
     - list
 aoc_admin_app_list_org:
   description: List applications in organization
@@ -3166,6 +3193,7 @@ aoc_admin_app_list_org:
     - aoc
     - admin
     - application
+    - instance
     - list
     - --query.organization_apps=true
 aoc_admin_app_list_type:
@@ -3175,8 +3203,18 @@ aoc_admin_app_list_type:
     - aoc
     - admin
     - application
+    - instance
     - list
     - --query.aspera_app_type=files
+aoc_admin_app_member_list:
+  description: List applications memberships
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - application
+    - membership
+    - list
 aoc_adm_res_05b:
   args:
     - --preset=aoc_admin
@@ -3382,8 +3420,6 @@ aocat8:
 aocat8b:
   depends_on:
     - aocat8
-  tags:
-    - flaky
   args:
     - --preset=aoc_admin
     - aoc
@@ -3393,7 +3429,15 @@ aocat8b:
     - create
     - --cloud=softlayer
     - --region=@preset:icos.region
-    - '@json:@extend:{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+    - '@:'
+    - id=ak1ibmcloud
+    - secret=@preset:misc.secret_here
+    - name="my test key"
+    - storage.type=ibm-s3
+    - storage.bucket=@preset:icos.bucket
+    - storage.credentials.access_key_id=@preset:icos.access_key
+    - storage.credentials.secret_access_key=@preset:icos.secret_key
+    - storage.path=/
 aocat9:
   $comment: Fails for unknown reason on ATS side
   tags:
