@@ -508,7 +508,7 @@ module Aspera
         begin
           # remove known options one by one, exception if unknown
           Log.log.trace1('Before parse')
-          Log.dump(:unprocessed_cmd_line_options, @unprocessed_cmd_line_options)
+          Log.dump(:unprocessed_cmd_line_options, @unprocessed_cmd_line_options, level: :trace1)
           @parser.parse!(@unprocessed_cmd_line_options)
           Log.log.trace1('After parse')
         rescue OptionParser::InvalidOption => e
