@@ -78,6 +78,7 @@ module Aspera
 
       # Indicate that the given Hash query uses php style for array parameters
       # @param query [Hash] A key can have Array value and result will use PHP format: a[]=1&a[]=2
+      # @return [Hash] The query parameters.
       def php_style(query)
         Aspera.assert_type(query, Hash){'query'}
         query[:x_array_php_style] = true
