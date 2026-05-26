@@ -34,7 +34,7 @@ module Aspera
           end
           # Check for binaries
           tools_to_check.each do |command_sym|
-            external_command(command_sym, ['-h'])
+            silent_execute(command_sym, '-h')
           rescue Errno::ENOENT => e
             raise "missing #{command_sym} binary: #{e}"
           rescue
@@ -42,19 +42,17 @@ module Aspera
           end
         end
 
-        # Execute external command
-        # @return [nil]
-        def external_command(command_sym, command_args)
-          Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), out: File::NULL, err: File::NULL)
-          nil
+        # Execute external command, verify it is in the supported list
+        def execute(*args, **kwargs)
+          Aspera.assert_values(args.first, EXTERNAL_TOOLS){'command'}
+          Environment.secure_execute(*args, **kwargs)
         end
 
-        # Execute external command and get stdout
-        # @return [String]
-        def external_capture(command_sym, command_args)
-          Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          Environment.secure_execute(command_sym.to_s, *command_args.map(&:to_s), mode: :capture).first
+        # Execute external command silently
+        # @return [nil]
+        def silent_execute(*args)
+          execute(*args, out: File::NULL, err: File::NULL)
+          nil
         end
 
         # Execute `ffmpeg`
@@ -63,17 +61,19 @@ module Aspera
           Aspera.assert_type(gl_p, Array)
           Aspera.assert_type(in_p, Array)
           Aspera.assert_type(out_p, Array)
-          external_command(:ffmpeg, gl_p +  in_p + ['-i', in_f] + out_p + [out_f])
+          silent_execute(:ffmpeg, *gl_p, *in_p, '-i', in_f, *out_p, out_f)
         end
 
         # @return Float in seconds
         def video_get_duration(input_file)
-          return external_capture(:ffprobe, [
+          return execute(
+            :ffprobe,
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
             '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
-            input_file
-          ]).to_f
+            input_file,
+            mode: :capture
+          ).first.to_f
         end
 
         # File output format, including temp folder
@@ -100,7 +100,7 @@ module Aspera
           1.upto(count) do |i|
             percent = i * 100 / (count + 1)
             filename = get_tmp_num_filepath(temp_folder, index_begin + i)
-            external_command(:magick, ['composite', '-blend', percent, img2, img1, filename])
+            silent_execute(:magick, 'composite', '-blend', percent, img2, img1, filename)
           end
         end
 
@@ -117,6 +117,41 @@ module Aspera
             out_f: output_file,
             out_p: ['-frames:v', 1, '-filter:v', "scale=#{scale}"]
           )
+        end
+
+        # Parse the output of `magick identify -list font` command
+        # @param output [String] the output from `magick -list font`
+        # @return [Hash] with keys :path and :fonts
+        #   :path [String] the path to the type.xml file
+        #   :fonts [Array<Hash>] array of font hashes with keys:
+        #     :name, :family, :style, :stretch, :weight, :metrics, :glyphs, :index
+        def parse_magick_fonts(output)
+          result = {path: nil, fonts: []}
+          current_font = nil
+          output.each_line do |line|
+            line = line.strip
+            # Parse the Path line
+            if line.start_with?('Path:')
+              result[:path] = line.sub(/^Path:\s*/, '')
+            # Parse Font name
+            elsif line.start_with?('Font:')
+              # Save previous font if exists
+              result[:fonts] << current_font if current_font
+              # Start new font
+              current_font = {name: line.sub(/^Font:\s*/, '')}
+            # Parse font properties
+            elsif current_font && line.include?(':')
+              key, value = line.split(':', 2)
+              key = key.strip.gsub(/\s+/, '_').to_sym
+              value = value.strip
+              # Convert numeric values
+              value = value.to_i if key == :weight || key == :index
+              current_font[key] = value
+            end
+          end
+          # Don't forget the last font
+          result[:fonts] << current_font if current_font
+          result
         end
       end
     end

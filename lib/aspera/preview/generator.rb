@@ -59,6 +59,9 @@ module Aspera
         @processing_method = @processing_method.to_sym
         Log.log.debug{"method: #{@processing_method}"}
         Aspera.assert(respond_to?(@processing_method, true)){"no processing known for #{conversion_type} -> #{@preview_format_sym}"}
+        command = [:magick] + %w[identify -list font]
+        magick_fonts = Utils.parse_magick_fonts(Utils.execute(*command, mode: :capture).first)
+        Aspera.assert(magick_fonts[:fonts].any?{ |f| f[:name].eql?(@options.thumb_text_font)}){"Missing font #{@options.thumb_text_font} in #{command}"}
       end
 
       # Creates preview as specified in constructor.
@@ -245,18 +248,20 @@ module Aspera
         tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source, File.extname(@source))}.pdf")
         case @options.office_conversion
         when :unoconv
-          Utils.external_command(:unoconv, [
+          Utils.silent_execute(
+            :unoconv,
             '-f', 'pdf',
             '-o', tmp_pdf_file,
             @source
-          ])
+          )
         when :soffice
-          Utils.external_command(:soffice, [
+          Utils.silent_execute(
+            :soffice,
             '--headless',
             '--convert-to', 'pdf',
             '--outdir', File.dirname(tmp_pdf_file),
             @source
-          ])
+          )
           # soffice creates the file with the source name, so we need to rename it if needed.
           generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source, File.extname(@source))}.pdf")
           FileUtils.mv(generated_pdf, tmp_pdf_file) if generated_pdf != tmp_pdf_file
@@ -269,20 +274,22 @@ module Aspera
       # @param source_file_path [String, nil] Optional source file path, defaults to @source.
       def convert_pdf_to_png(source_file_path = nil)
         source_file_path ||= @source
-        Utils.external_command(:magick, [
+        Utils.silent_execute(
+          :magick,
           'convert',
           '-size', "x#{@options.thumb_img_size}",
           '-background', 'white',
           '-flatten',
           "#{source_file_path}[0]",
           @destination
-        ])
+        )
       end
 
       # Converts image to PNG thumbnail.
       # Applies auto-orientation, resizing, and optimization.
       def convert_image_to_png
-        Utils.external_command(:magick, [
+        Utils.silent_execute(
+          :magick,
           'convert',
           '-auto-orient',
           '-thumbnail', "#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
@@ -291,8 +298,8 @@ module Aspera
           '-posterize', 40,
           "#{@source}[0]",
           @destination
-        ])
-        Utils.external_command(:optipng, [@destination])
+        )
+        Utils.silent_execute(:optipng, @destination)
       end
 
       # Converts plain text to PNG image.
@@ -300,7 +307,8 @@ module Aspera
       def convert_plaintext_to_png
         # Get 100 first lines of text file.
         first_lines = File.foreach(@source).first(100).join
-        Utils.external_command(:magick, [
+        Utils.silent_execute(
+          :magick,
           'convert',
           '-size', "#{@options.thumb_img_size}x#{@options.thumb_img_size}",
           'xc:white', # Define canvas with background color (xc, or canvas) of preceding size.
@@ -313,7 +321,7 @@ module Aspera
           '-border', 8,
           '+repage',
           @destination
-        ])
+        )
       end
     end
   end

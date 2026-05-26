@@ -8121,10 +8121,13 @@ dnf install -y ImageMagick optipng
 ```
 
 You may also install `ghostscript` which adds fonts to ImageMagick.
-Available fonts, used to generate PNG for text, can be listed with `magick identify -list font`.
 Prefer ImageMagick version >=7.
-
 More info on ImageMagick at <https://imagemagick.org/>
+Available fonts, used to generate PNG for text, can be listed with:
+
+```shell
+magick identify -list font
+```
 
 If your OS has only ImageMagick v6, then you can create a script called `magick` and add it to your `PATH`:
 
