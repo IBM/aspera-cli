@@ -41,12 +41,16 @@ shares_health_bad:
     - health
     - --url=https://wrong.example.com
 shares_detect:
+  tags:
+    - shares
   args:
     - config
     - detect
     - "@preset:shares_admin.url"
     - shares
 shares_wizard:
+  tags:
+    - shares
   args:
     - config
     - wizard
