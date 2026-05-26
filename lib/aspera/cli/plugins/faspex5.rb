@@ -98,6 +98,8 @@ module Aspera
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
+          # [Aspera::Api::Faspex]
+          @api_v5 = nil
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
@@ -114,7 +116,7 @@ module Aspera
           parameters[type].map! do |recipient_data|
             # If just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
-              matched = @api_v5.lookup_by_name('contacts', recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
+              matched = @api_v5.lookup_with_q('contacts', value: recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
               recipient_data = {
                 name:           matched['name'],
                 recipient_type: matched['type']

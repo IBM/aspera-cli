@@ -277,7 +277,7 @@ module Aspera
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
             Aspera.assert(field.eql?('name'), type: BadArgument){'only selection by name is supported'}
-            aoc_api.lookup_by_name(resource_class_path, value)['id']
+            aoc_api.lookup_with_q(resource_class_path, value: value)['id']
           end
         end
 
@@ -308,7 +308,7 @@ module Aspera
             # convenience: specify name instead of id
             raise BadArgument, 'Use field dropbox_name or dropbox_id, not both' if query.key?('dropbox_id')
             # TODO : craft a query that looks for dropbox only in current workspace
-            query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query.delete('dropbox_name'))['id']
+            query['dropbox_id'] = aoc_api.lookup_with_q('dropboxes', value: query.delete('dropbox_name'))['id']
           end
           workspace_id_hash(query, string: true)
           # by default show dropbox packages only for dropboxes
@@ -424,6 +424,7 @@ module Aspera
             list_default_fields = %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]
           when :user
             list_default_fields = %w[id name email]
+            supported_operations += %i[preferences]
           when :workspace
             supported_operations += %i[shared_folder dropbox]
           when :workspace_membership
@@ -524,6 +525,15 @@ module Aspera
                 # TODO : read users and group name and add, if query "include_members"
                 return Main.result_object_list(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
               end
+            end
+          when :preferences
+            user_preferences_res = "#{resource_instance_path}/user_interaction_preferences"
+            case options.get_next_command(%i[show modify])
+            when :show
+              return Main.result_single_object(aoc_api.read(user_preferences_res))
+            when :modify
+              aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
+              return Main.result_status('modified')
             end
           else Aspera.error_unexpected_value(command)
           end

@@ -11,33 +11,38 @@ module Aspera
 
     # Query entity by general search (read with parameter `q`)
     #
-    # @param subpath     [String] Path of entity in API
-    # @param search_name [String] Name of searched entity
-    # @param query       [Hash]   Optional additional search query parameters
+    # @param entity [String] Path of entity in API
+    # @param value [String] Value of field of searched entity
+    # @param field [String] Field of searched entity
+    # @param query [Hash] Optional additional search query parameters
     # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
-    def lookup_by_name(subpath, search_name, query: nil)
-      query = {} if query.nil?
+    def lookup_with_q(entity, value:, field: 'name', query: {})
+      Aspera.assert_type(query, Hash){'query'}
+      Aspera.assert_type(field, String){'field'}
       # returns entities matching the query (it matches against several fields in case insensitive way)
-      matching_items = read(subpath, query.merge({'q' => search_name}))
-      # API style: {totalcount:, ...} cspell: disable-line
-      matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
+      # We don't do paging, as anyway, we look for only one match
+      matching_items = read(entity, query.merge({'q' => value}))
+      # API style: {totalcount:, ...} cspell: disable-line: TODO: is that total_count ?
+      matching_items = matching_items[entity] if matching_items.is_a?(Hash)
       Aspera.assert_type(matching_items, Array)
       case matching_items.length
       when 1 then return matching_items.first
-      when 0 then raise EntityNotFound, %Q{No such #{subpath}: "#{search_name}"}
+      when 0 then raise EntityNotFound, %Q{No such #{entity}: "#{value}"}
       else
         # multiple case insensitive partial matches, try case insensitive full match
-        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        name_matches = matching_items.select{ |i| i['name'].casecmp?(search_name)}
-        case name_matches.length
-        when 1 then return name_matches.first
-        when 0 then raise %Q(#{subpath}: Multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
-        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{ |i| i['name']}}"
+        # (anyway AoC does not allow creation of 2 entities with same case insensitive field value)
+        value_matches = matching_items.select{ |i| i[field].casecmp?(value)}
+        case value_matches.length
+        when 1 then return value_matches.first
+        when 0 then raise %Q(#{entity}: Multiple case insensitive partial match for: "#{value}": #{matching_items.map{ |i| i[field]}} but no case insensitive full match. Please be more specific or give exact #{field}.)
+        else raise "Two entities cannot have the same case insensitive #{field}: #{value_matches.map{ |i| i[field]}}"
         end
       end
     end
 
-    # Get a (full or partial) list of all entities of a given type with query: offset/limit
+    # Get a (full or partial) list of all entities of a given type.
+    # Using query: `offset` + `limit`
+    # And response `total_count`
     # @param entity    [String,Symbol] API endpoint of entity to list
     # @param items_key [String]        Key in the result to get the list of items (Default: same as `entity`)
     # @param query     [Hash,nil]      Additional query parameters
@@ -114,6 +119,7 @@ module Aspera
       return found.first if found.length.eql?(1)
       raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)
     end
+
     PER_PAGE_DEFAULT = 1000
     private_constant :PER_PAGE_DEFAULT
     module_function :lookup_entity_generic

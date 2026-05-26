@@ -411,7 +411,7 @@ module Aspera
           elsif @workspace_name.nil?
             nil
           else
-            lookup_by_name('workspaces', @workspace_name)['id']
+            lookup_with_q('workspaces', value: @workspace_name)['id']
           end
         @workspace_info =
           if ws_id.nil?
@@ -546,7 +546,7 @@ module Aspera
             # email: user, else dropbox
             entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
             begin
-              full_recipient_info = lookup_by_name(entity_type, short_recipient_info, query: {'workspace_id' => ws_id})
+              full_recipient_info = lookup_with_q(entity_type, value: short_recipient_info, query: {'workspace_id' => ws_id})
             rescue EntityNotFound
               # dropboxes cannot be created on the fly
               Aspera.assert_values(entity_type, 'contacts', type: Error){"No such shared inbox in workspace #{ws_id}"}
@@ -720,7 +720,7 @@ module Aspera
           perm_data.merge!(self.class.workspace_access(app_info.workspace_id))
           tag_workspace['shared_with_name'] = perm_data['access_id']
         else
-          entity_info = lookup_by_name('contacts', shared_with, query: {'current_workspace_id' => app_info.workspace_id})
+          entity_info = lookup_with_q('contacts', value: shared_with, query: {'current_workspace_id' => app_info.workspace_id})
           perm_data['access_type'] = entity_info['source_type']
           perm_data['access_id'] = entity_info['source_id']
           tag_workspace['shared_with_name'] = entity_info['email'] # TODO: check that ???
