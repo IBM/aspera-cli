@@ -93,8 +93,11 @@ namespace :doc do
   desc 'Generate PDF Manual'
   task md: Paths::MD_MANUAL
 
+  desc 'Generate docs except PDF'
+  task prep: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL]
+
   desc 'Generate All Docs'
-  task build: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL, Paths::PDF_MANUAL]
+  task build: [:prep, Paths::PDF_MANUAL]
 
   # UML Diagram : requires tools: graphviz and gem xumlidot
   # on mac: `gem install xumlidot pry` and `brew install graphviz`
