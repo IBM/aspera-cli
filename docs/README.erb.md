@@ -70,7 +70,7 @@ It supports both interactive terminal operations (e.g., maintenance tasks on VT1
 Internally, <%=tool%> integrates several components:
 
 - A configuration file (`config.yaml`) for persistent settings
-- Advanced command-line options (see [Extended Value Syntax](#extended-value-syntax))
+- Advanced command-line options (see [Extended Value](#extended-value-syntax))
 - REST API calls, including OAuth (like `curl`)
 - Aspera’s `ascp` for high-speed file transfers
 
@@ -291,7 +291,7 @@ There are several ways to install <%=tool%>:
 The following sections describe the various installation methods.
 
 An internet connection is required during installation.
-If you do not have internet access, refer to section [Installation without internet access](#installation-in-an-air-gapped-environment).
+If you do not have internet access, see [Installation without internet access](#installation-in-an-air-gapped-environment).
 
 ### Single file executable
 
@@ -306,7 +306,7 @@ This executable includes the Ruby runtime.
 > [!NOTE]
 > Replace the URL with the one for your platform.
 > Installation of `ascp` is still required separately.
-> Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+> See [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
 curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.<%=build_version%>.osx-arm64
@@ -606,14 +606,14 @@ make install
 All that is needed is a JVM (Java Virtual Machine) on your system (`java`).
 The JRuby package comes pre-compiled and does not require compilation of native extensions.
 Use a version of JRuby compatible with Ruby version supported by <%=tool%>.
-Refer to [the Wikipedia page](https://en.wikipedia.org/wiki/JRuby) to match JRuby and Ruby versions.
+See [the Wikipedia page](https://en.wikipedia.org/wiki/JRuby) to match JRuby and Ruby versions.
 Choose the latest version from:
 
 <https://www.jruby.org/download>
 
 > [!WARNING]
 > The startup time is slightly longer using `jruby` than the native Ruby.
-> Refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
+> See the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details.
 > This can be reduced by using the `--dev` option.
 > The transfer speed is not impacted (executed by `ascp` binary).
 
@@ -787,11 +787,11 @@ For instance, Aspera Connect Client can be installed by visiting the page:
 [https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
 
 <%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found by default.
-Refer to section [FASP](#fasp-configuration) for details on how to select a client or set path to the FASP protocol.
+See [FASP](#fasp-configuration) for details on how to select a client or set path to the FASP protocol.
 
 Several methods are provided to start a transfer.
 Use of a local client ([`direct`](#agent-direct) transfer agent) is one of them, but other methods are available.
-Refer to section: [Transfer Agents](#transfer-clients-agents)
+See [Transfer Agents](#transfer-clients-agents)
 
 ### Installation in an air-gapped environment
 
@@ -1267,7 +1267,7 @@ Basic usage is displayed by executing:
 <%=cmd%> -h
 ```
 
-Refer to sections: [Usage](#usage).
+See [Usage](#usage).
 
 > [!NOTE]
 > <%=tool%> features are not fully documented here, the user may explore commands on the command line.
@@ -1283,7 +1283,7 @@ Command line arguments are the units of command line typically separated by spac
 - [**Resource Types**](#resource-types) e.g. `users`
 - [**Verbs**](#verbs) e.g. `create`, to act on those resources or plugins.
 - [**Identifiers**](#identifiers) e.g. `123`, uniquely identifying a resource
-- [**Command Parameters**](#command-parameters) arguments, e.g. creation data, can be an Extended value.
+- [**Command Parameters**](#command-parameters) arguments, e.g. creation data, can be an [Extended Value](#extended-value-syntax).
 
 Command line arguments that are not options are referred to as **Positional Arguments**.
 
@@ -1300,7 +1300,7 @@ Enumeration values (positional arguments and option names/values) support prefix
 See [Enumerations](#enumerations) for details.
 For example `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`.
 
-The value of **Options** and **Command Parameters** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
+The value of **Options** and **Command Parameters** is evaluated with the [Extended Value](#extended-value-syntax) syntax.
 
 #### Positional Arguments
 
@@ -1308,7 +1308,7 @@ When options (beginning with `--`) are removed from the command line, the remain
 
 **Plugins**, **Resource Types** and **Verbs** are [Enumerations](#enumerations).
 
-**Identifiers** and **Command Parameters** are open values, but a given type is expected, either a simple `String` or an **Extended value**.
+**Identifiers** and **Command Parameters** are open values, but a given type is expected, either a simple `String` or an [Extended Value](#extended-value-syntax).
 
 The general structure of positional arguments is:
 
@@ -1387,9 +1387,9 @@ For example, in the following command, `<%=ph :user_id%>` is the user's identifi
 > It could also have been designed as an option.
 > But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
 > The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
-> [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
+> [Extended Value](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
 
-If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
+If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Value](#extended-value-syntax)), or use the `--` separator (see below).
 
 A few **Command Parameters** are optional, they are always located at the end of the command line.
 
@@ -1418,10 +1418,10 @@ Examples:
 
 #### Dot-path Notation
 
-<%=tool%> uses a unified **dot-path notation** in several places on the command line and in output.
+<%=tool%> uses a unified [dot-path](#dot-path-notation) notation in several places on the command line and in output.
 Understanding this concept once makes it immediately usable everywhere it appears.
 
-**Dot-path** notation is used in four distinct places in <%=tool%>:
+[Dot-path](#dot-path-notation) notation is used in four distinct places in <%=tool%>:
 
 | Surface                   | Syntax                | in/out | read/write |
 |---------------------------|-----------------------|--------|------------|
@@ -1430,7 +1430,7 @@ Understanding this concept once makes it immediately usable everywhere it appear
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
 | [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
 
-A **dot-path** is a String where segments are separated by `.` (dot), each segment designating a key in a nested structure:
+A [dot-path](#dot-path-notation) is a `String` where segments are separated by `.` (dot), each segment designating a key in a nested structure:
 
 - A **string segment** designates a key in a `Hash` (associative array).
 - An **integer segment** designates an index in an `Array`.
@@ -1441,11 +1441,11 @@ When a **value** is assigned to the path (**write** with `=`), it is automatical
 
 > [!NOTE]
 > A value of `1` will be automatically converted to an `Integer`.
-> When a specific type is required for the value, the [Extended Value Syntax](#extended-value-syntax) modifiers `@json:` or `@ruby:` can be used.
+> When a specific type is required for the value, the [Extended Value](#extended-value-syntax) syntax modifiers `@json:` or `@ruby:` can be used.
 > For example: `--opt.x=1` generates `{"x": 1}`.
 > To get a `String`: `--opt.x=@json:\"1\"` or `--opt.x=@ruby:%q{1}`.
 
-Example: dot-path to JSON output
+Example: [dot-path](#dot-path-notation) to JSON output
 
 ```shell
 <%=cmd%> config echo @: a.b=1 a.c=2 a.d.0=hello a.d.1=world --format=json
@@ -1455,7 +1455,7 @@ Example: dot-path to JSON output
 {"a":{"b":1,"c":2,"d":["hello","world"]}}
 ```
 
-Example: JSON to dot-path output
+Example: JSON to [dot-path](#dot-path-notation) output
 
 ```shell
 <%=cmd%> config echo @json:'{"a":{"b":1,"c":2,"d":["hello","world"]}}'
@@ -1485,9 +1485,9 @@ The general syntax for this argument is:
 @: <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [END]
 ```
 
-- `@:`: The prefix that initiates the collection of dot-path assignments into a single data structure.
+- `@:`: The prefix that initiates the collection of [dot-path](#dot-path-notation) assignments into a single data structure.
 
-- `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard dot-path notation. Multiple assignments can be provided in sequence to build a complex object.
+- `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard [dot-path](#dot-path-notation) notation. Multiple assignments can be provided in sequence to build a complex object.
 
 - `END`: An optional marker that terminates the `@:` parsing session.
 
@@ -1497,7 +1497,7 @@ The general syntax for this argument is:
 
 > [!IMPORTANT]
 > Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
-> Without `END`, those arguments are silently consumed as dot-path keys instead of being passed to the command.
+> Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
 
 **Example**: Sending a package with a file list using `@:` for package information.
 
@@ -1506,7 +1506,7 @@ The general syntax for this argument is:
 ```
 
 > [!CAUTION]
-> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as dot-path keys, not passed as files.
+> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
 
 #### Options
 
@@ -1533,7 +1533,7 @@ Exceptions and Special Cases:
 
   Some options have short forms.
   For example, `-Ptoto` is equivalent to `--preset=toto`.
-  Refer to the manual or `-h` for details.
+  See the manual or `-h` for details.
 - **Flags**
 
   Certain options are flags and do not require a value (e.g., `-N`).
@@ -1703,7 +1703,7 @@ Effective only when `format` is `table` to display `single_object` or `object_li
 
 If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
 
-If value is `yes` (default), then objects are "flattened" using [dot-path notation](#dot-path-notation) with a variation:
+If value is `yes` (default), then objects are "flattened" using [dot-path](#dot-path-notation) notation with a variation:
 
 - Final arrays are displayed as comma separated list of values
 - `Array` of `Hash` with only `name` keys are displayed as comma separated list of values
@@ -1868,7 +1868,7 @@ The option `display` controls the level of output:
 Depending on the command, results may include by default all fields, or only some selected fields.
 It is possible to define specific columns to be displayed, by setting the `fields` option.
 
-The `fields` option is a list that can be either a comma-separated list or an extended value `Array`.
+The `fields` option is a list that can be either a comma-separated list or an [Extended Value](#extended-value-syntax) `Array`.
 
 Individual elements of the list can be:
 
@@ -1878,13 +1878,13 @@ Individual elements of the list can be:
 - `ALL`: all fields
 - A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
-To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path notation](#dot-path-notation).
+To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path](#dot-path-notation) notation.
 
 Examples:
 
 - `a,b,c`: the list of attributes specified as a comma-separated list (overrides the default)
-- `@list:,a,b,c`: `Array` extended value: same as above
-- `@json:'["a","b","c"]'`: `Array` extended value: same as above
+- `@list:,a,b,c`: `Array` [Extended Value](#extended-value-syntax): same as above
+- `@json:'["a","b","c"]'`: `Array` [Extended Value](#extended-value-syntax): same as above
 - `b,DEF,-a`: default property list, remove `a` and add `b` in first position
 - `@ruby:'/^server/'`: Display all fields whose name begins with `server`
 
@@ -1926,7 +1926,7 @@ Most options and arguments are specified by a simple string (e.g. `username` or 
 Sometimes it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
 Some options expect a more complex value such as `Hash` or `Array`.
 
-The **Extended Value** Syntax allows specifying such values and even reading values from other sources than the command line itself.
+The [Extended Value](#extended-value-syntax) Syntax allows specifying such values and even reading values from other sources than the command line itself.
 
 #### Syntax and Decoders
 
@@ -1957,8 +1957,8 @@ The following decoders are supported:
 | `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
 | `none`   | None     | Nil      | A `null` value. |
 | `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). e.g. `--config-file=@path:~/sample_config.yml` |
-| `preset` | `String` | `Hash`   | Get value from configuration file using [dot-path notation](#dot-path-notation). |
-| `extend` | `String` | `String` | Evaluates embedded extended value syntax in string. |
+| `preset` | `String` | `Hash`   | Get value from configuration file using [dot-path](#dot-path-notation) notation. |
+| `extend` | `String` | `String` | Evaluates embedded [Extended Value](#extended-value-syntax) syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
 | `s`      | Any      | `String` | Converts argument to `String`. |
@@ -1968,18 +1968,18 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | The empty modifier, resulting as argument `@:`, parses remaining positional arguments as a `Hash` or `Array` using [dot-path notation](#dot-path-notation).<%=br%>Use `END` to stop collection when further positional arguments must follow. |
+| `<empty>`| None     | Any      | The empty modifier, resulting as argument `@:`, parses remaining positional arguments as a `Hash` or `Array` using [dot-path](#dot-path-notation) notation.<%=br%>Use `END` to stop collection when further positional arguments must follow. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
-> For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` parameter named `i`.
+> For example, the [Extended Value](#extended-value-syntax) `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` parameter named `i`.
 
 **Chaining rule**: When multiple decoders are combined, they are applied right-to-left: the rightmost decoder runs first on the literal string, and each decoder to its left receives the output of the one to its right.
 
-To display the result of an extended value, use the `config echo` command.
+To display the result of an [Extended Value](#extended-value-syntax), use the `config echo` command.
 
-The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
-It expects a `@` to close the embedded extended value syntax.
+The `extend` decoder is useful to evaluate embedded [Extended Value](#extended-value-syntax) syntax in a string.
+It expects a `@` to close the embedded [Extended Value](#extended-value-syntax) syntax.
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
@@ -2062,7 +2062,7 @@ EOF
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
-#### Testing Extended Values
+#### Testing Extended Value
 
 In case of doubt of argument values after parsing, one can test using command `config echo`.
 `config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
@@ -2083,7 +2083,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 `config echo` displays the value of the **first** argument using the current output `format`.
 
 > [!NOTE]
-> It gets its value after shell command line parsing and <%=tool%> extended value parsing.
+> It gets its value after shell command line parsing and <%=tool%> [Extended Value](#extended-value-syntax) parsing.
 In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all example, most special character handling is not specific to <%=tool%>:
 It depends on the underlying syntax: shell, JSON, etc.
@@ -2202,10 +2202,10 @@ Two [Option Presets](#option-preset) are reserved:
 The user may create as many [Option Preset](#option-preset) as needed.
 For instance, a particular [Option Preset](#option-preset) can be created for a particular application instance and contain URL and credentials.
 
-Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
+Values in the configuration also follow the [Extended Value](#extended-value-syntax) syntax.
 
 > [!NOTE]
-> If the user wants to keep the [Extended Value Syntax](#extended-value-syntax) inside the configuration file, the user shall use the `@val:` prefix.
+> If the user wants to keep the [Extended Value](#extended-value-syntax) syntax inside the configuration file, the user shall use the `@val:` prefix.
 
 Example:
 
@@ -2237,7 +2237,7 @@ A named [Option Preset](#option-preset) can be modified directly using <%=tool%>
 <%=cmd%> config preset <set|delete|show|initialize|update> <%=ph :preset_name%>
 ```
 
-The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
+The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a `Hash` [Extended Value](#extended-value-syntax).
 
 ```shell
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<%=ph :password%>","ts":{"precalculate_job_size":true}}'
@@ -2560,7 +2560,7 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
-It is possible to use extended value `@secret:[name]` to ask for a secret interactively.
+It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
 It is also possible to enter an option as an environment variable, e.g. `<%=opt_env :password%>` for option `password` and read the env var like this:
 
 ```shell
@@ -2680,7 +2680,7 @@ For a more secure storage one can do:
 ```
 
 > [!NOTE]
-> Use `@val:` in front of `@vault:` so that the extended value is not evaluated.
+> Use `@val:` in front of `@vault:` so that the [Extended Value](#extended-value-syntax) is not evaluated.
 
 ### Private Key
 
@@ -2986,12 +2986,12 @@ There are several types of network connections, each of them use a different mec
 - `ascp` WSS and Legacy Aspera HTTP/S Fallback
 - `ascp` SSH and UDP (Aspera FASP)
 
-Refer to the following sections.
+See the following sections.
 
 #### Proxy for REST and HTTP Gateway
 
 REST API calls and transfers based on HTTP Gateway both use Ruby's `Net::HTTP` class.
-Refer to [Ruby find proxy](https://rubyapi.org/4.0/o/uri/generic#method-i-find_proxy).
+See [Ruby find proxy](https://rubyapi.org/4.0/o/uri/generic#method-i-find_proxy).
 
 When Ruby HTTP is used, there are two possibilities to define an HTTP proxy to be used.
 
@@ -3211,7 +3211,7 @@ Parameters in transfer-spec can be modified with option `ts`.
 The `direct` agent directly executes a local `ascp` in <%=tool%>.
 This is the default agent for <%=tool%> (option `--transfer=direct`).
 <%=tool%> will locally search installed Aspera products, including SDK, and use `ascp` from that component.
-Refer to section [FASP](#fasp-configuration).
+See [FASP](#fasp-configuration).
 
 ##### Agent: Direct: `transfer_info`
 
@@ -3499,7 +3499,7 @@ Like any other option, `transfer_info` can get its value from a pre-configured [
 --transfer-info=@preset:_name_here_
 ```
 
-or be specified using the extended value syntax :
+It can also directly use the [Extended Value](#extended-value-syntax) syntax:
 
 ```shell
 --transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"<%=ph :password%>"}'
@@ -3603,7 +3603,7 @@ All parameters necessary for this transfer are described in a [**transfer-spec**
 It is not necessary to provide additional parameters on the command line for a transfer.
 
 It is possible to modify or add any of the supported [**transfer-spec**](#transfer-specification) parameter using the `ts` option.
-The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) containing one or several [**transfer-spec**](#transfer-specification) parameters.
+The `ts` option accepts a `Hash` [Extended Value](#extended-value-syntax) containing one or several [**transfer-spec**](#transfer-specification) parameters.
 Multiple `ts` options on command line are cumulative, and the `Hash` value is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
 
@@ -3688,7 +3688,7 @@ When uploading, downloading or sending files, the user must specify the list of 
 
 By default, the list of files to transfer is simply provided on the command line.
 
-The list of (source) files to transfer is specified by (extended value) option `sources` (default: `@args`).
+The list of (source) files to transfer is specified by ([Extended Value](#extended-value-syntax)) option `sources` (default: `@args`).
 The list is either simply the list of source files, or a combined source/destination list (see below) depending on value of option `src_type` (default: `list`).
 
 In <%=tool%>, all transfer parameters, including file list, are provided to the transfer agent in a [**transfer-spec**](#transfer-specification) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer daemon...).
@@ -3717,14 +3717,14 @@ So, by default, the list of files to transfer will be simply specified on the co
   <%=cmd%> server upload --sources=@args --src-type=list ~/mysample.file secondfile
   ```
 
-- An [Extended Value](#extended-value-syntax) with type **Array of String**
+- An [Extended Value](#extended-value-syntax) with type **`Array` of `String`**
 
 > [!TIP]
-> Extended values can be tested with the command `config echo`
+> An [Extended Value](#extended-value-syntax) can be tested with the command `config echo`
 
   Examples:
 
-- Using extended value
+- Using [Extended Value](#extended-value-syntax)
 
     Create the file list:
 
@@ -4320,7 +4320,7 @@ Examples:
 ### Bulk creation and deletion of resources
 
 Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
-In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value Syntax](#extended-value-syntax).
+In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value](#extended-value-syntax) syntax.
 This option is available only for some resources: if you need it: try and see if the entities you try to create or delete support this option.
 
 ### Option: `query`
@@ -4585,13 +4585,13 @@ $var="v"
 <%=cmd%> config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
 ```
 
-#### Extended Values (JSON, Ruby, ...)
+#### Extended Value (JSON, Ruby, ...)
 
-Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
-Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
+Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Value](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string, or the [dot-path](#dot-path-notation).
 JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
-#### Using a shell variable, parsed by shell, in an extended value
+#### Using a shell variable, parsed by shell, in an Extended Value
 
 To be evaluated by shell, the shell variable must not be in single quotes.
 Even if the variable contains spaces it results only in one argument for <%=tool%> because word parsing is made before variable expansion by shell.
@@ -4640,11 +4640,11 @@ Both shell and JSON syntax allow protecting `"`, but only the shell allows prote
 Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
 But as `\` is also shell special, then it is protected by another `\`.
   
-#### Shell and JSON or Ruby special characters in extended value
+#### Shell and JSON or Ruby special characters in Extended Value
 
 Construction of values with special characters is done like this:
 
-- First select a syntax to represent the extended value, e.g. JSON or Ruby
+- First select a syntax to represent the [Extended Value](#extended-value-syntax), e.g. JSON or Ruby
 
 - Write the expression using this syntax, for example, using JSON:
 
@@ -5083,7 +5083,7 @@ The command `aoc admin <%=ph :type%> list` lists all entities of given type.
 It uses paging and multiple requests if necessary.
 
 The option `query` can be optionally used.
-It expects a `Hash` using [Extended Value Syntax](#extended-value-syntax), generally provided using: `--query=@json:{...}`.
+It expects a `Hash` using [Extended Value](#extended-value-syntax) syntax, generally provided using: `--query=@json:{...}`.
 Values are directly sent to the API call and used as a filter on server side.
 
 The following parameters are supported:
@@ -5104,7 +5104,7 @@ The following parameters are supported:
 > `page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000.
 (AoC allows a maximum page size of 1000).
 > Other parameters depend on the type of resource (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
-> Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
+> See the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
 > [!TIP]
 > The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).
@@ -5242,7 +5242,7 @@ The period is `[date of previous execution]..[now]`.
 
 #### Using ATS
 
-Refer to section **Examples** of [ATS](#plugin-ats-ibm-aspera-transfer-service) and substitute command `ats` with `aoc admin ats`.
+See the section **Examples** of [ATS](#plugin-ats-ibm-aspera-transfer-service) and substitute command `ats` with `aoc admin ats`.
 
 #### Files with type `link`
 
@@ -5691,7 +5691,7 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 
 Source files are provided as a list with the `sources` option.
 By default, simply the list of files on the command line.
-Refer to section [File list](#list-of-files-for-transfers).
+See [File list](#list-of-files-for-transfers).
 
 ### Packages app
 
@@ -5706,7 +5706,7 @@ General syntax:
 ```
 
 Package creation parameter are sent as **Command Parameter**.
-Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
+See the AoC package creation API, or display an existing package in JSON to list attributes.
 
 List allowed shared inbox destinations with:
 
@@ -6219,7 +6219,7 @@ Finally, list all shared folders, as permissions:
 ```
 
 > [!NOTE]
-> Refer to Node API: `GET /permissions` for all `query` options.
+> See Node API: `GET /permissions` for all `query` options.
 > The folder identifier is left empty `%id:`, to apply to all folders.
 
 #### Cross Organization transfers
@@ -6280,7 +6280,7 @@ ATS is usable either :
 
 > [!NOTE]
 > If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
-> Refer to the AoC section instead.
+> See the AoC section instead.
 
 This section is about using ATS with an IBM cloud subscription.
 
@@ -6356,7 +6356,7 @@ Execute:
 
 ### ATS Access key creation parameters
 
-When creating an ATS access key, the option `params` must contain an extended value with the creation parameters.
+When creating an ATS access key, the option `params` must contain an [Extended Value](#extended-value-syntax) with the creation parameters.
 Those are directly the parameters expected by the [ATS API](https://developer.ibm.com/apis/catalog?search=%22Aspera%20ATS%20API%22).
 
 ### Misc. Examples
@@ -6600,7 +6600,7 @@ It recursively scans storage to find files and folders matching the criteria and
 
 - Optional (default): All files and folders are selected
 - Type `String`: The expression is similar to shell globbing; refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
-- Type `Proc` : The expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
+- Type `Proc` : The expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. See the following examples.
 
 Examples of expressions:
 
@@ -6879,14 +6879,14 @@ They way to create access keys depend slightly on the type of HSTS:
 
 - If a self-managed Aspera node is used, then a **node user admin** must be created:
   It has no `docroot` but has at least one file restriction (for testing, one can use `*` to accept creation of an access key with any storage root path).
-  Refer to the Aspera HSTS documentation.
+  See the Aspera HSTS documentation.
 
 - If Cloud Pak for integration is used, then the node admin is created automatically.
 
 - If Aspera on Cloud or ATS is used, then the SaaS API for access key creation is used.
 
 > [!NOTE]
-> Refer to [HSTS manual](https://www.ibm.com/docs/en/ahts): `Access key authentication` section for more details on access key creation.
+> See [HSTS manual](https://www.ibm.com/docs/en/ahts): `Access key authentication` section for more details on access key creation.
 
 In the next sections, we will assume that an access key has been created and that <%=tool%> is configured to use this access key by default using `node`.
 
@@ -6905,7 +6905,7 @@ my_private_pem=./myorgkey.pem
 > [!NOTE]
 > This private key is not used for authentication.
 > It is used to sign bearer tokens.
-> Refer to section [private key](#private-key) for more details on generation.
+> See [private key](#private-key) for more details on generation.
 
 The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<%=ph :id%>`):
 
@@ -6959,7 +6959,7 @@ Alternatively, use the following equivalent command, as <%=tool%> kindly extract
 
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
-> Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
+> See the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
 > Code for token generation is provided in [`lib/aspera/api/node.rb`](<%=link_repo('lib/aspera/api/node.rb')%>)
 
 #### Bearer token: User side
@@ -7214,7 +7214,7 @@ Use this token as password and use `--auth=boot`.
 <%=include_commands_for_plugin(:faspex5)%>
 
 Most commands correspond directly to REST API calls.
-Parameters to commands are carried through option `query`, as extended value, for `list`, or through **Command Parameter** for creation.
+Parameters to commands are carried through option `query`, as [Extended Value](#extended-value-syntax), for `list`, or through **Command Parameter** for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > [!TIP]
@@ -7253,7 +7253,7 @@ Use the following command to send a package:
 ```
 
 The `Hash` passed as a command parameter corresponds to the Faspex 5 API endpoint [`POST /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#createPackageRecord).
-Refer to the API reference for a full list of supported fields, or inspect such request when interacting with a browser.
+See the API reference for a full list of supported fields, or inspect such request when interacting with a browser.
 
 The following fields are required:
 
@@ -7329,7 +7329,7 @@ To limit automatic contact lookup to one or more specific types, include the `re
 #### Content Protection (Encryption at Rest)
 
 To enable content protection (CSEAR), set parameter `ear_enabled` to `true` in the package creation payload.
-Refer to the Faspex package creation API for full details.
+See the Faspex package creation API for full details.
 
 The following error is returned by Faspex, if CSEAR was not specified in the package creation and if it is configured as mandatory on the server:
 
@@ -7340,7 +7340,7 @@ the provided encryption value (no) does not match the expected server side encry
 #### Package with metadata
 
 To attach metadata to a package, include the `metadata` field in the package creation payload.
-Refer to the API documentation.
+See the API documentation.
 Each key corresponds to a metadata field name, and its value is the metadata value:
 
 ```json
@@ -7358,7 +7358,7 @@ Option `query` can be used to filter the list of packages, based on native API p
 | `offset`| Native  | Managed by <%=tool%>: Offset of first package.<%=br%>Default: `0` |
 | `limit` | Native  | Managed by <%=tool%>: # of packages per API call.<%=br%>Default: `100` |
 | `q`     | Native  | General search string, case-insensitive.<%=br%>Matches if value is contained in one of several fields. |
-| ...     | Native  | Other native parameters are supported.<%=br%>Refer to API documentation. |
+| ...     | Native  | Other native parameters are supported.<%=br%>See API documentation. |
 | `max`   | Special | Maximum number of **items** to retrieve<%=br%>Stop pages when the maximum is passed. |
 | `pmax`  | Special | Maximum number of **pages** to request.<%=br%>Stop pages when the maximum is passed. |
 
@@ -7393,7 +7393,7 @@ Option `query` is available with parameters supported by the API and <%=tool%> :
 | `paging`  | <%=tool%>    | `true`            | Use paging API.                         |
 | `recursive`| <%=tool%>   | `false`           | List inside folders.                    |
 | `max`     | <%=tool%>    | -                 | Maximum number of items.                |
-| `filter`  | API          | `{"basenames":[]}`| Refer to API doc.                       |
+| `filter`  | API          | `{"basenames":[]}`| See API doc.                       |
 | `offset`  | API (legacy) | `0`               | Index of first item.                    |
 | `limit`   | API (legacy) | `500`             | Number of items in one API call result. |
 | `per_page`| API (paging) | `500`             | Number of items in one API call result. |
@@ -7409,7 +7409,7 @@ Optionally, provide a folder path.
 ### Faspex 5: Receive a package
 
 To receive one, or several packages at once, use command `faspex5 packages receive`.
-Provide either a single package ID, or an extended value `Array` of package IDs, e.g. `@list:,1,2,3` as argument.
+Provide either a single package ID, or an [Extended Value](#extended-value-syntax) `Array` of package IDs, e.g. `@list:,1,2,3` as argument.
 
 The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
 i.e., options `box` and `query`, as well as last **Command Parameter** `Proc` (filter).
@@ -7590,7 +7590,7 @@ It is invoked like this:
 <%=cmd%> faspex5 postprocessing
 ```
 
-An optional positional parameter can be provided as extended value `Hash`:
+An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
 | Parameter         | Type      | Default | Description                                       |
 |-------------------|-----------|-------|-----------------------------------------------------|
@@ -7761,7 +7761,7 @@ Additional optional parameters in mandatory option `delivery_info`:
 It is possible to send from a remote source using option `remote_source`, providing either the numerical ID, or the name of the remote source using percent selector: `%name:<%=ph :name%>`.
 
 Remote source can be browsed if option `storage` is provided.
-`storage` is a `Hash` extended value.
+`storage` is a `Hash` [Extended Value](#extended-value-syntax).
 The key is the storage name, as listed in `source list` command.
 The value is a `Hash` with the following keys:
 
@@ -7824,7 +7824,7 @@ The node configuration name is `my_faspex_node` here.
 ### Automated package download (cargo)
 
 It is possible to tell <%=tool%> to download newly received packages, much like the official cargo client, or drive.
-Refer to the [same section](#receive-new-packages-only-cargo) in the Aspera on Cloud plugin:
+See the [same section](#receive-new-packages-only-cargo) in the Aspera on Cloud plugin:
 
 ```shell
 <%=cmd%> faspex packages recv ALL --once-only=yes --lock-port=12345
@@ -8297,7 +8297,7 @@ The option `folder_reset_cache` forces the node service to refresh folder conten
 
 When scanning the option `query` has the same behavior as for the `node access_keys do self find` command.
 
-Refer to that section for details.
+See the following section for details.
 
 ### Preview File types
 
@@ -8422,13 +8422,13 @@ The corresponding path on the opposite side is provided using the `to_folder` op
 <%=cmd%> ... sync <%=ph :direction%> <%=ph :path%> [--to-folder=<%=ph :path%>] [<%=ph :sync_info%>]
 ```
 
-| Direction<%=br%>(parameter) | Path<%=br%>(parameter)   | `to_folder`<%=br%>(option) |
+| <%=ph :direction%><%=br%>(parameter) | <%=ph :path%><%=br%>(parameter)   | `to_folder`<%=br%>(option) |
 |-----------|--------|-------------|
 | `push`    | Local  | Remote      |
 | `bidi`    | Local  | Remote      |
 | `pull`    | Remote | Local       |
 
-An optional positional `Hash` argument (`sync_info`) may be provided.
+An optional positional `Hash` argument (`<%=ph :sync_info%>`) may be provided.
 It can be expressed in one of two formats:
 
 - `conf` format (recommended)
@@ -8440,7 +8440,7 @@ A single sync session must use **one format exclusively**.
 
 - If argument `<%=ph :sync_info%>` is provided, the format is inferred:
 
-  - If the Hash contains `sessions` or `instance`, the `args` is used
+  - If the `Hash` contains either key `sessions` or `instance`, the `args` format is used.
   - Otherwise, the `conf` format is used.
 
 ##### `sync_info`: `conf` format
@@ -8578,7 +8578,7 @@ Virtually any transfer on a **repository** on a regular basis might emulate a ho
 ##### Scheduling
 
 Once <%=tool%> command line arguments are defined, run the command using the OS native scheduler, e.g. every minute, or 5 minutes, etc.
-Refer to section [Scheduler](#scheduler).
+See [Scheduler](#scheduler).
 (on use of option `lock_port`)
 
 #### Example: Upload hot folder
@@ -8651,7 +8651,7 @@ OK - [transfer:ok]
 <%=tool%> can send email, for that setup SMTP configuration.
 This is done with option `smtp`.
 
-The `smtp` option is a `Hash` (extended value) with the following fields:
+The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
 | Field        | Default            | Example          | Description                      |
@@ -8868,7 +8868,7 @@ If Ruby was installed as a Linux Packages, then also install Ruby development pa
 There are a few aspects concerning ED25519 keys.
 
 By default, the `aspera-cli` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of <%=tool%>, especially when using JRuby.
-Refer to [this](https://github.com/net-ssh/net-ssh/issues/565).
+See [this](https://github.com/net-ssh/net-ssh/issues/565).
 If you want to use `ed25519` keys, then install the required gems:
 
 ```shell
@@ -8923,7 +8923,7 @@ Workaround: Install an older version of `transferd`:
 <%=cmd%> config transferd install 1.1.2
 ```
 
-Refer to: [Binary](#single-file-executable)
+See [Binary](#single-file-executable)
 
 ### Error: Cannot rename partial file
 
@@ -8931,10 +8931,10 @@ This is an error coming from `ascp` when it is configured to use a partial file 
 
 This often happens when two transfers start in parallel for the same file:
 
-- session 1 starts for file1, it creates file: file1.partial and fills it
-- session 2 starts for file1 (same), it creates file: file1.partial and fills it
-- session 1 finishes, and renames file1.partial to file1
-- session 2 finishes, and tries to rename file1.partial to file1, but it fails as it does not exist anymore...
+- Session 1 starts for file1, it creates file: file1.partial and fills it.
+- Session 2 starts for file1 (same), it creates file: file1.partial and fills it.
+- Session 1 finishes, and renames file1.partial to file1.
+- Session 2 finishes, and tries to rename file1.partial to file1, but it fails as it does not exist anymore...
 
 By default, <%=tool%> creates a config file:`~/.aspera/sdk/aspera.conf` like this:
 
