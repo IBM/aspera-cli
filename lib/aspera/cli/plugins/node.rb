@@ -479,7 +479,7 @@ module Aspera
         # Allows to specify a file by its path or by its id on the node in command line
         # @return [NodeFileId] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
-          file_path = instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
+          file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
             # Directly return result for method
             return Api::NodeFileId.new(@api_node, value)
@@ -571,7 +571,7 @@ module Aspera
             return Main.result_status("renamed to #{newname}")
           when :delete
             return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
-              apifid = if (m = Base.percent_selector(l_path))
+              apifid = if (m = Manager.percent_selector(l_path))
                 Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
                 Api::NodeFileId.new(@api_node, m[:value])
               else
@@ -621,7 +621,7 @@ module Aspera
             command_perm = options.get_next_command(%i[list show create delete modify])
             case command_perm
             when :modify
-              apifid.node_api.update("permissions/#{instance_identifier}", value_create_modify(command: 'permission modify'))
+              apifid.node_api.update("permissions/#{options.instance_identifier}", value_create_modify(command: 'permission modify'))
               return Main.result_status('Updated')
             when :list
               list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
@@ -631,7 +631,7 @@ module Aspera
               items = apifid.node_api.read_with_pages('permissions', list_query)
               return Main.result_object_list(items)
             when :show
-              return Main.result_single_object(apifid.node_api.read("permissions/#{instance_identifier}"))
+              return Main.result_single_object(apifid.node_api.read("permissions/#{options.instance_identifier}"))
             when :delete
               return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
                 apifid.node_api.delete("permissions/#{one_id}")
@@ -678,7 +678,7 @@ module Aspera
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
-            async_id = instance_identifier{ |field, value| async_lookup(field, value)}
+            async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
             if async_id.eql?(SpecialValues::ALL)
               raise Cli::BadArgument, 'ALL only for show and delete' unless %i[show delete].include?(command)
               async_ids = @api_node.read('async/list')['sync_ids']
@@ -766,7 +766,7 @@ module Aspera
           res_class_path = 'v3/watchfolders'
           command = options.get_next_command(WATCH_FOLDER_MUL + WATCH_FOLDER_SING)
           if WATCH_FOLDER_SING.include?(command)
-            one_res_id = instance_identifier
+            one_res_id = options.instance_identifier
             one_res_path = "#{res_class_path}/#{one_res_id}"
           end
           # hum, to avoid: Unable to convert 2016_09_14 configuration
@@ -824,7 +824,7 @@ module Aspera
                 items_key: 'ids'
               ){ |field, value| ssync_lookup(field, value)}
             else
-              asyncs_id = instance_identifier{ |field, value| ssync_lookup(field, value)}
+              asyncs_id = options.instance_identifier{ |field, value| ssync_lookup(field, value)}
               if %i[start stop].include?(sync_command)
                 @api_node.call(
                   operation:    'POST',
@@ -896,13 +896,13 @@ module Aspera
               end
               return Main.result_object_list(sessions, fields: %w[id status start_time end_time target_rate_kbps])
             when :cancel
-              @api_node.cancel("ops/transfers/#{instance_identifier}")
+              @api_node.cancel("ops/transfers/#{options.instance_identifier}")
               return Main.result_status('Cancelled')
             when :show
-              resp = @api_node.read("ops/transfers/#{instance_identifier}")
+              resp = @api_node.read("ops/transfers/#{options.instance_identifier}")
               return Main.result_single_object(resp)
             when :modify
-              @api_node.update("ops/transfers/#{instance_identifier}", options.get_next_argument('update value', validation: Hash))
+              @api_node.update("ops/transfers/#{options.instance_identifier}", options.get_next_argument('update value', validation: Hash))
               return Main.result_status('Modified')
             when :bandwidth_average
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
@@ -951,7 +951,7 @@ module Aspera
             end
           when :service
             command = options.get_next_command(%i[list create delete])
-            service_id = instance_identifier if [:delete].include?(command)
+            service_id = options.instance_identifier if [:delete].include?(command)
             case command
             when :list
               resp = @api_node.read('rund/services')

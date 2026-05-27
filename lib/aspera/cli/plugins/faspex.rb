@@ -291,7 +291,7 @@ module Aspera
             command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
             case command_pkg
             when :show
-              delivery_id = instance_identifier
+              delivery_id = options.instance_identifier
               return Main.result_single_object(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
             when :list
               return Main.result_object_list(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
@@ -307,7 +307,7 @@ module Aspera
                 first_source = delivery_info['sources'].first
                 first_source['paths'].concat(transfer.source_list)
                 source_id = options.get_option(:remote_source)
-                if source_id && (m = Base.percent_selector(source_id))
+                if source_id && (m = Manager.percent_selector(source_id))
                   Aspera.assert(m[:field].eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
                   source_list = api_v3.read('source_shares')['items']
                   source_id = self.class.get_source_id_by_name(m[:value], source_list)
@@ -348,7 +348,7 @@ module Aspera
                   )
                 end
                 # get command line parameters
-                delivery_id = instance_identifier
+                delivery_id = options.instance_identifier
                 Aspera.assert(!delivery_id.empty?){'empty id'}
                 recipient = options.get_option(:recipient)
                 if delivery_id.eql?(SpecialValues::ALL)
@@ -441,7 +441,7 @@ module Aspera
             when :list
               return Main.result_object_list(source_list)
             else # :info :node
-              source_id = instance_identifier do |field, value|
+              source_id = options.instance_identifier do |field, value|
                 Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
@@ -506,7 +506,7 @@ module Aspera
               return entity_execute(api: api_v4, entity: 'metadata_profiles')
             when :package
               pkg_box_type = options.get_next_command([:users])
-              pkg_box_id = instance_identifier
+              pkg_box_id = options.instance_identifier
               return entity_execute(api: api_v4, entity: "#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book

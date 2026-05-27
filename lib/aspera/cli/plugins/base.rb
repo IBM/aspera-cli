@@ -24,15 +24,6 @@ module Aspera
             options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
             options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
           end
-
-          # @return [Hash,NilClass] `{field:,value:}` if identifier is a percent selector, else `nil`
-          def percent_selector(identifier)
-            Aspera.assert_type(identifier, String)
-            if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
-              return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
-            end
-            return
-          end
         end
 
         def initialize(context:)
@@ -65,21 +56,6 @@ module Aspera
           options.parser.separator('OPTIONS:') if has_options
         end
 
-        # Resource identifier as positional parameter
-        #
-        # @param description [String] description of the identifier
-        # @param block       [Proc] block to search for identifier based on attribute value
-        # @return   [String, Array] identifier or list of ids
-        def instance_identifier(description: 'identifier', &block)
-          res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
-          # Can be an Array
-          if res_id.is_a?(String) && (m = Base.percent_selector(res_id))
-            Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
-            res_id = yield(m[:field], m[:value])
-          end
-          return res_id
-        end
-
         # For create and delete operations: execute one action or multiple if bulk is yes
         # @param command   [Symbol] Operation: :create, :delete, ...
         # @param descr     [String] Description of the value
@@ -92,7 +68,7 @@ module Aspera
           is_bulk = options.get_option(:bulk)
           case values
           when :identifier
-            values = instance_identifier(description: descr)
+            values = options.instance_identifier(description: descr)
           when Class
             values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk)
           end
@@ -155,7 +131,7 @@ module Aspera
           if is_singleton
             one_res_path = entity
           elsif Operations::INSTANCE.include?(command)
-            one_res_id = instance_identifier(&block)
+            one_res_id = options.instance_identifier(&block)
             one_res_path = "#{entity}/#{one_res_id}"
             one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg
           end
@@ -251,10 +227,6 @@ module Aspera
           end
           return value
         end
-
-        # Percent selector: select by this field for this value
-        REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
-        private_constant :REGEX_LOOKUP_ID_BY_FIELD
       end
     end
   end

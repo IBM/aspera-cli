@@ -77,13 +77,13 @@ def convert_img_for_pandoc(content)
     src = attrs[/src=["']([^"']*)["']/, 1]
     alt = attrs[/alt=["']([^"']*)["']/, 1] || ''
     # Try width/height from style= first, then plain attributes
-    style = attrs[/style=["']([^"']*)["']/, 1] || ''
-    pandoc_attrs = {}
-    ATTRS.each do |attr|
-      pandoc_attrs[attr] = style[/#{attr}\s*:\s*([\d.]+\w*)/, 1] || attrs[/#{attr}=["']?([\d.]+\w*)["']?/, 1]
-    end
-    pandoc_attrs.compact!
-    pandoc_attrs.empty? ? '' : "{ #{pandoc_attrs.map{ |k, v| "#{k}=#{v}"}.join(' ')} }"
+    # style = attrs[/style=["']([^"']*)["']/, 1] || ''
+    # pandoc_attrs = {}
+    # ATTRS.each do |attr|
+    #  pandoc_attrs[attr] = style[/#{attr}\s*:\s*([\d.]+\w*)/, 1] || attrs[/#{attr}=["']?([\d.]+\w*)["']?/, 1]
+    # end
+    # pandoc_attrs.compact!
+    # pandoc_attrs.empty? ? '' : "{ #{pandoc_attrs.map{ |k, v| "#{k}=#{v}"}.join(' ')} }"
     "![#{alt}](#{src})"
   end
 end

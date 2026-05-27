@@ -146,7 +146,7 @@ module Aspera
                   &lookup_share
                 )
               when :user_permissions, :group_permissions
-                share_id = instance_identifier(&lookup_share)
+                share_id = options.instance_identifier(&lookup_share)
                 return entity_execute(api: api_shares_admin, entity: "data/shares/#{share_id}/#{share_command}")
               end
             when :transfer_settings
@@ -192,7 +192,7 @@ module Aspera
                   &lookup_block
                 )
               when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
-                group_id = instance_identifier(&lookup_block)
+                group_id = options.instance_identifier(&lookup_block)
                 entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
                 return entity_execute(api: api_shares_admin, entity: entities_path, is_singleton: !entity_verb.eql?(:share_permissions), &lookup_share)
               when :import # saml
@@ -210,7 +210,7 @@ module Aspera
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})
                 end
               when :users # group
-                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{instance_identifier(&lookup_block)}/#{entities_prefix}users")
+                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{options.instance_identifier(&lookup_block)}/#{entities_prefix}users")
               else Aspera.error_unexpected_value(entity_verb)
               end
             end

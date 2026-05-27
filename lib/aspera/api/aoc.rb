@@ -96,7 +96,9 @@ module Aspera
       # Various API scopes supported
       module Scope
         SELF = 'self'
+        # Scope `user:all`
         USER = 'user:all'
+        # Scope `admin:all`
         ADMIN = 'admin:all'
         ADMIN_USER = 'admin-user:all'
         ADMIN_USER_USER = "#{ADMIN_USER}+#{USER}"
@@ -263,19 +265,20 @@ module Aspera
       attr_reader :private_link
 
       def initialize(
+        workspace: nil,
+        scope: nil,
+        subpath: API_V1,
+        secret_finder: nil,
+        # below: OAuth::AUTH_OPTIONS
         url:,
         auth:,
-        subpath: API_V1,
         client_id: nil,
         client_secret: nil,
-        scope: nil,
         redirect_uri: nil,
         private_key: nil,
         passphrase: nil,
         username: nil,
-        password: nil,
-        workspace: nil,
-        secret_finder: nil
+        password: nil
       )
         # Test here because link may set url
         Aspera.assert(url, 'Missing mandatory option: url', type: ParameterError)

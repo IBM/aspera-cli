@@ -204,6 +204,15 @@ module Aspera
         def option_name_to_line(name)
           return "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
+
+        # @return [Hash,nil] `{field:,value:}` if identifier is a percent selector, else `nil`
+        def percent_selector(identifier)
+          Aspera.assert_type(identifier, String)
+          if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
+            return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
+          end
+          nil
+        end
       end
 
       attr_reader :parser
@@ -388,6 +397,21 @@ module Aspera
           end
         end
         return result
+      end
+
+      # Resource identifier as positional parameter
+      #
+      # @param description [String] description of the identifier
+      # @param block       [Proc] block to search for identifier based on attribute value
+      # @return   [String, Array] identifier or list of ids
+      def instance_identifier(description: 'identifier', &block)
+        res_id = get_next_argument(description, multiple: get_option(:bulk)) if res_id.nil?
+        # Can be an Array
+        if res_id.is_a?(String) && (m = Manager.percent_selector(res_id))
+          Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
+          res_id = yield(m[:field], m[:value])
+        end
+        return res_id
       end
 
       def get_next_command(command_list, aliases: nil); return get_next_argument('command', accept_list: command_list, aliases: aliases); end
@@ -678,8 +702,10 @@ module Aspera
       # when this is alone, this stops option processing
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
+      # Percent selector: select by this field for this value
+      REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
 
-      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER
+      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD
     end
   end
 end

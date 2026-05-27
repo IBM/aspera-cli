@@ -217,22 +217,24 @@ module Aspera
         # Change API scope for subsequent calls, re-instantiate API object
         # @param new_scope [String] New scope
         def change_api_scope(new_scope)
+          # Discard cache
           @cache_api_aoc = nil
           @scope = new_scope
+          nil
         end
 
         # Create an API object with the options from CLI, but with a different subpath
-        # @param aoc_base_path [String] New subpath
+        # @param base_path [String] Base path for APIs.
         # @return [Api::AoC] API object for AoC (is Rest)
-        def api_from_options(aoc_base_path)
-          # Get all kw args from options, take defaults from `defaults`, add the remaining
-          return Api::AoC.new(**Oauth.args_from_options(
-            options,
-            defaults:      {workspace: nil},
+        def api_from_options(base_path)
+          # Get all existing OAuth kwargs from `options`.
+          return Api::AoC.new(
+            workspace: nil,
             scope:         @scope,
-            subpath:       aoc_base_path,
-            secret_finder: config
-          ))
+            subpath:       base_path,
+            secret_finder: config,
+            **Oauth.kwargs_from_options(options)
+          )
         end
 
         # AoC Rest object
@@ -274,7 +276,7 @@ module Aspera
         # @param resource_class_path url path for resource
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
-          return instance_identifier do |field, value|
+          return options.instance_identifier do |field, value|
             Aspera.assert(field.eql?('name'), type: BadArgument){'only selection by name is supported'}
             aoc_api.lookup_with_q(resource_class_path, value: value)['id']
           end
@@ -494,7 +496,7 @@ module Aspera
             when :list
               return Main.result_object_list(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
             when :member
-              shared_folder_id = instance_identifier
+              shared_folder_id = options.instance_identifier
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
               Aspera.assert(shared_folder)
               command_shared_member = options.get_next_command(%i[list])
@@ -563,7 +565,7 @@ module Aspera
             resource_path = 'admin/apps_new'
             if Operations::SINGLETON.include?(command_app_instances)
               app_type = options.get_next_command(all_app_types)
-              resource_path = "#{resource_path}/#{app_type}/#{instance_identifier(description: "#{app_type} identifier")}"
+              resource_path = "#{resource_path}/#{app_type}/#{options.instance_identifier(description: "#{app_type} identifier")}"
             end
             case command_app_instances
             when :list
@@ -577,7 +579,7 @@ module Aspera
           when :membership
             resource_path = 'apps/app_memberships'
             command_app_member = options.get_next_command(%i[create list show delete])
-            resource_path = "#{resource_path}/#{instance_identifier(description: 'membership id')}" unless Operations::GLOBAL.include?(command_app_member)
+            resource_path = "#{resource_path}/#{options.instance_identifier(description: 'membership id')}" unless Operations::GLOBAL.include?(command_app_member)
             case command_app_member
             when :list
               return result_list(resource_path)
@@ -785,7 +787,7 @@ module Aspera
             when :files
               event_type = command_analytics.to_s
               event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-              event_resource_id = instance_identifier(description: "#{event_resource_type} identifier")
+              event_resource_id = options.instance_identifier(description: "#{event_resource_type} identifier")
               event_resource_id =
                 case event_resource_type
                 when :organizations then aoc_api.current_user_info['organization_id']
@@ -793,7 +795,7 @@ module Aspera
                 when :nodes then aoc_api.current_user_info['read_only_home_node_id']
                 else Aspera.error_unreachable_line
                 end if event_resource_id.empty?
-              event_uuid = instance_identifier(description: 'event uuid')
+              event_uuid = options.instance_identifier(description: 'event uuid')
               filter = query_read_delete(default: {})
               filter['limit'] ||= 100
               events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/#{event_type}", filter)[event_type]
@@ -882,7 +884,7 @@ module Aspera
             short_list = aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact)
             case command
             when :delete
-              one_id = instance_identifier(description: 'short link id')
+              one_id = options.instance_identifier(description: 'short link id')
               if link_type.eql?(:public)
                 found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
                 raise BadIdentifier.new('Short link', one_id) if found.nil?
@@ -896,12 +898,12 @@ module Aspera
             when :list
               return Main.result_object_list(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
             when :show
-              one_id = instance_identifier(description: 'short link id')
+              one_id = options.instance_identifier(description: 'short link id')
               found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
               raise BadIdentifier.new('Short link', one_id) if found.nil?
               return Main.result_single_object(found, fields: Formatter.all_but('data'))
             when :modify
-              one_id = instance_identifier(description: 'short link id')
+              one_id = options.instance_identifier(description: 'short link id')
               node_file = shared_data.slice(:node_id, :file_id)
               modify_payload = {
                 edit_access: true,
@@ -1055,7 +1057,7 @@ module Aspera
                 ids_to_download = aoc_api.public_link['data']['package_id']
               end
               # Get from command line unless it was a public link
-              ids_to_download ||= instance_identifier
+              ids_to_download ||= options.instance_identifier
               skip_ids_persistency = package_persistency
               case ids_to_download
               when SpecialValues::INIT
@@ -1110,7 +1112,7 @@ module Aspera
               end
               return Main.result_transfer_multiple(result_transfer)
             when :show
-              package_id = instance_identifier
+              package_id = options.instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
               return Main.result_single_object(package_info)
             when :list
@@ -1121,17 +1123,17 @@ module Aspera
               display_fields += ['workspace_id'] if aoc_api.workspace[:id].nil?
               return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
             when :delete
-              return do_bulk_operation(command: package_command, values: instance_identifier) do |package_id|
+              return do_bulk_operation(command: package_command, values: options.instance_identifier) do |package_id|
                 Aspera.assert_type(package_id, String, Integer){'identifier'}
                 aoc_api.delete("packages/#{package_id}")
               end
             when :modify
-              package_id = instance_identifier
+              package_id = options.instance_identifier
               package_data = value_create_modify(command: package_command)
               aoc_api.update("packages/#{package_id}", package_data)
               return Main.result_status('modified')
             when *Node::NODE4_READ_ACTIONS
-              package_id = instance_identifier
+              package_id = options.instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
               return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
             end
@@ -1204,12 +1206,12 @@ module Aspera
                   command: wf_command
                 )
               when :launch
-                wf_id = instance_identifier
+                wf_id = options.instance_identifier
                 data = automation_api.create("workflows/#{wf_id}/launch", {})
                 return Main.result_single_object(data)
               when :action
                 # TODO: not complete
-                wf_id = instance_identifier
+                wf_id = options.instance_identifier
                 wf_action_cmd = options.get_next_command(%i[list create show])
                 Log.log.warn{"Not implemented: #{wf_action_cmd}"}
                 step = automation_api.create('steps', {'workflow_id' => wf_id})

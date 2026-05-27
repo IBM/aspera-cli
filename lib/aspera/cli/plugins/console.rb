@@ -130,15 +130,15 @@ module Aspera
                   fields: %w[id contact name status]
                 )
               when :show
-                transfer_id = instance_identifier(description: 'transfer ID')
+                transfer_id = options.instance_identifier(description: 'transfer ID')
                 return Main.result_single_object(api_console.read("transfers/#{transfer_id}"))
               when :files
-                transfer_id = instance_identifier(description: 'transfer ID')
+                transfer_id = options.instance_identifier(description: 'transfer ID')
                 query = query_read_delete(default: {})
                 query['limit'] ||= 100
                 return Main.result_object_list(api_console.read("transfers/#{transfer_id}/files", query))
               when :start, :pause, :cancel, :resume, :rerun, :change_rate, :change_policy, :move_forwards, :move_back
-                transfer_id = instance_identifier(description: 'transfer ID')
+                transfer_id = options.instance_identifier(description: 'transfer ID')
                 return Main.result_single_object(api_console.update("transfers/#{transfer_id}/#{command}", query_read_delete))
               end
             end

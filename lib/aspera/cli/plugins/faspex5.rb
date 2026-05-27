@@ -299,7 +299,7 @@ module Aspera
             return Main.result_transfer(transfer.start(transfer_spec))
           else
             # send from remote shared folder
-            if (m = Base.percent_selector(shared_folder))
+            if (m = Manager.percent_selector(shared_folder))
               shared_folder = @api_v5.lookup_entity_by_field(
                 entity: 'shared_folders',
                 field: m[:field],
@@ -378,7 +378,7 @@ module Aspera
           command = options.get_next_command(%i[show browse status delete receive send list])
           package_id =
             if %i[receive show browse status delete].include?(command)
-              @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : instance_identifier
+              @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
             end
           case command
           when :show
@@ -439,7 +439,7 @@ module Aspera
             available_commands += [:reset_password]
           when :oauth_clients
             exec_args[:display_fields] = Formatter.all_but('public_key')
-            exec_args[:api] = Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.args_from_options(options))
+            exec_args[:api] = Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))
             exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           when :shared_inboxes, :workgroups
             available_commands += %i[members saml_groups invite_external_collaborator]
@@ -461,7 +461,7 @@ module Aspera
             return Main.result_object_list(data, total: total, fields: exec_args[:display_fields])
           when :shared_folders
             # nodes
-            node_id = instance_identifier do |field, value|
+            node_id = options.instance_identifier do |field, value|
               @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
             end
             shfld_entity = "nodes/#{node_id}/shared_folders"
@@ -476,7 +476,7 @@ module Aspera
                        @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
                      end
             when :user
-              sh_id = instance_identifier do |field, value|
+              sh_id = options.instance_identifier do |field, value|
                 @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
               end
               user_path = "#{shfld_entity}/#{sh_id}/custom_access_users"
@@ -487,13 +487,13 @@ module Aspera
             end
           when :browse
             # nodes
-            node_id = instance_identifier do |field, value|
+            node_id = options.instance_identifier do |field, value|
               @api_v5.lookup_entity_by_field(entity: 'nodes', value: value, field: field)['id']
             end
             return browse_folder("nodes/#{node_id}/browse")
           when :invite_external_collaborator
             # :shared_inboxes, :workgroups
-            shared_inbox_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
+            shared_inbox_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
             creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
             result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
@@ -507,7 +507,7 @@ module Aspera
             return Main.result_single_object(result)
           when :members, :saml_groups
             # res_command := :shared_inboxes, :workgroups
-            res_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
+            res_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             res_path = "#{res_sym}/#{res_id}/#{res_command}"
             list_key = res_command.to_s
             list_key = 'groups' if res_command.eql?(:saml_groups)
@@ -517,7 +517,7 @@ module Aspera
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
-                if (m = Base.percent_selector(user))
+                if (m = Manager.percent_selector(user))
                   @api_v5.lookup_entity_by_field(
                     entity: 'accounts',
                     field: m[:field],
@@ -548,7 +548,7 @@ module Aspera
                    end
           when :reset_password
             # :accounts
-            contact_id = instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
+            contact_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
             @api_v5.create("accounts/#{contact_id}/reset_password", {})
             return Main.result_status('password reset, user shall check email')
           end
@@ -619,7 +619,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           unless %i{postprocessing health}.include?(command)
             # create an API object with the same options, but with a different subpath
-            @api_v5 = Api::Faspex.new(**Oauth.args_from_options(options))
+            @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
             # in case user wants to use HTTPGW tell transfer agent how to get address
             transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
           end
@@ -662,7 +662,7 @@ module Aspera
             when :list
               return Main.result_object_list(all_shared_folders)
             when :browse
-              shared_folder_id = instance_identifier do |field, value|
+              shared_folder_id = options.instance_identifier do |field, value|
                 matches = all_shared_folders.select{ |i| i[field].eql?(value)}
                 raise "no match for #{field} = #{value}" if matches.empty?
                 raise "multiple matches for #{field} = #{value}" if matches.length > 1
@@ -684,7 +684,7 @@ module Aspera
                 @api_v5.create(invitation_endpoint, params)
               end
             when :resend
-              @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend", nil)
+              @api_v5.create("#{invitation_endpoint}/#{options.instance_identifier}/resend", nil)
               return Main.result_status('Invitation resent')
             else
               return entity_execute(

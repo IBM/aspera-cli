@@ -8,21 +8,14 @@ module Aspera
       # base class for applications supporting OAuth 2.0 authentication
       class Oauth < BasicAuth
         class << self
-          # Get command line options specified by `AUTH_OPTIONS` and `defaults.keys` (value is default).
-          # Adds those not `nil` to the `kwargs`.
-          # Instantiate the provided `klass` with those `kwargs`.
-          # `defaults` can specify a default value (not `nil`)
-          # @param options  [Cli::Manager] Object to get command line options.
-          # @param defaults [Hash]  Additional options, key=symbol, value=default value or nil
-          # @param kwargs   [Hash{Symbol => Object}]  Object creation arguments
+          # Get command line `options` specified by `AUTH_OPTIONS`
+          # @param options [Cli::Manager] Object to get command line options.
           # @return [Hash{Symbol => Object}] Options
           # @raise [Cli::Error] if a required option is missing
-          def args_from_options(options, defaults: nil, **kwargs)
-            defaults ||= {}
-            (AUTH_OPTIONS + defaults.keys).each_with_object(kwargs) do |i, m|
+          def kwargs_from_options(options)
+            AUTH_OPTIONS.each_with_object({}) do |i, m|
               v = options.get_option(i)
               m[i] = v unless v.nil?
-              m[i] = defaults[i] if m[i].nil? && !defaults[i].nil?
             end
           rescue ::ArgumentError => e
             if (m = e.message.match(/missing keyword: :(.*)$/))
