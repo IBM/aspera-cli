@@ -205,7 +205,7 @@ module Aspera
           return "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
 
-        # @return [Hash,nil] `{field:,value:}` if identifier is a percent selector, else `nil`
+        # @return [Hash{Symbol => String}, nil] `{field:,value:}` if identifier is a percent selector, else `nil`
         def percent_selector(identifier)
           Aspera.assert_type(identifier, String)
           if (m = identifier.match(REGEX_LOOKUP_ID_BY_FIELD))
