@@ -52,10 +52,8 @@ module Aspera
           'completed'   => true
         }.freeze
         PACKAGE_LIST_DEFAULT_FIELDS = %w[id name created_at files_completed bytes_transferred].freeze
-        # options and parameters for Api::AoC.new
-        OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
 
-        private_constant :REDIRECT_LOCALHOST, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
+        private_constant :REDIRECT_LOCALHOST, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :PACKAGE_LIST_DEFAULT_FIELDS
         class << self
           def application_name
             'Aspera on Cloud'
@@ -227,6 +225,7 @@ module Aspera
         # @param aoc_base_path [String] New subpath
         # @return [Api::AoC] API object for AoC (is Rest)
         def api_from_options(aoc_base_path)
+          # Get all kw args from options, take defaults from `defaults`, add the remaining
           return Api::AoC.new(**Oauth.args_from_options(
             options,
             defaults:      {workspace: nil},
@@ -962,7 +961,7 @@ module Aspera
         def execute_action
           command = options.get_next_command(ACTIONS)
           if %i[files packages].include?(command)
-            default_flag = ' (default)' if options.get_option(:workspace).eql?(:default)
+            default_flag = ' (default)' if options.get_option(:workspace).eql?(Api::AoC::DEFAULT_WORKSPACE)
             formatter.display_status("Workspace: #{aoc_api.workspace[:name].to_s.red}#{default_flag}")
             if !aoc_api.private_link.nil?
               folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']

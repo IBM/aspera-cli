@@ -23,6 +23,7 @@ module Aspera
       # We don't do paging, as anyway, we look for only one match
       matching_items = read(entity, query.merge({'q' => value}))
       # API style: {totalcount:, ...} cspell: disable-line: TODO: is that total_count ?
+      # @type [Array<Hash{String => String}>]
       matching_items = matching_items[entity] if matching_items.is_a?(Hash)
       Aspera.assert_type(matching_items, Array)
       case matching_items.length
@@ -34,7 +35,7 @@ module Aspera
         value_matches = matching_items.select{ |i| i[field].casecmp?(value)}
         case value_matches.length
         when 1 then return value_matches.first
-        when 0 then raise %Q(#{entity}: Multiple case insensitive partial match for: "#{value}": #{matching_items.map{ |i| i[field]}} but no case insensitive full match. Please be more specific or give exact #{field}.)
+        when 0 then raise %Q(#{entity}: Multiple case insensitive partial match for: "#{value}" in #{matching_items.map{ |i| i[field]}.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}.)
         else raise "Two entities cannot have the same case insensitive #{field}: #{value_matches.map{ |i| i[field]}}"
         end
       end

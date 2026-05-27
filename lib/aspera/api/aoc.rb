@@ -57,7 +57,7 @@ module Aspera
         end
       end
       PRODUCT_NAME = 'Aspera on Cloud'
-      # use default workspace if it is set, else none
+      # Use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
       SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
