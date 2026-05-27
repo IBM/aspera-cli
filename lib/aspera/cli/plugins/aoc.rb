@@ -228,13 +228,25 @@ module Aspera
         # @return [Api::AoC] API object for AoC (is Rest)
         def api_from_options(base_path)
           # Get all existing OAuth kwargs from `options`.
-          return Api::AoC.new(
-            workspace: nil,
+          api = Api::AoC.new(
             scope:         @scope,
             subpath:       base_path,
             secret_finder: config,
             **Oauth.kwargs_from_options(options)
           )
+          # User set a workspace ?
+          # @type [String, nil]
+          workspace = options.get_option(:workspace)
+          if !workspace.nil? && (m = Manager.percent_selector(workspace))
+            case m[:field]
+            when 'name' then api.ws_ids[:name] = m[:value]
+            when 'id' then api.ws_ids[:id] = m[:value]
+            else Aspera.error_unexpected_value(m[:field]){'workspace selector: only `name` or `id`'}
+            end
+          else
+            api.ws_ids[:name] = workspace
+          end
+          api
         end
 
         # AoC Rest object
@@ -260,7 +272,7 @@ module Aspera
         #   * `workspace_name` [String] (optional) the name, included if +name+ is true.
         # @note The key type (String or Symbol) depends on the +string+ parameter.
         def workspace_id_hash(hash = nil, string: false, name: false)
-          info = aoc_api.workspace
+          info = aoc_api.workspace_info
           hash = {} if hash.nil?
           fields = %i[id]
           fields.push(:name) if name
@@ -425,7 +437,7 @@ module Aspera
             list_default_fields = %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]
           when :user
             list_default_fields = %w[id name email]
-            supported_operations += %i[preferences]
+            supported_operations += %i[preferences notifications]
           when :workspace
             supported_operations += %i[shared_folder dropbox]
           when :workspace_membership
@@ -443,7 +455,7 @@ module Aspera
             id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
             # TODO: report inconsistency: creation url is !=, and does not return id.
             resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-            workspace_id = aoc_api.workspace[:id] if require_workspace_id
+            workspace_id = aoc_api.workspace_info[:id] if require_workspace_id
             return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
               params['workspace_id'] = workspace_id if require_workspace_id && workspace_id && !params.key?('workspace_id')
               aoc_api.create(resource_class_path, params)
@@ -527,8 +539,8 @@ module Aspera
                 return Main.result_object_list(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
               end
             end
-          when :preferences
-            user_preferences_res = "#{resource_instance_path}/user_interaction_preferences"
+          when :preferences, :notifications
+            user_preferences_res = "#{resource_instance_path}/#{command.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
             case options.get_next_command(%i[show modify])
             when :show
               return Main.result_single_object(aoc_api.read(user_preferences_res))
@@ -559,7 +571,7 @@ module Aspera
               return Main.result_status('modified')
             end
           when :instance
-            list_default_query = {workspace_id: aoc_api.workspace[:id]}
+            list_default_query = {workspace_id: aoc_api.workspace_info[:id]}
             list_default_fields = %w[id app_type available workspace_id]
             command_app_instances = options.get_next_command(%i[list] + Operations::SINGLETON)
             resource_path = 'admin/apps_new'
@@ -765,7 +777,7 @@ module Aspera
                   id: IdGenerator.from_list(
                     'aoc_ana_date',
                     options.get_option(:url, mandatory: true),
-                    aoc_api.workspace[:name],
+                    aoc_api.workspace_info[:name],
                     event_resource_type.to_s,
                     event_resource_id
                   )
@@ -945,7 +957,7 @@ module Aspera
             id: IdGenerator.from_list(
               'aoc_recv',
               options.get_option(:url, mandatory: true),
-              aoc_api.workspace[:id],
+              aoc_api.workspace_info[:id],
               aoc_api.additional_persistence_ids
             )
           )
@@ -963,8 +975,7 @@ module Aspera
         def execute_action
           command = options.get_next_command(ACTIONS)
           if %i[files packages].include?(command)
-            default_flag = ' (default)' if options.get_option(:workspace).eql?(Api::AoC::DEFAULT_WORKSPACE)
-            formatter.display_status("Workspace: #{aoc_api.workspace[:name].to_s.red}#{default_flag}")
+            formatter.display_status("Workspace: #{aoc_api.workspace_info[:name].to_s.red}#{' (default)' if aoc_api.default_workspace?}")
             if !aoc_api.private_link.nil?
               folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']
               formatter.display_status("Private Folder: #{folder_name}")
@@ -985,7 +996,8 @@ module Aspera
           when :tier_restrictions
             return Main.result_single_object(aoc_api.read('tier_restrictions'))
           when :user
-            case options.get_next_command(%i[workspaces profile preferences contacts])
+            user_cmd = options.get_next_command(%i[workspaces profile preferences notifications contacts])
+            case user_cmd
             when :contacts
               return execute_resource_action(:contact)
             # when :settings
@@ -995,7 +1007,7 @@ module Aspera
               when :list
                 return result_list('workspaces', fields: %w[id name])
               when :current
-                return Main.result_single_object(aoc_api.workspace)
+                return Main.result_single_object(aoc_api.workspace_info)
               end
             when :profile
               case options.get_next_command(%i[show modify])
@@ -1005,8 +1017,8 @@ module Aspera
                 aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
               end
-            when :preferences
-              user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/user_interaction_preferences"
+            when :preferences, :notifications
+              user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/#{user_cmd.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
               case options.get_next_command(%i[show modify])
               when :show
                 return Main.result_single_object(aoc_api.read(user_preferences_res))
@@ -1120,7 +1132,7 @@ module Aspera
               skip_ids_persistency = package_persistency
               reject_packages_from_persistency(result[:items], skip_ids_persistency)
               display_fields = PACKAGE_LIST_DEFAULT_FIELDS
-              display_fields += ['workspace_id'] if aoc_api.workspace[:id].nil?
+              display_fields += ['workspace_id'] if aoc_api.workspace_info[:id].nil?
               return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
             when :delete
               return do_bulk_operation(command: package_command, values: options.instance_identifier) do |package_id|
@@ -1230,7 +1242,7 @@ module Aspera
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
             Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
-            server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace[:id])
+            server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
             server.start
             return Main.result_status('Gateway terminated')
           else Aspera.error_unreachable_line

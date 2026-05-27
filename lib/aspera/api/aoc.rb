@@ -57,7 +57,7 @@ module Aspera
         end
       end
       PRODUCT_NAME = 'Aspera on Cloud'
-      # Use default workspace if it is set, else none
+      # `''` Use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
       SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
@@ -134,8 +134,9 @@ module Aspera
           false
         end
 
+        # Get information from link
         # @param url [String] URL of AoC public link
-        # @return [Hash] information about public link, or nil if not a public link
+        # @return [Hash{Symbol => String, Hash}] Information about public link, or nil if not a public link
         def link_info(url)
           final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET', ret: :resp).uri
           Log.dump(:final_uri, final_uri, level: :trace1)
@@ -263,9 +264,10 @@ module Aspera
       end
 
       attr_reader :private_link
+      attr_accessor :ws_ids
 
+      # By default: no workspace
       def initialize(
-        workspace: nil,
         scope: nil,
         subpath: API_V1,
         secret_finder: nil,
@@ -289,10 +291,12 @@ module Aspera
         # key: access key
         # value: associated secret
         @secret_finder = secret_finder
-        @workspace_name = workspace
         @cache_user_info = nil
         @cache_url_token_info = nil
+        # @type [Hash]
         @workspace_info = nil
+        # Used only for init: provided by user
+        @ws_ids = {id: nil, name: nil}
         @home_info = nil
         auth_params = {
           type:   :oauth2,
@@ -393,37 +397,38 @@ module Aspera
         return @cache_user_info
       end
 
+      def default_workspace?
+        @ws_ids[:name].eql?(DEFAULT_WORKSPACE)
+      end
+
       # Cached workspace information.
       # Always with `:name`.
       # If no workspace, then no `:id`
-      # @return [Hash] Workspace info.
-      def workspace
+      # @return [Hash{Symbol=>String}] Workspace info.
+      def workspace_info
         return @workspace_info unless @workspace_info.nil?
-        ws_id =
-          if !public_link.nil?
-            Log.log.debug('Using workspace of public link')
-            public_link['data']['workspace_id']
-          elsif !private_link.nil?
-            Log.log.debug('Using workspace of private link')
-            private_link[:workspace_id]
-          elsif @workspace_name.eql?(DEFAULT_WORKSPACE)
-            if !current_user_info['default_workspace_id'].nil?
-              Log.log.debug('Using default workspace'.green)
-              current_user_info['default_workspace_id']
-            end
-          elsif @workspace_name.nil?
-            nil
+        if !public_link.nil?
+          Log.log.debug('Using workspace of public link')
+          @ws_ids[:id] = public_link['data']['workspace_id']
+        elsif !private_link.nil?
+          Log.log.debug('Using workspace of private link')
+          @ws_ids[:id] = private_link[:workspace_id]
+        elsif @ws_ids[:id]
+          Log.log.debug("Using workspace id: #{@ws_ids[:id]}")
+        elsif default_workspace?
+          if current_user_info['default_workspace_id'].nil?
+            @ws_ids[:name] = nil
+            Log.log.warn('No default workspace')
           else
-            lookup_with_q('workspaces', value: @workspace_name)['id']
+            Log.log.debug('Using default workspace'.green)
+            @ws_ids[:id] = current_user_info['default_workspace_id']
           end
-        @workspace_info =
-          if ws_id.nil?
-            {
-              name: 'Shared (no workspace)'
-            }
-          else
-            read("workspaces/#{ws_id}").slice('name', 'id', 'home_node_id', 'home_file_id').symbolize_keys
-          end
+        elsif !@ws_ids[:name].nil?
+          @workspace_info = lookup_with_q('workspaces', value: @ws_ids[:name])
+        end
+        @workspace_info = read("workspaces/#{@ws_ids[:id]}") unless @ws_ids[:id].nil?
+        @workspace_info ||= {name: 'Shared (no workspace)'}
+        @workspace_info = @workspace_info.slice('name', 'id', 'home_node_id', 'home_file_id').symbolize_keys
         Log.dump(:workspace_info, @workspace_info)
         @workspace_info
       end
@@ -443,10 +448,10 @@ module Aspera
               node_id: private_link[:node_id],
               file_id: private_link[:file_id]
             }
-          elsif workspace[:home_node_id] && workspace[:home_file_id]
+          elsif workspace_info[:home_node_id] && workspace_info[:home_file_id]
             {
-              node_id: workspace[:home_node_id],
-              file_id: workspace[:home_file_id]
+              node_id: workspace_info[:home_node_id],
+              file_id: workspace_info[:home_file_id]
             }
           else
             # not part of any workspace, but has some folder shared

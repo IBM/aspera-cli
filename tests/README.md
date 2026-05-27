@@ -82,13 +82,13 @@ ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs -n 1 gem uninstall
 
 # clean Gemfile.lock
 rm -f Gemfile.lock
-killall ascli
 
 # re-install Gems
 gem install bundler
 bundle install
 
 bundle exec rake clobber
+killall ascli
 
 # skip some tests
 bundle exec rake test:skip'[tag faspex]'
