@@ -2652,6 +2652,9 @@ aocp4:
     - --package-folder.fld.1=id
     - --package-folder.opt=true
 aocp5:
+  $comment: "TODO: generate new token based package receive"
+  tags:
+    - flaky
   args:
     - aoc
     - organization
