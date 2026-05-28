@@ -9424,14 +9424,17 @@ In this case the `preview` command will first analyze the file content using gem
 
 Thumbnails and video previews are generated using standard open source tools and stored together in the storage root under the folder specified by option `previews_folder`.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-Nevertheless, `ascli` may or not have direct file system access to the access key storage root.
+Nevertheless, `ascli` may or may not have direct file system access to the access key storage root.
 
-`ascli` provides 2 ways to read and write files with the option: `root_url`.
+`ascli` provides 2 ways to read and write files with the option: `root_url`:
+
+- Using direct access to the local file system.
+- Using Aspera to transfer files between the storage and the `ascli` server.
 
 | `root_url`    | Description |
 |---------------|-------------------------------------------------------------------------------|
 | `<empty>`     | (Default) If the access key storage type is `local`, then the storage root is used as the main folder.<br/>This assumes that `ascli` runs on the same system as HSTS, or has access through a common "mount".<br/>Else, remote access is assumed. |
-| `aspera:`     | Source files are **downloaded** to a temporary directory, and preview files are **uploaded** to the storage.<br/>Two transfers are realized using Aspera. |
+| `aspera:`     | Source files are **downloaded** to a temporary directory, and preview files are **uploaded** to the storage.<br/>Two transfers are realized using Aspera: one download transfer for source files, one upload transfer for preview files. |
 | `file:///<path>` | Files are accessed from the specified path locally. |
 
 ### Tested commands for `preview`
