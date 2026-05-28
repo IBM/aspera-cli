@@ -2,6 +2,16 @@
 
 <!-- markdownlint-configure-file { "no-duplicate-heading": { "siblings_only": true } } -->
 
+## 4.27.0.pre
+
+Released: [Place date of release here]
+
+### New Features
+
+### Issues Fixed
+
+### Breaking Changes
+
 ## 4.26.0
 
 Released: 2026-05-28
