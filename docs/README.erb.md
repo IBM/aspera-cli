@@ -4211,7 +4211,7 @@ In order to activate a PVCL library, place the corresponding shared library in t
 
 Example:
 
-```bash
+```shell
 cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(<%=tool%> conf ascp info --fields=root)
 ```
 
@@ -5686,6 +5686,30 @@ Then use the returned address for the `url` key to actually create the AoC Node 
 ```
 
 Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
+
+#### Example: Deactivate an application in a workspace
+
+This is a two-steps procedure:
+
+1. Find the application ID in the workspace:
+
+   ```shell
+   <%=cmd%> aoc admin workspace show <%=ph :workspace_id%> --query.include_aspera_apps=true --fields=packages_app.id
+   ```
+
+   Or, alternatively:
+
+   ```shell
+   <%=cmd%> aoc admin application instance list --query.aspera_app_type=packages --query.workspace_id=<%=ph :workspace_id%> --fields=id --display=data
+   ```
+
+   This displays the <%=ph :app_id%>.
+
+2. Deactivate the application:
+
+   ```shell
+   <%=cmd%> aoc admin application instance modify packages <%=ph :app_id%> @: enabled=false inherit_organization_app_settings=false
+   ```
 
 ### List of files to transfer
 
