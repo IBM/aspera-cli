@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `aoc`: New sub command in `shared_folder` : `admin workspace shared_folder <workspace ID> node <shared folder ID>`, shortcut to node operations directly from the shared folder.
+
 ### Issues Fixed
 
 ### Breaking Changes

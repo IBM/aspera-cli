@@ -503,12 +503,18 @@ module Aspera
             query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
             shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
             # inside a workspace
-            command_shared = options.get_next_command(%i[list member])
+            command_shared = options.get_next_command(%i[list node member])
             case command_shared
             when :list
               return Main.result_object_list(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
+            when :node
+              shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
+              shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+              Aspera.assert(shared_folder)
+              command_repo = options.get_next_command(FILES_COMMANDS)
+              return execute_nodegen4_command(command_repo, shared_folder['node_id'], file_id: shared_folder['file_id'], scope: Api::Node::Scope::ADMIN)
             when :member
-              shared_folder_id = options.instance_identifier
+              shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
               Aspera.assert(shared_folder)
               command_shared_member = options.get_next_command(%i[list])
