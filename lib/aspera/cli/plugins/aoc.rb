@@ -429,7 +429,8 @@ module Aspera
             list_default_fields = %w[id name host access_key]
             supported_operations += %i[do bearer_token]
           when :operation
-            list_default_fields = nil
+            list_default_fields = %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id]
+            supported_operations = %i[list show modify]
           when :organization, :self
             supported_operations = Operations::SINGLETON
             resource_instance_path = resource_class_path = resource_type
