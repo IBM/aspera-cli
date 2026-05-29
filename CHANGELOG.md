@@ -27,7 +27,7 @@ Released: 2026-05-28
 * `aoc`: Support selection of workspace using percent selectors: `%name:` and `%id:`.
 * **global**: Added download URLs for `transferd` 1.1.8.
 * **global**: New Extended Value modifier: `s` converts to `String`.
-* **global**: Parameter `str_lst_sep` or option `table_style` allows setting separator for list of strings.
+* **global**: Parameter `str_lst_sep` of option `table_style` allows setting separator for list of strings.
 
 ### Issues Fixed
 
