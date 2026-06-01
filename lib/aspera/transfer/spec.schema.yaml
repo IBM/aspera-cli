@@ -8,7 +8,7 @@ $comment: >-
   x-cli-envvar   [String]       Name of env var
   x-cli-option   [String]       Command line option (starts with "-"), or `true`: same as ts, or `false`: not an option
   x-cli-switch   [Boolean]      `true` if option has no arg, else by default option has a value
-  x-cli-special  [Boolean]      `true` if not anaged by command line generator (special handling: option or argument)
+  x-cli-special  [Boolean]      `true` if not managed by command line generator (special handling: option or argument)
   x-cli-convert  [String,Hash]  Method name for Convert object or Conversion Hash for enum: ts to arg
   x-agents       [Array]        Supported agents (for doc only), if not specified: all
   x-deprecation  [String]       Deprecation message for doc

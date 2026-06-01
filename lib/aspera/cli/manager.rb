@@ -12,6 +12,17 @@ require 'optparse'
 
 module Aspera
   module Cli
+    class OptionSchema < Error
+      # @return [String, nil] path to schema file
+      attr_reader :path
+
+      # @param option [OptionValue]
+      def initialize(option)
+        super("Help for `#{option.option}`")
+        @path = option.schema
+      end
+    end
+
     module BoolValue
       # boolean options are set to true/false from the following values
       YES_SYM = :yes
@@ -61,21 +72,22 @@ module Aspera
     # Description of option, how to manage
     class OptionValue
       # [Array(Class)] List of allowed types
-      attr_reader :types, :sensitive
+      attr_reader :types, :sensitive, :schema, :option
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
 
-      # @param option      [Symbol] Name of option
+      # @param option [Symbol] Name of option
       # @param description [String] Description for help
-      # @param allowed  [nil,Class,Array<Class>,Array<Symbol>] Allowed values
-      # @param handler       [Hash] Accessor: keys: :o(object) and :m(method)
+      # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
+      # @param handler [Hash] Accessor: keys: :o(object) and :m(method)
       # @param deprecation [String] Deprecation message
+      # @param schema [String] Declaration of schema
       # `allowed`:
       # - `nil` No validation, so just a string
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description:, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil)
+      def initialize(option:, description:, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil, schema: nil)
         Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
         @option = option
         @description = description
@@ -86,6 +98,7 @@ module Aspera
         @read_method = handler&.[](:m)
         @write_method = @read_method ? "#{@read_method}=".to_sym : nil
         @deprecation = deprecation
+        @schema = schema
         @access = if @object.nil?
           :local
         elsif @object.respond_to?(@write_method)
@@ -299,7 +312,8 @@ module Aspera
           description: description,
           allowed:     allowed,
           handler:     handler,
-          deprecation: deprecation
+          deprecation: deprecation,
+          schema:      schema
         )
         real_types = option_attrs.types&.reject{ |i| [NilClass, String, Symbol].include?(i)}
         description = "#{description} (#{real_types.map(&:name).join(', ')})" if real_types && !real_types.empty? && !real_types.eql?(Allowed::TYPES_ENUM) && !real_types.eql?(Allowed::TYPES_BOOLEAN) && !real_types.eql?(Allowed::TYPES_STRING)
@@ -447,8 +461,10 @@ module Aspera
       # @param where [String] Where the value comes from
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
-        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
-        @declared_options[option_symbol].assign_value(value, where: where)
+        option = @declared_options[option_symbol]
+        Aspera.assert(option, type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        raise OptionSchema.new(option) if option.types&.include?(Hash) && value.eql?(HELP)
+        option.assign_value(value, where: where)
       end
 
       # Set option to `nil`
@@ -705,6 +721,8 @@ module Aspera
       SOURCE_USER = 'cmdline' # cspell:disable-line
       # Percent selector: select by this field for this value
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
+      # Ask for schema of Extended value
+      HELP = 'help'
 
       private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD
     end

@@ -271,6 +271,7 @@ module Aspera
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
         rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing', usage: true}
         rescue Cli::BadIdentifier => e;             exception_info = {e: e, t: 'Identifier'}
+        rescue Cli::OptionSchema => e;              exception_info = {e: e, t: 'Schema'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
         rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
         rescue RestCallError => e;                  exception_info = {e: e, t: 'Rest'}
@@ -288,6 +289,17 @@ module Aspera
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
+          # Requested help for a Hash parameter/option ?
+          if exception_info[:e].is_a?(Cli::OptionSchema)
+            schema_path = exception_info[:e].path
+            if schema_path.nil?
+              Log.log.error{'No schema, consult manual.'}
+            else
+              schema = Schema.instance.schema(schema_path)
+              fields, data = Transfer::SpecDoc.man_table(Formatter, schema: schema)
+              @context.formatter.display_results(**Main.result_object_list(data, fields: fields.map(&:to_s)))
+            end
+          end
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config

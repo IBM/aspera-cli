@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: Aspera CLI Options Schema
+  version: 1.0.0
+  description: Schema definitions for Aspera CLI options
+paths: {}
+components:
+  schemas:
+    TransferInfo:
+      type: object
+      description: Optional parameters to control multi-session transfers, Web Socket Session, resume policy, and additional arguments for `ascp`.
+      properties:
+        wss:
+          type: boolean
+          description: Enable Web Socket Session when available.
+          default: true
+        quiet:
+          type: boolean
+          description: Suppress the `ascp` progress bar display.
+          default: false
+        trusted_certs:
+          type: array
+          description: List of trusted certificate repositories.
+          items:
+            type: string
+        client_ssh_key:
+          type: string
+          description: SSH key type to use for token-based transfers.
+          enum:
+            - rsa
+            - dsa_rsa
+            - per_client
+          default: rsa
+        ascp_args:
+          type: array
+          description: List of native `ascp` command-line arguments.
+          items:
+            type: string
+          default: []
+        spawn_timeout_sec:
+          type: number
+          format: float
+          description: Multi session - Maximum time (in seconds) to verify that `ascp` is running.
+          default: 3
+        spawn_delay_sec:
+          type: number
+          format: float
+          description: Multi session - Delay (in seconds) between starting each `ascp` session.
+          default: 2
+        multi_incr_udp:
+          type: boolean
+          description: >-
+            Multi session - Increment UDP port for each session.
+            
+            If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).
+            
+            If `false`, all sessions use the same `fasp_port` (or `ascp` default).
+          default: true
+        resume:
+          type: object
+          description: Configuration for automatic transfer resume on interruption.
+          properties:
+            iter_max:
+              type: integer
+              description: Maximum number of retry attempts on error.
+              default: 7
+            sleep_initial:
+              type: integer
+              description: Initial sleep duration (in seconds) before first retry.
+              default: 2
+            sleep_factor:
+              type: integer
+              description: Multiplier applied to sleep duration between consecutive retry attempts.
+              default: 2
+            sleep_max:
+              type: integer
+              description: Maximum sleep duration (in seconds) between retry attempts.
+              default: 60
+        monitor:
+          type: boolean
+          description: Enable use of the `ascp` management port for transfer monitoring.
+          default: true

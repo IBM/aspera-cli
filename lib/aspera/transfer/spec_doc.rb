@@ -13,7 +13,7 @@ module Aspera
         # @param agent_columns  [Boolean]        `true` : include agents columns
         # @param schema         [Hash]           The JSON spec
         # @return [Array] a table suitable to display in manual
-        def man_table(formatter, include_option: false, agent_columns: true, schema: Spec::SCHEMA)
+        def man_table(formatter, include_option: false, agent_columns: false, schema: Spec::SCHEMA)
           cols = %i[name type description]
           cols.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if agent_columns
           rows = []
