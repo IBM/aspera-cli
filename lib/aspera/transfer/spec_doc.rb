@@ -8,11 +8,16 @@ module Aspera
     # Generate documentation from Schema, for Transfer Spec, or async Conf spec
     class SpecDoc
       class << self
-        # @param formatter      [Cli::Formatter] Formatter to use, methods: markdown_text, tick, check_row
-        # @param include_option [Boolean]        `true` : include CLI options
-        # @param agent_columns  [Boolean]        `true` : include agents columns
-        # @param schema         [Hash]           The JSON spec
-        # @return [Array] a table suitable to display in manual
+        # Generate a documentation table from a JSON schema for transfer specifications
+        #
+        # Recursively processes a JSON schema to create a formatted table for manual documentation.
+        # Handles nested objects, arrays, and extracts metadata (descriptions, types, enums, deprecations).
+        #
+        # @param formatter      [Cli::Formatter] Formatter instance with methods: markdown_text, tick, check_row
+        # @param include_option [Boolean]        `true`: include CLI options (switches, env vars) in descriptions
+        # @param agent_columns  [Boolean]        `true`: add separate columns for each transfer agent compatibility
+        # @param schema         [Hash]           The JSON schema to process (default: Spec::SCHEMA)
+        # @return [Array<Array>] Two-element array: [column_names, sorted_rows]
         def man_table(formatter, include_option: false, agent_columns: false, schema: Spec::SCHEMA)
           cols = %i[name type description]
           cols.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if agent_columns
