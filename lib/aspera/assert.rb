@@ -83,6 +83,7 @@ module Aspera
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block  [Proc]             Additional description in front of message
     def assert_values(value, values, type: AssertError)
+      assert_type(values, Array, type: type)
       assert(values.include?(value), type: type) do
         val_list = values.inspect
         val_list = "one of #{val_list}" if values.is_a?(Array)

@@ -19,6 +19,8 @@ module Aspera
   module Cli
     # Global objects shared with plugins
     class Context
+      # @type [Array<Symbol>]
+      MEMBERS = %i[options transfer config formatter persistency man_header].freeze
       # @!attribute [rw] options
       #   @return [Manager] the command line options manager
       # @!attribute [rw] transfer
@@ -31,15 +33,17 @@ module Aspera
       #   @return [Object] # whatever the type is
       # @!attribute [rw] man_header
       #   @return [Boolean] whether to display the manual header in plugin help
-      MEMBERS = %i[options transfer config formatter persistency man_header].freeze
       attr_accessor(*MEMBERS)
 
       # Initialize all members to nil, so that they are defined and can be validated later
+      # @return [nil]
       def initialize
         MEMBERS.each{ |i| instance_variable_set(:"@#{i}", nil)}
       end
 
       # Validate that all members are set, raise exception if not
+      # @raise [Aspera::AssertionError] if any member is not set
+      # @return [nil]
       def validate
         MEMBERS.each do |i|
           Aspera.assert(instance_variable_defined?(:"@#{i}"))
@@ -47,10 +51,14 @@ module Aspera
         end
       end
 
+      # Check if the context is in manual-only mode
+      # @return [Boolean] true if in manual-only mode
       def only_manual?
         transfer.eql?(:only_manual)
       end
 
+      # Set the context to manual-only mode
+      # @return [Symbol] :only_manual
       def only_manual!
         @transfer = :only_manual
       end
@@ -69,26 +77,37 @@ module Aspera
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
-        def result_special(how); {type: :special, data: how}; end
+        # Create a special result type (only used internally here)
+        # @param special_sym [Symbol] the special result type
+        # @return [Hash] result hash with type :special
+        def result_special(special_sym); {type: :special, data: special_sym}; end
 
         # Expect some list, but nothing to display
+        # @return [Hash] result hash for empty list
         def result_empty; result_special(:empty); end
 
         # Nothing expected
+        # @return [Hash] result hash for nothing
         def result_nothing; result_special(:nothing); end
 
         # Result is some status, such as "complete", "deleted"...
         # @param status [String] The status
+        # @return [Hash] result hash with type :status
         def result_status(status); return {type: :status, data: status}; end
 
         # Text result coming from command result
+        # @param data [String, Integer, Symbol] the text data to display
+        # @return [Hash] result hash with type :text
         def result_text(data); return {type: :text, data: data}; end
 
+        # Create a success result
+        # @return [Hash] result hash with status 'complete'
         def result_success; return result_status('complete'); end
 
         # Process statuses of finished transfer sessions
-        # @raise exception if there is one error
-        # else returns an empty status
+        # @param statuses [Array] array of transfer session statuses
+        # @raise [Symbol] exception if there is one error
+        # @return [Hash] empty status result if all transfers succeeded
         def result_transfer(statuses)
           worst = TransferAgent.session_status(statuses)
           raise worst unless worst.eql?(:success)
@@ -112,26 +131,33 @@ module Aspera
         end
 
         # Display image for that URL or directly blob
-        #
         # @param url_or_blob [String] URL or blob to display as image
+        # @return [Hash] result hash with type :image
         def result_image(url_or_blob)
           return {type: :image, data: url_or_blob}
         end
 
         # A single object, must be Hash
+        # @param data [Hash] the object data
+        # @param fields [Array<String>, nil] optional list of fields to display
+        # @return [Hash] result hash with type :single_object
         def result_single_object(data, fields: nil)
           return {type: :single_object, data: data, fields: fields}
         end
 
         # An Array of Hash
+        # @param data [Array<Hash>] array of objects
+        # @param fields [Array<String>, nil] optional list of fields to display
+        # @param total [Integer, nil] optional total count
+        # @return [Hash] result hash with type :object_list
         def result_object_list(data, fields: nil, total: nil)
           return {type: :object_list, data: data, fields: fields, total: total}
         end
 
         # A list of values
-        #
         # @param data [Array] The list of values
         # @param name [String] The name of the list (used for display)
+        # @return [Hash] result hash with type :value_list
         def result_value_list(data, name: 'id')
           Aspera.assert_type(data, Array)
           Aspera.assert_type(name, String)
@@ -139,6 +165,8 @@ module Aspera
         end
 
         # Determines type of result based on data
+        # @param data [Object] the data to analyze and format
+        # @return [Hash] result hash with appropriate type based on data
         def result_auto(data)
           case data
           when NilClass
@@ -159,6 +187,8 @@ module Aspera
       end
 
       # Minimum initialization, no exception raised
+      # @param argv [Array<String>] command line arguments
+      # @return [nil]
       def initialize(argv)
         @argv = argv
         Log.dump(:argv, @argv, level: :trace2)
@@ -169,6 +199,8 @@ module Aspera
       end
 
       # This is the main function called by initial script just after constructor
+      # Processes command line arguments, executes commands, and handles exceptions
+      # @return [nil]
       def process_command_line
         # Catch exception information , if any
         exception_info = nil
@@ -276,6 +308,10 @@ module Aspera
         return
       end
 
+      # Display usage information and help
+      # @param all [Boolean] if true, show help for all plugins; if false, show only current plugin
+      # @param exit [Boolean] if true, exit the process after displaying help
+      # @return [nil]
       def show_usage(all: true, exit: true)
         # Display main plugin options (+config)
         @context.formatter.display_message(:error, @context.options.parser)
@@ -298,7 +334,10 @@ module Aspera
 
       private
 
+      # Initialize agents and options
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
+      # @raise [StandardError] if there is a problem with the environment
+      # @return [nil]
       def init_agents_and_options
         @context.man_header = true
         # Create formatter, in case there is an exception, it is used to display.
@@ -328,6 +367,8 @@ module Aspera
         @context.options.parser.banner = app_banner
       end
 
+      # Generate the application banner for help display
+      # @return [String] formatted banner text
       def app_banner
         t = ' ' * 8
         return <<~END_OF_BANNER
@@ -362,7 +403,8 @@ module Aspera
         END_OF_BANNER
       end
 
-      # Define header for manual
+      # Define header for manual and declare all global options
+      # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
         @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h'){@option_help = true}
@@ -397,9 +439,10 @@ module Aspera
         @context.options.parse_options!
       end
 
-      # @return the plugin instance, based on name
+      # Get the plugin instance based on name
       # Also loads the plugin options, and default values from conf file
-      # @param plugin_name_sym : symbol for plugin name
+      # @param plugin_name_sym [Symbol] symbol for plugin name
+      # @return [Plugins::Base] the plugin instance
       def get_plugin_instance_with_options(plugin_name_sym)
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         # Load default params only if no param already loaded before plugin instantiation
@@ -408,6 +451,8 @@ module Aspera
         return command_plugin
       end
 
+      # Generate bash completion suggestions
+      # @return [nil]
       def generate_bash_completion
         if @context.options.get_next_argument('', multiple: true, mandatory: false).nil?
           Plugins::Factory.instance.plugin_list.each{ |p| puts p}

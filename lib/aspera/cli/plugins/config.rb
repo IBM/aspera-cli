@@ -436,7 +436,7 @@ module Aspera
         end
 
         def set_preset_key(preset, param_name, param_value)
-          Aspera.assert_values(param_name.class, [String, Symbol]){'parameter'}
+          Aspera.assert_type(param_name, String, Symbol){'parameter'}
           param_name = param_name.to_s
           selected_preset = @config_presets[preset]
           if selected_preset.nil?

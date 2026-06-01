@@ -73,7 +73,7 @@ module Aspera
           end
           Aspera.assert_type(match, MatchData)
           if match[:entity]
-            Aspera.assert_values(match[:entity], 'bsol')
+            Aspera.assert_values(match[:entity], %w[bsol])
             '\\'
           elsif match[:bold]
             match[:bold].to_s.blue
@@ -240,7 +240,7 @@ module Aspera
         !@options[:show_secrets] && !@options[:display].eql?(:data)
       end
 
-      # hides secrets in Hash or Array
+      # Hides secrets in Hash or Array
       def hide_secrets(data)
         SecretHider.instance.deep_remove_secret(data) if hide_secrets?
       end

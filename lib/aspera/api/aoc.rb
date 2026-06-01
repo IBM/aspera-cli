@@ -362,6 +362,7 @@ module Aspera
         end
       end
 
+      # @param expected [Array<String>] Link types
       def assert_public_link_types(expected)
         Aspera.assert_values(public_link['purpose'], expected){'public link type'}
       end
@@ -557,7 +558,7 @@ module Aspera
               full_recipient_info = lookup_with_q(entity_type, value: short_recipient_info, query: {'workspace_id' => ws_id})
             rescue EntityNotFound
               # dropboxes cannot be created on the fly
-              Aspera.assert_values(entity_type, 'contacts', type: Error){"No such shared inbox in workspace #{ws_id}"}
+              Aspera.assert_values(entity_type, %w[contacts], type: Error){"No such shared inbox in workspace #{ws_id}"}
               # unknown user: create it as external user
               full_recipient_info = create('contacts', {
                 'current_workspace_id' => ws_id,

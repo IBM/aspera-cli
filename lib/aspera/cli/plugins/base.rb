@@ -217,12 +217,9 @@ module Aspera
             type = [type] unless type.is_a?(Array)
             Aspera.assert_array_all(type, Class){'check types'}
             if bulk
-              Aspera.assert_type(value, Array, type: Cli::BadArgument)
-              value.each do |v|
-                Aspera.assert_values(v.class, type, type: Cli::BadArgument)
-              end
+              Aspera.assert_array_all(value, type, type: Cli::BadArgument)
             else
-              Aspera.assert_values(value.class, type, type: Cli::BadArgument)
+              Aspera.assert_type(value, type, type: Cli::BadArgument)
             end
           end
           return value
