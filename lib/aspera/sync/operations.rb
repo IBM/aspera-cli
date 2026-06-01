@@ -336,10 +336,10 @@ module Aspera
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options
-      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__dir__, 'args')
+      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(:args)
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA['properties']['sessions']['items']
       ARGS_INSTANCE_SCHEMA['properties'].delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(__dir__, 'conf')
+      CONF_SCHEMA = CommandLineBuilder.read_schema(:conf)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp"

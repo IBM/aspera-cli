@@ -284,8 +284,9 @@ module Aspera
       # @param default       [Object] default value
       # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method)
       # @param deprecation   [String] deprecation
+      # @param schema        [String] Definition of schema for Hash parameters
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, &block)
+      def declare(option_symbol, description, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}

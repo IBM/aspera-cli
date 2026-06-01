@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/schema'
 require 'yaml'
 module Aspera
   # Helper class to build command line from a parameter list (key-value hash)
@@ -35,9 +36,8 @@ module Aspera
 
     class << self
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
-      def read_schema(folder, name, ascp: false)
-        schema = YAML.load_file(File.join(folder, "#{name}.schema.yaml"))
-        validate_schema(schema, ascp: ascp)
+      def read_schema(name_sym, ascp: false)
+        validate_schema(Schema.instance.schema(name_sym), ascp: ascp)
       end
 
       # @param agent      [Symbol] Transfer agent name
@@ -52,6 +52,7 @@ module Aspera
       # Fill default values for some fields in the schema
       # @param schema [Hash]    The JSON schema
       # @param ascp   [Boolean] `true` if ascp
+      # @return [Hash] The JSON schema
       def validate_schema(schema, ascp: false)
         direct_props = %w[x-cli-option x-cli-envvar x-cli-special].freeze
         schema['properties'].each do |name, info|
