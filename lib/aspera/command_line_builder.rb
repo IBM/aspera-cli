@@ -58,18 +58,20 @@ module Aspera
       # @return [Schema::Reader] The JSON schema
       def validate_schema(schema, ascp: false)
         Aspera.assert_type(schema, Schema::Reader){'schema'}
-        Aspera.assert(schema.current.key?('properties')){"Schema must have 'properties': #{schema}"}
-        schema.dig('properties').current.each do |name, info|
-          Aspera.assert_type(info, Hash){"#{info.class} for #{name}"}
-          unsupported_keys = info.keys - PROPERTY_KEYS
+        properties = schema.dig('properties')
+        Aspera.assert(properties){"Schema must have 'properties': #{schema}"}
+        properties.current.each_key do |name|
+          property_schema = properties.dig(name)
+          node = property_schema.current
+          unsupported_keys = node.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          Aspera.assert(info.key?('type') || info.key?('enum')){"Missing type for #{name} in #{schema.current.dig('description').current}"}
-          Aspera.assert(info['type'].eql?('boolean')){"switch must be bool: #{name}"} if info['x-cli-switch'] && !info['x-cli-special']
-          info['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if info['x-cli-option'].eql?(true) || (info['x-cli-switch'].eql?(true) && !info.key?('x-cli-option'))
-          Aspera.assert(DIRECT_PROPERTIES.any?{ |i| info.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, info)
-          info.freeze
-          validate_schema(schema.sub(info), ascp: ascp) if info['type'].eql?('object') && info['properties']
-          validate_schema(schema.sub(info['items']), ascp: ascp) if info['type'].eql?('array') && info['items'] && info['items']['properties']
+          Aspera.assert(node.key?('type') || node.key?('enum')){"Missing type for #{name} in #{schema.current.dig('description').current}"}
+          Aspera.assert(node['type'].eql?('boolean')){"switch must be bool: #{name}"} if node['x-cli-switch'] && !node['x-cli-special']
+          node['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if node['x-cli-option'].eql?(true) || (node['x-cli-switch'].eql?(true) && !node.key?('x-cli-option'))
+          Aspera.assert(DIRECT_PROPERTIES.any?{ |i| node.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, node)
+          node.freeze
+          validate_schema(property_schema, ascp: ascp) if node['type'].eql?('object') && node['properties']
+          validate_schema(property_schema.dig('items'), ascp: ascp) if node['type'].eql?('array') && node['items'] && node['items']['properties']
         end
         schema
       end

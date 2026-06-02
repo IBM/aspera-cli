@@ -7022,7 +7022,10 @@ components:
           examples:
             - false
         bcc_recipients:
-          $ref: '#/components/schemas/senders_recipients_object'
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/senders_recipients_object'
         content_retention_duration:
           description: When a time-based content expiration value is set for this package, the duration to retain packages contents. When this duration passes, the packages contents are deleted. Valid values are null to 10 years. Units are seconds.
           type: integer
@@ -7034,7 +7037,10 @@ components:
           examples:
             - 604800
         download_notification_recipients:
-          $ref: '#/components/schemas/senders_recipients_object'
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/senders_recipients_object'
         draft:
           description: Whether or not the package is in draft status.
           type: boolean
@@ -7072,7 +7078,10 @@ components:
           examples:
             - false
         recipients:
-          $ref: '#/components/schemas/senders_recipients_object'
+          type: array
+          nullable: false
+          items:
+            $ref: '#/components/schemas/senders_recipients_object'
         sent:
           description: Whether or not the package was sent.
           type: boolean
@@ -7089,7 +7098,10 @@ components:
           examples:
             - 3
         upload_notification_recipients:
-          $ref: '#/components/schemas/senders_recipients_object'
+          type: array
+          nullable: false
+          items:
+            $ref: '#/components/schemas/senders_recipients_object'
         workspace_id:
           description: The ID of the workspace from which this package was sent. Required for POST. Optional for PUT.
           type: integer
@@ -7122,7 +7134,10 @@ components:
           examples:
             - true
         bcc_recipients:
-          $ref: '#/components/schemas/senders_recipients_object'
+          type: array
+          nullable: false
+          items:
+            $ref: '#/components/schemas/senders_recipients_object'
         bytes_transferred:
           description: How many bytes have been transferred.
           type: integer

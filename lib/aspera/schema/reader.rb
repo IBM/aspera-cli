@@ -12,18 +12,14 @@ module Aspera
       def dig(*path)
         current = @current
         path.each do |p|
+          current = current[p]
+          Aspera.assert_type(current, Hash){'schema'}
           if current.key?('$ref')
             ref = current['$ref']
             Aspera.assert(ref.start_with?('#/'))
             current = @root.dig(*ref[2..].split('/'))
           end
-          current = current[p]
-          Aspera.assert_type(current, Hash){'schema'}
         end
-        Reader.new(@root, current)
-      end
-
-      def sub(current)
         Reader.new(@root, current)
       end
 

@@ -34,31 +34,42 @@ module Aspera
       # Recursively processes a JSON schema to create a formatted table for manual documentation.
       # Handles nested objects, arrays, and extracts metadata (descriptions, types, enums, deprecations).
       #
-      # @param schema [Hash] The JSON schema to process
+      # @param schema [Reader] The JSON schema to process
       # @return [nil]
       def build(schema = nil, prefix = '')
         schema ||= @schema
-        schema.dig('properties').current.each do |name, info|
-          build(schema.sub(info), "#{prefix}#{name}.") if info['type'].eql?('object') && info['properties']
-          build(schema.sub(info['items']), "#{prefix}#{name}[].") if info['type'].eql?('array') && info['items'] && info['items']['properties']
+        properties = schema.dig('properties')
+        properties.current.each_key do |name|
+          property_full_name = "#{prefix}#{name}"
+          property_schema = properties.dig(name)
+          node = property_schema.current
+          case node['type']
+          when 'object'
+            build(property_schema, "#{property_full_name}.") if node['properties']
+          when 'array'
+            if node['items']
+              array_item_schema = property_schema.dig('items')
+              build(array_item_schema, "#{property_full_name}[].") if array_item_schema.current['properties']
+            end
+          end
           # Manual table
           item = {
-            name:        name,
-            type:        info['type'],
+            name:        property_full_name,
+            type:        node['type'],
             description: []
           }
           # Render Markdown formatting and split lines
           item[:description] =
-            info['description']
+            node['description']
               .gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)}
-              .split("\n") if info.key?('description')
-          item[:description].unshift("DEPRECATED: #{info['x-deprecation']}") if info.key?('x-deprecation')
+              .split("\n") if node.key?('description')
+          item[:description].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
           # Add flags for supported agents in doc
           agents = []
           Agent::Factory::ALL.each_key do |sym|
-            agents.push(sym) if info['x-agents'].nil? || info['x-agents'].include?(sym.to_s)
+            agents.push(sym) if node['x-agents'].nil? || node['x-agents'].include?(sym.to_s)
           end
-          Aspera.assert(agents.include?(:direct)){"#{name}: x-cli-option requires agent direct (or nil)"} if info['x-cli-option']
+          Aspera.assert(agents.include?(:direct)){"#{name}: x-cli-option requires agent direct (or nil)"} if node['x-cli-option']
           if @agent_columns
             Agent::Factory::ALL.each do |sym, names|
               item[names[:short]] = @formatter.tick(agents.include?(sym))
@@ -68,25 +79,25 @@ module Aspera
           end
           # Only keep lines that are usable in supported agents
           next false if agents.empty?
-          item[:description].push("Allowed values: #{info['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if info.key?('enum')
-          item[:description].push("Default: #{info['default']}.") if info.key?('default')
+          item[:description].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
+          item[:description].push("Default: #{node['default']}.") if node.key?('default')
           if @include_option
             envvar_prefix = ''
             cli_option =
-              if info.key?('x-cli-envvar')
+              if node.key?('x-cli-envvar')
                 envvar_prefix = 'env:'
-                info['x-cli-envvar']
-              elsif info['x-cli-switch']
-                info['x-cli-option']
-              elsif info['x-cli-option']
-                arg_type = info.key?('enum') ? '{enum}' : "{#{[info['type']].flatten.join('|')}}"
-                # conversion_tag = info['x-cli-convert']
-                conversion_tag = info.key?('x-cli-convert') ? 'conversion' : nil
-                sep = info['x-cli-option'].start_with?('--') ? '=' : ' '
-                "#{info['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
+                node['x-cli-envvar']
+              elsif node['x-cli-switch']
+                node['x-cli-option']
+              elsif node['x-cli-option']
+                arg_type = node.key?('enum') ? '{enum}' : "{#{[node['type']].flatten.join('|')}}"
+                # conversion_tag = node['x-cli-convert']
+                conversion_tag = node.key?('x-cli-convert') ? 'conversion' : nil
+                sep = node['x-cli-option'].start_with?('--') ? '=' : ' '
+                "#{node['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
               end
-            short = info.key?('x-cli-short') ? "(#{info['x-cli-short']})" : nil
-            item[:description].push("(#{'special:' if info['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
+            short = node.key?('x-cli-short') ? "(#{node['x-cli-short']})" : nil
+            item[:description].push("(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
           end
           @rows.push(@formatter.check_row(item))
         end
