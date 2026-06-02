@@ -58,10 +58,8 @@ module Aspera
       # @return [Schema::Reader] The JSON schema
       def validate_schema(schema, ascp: false)
         Aspera.assert_type(schema, Schema::Reader){'schema'}
-        properties = schema.dig('properties')
-        Aspera.assert(properties){"Schema must have 'properties': #{schema}"}
-        properties.current.each_key do |name|
-          property_schema = properties.dig(name)
+        Aspera.assert(schema.current.key?('properties')){"Schema must have 'properties': #{schema}"}
+        schema.each_property do |property_schema, name, _full_name|
           node = property_schema.current
           unsupported_keys = node.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
@@ -70,8 +68,6 @@ module Aspera
           node['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if node['x-cli-option'].eql?(true) || (node['x-cli-switch'].eql?(true) && !node.key?('x-cli-option'))
           Aspera.assert(DIRECT_PROPERTIES.any?{ |i| node.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, node)
           node.freeze
-          validate_schema(property_schema, ascp: ascp) if node['type'].eql?('object') && node['properties']
-          validate_schema(property_schema.dig('items'), ascp: ascp) if node['type'].eql?('array') && node['items'] && node['items']['properties']
         end
         schema
       end

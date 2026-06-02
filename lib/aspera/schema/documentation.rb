@@ -36,22 +36,10 @@ module Aspera
       #
       # @param schema [Reader] The JSON schema to process
       # @return [nil]
-      def build(schema = nil, prefix = '')
+      def build(schema = nil)
         schema ||= @schema
-        properties = schema.dig('properties')
-        properties.current.each_key do |name|
-          property_full_name = "#{prefix}#{name}"
-          property_schema = properties.dig(name)
+        schema.each_property do |property_schema, _name, property_full_name|
           node = property_schema.current
-          case node['type']
-          when 'object'
-            build(property_schema, "#{property_full_name}.") if node['properties']
-          when 'array'
-            if node['items']
-              array_item_schema = property_schema.dig('items')
-              build(array_item_schema, "#{property_full_name}[].") if array_item_schema.current['properties']
-            end
-          end
           # Manual table
           item = {
             name:        property_full_name,

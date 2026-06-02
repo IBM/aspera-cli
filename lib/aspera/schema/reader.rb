@@ -31,6 +31,37 @@ module Aspera
         @root = root
         @current = current || root
       end
+
+      # Recursively traverse schema properties with a block
+      # Handles nested objects and arrays automatically
+      # @param prefix [String] Prefix for property names (e.g., 'parent.child.')
+      # @yield [property_schema, name, full_name] Yields property info to block
+      # @yieldparam property_schema [Reader] Schema reader for this property (use .current to get node hash)
+      # @yieldparam name [String] Property name
+      # @yieldparam full_name [String] Full property name with prefix
+      # @return [nil]
+      def each_property(prefix = '', &block)
+        properties = dig('properties')
+        properties.current.each_key do |name|
+          property_full_name = "#{prefix}#{name}"
+          property_schema = properties.dig(name)
+          node = property_schema.current
+
+          # Yield current property to block
+          yield(property_schema, name, property_full_name)
+
+          # Recursively process nested structures
+          case node['type']
+          when 'object'
+            property_schema.each_property("#{property_full_name}.", &block) if node['properties']
+          when 'array'
+            if node['items']
+              array_item_schema = property_schema.dig('items')
+              array_item_schema.each_property("#{property_full_name}[].", &block) if array_item_schema.current['properties']
+            end
+          end
+        end
+      end
     end
   end
 end
