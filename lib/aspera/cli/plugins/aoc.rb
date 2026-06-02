@@ -1050,7 +1050,7 @@ module Aspera
                 return short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
               end
             when :send
-              package_data = value_create_modify(command: package_command)
+              package_data = value_create_modify(command: package_command, schema: 'aoc:paths./packages.post.requestBody.content.application/json.schema')
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
               # Works for both normal user auth and link auth.

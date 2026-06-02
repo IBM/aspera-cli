@@ -12,14 +12,17 @@ require 'optparse'
 
 module Aspera
   module Cli
-    class OptionSchema < Error
+    # Exception raised when schema is asked (`help`)
+    class SchemaRequest < Error
       # @return [String, nil] path to schema file
       attr_reader :path
 
-      # @param option [OptionValue]
-      def initialize(option)
-        super("Help for `#{option.option}`")
-        @path = option.schema
+      # @param type [Symbol] :argument or :option
+      # @param name [String] name of the option/argument
+      # @param schema_path [String, nil] path to schema file, or `nil` if not available
+      def initialize(type, name, schema_path)
+        super("#{type}: #{name}")
+        @path = schema_path
       end
     end
 
@@ -232,6 +235,8 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
+      # @param program_name [String] Name of the program
+      # @param argv [Array<String>, nil] Command line arguments to parse
       def initialize(program_name, argv = nil)
         # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
@@ -239,7 +244,8 @@ module Aspera
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
-        # option description: option_symbol => OptionValue
+        # Option descriptions: maps option symbol to its OptionValue descriptor
+        # @type [Hash{Symbol => OptionValue}]
         @declared_options = {}
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
@@ -362,7 +368,7 @@ module Aspera
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
       # @return one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Allowed::TYPES_STRING, aliases: nil, default: nil)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Allowed::TYPES_STRING, aliases: nil, default: nil, schema: nil)
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
         validation = Symbol unless accept_list.nil?
@@ -393,7 +399,7 @@ module Aspera
             multiple ? values : values.first
           elsif !default.nil? then default
             # no value provided, either get value interactively, or exception
-          elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list)
+          elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, schema: schema)
           end
         if result.is_a?(String) && validation&.eql?(Allowed::TYPES_INTEGER)
           int_result = Integer(result, exception: false)
@@ -407,6 +413,7 @@ module Aspera
         if validation && (mandatory || !result.nil?)
           value_list = multiple ? result : [result]
           value_list.each do |value|
+            raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(HELP)
             raise Cli::BadArgument,
               "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" unless validation.any?{ |t| value.is_a?(t)}
           end
@@ -431,14 +438,23 @@ module Aspera
 
       def get_next_command(command_list, aliases: nil); return get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
+      # Get an option definition by name
+      # @param option_symbol [Symbol]
+      # @return [OptionValue] Option definition
+      # @raise [Cli::BadArgument] if option not found
+      def option_def(option_symbol)
+        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        @declared_options[option_symbol]
+      end
+
       # Get an option value by name
       # either return value or calls handler, can return nil
       # ask interactively if requested/required
+      # @param option_symbol [Symbol]
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false)
         Aspera.assert_type(option_symbol, Symbol)
-        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
-        option_attrs = @declared_options[option_symbol]
+        option_attrs = option_def(option_symbol)
         result = option_attrs.value
         # Do not fail for manual generation if option mandatory but not set
         return :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
@@ -447,7 +463,7 @@ module Aspera
             Aspera.assert(!mandatory, type: Cli::BadArgument){"Missing mandatory option: #{option_symbol}"}
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
-            result = get_interactive(option_symbol.to_s, check_option: true, accept_list: option_attrs.values)
+            result = get_interactive(option_symbol.to_s, check_option: true, accept_list: option_attrs.values, schema: option_attrs.schema)
             set_option(option_symbol, result, where: 'interactive')
           end
         end
@@ -461,17 +477,15 @@ module Aspera
       # @param where [String] Where the value comes from
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
-        option = @declared_options[option_symbol]
-        Aspera.assert(option, type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
-        raise OptionSchema.new(option) if option.types&.include?(Hash) && value.eql?(HELP)
+        option = option_def(option_symbol)
+        raise SchemaRequest.new(:option, option.option, option.schema) if option.types&.include?(Hash) && value.eql?(HELP)
         option.assign_value(value, where: where)
       end
 
       # Set option to `nil`
       def clear_option(option_symbol)
         Aspera.assert_type(option_symbol, Symbol)
-        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
-        @declared_options[option_symbol].clear
+        option_def(option_symbol).clear
       end
 
       # Adds each of the keys of specified hash as an option
@@ -605,18 +619,17 @@ module Aspera
       # @param check_option [Boolean] Check attributes of option with name=descr
       # @param multiple     [Boolean] true if multiple values expected
       # @param accept_list  [Array] list of expected values
-      def get_interactive(descr, check_option: false, multiple: false, accept_list: nil)
+      def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, schema: nil)
         option_attrs = @declared_options[descr.to_sym]
         what = option_attrs ? 'option' : 'argument'
-        if !@ask_missing_mandatory
-          message = "missing #{what}: #{descr}"
-          if accept_list.nil?
-            raise Cli::BadArgument, message
-          else
-            Aspera.assert(false, self.class.multi_choice_assert_msg(message, accept_list), type: Cli::MissingArgument)
-          end
-        end
         default_prompt = "#{what}: #{descr}"
+        if !@ask_missing_mandatory
+          message = "Missing #{default_prompt}"
+          add_info = "\nGive `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
+          Aspera.assert(accept_list, type: Cli::MissingArgument){"#{message}#{add_info}"}
+          # Aspera.assert(!accept_list, type: Cli::MissingArgument){self.class.multi_choice_assert_msg(message, accept_list)}
+          raise Cli::MissingArgument, message
+        end
         # ask interactively
         result = []
         puts(' (one per line, end with empty line)') if multiple

@@ -271,7 +271,7 @@ module Aspera
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
         rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing', usage: true}
         rescue Cli::BadIdentifier => e;             exception_info = {e: e, t: 'Identifier'}
-        rescue Cli::OptionSchema => e;              exception_info = {e: e, t: 'Schema'}
+        rescue Cli::SchemaRequest => e;             exception_info = {e: e, t: 'Schema'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
         rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
         rescue RestCallError => e;                  exception_info = {e: e, t: 'Rest'}
@@ -290,10 +290,10 @@ module Aspera
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
           # Requested help for a Hash parameter/option ?
-          if exception_info[:e].is_a?(Cli::OptionSchema)
+          if exception_info[:e].is_a?(Cli::SchemaRequest)
             schema_path = exception_info[:e].path
             if schema_path.nil?
-              Log.log.error{'No schema, consult manual.'}
+              Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
             else
               builder = Transfer::SpecDoc.new(Formatter, Schema.instance.schema(schema_path)).build
               @context.formatter.display_results(**Main.result_object_list(builder.rows, fields: builder.columns))

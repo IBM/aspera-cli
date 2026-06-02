@@ -207,10 +207,12 @@ module Aspera
         # @param type    [Class]   expected type of value, either a Class, an Array of Class
         # @param bulk    [Boolean] if true, value must be an Array of <type>
         # @param default [Object]  default value if not provided
-        def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
+        def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil, schema: nil)
           value = options.get_next_argument(
-            "parameters for #{command}#{" (#{description})" unless description.nil?}", mandatory: default.nil?,
-            validation: bulk ? Array : type
+            "parameters for #{command}#{" (#{description})" unless description.nil?}",
+            mandatory: default.nil?,
+            validation: bulk ? Array : type,
+            schema: schema
           )
           value = default if value.nil?
           unless type.nil?

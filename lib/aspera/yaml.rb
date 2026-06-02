@@ -34,14 +34,16 @@ module Aspera
       duplicate_keys
     end
 
-    # Safely load YAML content, raising an error if duplicate keys are found
+    # Safely load YAML content
+    # raising an error if duplicate keys are found
+    # Validates the yaml, and then call `YAML.safe_load`
     # @param yaml [String] YAML content
     # @return [Object] Parsed YAML content
     # @raise [RuntimeError] If duplicate keys are found
     def safe_load(yaml)
       duplicate_keys = find_duplicate_keys(Psych.parse_stream(yaml))
       raise "Duplicate keys: #{duplicate_keys.join('; ')}" unless duplicate_keys.empty?
-      YAML.safe_load(yaml)
+      YAML.safe_load(yaml, permitted_classes: [Time, Date, Symbol])
     end
 
     module_function :find_duplicate_keys, :safe_load
