@@ -598,8 +598,8 @@ module Aspera
           when :install
             return install_transfer_sdk
           when :spec
-            fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true, agent_columns: true)
-            return Main.result_object_list(data, fields: fields.map(&:to_s))
+            builder = Transfer::SpecDoc.new(Formatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
+            return Main.result_object_list(builder.rows, fields: builder.columns)
           when :schema
             schema = Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
             agent = options.get_next_argument('transfer agent name', mandatory: false)
@@ -878,8 +878,8 @@ module Aspera
           when :sync
             case options.get_next_command(%i[spec admin translate])
             when :spec
-              fields, data = Transfer::SpecDoc.man_table(Formatter, include_option: true, schema: Sync::Operations::CONF_SCHEMA)
-              return Main.result_object_list(data, fields: fields.map(&:to_s))
+              builder = Transfer::SpecDoc.new(Formatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
+              return Main.result_object_list(builder.rows, fields: builder.columns)
             when :admin
               return execute_sync_admin
             when :translate

@@ -295,9 +295,8 @@ module Aspera
             if schema_path.nil?
               Log.log.error{'No schema, consult manual.'}
             else
-              schema = Schema.instance.schema(schema_path)
-              fields, data = Transfer::SpecDoc.man_table(Formatter, schema: schema)
-              @context.formatter.display_results(**Main.result_object_list(data, fields: fields.map(&:to_s)))
+              builder = Transfer::SpecDoc.new(Formatter, Schema.instance.schema(schema_path)).build
+              @context.formatter.display_results(**Main.result_object_list(builder.rows, fields: builder.columns))
             end
           end
         end
