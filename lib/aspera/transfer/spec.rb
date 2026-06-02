@@ -50,9 +50,9 @@ module Aspera
           transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']] if transfer_spec.key?('resume_policy')
         end
       end
-      SCHEMA = CommandLineBuilder.read_schema(Schema::TRANSFER_SPEC, ascp: true)
+      SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::TRANSFER_SPEC, ascp: true)
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
-      SCHEMA['properties'].each do |name, description|
+      SCHEMA.current['properties'].each do |name, description|
         next unless description['enum'].is_a?(Array)
         const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description['enum'])
         description['enum'].each do |enum|

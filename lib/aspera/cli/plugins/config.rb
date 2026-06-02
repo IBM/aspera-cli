@@ -16,7 +16,7 @@ require 'aspera/sync/operations'
 require 'aspera/products/transferd'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
-require 'aspera/transfer/spec_doc'
+require 'aspera/schema/documentation'
 require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
 require 'aspera/environment'
@@ -598,7 +598,7 @@ module Aspera
           when :install
             return install_transfer_sdk
           when :spec
-            builder = Transfer::SpecDoc.new(Formatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
+            builder = Schema::Documentation.new(Formatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
             return Main.result_object_list(builder.rows, fields: builder.columns)
           when :schema
             schema = Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
@@ -878,7 +878,7 @@ module Aspera
           when :sync
             case options.get_next_command(%i[spec admin translate])
             when :spec
-              builder = Transfer::SpecDoc.new(Formatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
+              builder = Schema::Documentation.new(Formatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
               return Main.result_object_list(builder.rows, fields: builder.columns)
             when :admin
               return execute_sync_admin

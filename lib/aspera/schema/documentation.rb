@@ -4,10 +4,11 @@ require 'aspera/agent/factory'
 require 'aspera/markdown'
 
 module Aspera
-  module Transfer
+  module Schema
     # Generate documentation from Schema, for Transfer Spec, or async Conf spec
-    class SpecDoc
+    class Documentation
       # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick, check_row
+      # @param schema [Reader]
       # @param include_option [Boolean]        `true`: include CLI options (switches, env vars) in descriptions
       # @param agent_columns  [Boolean]        `true`: add separate columns for each transfer agent compatibility
       def initialize(formatter, schema, include_option: false, agent_columns: false)
@@ -37,9 +38,9 @@ module Aspera
       # @return [nil]
       def build(schema = nil, prefix = '')
         schema ||= @schema
-        schema['properties'].each do |name, info|
-          build(info, "#{prefix}#{name}.") if info['type'].eql?('object') && info['properties']
-          build(info['items'], "#{prefix}#{name}[].") if info['type'].eql?('array') && info['items'] && info['items']['properties']
+        schema.dig('properties').current.each do |name, info|
+          build(schema.sub(info), "#{prefix}#{name}.") if info['type'].eql?('object') && info['properties']
+          build(schema.sub(info['items']), "#{prefix}#{name}[].") if info['type'].eql?('array') && info['items'] && info['items']['properties']
           # Manual table
           item = {
             name:        name,

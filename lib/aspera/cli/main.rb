@@ -12,6 +12,8 @@ require 'aspera/cli/hints'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/schema/documentation'
+require 'aspera/schema/registry'
 require 'net/ssh/errors'
 require 'openssl'
 
@@ -295,7 +297,7 @@ module Aspera
             if schema_path.nil?
               Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
             else
-              builder = Transfer::SpecDoc.new(Formatter, Schema.instance.schema(schema_path)).build
+              builder = Schema::Documentation.new(Formatter, Schema::Registry.instance.reader(schema_path)).build
               @context.formatter.display_results(**Main.result_object_list(builder.rows, fields: builder.columns))
             end
           end

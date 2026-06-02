@@ -9,6 +9,7 @@ require 'aspera/command_line_builder'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
+require 'aspera/schema/registry'
 require 'json'
 require 'base64'
 require 'open3'
@@ -336,10 +337,10 @@ module Aspera
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options
-      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(Schema::SYNC_ARGS)
-      ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA['properties']['sessions']['items']
-      ARGS_INSTANCE_SCHEMA['properties'].delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(Schema::SYNC_CONF)
+      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
+      ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA.dig(*%w[properties sessions items])
+      ARGS_INSTANCE_SCHEMA.dig('properties').current.delete('sessions')
+      CONF_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp"
