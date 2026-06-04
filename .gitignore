@@ -10,3 +10,4 @@
 .bundle
 # created by github workflow: bundler-cache: true
 /vendor/
+.tmp.*

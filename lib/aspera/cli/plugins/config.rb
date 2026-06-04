@@ -601,7 +601,7 @@ module Aspera
             builder = Schema::Documentation.new(Formatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
             return Main.result_object_list(builder.rows, fields: builder.columns)
           when :schema
-            schema = Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
+            schema = Transfer::Spec::SCHEMA.current.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
             agent = options.get_next_argument('transfer agent name', mandatory: false)
             schema['properties'] = schema['properties'].select{ |_k, v| CommandLineBuilder.supported_by_agent(agent, v)} unless agent.nil?
             schema['properties'] = schema['properties'].sort.to_h

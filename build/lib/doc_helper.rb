@@ -11,7 +11,7 @@ require 'aspera/agent/factory'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/main'
-require 'aspera/transfer/spec_doc'
+require 'aspera/schema/documentation'
 require 'aspera/sync/operations'
 require 'aspera/log'
 require 'aspera/rest'
@@ -228,25 +228,15 @@ class DocHelper
     end
   end
 
-  # Transfer spec description generation for markdown manual
-  def spec_table
-    agents = Aspera::Agent::Factory::ALL.map{ |_, v| [v[:short].upcase, v[:long]]}.sort_by{ |a| a[0]}
-    agents.unshift(%w[ID Name])
-    fields, data = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true, agent_columns: false)
-    props = data.map{ |param| fields.map{ |field_name| param[field_name]}}
-    # Column titles
-    props.unshift(fields.map(&:capitalize))
-    props.first[0] = 'Field'
-    [Aspera::Markdown.table(agents), Aspera::Markdown.table(props)].join("\n\n")
+  def spec_to_table(spec, **kwargs)
+    table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, **kwargs).build.table
+    table[0] = table[0].map(&:capitalize)
+    table[0][0] = 'Field'
+    Aspera::Markdown.table(table)
   end
 
-  def sync_conf_table
-    fields, data = Aspera::Transfer::SpecDoc.man_table(MarkdownFormatter, include_option: true, agent_columns: false, schema: Aspera::Sync::Operations::CONF_SCHEMA)
-    props = data.map{ |param| param.values_at(*fields)}
-    # Column titles
-    props.unshift(fields.map(&:capitalize))
-    props.first[0] = 'Field'
-    Aspera::Markdown.table(props)
+  def agent_table
+    Aspera::Markdown.table([%w[ID Name]] + Aspera::Agent::Factory::ALL.map{ |_, v| [v[:short].upcase, v[:long]]}.sort_by{ |a| a[0]})
   end
 
   # @return the minimum ruby version from gemspec

@@ -3668,7 +3668,9 @@ An optional parameter can be specified to display the schema for a specific tran
 
 #### Transfer Specification Reference
 
-<%=spec_table%>
+<%=agent_table%>
+
+<%=spec_to_table(Aspera::Transfer::Spec::SCHEMA, include_option: true)%>
 
 #### Destination folder for transfers
 
@@ -8409,7 +8411,7 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 #### Quick test
 
-Below is a simple end‑to‑end procedure to verify synchronization using the demo server.
+Below is a simple end-to-end procedure to verify synchronization using the demo server.
 
 1. Initialize the demo server configuration:
 
@@ -8497,9 +8499,9 @@ The documentation is available in the terminal with:
 
 > [!NOTE]
 > <%=tool%> accepts the following fields within the `sync_info` Hash.
-> The option listed in the **Description** correspond to the equivalent parameters used by the low‑level `async` command.
+> The option listed in the **Description** correspond to the equivalent parameters used by the low-level `async` command.
 
-<%=sync_conf_table%>
+<%=spec_to_table(Aspera::Sync::Operations::CONF_SCHEMA, include_option: true)%>
 
 ##### `sync_info`: `args` format
 

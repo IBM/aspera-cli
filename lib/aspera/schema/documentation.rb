@@ -18,6 +18,7 @@ module Aspera
         @agent_columns = agent_columns
         @columns = %i[name type description]
         @columns.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if @agent_columns
+        # @type [Array<Hash<Symbol,String>>]
         @rows = []
       end
 
@@ -25,8 +26,15 @@ module Aspera
         @rows.sort_by{ |i| i[:name]}
       end
 
+      # @return [Array<String>]
       def columns
         @columns.map(&:to_s)
+      end
+
+      # First row is the titles
+      # @return [Array<Array<String>>]
+      def table
+        [@columns.map(&:to_s)] + @rows.sort_by{ |i| i[:name]}.map{ |row| @columns.map{ |field| row[field]}}
       end
 
       # Generate a documentation table from a JSON schema for transfer specifications
@@ -35,7 +43,7 @@ module Aspera
       # Handles nested objects, arrays, and extracts metadata (descriptions, types, enums, deprecations).
       #
       # @param schema [Reader] The JSON schema to process
-      # @return [nil]
+      # @return [Documentation]
       def build(schema = nil)
         schema ||= @schema
         schema.each_property do |property_schema, _name, property_full_name|

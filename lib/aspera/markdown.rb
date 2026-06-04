@@ -8,11 +8,14 @@ module Aspera
     HTML_BREAK = '<br/>'
 
     class << self
+      COL_WIDTH = 80
       # Generate markdown from the provided 2D table
+      # @param table [Array<Array<String>>] 2D array of strings
+      # @return [String] markdown table
       def table(table)
         # get max width of each columns
         col_widths = table.transpose.map do |col|
-          [col.flat_map{ |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size)}.max, 80].min
+          [col.flat_map{ |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size)}.max, COL_WIDTH].min
         end
         headings = table.shift
         table.unshift(col_widths.map{ |col_width| '-' * col_width})
