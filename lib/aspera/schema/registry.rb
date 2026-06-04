@@ -29,12 +29,13 @@ module Aspera
         faspex: 'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml'
       }
 
-      TRANSFER_INFO = 'opts:components.schemas.TransferInfo'
+      OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
       AOC = 'aoc'
       FASPEX = 'faspex'
+      TRANSFER_INFO = "#{OPTIONS}:components.schemas.TransferInfo"
 
       REQ_BODY = '.requestBody.content.application/json.schema'
 

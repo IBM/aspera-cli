@@ -3217,22 +3217,7 @@ See [FASP](#fasp-configuration).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-| Name                   | Type      | Description                                                                 |
-|------------------------|-----------|-----------------------------------------------------------------------------|
-| `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: `true` |
-| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false`    |
-| `trusted_certs`        | `Array`   | List of repositories for trusted certificates.                              |
-| `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers.<%=br%>One of: `dsa_rsa`, `rsa`, `per_client`.<%=br%>Default: `rsa` |
-| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<%=br%>Default: `[]`        |
-| `spawn_timeout_sec`    | `Float`   | Multi session<%=br%>Verification time that `ascp` is running<%=br%>Default: `3` |
-| `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2`    |
-| `multi_incr_udp`       | `Bool`    | Multi Session<%=br%>Increment UDP port on multi-session<%=br%>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<%=br%>Else, each session will use `fasp_port` (or `ascp` default)<%=br%>Default: `true` on Windows, else `false` |
-| `resume`               | `Hash`    | Resume parameters. See below.                                               |
-| `resume.iter_max`      | `Integer` | Max number of retry on error<%=br%>Default: `7`                             |
-| `resume.sleep_initial` | `Integer` | First Sleep before retry<%=br%>Default: `2` |
-| `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<%=br%>Default: `2` |
-| `resume.sleep_max`     | `Integer` | Default: `60` |
-| `monitor`              | `Bool`    | Use management port.<%=br%>Default: `true` |
+<%=schema_to_table(Aspera::Schema::Registry::TRANSFER_INFO)%>
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:

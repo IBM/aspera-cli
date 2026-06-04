@@ -12,6 +12,7 @@ require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/main'
 require 'aspera/schema/documentation'
+require 'aspera/schema/registry'
 require 'aspera/sync/operations'
 require 'aspera/log'
 require 'aspera/rest'
@@ -228,11 +229,19 @@ class DocHelper
     end
   end
 
+  # Generate table from schema
+  # @param spec [Aspera::Schema::Reader]
   def spec_to_table(spec, **kwargs)
     table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, **kwargs).build.table
     table[0] = table[0].map(&:capitalize)
     table[0][0] = 'Field'
     Aspera::Markdown.table(table)
+  end
+
+  # Generate table from schema registry path
+  def schema_to_table(schema_path)
+    schema = Aspera::Schema::Registry.instance.reader(schema_path)
+    spec_to_table(schema)
   end
 
   def agent_table
