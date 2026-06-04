@@ -16,7 +16,6 @@ properties:
   ascp_dir:
     description: Directory containing ascp executable to use.
     type: string
-    default: ""
   assume_no_mods:
     description: Assume that the directory structure has not been modified.
     type: boolean
@@ -52,7 +51,6 @@ properties:
   cookie:
     description: User-defined identification string.
     type: string
-    default: ""
     x-cli-option: true
   cooloff_max_seconds:
     description:
@@ -153,7 +151,6 @@ properties:
       absolute:
         description: UTC timestamp. Empty value for disabled.
         type: string
-        default: ""
       relative_seconds:
         description: Relative to async start time. `-1` for disabled.
         type: integer
@@ -185,7 +182,6 @@ properties:
       pass:
         description: Authenticate the local async with the specified password.
         type: string
-        default: ""
       path:
         description: The directory to be synchronized on the local host.
         type: string
@@ -201,7 +197,6 @@ properties:
     description: Use the specified database directory on the local host.
       Default is `.private-asp` at the root level of the synchronized directory.
     type: string
-    default: ""
     x-cli-option: true
     x-cli-short: -b
   local_checksum_threads:
@@ -215,7 +210,6 @@ properties:
       Store/Restore the database to/from the specified directory on the local host.
       The value can be an absolute path, an URI or - (use the local sync dir)
     type: string
-    default: ""
     x-cli-option: true
   local_force_stat:
     description: Forces the local async to retrieve file information even when no changes are detected by the scanner or monitor.
@@ -233,12 +227,10 @@ properties:
   local_keep_dir:
     description: Move deleted files into the specified directory on the local host.
     type: string
-    default: ""
     x-cli-option: --keep-dir-local
   local_mount_signature:
     description: Verify that the file system is mounted by the existence of this file on the local host.
     type: string
-    default: ""
     x-cli-option: true
   local_move_cache_timeout_seconds:
     description:
@@ -299,13 +291,11 @@ properties:
       local_dir:
         description: Use the specified logging directory on the local host.
         type: string
-        default: ""
         x-cli-option: --alt-logdir
         x-cli-short: -L
       remote_dir:
         description: Use the specified logging directory on the remote host.
         type: string
-        default: ""
         x-cli-option: --remote-logdir
         x-cli-short: -R
   manifest_path:
@@ -313,7 +303,6 @@ properties:
       A directory path where ascp will create manifest TEXT files (passed
       to ascp as --file-manifest-path)
     type: string
-    default: ""
   mirror:
     description:
       Force the pulling side to be exactly like the pushing side, removing
@@ -352,7 +341,6 @@ properties:
     description: Suppress log messages for ITEM.
       The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.
     type: string
-    default: ""
     x-cli-option: true
   no_preserve_root_attrs:
     description: Disable the preservation of attributes on the Sync root.
@@ -455,7 +443,6 @@ properties:
       fingerprint:
         description: Check it against server SSH host key fingerprint.
         type: string
-        default: ""
         x-ts-name: sshfp
       host:
         description: Use the specified host name or address of the remote host.
@@ -465,7 +452,6 @@ properties:
       pass:
         description: Authenticate the transfer with the specified password.
         type: string
-        default: ""
         x-ts-name: remote_password
         x-cli-option: true
         x-cli-short: -w
@@ -516,11 +502,9 @@ properties:
           host:
             description: Use the specified host name or address of the proxy.
             type: string
-            default: ""
           pass:
             description: Authenticate to the proxy with the specified password.
             type: string
-            default: ""
           port:
             description: Use the specified port, default is 9091 for dnat, 9092.
               for dnats
@@ -536,18 +520,15 @@ properties:
           user:
             description: Authenticate to the proxy with the specified username.
             type: string
-            default: ""
       token:
         description: Token string passed to server's authentication service.
         type: string
-        default: ""
         x-ts-name: token
         x-cli-short: -W
       token_node_user:
         description: Node API user identity associated with the token.
           Required for node user bearer tokens
         type: string
-        default: ""
       user:
         description: Authenticate the transfer with the specified username.
         type: string
@@ -563,7 +544,6 @@ properties:
     description: Use the specified database directory on the remote host.
       Default is `.private-asp` at the root level of the synchronized directory.
     type: string
-    default: ""
     x-cli-option: true
     x-cli-short: -B
   remote_db_store_dir:
@@ -571,7 +551,6 @@ properties:
       Store/Restore the database to/from the specified directory on the remote host.
       The value can be an absolute path, an URI or - (use the remote sync dir).
     type: string
-    default: ""
     x-cli-option: true
   remote_force_stat:
     description: Forces the remote async to retrieve file information even when no changes are detected by the scanner or monitor.
@@ -589,12 +568,10 @@ properties:
   remote_keep_dir:
     description: Move deleted files into the specified directory on the remote host.
     type: string
-    default: ""
     x-cli-option: --keep-dir-remote
   remote_mount_signature:
     description: Verify that the file system is mounted by the existence of this file on the remote host.
     type: string
-    default: ""
     x-cli-option: true
   remote_move_cache_timeout_seconds:
     description:
@@ -868,7 +845,6 @@ properties:
       host:
         description: Use the specified host name or address to connect to the datastore.
         type: string
-        default: ""
       port:
         description: Use the specified port.
         type: integer
@@ -876,10 +852,8 @@ properties:
   write_gid:
     description: Try to write files as the specified group.
     type: string
-    default: ""
     x-cli-option: true
   write_uid:
     description: Try to write files as the specified user.
     type: string
-    default: ""
     x-cli-option: true
