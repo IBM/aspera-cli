@@ -240,7 +240,7 @@ class DocHelper
   # Generate table from schema
   # @param spec [Aspera::Schema::Reader]
   def spec_to_table(spec, **kwargs)
-    table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, **kwargs).build.table
+    table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, code_highlight: true, **kwargs).build.table
     table[0] = table[0].map(&:capitalize)
     table[0][0] = 'Field'
     Aspera::Markdown.table(table)

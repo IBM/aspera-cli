@@ -9,13 +9,15 @@ module Aspera
     class Documentation
       # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick, check_row
       # @param schema [Reader]
-      # @param include_option [Boolean]        `true`: include CLI options (switches, env vars) in descriptions
-      # @param agent_columns  [Boolean]        `true`: add separate columns for each transfer agent compatibility
-      def initialize(formatter, schema, include_option: false, agent_columns: false)
+      # @param include_option [Boolean] `true`: include CLI options (switches, env vars) in descriptions
+      # @param agent_columns  [Boolean] `true`: add separate columns for each transfer agent compatibility
+      # @param code_highlight [Boolean] `true`: format name and type as code
+      def initialize(formatter, schema, include_option: false, agent_columns: false, code_highlight: false)
         @formatter = formatter
         @schema = schema
         @include_option = include_option
         @agent_columns = agent_columns
+        @code_highlight = code_highlight
         @columns = %i[name type description]
         @columns.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if @agent_columns
         # @type [Array<Hash<Symbol,String>>]
@@ -45,13 +47,14 @@ module Aspera
       # @param schema [Reader] The JSON schema to process
       # @return [Documentation]
       def build(schema = nil)
+        code = @code_highlight ? ->(c){"`#{c}`"} : ->(c){c}
         schema ||= @schema
         schema.each_property do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
           item = {
-            name:        property_full_name,
-            type:        node['type'],
+            name:        code.call(property_full_name),
+            type:        code.call(node['type']),
             description: []
           }
           # Render Markdown formatting and split lines
@@ -76,7 +79,7 @@ module Aspera
           # Only keep lines that are usable in supported agents
           next false if agents.empty?
           item[:description].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
-          item[:description].push("Default: #{node['default']}.") if node.key?('default')
+          item[:description].push("Default: #{code.call(node['default'])}.") if node.key?('default')
           if @include_option
             envvar_prefix = ''
             cli_option =
