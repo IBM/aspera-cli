@@ -63,14 +63,14 @@ module Aspera
         # @param id_result [String] Key in result hash to use as identifier
         # @param fields    [Array]  Fields to display
         # @param block     [Proc]   Block to execute for each value
-        def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, &block)
+        def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
           Aspera.assert(block_given?){'missing block'}
           is_bulk = options.get_option(:bulk)
           case values
           when :identifier
             values = options.instance_identifier(description: descr)
           when Class
-            values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk)
+            values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk, schema: schema)
           end
           # If not bulk, there is a single value
           params = is_bulk ? values : [values]

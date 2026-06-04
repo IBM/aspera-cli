@@ -14,14 +14,19 @@ module Aspera
         def known?(sym)
           LOCATIONS.key?(sym)
         end
+
+        def req_body(component, endpoint)
+          "#{component}:paths./#{endpoint}.requestBody.content.application/json.schema"
+        end
       end
 
       LOCATIONS = {
-        spec: 'aspera/transfer/spec.schema.yaml',
-        args: 'aspera/sync/args.schema.yaml',
-        conf: 'aspera/sync/conf.schema.yaml',
-        opts: 'aspera/cli/options.schema.yaml',
-        aoc:  'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml'
+        spec:   'aspera/transfer/spec.schema.yaml',
+        args:   'aspera/sync/args.schema.yaml',
+        conf:   'aspera/sync/conf.schema.yaml',
+        opts:   'aspera/cli/options.schema.yaml',
+        aoc:    'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
+        faspex: 'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml'
       }
 
       TRANSFER_INFO = 'opts:components.schemas.TransferInfo'
@@ -29,6 +34,9 @@ module Aspera
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
       AOC = 'aoc'
+      FASPEX = 'faspex'
+
+      REQ_BODY = '.requestBody.content.application/json.schema'
 
       def initialize
         @cache = {}
@@ -42,7 +50,9 @@ module Aspera
         name, path = name_path.split(':', 2)
         sym = name.to_sym
         Aspera.assert(Registry.known?(sym)){"schema: #{sym}"}
-        @cache[sym] = Yaml.safe_load(File.read(File.join(@main_folder, LOCATIONS[sym]))) unless @cache.key?(sym)
+        spec_file = File.join(@main_folder, LOCATIONS[sym])
+        @cache[sym] = Yaml.safe_load(File.read(spec_file)) if spec_file.end_with?('.yaml') && !@cache.key?(sym)
+        @cache[sym] = JSON.parse(File.read(spec_file)) if spec_file.end_with?('.json') && !@cache.key?(sym)
         reader = Reader.new(@cache[sym])
         return reader unless path
         reader.dig(*path.split('.'))

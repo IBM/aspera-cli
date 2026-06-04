@@ -407,6 +407,7 @@ module Aspera
           list_default_query = {}
           supported_operations = Operations::ALL
           resource_class_path = "#{resource_type}s"
+          schema_create_modify = nil
           case resource_type
           when :client
             supported_operations += %i[set_pub_key]
@@ -428,6 +429,7 @@ module Aspera
           when :node
             list_default_fields = %w[id name host access_key]
             supported_operations += %i[do bearer_token]
+            schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, 'nodes.post')
           when :operation
             list_default_fields = %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id]
             supported_operations = %i[list show modify]
@@ -457,7 +459,7 @@ module Aspera
             # TODO: report inconsistency: creation url is !=, and does not return id.
             resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
             workspace_id = aoc_api.workspace_info[:id] if require_workspace_id
-            return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
+            return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result, schema: schema_create_modify) do |params|
               params['workspace_id'] = workspace_id if require_workspace_id && workspace_id && !params.key?('workspace_id')
               aoc_api.create(resource_class_path, params)
             end
@@ -467,7 +469,7 @@ module Aspera
             object = aoc_api.read(resource_instance_path, query_read_delete)
             return Main.result_single_object(object, fields: Formatter.all_but('certificate'))
           when :modify
-            changes = options.get_next_argument('properties', validation: Hash)
+            changes = options.get_next_argument('properties', validation: Hash, schema: schema_create_modify)
             return do_bulk_operation(command: command, values: res_id) do |one_id|
               aoc_api.update("#{resource_class_path}/#{one_id}", changes)
               {'id' => one_id}
@@ -1050,7 +1052,7 @@ module Aspera
                 return short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
               end
             when :send
-              package_data = value_create_modify(command: package_command, schema: 'aoc:paths./packages.post.requestBody.content.application/json.schema')
+              package_data = value_create_modify(command: package_command, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post'))
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
               # Works for both normal user auth and link auth.

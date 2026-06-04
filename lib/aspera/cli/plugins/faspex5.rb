@@ -270,7 +270,7 @@ module Aspera
         end
 
         def package_send
-          parameters = value_create_modify(command: :send)
+          parameters = value_create_modify(command: :send, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post'))
           # autofill recipient for public url
           if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
             parameters['recipients'] = [{
