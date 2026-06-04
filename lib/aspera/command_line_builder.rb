@@ -73,8 +73,9 @@ module Aspera
       end
     end
 
-    # @param [Hash] object with parameters
-    # @param [Hash] schema JSON schema
+    # @param object [Hash] object with parameters
+    # @param schema [Schema::Reader] JSON schema
+    # @param convert [Object] function to convert value
     def initialize(object, schema, convert)
       @object = object # keep reference so that it can be modified by caller before calling `process_params`
       @schema = schema

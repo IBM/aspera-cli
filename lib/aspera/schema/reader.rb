@@ -7,6 +7,13 @@ module Aspera
     class Reader
       attr_reader :current
 
+      # Shortcut to access current value at path
+      # @param x [String] path element
+      # @return [Hash, Array, String, Integer] current value at path
+      def [](x)
+        @current[x]
+      end
+
       # Find sub path relative to current
       # Honors $ref
       def dig(*path)
