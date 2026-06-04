@@ -97,14 +97,14 @@ module Aspera
             current.each do |key, value|
               case value
               when NilClass
-                current[key] = special_format('null')
+                current[key] = TerminalFormatter.special_format('null')
               when String
-                current[key] = special_format('empty string') if value.empty?
+                current[key] = TerminalFormatter.special_format('empty string') if value.empty?
               when Proc
-                current[key] = special_format('lambda')
+                current[key] = TerminalFormatter.special_format('lambda')
               when Array
                 if value.empty?
-                  current[key] = special_format('empty list')
+                  current[key] = TerminalFormatter.special_format('empty list')
                 elsif value.all?(String)
                   current[key] = value.join(string_list_separator)
                 else
@@ -114,7 +114,7 @@ module Aspera
                 end
               when Hash
                 if value.empty?
-                  current[key] = special_format('empty dict')
+                  current[key] = TerminalFormatter.special_format('empty dict')
                 else
                   hash_to_process.push(value)
                 end
@@ -321,7 +321,7 @@ module Aspera
             # :single_object is a Hash, where key=column name
             Aspera.assert_type(data, Hash){'result'}
             if data.empty?
-              display_message(:data, self.class.special_format('empty dict'))
+              display_message(:data, TerminalFormatter.special_format('empty dict'))
             else
               data = DotContainer.new(data).to_dotted if @options[:flat_hash]
               display_table([data], compute_fields([data], fields), single: true)
@@ -339,7 +339,7 @@ module Aspera
               Log.log.debug('no result expected')
               return
             end
-            display_message(:info, self.class.special_format(data.to_s))
+            display_message(:info, TerminalFormatter.special_format(data.to_s))
             return
           when :status # no table
             # :status displays a simple message
@@ -444,7 +444,7 @@ module Aspera
         Aspera.assert_array_all(fields, String)
         if object_array.empty?
           # no  display for csv
-          display_message(:info, self.class.special_format('empty')) if @options[:format].eql?(:table)
+          display_message(:info, TerminalFormatter.special_format('empty')) if @options[:format].eql?(:table)
           return
         end
         filter_columns_on_select(object_array)
