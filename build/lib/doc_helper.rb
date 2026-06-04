@@ -17,6 +17,7 @@ require 'aspera/sync/operations'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/markdown'
+require 'aspera/formatter_interface'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -25,30 +26,37 @@ require_relative 'test_env'
 require_relative 'paths'
 require_relative 'build_tools'
 
-# Format special values to markdown
-class MarkdownFormatter
-  class << self
-    def special_format(special)
-      "&lt;#{special}&gt;"
-    end
+# Markdown/HTML formatter for static documentation
+# @see Aspera::FormatterInterface
+# @see TerminalFormatter (in lib/aspera/cli/formatter.rb)
+module MarkdownFormatter
+  include Aspera::FormatterInterface
 
-    def check_row(row)
-      row.each_key do |k|
-        row[k] = row[k].join(Aspera::Markdown::HTML_BREAK) if row[k].is_a?(Array)
-        row[k] = '&nbsp;' if row[k].to_s.strip.empty?
-      end
-    end
+  # Format special values as HTML entities
+  def special_format(special)
+    "&lt;#{special}&gt;"
+  end
 
-    # @param match [MatchData]
-    def markdown_text(match)
-      # keep markdown unchanged
-      match.to_s
-    end
-
-    def tick(bool)
-      bool ? 'Y' : ' '
+  # Prepare table row for Markdown (join arrays with <br/>, replace empty with &nbsp;)
+  def check_row(row)
+    row.each_key do |k|
+      row[k] = row[k].join(Aspera::Markdown::HTML_BREAK) if row[k].is_a?(Array)
+      row[k] = '&nbsp;' if row[k].to_s.strip.empty?
     end
   end
+
+  # Keep Markdown formatting unchanged (pass-through)
+  # @param match [MatchData, String]
+  def markdown_text(match)
+    match.to_s
+  end
+
+  # Format boolean as simple Y or space
+  def tick(bool)
+    bool ? 'Y' : ' '
+  end
+
+  module_function :tick, :special_format, :check_row, :markdown_text
 end
 
 # :reek:TooManyMethods

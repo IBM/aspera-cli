@@ -598,7 +598,7 @@ module Aspera
           when :install
             return install_transfer_sdk
           when :spec
-            builder = Schema::Documentation.new(Formatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
+            builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
             return Main.result_object_list(builder.rows, fields: builder.columns)
           when :schema
             schema = Transfer::Spec::SCHEMA.current.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
@@ -834,8 +834,8 @@ module Aspera
                 plugin_class = Plugins::Factory.instance.plugin_class(name)
                 result.push({
                   plugin: name,
-                  detect: Formatter.tick(plugin_class.respond_to?(:detect)),
-                  wizard: Formatter.tick(plugin_class.method_defined?(:wizard)),
+                  detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
+                  wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
                   path:   Plugins::Factory.instance.plugin_source(name)
                 })
               end
@@ -878,7 +878,7 @@ module Aspera
           when :sync
             case options.get_next_command(%i[spec admin translate])
             when :spec
-              builder = Schema::Documentation.new(Formatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
+              builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
               return Main.result_object_list(builder.rows, fields: builder.columns)
             when :admin
               return execute_sync_admin
