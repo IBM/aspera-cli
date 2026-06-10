@@ -15,6 +15,10 @@ require 'singleton'
 module Aspera
   module Cli
     # Command line extended values
+    #
+    # @!method self.instance
+    #   Returns the singleton instance of ExtendedValue
+    #   @return [ExtendedValue] the singleton instance
     class ExtendedValue
       include Singleton
 
@@ -145,7 +149,7 @@ module Aspera
       # @param value   [String] the value to parse
       # @param context [String] Context in which evaluation is done
       # @param allowed [Array<Class>,NilClass] Expected types
-      # @return [Object] Evaluated value
+      # @return [String, Integer, Array, Hash, Boolean] Evaluated value
       def evaluate(value, context:, allowed: nil)
         return value unless value.is_a?(String)
         Aspera.assert_array_all(allowed, Class) unless allowed.nil?
