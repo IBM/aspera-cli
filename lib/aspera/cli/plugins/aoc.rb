@@ -413,8 +413,8 @@ module Aspera
           supported_operations = Operations::ALL
           # API path
           resource_class_path = "#{resource_type}s"
-          # Default location of creation payload in schema
-          schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{resource_class_path}.post") rescue nil
+          # path in openapi where post is located to get creation schema
+          create_schema_path = resource_class_path
           case resource_type
           when :client
             supported_operations += %i[set_pub_key]
@@ -431,14 +431,18 @@ module Aspera
           when :dropbox
             require_workspace_id = true
             resource_class_path = "#{resource_type}es"
+            create_schema_path = resource_class_path
+          when :group, :saml_configuration
+            create_schema_path = nil
           when :group_membership
             list_default_fields = %w[id group_id member_type member_id]
+            create_schema_path = nil
           when :kms_profile
             resource_class_path = "integrations/#{resource_type}s"
+            create_schema_path = nil
           when :node
             list_default_fields = %w[id name host access_key]
             supported_operations += %i[do bearer_token]
-            # schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, 'nodes.post')
           when :operation
             list_default_fields = %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id]
             supported_operations = %i[list show modify]
@@ -455,6 +459,8 @@ module Aspera
           when :workspace_membership
             list_default_fields = %w[id workspace_id member_type member_id]
           end
+          # Default location of creation payload in schema
+          schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{create_schema_path}.post") if create_schema_path && supported_operations.include?(:create)
           command = options.get_next_command(supported_operations)
           # Require identifier for non global commands
           if (supported_operations != Operations::SINGLETON) && !Operations::GLOBAL.include?(command)

@@ -4575,8 +4575,35 @@ $var="v"
 #### Extended Value (JSON, Ruby, ...)
 
 Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Value](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
-Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string, or the [dot-path](#dot-path-notation).
-JSON itself has some special syntax: for example `"` is used to enclose a `String`.
+
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) value.
+JSON itself has some special syntax: for example `"` is used to enclose a `String` which may be difficult to specify in shells for whom it is a special character.
+
+The [dot-path](#dot-path-notation) can also be used and can be easier to use because it does usually not require special characters.
+
+Some parameters or options can provide the expected structure of the Extended Value by providing the special value: `help`.
+
+Example:
+
+```shell
+ascli --ts=help
+```
+
+```text
+ERRR Schema: option: ts
+╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                           │ type    │ description                                                                                                              │
+╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
+│                                │         │ (A, T)                                                                                                                   │
+│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
+│                                │         │ (C)                                                                                                                      │
+│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
+│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb,                                                            │
+│                                │         │ aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm.                                                         │
+│                                │         │ Default: none.                                                                                                           │
+...
+╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯```
 
 #### Using a shell variable, parsed by shell, in an Extended Value
 
