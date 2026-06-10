@@ -82,6 +82,8 @@ tags:
     description: Manage client-specific settings for authenticated users. Store and retrieve configuration preferences per OAuth client.
   - name: Clients
     description: Manage OAuth client applications for API authentication. Configure browser-based or JWT authentication methods for secure API access.
+  - name: Contacts
+    description: Access contact information for users in the organization. Retrieve a list of available contacts with their email addresses, names, and source identifiers.
   - name: Dropbox Memberships
     description: Manage membership for shared inboxes. Add or remove users and groups with direct or inherited membership.
   - name: Dropboxes
@@ -138,6 +140,7 @@ x-tagGroups:
     tags:
       - Self
       - Users
+      - Contacts
       - Organizations
       - Organization
       - Feature Flags
@@ -4630,6 +4633,221 @@ paths:
           description: No Content
       tags:
         - Workspace Collaborators
+  /contacts:
+    get:
+      operationId: get_contacts
+      summary: Get Contacts
+      description: |
+        Retrieve a list of contacts available to the authenticated user.
+        Contacts include users from the organization with their email, name, source ID, and source type.
+        Supports filtering, searching, and scoping by workspace, app, or context.
+      parameters:
+        - name: q
+          in: query
+          description: Search query to filter contacts by name or email (substring match)
+          schema:
+            type: string
+        - name: workspace_id
+          in: query
+          description: Filter contacts by workspace ID
+          schema:
+            type: integer
+        - name: current_workspace_id
+          in: query
+          description: Current workspace context for determining membership and collaborator status
+          schema:
+            type: integer
+        - name: current_group_id
+          in: query
+          description: Current group context for determining membership status
+          schema:
+            type: integer
+        - name: current_dropbox_id
+          in: query
+          description: Current dropbox context for determining membership status
+          schema:
+            type: integer
+        - name: aspera_app_type
+          in: query
+          description: Type of Aspera application (e.g., 'packages', 'files')
+          schema:
+            type: string
+            enum:
+              - packages
+              - files
+        - name: aspera_app_id
+          in: query
+          description: ID of the Aspera application
+          schema:
+            type: integer
+        - name: context
+          in: query
+          description: Context for filtering contacts (e.g., 'send_package', 'share_folder', 'personal_distribution_list', 'workspace_distribution_list')
+          schema:
+            type: string
+            enum:
+              - send_package
+              - share_folder
+              - personal_distribution_list
+              - workspace_distribution_list
+        - name: source_type
+          in: query
+          description: Filter contacts by source type
+          schema:
+            type: string
+            enum:
+              - user
+              - group
+              - DistributionList
+        - name: include_personal_contacts
+          in: query
+          description: Include user's personal contacts in the results
+          schema:
+            type: boolean
+            default: false
+        - name: include_only_user_personal_contacts
+          in: query
+          description: Include only personal contacts that are users (excludes groups and distribution lists)
+          schema:
+            type: boolean
+            default: false
+        - name: member
+          in: query
+          description: Filter by membership status
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order for results (e.g., 'score' for relevance-based sorting)
+          schema:
+            type: string
+        - name: embed[]
+          in: query
+          description: Embed related resources (e.g., 'source' to include source details)
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/contact_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Contacts
+    post:
+      operationId: create_contact
+      summary: Create Contact
+      description: |
+        Create a new contact for the authenticated user.
+        This allows users to add contacts to their personal contact list.
+        Requires either current_workspace_id or both aspera_app_id and aspera_app_type.
+      parameters:
+        - name: current_workspace_id
+          in: query
+          description: ID of the current workspace context (can be provided as query parameter instead of in body)
+          schema:
+            type: integer
+        - name: aspera_app_id
+          in: query
+          description: ID of the Aspera application (can be provided as query parameter instead of in body)
+          schema:
+            type: integer
+        - name: aspera_app_type
+          in: query
+          description: Type of the Aspera application (can be provided as query parameter instead of in body)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - current_workspace_id
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the contact
+                current_workspace_id:
+                  type: integer
+                  description: ID of the current workspace context (required for authorization)
+                aspera_app_id:
+                  type: integer
+                  description: ID of the Aspera application (alternative to current_workspace_id)
+                aspera_app_type:
+                  type: string
+                  description: Type of the Aspera application (e.g., 'packages', 'files')
+                  enum:
+                    - packages
+                    - files
+                package_contact:
+                  type: boolean
+                  description: Whether this contact is being created for package sending
+                  default: false
+                send_invitation_email:
+                  type: boolean
+                  description: Whether to send an invitation email to the contact
+                  default: false
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/contact_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Contacts
+        - Contacts
 components:
   schemas:
     UnauthorizedError:
@@ -8563,6 +8781,35 @@ components:
           type: integer
           examples:
             - 0
+    contact_response:
+      type: object
+      description: Contact information for users in the organization
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the contact
+          example: files@asperasoft.com
+        name:
+          type: string
+          description: Display name of the contact
+          example: Files Asperasoft
+        source_id:
+          type: string
+          description: Unique identifier of the contact source
+          example: "113371"
+        source_type:
+          type: string
+          description: Type of the contact source
+          enum:
+            - user
+            - group
+          example: user
+      required:
+        - email
+        - name
+        - source_id
+        - source_type
   requestBodies:
     clients_params:
       content:
