@@ -402,20 +402,29 @@ module Aspera
         # Execute an action on admin resources
         # @param resource_type [Symbol] One of ADMIN_OBJECTS
         def execute_resource_action(resource_type)
+          # Set to `true` is resource creation requires a workspace id
           require_workspace_id = false
+          # Default fields to display
           list_default_fields = %w[id name]
+          # Default query for `list` action
           list_default_query = {}
+          # In result of create, what is the field that contains the id of the created resource
+          id_result = 'id'
           supported_operations = Operations::ALL
+          # API path
           resource_class_path = "#{resource_type}s"
-          schema_create_modify = nil
+          # Default location of creation payload in schema
+          schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{resource_class_path}.post") rescue nil
           case resource_type
           when :client
             supported_operations += %i[set_pub_key]
+            # schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{resource_class_path}.post")
           when :client_access_key
             resource_class_path = "admin/#{resource_type}s"
           when :client_registration_token
             resource_class_path = "admin/#{resource_type}s"
             list_default_fields = %w[id value data.client_subject_scopes created_at]
+            id_result = 'token'
           when :contact
             list_default_fields = %w[source_type source_id name email]
             # list_default_query = {'include_only_user_personal_contacts' => true} if @scope == Api::AoC::Scope::USER
@@ -429,7 +438,7 @@ module Aspera
           when :node
             list_default_fields = %w[id name host access_key]
             supported_operations += %i[do bearer_token]
-            schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, 'nodes.post')
+            # schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, 'nodes.post')
           when :operation
             list_default_fields = %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id]
             supported_operations = %i[list show modify]
@@ -454,8 +463,6 @@ module Aspera
           end
           case command
           when :create
-            id_result = 'id'
-            id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
             # TODO: report inconsistency: creation url is !=, and does not return id.
             resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
             workspace_id = aoc_api.workspace_info[:id] if require_workspace_id
