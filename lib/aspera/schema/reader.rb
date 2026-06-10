@@ -19,6 +19,7 @@ module Aspera
       def dig(*path)
         current = @current
         path.each do |p|
+          Aspera.assert(current.key?(p)){"schema: #{p} in #{path}"}
           current = current[p]
           Aspera.assert_type(current, Hash){'schema'}
           if current.key?('$ref')
