@@ -3790,6 +3790,12 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientRegistrationToken'
         '400':
           description: Bad Request
         '401':
@@ -3798,6 +3804,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+      tags:
+        - Client Registration Tokens
+    post:
+      operationId: create_client_registration_token
+      summary: Create Client Registration Token
+      description: Create a new client registration token for the current organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ClientRegistrationTokenData'
+              required:
+                - data
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRegistrationToken'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
       tags:
         - Client Registration Tokens
   /client_registration_tokens/{id}:
@@ -3814,6 +3858,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRegistrationToken'
         '400':
           description: Bad Request
         '401':
@@ -3846,10 +3894,18 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties: true
+              properties:
+                data:
+                  $ref: '#/components/schemas/ClientRegistrationTokenData'
+              required:
+                - data
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRegistrationToken'
         '400':
           description: Bad Request
         '401':
@@ -3866,6 +3922,10 @@ paths:
                 $ref: '#/components/schemas/NotFoundError'
         '422':
           description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
       tags:
         - Client Registration Tokens
     delete:
@@ -4693,6 +4753,76 @@ components:
         code: not_found
         message: The resource you were looking for does not exist
         request_id: 58825f7f-42bb-4f4e-90bc-a6deb9b999db
+    ClientRegistrationToken:
+      type: object
+      description: Client registration token with metadata
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the token
+          example: "89"
+        organization_id:
+          type: string
+          description: Organization ID this token belongs to
+          example: "28453"
+        creator_id:
+          type: string
+          description: ID of the user who created the token
+          example: "113501"
+        value:
+          type: string
+          description: The actual token value
+          example: "wnbuvqellfnsfptubuxtawiokhllippk"
+        data:
+          $ref: '#/components/schemas/ClientRegistrationTokenData'
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the token was created
+          example: "2026-06-10T14:20:07.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the token was last updated
+          example: "2026-06-10T14:20:07.000Z"
+        expires_at:
+          type: string
+          format: date-time
+          description: Timestamp when the token expires
+          example: "2026-06-11T14:20:07.000Z"
+      required:
+        - id
+        - organization_id
+        - creator_id
+        - value
+        - data
+        - created_at
+        - updated_at
+        - expires_at
+    ClientRegistrationTokenData:
+      type: object
+      description: Configuration data for client registration token
+      properties:
+        name:
+          type: string
+          description: Name of the client registration token
+          example: "laurentnode"
+        jwt_grant_enabled:
+          type: boolean
+          description: Whether JWT grant is enabled for this token
+          example: true
+        client_subject_enabled:
+          type: boolean
+          description: Whether client subject is enabled
+          example: true
+        client_subject_scopes:
+          type: array
+          description: List of scopes for client subject
+          items:
+            type: string
+          example: ["alee", "aejd"]
+      required:
+        - name
     app_simple_response:
       type: object
       properties:
