@@ -13,6 +13,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* **global**: Fixed listing supported enum values when not provided, e.g. for a command.
+
 ### Breaking Changes
 
 ## 4.26.0

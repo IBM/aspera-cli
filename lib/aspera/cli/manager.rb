@@ -36,6 +36,7 @@ module Aspera
       # Boolean values
       # @return [Array<true, false, :yes, :no>]
       ALL = (TRUE_VALUES + FALSE_VALUES).freeze
+      # `false` and `true`
       TYPES = [FalseClass, TrueClass].freeze
       SYMBOLS = [NO_SYM, YES_SYM].freeze
       # @return `true` if value is a value for `true` in ALL
@@ -66,9 +67,11 @@ module Aspera
       # Value will be coerced to int
       TYPES_INTEGER = [Integer].freeze
       TYPES_BOOLEAN = BoolValue::TYPES
-      # no value at all, it's a switch
+      # No value at all for the option, it's a switch, like `-N`
       TYPES_NONE = [].freeze
+      # Symbol
       TYPES_ENUM = [Symbol].freeze
+      # String
       TYPES_STRING = [String].freeze
     end
 
@@ -151,8 +154,10 @@ module Aspera
       end
 
       # Assign value to option.
-      # Value can be a String, then evaluated with ExtendedValue, or directly a value.
+      # Value can be a `String`, then evaluated with `ExtendedValue`, or directly a value.
       # @param value [String, Object] Value to assign to option
+      # @param where [String] Where the value is assigned from
+      # @return [nil]
       def assign_value(value, where:)
         Aspera.assert(!@deprecation, type: warn){"Option #{@option} is deprecated: #{@deprecation}"}
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
@@ -182,6 +187,7 @@ module Aspera
         when :setter then @object.send(@read_method, @option, :set, new_value)
         end
         Log.log.trace1{v = value(log: false); "#{@option} <- (#{v.class})#{v}"} # rubocop:disable Style/Semicolon
+        nil
       end
     end
 
@@ -204,10 +210,10 @@ module Aspera
         end
 
         # Generates error message with list of allowed values
-        # @param error_msg [String] error message
-        # @param accept_list [Array] list of allowed values
+        # @param error_msg [String] Error message
+        # @param accept_list [Array<Symbol>] List of allowed values
         def multi_choice_assert_msg(error_msg, accept_list)
-          [error_msg, 'Use:'].concat(accept_list.map{ |c| "- #{c}"}.sort).join("\n")
+          [error_msg, 'Use:', *accept_list.map{ |choice| "- #{choice}"}.sort].join("\n")
         end
 
         # Change option name with dash to name with underscore
@@ -295,6 +301,14 @@ module Aspera
         # do not parse options yet, let's wait for option `-h` to be overridden
       end
 
+      # Add a type to the message if not special types
+      # @param types [Array<Class>] types to add
+      # @return [String] Types if relevant
+      def add_types_info(types)
+        return '' if !types || types.empty? || types.eql?(Allowed::TYPES_ENUM) || types.eql?(Allowed::TYPES_BOOLEAN) || types.eql?(Allowed::TYPES_STRING)
+        " (#{types.map(&:name).join(', ')})"
+      end
+
       # Declare an option
       # @param option_symbol [Symbol] option name
       # @param description   [String] description for help
@@ -322,7 +336,7 @@ module Aspera
           schema:      schema
         )
         real_types = option_attrs.types&.reject{ |i| [NilClass, String, Symbol].include?(i)}
-        description = "#{description} (#{real_types.map(&:name).join(', ')})" if real_types && !real_types.empty? && !real_types.eql?(Allowed::TYPES_ENUM) && !real_types.eql?(Allowed::TYPES_BOOLEAN) && !real_types.eql?(Allowed::TYPES_STRING)
+        description += add_types_info(real_types)
         description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
         set_option(option_symbol, default, where: 'default') unless default.nil?
         on_args = [description]
@@ -363,7 +377,7 @@ module Aspera
       # @param descr       [String] description for help
       # @param mandatory   [Boolean] if true, raise error if option not set
       # @param multiple    [Boolean] if true, return remaining arguments (Array) until END
-      # @param accept_list [Array, NilClass] list of allowed values (Symbol)
+      # @param accept_list [Array<Symbol>, NilClass] list of allowed values
       # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
@@ -374,7 +388,7 @@ module Aspera
         validation = Symbol unless accept_list.nil?
         validation = [validation] unless validation.is_a?(Array) || validation.nil?
         Aspera.assert_array_all(validation, Class){'validation'} unless validation.nil?
-        descr = "#{descr} (#{validation.join(', ')})" unless validation.nil? || validation.eql?(Allowed::TYPES_STRING)
+        descr += add_types_info(validation)
         result =
           if !@unprocessed_cmd_line_arguments.empty?
             if multiple
@@ -618,16 +632,16 @@ module Aspera
       # @param descr        [String] description for help
       # @param check_option [Boolean] Check attributes of option with name=descr
       # @param multiple     [Boolean] true if multiple values expected
-      # @param accept_list  [Array] list of expected values
+      # @param accept_list  [Array<Symbol>,NilClass] List of expected values
+      # @return [String] user input
       def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, schema: nil)
         option_attrs = @declared_options[descr.to_sym]
         what = option_attrs ? 'option' : 'argument'
         default_prompt = "#{what}: #{descr}"
         if !@ask_missing_mandatory
           message = "Missing #{default_prompt}"
-          add_info = "\nGive `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
-          Aspera.assert(accept_list, type: Cli::MissingArgument){"#{message}#{add_info}"}
-          # Aspera.assert(!accept_list, type: Cli::MissingArgument){self.class.multi_choice_assert_msg(message, accept_list)}
+          message = self.class.multi_choice_assert_msg(message, accept_list) if accept_list
+          message += "\nGive `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
           raise Cli::MissingArgument, message
         end
         # ask interactively
