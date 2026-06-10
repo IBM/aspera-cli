@@ -59,9 +59,9 @@ module Aspera
         # For create and delete operations: execute one action or multiple if bulk is yes
         # @param command   [Symbol] Operation: :create, :delete, ...
         # @param descr     [String] Description of the value
-        # @param values    [Object] Value(s), or type of value to get from user
-        # @param id_result [String] Key in result hash to use as identifier
-        # @param fields    [Array]  Fields to display
+        # @param values    [Class, Array<Symbol>] Value(s), or type of value to get from user
+        # @param id_result [String] Key in result Hash to use as identifier
+        # @param fields    [:default, Array]  Fields to display
         # @param block     [Proc]   Block to execute for each value
         def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
           Aspera.assert(block_given?){'missing block'}
@@ -202,11 +202,13 @@ module Aspera
           return query
         end
 
-        # Retrieves an extended value from command line, used for creation or modification of entities
-        # @param command [Symbol]  command name for error message
-        # @param type    [Class]   expected type of value, either a Class, an Array of Class
-        # @param bulk    [Boolean] if true, value must be an Array of <type>
-        # @param default [Object]  default value if not provided
+        # Retrieves an extended value from command line.
+        # Used for creation or modification of entities.
+        # @param command [Symbol]  Command name for error message
+        # @param type    [Class]   Expected type of value, either a Class, an Array of Class
+        # @param bulk    [Boolean] If `true`, value must be an Array of `type`
+        # @param default [Object]  Default value if not provided.
+        # @return [Hash, Array<Hash>] The value(s) to create object(s).
         def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil, schema: nil)
           value = options.get_next_argument(
             "parameters for #{command}#{" (#{description})" unless description.nil?}",
@@ -216,12 +218,11 @@ module Aspera
           )
           value = default if value.nil?
           unless type.nil?
-            type = [type] unless type.is_a?(Array)
-            Aspera.assert_array_all(type, Class){'check types'}
+            Aspera.assert_type(type, Class){'type'}
             if bulk
-              Aspera.assert_array_all(value, type, type: Cli::BadArgument)
+              Aspera.assert_array_all(value, type, type: Cli::BadArgument){'type'}
             else
-              Aspera.assert_type(value, type, type: Cli::BadArgument)
+              Aspera.assert_type(value, type, type: Cli::BadArgument){'type'}
             end
           end
           return value
