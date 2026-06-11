@@ -37,15 +37,15 @@ module Aspera
         # Global objects
         attr_reader :context
 
-        # @return [Manager]
+        # @return [Aspera::Cli::Manager]
         def options; @context.options; end
-        # @return [TransferAgent]
+        # @return [Aspera::Cli::TransferAgent]
         def transfer; @context.transfer; end
-        # @return [Config]
+        # @return [Aspera::Cli::Plugins::Config]
         def config; @context.config; end
-        # @return [Formatter]
+        # @return [Aspera::Cli::Formatter]
         def formatter; @context.formatter; end
-        # @return [PersistencyFolder]
+        # @return [Aspera::PersistencyFolder]
         def persistency; @context.persistency; end
 
         def add_manual_header(has_options = true)
@@ -57,13 +57,15 @@ module Aspera
         end
 
         # For create and delete operations: execute one action or multiple if bulk is yes
-        # @param command   [Symbol] Operation: :create, :delete, ...
-        # @param descr     [String] Description of the value
-        # @param values    [Class, Array<Symbol>] Value(s), or type of value to get from user
+        # @param command [Symbol] Operation: :create, :delete, ...
+        # @param descr [String, nil] Description of the value
+        # @param values [Class, Array, Symbol] Value(s), or type of value to get from user
         # @param id_result [String] Key in result Hash to use as identifier
-        # @param fields    [:default, Array]  Fields to display
+        # @param fields [Symbol, Array] Fields to display
+        # @param schema [Hash, nil] JSON schema for validation
         # @yieldparam param [Object] The parameter value to process
         # @yieldreturn [Hash, nil] Result hash for the operation (optional)
+        # @return [Hash] Result suitable for CLI output
         def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
           Aspera.assert(block_given?){'missing block'}
           is_bulk = options.get_option(:bulk)
@@ -106,15 +108,17 @@ module Aspera
         end
 
         # Operations: Create, Delete, Show, List, Modify
-        # @param api            [Rest]    api to use
-        # @param entity         [String]  sub path in URL to resource relative to base url
-        # @param command        [Symbol]  command to execute: create show list modify delete
-        # @param display_fields [Array]   fields to display by default
-        # @param items_key      [String]  result is in a sub key of the json
-        # @param delete_style   [String]  If set, the delete operation by array in payload
-        # @param id_as_arg      [String]  If set, the id is provided as url argument ?<id_as_arg>=<id>
-        # @param is_singleton   [Boolean] If `true`, entity is the full path to the resource
-        # @param &block         [Proc]    Block to search for identifier based on attribute value
+        # @param api [Aspera::Rest] API to use
+        # @param entity [String] Sub path in URL to resource relative to base url
+        # @param command [Symbol, nil] Command to execute: :create, :show, :list, :modify, :delete
+        # @param display_fields [Array, nil] Fields to display by default
+        # @param items_key [String, nil] Result is in a sub key of the JSON
+        # @param delete_style [String, nil] If set, the delete operation by array in payload
+        # @param id_as_arg [Boolean, String] If set, the id is provided as url argument ?<id_as_arg>=<id>
+        # @param is_singleton [Boolean] If `true`, entity is the full path to the resource
+        # @param list_query [Hash, nil] Query parameters for list operation
+        # @yieldparam value [String] Value to search for identifier
+        # @yieldreturn [String] The identifier
         # @return [Hash] Result suitable for CLI result
         def entity_execute(
           api:,
@@ -190,6 +194,8 @@ module Aspera
         end
 
         # Query parameters in URL suitable for REST: list/`GET` and delete/`DELETE`
+        # @param default [Hash, nil] Default query parameters
+        # @return [Hash, nil] Query parameters
         def query_read_delete(default: nil)
           # Dup default, as it could be frozen
           query = options.get_option(:query) || default.dup
@@ -205,11 +211,13 @@ module Aspera
 
         # Retrieves an extended value from command line.
         # Used for creation or modification of entities.
-        # @param command [Symbol]  Command name for error message
-        # @param type    [Class]   Expected type of value, either a Class, an Array of Class
-        # @param bulk    [Boolean] If `true`, value must be an Array of `type`
-        # @param default [Object]  Default value if not provided.
-        # @return [Hash, Array<Hash>] The value(s) to create object(s).
+        # @param command [Symbol] Command name for error message
+        # @param description [String, nil] Description of the value
+        # @param type [Class, nil] Expected type of value
+        # @param bulk [Boolean] If `true`, value must be an Array of `type`
+        # @param default [Object, nil] Default value if not provided
+        # @param schema [Hash, nil] JSON schema for validation
+        # @return [Hash, Array<Hash>] The value(s) to create object(s)
         def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil, schema: nil)
           value = options.get_next_argument(
             "parameters for #{command}#{" (#{description})" unless description.nil?}",
