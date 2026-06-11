@@ -27,7 +27,7 @@ module Aspera
       # @return [Hash] sync info
       def async_info_from_args(direction: nil)
         path = options.get_next_argument('path')
-        sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {})
+        sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {}, schema: Schema::Registry::SYNC_CONF)
         # is the positional path a remote path ?
         path_is_remote = direction.eql?(:pull)
         if sync_info.key?('sessions') || sync_info.key?('instance')
