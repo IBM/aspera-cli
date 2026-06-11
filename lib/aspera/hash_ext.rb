@@ -9,6 +9,12 @@ class ::Hash
     merge!(second){ |_key, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.deep_merge!(v2) : v2}
   end
 
+  # Recursively iterate through hash and execute block on leaf values
+  # @param memory [Object, nil] Optional memory object passed to block
+  # @yieldparam hash [Hash] The current hash
+  # @yieldparam key [Object] The current key
+  # @yieldparam value [Object] The current value (non-Hash)
+  # @yieldparam memory [Object, nil] The memory object
   def deep_do(memory = nil, &block)
     each do |key, value|
       if value.is_a?(Hash)

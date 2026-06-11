@@ -32,7 +32,7 @@ module Aspera
       # Calls block a number of times (resumes) until success or limit reached
       # This is re-entrant, one resumer can handle multiple transfers in //
       #
-      # @param block [Proc]
+      # @yieldreturn [void] Executes the transfer operation
       def execute_with_resume
         Aspera.assert(block_given?)
         # maximum of retry

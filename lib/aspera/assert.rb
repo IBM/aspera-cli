@@ -20,21 +20,24 @@ module Aspera
   class << self
     # Replaces `raise` in assertion
     # Allows sending exception, or just error log, when type is `:error`
-    # @param type [Exception,Symbol] Send to log if symbol, else raise exception
+    # @param type [Exception, Symbol] Send to log if symbol, else raise exception
     # @param message [String] Message for error.
+    # @raise [Exception]
+    # @return [nil]
     def report_error(type, message)
       if type.is_a?(Symbol)
         Log.log.send(type, message)
       else
         raise type, message
       end
+      nil
     end
 
     # Assert that a condition is true, else raise exception
     # @param assertion [TrueClass, FalseClass]       Must be true
-    # @param info      [String,nil] Fixed message in case assert fails, else use `block`
+    # @param info      [String,nil] Fixed message in case assert fails, else use block
     # @param type      [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block     [Proc]       Produces a string that describes the problem for complex messages
+    # @yieldreturn [String] A string that describes the problem for complex messages
     # The block is executed in the context of the Aspera module
     def assert(assertion, info = nil, type: AssertError)
       raise InternalError, 'bad assert: both info and block given' unless info.nil? || !block_given?
@@ -50,7 +53,7 @@ module Aspera
     # @param value   [Object]           The value to check
     # @param classes [Class, Array]     The expected type(s)
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block   [Proc]             Additional description in front of message
+    # @yieldreturn [String] Additional description to prepend to the error message
     def assert_type(value, *classes, type: AssertError)
       assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting type #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
@@ -59,7 +62,7 @@ module Aspera
     # @param array   [Array]            The array to check
     # @param klass   [Class]            The expected type of elements
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block   [Proc]             Additional description in front of message
+    # @yieldreturn [String] Additional description to prepend to the error message
     def assert_array_all(array, klass, type: AssertError)
       assert_type(array, Array, type: AssertError){'array'}
       assert(array.all?(klass), type: type){"#{"#{yield}: " if block_given?}expecting all as #{klass}, but have #{array.map(&:class).uniq}"}
@@ -70,7 +73,7 @@ module Aspera
     # @param key_class   [Class]            The expected type of keys (or nil)
     # @param value_class [Class]            The expected type of values (or nil)
     # @param type        [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block       [Proc]             Additional description in front of message
+    # @yieldreturn [String] Additional description to prepend to the error message
     def assert_hash_all(hash, key_class, value_class, type: AssertError)
       assert_type(hash, Hash, type: AssertError){'hash'}
       assert_array_all(hash.keys, key_class, type: type){"#{"#{yield}: " if block_given?}keys"} unless key_class.nil?
@@ -81,7 +84,7 @@ module Aspera
     # @param value  [Object]           Value to check
     # @param values [Array]            Accepted values
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param block  [Proc]             Additional description in front of message
+    # @yieldreturn [String] Additional description to prepend to the error message
     def assert_values(value, values, type: AssertError)
       assert_type(values, Array, type: AssertError){'values'}
       assert(values.include?(value), type: type) do
@@ -94,7 +97,7 @@ module Aspera
     # The value is not one of the expected values
     # @param value  [Object]           The wrong value
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
-    # @param &block [Proc]             Additional description in front of message
+    # @yieldreturn [String] Additional description to prepend to the error message
     def error_unexpected_value(value, type: InternalError)
       report_error(type, "#{"#{yield}: " if block_given?}unexpected value: #{value.inspect}")
     end

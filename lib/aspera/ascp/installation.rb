@@ -243,7 +243,9 @@ module Aspera
       end
 
       # @param sdk_archive_path [String] path to SDK archive
-      # @param &block called with: file path, data stream, link target if link?
+      # @yieldparam entry_name [String] File path in archive
+      # @yieldparam entry_stream [IO, Gem::Package::TarReader::Entry] Data stream
+      # @yieldparam link_target [String, nil] Link target if symlink, nil otherwise
       def extract_archive_files(sdk_archive_path)
         Aspera.assert(block_given?){'missing block'}
         case sdk_archive_path
@@ -281,7 +283,8 @@ module Aspera
       # @param url     [nil, String] URL to SDK archive, if nil: default url for version
       # @param version [nil, String] Specific version, if nil: latest version
       # @param backup  [Boolean]     If destination folder exists, then rename
-      # @param &block  [nil, Proc]   A lambda that receives a file path from archive and tells destination sub folder(end with /) or file, or nil to not extract
+      # @yieldparam entry_name [String] File path from archive
+      # @yieldreturn [String, nil] Destination sub folder (end with /) or file, or nil to not extract
       # @return [Array] name, ascp version (from execution), folder
       def install_sdk(folder:, url: nil, version: nil, backup: true)
         url ||= sdk_url_for_platform(version: version)

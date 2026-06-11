@@ -234,8 +234,8 @@ module Aspera
           result_transfer = []
           param_file_list = {}
           begin
-            param_file_list['paths'] = transfer.source_list.map{ |source| {'path'=>source}}
-          rescue Cli::BadArgument
+            param_file_list['paths'] = transfer.ts_source_paths
+          rescue Cli::MissingArgument
             # paths is optional
           end
           box = options.get_option(:box)

@@ -82,7 +82,10 @@ module Aspera
         # Start the sync process
         # @param sync_info [Hash] Sync parameters, old or new format
         # @param opt_ts    [Hash] Optional transfer spec
-        # @param &block    [nil, Proc] block to generate transfer spec, takes: `direction` (one of DIRECTIONS), `local_dir`, `remote_dir`
+        # @yieldparam direction [Symbol] Sync direction (one of DIRECTIONS: :push, :pull, :bidi)
+        # @yieldparam local_dir [String] Local directory path
+        # @yieldparam remote_dir [String] Remote directory path
+        # @yieldreturn [Hash] Transfer spec to use for authentication
         def start(sync_info, opt_ts = nil)
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)

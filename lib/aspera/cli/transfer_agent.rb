@@ -13,9 +13,9 @@ module Aspera
     # one of the supported transfer agents.
     # Provide CLI options to select one of the transfer agents (FASP/ascp client)
     class TransferAgent
-      # @args special value for --sources : read file list from arguments
+      # `@args` special value for --sources : read file list from arguments
       FILE_LIST_FROM_ARGS = '@args'
-      # @ts special value for --sources : read file list from transfer spec (--ts)
+      # `@ts` special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
       FILE_LIST_OPTIONS = [FILE_LIST_FROM_ARGS, FILE_LIST_FROM_TRANSFER_SPEC, 'Array'].freeze
       DEFAULT_TRANSFER_NOTIFY_TEMPLATE = <<~END_OF_TEMPLATE
@@ -155,24 +155,25 @@ module Aspera
       end
 
       # Transform the list of paths to a list of hash with source/dest
-      # @param file_list [Array]
+      # @param file_list [Array<Hash>]
       def list_to_paths(file_list)
         source_type = @opt_mgr.get_option(:src_type, mandatory: true)
-        case source_type
-        when :list
-          # when providing a list, just specify source
-          @transfer_paths = file_list.map{ |i| {'source' => i}}
-        when :pair
-          Aspera.assert(file_list.length.even?, type: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
-          @transfer_paths = file_list.each_slice(2).map{ |s, d| {'source' => s, 'destination' => d}}
-        else Aspera.error_unexpected_value(source_type)
-        end
+        @transfer_paths =
+          case source_type
+          when :list
+            # when providing a list, just specify source
+            file_list.map{ |i| {'source' => i}}
+          when :pair
+            Aspera.assert(file_list.length.even?, type: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
+            file_list.each_slice(2).map{ |s, d| {'source' => s, 'destination' => d}}
+          else Aspera.error_unexpected_value(source_type)
+          end
       end
 
       # This is how the list of files to be transferred is specified
       # get paths suitable for transfer spec from command line
       # computation is done only once, cache is kept in @transfer_paths
-      # @param default [Array] of [String] if set, used as default file for --sources=@args
+      # @param default [nil, Array<String>] If set, used as default file for --sources=@args
       # @return [Array, nil] of Hash {source: (mandatory), destination: (optional)}
       def ts_source_paths(default: nil)
         # return cache if set

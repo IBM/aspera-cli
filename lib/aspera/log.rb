@@ -77,7 +77,7 @@ module Aspera
       # @param name   [String, Symbol]  Name of object dumped
       # @param object [Hash, nil]       Data to dump
       # @param level  [Symbol]          Debug level
-      # @param block  [Proc, nil]       Give computed object
+      # @yieldreturn [Object] Computed object to dump (alternative to object parameter)
       def dump(name, object = nil, level: :debug, &block)
         return unless instance.logger.send(:"#{level}?")
         Aspera.assert(object.nil? || block.nil?){'Use either object, or block, not both'}
@@ -99,6 +99,7 @@ module Aspera
       end
 
       # Capture the output of $stderr and log it at debug level
+      # @yieldreturn [void] Code block whose stderr output will be captured
       def capture_stderr
         real_stderr = $stderr
         $stderr = StringIO.new

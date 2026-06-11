@@ -10,6 +10,9 @@ module URI
     # save original method that finds proxy in URI::Generic, it uses env var http_proxy
     alias_method :find_proxy_orig, :find_proxy
     class << self
+      # Register a custom proxy finder block
+      # @yieldparam url [String] The URL to find proxy for
+      # @yieldreturn [String, nil] Proxy URL or nil to fallback to original method
       def register_proxy_finder
         Aspera.assert(block_given?)
         # overload the method in URI : call user's provided block and fallback to original method

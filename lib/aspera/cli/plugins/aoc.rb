@@ -304,7 +304,7 @@ module Aspera
         # @param fields fields to display
         # @param base_query a query applied always
         # @param default_query default query unless overridden by user
-        # @param &block (Optional) calls block with user's or default query
+        # @yieldparam query [Hash] The user's or default query for modification
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
@@ -847,7 +847,10 @@ module Aspera
         # - a resource id, e.g. `scQ7uXPbvQ`
         # - a short URL path, e.g. `dxyRpT9`
         # @param shared_data [Hash] Information for shared data: dropbox_id+name or file_id+node_id
-        # @param &perm_block [Proc] Optional: create/modify/delete permissions on node
+        # @param shared_data [Hash] Shared data for the short link
+        # @yieldparam operation [Symbol] Operation type (:create, :update, :delete)
+        # @yieldparam resource_id [String] Resource ID for permission management
+        # @yieldparam access_levels [Object] Access levels for permissions
         def short_link_command(**shared_data, &perm_block)
           link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
           if shared_data.keys.sort == %i[dropbox_id name]

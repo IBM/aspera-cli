@@ -62,7 +62,8 @@ module Aspera
         # @param values    [Class, Array<Symbol>] Value(s), or type of value to get from user
         # @param id_result [String] Key in result Hash to use as identifier
         # @param fields    [:default, Array]  Fields to display
-        # @param block     [Proc]   Block to execute for each value
+        # @yieldparam param [Object] The parameter value to process
+        # @yieldreturn [Hash, nil] Result hash for the operation (optional)
         def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
           Aspera.assert(block_given?){'missing block'}
           is_bulk = options.get_option(:bulk)

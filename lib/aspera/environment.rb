@@ -151,7 +151,7 @@ module Aspera
       # @param path [String] the file path
       # @param force [Boolean] if true, overwrite the file
       # @param mode [Integer] the file mode (permissions)
-      # @block [Proc] return the content to write to the file
+      # @yieldreturn [String] The content to write to the file
       def write_file_restricted(path, force: false, mode: nil)
         Aspera.assert(block_given?, type: Aspera::InternalError)
         if force || !File.exist?(path)
