@@ -540,7 +540,7 @@ module Aspera
         else
           transfer_spec.merge!(transport_params)
         end
-        Aspera.assert_values(transfer_spec['remote_user'], Transfer::Spec::ACCESS_KEY_TRANSFER_USER, type: :warn){'transfer user'}
+        Aspera.assert_values(transfer_spec['remote_user'], [Transfer::Spec::ACCESS_KEY_TRANSFER_USER], type: :warn){'transfer user'}
         return transfer_spec
       end
 
