@@ -165,7 +165,7 @@ module Aspera
           items = scope.split(Scope::SEPARATOR, 2)
           Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
           Aspera.assert(items[0].start_with?(Scope::NODE_PREFIX)){"invalid scope: #{scope}"}
-          return {access_key: items[0][Scope::NODE_PREFIX.length..-1], scope: items[1]}
+          return {access_key: items[0].delete_prefix(Scope::NODE_PREFIX), scope: items[1]}
         end
 
         # Create an Aspera Node bearer token

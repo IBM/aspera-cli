@@ -384,7 +384,7 @@ module Aspera
           removal = false
           if item[0].eql?(FIELDS_LESS)
             removal = true
-            item = item[1..-1]
+            item = item.delete_prefix(FIELDS_LESS)
           end
           case item
           when SpecialValues::ALL

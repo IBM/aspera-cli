@@ -41,7 +41,7 @@ module Aspera
 
           def remove_in_object_list!(obj_list)
             obj_list.each do |item|
-              item['path'] = item['path'][@root.length..-1] if item['path'].start_with?(@root)
+              item['path'] = item['path'].delete_prefix(@root) if item['path'].start_with?(@root)
             end
           end
         end

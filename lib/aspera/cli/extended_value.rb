@@ -95,7 +95,7 @@ module Aspera
           uri:    lambda{ |i| UriReader.read(i)},
           json:   lambda{ |i| ExtendedValue.JSON_parse(i)},
           lines:  lambda{ |i| i.split("\n")},
-          list:   lambda{ |i| i[1..-1].split(i[0])},
+          list:   lambda{ |i| i[1..].split(i[0])},
           none:   lambda{ |i| ExtendedValue.assert_no_value(i, :none); nil}, # rubocop:disable Style/Semicolon
           path:   lambda{ |i| File.expand_path(i)},
           re:     lambda{ |i| Regexp.new(i, Regexp::MULTILINE)},

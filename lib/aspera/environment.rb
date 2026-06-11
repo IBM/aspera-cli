@@ -334,7 +334,7 @@ module Aspera
       filename = filename.chop while filename.end_with?(' ', '.')
       if @file_illegal_characters&.size.to_i >= 2
         # replace all illegal characters with safe_char
-        filename = filename.tr(@file_illegal_characters[1..-1], safe_char)
+        filename = filename.tr(@file_illegal_characters[1..], safe_char)
       end
       # ensure only one safe_char is used at a time
       return filename.gsub(/#{Regexp.escape(safe_char)}+/, safe_char).chomp(safe_char)

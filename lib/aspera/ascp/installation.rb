@@ -60,7 +60,7 @@ module Aspera
         Aspera.assert(!ascp_location.empty?){'ascp location cannot be empty: check your config file'}
         folder =
           if ascp_location.start_with?(USE_PRODUCT_PREFIX)
-            product_name = ascp_location[USE_PRODUCT_PREFIX.length..-1]
+            product_name = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
             if product_name.eql?(FIRST_FOUND)
               pl = installed_products.first
               raise "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install" if pl.nil?
@@ -113,7 +113,7 @@ module Aspera
           file = File.join(File.dirname(file), Environment.instance.exe_file(k.to_s)) unless k.eql?(:transferd)
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
-          type = k.to_s[-3..-1].to_sym
+          type = k.to_s.last(3).to_sym
           file = check_or_create_sdk_file("aspera_bypass_#{type}.pem"){DataRepository.instance.item(type)}
         when :aspera_license
           file = check_or_create_sdk_file('aspera-license'){DataRepository.instance.item(:license)}

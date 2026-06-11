@@ -121,7 +121,7 @@ module Aspera
           if allowed.take(Allowed::TYPES_SYMBOL_ARRAY.length) == Allowed::TYPES_SYMBOL_ARRAY
             # Special case: array of defined symbol values
             @types = Allowed::TYPES_SYMBOL_ARRAY
-            @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..-1]
+            @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..]
           elsif allowed.all?(Class)
             @types = allowed
             @values = BoolValue::ALL if allowed.eql?(Allowed::TYPES_BOOLEAN)
@@ -269,7 +269,7 @@ module Aspera
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
         ENV.each do |k, v|
-          @option_pairs_env[k[env_prefix.length..-1].downcase.to_sym] = v if k.start_with?(env_prefix)
+          @option_pairs_env[k.delete_prefix(env_prefix).downcase.to_sym] = v if k.start_with?(env_prefix)
         end
         Log.log.debug{"env=#{@option_pairs_env}".red}
         @unprocessed_cmd_line_options = []
@@ -539,7 +539,7 @@ module Aspera
         @initial_cli_options.each do |option_argument|
           # ignore short options
           next unless option_argument.start_with?(OPTION_PREFIX)
-          name, value = option_argument[OPTION_PREFIX.length..-1].split(OPTION_VALUE_SEPARATOR, 2)
+          name, value = option_argument.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
           # ignore options without value
           next if value.nil?
           Log.log.debug{"option #{name}=#{value}"}
@@ -583,7 +583,7 @@ module Aspera
           Log.log.trace1{"InvalidOption #{e}".red}
           # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
           if e.args.first.start_with?(OPTION_PREFIX)
-            name, value = e.args.first[OPTION_PREFIX.length..-1].split(OPTION_VALUE_SEPARATOR, 2)
+            name, value = e.args.first.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
             if !value.nil?
               path = name.split(DotContainer::SEPARATOR)
               option_sym = self.class.option_line_to_name(path.shift).to_sym

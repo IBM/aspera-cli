@@ -33,7 +33,7 @@ module Aspera
         # Extract only token from Authorization (remove scheme)
         def bearer_token(authorization)
           Aspera.assert(bearer_auth?(authorization)){'not a bearer token, wrong prefix scheme'}
-          return authorization[SPACE_BEARER_AUTH_SCHEME.length..-1]
+          return authorization.delete_prefix(SPACE_BEARER_AUTH_SCHEME)
         end
 
         # Generate a unique cache id for a token creator

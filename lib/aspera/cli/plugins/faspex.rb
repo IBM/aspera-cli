@@ -165,7 +165,7 @@ module Aspera
         def mailbox_filtered_entries(stop_at_id: nil)
           recipient_names = [options.get_option(:recipient) || options.get_option(:username, mandatory: true)]
           # some workgroup messages have no star in recipient name
-          recipient_names.push(recipient_names.first[1..-1]) if recipient_names.first.start_with?('*')
+          recipient_names.push(recipient_names.first.delete_prefix('*')) if recipient_names.first.start_with?('*')
           # mailbox is in ATOM_MAILBOXES
           mailbox = options.get_option(:box, mandatory: true)
           # parameters

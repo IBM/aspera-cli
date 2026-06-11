@@ -166,7 +166,7 @@ module Aspera
           next unless url_match
           url = url_match[1]
           # Extract parameters after the URL
-          params_str = link_part[url_match.end(0)..-1]
+          params_str = link_part[url_match.end(0)..]
           # Check if this link has the specified rel (with or without quotes, case insensitive)
           next unless /;\s*rel\s*=\s*"?#{Regexp.escape(rel)}"?/i.match?(params_str)
           return url

@@ -27,7 +27,7 @@ module Aspera
       # @return [String] the path of a file:// URL
       def file_path(url)
         Aspera.assert(file?(url)){"use format: #{file_url('<path>')}"}
-        File.expand_path(url[SCHEME_FILE_PFX2.length..-1])
+        File.expand_path(url.delete_prefix(SCHEME_FILE_PFX2))
       end
 
       # Read some content from some URI, support file: , http: and https: schemes
