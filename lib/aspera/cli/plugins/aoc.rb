@@ -423,7 +423,7 @@ module Aspera
             resource_class_path = "admin/#{resource_type}s"
           when :client_registration_token
             resource_class_path = "admin/#{resource_type}s"
-            list_default_fields = %w[id value data.client_subject_scopes created_at]
+            list_default_fields = %w[id value data.client_subject_scopes data.name created_at]
             id_result = 'token'
           when :contact
             list_default_fields = %w[source_type source_id name email]
