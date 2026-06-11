@@ -286,13 +286,14 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"}
+          Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"} unless exception_info[:e].is_a?(Cli::SchemaRequest)
           Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
           # Requested help for a Hash parameter/option ?
           if exception_info[:e].is_a?(Cli::SchemaRequest)
+            Log.log.info{"#{exception_info[:t]}: #{exception_info[:e].message}"}
             schema_path = exception_info[:e].path
             if schema_path.nil?
               Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
