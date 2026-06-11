@@ -8,14 +8,13 @@ Released: [Place date of release here]
 
 ### New Features
 
-* `aoc`: Added new subcommand `admin workspace shared_folder <workspace ID> node <shared folder ID>` to provide direct access to node operations from shared folders.
-* **global**: Extended Value option schema can now be retrieved using the special value `help` (e.g., `--ts=help`).
+* `aoc`: Added new command `admin workspace shared_folder <workspace ID> node <shared folder ID>` to provide direct access to node operations from shared folders.
+* **global**: Schema for Extended Value for option or command argument can now be retrieved using the special value `help` (e.g., `--ts=help` or `package send help`). Those are generated from JSON schema descriptions.
+* **doc**: Some tables in documentation are now generated from JSON schema descriptions.
 
 ### Issues Fixed
 
 * **global**: Resolved issue where supported enumerated values were not properly listed when no value was provided (e.g., for command parameters).
-
-### Breaking Changes
 
 ## 4.26.0
 
@@ -455,7 +454,7 @@ Released: 2024-07-13
 
 ### Breaking Changes
 
-* `config`: Command `remote_certificate` now takes a sub-command.
+* `config`: Command `remote_certificate` now takes a command.
 * **global**: Moved a few internal classes in new/renamed modules.
 * **global**: Deprecated pseudo transfer specification parameters starting with `EX_`:
   * `EX_ssh_key_paths`: Use spec `ssh_private_key` or option `transfer_info={"ascp_args":["-i","..."]}`
