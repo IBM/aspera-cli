@@ -42,18 +42,18 @@ module Aspera
       # @return `true` if value is a value for `true` in ALL
       def true?(enum)
         Aspera.assert_values(enum, ALL){'boolean'}
-        return TRUE_VALUES.include?(enum)
+        TRUE_VALUES.include?(enum)
       end
 
       # @return [:yes, :no]
       def to_sym(enum)
         Aspera.assert_values(enum, ALL){'boolean'}
-        return TRUE_VALUES.include?(enum) ? YES_SYM : NO_SYM
+        TRUE_VALUES.include?(enum) ? YES_SYM : NO_SYM
       end
 
       # @return `true` if value is a value for `true` or `false` in ALL
       def symbol?(sym)
-        return ALL.include?(sym)
+        ALL.include?(sym)
       end
       module_function :true?, :to_sym, :symbol?
     end
@@ -150,7 +150,7 @@ module Aspera
           when :setter then @object.send(@read_method, @option, :get)
           end
         Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"} if log
-        return current_value
+        current_value
       end
 
       # Assign value to option.
@@ -171,7 +171,6 @@ module Aspera
         new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
         if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
           new_value = [new_value] if new_value.is_a?(String)
-          Aspera.assert_type(new_value, Array, type: BadArgument)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
           new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
         end
@@ -206,7 +205,7 @@ module Aspera
           Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values), type: BadArgument)
           Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching), type: BadArgument)
           return BoolValue.true?(matching.first) if allowed_values.eql?(BoolValue::ALL)
-          return matching.first
+          matching.first
         end
 
         # Generates error message with list of allowed values
@@ -220,11 +219,11 @@ module Aspera
         # @param name [String] option name
         # @return [String]
         def option_line_to_name(name)
-          return name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
+          name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
         end
 
         def option_name_to_line(name)
-          return "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
+          "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
 
         # @return [Hash{Symbol => String}, nil] `{field:,value:}` if identifier is a percent selector, else `nil`
@@ -388,7 +387,7 @@ module Aspera
         validation = Symbol unless accept_list.nil?
         validation = [validation] unless validation.is_a?(Array) || validation.nil?
         Aspera.assert_array_all(validation, Class){'validation'} unless validation.nil?
-        descr += add_types_info(validation)
+        descr = "#{descr}#{add_types_info(validation)}"
         result =
           if !@unprocessed_cmd_line_arguments.empty?
             if multiple
@@ -432,7 +431,7 @@ module Aspera
               "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" unless validation.any?{ |t| value.is_a?(t)}
           end
         end
-        return result
+        result
       end
 
       # Resource identifier as positional parameter
@@ -447,10 +446,10 @@ module Aspera
           Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
           res_id = yield(m[:field], m[:value])
         end
-        return res_id
+        res_id
       end
 
-      def get_next_command(command_list, aliases: nil); return get_next_argument('command', accept_list: command_list, aliases: aliases); end
+      def get_next_command(command_list, aliases: nil); get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
       # Get an option definition by name
       # @param option_symbol [Symbol]
@@ -481,7 +480,7 @@ module Aspera
             set_option(option_symbol, result, where: 'interactive')
           end
         end
-        return result
+        result
       end
 
       # Set an option value by name, either store value or call handler
@@ -522,7 +521,7 @@ module Aspera
 
       # Check if there were unprocessed values to generate error
       def command_or_arg_empty?
-        return @unprocessed_cmd_line_arguments.empty?
+        @unprocessed_cmd_line_arguments.empty?
       end
 
       # Unprocessed options or arguments ?
@@ -530,7 +529,7 @@ module Aspera
         result = []
         result.push("unprocessed options: #{@unprocessed_cmd_line_options}") unless @unprocessed_cmd_line_options.empty?
         result.push("unprocessed values: #{@unprocessed_cmd_line_arguments}") unless @unprocessed_cmd_line_arguments.empty?
-        return result
+        result
       end
 
       # Get all original options on command line used to generate a config in config file
@@ -549,7 +548,7 @@ module Aspera
           DotContainer.dotted_to_container(path, smart_convert(value), result)
           @unprocessed_cmd_line_options.delete(option_argument)
         end
-        return result
+        result
       end
 
       # @param only_defined [Boolean] if true, only return options that were defined
@@ -562,7 +561,7 @@ module Aspera
         rescue => e
           result[option_symbol] = e.to_s
         end
-        return result
+        result
       end
 
       # Removes already known options from the list
@@ -610,7 +609,7 @@ module Aspera
         print("#{prompt}> ")
         line = $stdin.gets
         Aspera.assert_type(line, String){'Unexpected end of standard input'}
-        return line.chomp
+        line.chomp
       end
 
       # prompt user for input in a list of symbols
@@ -657,7 +656,7 @@ module Aspera
           return entry unless multiple
           result.push(entry)
         end
-        return result
+        result
       end
 
       # Read remaining args and build an Array or Hash
@@ -666,7 +665,7 @@ module Aspera
         # This extended value does not take args (`@:`)
         ExtendedValue.assert_no_value(arg, :p)
         result = nil
-        get_next_argument(:args, multiple: true).each do |arg|
+        get_next_argument('args', multiple: true).each do |arg|
           Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not include #{OPTION_VALUE_SEPARATOR}"}
           path, value = arg.split(OPTION_VALUE_SEPARATOR, 2)
           result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
@@ -695,7 +694,7 @@ module Aspera
       def symbol_to_option(symbol, opt_val = nil)
         result = [OPTION_PREFIX, symbol.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)].join
         result = [result, OPTION_VALUE_SEPARATOR, opt_val].join unless opt_val.nil?
-        return result
+        result
       end
 
       # TODO: use formatter
