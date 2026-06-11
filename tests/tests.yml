@@ -2581,7 +2581,11 @@ aoc_pack_send1:
     - aoc
     - packages
     - send
-    - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:aoc_user.username@"],"note":"some notes"}'
+    - '@:'
+    - name=$(name) $(TIMESTEMP_TEST_RUN)
+    - recipients.0=@preset:aoc_user.username
+    - note=some notes
+    - END
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
   args:

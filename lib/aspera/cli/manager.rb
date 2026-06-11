@@ -374,8 +374,8 @@ module Aspera
       end
 
       # @param descr       [String] description for help
-      # @param mandatory   [Boolean] if true, raise error if option not set
-      # @param multiple    [Boolean] if true, return remaining arguments (Array) until END
+      # @param mandatory   [Boolean] `true`: raise error no more argument
+      # @param multiple    [Boolean] `true`: return all remaining arguments (Array). String: until marker
       # @param accept_list [Array<Symbol>, NilClass] list of allowed values
       # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
@@ -390,16 +390,20 @@ module Aspera
         descr = "#{descr}#{add_types_info(validation)}"
         result =
           if !@unprocessed_cmd_line_arguments.empty?
-            if multiple
-              index = @unprocessed_cmd_line_arguments.index(SpecialValues::EOA)
-              if index.nil?
-                values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
-              else
-                values = @unprocessed_cmd_line_arguments.shift(index)
-                @unprocessed_cmd_line_arguments.shift # remove EOA
-              end
-            else
+            case multiple
+            when true
+              values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
+            when false
               values = [@unprocessed_cmd_line_arguments.shift]
+            when String
+              index = @unprocessed_cmd_line_arguments.index(multiple)
+              if index
+                values = @unprocessed_cmd_line_arguments.shift(index)
+                @unprocessed_cmd_line_arguments.shift # remove end marker
+              else
+                values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
+              end
+            else Aspera.error_unexpected_value(multiple){'multiple'}
             end
             values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation)}
             # If expecting list and only one arg of type array : it is the list
@@ -630,7 +634,7 @@ module Aspera
       # Prompt user for input in a list of symbols
       # @param descr        [String] description for help
       # @param check_option [Boolean] Check attributes of option with name=descr
-      # @param multiple     [Boolean] true if multiple values expected
+      # @param multiple     [Boolean, String] `true` if multiple values expected
       # @param accept_list  [Array<Symbol>,NilClass] List of expected values
       # @return [String] user input
       def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, schema: nil)
@@ -659,15 +663,17 @@ module Aspera
         result
       end
 
-      # Read remaining args and build an Array or Hash
-      # @param value [nil] Argument to `@:` extended value
-      def args_as_extended(arg)
+      # Read remaining args and build an `Array` or `Hash`
+      # @param value [String] Argument to `@:` extended value
+      # @return [Hash, Array] Object representing dot-path values
+      def args_as_extended(end_marker)
         # This extended value does not take args (`@:`)
-        ExtendedValue.assert_no_value(arg, :p)
+        # ExtendedValue.assert_no_value(end_marker, :p)
+        end_marker = SpecialValues::EOA if end_marker.empty?
         result = nil
-        get_next_argument('args', multiple: true).each do |arg|
-          Aspera.assert(arg.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{arg} does not include #{OPTION_VALUE_SEPARATOR}"}
-          path, value = arg.split(OPTION_VALUE_SEPARATOR, 2)
+        get_next_argument('args', multiple: end_marker).each do |argument|
+          Aspera.assert(argument.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{argument} does not include #{OPTION_VALUE_SEPARATOR}"}
+          path, value = argument.split(OPTION_VALUE_SEPARATOR, 2)
           result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
         end
         result

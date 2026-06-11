@@ -1543,6 +1543,8 @@ The general syntax for this argument is:
 
   - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
 
+  - If another value than `END` is preferred, then specify: `@:<MARKER>` and use `@:<MARKER>` as replacement for `END`.
+
 > [!IMPORTANT]
 > Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
 > Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
@@ -6986,8 +6988,8 @@ packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_name"]}' test_file.bin
+packages send @: 'name=$(name) $(TIMESTEMP_TEST_RUN)' recipients.0=my_username 'note=some notes' END test_file.bin
 packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_username"],"note":"some notes"}' test_file.bin
 packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
 packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_shared_inbox
 packages shared_inboxes list

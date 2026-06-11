@@ -1495,6 +1495,8 @@ The general syntax for this argument is:
 
   - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
 
+  - If another value than `END` is preferred, then specify: `@:<%=ph :marker%>` and use `@:<%=ph :marker%>` as replacement for `END`.
+
 > [!IMPORTANT]
 > Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
 > Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
