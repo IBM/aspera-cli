@@ -280,7 +280,7 @@ module Aspera
       when Environment::OS_MACOS then return self.class.secure_execute('open', uri.to_s)
       when Environment::OS_WINDOWS then return self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
       when Environment::OS_LINUX   then return self.class.secure_execute('xdg-open', uri.to_s)
-      else Assert.error_unexpected_value(os){'no graphical open method'}
+      else Aspera.error_unexpected_value(os){'no graphical open method'}
       end
     end
 

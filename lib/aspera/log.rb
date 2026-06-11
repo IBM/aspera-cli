@@ -93,7 +93,7 @@ module Aspera
             JSON.pretty_generate(object) rescue PP.pp(object, +'')
           when :ruby
             PP.pp(object, +'')
-          else error_unexpected_value(instance.dump_format){'dump format'}
+          else Aspera.error_unexpected_value(instance.dump_format){'dump format'}
           end
         "#{name.to_s.green}(#{instance.dump_format})#{object.class}=\n#{dump_text}"
       end
@@ -192,7 +192,7 @@ module Aspera
         end
         # Use `local2` facility, like other Aspera components
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
-      else error_unexpected_value(new_log_type){"log type (#{LOG_TYPES.join(', ')})"}
+      else Aspera.error_unexpected_value(new_log_type){"log type (#{LOG_TYPES.join(', ')})"}
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
