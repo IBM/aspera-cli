@@ -113,7 +113,7 @@ module Aspera
           file = File.join(File.dirname(file), Environment.instance.exe_file(k.to_s)) unless k.eql?(:transferd)
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
-          type = k.to_s.last(3).to_sym
+          type = k.to_s[-3..].to_sym
           file = check_or_create_sdk_file("aspera_bypass_#{type}.pem"){DataRepository.instance.item(type)}
         when :aspera_license
           file = check_or_create_sdk_file('aspera-license'){DataRepository.instance.item(:license)}
