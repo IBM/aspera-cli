@@ -3236,7 +3236,7 @@ aoc_adm_res_05c:
     - admin
     - kms_profile
     - list
-aoccltreg:
+aoc_clt_reg_tok_create:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3244,7 +3244,9 @@ aoccltreg:
     - client_registration_token
     - create
     - '@json:{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-aoccltregb:
+aoc_clt_reg_tok_list:
+  depends_on:
+    - aoc_clt_reg_tok_create
   args:
     - --preset=aoc_admin
     - aoc
@@ -3252,6 +3254,8 @@ aoccltregb:
     - client_registration_token
     - list
 client_reg_id:
+  depends_on:
+    - aoc_clt_reg_tok_list
   tags:
     - save_output
     - nodoc
@@ -3261,11 +3265,13 @@ client_reg_id:
     - admin
     - client_registration_token
     - list
-    - --select=@json:{"data.name":"test_client_reg1"}
     - --fields=id
     - --display=data
     - --query.max=1
 aoccltregd:
+  depends_on:
+    - aoc_clt_reg_tok_list
+    - client_reg_id
   args:
     - --preset=aoc_admin
     - aoc
