@@ -59,7 +59,7 @@ module Aspera
         # For create and delete operations: execute one action or multiple if bulk is yes
         # @param command [Symbol] Operation: :create, :delete, ...
         # @param descr [String, nil] Description of the value
-        # @param values [Class, Array, Symbol] Value(s), or type of value to get from user
+        # @param values [Class, Array, Symbol] Type, or list of values, or :identifier, result is given to the block in loop
         # @param id_result [String] Key in result Hash to use as identifier
         # @param fields [Symbol, Array] Fields to display
         # @param schema [Hash, nil] JSON schema for validation
