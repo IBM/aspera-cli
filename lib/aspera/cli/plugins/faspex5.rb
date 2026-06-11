@@ -494,8 +494,7 @@ module Aspera
           when :invite_external_collaborator
             # :shared_inboxes, :workgroups
             shared_inbox_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
-            creation_payload = value_create_modify(command: res_command, type: [Hash, String])
-            creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
+            creation_payload = value_create_modify(command: res_command)
             result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
             formatter.display_status(result['message'])
             result = @api_v5.lookup_entity_by_field(
