@@ -8,12 +8,12 @@ Released: [Place date of release here]
 
 ### New Features
 
-* `aoc`: New sub command in `shared_folder` : `admin workspace shared_folder <workspace ID> node <shared folder ID>`, shortcut to node operations directly from the shared folder.
-* **general**: Possibility to get Extended Value option schema using special value: `help`. e.g. : `--ts=help`.
+* `aoc`: Added new subcommand `admin workspace shared_folder <workspace ID> node <shared folder ID>` to provide direct access to node operations from shared folders.
+* **global**: Extended Value option schema can now be retrieved using the special value `help` (e.g., `--ts=help`).
 
 ### Issues Fixed
 
-* **global**: Fixed listing supported enumerated values when not provided, e.g. for a command.
+* **global**: Resolved issue where supported enumerated values were not properly listed when no value was provided (e.g., for command parameters).
 
 ### Breaking Changes
 
@@ -72,7 +72,7 @@ Released: 2026-03-04
 
 ### New Features
 
-* **general**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
+* **global**: If `@:` is used, then marker `END` optionally marks the end of collected arguments.
 * `format`: `display` defaults to `info` only if `format` is set to `table`, else defaults to `data`.
 * `node`: Parameter `accept_v4` of option `node_api` (boolean, defaults to `true`) allows using gen4 browsing with `Accept-Version: 4.0` for best performance when there are thousands of files.
 
