@@ -13,7 +13,7 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
-* **global**: Fixed listing supported enum values when not provided, e.g. for a command.
+* **global**: Fixed listing supported enumerated values when not provided, e.g. for a command.
 
 ### Breaking Changes
 

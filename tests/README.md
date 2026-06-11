@@ -87,8 +87,8 @@ rm -f Gemfile.lock
 gem install bundler
 bundle install
 
+killall ascli;sleep 2
 bundle exec rake clobber
-killall ascli
 
 # skip some tests
 bundle exec rake test:skip'[tag faspex]'

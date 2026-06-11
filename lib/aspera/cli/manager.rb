@@ -442,10 +442,10 @@ module Aspera
       #
       # @param description [String] description of the identifier
       # @param block       [Proc] block to search for identifier based on attribute value
-      # @return   [String, Array] identifier or list of ids
+      # @return   [String, Array<String>] identifier or list of IDs (if `bulk` option is set)
       # @yieldparam field [String] The field name from percent selector
       # @yieldparam value [String] The value from percent selector
-      # @yieldreturn [String, Array] Resolved identifier(s)
+      # @yieldreturn [String] Resolved identifier
       def instance_identifier(description: 'identifier', &block)
         res_id = get_next_argument(description, multiple: get_option(:bulk)) if res_id.nil?
         # Can be an Array
