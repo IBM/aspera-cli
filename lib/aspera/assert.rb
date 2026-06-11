@@ -52,7 +52,7 @@ module Aspera
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block   [Proc]             Additional description in front of message
     def assert_type(value, *classes, type: AssertError)
-      assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
+      assert(classes.any?{ |k| value.is_a?(k)}, type: type){"#{"#{yield}: " if block_given?}expecting type #{classes.join(', ')}, but have (#{value.class})#{value.inspect}"}
     end
 
     # Assert that all value of array are of the same specified type.
@@ -61,7 +61,7 @@ module Aspera
     # @param type    [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block   [Proc]             Additional description in front of message
     def assert_array_all(array, klass, type: AssertError)
-      assert_type(array, Array, type: type)
+      assert_type(array, Array, type: AssertError){'array'}
       assert(array.all?(klass), type: type){"#{"#{yield}: " if block_given?}expecting all as #{klass}, but have #{array.map(&:class).uniq}"}
     end
 
@@ -72,9 +72,9 @@ module Aspera
     # @param type        [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block       [Proc]             Additional description in front of message
     def assert_hash_all(hash, key_class, value_class, type: AssertError)
-      assert_type(hash, Hash, type: type)
-      assert_array_all(hash.keys, key_class, type: AssertError){"#{"#{yield}: " if block_given?}keys"} unless key_class.nil?
-      assert_array_all(hash.values, value_class, type: AssertError){"#{"#{yield}: " if block_given?}values"} unless value_class.nil?
+      assert_type(hash, Hash, type: AssertError){'hash'}
+      assert_array_all(hash.keys, key_class, type: type){"#{"#{yield}: " if block_given?}keys"} unless key_class.nil?
+      assert_array_all(hash.values, value_class, type: type){"#{"#{yield}: " if block_given?}values"} unless value_class.nil?
     end
 
     # Assert that value is one of the given values
@@ -83,7 +83,7 @@ module Aspera
     # @param type   [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @param block  [Proc]             Additional description in front of message
     def assert_values(value, values, type: AssertError)
-      assert_type(values, Array, type: type)
+      assert_type(values, Array, type: AssertError){'values'}
       assert(values.include?(value), type: type) do
         val_list = values.inspect
         val_list = "one of #{val_list}" if values.is_a?(Array)
