@@ -86,6 +86,7 @@ module Aspera
         # Base handlers
         # Other handlers can be set using `on`
         # e.g. `preset` is reader in config plugin
+        # @type [Hash{Symbol => Proc}]
         @handlers = {
           val:    lambda{ |i| i},
           base64: lambda{ |i| Base64.decode64(i)},
@@ -100,7 +101,7 @@ module Aspera
           path:   lambda{ |i| File.expand_path(i)},
           re:     lambda{ |i| Regexp.new(i, Regexp::MULTILINE)},
           ruby:   lambda{ |i| Environment.secure_eval(i, __FILE__, __LINE__)},
-          s:      lambda{ |i| i.to_s},
+          s:      lambda(&:to_s),
           secret: lambda{ |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{ |i| ExtendedValue.read_stdin(i)},
           yaml:   lambda{ |i| YAML.load(i)},
