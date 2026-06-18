@@ -97,7 +97,7 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('console api', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :transfer
             command = options.get_next_command(%i[current smart])
             case command
@@ -105,11 +105,11 @@ module Aspera
               command = options.get_next_command(%i[list submit])
               case command
               when :list
-                return Main.result_object_list(api_console.read('smart_transfers'))
+                return Result::ObjectList.new(api_console.read('smart_transfers'))
               when :submit
                 smart_id = options.get_next_argument('smart_id')
                 params = options.get_next_argument('transfer parameters', validation: Hash)
-                return Main.result_object_list(api_console.create("smart_transfers/#{smart_id}", params))
+                return Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", params))
               end
             when :current
               command = options.get_next_command(%i[list show files start pause cancel resume rerun change_rate change_policy move_forwards move_back])
@@ -125,21 +125,21 @@ module Aspera
                 if (filter = query.delete('filter'))
                   parse_extended_filter(filter, query)
                 end
-                return Main.result_object_list(
+                return Result::ObjectList.new(
                   api_console.read('transfers', query),
                   fields: %w[id contact name status]
                 )
               when :show
                 transfer_id = options.instance_identifier(description: 'transfer ID')
-                return Main.result_single_object(api_console.read("transfers/#{transfer_id}"))
+                return Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
               when :files
                 transfer_id = options.instance_identifier(description: 'transfer ID')
                 query = query_read_delete(default: {})
                 query['limit'] ||= 100
-                return Main.result_object_list(api_console.read("transfers/#{transfer_id}/files", query))
+                return Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
               when :start, :pause, :cancel, :resume, :rerun, :change_rate, :change_policy, :move_forwards, :move_back
                 transfer_id = options.instance_identifier(description: 'transfer ID')
-                return Main.result_single_object(api_console.update("transfers/#{transfer_id}/#{command}", query_read_delete))
+                return Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{command}", query_read_delete))
               end
             end
           end

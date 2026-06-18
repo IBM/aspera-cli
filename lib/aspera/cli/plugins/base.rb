@@ -2,6 +2,7 @@
 
 require 'aspera/cli/extended_value'
 require 'aspera/assert'
+require 'aspera/cli/result'
 
 module Aspera
   module Cli
@@ -100,10 +101,10 @@ module Aspera
           end
           display_fields = [id_result, 'status']
           if is_bulk
-            return Main.result_object_list(result_list, fields: display_fields)
+            return Result::ObjectList.new(result_list, fields: display_fields)
           else
             display_fields = fields unless fields.eql?(:default)
-            return Main.result_single_object(result_list.first, fields: display_fields)
+            return Result::SingleObject.new(result_list.first, fields: display_fields)
           end
         end
 
@@ -158,17 +159,17 @@ module Aspera
                 content_type: Mime::JSON,
                 body:         {delete_style => one_res_id}
               )
-              return Main.result_status('deleted')
+              return Result::Status.new('deleted')
             end
             return do_bulk_operation(command: command, values: one_res_id) do |one_id|
               api.delete("#{entity}/#{one_id}", query_read_delete)
               {'id' => one_id}
             end
           when :show
-            return Main.result_single_object(api.read(one_res_path), fields: display_fields)
+            return Result::SingleObject.new(api.read(one_res_path), fields: display_fields)
           when :list
             data, http = api.read(entity, query_read_delete, ret: :both)
-            return Main.result_empty if http.code == '204'
+            return Result::Empty.new if http.code == '204'
             # TODO: not generic : which application is this for ?
             if http['Content-Type'].start_with?('application/vnd.api+json')
               Log.log.debug('is vnd.api')
@@ -177,17 +178,17 @@ module Aspera
             data = data[items_key] if items_key
             case data
             when Hash
-              return Main.result_single_object(data, fields: display_fields)
+              return Result::SingleObject.new(data, fields: display_fields)
             when Array
-              return Main.result_object_list(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
-              return Main.result_value_list(data)
+              return Result::ObjectList.new(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
+              return Result::ValueList.new(data)
             else
               Aspera.error_unexpected_value(data.class.name){'list type'}
             end
           when :modify
             parameters = value_create_modify(command: command)
             api.update(one_res_path, parameters)
-            return Main.result_status('modified')
+            return Result::Status.new('modified')
           else
             Aspera.error_unexpected_value(command){'command'}
           end

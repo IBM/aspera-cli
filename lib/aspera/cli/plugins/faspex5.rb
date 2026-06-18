@@ -216,7 +216,7 @@ module Aspera
             Aspera.assert(skip_ids_persistency){'Only with option once_only'}
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']})
             skip_ids_persistency.save
-            return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+            return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
             packages = list_packages_with_filter(query: {'status' => 'completed'}).first
@@ -314,7 +314,7 @@ module Aspera
               formatter.display_status("Package #{package['id']}")
               result = wait_package_status(package['id'])
             end
-            return Main.result_single_object(result)
+            return Result::SingleObject.new(result)
           end
         end
 
@@ -371,7 +371,7 @@ module Aspera
             query.delete('iteration_token')
           end
           RestParameters.instance.spinner_cb.call(action: :success)
-          return Main.result_object_list(all_items, total: total_count)
+          return Result::ObjectList.new(all_items, total: total_count)
         end
 
         def package_action
@@ -382,13 +382,13 @@ module Aspera
             end
           case command
           when :show
-            return Main.result_single_object(@api_v5.read("packages/#{package_id}"))
+            return Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))
           when :browse
             return browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
           when :status
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             status = wait_package_status(package_id, status_list: status_list)
-            return Main.result_single_object(status)
+            return Result::SingleObject.new(status)
           when :delete
             ids = package_id
             ids = [ids] unless ids.is_a?(Array)
@@ -401,7 +401,7 @@ module Aspera
               body:         {ids: ids},
               headers:      {'Accept' => Mime::JSON}
             )
-            return Main.result_status('Package(s) deleted')
+            return Result::Status.new('Package(s) deleted')
           when :receive
             return package_receive(package_id)
           when :send
@@ -411,7 +411,7 @@ module Aspera
             fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
             fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
             fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
-            return Main.result_object_list(list, total: total, fields: fields)
+            return Result::ObjectList.new(list, total: total, fields: fields)
           end
         end
 
@@ -450,7 +450,7 @@ module Aspera
             exec_args[:display_fields] = %w[id job_name job_type status]
           end
           res_command = options.get_next_command(available_commands)
-          return Main.result_value_list(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
+          return Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
           case res_command
           when :create, :modify, :delete, :show
             return entity_execute(command: res_command, **exec_args) do |field, value|
@@ -458,7 +458,7 @@ module Aspera
                    end
           when :list
             data, total = exec_args[:api].list_entities_limit_offset_total_count(entity: exec_args[:entity], items_key: exec_args[:items_key], query: query_read_delete(default: exec_args[:list_query]))
-            return Main.result_object_list(data, total: total, fields: exec_args[:display_fields])
+            return Result::ObjectList.new(data, total: total, fields: exec_args[:display_fields])
           when :shared_folders
             # nodes
             node_id = options.instance_identifier do |field, value|
@@ -503,7 +503,7 @@ module Aspera
               value: creation_payload['email_address'],
               query: {}
             )
-            return Main.result_single_object(result)
+            return Result::SingleObject.new(result)
           when :members, :saml_groups
             # res_command := :shared_inboxes, :workgroups
             res_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
@@ -549,7 +549,7 @@ module Aspera
             # :accounts
             contact_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
             @api_v5.create("accounts/#{contact_id}/reset_password", {})
-            return Main.result_status('password reset, user shall check email')
+            return Result::Status.new('password reset, user shall check email')
           end
           Aspera.error_unreachable_line
         end
@@ -563,29 +563,29 @@ module Aspera
             delete_data = value_create_modify(command: command, default: {})
             delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
             res = @api_v5.create('internal/packages/clean_deleted', delete_data)
-            return Main.result_single_object(res)
+            return Result::SingleObject.new(res)
           when :events
             event_type = options.get_next_command(%i[application webhook])
             case event_type
             when :application
               list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
-              return Main.result_object_list(list, total: total, fields: %w[event_type created_at application user.name])
+              return Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
             when :webhook
               list, total = @api_v5.list_entities_limit_offset_total_count(
                 entity: 'all_webhooks_events',
                 query: query_read_delete,
                 items_key: 'events'
               )
-              return Main.result_object_list(list, total: total)
+              return Result::ObjectList.new(list, total: total)
             end
           when :configuration
             conf_path = 'configuration'
             conf_cmd = options.get_next_command(%i[show modify])
             case conf_cmd
             when :show
-              return Main.result_single_object(@api_v5.read(conf_path))
+              return Result::SingleObject.new(@api_v5.read(conf_path))
             when :modify
-              return Main.result_single_object(@api_v5.update(conf_path, value_create_modify(command: conf_cmd)))
+              return Result::SingleObject.new(@api_v5.update(conf_path, value_create_modify(command: conf_cmd)))
             end
           when :smtp
             # only one SMTP config
@@ -593,21 +593,21 @@ module Aspera
             smtp_cmd = options.get_next_command(%i[show create modify delete test])
             case smtp_cmd
             when :show
-              return Main.result_single_object(@api_v5.read(smtp_path))
+              return Result::SingleObject.new(@api_v5.read(smtp_path))
             when :create
-              return Main.result_single_object(@api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)))
+              return Result::SingleObject.new(@api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)))
             when :modify
-              return Main.result_single_object(@api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)))
+              return Result::SingleObject.new(@api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)))
             when :delete
               @api_v5.delete(smtp_path)
-              return Main.result_status('SMTP configuration deleted')
+              return Result::Status.new('SMTP configuration deleted')
             when :test
               test_data = options.get_next_argument('Email or test data, see API')
               test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
               creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
               result = wait_for_job(creation['job_id'])
               result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
-              return Main.result_single_object(result)
+              return Result::SingleObject.new(result)
             end
           end
         end
@@ -624,7 +624,7 @@ module Aspera
           end
           case command
           when :version
-            return Main.result_single_object(@api_v5.read('version'))
+            return Result::SingleObject.new(@api_v5.read('version'))
           when :health
             nagios = Nagios.new
             begin
@@ -637,29 +637,29 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('core', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :user
             case options.get_next_command(%i[account profile])
             when :account
-              return Main.result_single_object(@api_v5.read('account', query_read_delete))
+              return Result::SingleObject.new(@api_v5.read('account', query_read_delete))
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return Main.result_single_object(@api_v5.read('account/preferences'))
+                return Result::SingleObject.new(@api_v5.read('account/preferences'))
               when :modify
                 @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
-                return Main.result_status('modified')
+                return Result::Status.new('modified')
               end
             end
           when :bearer_token
-            return Main.result_text(@api_v5.oauth.authorization)
+            return Result::Text.new(@api_v5.oauth.authorization)
           when :packages
             return package_action
           when :shared_folders
             all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
             case options.get_next_command(%i[list browse])
             when :list
-              return Main.result_object_list(all_shared_folders)
+              return Result::ObjectList.new(all_shared_folders)
             when :browse
               shared_folder_id = options.instance_identifier do |field, value|
                 matches = all_shared_folders.select{ |i| i[field].eql?(value)}
@@ -684,7 +684,7 @@ module Aspera
               end
             when :resend
               @api_v5.create("#{invitation_endpoint}/#{options.instance_identifier}/resend", nil)
-              return Main.result_status('Invitation resent')
+              return Result::Status.new('Invitation resent')
             else
               return entity_execute(
                 api: @api_v5,
@@ -704,7 +704,7 @@ module Aspera
             Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
             server.start
-            return Main.result_status('Gateway terminated')
+            return Result::Status.new('Gateway terminated')
           when :postprocessing
             require 'aspera/faspex_postproc' # cspell:disable-line
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
@@ -713,7 +713,7 @@ module Aspera
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
             server.mount(uri.path, Faspex4PostProcServlet, parameters.except(*WebServerSimple::PARAMS))
             server.start
-            return Main.result_status('Gateway terminated')
+            return Result::Status.new('Gateway terminated')
           end
         end
         SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze

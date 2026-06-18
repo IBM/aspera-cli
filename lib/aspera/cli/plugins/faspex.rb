@@ -286,15 +286,15 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('faspex api', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :package
             command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
             case command_pkg
             when :show
               delivery_id = options.instance_identifier
-              return Main.result_single_object(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
+              return Result::SingleObject.new(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
             when :list
-              return Main.result_object_list(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
+              return Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)
               Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
@@ -316,7 +316,7 @@ module Aspera
                 pkg_created = api_v3.create('send', package_create_params)
                 if first_source.key?('id')
                   # no transfer spec if remote source: handled by faspex
-                  return {data: [pkg_created['links']['status']], type: :value_list, name: 'link'}
+                  return Result::ValueList.new([pkg_created['links']['status']], name: 'link')
                 end
                 raise Cli::BadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
                 transfer_spec = pkg_created['xfer_sessions'].first
@@ -357,7 +357,7 @@ module Aspera
                   Aspera.assert(skip_ids_persistency){'Only with option once_only'}
                   skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD]}})
                   skip_ids_persistency.save
-                  return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+                  return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
                   raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Transfer::Uri::SCHEME}" if found_package_link.nil?
@@ -401,7 +401,7 @@ module Aspera
               # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
               pkg_id_uri.reject!{ |i| skip_ids_data.include?(i[:id])}
               Log.dump(:pkg_id_uri, pkg_id_uri)
-              return Main.result_status('no new package') if pkg_id_uri.empty?
+              return Result::Status.new('no new package') if pkg_id_uri.empty?
               result_transfer = []
               pkg_id_uri.each do |id_uri|
                 if id_uri[:uri].nil?
@@ -439,7 +439,7 @@ module Aspera
             source_list = api_v3.read('source_shares')['items']
             case command_source
             when :list
-              return Main.result_object_list(source_list)
+              return Result::ObjectList.new(source_list)
             else # :info :node
               source_id = options.instance_identifier do |field, value|
                 Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
@@ -462,7 +462,7 @@ module Aspera
               Log.dump(:source_info, source_info)
               case command_source
               when :info
-                return Main.result_single_object(source_info)
+                return Result::SingleObject.new(source_info)
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
                 Log.log.debug{"node=#{node_config}"}
@@ -481,13 +481,13 @@ module Aspera
             end
           when :me
             my_info = api_v3.read('me')
-            return Main.result_single_object(my_info)
+            return Result::SingleObject.new(my_info)
           when :dropbox
             command_pkg = options.get_next_command([:list])
             case command_pkg
             when :list
               dropbox_list = api_v3.read('dropboxes')
-              return Main.result_object_list(dropbox_list['items'], fields: %w[name id description can_read can_write])
+              return Result::ObjectList.new(dropbox_list['items'], fields: %w[name id description can_read can_write])
             end
           when :v4
             command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
@@ -526,11 +526,11 @@ module Aspera
               u['first_name'], u['last_name'] = u['displayName'].split(' ', 2)
               u['x'] = true
             end
-            return Main.result_object_list(users)
+            return Result::ObjectList.new(users)
           when :login_methods
             login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}, ret: :resp).body
             login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
-            return Main.result_object_list(login_methods['XRD']['Service'])
+            return Result::ObjectList.new(login_methods['XRD']['Service'])
           end
         end
       end

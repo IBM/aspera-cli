@@ -251,21 +251,23 @@ module Aspera
       end
 
       # Display results, especially the table format
-      # @param type [Symbol] Type of data
-      # @param data [Object] Data to display
-      # @param fields [Array<String>] List of fields to display
-      # @param total [Integer] Total number of items
-      # @param name [String] Name of the column to display
-      def display_results(type:, data: nil, fields: nil, total: nil, name: nil)
-        Log.log.debug{"display_results: type=#{type}"}
+      # @param result [Result] Result object to display
+      def display_results(result)
+        require 'aspera/cli/result'
+        Aspera.assert_type(result, Cli::Result){'result must be a Result object'}
+
+        data = result.data
+        fields = result.fields
+        total = result.total
+        name = result.name
+
+        Log.log.debug{"display_results: result class=#{result.class.name}"}
         Log.dump(:data, data, level: :trace1)
         Log.dump(:fields, fields, level: :trace1)
-        Aspera.assert_type(type, Symbol){'result must have type'}
-        Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
         display_item_count(data.length, total) unless total.nil?
         hide_secrets(data)
         data = SecretHider.instance.hide_secrets_in_string(data) if data.is_a?(String) && hide_secrets?
-        @options[:format] = :image if type.eql?(:image)
+        @options[:format] = :image if result.is_a?(Cli::Result::Image)
         case @options[:format]
         when :text
           display_message(:data, data.to_s)
@@ -281,9 +283,8 @@ module Aspera
           display_message(:data, YAML.dump(filter_list_on_fields(data)))
         when :image
           # if object or list, then must be a single
-          case type
-          when :single_object, :object_list
-            data = [data] if type.eql?(:single_object)
+          if result.is_a?(Cli::Result::SingleObject) || result.is_a?(Cli::Result::ObjectList)
+            data = [data] if result.is_a?(Cli::Result::SingleObject)
             raise BadArgument, 'image display requires a single result' unless data.length == 1
             fields = compute_fields(data, fields)
             raise BadArgument, 'select a single field to display' unless fields.length == 1
@@ -316,8 +317,7 @@ module Aspera
           # here, data is the image blob
           display_message(:data, Preview::Terminal.build(data, **@options[:image].symbolize_keys)) unless data.eql?(:done)
         when :table, :csv
-          case type
-          when :single_object
+          if result.is_a?(Cli::Result::SingleObject)
             # :single_object is a Hash, where key=column name
             Aspera.assert_type(data, Hash){'result'}
             if data.empty?
@@ -326,28 +326,30 @@ module Aspera
               data = DotContainer.new(data).to_dotted if @options[:flat_hash]
               display_table([data], compute_fields([data], fields), single: true)
             end
-          when :object_list
+          elsif result.is_a?(Cli::Result::ObjectList)
             # :object_list is an Array of Hash, where key=column name
             Aspera.assert_array_all(data, Hash){'result'}
             data = data.map{ |obj| DotContainer.new(obj).to_dotted} if @options[:flat_hash]
-            display_table(data, compute_fields(data, fields), single: type.eql?(:single_object))
-          when :value_list
+            display_table(data, compute_fields(data, fields), single: false)
+          elsif result.is_a?(Cli::Result::ValueList)
             # :value_list is a simple array of values, name of column provided in `name`
             display_table(data.map{ |i| {name => i}}, [name])
-          when :special # no table
+          elsif result.is_a?(Cli::Result::Special)
+            # Special results (empty, nothing, null, etc.)
             if data.eql?(:nothing)
               Log.log.debug('no result expected')
               return
             end
             display_message(:info, TerminalFormatter.special_format(data.to_s))
             return
-          when :status # no table
+          elsif result.is_a?(Cli::Result::Status)
             # :status displays a simple message
             display_message(:info, data)
-          when :text # no table
-            # :status displays a simple message
+          elsif result.is_a?(Cli::Result::Text)
+            # :text displays a simple message
             display_message(:data, data)
-          else Aspera.error_unexpected_value(type){'data type'}
+          else
+            Aspera.error_unexpected_value(result.class.name){'result type'}
           end
         else Aspera.error_unexpected_value(@options[:format]){'format'}
         end

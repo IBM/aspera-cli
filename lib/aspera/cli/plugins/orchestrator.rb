@@ -136,38 +136,34 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('node api', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           # 14. Ping the remote Instance
           when :info
             result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
-            return Main.result_single_object(result)
+            return Result::SingleObject.new(result)
           # 12. Orchestrator Background Process status
           when :processes
             # TODO: Bug ? API has only XML format
             result = call_ao('processes_status', format: 'xml')
-            return Main.result_object_list(result['process'])
+            return Result::ObjectList.new(result['process'])
           # 13. Orchestrator Monitor
           when :monitors
             result = call_ao('monitor_snapshot')
-            return Main.result_single_object(result['monitor'])
+            return Result::SingleObject.new(result['monitor'])
           when :plugins
             # TODO: Bug ? only json format on url
             result = call_ao('plugin_version')
-            return Main.result_object_list(result['Plugin'])
+            return Result::ObjectList.new(result['Plugin'])
           when :workflows
             command = options.get_next_command(%i[list status inputs details start export workorders outputs])
             case command
             # 1. List all available workflows on the system
             when :list
               result = call_ao('workflows_list')
-              return Main.result_object_list(result['workflows']['workflow'], fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification])
+              return Result::ObjectList.new(result['workflows']['workflow'], fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification])
             # 2.1 Initiate a workorder - Asynchronous
             # 2.2 Initiate a workorder - Synchronous
             when :start
-              result = {
-                type: :single_object,
-                data: nil
-              }
               call_params = {format: :json}
               wf_id = options.instance_identifier
               # get external parameters if any
@@ -179,7 +175,6 @@ module Aspera
               # expected result for synchro call ?
               result_location = options.get_option(:result)
               unless result_location.nil?
-                result[:type] = :status
                 fields = result_location.split(':')
                 raise Cli::BadArgument, "Expects: work_step:result_name : #{result_location}" if fields.length != 2
                 call_params['explicit_output_step'] = fields[0]
@@ -187,34 +182,34 @@ module Aspera
                 # implicitly, call is synchronous
                 call_params['synchronous'] = true
               end
-              result[:type] = :text if call_params['synchronous']
-              result[:data] = call_ao("initiate/#{wf_id}", args: call_params)
-              return result
+              result_data = call_ao("initiate/#{wf_id}", args: call_params)
+              # Return appropriate result type based on call mode
+              return call_params['synchronous'] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
             # 3. Fetch input specification for a workflow
             when :inputs
               result = call_ao("workflow_inputs_spec/#{options.instance_identifier}")
-              return Main.result_single_object(result['workflow_inputs_spec'])
+              return Result::SingleObject.new(result['workflow_inputs_spec'])
             # 4. Check the running status for all workflows
             # 5. Check the running status for a particular workflow
             when :status
               wf_id = options.instance_identifier
               result = call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")
-              return Main.result_object_list(result['workflows']['workflow'])
+              return Result::ObjectList.new(result['workflows']['workflow'])
             # 6. Check the detailed running status for a particular workflow
             when :details
               result = call_ao("workflow_details/#{options.instance_identifier}")
-              return Main.result_object_list(result['workflows']['workflow']['statuses'])
+              return Result::ObjectList.new(result['workflows']['workflow']['statuses'])
             # 15. Fetch output specification for a particular work flow
             when :outputs
               result = call_ao("workflow_outputs_spec/#{options.instance_identifier}")
-              return Main.result_object_list(result['workflow_outputs_spec']['output'])
+              return Result::ObjectList.new(result['workflow_outputs_spec']['output'])
             # 19.Fetch all workorders from a workflow
             when :workorders
               result = call_ao("work_orders_list/#{options.instance_identifier}")
-              return Main.result_object_list(result['work_orders'])
+              return Result::ObjectList.new(result['work_orders'])
             when :export
               result = call_ao("export_workflow/#{options.instance_identifier}", format: nil, http: true)
-              return Main.result_text(result.body)
+              return Result::Text.new(result.body)
             end
           when :workorders
             command = options.get_next_command(%i[status cancel reset output])
@@ -223,22 +218,22 @@ module Aspera
             when :status
               wo_id = options.instance_identifier
               result = call_ao("work_order_status/#{wo_id}")
-              return Main.result_single_object(result['work_order'])
+              return Result::SingleObject.new(result['work_order'])
             # 9. Cancel a Work Order
             when :cancel
               wo_id = options.instance_identifier
               result = call_ao("work_order_cancel/#{wo_id}")
-              return Main.result_single_object(result['work_order'])
+              return Result::SingleObject.new(result['work_order'])
             # 11. Reset a Work order
             when :reset
               wo_id = options.instance_identifier
               result = call_ao("work_order_reset/#{wo_id}")
-              return Main.result_single_object(result['work_order'])
+              return Result::SingleObject.new(result['work_order'])
             # 16. Fetch output of a work order
             when :output
               wo_id = options.instance_identifier
               result = call_ao("work_order_output/#{wo_id}", format: 'xml')
-              return Main.result_object_list(result['variable'])
+              return Result::ObjectList.new(result['variable'])
             end
           when :workstep
             command = options.get_next_command(%i[status cancel])
@@ -247,12 +242,12 @@ module Aspera
             when :status
               ws_id = options.instance_identifier
               result = call_ao("work_step_status/#{ws_id}")
-              return Main.result_single_object(result)
+              return Result::SingleObject.new(result)
             # 10. Cancel a Work Step
             when :cancel
               ws_id = options.instance_identifier
               result = call_ao("work_step_cancel/#{ws_id}")
-              return Main.result_single_object(result)
+              return Result::SingleObject.new(result)
             end
           else Aspera.error_unexpected_value(command)
           end

@@ -128,7 +128,8 @@ module Aspera
           apps.first
         else
           formatter.display_status('Multiple applications detected, please select from:')
-          formatter.display_results(type: :object_list, data: apps, fields: %w[product url version])
+          require 'aspera/cli/result'
+          formatter.display_results(Result::ObjectList.new(apps, fields: %w[product url version]))
           answer = options.prompt_user_input_in_list('product', apps.map{ |a| a[:product]})
           apps.find{ |a| a[:product].eql?(answer)}
         end
@@ -166,7 +167,7 @@ module Aspera
         test_args = "-P#{wiz_preset_name} #{test_args}" unless option_default
         # TODO: actually test the command
         test_cmd = "#{Info::CMD_NAME} #{identification[:product]} #{test_args}"
-        return Main.result_status("You can test with:\n#{test_cmd.red}")
+        return Result::Status.new("You can test with:\n#{test_cmd.red}")
       end
     end
   end

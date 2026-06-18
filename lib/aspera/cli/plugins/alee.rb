@@ -23,12 +23,12 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('api', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :entitlement
             entitlement_id = options.get_option(:username, mandatory: true)
             customer_id = options.get_option(:password, mandatory: true)
             api_metering = Api::Alee.new(entitlement_id, customer_id)
-            return Main.result_single_object(api_metering.read('entitlement'))
+            return Result::SingleObject.new(api_metering.read('entitlement'))
           end
         end
       end

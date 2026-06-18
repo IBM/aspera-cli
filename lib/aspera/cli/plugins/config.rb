@@ -571,14 +571,14 @@ module Aspera
           sdk_url = options.get_option(:sdk_url, mandatory: true)
           sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
           name, version, folder = Ascp::Installation.instance.retrieve_sdk(url: sdk_url, version: asked_version)
-          return Main.result_status("Installed #{name} version #{version} in #{folder}")
+          return Result::Status.new("Installed #{name} version #{version} in #{folder}")
         end
 
         def execute_action_ascp
           command = options.get_next_command(%i[show products info install spec schema errors])
           case command
           when :show
-            return Main.result_text(Ascp::Installation.instance.path(:ascp))
+            return Result::Text.new(Ascp::Installation.instance.path(:ascp))
           when :info
             # Collect info from ascp executable
             data = Ascp::Installation.instance.ascp_info
@@ -588,30 +588,30 @@ module Aspera
             DataRepository::ELEMENTS.each_with_object(data){ |i, h| h[i.to_s] = DataRepository.instance.item(i)}
             # Declare those as secrets
             SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
-            return Main.result_single_object(data)
+            return Result::SingleObject.new(data)
           when :products
             command = options.get_next_command(%i[list])
             case command
             when :list
-              return Main.result_object_list(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
+              return Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
             end
           when :install
             return install_transfer_sdk
           when :spec
             builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
-            return Main.result_object_list(builder.rows, fields: builder.columns)
+            return Result::ObjectList.new(builder.rows, fields: builder.columns)
           when :schema
             schema = Transfer::Spec::SCHEMA.current.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
             agent = options.get_next_argument('transfer agent name', mandatory: false)
             schema['properties'] = schema['properties'].select{ |_k, v| CommandLineBuilder.supported_by_agent(agent, v)} unless agent.nil?
             schema['properties'] = schema['properties'].sort.to_h
-            return Main.result_single_object(schema)
+            return Result::SingleObject.new(schema)
           when :errors
             error_data = []
             Ascp::Management::ERRORS.each_pair do |code, prop|
               error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
-            return Main.result_object_list(error_data)
+            return Result::ObjectList.new(error_data)
           else Aspera.error_unexpected_value(command)
           end
           Aspera.error_unreachable_line
@@ -624,7 +624,7 @@ module Aspera
             return install_transfer_sdk
           when :list
             sdk_list = Ascp::Installation.instance.sdk_locations
-            return Main.result_object_list(
+            return Result::ObjectList.new(
               sdk_list,
               fields: sdk_list.first.keys - ['url']
             )
@@ -649,7 +649,7 @@ module Aspera
           raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
           case action
           when :list
-            return Main.result_value_list(@config_presets.keys, name: 'name')
+            return Result::ValueList.new(@config_presets.keys, name: 'name')
           when :overview
             # Display process modifies the value (hide secrets): we do not want to save removed secrets
             data = self.class.deep_clone(@config_presets)
@@ -660,42 +660,42 @@ module Aspera
                 result.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
               end
             end
-            return Main.result_object_list(result, fields: CONF_OVERVIEW_KEYS)
+            return Result::ObjectList.new(result, fields: CONF_OVERVIEW_KEYS)
           when :show
-            return Main.result_single_object(self.class.deep_clone(@config_presets[name]))
+            return Result::SingleObject.new(self.class.deep_clone(@config_presets[name]))
           when :delete
             @config_presets.delete(name)
-            return Main.result_status("Deleted: #{name}")
+            return Result::Status.new("Deleted: #{name}")
           when :get
             param_name = options.get_next_argument('parameter name')
             value = @config_presets[name][param_name]
             raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
-            when Numeric, String then return Main.result_text(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
+            when Numeric, String then return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
             end
-            return Main.result_single_object(value)
+            return Result::SingleObject.new(value)
           when :unset
             param_name = options.get_next_argument('parameter name')
             @config_presets[name].delete(param_name)
-            return Main.result_status("Removed: #{name}: #{param_name}")
+            return Result::Status.new("Removed: #{name}: #{param_name}")
           when :set
             param_name = options.get_next_argument('parameter name')
             param_name = Manager.option_line_to_name(param_name)
             param_value = options.get_next_argument('parameter value', validation: nil)
             set_preset_key(name, param_name, param_value)
-            return Main.result_nothing
+            return Result::Nothing.new
           when :initialize
             config_value = options.get_next_argument('extended value', validation: Hash)
             Log.log.warn{"configuration already exists: #{name}, overwriting"} if @config_presets.key?(name)
             @config_presets[name] = config_value
-            return Main.result_status("Modified: #{@option_config_file}")
+            return Result::Status.new("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
             unprocessed_options = options.unprocessed_options_with_value
             Log.log.debug{"opts=#{unprocessed_options}"}
             @config_presets[name] ||= {}
             @config_presets[name].merge!(unprocessed_options)
-            return Main.result_status("Updated: #{name}")
+            return Result::Status.new("Updated: #{name}")
           when :ask
             options.ask_missing_mandatory = true
             @config_presets[name] ||= {}
@@ -703,14 +703,14 @@ module Aspera
               option_value = options.get_interactive(option_name, check_option: true)
               @config_presets[name][option_name] = option_value
             end
-            return Main.result_status("Updated: #{name}")
+            return Result::Status.new("Updated: #{name}")
           when :lookup
             BasicAuth.declare_options(options)
             url = options.get_option(:url, mandatory: true)
             user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)
             raise Error, 'no such config found' if result.nil?
-            return Main.result_single_object(result)
+            return Result::SingleObject.new(result)
           when :secure
             identifier = options.get_next_argument('config name', mandatory: false)
             preset_names = identifier.nil? ? @config_presets.keys : [identifier]
@@ -735,7 +735,7 @@ module Aspera
                 end
               end
             end
-            return Main.result_status('Secrets secured in vault: Make sure to save the vault password securely.')
+            return Result::Status.new('Secrets secured in vault: Make sure to save the vault password securely.')
           end
         end
 
@@ -778,20 +778,20 @@ module Aspera
             return execute_preset
           when :open
             Environment.instance.open_editor(@option_config_file.to_s)
-            return Main.result_nothing
+            return Result::Nothing.new
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
             section = "##{section}" unless section.nil?
             Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
-            return Main.result_nothing
+            return Result::Nothing.new
           when :genkey # Generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
             private_key_length = options.get_next_argument('size in bits', mandatory: false, validation: Integer, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
             OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
-            return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
+            return Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
           when :pubkey # Get pub key
             private_key_pem = options.get_next_argument('private key PEM value')
-            return Main.result_text(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
+            return Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
           when :remote_certificate
             cert_action = options.get_next_command(%i[chain only name])
             remote_url = options.get_next_argument('remote URL')
@@ -799,32 +799,32 @@ module Aspera
             raise "No certificate found for #{remote_url}" unless remote_chain&.first
             case cert_action
             when :chain
-              return Main.result_text(remote_chain.map(&:to_pem).join("\n"))
+              return Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
             when :only
-              return Main.result_text(remote_chain.first.to_pem)
+              return Result::Text.new(remote_chain.first.to_pem)
             when :name
-              return Main.result_text(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
+              return Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
             end
           when :echo # Display the content of a value given on command line
-            return Main.result_auto(options.get_next_argument('value', validation: nil))
+            return Result.auto(options.get_next_argument('value', validation: nil))
           when :download
             file_url = options.get_next_argument('source URL').chomp
             file_dest = options.get_next_argument('file path', mandatory: false)
             file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
             Log.log.info("Downloading: #{file_url}")
             Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
-            return Main.result_status("Saved to: #{file_dest}")
+            return Result::Status.new("Saved to: #{file_dest}")
           when :tokens
             require 'aspera/api/node'
             case options.get_next_command(%i{flush list show})
             when :flush
-              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, name: 'file')
+              return Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
             when :list
-              return Main.result_object_list(OAuth::Factory.instance.persisted_tokens)
+              return Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
             when :show
               data = OAuth::Factory.instance.get_token_info(options.instance_identifier)
               raise Cli::Error, 'Unknown identifier' if data.nil?
-              return Main.result_single_object(data)
+              return Result::SingleObject.new(data)
             end
           when :plugins
             case options.get_next_command(%i[list create])
@@ -839,7 +839,7 @@ module Aspera
                   path:   Plugins::Factory.instance.plugin_source(name)
                 })
               end
-              return Main.result_object_list(result, fields: %w[plugin detect wizard path])
+              return Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
             when :create
               plugin_name = options.get_next_argument('name').downcase
               destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
@@ -852,7 +852,7 @@ module Aspera
                       class #{plugin_name.snake_to_capital} < Base
                         ACTIONS=[]
                         def execute_action
-                          return Main.result_status('You called plugin #{plugin_name}')
+                          return Result::Status.new('You called plugin #{plugin_name}')
                         end
                       end
                     end
@@ -860,57 +860,57 @@ module Aspera
                 end
               END_OF_PLUGIN_CODE
               File.write(plugin_file, content)
-              return Main.result_status("Created #{plugin_file}")
+              return Result::Status.new("Created #{plugin_file}")
             end
           when :detect, :wizard
             # Interactive mode
             options.ask_missing_mandatory = true
             # Detect plugins by url and optional query
             apps = @wizard.identify_plugins_for_url.freeze
-            return Main.result_object_list(apps) if action.eql?(:detect)
+            return Result::ObjectList.new(apps) if action.eql?(:detect)
             return @wizard.find(apps)
           when :coffee
-            return Main.result_image(COFFEE_IMAGE_URL)
+            return Result::Image.new(COFFEE_IMAGE_URL)
           when :image
-            return Main.result_image(options.get_next_argument('image URI or blob'))
+            return Result::Image.new(options.get_next_argument('image URI or blob'))
           when :ascp
             execute_action_ascp
           when :sync
             case options.get_next_command(%i[spec admin translate])
             when :spec
               builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
-              return Main.result_object_list(builder.rows, fields: builder.columns)
+              return Result::ObjectList.new(builder.rows, fields: builder.columns)
             when :admin
               return execute_sync_admin
             when :translate
-              return Main.result_single_object(Sync::Operations.args_to_conf(options.get_next_argument('async arguments', multiple: true)))
+              return Result::SingleObject.new(Sync::Operations.args_to_conf(options.get_next_argument('async arguments', multiple: true)))
             else Aspera.error_unreachable_line
             end
           when :transferd
             execute_action_transferd
           when :gem
             case options.get_next_command(%i[path version name])
-            when :path then return Main.result_text(self.class.gem_src_root)
-            when :version then return Main.result_text(Cli::VERSION)
-            when :name then return Main.result_text(Info::GEM_NAME)
+            when :path then return Result::Text.new(self.class.gem_src_root)
+            when :version then return Result::Text.new(Cli::VERSION)
+            when :name then return Result::Text.new(Info::GEM_NAME)
             else Aspera.error_unreachable_line
             end
           when :folder
-            return Main.result_text(@main_folder)
+            return Result::Text.new(@main_folder)
           when :file
-            return Main.result_text(@option_config_file)
+            return Result::Text.new(@option_config_file)
           when :email_test
             send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
-            return Main.result_nothing
+            return Result::Nothing.new
           when :smtp_settings
-            return Main.result_single_object(email_settings)
+            return Result::SingleObject.new(email_settings)
           when :proxy_check
             # Ensure fpac was provided
             options.get_option(:fpac, mandatory: true)
             server_url = options.get_next_argument('server url')
-            return Main.result_text(@pac_exec.get_proxies(server_url))
+            return Result::ValueList.new(@pac_exec.get_proxies(server_url), name: 'proxy')
           when :check_update
-            return Main.result_single_object(check_gem_version)
+            return Result::SingleObject.new(check_gem_version)
           when :initdemo
             if @config_presets.key?(DEMO_PRESET)
               Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
@@ -931,11 +931,11 @@ module Aspera
               @config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
               Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
             end
-            return Main.result_status('Done')
+            return Result::Status.new('Done')
           when :vault then execute_vault
           when :test then return execute_test
           when :platform
-            return Main.result_text(Environment.instance.architecture)
+            return Result::Text.new(Environment.instance.architecture)
           else Aspera.error_unreachable_line
           end
         end
@@ -1052,23 +1052,23 @@ module Aspera
           command = options.get_next_command(%i[info list show create delete password])
           case command
           when :info
-            return Main.result_single_object(vault.info)
+            return Result::SingleObject.new(vault.info)
           when :list
             # , fields: %w(label url username password description)
-            return Main.result_object_list(vault.list)
+            return Result::ObjectList.new(vault.list)
           when :show
-            return Main.result_single_object(vault.get(label: options.get_next_argument('label')))
+            return Result::SingleObject.new(vault.get(label: options.get_next_argument('label')))
           when :create
             vault.set(options.get_next_argument('info', validation: Hash).symbolize_keys)
-            return Main.result_status('Secret added')
+            return Result::Status.new('Secret added')
           when :delete
             label_to_delete = options.get_next_argument('label')
             vault.delete(label: label_to_delete)
-            return Main.result_status("Secret deleted: #{label_to_delete}")
+            return Result::Status.new("Secret deleted: #{label_to_delete}")
           when :password
             Aspera.assert(vault.respond_to?(:change_password)){'Vault does not support password change'}
             vault.change_password(options.get_next_argument('new_password'))
-            return Main.result_status('Vault password updated')
+            return Result::Status.new('Vault password updated')
           end
         end
 

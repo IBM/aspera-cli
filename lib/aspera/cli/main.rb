@@ -9,6 +9,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/cli/hints'
+require 'aspera/cli/result'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
@@ -79,46 +80,19 @@ module Aspera
       private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
-        # Create a special result type (only used internally here)
-        # @param special_sym [Symbol] the special result type
-        # @return [Hash] result hash with type :special
-        def result_special(special_sym); {type: :special, data: special_sym}; end
-
-        # Expect some list, but nothing to display
-        # @return [Hash] result hash for empty list
-        def result_empty; result_special(:empty); end
-
-        # Nothing expected
-        # @return [Hash] result hash for nothing
-        def result_nothing; result_special(:nothing); end
-
-        # Result is some status, such as "complete", "deleted"...
-        # @param status [String] The status
-        # @return [Hash] result hash with type :status
-        def result_status(status); return {type: :status, data: status}; end
-
-        # Text result coming from command result
-        # @param data [String, Integer, Symbol] the text data to display
-        # @return [Hash] result hash with type :text
-        def result_text(data); return {type: :text, data: data}; end
-
-        # Create a success result
-        # @return [Hash] result hash with status 'complete'
-        def result_success; return result_status('complete'); end
-
         # Process statuses of finished transfer sessions
         # @param statuses [Array] array of transfer session statuses
         # @raise [Symbol] exception if there is one error
-        # @return [Hash] empty status result if all transfers succeeded
+        # @return [Result] empty status result if all transfers succeeded
         def result_transfer(statuses)
           worst = TransferAgent.session_status(statuses)
           raise worst unless worst.eql?(:success)
-          return Main.result_nothing
+          return Result::Nothing.new
         end
 
         # Used when one command executes several transfer jobs (each job being possibly multi session)
         # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
-        # @return a status object suitable as command result
+        # @return [Result] a status object suitable as command result
         # Each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
         def result_transfer_multiple(status_table)
           global_status = :success
@@ -129,62 +103,7 @@ module Aspera
             item[STATUS_FIELD] = item[STATUS_FIELD].join(',')
           end
           raise global_status unless global_status.eql?(:success)
-          return result_object_list(status_table)
-        end
-
-        # Display image for that URL or directly blob
-        # @param url_or_blob [String] URL or blob to display as image
-        # @return [Hash] result hash with type :image
-        def result_image(url_or_blob)
-          return {type: :image, data: url_or_blob}
-        end
-
-        # A single object, must be Hash
-        # @param data [Hash] the object data
-        # @param fields [Array<String>, nil] optional list of fields to display
-        # @return [Hash] result hash with type :single_object
-        def result_single_object(data, fields: nil)
-          return {type: :single_object, data: data, fields: fields}
-        end
-
-        # An Array of Hash
-        # @param data [Array<Hash>] array of objects
-        # @param fields [Array<String>, nil] optional list of fields to display
-        # @param total [Integer, nil] optional total count
-        # @return [Hash] result hash with type :object_list
-        def result_object_list(data, fields: nil, total: nil)
-          return {type: :object_list, data: data, fields: fields, total: total}
-        end
-
-        # A list of values
-        # @param data [Array] The list of values
-        # @param name [String] The name of the list (used for display)
-        # @return [Hash] result hash with type :value_list
-        def result_value_list(data, name: 'id')
-          Aspera.assert_type(data, Array)
-          Aspera.assert_type(name, String)
-          return {type: :value_list, data: data, name: name}
-        end
-
-        # Determines type of result based on data
-        # @param data [Object] the data to analyze and format
-        # @return [Hash] result hash with appropriate type based on data
-        def result_auto(data)
-          case data
-          when NilClass
-            return result_special(:null)
-          when Hash
-            return result_single_object(data)
-          when Array
-            all_types = data.map(&:class).uniq
-            return result_object_list(data) if all_types.eql?([Hash])
-            unsupported_types = all_types - SCALAR_TYPES
-            return result_value_list(data, name: 'list') if unsupported_types.empty?
-            Aspera.error_unexpected_value(unsupported_types){'list item types'}
-          when *SCALAR_TYPES
-            return result_text(data)
-          else Aspera.error_unexpected_value(data.class.name){'result type'}
-          end
+          return Result::ObjectList.new(status_table)
         end
       end
 
@@ -240,7 +159,7 @@ module Aspera
           # Help requested for current plugin
           show_usage(all: false) if @option_help
           if @option_show_config
-            @context.formatter.display_results(type: :single_object, data: @context.options.known_options(only_defined: true).stringify_keys)
+            @context.formatter.display_results(Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys))
             execute_command = false
           end
           # Locking for single execution (only after "per plugin" option, in case lock port is there)
@@ -263,7 +182,7 @@ module Aspera
             at_exit{File.delete(pid_file)}
           end
           # Execute and display (if not exclusive execution)
-          @context.formatter.display_results(**command_plugin.execute_action) if execute_command
+          @context.formatter.display_results(command_plugin.execute_action) if execute_command
           # Save config file if command modified it
           @context.config.save_config_file_if_needed
           # Finish
@@ -299,7 +218,7 @@ module Aspera
               Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
             else
               builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path)).build
-              @context.formatter.display_results(**Main.result_object_list(builder.rows, fields: builder.columns))
+              @context.formatter.display_results(Result::ObjectList.new(builder.rows, fields: builder.columns))
             end
           end
         end

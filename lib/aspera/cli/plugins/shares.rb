@@ -118,9 +118,9 @@ module Aspera
             else
               nagios.add_critical('API', health[:api].to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :info
-            return Main.result_single_object(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
+            return Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
           when :files
             api_shares_node = basic_auth_api(NODE_API_PATH)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)

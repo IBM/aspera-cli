@@ -471,7 +471,7 @@ module Aspera
               end
             @filter_block = Api::Node.file_matcher_from_argument(options)
             scan_folder_files(folder_info, scan_path)
-            return Main.result_status('scan finished')
+            return Result::Status.new('scan finished')
           when :events, :trevents
             @filter_block = Api::Node.file_matcher_from_argument(options)
             iteration_persistency = nil
@@ -489,15 +489,15 @@ module Aspera
             end
             # call processing method specified by command line command
             send(:"process_#{command}", iteration_persistency)
-            return Main.result_status("#{command} finished")
+            return Result::Status.new("#{command} finished")
           when :check
-            return Main.result_status('Tools validated')
+            return Result::Status.new('Tools validated')
           when :test
             source = options.get_next_argument('source file')
             format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
             generated_file_path = preview_filename(format, options.get_option(:base))
             Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
-            return Main.result_status("generated: #{generated_file_path}")
+            return Result::Status.new("generated: #{generated_file_path}")
           when :show
             source = options.get_next_argument('source file')
             # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
@@ -505,8 +505,8 @@ module Aspera
             Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
             formatter.display_status("generated: #{generated_file_path}")
             # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
-            # return Main.result_status("generated: #{generated_file_path}")
-            return Main.result_image(UriReader.file_url(generated_file_path))
+            # return Result::Status.new("generated: #{generated_file_path}")
+            return Result::Image.new(UriReader.file_url(generated_file_path))
           else Aspera.error_unexpected_value(command)
           end
         ensure

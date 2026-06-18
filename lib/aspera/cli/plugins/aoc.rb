@@ -312,7 +312,7 @@ module Aspera
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
           result = aoc_api.read_with_paging(resource_class_path, base_query.merge(query).compact)
-          return Main.result_object_list(result[:items], fields: fields, total: result[:total])
+          return Result::ObjectList.new(result[:items], fields: fields, total: result[:total])
         end
 
         # Translates `dropbox_name` to `dropbox_id` and fills current workspace_id
@@ -480,7 +480,7 @@ module Aspera
             return result_list(resource_class_path, fields: list_default_fields, default_query: list_default_query)
           when :show
             object = aoc_api.read(resource_instance_path, query_read_delete)
-            return Main.result_single_object(object, fields: Formatter.all_but('certificate'))
+            return Result::SingleObject.new(object, fields: Formatter.all_but('certificate'))
           when :modify
             changes = options.get_next_argument('properties', validation: Hash, schema: schema_create_modify)
             return do_bulk_operation(command: command, values: res_id) do |one_id|
@@ -497,7 +497,7 @@ module Aspera
             the_private_key = options.get_next_argument('private_key PEM value', validation: String)
             the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
             aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
-            return Main.result_success
+            return Result::Success.new
           when :do
             command_repo = options.get_next_command(FILES_COMMANDS)
             return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::Scope::ADMIN)
@@ -506,14 +506,14 @@ module Aspera
               node_id: res_id,
               scope:   options.get_next_argument('scope', default: Api::Node::Scope::ADMIN)
             )
-            return Main.result_text(node_api.oauth.authorization)
+            return Result::Text.new(node_api.oauth.authorization)
           when :dropbox
             command_shared = options.get_next_command(%i[list])
             case command_shared
             when :list
               query = options.get_option(:query) || {}
               res_data = aoc_api.read('dropboxes', query.merge({'workspace_id'=>res_id}))
-              return Main.result_object_list(res_data, fields: %w[id name description])
+              return Result::ObjectList.new(res_data, fields: %w[id name description])
             end
           when :shared_folder
             query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
@@ -522,7 +522,7 @@ module Aspera
             command_shared = options.get_next_command(%i[list node member])
             case command_shared
             when :list
-              return Main.result_object_list(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
+              return Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
             when :node
               shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
@@ -558,17 +558,17 @@ module Aspera
                   end
                 end
                 # TODO : read users and group name and add, if query "include_members"
-                return Main.result_object_list(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
+                return Result::ObjectList.new(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
               end
             end
           when :preferences, :notifications
             user_preferences_res = "#{resource_instance_path}/#{command.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
             case options.get_next_command(%i[show modify])
             when :show
-              return Main.result_single_object(aoc_api.read(user_preferences_res))
+              return Result::SingleObject.new(aoc_api.read(user_preferences_res))
             when :modify
               aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             end
           else Aspera.error_unexpected_value(command)
           end
@@ -580,17 +580,17 @@ module Aspera
           command_apps = options.get_next_command(%i[types settings instance membership])
           case command_apps
           when :types
-            return Main.result_object_list(apps_info)
+            return Result::ObjectList.new(apps_info)
           when :settings
             app_type = options.get_next_command(all_app_types)
             cmd_path = "/apps/#{app_type}/settings"
             command_app_settings = options.get_next_command(Operations::SINGLETON)
             case command_app_settings
             when :show
-              return Main.result_single_object(aoc_api.read(cmd_path))
+              return Result::SingleObject.new(aoc_api.read(cmd_path))
             when :modify
               aoc_api.update(cmd_path, options.get_next_argument('properties', validation: Hash))
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             end
           when :instance
             list_default_query = {workspace_id: aoc_api.workspace_info[:id]}
@@ -605,10 +605,10 @@ module Aspera
             when :list
               return result_list(resource_path, fields: list_default_fields, default_query: list_default_query)
             when :show
-              return Main.result_single_object(aoc_api.read(resource_path, query_read_delete))
+              return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
             when :modify
               aoc_api.update(resource_path, options.get_next_argument('properties', validation: Hash))
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             end
           when :membership
             resource_path = 'apps/app_memberships'
@@ -619,12 +619,12 @@ module Aspera
               return result_list(resource_path)
             when :delete
               aoc_api.delete("#{resource_path}}")
-              return Main.result_status('deleted')
+              return Result::Status.new('deleted')
             when :show
-              return Main.result_single_object(aoc_api.read(resource_path, query_read_delete))
+              return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
             when :create
               aoc_api.update(resource_path, options.get_next_argument('membership properties', validation: Hash))
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             end
           end
         end
@@ -637,7 +637,7 @@ module Aspera
           command_admin = options.get_next_command(ADMIN_ACTIONS)
           case command_admin
           when :bearer_token
-            return Main.result_text(aoc_api.oauth.authorization)
+            return Result::Text.new(aoc_api.oauth.authorization)
           when *ADMIN_OBJECTS
             return execute_resource_action(command_admin)
           when :application
@@ -709,7 +709,7 @@ module Aspera
               GRAPHQL
               # cspell:enable
               result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
-              return Main.result_single_object(result['aoc']['bssSubscription'])
+              return Result::SingleObject.new(result['aoc']['bssSubscription'])
             when :usage
               # cspell:disable
               graphql_query = <<-GRAPHQL
@@ -760,7 +760,7 @@ module Aspera
                   }
                 }
               )['data']
-              return Main.result_single_object(result['aoc'])
+              return Result::SingleObject.new(result['aoc'])
             end
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
@@ -778,7 +778,7 @@ module Aspera
             when :application_events
               event_type = command_analytics.to_s
               events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/#{event_type}")[event_type]
-              return Main.result_object_list(events)
+              return Result::ObjectList.new(events)
             when :transfers
               event_type = command_analytics.to_s
               event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
@@ -817,7 +817,7 @@ module Aspera
                   config.send_email_template(values: {ev: tr_event})
                 end
               end
-              return Main.result_object_list(events)
+              return Result::ObjectList.new(events)
             when :files
               event_type = command_analytics.to_s
               event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
@@ -833,7 +833,7 @@ module Aspera
               filter = query_read_delete(default: {})
               filter['limit'] ||= 100
               events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/#{event_type}", filter)[event_type]
-              return Main.result_object_list(events)
+              return Result::ObjectList.new(events)
             end
           when :usage_reports
             return result_list('usage_reports', base_query: workspace_id_hash)
@@ -898,7 +898,7 @@ module Aspera
             result_create_short_link = aoc_api.create('short_links', create_payload)
             # Creation: perm_block: permission on node
             yield(:create, result_create_short_link['resource_id'], access_levels) if block_given? && link_type.eql?(:public)
-            return Main.result_single_object(result_create_short_link)
+            return Result::SingleObject.new(result_create_short_link)
           when :delete, :list, :show, :modify
             workspace_id_hash(shared_data)
             query = if link_type.eql?(:private)
@@ -931,14 +931,14 @@ module Aspera
                 edit_access: true,
                 json_query:  shared_data.to_json
               })
-              return Main.result_status('deleted')
+              return Result::Status.new('deleted')
             when :list
-              return Main.result_object_list(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
+              return Result::ObjectList.new(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
             when :show
               one_id = options.instance_identifier(description: 'short link id')
               found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
               raise BadIdentifier.new('Short link', one_id) if found.nil?
-              return Main.result_single_object(found, fields: Formatter.all_but('data'))
+              return Result::SingleObject.new(found, fields: Formatter.all_but('data'))
             when :modify
               one_id = options.instance_identifier(description: 'short link id')
               node_file = shared_data.slice(:node_id, :file_id)
@@ -966,7 +966,7 @@ module Aspera
               end
               modify_payload.deep_merge!(custom_data)
               aoc_api.update("short_links/#{one_id}", modify_payload)
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             end
           else Aspera.error_unexpected_value(command)
           end
@@ -1011,45 +1011,45 @@ module Aspera
             # send an email reminder with list of orgs
             user_email = options.get_option(:username, mandatory: true)
             Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").create('organization_reminders', {email: user_email})
-            return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
+            return Result::Status.new("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
-            return Main.result_object_list(Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers'))
+            return Result::ObjectList.new(Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers'))
           when :bearer_token
-            return Main.result_text(aoc_api.oauth.authorization)
+            return Result::Text.new(aoc_api.oauth.authorization)
           when :organization
-            return Main.result_single_object(aoc_api.read('organization'))
+            return Result::SingleObject.new(aoc_api.read('organization'))
           when :tier_restrictions
-            return Main.result_single_object(aoc_api.read('tier_restrictions'))
+            return Result::SingleObject.new(aoc_api.read('tier_restrictions'))
           when :user
             user_cmd = options.get_next_command(%i[workspaces profile preferences notifications contacts])
             case user_cmd
             when :contacts
               return execute_resource_action(:contact)
             # when :settings
-            # return Main.result_object_list(aoc_api.read('client_settings/'))
+            # return Result::ObjectList.new(aoc_api.read('client_settings/'))
             when :workspaces
               case options.get_next_command(%i[list current])
               when :list
                 return result_list('workspaces', fields: %w[id name])
               when :current
-                return Main.result_single_object(aoc_api.workspace_info)
+                return Result::SingleObject.new(aoc_api.workspace_info)
               end
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return Main.result_single_object(aoc_api.current_user_info(exception: true))
+                return Result::SingleObject.new(aoc_api.current_user_info(exception: true))
               when :modify
                 aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
-                return Main.result_status('modified')
+                return Result::Status.new('modified')
               end
             when :preferences, :notifications
               user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/#{user_cmd.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
               case options.get_next_command(%i[show modify])
               when :show
-                return Main.result_single_object(aoc_api.read(user_preferences_res))
+                return Result::SingleObject.new(aoc_api.read(user_preferences_res))
               when :modify
                 aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
-                return Main.result_status('modified')
+                return Result::Status.new('modified')
               end
             end
           when :packages
@@ -1062,7 +1062,7 @@ module Aspera
                 workspace_id_hash(default_query, string: true)
                 return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
               when :show
-                return Main.result_single_object(aoc_api.read(get_resource_path_from_args('dropboxes')))
+                return Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))
               when :short_link
                 # TODO: check name
                 return short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
@@ -1085,7 +1085,7 @@ module Aspera
               created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
               Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
               # return all info on package (especially package id)
-              return Main.result_single_object(created_package[:info])
+              return Result::SingleObject.new(created_package[:info])
             when :receive
               ids_to_download = nil
               if !aoc_api.public_link.nil?
@@ -1102,7 +1102,7 @@ module Aspera
                 Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
                 skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
                 skip_ids_persistency.save
-                return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+                return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
               when SpecialValues::ALL
                 all_packages = list_all_packages_with_query[:items]
                 # remove from list the ones already downloaded
@@ -1151,14 +1151,14 @@ module Aspera
             when :show
               package_id = options.instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
-              return Main.result_single_object(package_info)
+              return Result::SingleObject.new(package_info)
             when :list
               result = list_all_packages_with_query
               skip_ids_persistency = package_persistency
               reject_packages_from_persistency(result[:items], skip_ids_persistency)
               display_fields = PACKAGE_LIST_DEFAULT_FIELDS
               display_fields += ['workspace_id'] if aoc_api.workspace_info[:id].nil?
-              return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
+              return Result::ObjectList.new(result[:items], fields: display_fields, total: result[:total])
             when :delete
               return do_bulk_operation(command: package_command, values: options.instance_identifier) do |package_id|
                 Aspera.assert_type(package_id, String, Integer){'identifier'}
@@ -1168,7 +1168,7 @@ module Aspera
               package_id = options.instance_identifier
               package_data = value_create_modify(command: package_command)
               aoc_api.update("packages/#{package_id}", package_data)
-              return Main.result_status('modified')
+              return Result::Status.new('modified')
             when *Node::NODE4_READ_ACTIONS
               package_id = options.instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
@@ -1245,7 +1245,7 @@ module Aspera
               when :launch
                 wf_id = options.instance_identifier
                 data = automation_api.create("workflows/#{wf_id}/launch", {})
-                return Main.result_single_object(data)
+                return Result::SingleObject.new(data)
               when :action
                 # TODO: not complete
                 wf_id = options.instance_identifier
@@ -1256,7 +1256,7 @@ module Aspera
                 action = automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
                 automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
                 wf = automation_api.read("workflows/#{wf_id}")
-                return Main.result_single_object(wf)
+                return Result::SingleObject.new(wf)
               end
             end
           when :admin
@@ -1269,7 +1269,7 @@ module Aspera
             Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
             server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
             server.start
-            return Main.result_status('Gateway terminated')
+            return Result::Status.new('Gateway terminated')
           else Aspera.error_unreachable_line
           end
           Aspera.error_unreachable_line

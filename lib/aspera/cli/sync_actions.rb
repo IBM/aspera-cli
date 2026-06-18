@@ -98,24 +98,24 @@ module Aspera
         require 'aspera/sync/database' unless command2.eql?(:status)
         case command2
         when :status
-          return Main.result_single_object(Sync::Operations.admin_status(async_info_from_args))
+          return Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args))
         when :find
           folder = options.get_next_argument('path')
           dbs = Sync::Operations.list_db_files(folder)
-          return Main.result_object_list(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
+          return Result::ObjectList.new(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
         when :meta, :counters
-          return Main.result_single_object(db_from_args.send(command2))
+          return Result::SingleObject.new(db_from_args.send(command2))
         when :file_info
           result = db_from_args.send(command2)
           result.each do |r|
             r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
           end
-          return Main.result_object_list(
+          return Result::ObjectList.new(
             result,
             fields: %w[sstate record_id f_meta_path message]
           )
         when :overview
-          return Main.result_object_list(
+          return Result::ObjectList.new(
             db_from_args.overview,
             fields: %w[table name type]
           )
@@ -131,7 +131,7 @@ module Aspera
         case command
         when *Sync::Operations::DIRECTIONS
           Sync::Operations.start(async_info_from_args(direction: command), transfer.user_transfer_spec, &block)
-          return Main.result_success
+          return Result::Success.new
         when :admin
           return execute_sync_admin
         else Aspera.error_unexpected_value(command)

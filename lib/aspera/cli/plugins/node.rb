@@ -224,7 +224,7 @@ module Aspera
               # 'file','symbolic_link'
               if !Node.gen3_entry_folder?(response['self']) || only_path
                 @node_path_prefix&.remove_in_object_list!([response['self']])
-                return Main.result_single_object(response['self'])
+                return Result::SingleObject.new(response['self'])
               end
               items = response['items']
               total_count ||= response['total_count']
@@ -246,7 +246,7 @@ module Aspera
             query.delete('skip')
           end
           @node_path_prefix&.remove_in_object_list!(all_items)
-          return Main.result_object_list(all_items)
+          return Result::ObjectList.new(all_items)
         ensure
           RestParameters.instance.spinner_cb.call(action: :success)
         end
@@ -298,18 +298,18 @@ module Aspera
             other_options = options.get_option(:query)
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search', parameters)
-            return Main.result_empty if resp['items'].empty?
+            return Result::Empty.new if resp['items'].empty?
             fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
             formatter.display_item_count(resp['item_count'], resp['total_count'])
             formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
             @node_path_prefix&.remove_in_object_list!(resp['items'])
-            return Main.result_object_list(resp['items'], fields: fields)
+            return Result::ObjectList.new(resp['items'], fields: fields)
           when :space
             path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
             @node_path_prefix&.add_to_paths!(path_list)
             resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
             @node_path_prefix&.remove_in_object_list!(resp['paths'])
-            return Main.result_object_list(resp['paths'])
+            return Result::ObjectList.new(resp['paths'])
           when :mkdir
             path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
             @node_path_prefix&.add_to_paths!(path_list)
@@ -383,11 +383,11 @@ module Aspera
             remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
             File.basename(remote_path)
             http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
-            return Main.result_text(http.body)
+            return Result::Text.new(http.body)
           when :transport
-            return Main.result_single_object(@api_node.transport_params)
+            return Result::SingleObject.new(@api_node.transport_params)
           when :spec
-            return Main.result_single_object(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))
+            return Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))
           end
           Aspera.error_unreachable_line
         end
@@ -433,7 +433,7 @@ module Aspera
               key = key.public_key if key.private?
               bearer_key_pem = key.to_pem
               @api_node.update("access_keys/#{access_key_id}", {token_verification_key: bearer_key_pem})
-              return Main.result_status('public key updated')
+              return Result::Status.new('public key updated')
             end
           when :health
             nagios = Nagios.new
@@ -458,21 +458,21 @@ module Aspera
             rescue StandardError => e
               nagios.add_critical('central', e.to_s)
             end
-            Main.result_object_list(nagios.status_list)
+            Result::ObjectList.new(nagios.status_list)
           when :events
             events = @api_node.read('events', query_read_delete)
-            return Main.result_object_list(events, fields: ->(f){!f.start_with?('data')})
+            return Result::ObjectList.new(events, fields: ->(f){!f.start_with?('data')})
           when :info
             nd_info = @api_node.read('info')
-            return Main.result_single_object(nd_info)
+            return Result::SingleObject.new(nd_info)
           when :slash
             nd_info = @api_node.read('')
-            return Main.result_single_object(nd_info)
+            return Result::SingleObject.new(nd_info)
           when :license
             # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
-            return Main.result_single_object(@api_node.read('license'))
+            return Result::SingleObject.new(@api_node.read('license'))
           when :api_details
-            return Main.result_single_object({base_url: @api_node.base_url}.merge(@api_node.params))
+            return Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))
           end
         end
 
@@ -514,21 +514,21 @@ module Aspera
               result[:password] = apifid.node_api.oauth.authorization
             else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]){'Node API Auth type'}
             end
-            return Main.result_single_object(result) if command_repo.eql?(:node_info)
+            return Result::SingleObject.new(result) if command_repo.eql?(:node_info)
             Log.dump(:result, result)
             raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
             Aspera.assert(OAuth::Factory.bearer_auth?(result[:password])){'Not using bearer token auth'}
-            return Main.result_text(result[:password])
+            return Result::Text.new(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
             file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
             # a single file
-            return Main.result_object_list([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
-            return Main.result_object_list(apifid.node_api.list_files(apifid.file_id, query: query_read_delete), fields: GEN4_LS_FIELDS)
+            return Result::ObjectList.new([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
+            return Result::ObjectList.new(apifid.node_api.list_files(apifid.file_id, query: query_read_delete), fields: GEN4_LS_FIELDS)
           when :find
             apifid = apifid_from_next_arg(top_file_id)
             find_lambda = Api::Node.file_matcher_from_argument(options)
-            return Main.result_object_list(@api_node.find_files(apifid.file_id, find_lambda), fields: ['path'])
+            return Result::ObjectList.new(@api_node.find_files(apifid.file_id, find_lambda), fields: ['path'])
           when :mkdir, :mklink, :mkfile
             containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
             apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
@@ -562,13 +562,13 @@ module Aspera
               payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
             end
             result = apifid.node_api.create("files/#{apifid.file_id}/files", payload)
-            return Main.result_single_object(result)
+            return Result::SingleObject.new(result)
           when :rename
             file_path = options.get_next_argument('source path')
             apifid = @api_node.resolve_api_fid(top_file_id, file_path)
             newname = options.get_next_argument('new name')
             result = apifid.node_api.update("files/#{apifid.file_id}", {name: newname})
-            return Main.result_status("renamed to #{newname}")
+            return Result::Status.new("renamed to #{newname}")
           when :delete
             return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
               apifid = if (m = Manager.percent_selector(l_path))
@@ -602,36 +602,36 @@ module Aspera
           when :cat
             apifid = apifid_from_next_arg(top_file_id)
             http = apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp)
-            return Main.result_text(http.body)
+            return Result::Text.new(http.body)
           when :show
             apifid = apifid_from_next_arg(top_file_id)
             items = apifid.node_api.read("files/#{apifid.file_id}")
-            return Main.result_single_object(items)
+            return Result::SingleObject.new(items)
           when :modify
             apifid = apifid_from_next_arg(top_file_id)
             update_param = options.get_next_argument('update data', validation: Hash)
             apifid.node_api.update("files/#{apifid.file_id}", update_param)
-            return Main.result_status('Done')
+            return Result::Status.new('Done')
           when :thumbnail
             apifid = apifid_from_next_arg(top_file_id)
             http = apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
-            return Main.result_image(http.body)
+            return Result::Image.new(http.body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
             command_perm = options.get_next_command(%i[list show create delete modify])
             case command_perm
             when :modify
               apifid.node_api.update("permissions/#{options.instance_identifier}", value_create_modify(command: 'permission modify'))
-              return Main.result_status('Updated')
+              return Result::Status.new('Updated')
             when :list
               list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
               # Specify file to get permissions for unless not specified (then, get all permissions)
               list_query['file_id'] = apifid.file_id unless apifid.file_id.to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
               items = apifid.node_api.read_with_pages('permissions', list_query)
-              return Main.result_object_list(items)
+              return Result::ObjectList.new(items)
             when :show
-              return Main.result_single_object(apifid.node_api.read("permissions/#{options.instance_identifier}"))
+              return Result::SingleObject.new(apifid.node_api.read("permissions/#{options.instance_identifier}"))
             when :delete
               return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
                 apifid.node_api.delete("permissions/#{one_id}")
@@ -652,7 +652,7 @@ module Aspera
               created_data = apifid.node_api.create('permissions', create_param)
               # notify application of creation
               the_app&.api&.permissions_send_event(event_data: created_data, app_info: the_app)
-              return Main.result_single_object(created_data)
+              return Result::SingleObject.new(created_data)
             else Aspera.error_unreachable_line
             end
           else Aspera.error_unreachable_line
@@ -691,22 +691,22 @@ module Aspera
           case command
           when :list
             resp = @api_node.read('async/list')['sync_ids']
-            return Main.result_value_list(resp)
+            return Result::ValueList.new(resp)
           when :show
             resp = @api_node.create('async/summary', post_data)['sync_summaries']
-            return Main.result_empty if resp.empty?
-            return Main.result_object_list(resp, fields: %w[snid name local_dir remote_dir]) if async_id.eql?(SpecialValues::ALL)
-            return Main.result_single_object(resp.first)
+            return Result::Empty.new if resp.empty?
+            return Result::ObjectList.new(resp, fields: %w[snid name local_dir remote_dir]) if async_id.eql?(SpecialValues::ALL)
+            return Result::SingleObject.new(resp.first)
           when :delete
             resp = @api_node.create('async/delete', post_data)
-            return Main.result_single_object(resp)
+            return Result::SingleObject.new(resp)
           when :bandwidth
             post_data['seconds'] = 100 # TODO: as parameter with --query
             resp = @api_node.create('async/bandwidth', post_data)
             data = resp['bandwidth_data']
-            return Main.result_empty if data.empty?
+            return Result::Empty.new if data.empty?
             data = data.first[async_id]['data']
-            return Main.result_object_list(data)
+            return Result::ObjectList.new(data)
           when :files
             # count int
             # filename str
@@ -733,13 +733,13 @@ module Aspera
               data.select!{ |l| l['fnid'].to_i > iteration_data.first} unless iteration_data.first.nil?
               iteration_data[0] = data.last['fnid'].to_i unless data.empty?
             end
-            return Main.result_empty if data.empty?
+            return Result::Empty.new if data.empty?
             skip_ids_persistency&.save
-            return Main.result_object_list(data)
+            return Result::ObjectList.new(data)
           when :counters
             resp = @api_node.create('async/counters', post_data)['sync_counters'].first[async_id].last
-            return Main.result_empty if resp.nil?
-            return Main.result_single_object(resp)
+            return Result::Empty.new if resp.nil?
+            return Result::SingleObject.new(resp)
           end
         end
 
@@ -775,20 +775,20 @@ module Aspera
           case command
           when :create
             resp = @api_node.create(res_class_path, value_create_modify(command: command))
-            return Main.result_status("#{resp['id']} created")
+            return Result::Status.new("#{resp['id']} created")
           when :list
             resp = @api_node.read(res_class_path, query_read_delete)
-            return Main.result_value_list(resp['ids'])
+            return Result::ValueList.new(resp['ids'])
           when :show
-            return Main.result_single_object(@api_node.read(one_res_path))
+            return Result::SingleObject.new(@api_node.read(one_res_path))
           when :modify
             @api_node.update(one_res_path, value_create_modify(command: 'watch_folder'))
-            return Main.result_status("#{one_res_id} updated")
+            return Result::Status.new("#{one_res_id} updated")
           when :delete
             @api_node.delete(one_res_path)
-            return Main.result_status("#{one_res_id} deleted")
+            return Result::Status.new("#{one_res_id} deleted")
           when :state
-            return Main.result_single_object(@api_node.read("#{one_res_path}/state"))
+            return Result::SingleObject.new(@api_node.read("#{one_res_path}/state"))
           end
         end
 
@@ -833,29 +833,29 @@ module Aspera
                   body:         '',
                   ret:          :resp
                 ).body
-                return Main.result_status('Done')
+                return Result::Status.new('Done')
               end
               parameters = options.get_option(:query) || {} if %i[bandwidth counters files].include?(sync_command)
-              return Main.result_single_object(@api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters))
+              return Result::SingleObject.new(@api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters))
             end
           when :stream
             command = options.get_next_command(%i[list create show modify cancel])
             case command
             when :list
               resp = @api_node.read('ops/transfers', query_read_delete)
-              return Main.result_object_list(resp, fields: %w[id status]) # TODO: useful?
+              return Result::ObjectList.new(resp, fields: %w[id status]) # TODO: useful?
             when :create
               resp = @api_node.create('streams', value_create_modify(command: command))
-              return Main.result_single_object(resp)
+              return Result::SingleObject.new(resp)
             when :show
               resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
-              return Main.result_single_object(resp)
+              return Result::SingleObject.new(resp)
             when :modify
               resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command))
-              return Main.result_single_object(resp)
+              return Result::SingleObject.new(resp)
             when :cancel
               resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
-              return Main.result_single_object(resp)
+              return Result::SingleObject.new(resp)
             else Aspera.error_unexpected_value(command)
             end
           when :transfer
@@ -877,14 +877,14 @@ module Aspera
                 if transfer_filter.delete('reset')
                   iteration_persistency.data.clear
                   iteration_persistency.save
-                  return Main.result_status('Persistency reset')
+                  return Result::Status.new('Persistency reset')
                 end
               else
                 Aspera.assert(!transfer_filter.key?('reset'), type: Cli::BadArgument){'reset only with once_only'}
               end
               transfers_data = @api_node.read_with_paging('ops/transfers', transfer_filter, iteration: iteration_persistency&.data)
               iteration_persistency&.save
-              return Main.result_object_list(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
+              return Result::ObjectList.new(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
             when :sessions
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
               sessions = transfers_data.flat_map{ |t| t['sessions']}
@@ -894,16 +894,16 @@ module Aspera
                   session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
                 end
               end
-              return Main.result_object_list(sessions, fields: %w[id status start_time end_time target_rate_kbps])
+              return Result::ObjectList.new(sessions, fields: %w[id status start_time end_time target_rate_kbps])
             when :cancel
               @api_node.cancel("ops/transfers/#{options.instance_identifier}")
-              return Main.result_status('Cancelled')
+              return Result::Status.new('Cancelled')
             when :show
               resp = @api_node.read("ops/transfers/#{options.instance_identifier}")
-              return Main.result_single_object(resp)
+              return Result::SingleObject.new(resp)
             when :modify
               @api_node.update("ops/transfers/#{options.instance_identifier}", options.get_next_argument('update value', validation: Hash))
-              return Main.result_status('Modified')
+              return Result::Status.new('Modified')
             when :bandwidth_average
               transfers_data = @api_node.read('ops/transfers', query_read_delete)
               # collect all key dates
@@ -946,7 +946,7 @@ module Aspera
                 end
                 result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
               end
-              return Main.result_object_list(result)
+              return Result::ObjectList.new(result)
             else Aspera.error_unexpected_value(command)
             end
           when :service
@@ -955,15 +955,15 @@ module Aspera
             case command
             when :list
               resp = @api_node.read('rund/services')
-              return Main.result_object_list(resp['services'])
+              return Result::ObjectList.new(resp['services'])
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params = options.get_next_argument('creation data', validation: Hash)
               resp = @api_node.create('rund/services', params)
-              return Main.result_status("#{resp['id']} created")
+              return Result::Status.new("#{resp['id']} created")
             when :delete
               @api_node.delete("rund/services/#{service_id}")
-              return Main.result_status("#{service_id} deleted")
+              return Result::Status.new("#{service_id} deleted")
             end
           when :watch_folder
             return watch_folder_action
@@ -980,7 +980,7 @@ module Aspera
                 request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
-                return Main.result_object_list(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
+                return Result::ObjectList.new(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
               end
             when :file
               command = options.get_next_command(%i[list modify])
@@ -991,12 +991,12 @@ module Aspera
                 resp = @api_node.create('services/rest/transfers/v1/files', request_data)
                 resp = JSON.parse(resp) if resp.is_a?(String)
                 Log.dump(:resp, resp)
-                return Main.result_object_list(resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path])
+                return Result::ObjectList.new(resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path])
               when :modify
                 request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!(validation) unless validation.nil?
                 @api_node.update('services/rest/transfers/v1/files', request_data)
-                return Main.result_status('updated')
+                return Result::Status.new('updated')
               end
             end
           when :asperabrowser
@@ -1008,14 +1008,14 @@ module Aspera
             # encode parameters so that it looks good in url
             encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
             Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
-            return Main.result_status('done')
+            return Result::Status.new('done')
           when :basic_token
-            return Main.result_text(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+            return Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
             token_info = options.get_next_argument('user and group identification', validation: Hash)
             access_key = options.get_option(:username, mandatory: true)
-            return Main.result_text(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
+            return Result::Text.new(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           when :simulator
             require 'aspera/node_simulator'
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
@@ -1023,7 +1023,7 @@ module Aspera
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
             server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
             server.start
-            return Main.result_status('Simulator terminated')
+            return Result::Status.new('Simulator terminated')
           when :telemetry
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
             %i[url key].each do |psym|
@@ -1128,7 +1128,7 @@ module Aspera
         def cli_result_from_paths_response(response, success_msg)
           obj_list = response_to_result(response, success_msg)
           @node_path_prefix&.remove_in_object_list!(obj_list)
-          return Main.result_object_list(obj_list, fields: %w[path result])
+          return Result::ObjectList.new(obj_list, fields: %w[path result])
         end
       end
     end
