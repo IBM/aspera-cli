@@ -4708,7 +4708,9 @@ conf_help_2:
   tags:
     - nodoc
   args:
-    - --bash-comp
+    - config
+    - completion
+    - bash
 conf_coffee_1:
   args:
     - config

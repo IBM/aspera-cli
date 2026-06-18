@@ -69,7 +69,6 @@ module Aspera
         Log.dump(:argv, @argv, level: :trace2)
         @option_help = false
         @option_show_config = false
-        @bash_completion = false
         @context = Context.new
       end
 
@@ -88,7 +87,6 @@ module Aspera
           Plugins::Factory.instance.add_plugins_from_lookup_folders
           # Help requested without command ? (plugins must be known here)
           show_usage if @option_help && @context.options.command_or_arg_empty?
-          generate_bash_completion if @bash_completion
           @context.config.periodic_check_newer_gem_version
           command_sym =
             if @option_show_config && @context.options.command_or_arg_empty?
@@ -295,7 +293,6 @@ module Aspera
       def declare_global_options
         Log.log.debug('declare_global_options')
         @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h'){@option_help = true}
-        @context.options.declare(:bash_comp, 'Generate bash completion for command', allowed: Allowed::TYPES_NONE){@bash_completion = true}
         @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
         @context.options.declare(:version, 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(
@@ -336,17 +333,6 @@ module Aspera
         @context.config.add_plugin_default_preset(plugin_name_sym)
         command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
-      end
-
-      # Generate bash completion suggestions
-      # @return [nil]
-      def generate_bash_completion
-        if @context.options.get_next_argument('', multiple: true, mandatory: false).nil?
-          Plugins::Factory.instance.plugin_list.each{ |p| puts p}
-        else
-          Log.log.warn('only first level completion so far')
-        end
-        Process.exit(0)
       end
     end
   end

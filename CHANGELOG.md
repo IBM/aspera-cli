@@ -12,6 +12,8 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+**global**: Replaced option `--bash-comp` with `config completion bash`.
+
 ## 4.26.1
 
 Released: 2026-06-11

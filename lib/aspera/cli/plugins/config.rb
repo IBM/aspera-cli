@@ -768,6 +768,7 @@ module Aspera
           vault
           test
           platform
+          completion
         ].freeze
 
         # Main action procedure for plugin
@@ -936,6 +937,24 @@ module Aspera
           when :test then return execute_test
           when :platform
             return Result::Text.new(Environment.instance.architecture)
+          when :completion
+            return execute_completion
+          else Aspera.error_unreachable_line
+          end
+        end
+
+        # Generate shell completion
+        # @return [Result] completion result
+        def execute_completion
+          shell_type = options.get_next_command(%i[bash])
+          case shell_type
+          when :bash
+            if options.get_next_argument('', multiple: true, mandatory: false).nil?
+              Plugins::Factory.instance.plugin_list.each{ |p| puts p}
+            else
+              Log.log.warn('only first level completion so far')
+            end
+            Process.exit(0)
           else Aspera.error_unreachable_line
           end
         end

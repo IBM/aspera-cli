@@ -4614,10 +4614,9 @@ OPTIONS: global
         --show-secrets=ENUM          Show secrets on command output: [no], yes
         --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
-        --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
@@ -4668,7 +4667,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
+SUBCOMMANDS: ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
 
 
 COMMAND: alee
