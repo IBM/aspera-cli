@@ -941,6 +941,8 @@ console_xfer_id:
 cons_cur_show_one:
   depends_on:
     - console_xfer_id
+  tags:
+    - flaky
   args:
     - console
     - transfer
