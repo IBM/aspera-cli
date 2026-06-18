@@ -238,16 +238,7 @@ module Aspera
         end
 
         def format(formatter)
-          # Display item count if total is provided
-          unless @total.nil?
-            number = @data.length.to_i
-            total = @total.to_i
-            unless total.eql?(0) && number.eql?(0)
-              count_msg = "Items: #{number}/#{total}"
-              count_msg = count_msg.bg_red unless number.eql?(total)
-              formatter.display_status(count_msg)
-            end
-          end
+          formatter.display_item_count(@data.length, @total)
           case formatter.format_type
           when :image
             # Extract single field for image display

@@ -134,6 +134,17 @@ module Aspera
         @spinner = nil
       end
 
+      # Display item count if total is provided
+      def display_item_count(count, total)
+        return if total.nil?
+        count = count.to_i
+        total = total.to_i
+        return if total.eql?(0) && count.eql?(0)
+        count_msg = "Items: #{count}/#{total}"
+        count_msg = count_msg.bg_red unless count.eql?(total)
+        display_status(count_msg)
+      end
+
       def long_operation(title = nil, action: :spin)
         return unless Environment.terminal?
         return if %i[error data].include?(@options[:display])
