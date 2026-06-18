@@ -214,10 +214,16 @@ module Aspera
         nil
       end
 
-      # Main output method
-      # data: for requested data, not displayed if level==error
-      # info: additional info, displayed if level==info
-      # error: always displayed on stderr
+      # Main output method for displaying messages to the user
+      # This method is used by Result classes to output formatted data
+      # @param message_level [Symbol] The level of the message - must be one of: :data, :info, :error
+      # @param message [String] The message to display
+      # @param hide_secrets [Boolean] Whether to hide secrets in the message (default: true)
+      # @return [void]
+      # @note Message display behavior depends on the message_level:
+      #   - +:data+ messages are displayed unless display level is +:error+
+      #   - +:info+ messages are only displayed when display level is +:info+
+      #   - +:error+ messages are always displayed on stderr
       def display_message(message_level, message, hide_secrets: true)
         message = SecretHider.instance.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
         case message_level
@@ -232,15 +238,7 @@ module Aspera
         display_message(:info, status, **kwargs)
       end
 
-      def display_item_count(number, total)
-        number = number.to_i
-        total = total.to_i
-        return if total.eql?(0) && number.eql?(0)
-        count_msg = "Items: #{number}/#{total}"
-        count_msg = count_msg.bg_red unless number.eql?(total)
-        display_status(count_msg)
-      end
-
+      # Check if secrets should be hidden
       def hide_secrets?
         !@options[:show_secrets] && !@options[:display].eql?(:data)
       end
@@ -250,113 +248,55 @@ module Aspera
         SecretHider.instance.deep_remove_secret(data) if hide_secrets?
       end
 
-      # Display results, especially the table format
+      # Display results using the Visitor pattern
+      # Each Result subclass knows how to format itself by calling the appropriate
+      # formatter method, eliminating the need for type checking in the formatter.
       # @param result [Result] Result object to display
       def display_results(result)
         require 'aspera/cli/result'
         Aspera.assert_type(result, Cli::Result){'result must be a Result object'}
 
-        data = result.data
-        fields = result.fields
-        total = result.total
-        name = result.name
-
         Log.log.debug{"display_results: result class=#{result.class.name}"}
-        Log.dump(:data, data, level: :trace1)
-        Log.dump(:fields, fields, level: :trace1)
-        display_item_count(data.length, total) unless total.nil?
-        hide_secrets(data)
-        data = SecretHider.instance.hide_secrets_in_string(data) if data.is_a?(String) && hide_secrets?
-        @options[:format] = :image if result.is_a?(Cli::Result::Image)
-        case @options[:format]
-        when :text
-          display_message(:data, data.to_s)
-        when :nagios
-          Nagios.process(data)
-        when :ruby
-          display_message(:data, PP.pp(filter_list_on_fields(data), +''))
-        when :json
-          display_message(:data, JSON.generate(filter_list_on_fields(data)))
-        when :jsonpp
-          display_message(:data, JSON.pretty_generate(filter_list_on_fields(data)))
-        when :yaml
-          display_message(:data, YAML.dump(filter_list_on_fields(data)))
-        when :image
-          # if object or list, then must be a single
-          if result.is_a?(Cli::Result::SingleObject) || result.is_a?(Cli::Result::ObjectList)
-            data = [data] if result.is_a?(Cli::Result::SingleObject)
-            raise BadArgument, 'image display requires a single result' unless data.length == 1
-            fields = compute_fields(data, fields)
-            raise BadArgument, 'select a single field to display' unless fields.length == 1
-            data = data.first
-            raise BadArgument, 'no such field' unless data.key?(fields.first)
-            data = data[fields.first]
-          end
-          Aspera.assert_type(data, String){'URL or blob for image'}
-          # Check if URL
-          data =
-            begin
-              # just validate
-              URI.parse(data)
-              if Environment.instance.url_method.eql?(:text)
-                UriReader.read(data)
-              else
-                Environment.instance.open_uri(data)
-                display_message(:info, "Opened URL in browser: #{data}")
-                :done
-              end
-            rescue URI::InvalidURIError
-              data
-            end
-          # try base64
-          data = begin
-            Base64.strict_decode64(data)
-          rescue
-            data
-          end
-          # here, data is the image blob
-          display_message(:data, Preview::Terminal.build(data, **@options[:image].symbolize_keys)) unless data.eql?(:done)
-        when :table, :csv
-          if result.is_a?(Cli::Result::SingleObject)
-            # :single_object is a Hash, where key=column name
-            Aspera.assert_type(data, Hash){'result'}
-            if data.empty?
-              display_message(:data, TerminalFormatter.special_format('empty dict'))
-            else
-              data = DotContainer.new(data).to_dotted if @options[:flat_hash]
-              display_table([data], compute_fields([data], fields), single: true)
-            end
-          elsif result.is_a?(Cli::Result::ObjectList)
-            # :object_list is an Array of Hash, where key=column name
-            Aspera.assert_array_all(data, Hash){'result'}
-            data = data.map{ |obj| DotContainer.new(obj).to_dotted} if @options[:flat_hash]
-            display_table(data, compute_fields(data, fields), single: false)
-          elsif result.is_a?(Cli::Result::ValueList)
-            # :value_list is a simple array of values, name of column provided in `name`
-            display_table(data.map{ |i| {name => i}}, [name])
-          elsif result.is_a?(Cli::Result::Special)
-            # Special results (empty, nothing, null, etc.)
-            if data.eql?(:nothing)
-              Log.log.debug('no result expected')
-              return
-            end
-            display_message(:info, TerminalFormatter.special_format(data.to_s))
-            return
-          elsif result.is_a?(Cli::Result::Status)
-            # :status displays a simple message
-            display_message(:info, data)
-          elsif result.is_a?(Cli::Result::Text)
-            # :text displays a simple message
-            display_message(:data, data)
-          else
-            Aspera.error_unexpected_value(result.class.name){'result type'}
-          end
-        else Aspera.error_unexpected_value(@options[:format]){'format'}
-        end
-      end
-      #==========================================================================================
+        Log.dump(:data, result.data, level: :trace1)
+        Log.dump(:fields, result.fields, level: :trace1)
 
-      private
+        # Hide secrets in data
+        hide_secrets(result.data)
+
+        # Use the Visitor pattern: delegate formatting to the result object
+        result.format(self)
+      end
+      # Public methods exposed to Result classes for formatting
+
+      # Get the current format type
+      def format_type
+        @options[:format]
+      end
+
+      # Set the format type (used by Image result)
+      def set_format_type(format)
+        @options[:format] = format
+      end
+
+      # Hide secrets in a string
+      def hide_secrets_in_string(string)
+        SecretHider.instance.hide_secrets_in_string(string)
+      end
+
+      # Get special format string
+      def special_format(text)
+        TerminalFormatter.special_format(text)
+      end
+
+      # Check if flat_hash option is enabled
+      def flat_hash?
+        @options[:flat_hash]
+      end
+
+      # Get image options
+      def image_options
+        @options[:image].symbolize_keys
+      end
 
       # @return all fields of all objects in list of objects
       def all_fields(data)
