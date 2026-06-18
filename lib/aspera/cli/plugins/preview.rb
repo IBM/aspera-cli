@@ -206,7 +206,7 @@ module Aspera
           # Force the destination on the transfer agent object.
           # Setting `t_spec['destination_root']` directly would later be overwritten.
           transfer.user_transfer_spec['destination_root'] = destination
-          Main.result_transfer(transfer.start(t_spec))
+          Runner.result_transfer(transfer.start(t_spec))
         end
 
         # Populate generation metadata for a source file available on the local filesystem.

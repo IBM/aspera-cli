@@ -377,7 +377,7 @@ module Aspera
             Api::Node.add_private_key(transfer_spec)
             # delete this part, as the returned value contains only destination, and not sources
             transfer_spec.delete('paths') if command.eql?(:upload)
-            return Main.result_transfer(transfer.start(transfer_spec))
+            return Runner.result_transfer(transfer.start(transfer_spec))
           when :cat
             remote_path = options.get_next_argument('remote path', validation: String)
             remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
@@ -595,10 +595,10 @@ module Aspera
             end
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
-            return Main.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_SEND)))
+            return Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_SEND)))
           when :download
             apifid, source_paths = @api_node.resolve_api_fid_paths(top_file_id, transfer.ts_source_paths)
-            return Main.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+            return Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :cat
             apifid = apifid_from_next_arg(top_file_id)
             http = apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp)

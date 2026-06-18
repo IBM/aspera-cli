@@ -389,7 +389,7 @@ module Aspera
               'destination_root_id' => server_apifid.file_id,
               'source_root_id'      => client_apifid.file_id
             }
-            return Main.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
+            return Runner.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
               server_apifid.file_id,
               client_direction,
               add_ts
@@ -1083,7 +1083,7 @@ module Aspera
               package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
               # transfer may raise an error
               created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-              Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
+              Runner.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
               # return all info on package (especially package id)
               return Result::SingleObject.new(created_package[:info])
             when :receive
@@ -1140,14 +1140,14 @@ module Aspera
                   rest_token: package_node_api
                 )
                 File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
-                result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
+                result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
                 if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
                   skip_ids_persistency.data.push(package_id)
                   skip_ids_persistency.save
                 end
               end
-              return Main.result_transfer_multiple(result_transfer)
+              return Runner.result_transfer_multiple(result_transfer)
             when :show
               package_id = options.instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")

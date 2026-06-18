@@ -68,7 +68,7 @@ module Aspera
     end
 
     # The main CLI class
-    class Main
+    class Runner
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
       COMMAND_CONFIG = :config

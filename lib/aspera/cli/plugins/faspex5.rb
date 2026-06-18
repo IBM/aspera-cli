@@ -259,14 +259,14 @@ module Aspera
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)
-            result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
+            result_transfer.push({'package' => pkg_id, Runner::STATUS_FIELD => statuses})
             # skip only if all sessions completed
             if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
               skip_ids_persistency.data.push(pkg_id)
               skip_ids_persistency.save
             end
           end
-          return Main.result_transfer_multiple(result_transfer)
+          return Runner.result_transfer_multiple(result_transfer)
         end
 
         def package_send
@@ -296,7 +296,7 @@ module Aspera
             )
             # well, we asked a TS for connect, but we actually want a generic one
             transfer_spec.delete('authentication')
-            return Main.result_transfer(transfer.start(transfer_spec))
+            return Runner.result_transfer(transfer.start(transfer_spec))
           else
             # send from remote shared folder
             if (m = Manager.percent_selector(shared_folder))

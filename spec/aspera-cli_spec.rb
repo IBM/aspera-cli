@@ -105,7 +105,7 @@ RSpec.describe(Aspera::InternalError) do
   end
 end
 
-RSpec.describe(Aspera::Cli::Main) do
+RSpec.describe(Aspera::Cli::Runner) do
   it 'has a valid version string' do
     version = Aspera::Cli::VERSION
     expect(version).to(be_a(String))

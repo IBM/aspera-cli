@@ -326,7 +326,7 @@ module Aspera
                 transfer_spec = send_public_link_to_ts(public_link_url, package_create_params)
               end
               # Log.dump(:transfer_spec,transfer_spec)
-              return Main.result_transfer(transfer.start(transfer_spec))
+              return Runner.result_transfer(transfer.start(transfer_spec))
             when :receive
               link_url = options.get_option(:link)
               # list of faspex ID/URI to download
@@ -427,12 +427,12 @@ module Aspera
                   transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)
                 end
-                result_transfer.push({'package' => id_uri[:id], Main::STATUS_FIELD => statuses})
+                result_transfer.push({'package' => id_uri[:id], Runner::STATUS_FIELD => statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency&.save
-              return Main.result_transfer_multiple(result_transfer)
+              return Runner.result_transfer_multiple(result_transfer)
             end
           when :source
             command_source = options.get_next_command(%i[list info node])

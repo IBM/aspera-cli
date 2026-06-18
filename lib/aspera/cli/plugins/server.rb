@@ -173,7 +173,7 @@ module Aspera
           case command
           when :upload, :download
             transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(command)
-            return Main.result_transfer(transfer.start(transfer_spec))
+            return Runner.result_transfer(transfer.start(transfer_spec))
           when :sync
             # lets ignore the arguments provided by execute_sync_action, we just give the transfer spec
             return execute_sync_action{transfer_spec}
