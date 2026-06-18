@@ -1680,7 +1680,9 @@ nd_ak4:
     - "%id:1"
     - --secret=@preset:aoc.ak_secret
 nd_ak_bearer_reset:
+  $comment: Marked interactive as it requires to check if local node is running
   tags:
+    - interactive
     - pre_cleanup
     - nodoc
   args:
@@ -1692,11 +1694,8 @@ nd_ak_bearer_reset:
     - "@preset:ak_creds.username"
   post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
-  $comment: Marked interactive as it requires to check if local node is running
   depends_on:
     - nd_ak_bearer_reset
-  tags:
-    - interactive
   pre: system('ensure_local_node')
   args:
     - node
