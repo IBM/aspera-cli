@@ -7,7 +7,6 @@ require 'aspera/log'
 # Aspera::Log.instance.logger_type = :stderr
 require 'aspera/coverage'
 require 'aspera/transfer/uri'
-require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/assert'
 require 'aspera/ssh'

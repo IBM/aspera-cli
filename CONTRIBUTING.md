@@ -72,7 +72,7 @@ The `aspera-cli` architecture is designed to be modular and extensible.
 
 - **Entry Point**:
 
-  `lib/aspera/cli/main.rb` contains the core CLI startup logic.
+  `lib/aspera/cli/runner.rb` contains the core CLI startup logic.
 
 - **Plugins**:
 

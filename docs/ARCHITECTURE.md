@@ -46,8 +46,8 @@ The main executable script that:
 #!/usr/bin/env ruby
 Encoding.default_internal = Encoding::UTF_8
 Encoding.default_external = Encoding::UTF_8
-require 'aspera/cli/main'
-Aspera::Cli::Main.new(ARGV).process_command_line
+require 'aspera/cli/runner'
+Aspera::Cli::Runner.new(ARGV).process_command_line
 ```
 
 #### 2.2 CLI Manager
