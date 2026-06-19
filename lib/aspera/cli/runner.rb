@@ -75,7 +75,7 @@ module Aspera
       # This is the main function called by initial script just after constructor
       # Processes command line arguments, executes commands, and handles exceptions
       # @return [nil]
-      def process_command_line
+      def run
         # Catch exception information , if any
         exception_info = nil
         # False if command shall not be executed (e.g. --show-config)

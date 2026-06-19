@@ -33,4 +33,4 @@ require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/cli/runner'
 Aspera::Environment.instance.fix_home
-Aspera::Cli::Runner.new(ARGV).process_command_line
+Aspera::Cli::Runner.new(ARGV).run
