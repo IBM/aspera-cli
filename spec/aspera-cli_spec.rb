@@ -14,6 +14,7 @@ require 'aspera/rest'
 require 'aspera/uri_reader'
 require 'aspera/environment'
 require 'aspera/ascp/management'
+require 'aspera/proxy_auto_config'
 require 'uri'
 require 'openssl'
 require 'pathname'
@@ -104,7 +105,7 @@ RSpec.describe(Aspera::InternalError) do
   end
 end
 
-RSpec.describe(Aspera::Cli::Runner) do
+RSpec.describe(Aspera::Cli) do
   it 'has a valid version string' do
     version = Aspera::Cli::VERSION
     expect(version).to(be_a(String))
