@@ -7,6 +7,10 @@ require 'etc'
 module Aspera
   # create a temp file name for a given folder
   # files can be deleted on process exit by calling cleanup
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of TempFileManager
+  #   @return [TempFileManager] the singleton instance
   class TempFileManager
     include Singleton
 

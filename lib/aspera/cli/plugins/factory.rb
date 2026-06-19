@@ -9,6 +9,9 @@ module Aspera
   module Cli
     # Instantiate plugin from well-known locations
     module Plugins
+      # @!method self.instance
+      #   Returns the singleton instance of Factory
+      #   @return [Factory] the singleton instance
       class Factory
         include Singleton
 

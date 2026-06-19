@@ -8,6 +8,10 @@ require 'marcel'
 module Aspera
   module Preview
     # function conversion_type returns one of the types: CONVERSION_TYPES
+    #
+    # @!method self.instance
+    #   Returns the singleton instance of FileTypes
+    #   @return [FileTypes] the singleton instance
     class FileTypes
       include Singleton
 

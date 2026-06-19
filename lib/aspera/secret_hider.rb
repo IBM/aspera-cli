@@ -6,6 +6,10 @@ require 'singleton'
 
 module Aspera
   # remove secret from logs and output
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of SecretHider
+  #   @return [SecretHider] the singleton instance
   class SecretHider
     include Singleton
 

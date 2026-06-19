@@ -5,6 +5,9 @@ require 'singleton'
 
 module Aspera
   module Products
+    # @!method self.instance
+    #   Returns the singleton instance of Connect
+    #   @return [Connect] the singleton instance
     class Connect
       include Singleton
 

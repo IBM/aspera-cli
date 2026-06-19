@@ -30,6 +30,10 @@ module Aspera
   # @param download_partial_suffix [String] suffix for partial download
   # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
   # @param progress_bar [Object] progress bar object called for file transfer
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of RestParameters
+  #   @return [RestParameters] the singleton instance
   class RestParameters
     include Singleton
 

@@ -6,6 +6,10 @@ require 'aspera/environment'
 module Aspera
   module Agent
     # Factory for Agents
+    #
+    # @!method self.instance
+    #   Returns the singleton instance of Factory
+    #   @return [Factory] the singleton instance
     class Factory
       include Singleton
 

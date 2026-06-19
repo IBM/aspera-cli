@@ -54,6 +54,10 @@ $VERBOSE = old_verbose
 
 module Aspera
   # Singleton object for logging
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of Log
+  #   @return [Log] the singleton instance
   class Log
     include Singleton
 

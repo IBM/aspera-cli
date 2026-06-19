@@ -7,6 +7,10 @@ require 'net/http'
 
 module Aspera
   # analyze error codes returned by REST calls and raise ruby exception
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of RestErrorAnalyzer
+  #   @return [RestErrorAnalyzer] the singleton instance
   class RestErrorAnalyzer
     include Singleton
 

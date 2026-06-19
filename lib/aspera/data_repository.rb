@@ -6,6 +6,10 @@ require 'openssl'
 
 module Aspera
   # a simple binary data repository
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of DataRepository
+  #   @return [DataRepository] the singleton instance
   class DataRepository
     include Singleton
 

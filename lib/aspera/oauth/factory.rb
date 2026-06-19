@@ -7,6 +7,10 @@ require 'base64'
 module Aspera
   module OAuth
     # Factory to create tokens and manage their cache
+    #
+    # @!method self.instance
+    #   Returns the singleton instance of Factory
+    #   @return [Factory] the singleton instance
     class Factory
       include Singleton
 

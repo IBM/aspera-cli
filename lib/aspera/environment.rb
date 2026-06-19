@@ -13,6 +13,10 @@ require 'shellwords'
 
 module Aspera
   # detect OS, architecture, and specific stuff
+  #
+  # @!method self.instance
+  #   Returns the singleton instance of Environment
+  #   @return [Environment] the singleton instance
   class Environment
     include Singleton
 
@@ -266,6 +270,7 @@ module Aspera
       return unless @os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
       ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
       Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
+      nil
     end
 
     def graphical?

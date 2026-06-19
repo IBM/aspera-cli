@@ -7,6 +7,9 @@ require 'aspera/schema/reader'
 module Aspera
   # base class for plugins modules
   module Schema
+    # @!method self.instance
+    #   Returns the singleton instance of Registry
+    #   @return [Registry] the singleton instance
     class Registry
       include Singleton
 

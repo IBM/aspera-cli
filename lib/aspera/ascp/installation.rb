@@ -27,6 +27,10 @@ module Aspera
     # It is used by object : AgentDirect to find necessary resources
     # By default it takes the first Aspera product found
     # The user can specify `ascp` location by calling: `sdk_folder=` method
+    #
+    # @!method self.instance
+    #   Returns the singleton instance of Installation
+    #   @return [Installation] the singleton instance
     class Installation
       include Singleton
 
