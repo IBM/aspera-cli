@@ -15,15 +15,15 @@ module Aspera
     class Base
       Aspera.require_method!(:create_token)
       # @param params         [Hash]    Parameters for token creation (client_id, client_secret, scope, etc...)
-      # @param use_query      [Boolean] Provide parameters in query instead of body
       # @param path_token     [String]  API end point to create a token from base URL
+      # @param use_query      [Boolean] Provide parameters in query instead of body
       # @param token_field    [String]  Field in result that contains the token
       # @param cache_ids      [Array]   List of unique identifiers for cache id generation
       # @param **rest_params  [Hash]    Parameters for REST
       def initialize(
         params: {},
+        path_token: 'token',
         use_query: false,
-        path_token:  'token',
         token_field: Factory::TOKEN_FIELD,
         cache_ids: [],
         **rest_params
@@ -42,10 +42,10 @@ module Aspera
 
       # The OAuth API Object
       attr_reader :api
-      # Sub path to generate token
-      attr_reader :path_token
       # Parameters to generate token
       attr_reader :params
+      # Sub path to generate token
+      attr_reader :path_token
 
       # Helper method to create token as per RFC
       # @return [HTTPResponse]

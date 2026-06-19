@@ -14,7 +14,7 @@ module Aspera
     class Factory
       include Singleton
 
-      # a prefix for persistency of tokens (simplify garbage collect)
+      # prefix for persistency of tokens (simplify garbage collect)
       PERSIST_CATEGORY_TOKEN = 'token'
       # prefix for bearer authorization when in header
       SPACE_BEARER_AUTH_SCHEME = 'Bearer '
@@ -23,18 +23,23 @@ module Aspera
       private_constant :PERSIST_CATEGORY_TOKEN, :SPACE_BEARER_AUTH_SCHEME
 
       class << self
+        # Format a token for use in Authorization header
         # @param token [String] The token alone
         # @return [String] Value suitable for Authorization header
         def bearer_authorization(token)
           return "#{SPACE_BEARER_AUTH_SCHEME}#{token}"
         end
 
-        # @return true if the authorization contains a bearer token , i.e. auth scheme is bearer
+        # Check if the authorization contains a bearer token
+        # @param authorization [String] The authorization header value
+        # @return [Boolean] true if the authorization contains a bearer token, i.e. auth scheme is bearer
         def bearer_auth?(authorization)
           return authorization.start_with?(SPACE_BEARER_AUTH_SCHEME)
         end
 
         # Extract only token from Authorization (remove scheme)
+        # @param authorization [String] The authorization header value
+        # @return [String] The bearer token without the scheme prefix
         def bearer_token(authorization)
           Aspera.assert(bearer_auth?(authorization)){'not a bearer token, wrong prefix scheme'}
           return authorization.delete_prefix(SPACE_BEARER_AUTH_SCHEME)
@@ -44,12 +49,14 @@ module Aspera
         # @param url           [String] Base URL of the OAuth server
         # @param creator_class [Class]  Class of the token creator
         # @param params        [Array]  List of parameters (can be nested) to uniquely identify the token
-        # @return a unique cache identifier
+        # @return [String] a unique cache identifier
         def cache_id(url, creator_class, *params)
           return IdGenerator.from_list(PERSIST_CATEGORY_TOKEN, url, Factory.class_to_id(creator_class), params)
         end
 
-        # @return snake version of class name
+        # Convert a class name to snake_case symbol
+        # @param creator_class [Class] The class to convert
+        # @return [Symbol] snake_case version of class name
         def class_to_id(creator_class)
           return creator_class.name.split('::').last.capital_to_snake.to_sym
         end
@@ -57,6 +64,7 @@ module Aspera
 
       private
 
+      # Initialize the factory with default parameters and empty collections
       def initialize
         # persistency manager
         @persist = nil
@@ -77,12 +85,16 @@ module Aspera
 
       attr_reader :parameters
 
+      # Set the persistence manager for token caching
+      # @param manager [Object] The persistence manager instance
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
         @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @parameters[:token_cache_max_age])
       end
 
+      # Get or initialize the persistence manager
+      # @return [Object] The persistence manager instance
       def persist_mgr
         if @persist.nil?
           # use OAuth::Factory.instance.persist_mgr=PersistencyFolder.new)
@@ -95,11 +107,14 @@ module Aspera
         return @persist
       end
 
-      # delete all existing tokens
+      # Delete all existing tokens in cache
+      # @return [void]
       def flush_tokens
         persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN)
       end
 
+      # Retrieve all persisted tokens with their decoded information
+      # @return [Array<Hash>] Array of token information hashes
       def persisted_tokens
         data = persist_mgr.current_items(PERSIST_CATEGORY_TOKEN)
         data.each.map do |k, v|
@@ -138,12 +153,16 @@ module Aspera
         return info
       end
 
-      # register a bearer token decoder, mainly to inspect expiry date
+      # Register a bearer token decoder for inspecting token properties
+      # @param method [Proc] The decoder lambda/proc to register
+      # @return [void]
       def register_decoder(method)
         @decoders.push(method)
       end
 
-      # decode token using all registered decoders
+      # Decode a token using all registered decoders
+      # @param token [String] The token to decode
+      # @return [Hash, nil] Decoded token data or nil if no decoder succeeded
       def decode_token(token)
         @decoders.each do |decoder|
           result = decoder.call(token) rescue nil
@@ -152,10 +171,9 @@ module Aspera
         return
       end
 
-      # register a token creation method
-      # @param id creation type from field :grant_method in constructor
-      # @param lambda_create called to create token
-      # @param id_create called to generate unique id for token, for cache
+      # Register a token creation method
+      # @param creator_class [Class] The token creator class to register
+      # @return [void]
       def register_token_creator(creator_class)
         Aspera.assert_type(creator_class, Class)
         id = Factory.class_to_id(creator_class)
@@ -163,7 +181,9 @@ module Aspera
         @token_type_classes[id] = creator_class
       end
 
-      # @return one of the registered creators for the given create type
+      # Create a token creator instance for the specified grant method
+      # @param parameters [Hash] Parameters including :grant_method and creator-specific options
+      # @return [Object] An instance of the registered token creator class
       def create(**parameters)
         Aspera.assert_type(parameters, Hash)
         id = parameters[:grant_method]
