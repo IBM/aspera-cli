@@ -23,30 +23,32 @@ PANDOC_DEPS = [
   'pdf_in_header.tex'
 ].map{ |f| (PATH_PANDOC_ROOT / f).to_s}.freeze
 
-# Extract pandoc defaults from markdown comment
+# Extract pandoc defaults from markdown comment, else return nil
 def extract_pandoc_defaults_file(md)
-  custom_tmp_file = TMP / 'custom_defaults.yaml'
   inside = false
-  File.open(custom_tmp_file, 'w') do |out|
-    File.foreach(md.to_s) do |line|
-      if !inside
-        inside = true if line.include?('PANDOC_DEFAULTS_BEGIN')
-        next
-      end
-      break if line.include?('PANDOC_DEFAULTS_END')
-      out.write(line)
+  lines = []
+  File.foreach(md.to_s) do |line|
+    if !inside
+      inside = true if line.include?('PANDOC_DEFAULTS_BEGIN')
+      next
     end
+    break if line.include?('PANDOC_DEFAULTS_END')
+    lines << line
   end
+  return if lines.empty?
+  custom_tmp_file = TMP / 'custom_defaults.yaml'
+  custom_tmp_file.write(lines.join)
   custom_tmp_file
 end
 
 # Get latest git change date, or else just the file's modification date
 def get_change_date(md)
   begin
-    changes = run('git', 'status', '--porcelain', md, mode: :capture).first
+    changes = run('git', 'status', '--porcelain', md, mode: :capture, exception: true).first
     raise changes unless changes.empty?
-    epoch = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture).first.to_i
-    Time.at(epoch)
+    change_date = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture, exception: true).first
+    return Time.now if change_date.empty?
+    Time.at(change_date.to_i)
   rescue
     Time.now
   end.strftime('%Y/%m/%d')
@@ -103,9 +105,9 @@ def markdown_to_pdf(md:, pdf:)
     gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT, '.'])
     defaults = [
       PATH_PANDOC_ROOT / 'defaults_common.yaml',
-      PATH_PANDOC_ROOT / 'defaults_pdf.yaml',
-      custom_defaults_file
+      PATH_PANDOC_ROOT / 'defaults_pdf.yaml'
     ]
+    defaults.push(custom_defaults_file) if custom_defaults_file
     check_add_defaults_file(md, 'pdf', defaults)
     run(
       'pandoc',
@@ -116,7 +118,7 @@ def markdown_to_pdf(md:, pdf:)
       tmp_md
     )
     # temporary files
-    custom_defaults_file.delete
+    custom_defaults_file&.delete
     gfx_paths_latex.delete
     tmp_md.delete
     FileUtils.rm_rf('svg-inkscape')
