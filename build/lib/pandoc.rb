@@ -24,10 +24,11 @@ PANDOC_DEPS = [
 ].map{ |f| (PATH_PANDOC_ROOT / f).to_s}.freeze
 
 # Extract pandoc defaults from markdown comment, else return nil
+# @param md [Pathname] Path to Markdown file
 def extract_pandoc_defaults_file(md)
   inside = false
   lines = []
-  File.foreach(md.to_s) do |line|
+  File.foreach(md) do |line|
     if !inside
       inside = true if line.include?('PANDOC_DEFAULTS_BEGIN')
       next
@@ -42,19 +43,21 @@ def extract_pandoc_defaults_file(md)
 end
 
 # Get latest git change date, or else just the file's modification date
+# @param md [Pathname] Path to Markdown file
 def get_change_date(md)
   begin
     changes = run('git', 'status', '--porcelain', md, mode: :capture, exception: true).first
     raise changes unless changes.empty?
     change_date = run('git', 'log', '-1', '--pretty=format:%cd', '--date=unix', md, mode: :capture, exception: true).first
-    return Time.now if change_date.empty?
-    Time.at(change_date.to_i)
+    change_date.empty? ? md.mtime : Time.at(change_date.to_i)
   rescue
-    Time.now
+    md.mtime
   end.strftime('%Y/%m/%d')
 end
 
 # Generate a LaTeX file with \graphicspath for pandoc to find graphics
+# @param paths [Array<Pathname>] Array of paths to include in graphicspath
+# @return [Pathname] Path to generated LaTeX file
 def generate_gfx_paths_latex(paths)
   result = TMP / 'pandoc_add.tex'
   # https://latexref.xyz/_005cgraphicspath.html
@@ -62,8 +65,12 @@ def generate_gfx_paths_latex(paths)
   result
 end
 
+# Check for additional pandoc defaults file and add it to the list
+# @param md [Pathname] Path to Markdown file
+# @param format [String] Output format ('pdf' or 'html')
+# @param additional [Array<Pathname>] Array to append additional defaults file to
 def check_add_defaults_file(md, format, additional)
-  add_defaults = Pathname.new(md).dirname / ".#{Pathname.new(md).basename}.#{format}.pandoc.yaml"
+  add_defaults = md.dirname / ".#{md.basename}.#{format}.pandoc.yaml"
   log.info{"checking defaults: #{add_defaults}"}
   return unless add_defaults.exist?
   log.info{"Using default pandoc defaults: #{add_defaults}"}
@@ -73,34 +80,30 @@ end
 ATTRS = %i{width height}
 
 # Convert HTML <img> to format expected in pandoc
+# @param content [String] HTML content to convert
+# @return [String] Converted content with Markdown image syntax
 def convert_img_for_pandoc(content)
   content.gsub(%r{<img\s+([^>]*?)/?>}) do
     attrs = Regexp.last_match(1)
     src = attrs[/src=["']([^"']*)["']/, 1]
     alt = attrs[/alt=["']([^"']*)["']/, 1] || ''
-    # Try width/height from style= first, then plain attributes
-    # style = attrs[/style=["']([^"']*)["']/, 1] || ''
-    # pandoc_attrs = {}
-    # ATTRS.each do |attr|
-    #  pandoc_attrs[attr] = style[/#{attr}\s*:\s*([\d.]+\w*)/, 1] || attrs[/#{attr}=["']?([\d.]+\w*)["']?/, 1]
-    # end
-    # pandoc_attrs.compact!
-    # pandoc_attrs.empty? ? '' : "{ #{pandoc_attrs.map{ |k, v| "#{k}=#{v}"}.join(' ')} }"
     "![#{alt}](#{src})"
   end
 end
 
 # Generate PDF from Markdown using pandoc templates
+# @param md [Pathname] Path to Markdown file
+# @param pdf [Pathname] Path to output PDF file
 def markdown_to_pdf(md:, pdf:)
   log.info{"Generating: #{pdf}"}
-  pdf = File.expand_path(pdf)
+  pdf = pdf.expand_path
   # Ensure target folder exists for pandoc
-  FileUtils.mkdir_p(File.dirname(pdf))
+  pdf.dirname.mkpath
   # Paths in Markdown file are relative to its location
-  Dir.chdir(File.dirname(md)) do
-    md = File.basename(md)
+  Dir.chdir(md.dirname) do
+    md = md.basename
     tmp_md = Pathname.new(".tmp.#{md}")
-    tmp_md.write(convert_img_for_pandoc(File.read(md)))
+    tmp_md.write(convert_img_for_pandoc(md.read))
     custom_defaults_file = extract_pandoc_defaults_file(md)
     gfx_paths_latex = generate_gfx_paths_latex([PATH_PANDOC_ROOT, '.'])
     defaults = [
@@ -126,10 +129,12 @@ def markdown_to_pdf(md:, pdf:)
 end
 
 # Generate HTML from Markdown using pandoc template
+# @param md [Pathname] Path to Markdown file
+# @param html [Pathname] Path to output HTML file
 def markdown_to_html(md:, html:)
-  File.expand_path(html)
-  Dir.chdir(File.dirname(md)) do
-    md = File.basename(md)
+  html = html.expand_path
+  Dir.chdir(md.dirname) do
+    md = md.basename
     run(
       'pandoc',
       "--defaults=#{PATH_PANDOC_ROOT / 'defaults_common.yaml'}",
@@ -183,8 +188,8 @@ if __FILE__ == $PROGRAM_NAME
       exit(1)
     end
 
-    input_file = ARGV[1]
-    output_file = ARGV[2]
+    input_file = Pathname.new(ARGV[1])
+    output_file = Pathname.new(ARGV[2])
 
     # Validate format
     unless %w[pdf html].include?(command)
@@ -194,7 +199,7 @@ if __FILE__ == $PROGRAM_NAME
     end
 
     # Check if input file exists
-    unless File.exist?(input_file)
+    unless input_file.exist?
       puts("Error: Input file '#{input_file}' not found.")
       exit(2)
     end
