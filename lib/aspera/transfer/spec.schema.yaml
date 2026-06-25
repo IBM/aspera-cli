@@ -706,7 +706,17 @@ properties:
       - transferd
     x-cli-option: -i
   symlink_policy:
-    description: Handle source side symbolic links.
+    description: >-
+      Handle source side symbolic links.
+      Refer to HSTS manual for more details.
+
+      - `follow`: Follow a symbolic link and transfer the contents of the linked file or directory when the link target is in the user's docroot.
+      
+      - `copy`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link does not replace the file.
+      
+      - `skip`: Skip-symbolic links. The link or the file to which it points are not transferred.
+      
+      - `copy+force`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link replaces the file. If the file of the same name at the destination is a symbolic link to a directory, it is not replaced.
     type: string
     enum:
       - follow
