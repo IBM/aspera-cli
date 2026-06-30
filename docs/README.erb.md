@@ -5040,6 +5040,37 @@ Execute:
 
 After this last step, commands do not require web login anymore.
 
+#### AoC bootstrap authentication
+
+For quick access using an existing browser session, use `--auth=boot`.
+
+- Open a Web browser and log in to your AoC instance
+- Open the browser developer tools
+- In **Network**, select any request to `api.ibmaspera.com`.
+- In **Headers**, right click on the `Cookie` Request Header, and select **Copy Value**
+
+Alternatively:
+
+- Go to the **Application** tab &rarr; **Cookies**
+- Copy the full cookie string, all values on one line, separated by `"; "` (semi-colon + space).
+
+For a simpler use, configure a preset with the `url` option, and optionally `username`.
+(If the username is not provided, then the subject from the token is used, else both must match.)
+
+Use the cookie string for option `password` value, the env var can be used, as the value is temporary anyway:
+
+```shell
+export ASCLI_PASSWORD="...; aoc.token=...; aoc.refresh=...; ..."
+
+<%=cmd%> aoc user profile show --auth=boot
+```
+
+> [!NOTE]
+> The cookie string contains `aoc.token` (bearer JWT, mandatory) and `aoc.refresh` (refresh token, optional).
+> Only those two are used.
+> On first use, the tokens are cached locally.
+> Subsequent calls reuse the cache and refresh automatically: The `password` option is used only to get the `username` unless the option `username` is already provided.
+
 #### Public and private links
 
 AoC gives the possibility to generate public links for both the `Files` and `Packages` modules.

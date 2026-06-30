@@ -1021,12 +1021,12 @@ module Aspera
           when :tier_restrictions
             return Result::SingleObject.new(aoc_api.read('tier_restrictions'))
           when :user
-            user_cmd = options.get_next_command(%i[workspaces profile preferences notifications contacts])
+            user_cmd = options.get_next_command(%i[workspaces profile preferences notifications contacts settings])
             case user_cmd
             when :contacts
               return execute_resource_action(:contact)
-            # when :settings
-            # return Result::ObjectList.new(aoc_api.read('client_settings/'))
+            when :settings
+              return entity_execute(api: aoc_api, entity: 'client_settings')
             when :workspaces
               case options.get_next_command(%i[list current])
               when :list
