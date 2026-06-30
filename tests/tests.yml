@@ -1926,98 +1926,107 @@ aoc_faspex_gatewayb:
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
   post: stop_process :aoc_faspex_gateway
-aocg1:
+aoc_test:
+  instanciate: f4_user_suite
   args:
-    - -N
+    - aoc
+aew_user_suite:
+  instanciate: f4_user_suite
+  args:
+    - aoc
+    - --preset=aew_user
+f4_servers:
+  args:
     - aoc
     - servers
-aocg1b:
+    - -N
+f4_remind:
+  template: f4_user_suite
   args:
     - -N
-    - aoc
     - remind
     - --username=@preset:aoc.user_email
-aocg2:
+f4_bearer:
+  template: f4_user_suite
   args:
-    - aoc
     - bearer_token
     - --display=data
-aocg2b:
+f4_admin_bearer:
+  template: f4_user_suite
   args:
     - --preset=aoc_admin
-    - aoc
     - admin
     - bearer_token
     - --display=data
-aocg3:
+f4_org:
+  template: f4_user_suite
   args:
-    - aoc
     - organization
-aocg3b:
+f4_org_image:
+  template: f4_user_suite
   args:
-    - aoc
     - organization
     - --format=image
     - --fields=background_image_url
     - --ui=text
-aocg3c:
+f4_tiers:
+  template: f4_user_suite
   args:
-    - aoc
     - tier_restrictions
-aocg4:
+f4_ws_list:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - workspaces
     - list
 aoc_user_profile:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - profile
     - show
-aocg6:
+f4_usr_prof_mod:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - profile
     - modify
     - '@json:{"name":"dummy change"}'
-aocuprefshow:
+f4_usr_prof_show:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - pref
     - show
-aocuprefmod:
+f4_usr_prof_mod_lang:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - pref
     - modify
     - '@json:{"default_language":"en-us"}'
-aocucontactlist:
+f4_usr_ctct_list:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - contacts
     - list
-aocg7:
+f4_shbox_list:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - shared_inboxes
     - list
-aocg7b:
+f4_shbox_show:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - shared_inboxes
     - show
     - "%name:@preset:aoc.shared_inbox_name"
-aocg8:
+f4_ws_current:
+  template: f4_user_suite
   args:
-    - aoc
     - user
     - workspaces
     - current
