@@ -20,7 +20,7 @@ module Aspera
           when 'file'
             info[:file] = name || 'vault.bin'
             info[:file] = File.join(folder, info[:file]) unless File.absolute_path?(info[:file])
-            Aspera.assert(!password.nil?){'please provide password'}
+            Aspera.assert(!password.nil?, 'please provide password')
             info[:password] = password
             # this module requires compilation, so it is optional
             require 'aspera/keychain/encrypted_hash'

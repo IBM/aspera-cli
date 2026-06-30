@@ -33,8 +33,8 @@ module Aspera
       # @return [nil]
       def validate
         MEMBERS.each do |i|
-          Aspera.assert(instance_variable_defined?(:"@#{i}"))
-          Aspera.assert(!instance_variable_get(:"@#{i}").nil?)
+          Aspera.assert(instance_variable_defined?(:"@#{i}")){"context member @#{i} is not defined"}
+          Aspera.assert(!instance_variable_get(:"@#{i}").nil?){"context member @#{i} is nil"}
         end
       end
 

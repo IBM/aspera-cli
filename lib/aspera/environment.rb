@@ -115,7 +115,7 @@ module Aspera
       # @raise [RuntimeError] If `:exception` is `true` and the process fails in `:capture` mode.
       def secure_execute(*cmd, mode: :execute, **kwargs)
         cmd = cmd.map(&:to_s)
-        Aspera.assert(cmd.size.positive?, type: ArgumentError){'executable must be present'}
+        Aspera.assert(cmd.size.positive?, 'executable must be present', type: ArgumentError)
         Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError){'mode'}
         Log.log.debug do
           parts = [mode.to_s, 'command:']
@@ -157,7 +157,7 @@ module Aspera
       # @param mode [Integer] the file mode (permissions)
       # @yieldreturn [String] The content to write to the file
       def write_file_restricted(path, force: false, mode: nil)
-        Aspera.assert(block_given?, type: Aspera::InternalError)
+        Aspera.assert(block_given?, 'block required for write_file_restricted', type: Aspera::InternalError)
         if force || !File.exist?(path)
           # Windows may give error
           File.unlink(path) rescue nil

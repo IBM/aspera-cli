@@ -68,7 +68,7 @@ module Aspera
         # @yieldreturn [Hash, nil] Result hash for the operation (optional)
         # @return [Hash] Result suitable for CLI output
         def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
-          Aspera.assert(block_given?){'missing block'}
+          Aspera.assert(block_given?, 'missing block')
           is_bulk = options.get_option(:bulk)
           case values
           when :identifier

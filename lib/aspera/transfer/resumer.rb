@@ -34,7 +34,7 @@ module Aspera
       #
       # @yieldreturn [void] Executes the transfer operation
       def execute_with_resume
-        Aspera.assert(block_given?)
+        Aspera.assert(block_given?, 'block required for execute_with_resume')
         # maximum of retry
         remaining_resumes = @iter_max
         sleep_seconds = @sleep_initial

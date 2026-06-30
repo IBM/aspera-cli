@@ -78,7 +78,7 @@ module Aspera
           # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
-            Aspera.assert(m = public_uri.path.match(%r{^(.*)/(external.*)$}), type: Cli::BadArgument){'Public link does not match Faspex format'}
+            Aspera.assert(m = public_uri.path.match(%r{^(.*)/(external.*)$}), 'Public link does not match Faspex format', type: Cli::BadArgument)
             base = m[1]
             subpath = m[2]
             port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
@@ -176,7 +176,7 @@ module Aspera
           if !mailbox_query.nil?
             Aspera.assert_type(mailbox_query, Hash){'query'}
             Aspera.assert((mailbox_query.keys - ATOM_EXT_PARAMS).empty?){"query: supported params: #{ATOM_EXT_PARAMS}"}
-            Aspera.assert(!(mailbox_query.key?('startIndex') && mailbox_query.key?('page'))){'query: startIndex and page are exclusive'}
+            Aspera.assert(!(mailbox_query.key?('startIndex') && mailbox_query.key?('page')), 'query: startIndex and page are exclusive')
             # Extract pagination control parameters (not part of API query)
             max_items = mailbox_query.delete(RestList::MAX_ITEMS)
             max_pages = mailbox_query.delete(RestList::MAX_PAGES)
@@ -308,7 +308,7 @@ module Aspera
                 first_source['paths'].concat(transfer.source_list)
                 source_id = options.get_option(:remote_source)
                 if source_id && (m = Manager.percent_selector(source_id))
-                  Aspera.assert(m[:field].eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
+                  Aspera.assert(m[:field].eql?('name'), 'only name as selector, or give id', type: Cli::BadArgument)
                   source_list = api_v3.read('source_shares')['items']
                   source_id = self.class.get_source_id_by_name(m[:value], source_list)
                 end
@@ -349,12 +349,12 @@ module Aspera
                 end
                 # get command line parameters
                 delivery_id = options.instance_identifier
-                Aspera.assert(!delivery_id.empty?){'empty id'}
+                Aspera.assert(!delivery_id.empty?, 'empty id')
                 recipient = options.get_option(:recipient)
                 if delivery_id.eql?(SpecialValues::ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif delivery_id.eql?(SpecialValues::INIT)
-                  Aspera.assert(skip_ids_persistency){'Only with option once_only'}
+                  Aspera.assert(skip_ids_persistency, 'Only with option once_only')
                   skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD]}})
                   skip_ids_persistency.save
                   return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -442,7 +442,7 @@ module Aspera
               return Result::ObjectList.new(source_list)
             else # :info :node
               source_id = options.instance_identifier do |field, value|
-                Aspera.assert(field.eql?('name'), type: Cli::BadArgument){'only name as selector, or give id'}
+                Aspera.assert(field.eql?('name'), 'only name as selector, or give id', type: Cli::BadArgument)
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
               selected_source = source_list.find{ |i| i['id'].eql?(source_id)}

@@ -165,7 +165,7 @@ module Aspera
           end
           # if user provided transfer spec has a token, we will use bypass keys
           cred_set = true if transfer.user_transfer_spec['token'].is_a?(String)
-          Aspera.assert(cred_set, type: BadArgument){'Either password, key , or transfer spec token must be provided'}
+          Aspera.assert(cred_set, 'Either password, key , or transfer spec token must be provided', type: BadArgument)
           return server_transfer_spec
         end
 

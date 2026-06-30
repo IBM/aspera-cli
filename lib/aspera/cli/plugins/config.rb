@@ -73,7 +73,7 @@ module Aspera
           # @return [String] Product config folder (~/.aspera/<name>)
           def default_app_main_folder(app_name:)
             Aspera.assert_type(app_name, String)
-            Aspera.assert(!app_name.empty?)
+            Aspera.assert(!app_name.empty?, 'app_name must not be empty')
             return File.join(module_family_folder, app_name)
           end
         end
@@ -1038,7 +1038,7 @@ module Aspera
         # @return [String] name if config_presets has default
         # @return nil if there is no config or bypass default params
         def get_plugin_default_config_name(plugin_name_sym)
-          Aspera.assert(!@config_presets.nil?){'config_presets shall be defined'}
+          Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
           if !@use_plugin_defaults
             Log.log.debug('skip default config')
             return
@@ -1085,7 +1085,7 @@ module Aspera
             vault.delete(label: label_to_delete)
             return Result::Status.new("Secret deleted: #{label_to_delete}")
           when :password
-            Aspera.assert(vault.respond_to?(:change_password)){'Vault does not support password change'}
+            Aspera.assert(vault.respond_to?(:change_password), 'Vault does not support password change')
             vault.change_password(options.get_next_argument('new_password'))
             return Result::Status.new('Vault password updated')
           end

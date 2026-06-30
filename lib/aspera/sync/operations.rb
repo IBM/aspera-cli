@@ -89,7 +89,7 @@ module Aspera
         def start(sync_info, opt_ts = nil)
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, type: Error){'At least one of `local` or `sessions` must be present in async parameters'}
+          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           env_args = {
             args: [],
             env:  {}
@@ -145,7 +145,7 @@ module Aspera
             end
             sync_info['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
-              Aspera.assert(session_params.key?('name')){'session must contain at least: name'}
+              Aspera.assert(session_params.key?('name'), 'session must contain at least: name')
               session_builder = CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, CommandLineConverter)
               session_builder.process_params
               session_builder.add_env_args(env_args)
@@ -177,7 +177,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [Hash] parsed output of asyncadmin
         def admin_status(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, type: Error){'At least one of `local` or `sessions` must be present in async parameters'}
+          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           arguments = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
           if sync_info.key?('local')
             # `conf` format
@@ -209,7 +209,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [String, nil] Path to "local DB dir", i.e. folder that contains folders that contain `snap.db`
         def local_db_folder(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, type: Error){'At least one of `local` or `sessions` must be present in async parameters'}
+          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           if sync_info.key?('local')
             # `conf` format
             if sync_info.key?('local_db_dir')
@@ -234,7 +234,7 @@ module Aspera
         end
 
         def session_name(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, type: Error){'At least one of `local` or `sessions` must be present in async parameters'}
+          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           if sync_info.key?('local')
             # `conf` format
             return sync_info['name']

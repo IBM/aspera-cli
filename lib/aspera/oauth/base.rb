@@ -122,7 +122,7 @@ module Aspera
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(@token_cache_id, json_data)
         end
-        Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"}
+        Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"} unless token_data.nil?
         # ok we shall have a token here
         return token_data[@token_field]
       end

@@ -24,7 +24,7 @@ module Aspera
           Aspera.assert_type(current, Hash){'schema'}
           if current.key?('$ref')
             ref = current['$ref']
-            Aspera.assert(ref.start_with?('#/'))
+            Aspera.assert(ref.start_with?('#/')){"schema $ref must start with '#/': #{ref}"}
             current = @root.dig(*ref[2..].split('/'))
           end
         end

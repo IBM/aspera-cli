@@ -30,7 +30,7 @@ module Aspera
         @root_id = root_id
         rest_params = {base_url: url}
         if OAuth::Factory.bearer_auth?(password)
-          Aspera.assert(!@root_id.nil?){'root_id not allowed for access key'}
+          Aspera.assert(!@root_id.nil?, 'root_id not allowed for access key')
           rest_params[:headers] = Api::Node.bearer_headers(password, access_key: username)
         else
           rest_params[:auth] = {
@@ -117,7 +117,7 @@ module Aspera
 
       # used internally to ensure node api is set before using.
       def node_api_
-        Aspera.assert(!@node_api.nil?){'Before using this object, set the node_api attribute to a Aspera::Rest object'}
+        Aspera.assert(!@node_api.nil?, 'Before using this object, set the node_api attribute to a Aspera::Rest object')
         return @node_api
       end
     end

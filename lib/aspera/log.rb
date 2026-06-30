@@ -84,7 +84,7 @@ module Aspera
       # @yieldreturn [Object] Computed object to dump (alternative to object parameter)
       def dump(name, object = nil, level: :debug, &block)
         return unless instance.logger.send(:"#{level}?")
-        Aspera.assert(object.nil? || block.nil?){'Use either object, or block, not both'}
+        Aspera.assert(object.nil? || block.nil?, 'Use either object, or block, not both')
         object = yield if block_given?
         instance.logger.send(level, obj_dump(name, object))
       end
@@ -172,7 +172,7 @@ module Aspera
     # Get symbol of debug level of underlying logger
     # @return [Symbol] One of LEVELS
     def level
-      Aspera.assert(Logger::SEVERITY_LABEL.key?(@logger.level))
+      Aspera.assert(Logger::SEVERITY_LABEL.key?(@logger.level), 'unexpected logger level value')
       Logger::SEVERITY_LABEL[@logger.level].downcase
     end
 

@@ -80,7 +80,7 @@ module Aspera
         end
         RestParameters.instance.spinner_cb.call(action: :success)
         raise "No known application found at #{app_url}" if found_apps.empty?
-        Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)})
+        Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)}, 'all app info keys must be symbols')
         return found_apps
       end
 
@@ -141,9 +141,7 @@ module Aspera
         options.add_option_preset({url: wiz_url}, 'wizard')
         # Instantiate plugin: command line options will be known, e.g. private_key, and wizard can be called
         plugin_instance = Plugins::Factory.instance.plugin_class(identification[:product]).new(context: @parent.context)
-        Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument) do
-          "Detected: #{identification[:product]}, but this application has no wizard"
-        end
+        Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument){"Detected: #{identification[:product]}, but this application has no wizard"}
         # Call the wizard
         wizard_result = plugin_instance.wizard(self, wiz_url)
         Log.log.debug{"wizard result: #{wizard_result}"}

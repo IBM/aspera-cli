@@ -44,7 +44,7 @@ module Aspera
       def markdown_text(match)
         if match.is_a?(String)
           match = Markdown::FORMATS.match(match)
-          Aspera.assert(match)
+          Aspera.assert(match, 'markdown text does not match any known format')
         end
         Aspera.assert_type(match, MatchData)
         if match[:entity]

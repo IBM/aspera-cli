@@ -23,9 +23,9 @@ module Aspera
     # @param :merge    Optional  merge data from file to current data
     def initialize(manager:, data:, id:, delete: DELETE_DEFAULT, parse: PARSE_DEFAULT, format: FORMAT_DEFAULT, merge: MERGE_DEFAULT)
       Aspera.assert(MANAGER_METHODS.all?{ |i| manager.respond_to?(i)}){"Manager must answer to #{MANAGER_METHODS}"}
-      Aspera.assert(!data.nil?)
+      Aspera.assert(!data.nil?, 'data must not be nil')
       Aspera.assert_type(id, String)
-      Aspera.assert(!id.empty?)
+      Aspera.assert(!id.empty?, 'id must not be empty')
       Aspera.assert_type(delete, Proc)
       Aspera.assert_type(parse, Proc)
       Aspera.assert_type(format, Proc)

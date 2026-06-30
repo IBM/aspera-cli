@@ -104,7 +104,7 @@ module Aspera
     # @param query     [Hash]   Additional query parameters (Default: `:default`)
     def lookup_entity_by_field(entity:, value:, field: 'name', items_key: nil, query: :default)
       if query.eql?(:default)
-        Aspera.assert(field.eql?('name')){'Default query is on name only'}
+        Aspera.assert(field.eql?('name'), 'Default query is on name only')
         query = {'q'=> value}
       end
       lookup_entity_generic(entity: entity, field: field, value: value){list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first}
@@ -120,7 +120,7 @@ module Aspera
     # @return [Hash] The unique matching object.
     # @raise  [Cli::BadIdentifier] If 0 or >1 matches are found.
     def lookup_entity_generic(entity:, value:, field: 'name')
-      Aspera.assert(block_given?)
+      Aspera.assert(block_given?, 'block required for lookup_entity_generic')
       found = yield
       Aspera.assert_array_all(found, Hash)
       found = found.select{ |i| i[field].eql?(value)}

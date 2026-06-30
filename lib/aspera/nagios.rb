@@ -24,7 +24,7 @@ module Aspera
       # Process results of a analysis and display status and exit with code
       def process(data)
         Aspera.assert_type(data, Array)
-        Aspera.assert(!data.empty?){'data is empty'}
+        Aspera.assert(!data.empty?, 'data is empty')
         %w[status component message].each do |c|
           Aspera.assert(data.first.key?(c)){"result must have #{c}"}
         end
@@ -79,7 +79,7 @@ module Aspera
     # Readable status list
     # @return [Array] of Hash
     def status_list
-      Aspera.assert(!@data.empty?){'missing result'}
+      Aspera.assert(!@data.empty?, 'missing result')
       @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}
     end
   end

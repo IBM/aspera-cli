@@ -106,7 +106,7 @@ module Aspera
           when Hash
             URI.encode_www_form(h_to_query_array(query))
           when Array
-            Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays of 2 elements'}
+            Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}, 'Query must be array of arrays of 2 elements')
             URI.encode_www_form(query) # remove nil values
           else Aspera.error_unexpected_value(query.class){'query type'}
           end.gsub('%5B%5D=', '[]=')
@@ -320,7 +320,7 @@ module Aspera
       # default is no auth
       @auth_params = auth
       Aspera.assert_type(@auth_params, Hash)
-      Aspera.assert(@auth_params.key?(:type)){'no auth type defined'}
+      Aspera.assert(@auth_params.key?(:type), 'no auth type defined')
       @not_auth_codes = not_auth_codes
       Aspera.assert_type(@not_auth_codes, Array)
       # persistent session
@@ -337,7 +337,7 @@ module Aspera
     # @return the OAuth object (create, or cached if already created)
     def oauth
       if @oauth.nil?
-        Aspera.assert(@auth_params[:type].eql?(:oauth2)){'no OAuth defined'}
+        Aspera.assert(@auth_params[:type].eql?(:oauth2), 'no OAuth defined')
         oauth_parameters = @auth_params.reject{ |k, _v| k.eql?(:type)}
         Log.dump(:oauth_parameters, oauth_parameters)
         @oauth = OAuth::Factory.instance.create(**oauth_parameters)
@@ -378,7 +378,7 @@ module Aspera
       Log.dump(:headers, headers, level: :trace1)
       Aspera.assert_type(subpath, String)
       # We must have a way to check return code
-      Aspera.assert(exception || !ret.eql?(:data))
+      Aspera.assert(exception || !ret.eql?(:data), 'ret: :data requires exception handler')
       if headers.nil?
         headers = @headers.clone
       else

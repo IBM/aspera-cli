@@ -203,8 +203,8 @@ module Aspera
             # Extract single field for image display
             data_array = [@data]
             fields = formatter.compute_fields(data_array, @fields)
-            Aspera.assert(fields.length == 1, type: Cli::BadArgument){'select a single field to display'}
-            Aspera.assert(@data.key?(fields.first), type: Cli::BadArgument){'no such field'}
+            Aspera.assert(fields.length == 1, 'select a single field to display', type: Cli::BadArgument)
+            Aspera.assert(@data.key?(fields.first), 'no such field', type: Cli::BadArgument)
             # Create an Image result and format it
             Image.new(@data[fields.first]).format(formatter)
           when :table, :csv
@@ -242,7 +242,7 @@ module Aspera
           case formatter.format_type
           when :image
             # Extract single field for image display
-            Aspera.assert(@data.length == 1, type: Cli::BadArgument){'image display requires a single result'}
+            Aspera.assert(@data.length == 1, 'image display requires a single result', type: Cli::BadArgument)
             SingleObject.new(@data.first).format(formatter)
           when :table, :csv
             Aspera.assert_array_all(@data, Hash){'result'}

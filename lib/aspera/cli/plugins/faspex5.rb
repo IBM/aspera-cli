@@ -213,7 +213,7 @@ module Aspera
           packages = []
           case package_ids
           when SpecialValues::INIT
-            Aspera.assert(skip_ids_persistency){'Only with option once_only'}
+            Aspera.assert(skip_ids_persistency, 'Only with option once_only')
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']})
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -721,7 +721,7 @@ module Aspera
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
+            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
             server.start
             return Result::Status.new('Gateway terminated')

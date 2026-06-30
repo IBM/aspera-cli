@@ -326,7 +326,7 @@ module Aspera
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
         Aspera.assert_type(handler, Hash) if handler
-        Aspera.assert(handler.keys.sort.eql?(%i[m o])) if handler
+        Aspera.assert(handler.keys.sort.eql?(%i[m o]), 'handler must have keys :m and :o') if handler
         option_attrs = @declared_options[option_symbol] = OptionValue.new(
           option:      option_symbol,
           description: description,

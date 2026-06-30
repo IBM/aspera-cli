@@ -100,7 +100,7 @@ module Aspera
           # @param fld.               [Array]  List of fields of package
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
             Aspera.assert_array_all(fld, String, type: BadArgument){'fld'}
-            Aspera.assert([1, 2].include?(fld.length)){'fld must have 1 or 2 elements'}
+            Aspera.assert_values(fld.length, [1, 2]){'fld length'}
             folder = Environment.instance.sanitized_filename(package_info[fld[0]])
             if seq
               folder = next_available_folder(folder, always: !opt)
@@ -178,7 +178,7 @@ module Aspera
           end
           myself = aoc_api.read('self')
           if auto_set_pub_key
-            Aspera.assert(myself['public_key'].empty?, type: Error){'Public key is already set in profile (use --override=yes)'} unless option_override
+            Aspera.assert(myself['public_key'].empty?, 'Public key is already set in profile (use --override=yes)', type: Error) unless option_override
             formatter.display_status('Updating profile with the public key.')
             aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
           end
@@ -289,7 +289,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return options.instance_identifier do |field, value|
-            Aspera.assert(field.eql?('name'), type: BadArgument){'only selection by name is supported'}
+            Aspera.assert(field.eql?('name'), 'only selection by name is supported', type: BadArgument)
             aoc_api.lookup_with_q(resource_class_path, value: value)['id']
           end
         end
@@ -526,13 +526,13 @@ module Aspera
             when :node
               shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-              Aspera.assert(shared_folder)
+              Aspera.assert(shared_folder, 'shared folder not found')
               command_repo = options.get_next_command(FILES_COMMANDS)
               return execute_nodegen4_command(command_repo, shared_folder['node_id'], file_id: shared_folder['file_id'], scope: Api::Node::Scope::ADMIN)
             when :member
               shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
               shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-              Aspera.assert(shared_folder)
+              Aspera.assert(shared_folder, 'shared folder not found')
               command_shared_member = options.get_next_command(%i[list])
               case command_shared_member
               when :list
@@ -1099,7 +1099,7 @@ module Aspera
               case ids_to_download
               when SpecialValues::INIT
                 all_packages = list_all_packages_with_query[:items]
-                Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
+                Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
                 skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
                 skip_ids_persistency.save
                 return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -1266,7 +1266,7 @@ module Aspera
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
+            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
             server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
             server.start
             return Result::Status.new('Gateway terminated')

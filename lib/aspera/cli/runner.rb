@@ -242,7 +242,7 @@ module Aspera
         @context.config = Plugins::Config.new(context: @context)
         @context.man_header = true
         # Data persistency is set in config
-        Aspera.assert(@context.persistency){'missing persistency object'}
+        Aspera.assert(@context.persistency, 'missing persistency object')
         # The TransferAgent plugin may use the @preset parser
         @context.transfer = TransferAgent.new(@context.options, @context.config)
         # Add commands for config plugin after all options have been added

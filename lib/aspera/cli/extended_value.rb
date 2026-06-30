@@ -138,7 +138,7 @@ module Aspera
       # Add a new handler
       def on(name, &block)
         Aspera.assert_type(name, Symbol){'name'}
-        Aspera.assert(block)
+        Aspera.assert(block){"block required when registering handler for #{name}"}
         Log.log.debug{"Setting handler for #{name}"}
         @handlers[name] = block
         update_regex

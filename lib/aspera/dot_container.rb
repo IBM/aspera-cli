@@ -39,7 +39,7 @@ module Aspera
       # @param container [Hash, Array]
       # @param index     [String, Integer]
       def array_requires_integer_index!(container, index)
-        Aspera.assert(container.is_a?(Hash) || index.is_a?(Integer)){'Using String index when Integer index used previously'}
+        Aspera.assert(container.is_a?(Hash) || index.is_a?(Integer), 'Using String index when Integer index used previously')
       end
 
       # Create a new `Hash` or `Array` depending on type of `key`

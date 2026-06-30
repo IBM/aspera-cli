@@ -11,7 +11,7 @@ module Aspera
         options.each_pair do |k, v|
           Aspera.assert_type(v, String){k.to_s}
         end
-        Aspera.assert(options.key?(:label)){'label is required'}
+        Aspera.assert(options.key?(:label), 'label is required')
       end
     end
   end

@@ -66,7 +66,7 @@ module Aspera
           Aspera.assert(node.key?('type') || node.key?('enum')){"Missing type for #{name} in #{schema.current.dig('description').current}"}
           Aspera.assert(node['type'].eql?('boolean')){"switch must be bool: #{name}"} if node['x-cli-switch'] && !node['x-cli-special']
           node['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if node['x-cli-option'].eql?(true) || (node['x-cli-switch'].eql?(true) && !node.key?('x-cli-option'))
-          Aspera.assert(DIRECT_PROPERTIES.any?{ |i| node.key?(i)}, type: :warn){name} if ascp && supported_by_agent(:direct, node)
+          Aspera.assert(DIRECT_PROPERTIES.any?{ |i| node.key?(i)}, name, type: :warn) if ascp && supported_by_agent(:direct, node)
           node.freeze
         end
         schema

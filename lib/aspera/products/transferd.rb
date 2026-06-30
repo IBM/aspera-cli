@@ -29,7 +29,7 @@ module Aspera
 
         # @return the path to folder where SDK is or should be installed
         def sdk_directory
-          Aspera.assert(!@sdk_dir.nil?){'SDK path was not initialized'}
+          Aspera.assert(!@sdk_dir.nil?, 'SDK path was not initialized')
           @sdk_dir
         end
 
@@ -52,7 +52,7 @@ module Aspera
               end
             end
           end
-          Aspera.assert(!result.nil?){'Port not found in daemon logs'}
+          Aspera.assert(!result.nil?, 'Port not found in daemon logs')
           Log.log.debug{"Got port #{result} from log"}
           return result
         end

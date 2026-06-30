@@ -68,7 +68,7 @@ module Aspera
       case request.path
       when '/aspera/faspex/send'
         begin
-          Aspera.assert(!request.body.nil?){'payload missing'}
+          Aspera.assert(!request.body.nil?, 'payload missing')
           faspex_pkg_parameters = JSON.parse(request.body)
           Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
           # compare string, as class is not yet known here

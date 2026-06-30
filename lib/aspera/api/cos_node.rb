@@ -63,7 +63,7 @@ module Aspera
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
         Log.dump(:ats_info, ats_info)
         Aspera.assert_hash_all(ats_info, String, nil){'ats_info'}
-        Aspera.assert((FASP_INFO_KEYS - ats_info.keys).empty?){'ats_info missing required keys'}
+        Aspera.assert((FASP_INFO_KEYS - ats_info.keys).empty?, 'ats_info missing required keys')
         Aspera.assert_hash_all(ats_info['AccessKey'], String, String){'ats_info'}
         @storage_credentials = {
           'type'  => 'token',

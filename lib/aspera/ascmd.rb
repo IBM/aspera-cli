@@ -129,10 +129,10 @@ module Aspera
       Log.log.trace1{"execute_single:#{stdin_input}"}
       # execute, get binary output
       byte_buffer = @command_executor.execute(remote_cmd, input: stdin_input).unpack('C*')
-      Aspera.assert(!byte_buffer.empty?){'empty answer from server'}
+      Aspera.assert(!byte_buffer.empty?, 'empty answer from server')
       # get hash or table result
       result = self.class.parse(byte_buffer, :result)
-      Aspera.assert(byte_buffer.empty?){'unparsed bytes remaining'}
+      Aspera.assert(byte_buffer.empty?, 'unparsed bytes remaining')
       # get and delete info,always present in results
       system_info = result[:info]
       result.delete(:info)
@@ -187,7 +187,7 @@ module Aspera
         case type_descr[:decode]
         when :base
           num_bytes = type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
-          Aspera.assert(buffer.length >= num_bytes){'not enough bytes'}
+          Aspera.assert(buffer.length >= num_bytes, 'not enough bytes')
           byte_array = buffer.shift(num_bytes)
           byte_array = [byte_array] unless byte_array.is_a?(Array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
@@ -200,7 +200,7 @@ module Aspera
           until buffer.empty?
             btype = parse(buffer, :int8, indent_level)
             length = parse(buffer, :int32, indent_level)
-            Aspera.assert(buffer.length >= length){'not enough bytes'}
+            Aspera.assert(buffer.length >= length, 'not enough bytes')
             value = buffer.shift(length)
             result.push({btype: btype, buffer: value})
             Log.log.trace1{"#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}"}

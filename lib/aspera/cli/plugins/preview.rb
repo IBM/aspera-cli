@@ -198,7 +198,7 @@ module Aspera
         # @param destination [String, nil] local destination root for receive operations
         # @return [Object] transfer result returned by [`Main.result_transfer`](lib/aspera/cli/main.rb)
         def do_transfer(direction, folder_id, source_filename, destination = '/')
-          Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)))
+          Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)), 'destination must be set for receive direction')
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
             'tags'  => {Transfer::Spec::TAG_RESERVED => {PREV_GEN_TAG => true}}
@@ -323,7 +323,7 @@ module Aspera
           # create folder if needed
           FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
-            Aspera.assert(!entry['parent_file_id'].nil?){'missing parent_file_id in entry'}
+            Aspera.assert(!entry['parent_file_id'].nil?, 'missing parent_file_id in entry')
             #  download original file to temp folder
             do_transfer(Transfer::Spec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end

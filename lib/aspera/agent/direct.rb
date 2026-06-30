@@ -294,7 +294,7 @@ module Aspera
           Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
           readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
           Log.log.debug('after select, before accept')
-          Aspera.assert(readable, type: Transfer::Error){'timeout waiting mgt port connect (select not readable)'}
+          Aspera.assert(readable, 'timeout waiting mgt port connect (select not readable)', type: Transfer::Error)
           # There is a connection to accept
           client_socket, _client_addrinfo = mgt_server_socket.accept
           Log.log.debug('after accept')

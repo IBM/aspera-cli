@@ -517,7 +517,7 @@ module Aspera
             return Result::SingleObject.new(result) if command_repo.eql?(:node_info)
             Log.dump(:result, result)
             raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
-            Aspera.assert(OAuth::Factory.bearer_auth?(result[:password])){'Not using bearer token auth'}
+            Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
             return Result::Text.new(result[:password])
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
@@ -555,8 +555,8 @@ module Aspera
               payload[:type] = :folder
             when :mklink
               payload[:type] = :link
-              Aspera.assert(payload[:target_id]){'Missing target_id'}
-              Aspera.assert(payload[:target_node_id]){'Missing target_node_id'}
+              Aspera.assert(payload[:target_id], 'Missing target_id')
+              Aspera.assert(payload[:target_node_id], 'Missing target_node_id')
             when :mkfile
               payload[:type] = :file
               payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
@@ -880,7 +880,7 @@ module Aspera
                   return Result::Status.new('Persistency reset')
                 end
               else
-                Aspera.assert(!transfer_filter.key?('reset'), type: Cli::BadArgument){'reset only with once_only'}
+                Aspera.assert(!transfer_filter.key?('reset'), 'reset only with once_only', type: Cli::BadArgument)
               end
               transfers_data = @api_node.read_with_paging('ops/transfers', transfer_filter, iteration: iteration_persistency&.data)
               iteration_persistency&.save

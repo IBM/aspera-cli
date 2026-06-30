@@ -61,7 +61,7 @@ module Aspera
       # - "product:FIRST" to use ascp from first found product
       def sdk_folder=(ascp_location)
         Aspera.assert_type(ascp_location, String){'ascp_location'}
-        Aspera.assert(!ascp_location.empty?){'ascp location cannot be empty: check your config file'}
+        Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file')
         folder =
           if ascp_location.start_with?(USE_PRODUCT_PREFIX)
             product_name = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
@@ -251,7 +251,7 @@ module Aspera
       # @yieldparam entry_stream [IO, Gem::Package::TarReader::Entry] Data stream
       # @yieldparam link_target [String, nil] Link target if symlink, nil otherwise
       def extract_archive_files(sdk_archive_path)
-        Aspera.assert(block_given?){'missing block'}
+        Aspera.assert(block_given?, 'missing block')
         case sdk_archive_path
         # Windows and Mac use zip
         when /\.zip$/

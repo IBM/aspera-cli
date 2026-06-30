@@ -174,9 +174,9 @@ module Aspera
         # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
         def bearer_token(access_key:, payload:, private_key:)
           Aspera.assert_type(payload, Hash)
-          Aspera.assert(payload.key?('user_id'))
+          Aspera.assert(payload.key?('user_id'), 'payload must have user_id')
           Aspera.assert_type(payload['user_id'], String)
-          Aspera.assert(!payload['user_id'].empty?)
+          Aspera.assert(!payload['user_id'].empty?, 'user_id must not be empty')
           Aspera.assert_type(private_key, OpenSSL::PKey::RSA)
           # Manage convenience parameters
           expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
@@ -205,7 +205,7 @@ module Aspera
           # If username is not provided, use the access key from the token
           if access_key.nil?
             access_key = Node.decode_scope(Node.decode_bearer_token(OAuth::Factory.bearer_token(bearer_auth))['scope'])[:access_key]
-            Aspera.assert(!access_key.nil?)
+            Aspera.assert(!access_key.nil?, 'access_key could not be determined from token')
           end
           return {
             HEADER_X_ASPERA_ACCESS_KEY => access_key,
@@ -337,7 +337,7 @@ module Aspera
       # @param top_file_path [String] path of top folder (default = /)
       # @para query [Hash, nil] optional query for `read`
       def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
-        Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
+        Aspera.assert(!top_file_path.nil?, 'top_file_path not set')
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info.node_info['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # Start at top folder
         folders_to_explore = [{id: top_file_id, path: top_file_path}]
@@ -405,7 +405,7 @@ module Aspera
       #     - 'destination' [String]: Destination path (optional)
       def resolve_api_fid_paths(top_file_id, paths)
         Aspera.assert_type(paths, Array)
-        Aspera.assert(paths.size.positive?)
+        Aspera.assert(paths.size.positive?, 'paths must not be empty')
         split_sources = paths.map{ |p| Pathname(p['source']).each_filename.to_a}
         root = []
         split_sources.map(&:size).min.times do |i|
@@ -490,7 +490,7 @@ module Aspera
         case auth_params[:type]
         when :basic
           ak_name = auth_params[:username]
-          Aspera.assert(auth_params[:password]){'no secret in node object'}
+          Aspera.assert(auth_params[:password], 'no secret in node object')
           ak_token = Rest.basic_authorization(auth_params[:username], auth_params[:password])
         when :oauth2
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
@@ -551,7 +551,7 @@ module Aspera
       def read_with_paging(subpath, query = nil, iteration: nil, **call_args)
         Aspera.assert_type(iteration, Array, NilClass){'iteration'}
         Aspera.assert_type(query, Hash, NilClass){'query'}
-        Aspera.assert(!call_args.key?(:query))
+        Aspera.assert(!call_args.key?(:query), ':query must not be in call_args (use query parameter)')
         query = {} if query.nil?
         query[:iteration_token] = iteration[0] unless iteration.nil? || iteration[0].nil?
         max = query.delete(RestList::MAX_ITEMS)

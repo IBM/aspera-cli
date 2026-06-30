@@ -45,7 +45,7 @@ module Aspera
       info = Rest.query_to_h(URI.parse(http['Location']).query)
       Log.dump(:info, info)
       raise Error, info['action_message'] if info['action_message']
-      Aspera.assert(info['code']){'Missing code in answer'}
+      Aspera.assert(info['code'], 'Missing code in answer')
       # Exchange code for token
       return create_token_call(base_params.merge(
         grant_type:   'authorization_code',
@@ -194,15 +194,15 @@ module Aspera
             }
           # old: headers:  {'Passcode' => @pub_link_context['passcode']}
           when :boot
-            Aspera.assert(password, type: ParameterError){'Missing password'}
+            Aspera.assert(password, 'Missing password', type: ParameterError)
             # the password here is the token copied directly from browser in developer mode
             {
               base_url: "#{url}/#{root}",
               headers:  {'Authorization' => password}
             }
           when :web
-            Aspera.assert(client_id, type: ParameterError){'Missing client_id'}
-            Aspera.assert(redirect_uri, type: ParameterError){'Missing redirect_uri'}
+            Aspera.assert(client_id, 'Missing client_id', type: ParameterError)
+            Aspera.assert(redirect_uri, 'Missing redirect_uri', type: ParameterError)
             # opens a browser and ask user to auth using web
             {
               base_url: "#{url}/#{root}",
@@ -217,8 +217,8 @@ module Aspera
               }
             }
           when :jwt
-            Aspera.assert(client_id, type: ParameterError){'Missing client_id'}
-            Aspera.assert(private_key, type: ParameterError){'Missing private_key'}
+            Aspera.assert(client_id, 'Missing client_id', type: ParameterError)
+            Aspera.assert(private_key, 'Missing private_key', type: ParameterError)
             {
               base_url: "#{url}/#{root}",
               auth:     {

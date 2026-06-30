@@ -197,7 +197,7 @@ module Aspera
         # @option return [Integer] :total The total number of items
         def call_paging(query: {})
           Aspera.assert_type(query, Hash){'query'}
-          Aspera.assert(block_given?)
+          Aspera.assert(block_given?, 'block required for call_paging')
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           query['per_page'] = 1000 unless query.key?('per_page')
           max_items = query.delete(RestList::MAX_ITEMS)
@@ -211,7 +211,7 @@ module Aspera
             new_query = query.clone
             new_query['page'] = current_page
             result_data, result_http = yield(new_query)
-            Aspera.assert(result_http)
+            Aspera.assert(result_http, 'expected HTTP result from paging block')
             total_count = result_http[HEADER_X_TOTAL_COUNT]&.to_i
             page_count += 1
             current_page += 1
@@ -485,7 +485,7 @@ module Aspera
         ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'])
         # If secret is available, or no scope, use basic auth
         if scope.nil? || ak_secret
-          Aspera.assert(ak_secret, "Secret not found for access key #{node_info['access_key']}@#{node_info['url']}", type: Error)
+          Aspera.assert(ak_secret, type: Error){"Secret not found for access key #{node_info['access_key']}@#{node_info['url']}"}
           node_params[:auth] = {
             type:     :basic,
             username: node_info['access_key'],
@@ -522,10 +522,10 @@ module Aspera
         Log.dump(:metadata, pkg_meta)
         pkg_meta.each do |field|
           Aspera.assert_type(field, Hash){'metadata field'}
-          Aspera.assert(field.key?('name')){'metadata field must have name'}
-          Aspera.assert(field.key?('values')){'metadata field must have values'}
+          Aspera.assert(field.key?('name'), 'metadata field must have name')
+          Aspera.assert(field.key?('values'), 'metadata field must have values')
           Aspera.assert_type(field['values'], Array){'metadata field values'}
-          Aspera.assert(!meta_schema.none?{ |i| i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
+          Aspera.assert(meta_schema.any?{ |i| i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
         end
         meta_schema.each do |field|
           provided = pkg_meta.select{ |i| i['name'].eql?(field['name'])}
@@ -751,7 +751,7 @@ module Aspera
       # @param types [Array] event types
       def permissions_send_event(event_data:, app_info:, types: PERMISSIONS_CREATED)
         Aspera.assert_type(types, Array)
-        Aspera.assert(!types.empty?)
+        Aspera.assert(!types.empty?, 'types must not be empty')
         event_creation = {
           'types'        => types,
           'node_id'      => app_info.node_info['id'],

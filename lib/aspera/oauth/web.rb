@@ -22,8 +22,8 @@ module Aspera
         @redirect_uri = redirect_uri
         @path_authorize = path_authorize
         uri = URI.parse(@redirect_uri)
-        Aspera.assert(%w[http https].include?(uri.scheme)){'redirect_uri scheme must be http or https'}
-        Aspera.assert(!uri.port.nil?){'redirect_uri must have a port'}
+        Aspera.assert_values(uri.scheme, %w[http https]){'redirect_uri scheme must be http or https'}
+        Aspera.assert(!uri.port.nil?, 'redirect_uri must have a port')
         # TODO: we could check that host is localhost or local address, as we are going to listen locally
       end
 

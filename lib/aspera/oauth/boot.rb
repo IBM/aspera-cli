@@ -23,7 +23,7 @@ module Aspera
           Aspera.assert(cookies.key?('aoc.token'), '--password cookie does not contain aoc.token', type: ParameterError)
           token = cookies['aoc.token']
           decoded = Factory.instance.decode_token(token)
-          Aspera.assert(decoded.is_a?(Hash)){'Boot: token is not a decodable JWT'}
+          Aspera.assert_type(decoded, Hash){'Boot: token is not a decodable JWT'}
           sub = decoded['sub']
           Aspera.assert(username.nil? || username.eql?(sub)){"Boot: --username #{username} does not match token subject #{sub}"}
           super(**base_params, cache_ids: [sub])
@@ -35,7 +35,7 @@ module Aspera
 
       # Should never be reached: if cache and refresh are both exhausted, re-authenticate via browser
       def create_token
-        Aspera.assert(false){'Boot: token expired and no refresh available — re-authenticate in browser'}
+        Aspera.report_error(AssertError, 'Boot: token expired and no refresh available — re-authenticate in browser')
       end
     end
     Factory.instance.register_token_creator(Boot)

@@ -43,13 +43,13 @@ module Aspera
         case type
         when :sessions_init
           # Give opportunity to show progress of initialization with multiple status
-          Aspera.assert(session_id.nil?)
+          Aspera.assert(session_id.nil?, 'session_id must be nil for :sessions_init event')
           Aspera.assert_type(info, String)
           # Initialization of progress bar
           @title = info
         when :session_start
           Aspera.assert_type(session_id, String)
-          Aspera.assert(info.nil?)
+          Aspera.assert(info.nil?, 'info must be nil for :session_start event')
           raise "Session #{session_id} already started" if @sessions[session_id]
           @sessions[session_id] = {
             job_size: 0, # Total size of transfer (pre-calc)
@@ -60,7 +60,7 @@ module Aspera
           @title = nil
         when :session_size
           Aspera.assert_type(session_id, String)
-          Aspera.assert(!info.nil?)
+          Aspera.assert(!info.nil?, 'info must not be nil for :session_size event')
           Aspera.assert_type(@sessions[session_id], Hash)
           @sessions[session_id][:job_size] = info.to_i
           sessions_total = total(:job_size)
@@ -76,12 +76,12 @@ module Aspera
           end
         when :session_end
           Aspera.assert_type(session_id, String)
-          Aspera.assert(info.nil?)
+          Aspera.assert(info.nil?, 'info must be nil for :session_end event')
           # A session may be too short and finish before it has been started
           @sessions[session_id][:running] = false if @sessions[session_id].is_a?(Hash)
         when :end
-          Aspera.assert(session_id.nil?)
-          Aspera.assert(info.nil?)
+          Aspera.assert(session_id.nil?, 'session_id must be nil for :end event')
+          Aspera.assert(info.nil?, 'info must be nil for :end event')
           @progress_bar.finish
         else Aspera.error_unexpected_value(type){'event type'}
         end

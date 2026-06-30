@@ -85,12 +85,12 @@ module Aspera
         file_list_option = nil
         # transfer spec contains paths ?
         if !ts_paths_array.nil?
-          Aspera.assert(!ascp_file_list_provided){'file list provided both in transfer spec and ascp file list. Remove one of them.'}
-          Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}){"All elements of paths must have a 'source' key"}
+          Aspera.assert(!ascp_file_list_provided, 'file list provided both in transfer spec and ascp file list. Remove one of them.')
+          Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}, "All elements of paths must have a 'source' key")
           is_pair_list = ts_paths_array.any?{ |i| i.key?('destination')}
           raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')}
           if self.class.file_list_folder.nil?
-            Aspera.assert(!is_pair_list){'file pair list is not supported when file list folder is not set'}
+            Aspera.assert(!is_pair_list, 'file pair list is not supported when file list folder is not set')
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug('placing source file list on command line (no file list file)')
             @builder.add_command_line_options(ts_paths_array.map{ |i| i['source']})
@@ -160,7 +160,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # Notify multi-session was already used, anyway it was deleted by agent direct
-        Aspera.assert(!@builder.read_param('multi_session'))
+        Aspera.assert(!@builder.read_param('multi_session'), 'multi_session already consumed, must not be set here')
 
         # Add ssh or wss certificates
         # (reverse, to keep order, as we unshift)

@@ -33,7 +33,7 @@ module Aspera
         if sync_info.key?('sessions') || sync_info.key?('instance')
           # `args`
           sync_info['sessions'] ||= [{}]
-          Aspera.assert(sync_info['sessions'].length == 1){'Only one session is supported'}
+          Aspera.assert(sync_info['sessions'].length == 1, 'Only one session is supported')
           session = sync_info['sessions'].first
           dir_key = path_is_remote ? 'remote_dir' : 'local_dir'
           raise "Parameter #{dir_key} shall not be in sync_info" if session.key?(dir_key)

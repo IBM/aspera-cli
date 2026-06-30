@@ -42,7 +42,7 @@ module Aspera
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
-              Aspera.assert(uri.scheme.eql?('https')){'only https'}
+              Aspera.assert(uri.scheme.eql?('https'), 'only https')
               options[:protocol] = 'htps' # cspell: disable-line
               raise Error, 'host required in URL' if uri.host.nil?
               options[:server] = uri.host
