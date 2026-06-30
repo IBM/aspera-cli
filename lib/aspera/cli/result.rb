@@ -231,7 +231,7 @@ module Aspera
         # @param total [Integer, nil] Total number of items available (for pagination display)
         def initialize(data, fields: nil, total: nil)
           Aspera.assert_type(data, Array){'object list result data'}
-          raise ArgumentError, 'Object list result requires Array of Hash' unless data.all?{ |item| item.is_a?(Hash)}
+          raise ArgumentError, 'Object list result requires Array of Hash' unless data.all?(Hash)
           Aspera.assert_type(total, Integer, NilClass){'total'}
           super(data: data, fields: fields)
           @total = total
@@ -275,28 +275,30 @@ module Aspera
         end
       end
 
-      # Class method to automatically determine result type from data
-      # @param data [Object] the data to analyze and format
-      # @return [Result]
-      def self.auto(data)
-        case data
-        when NilClass
-          Null.new
-        when Hash
-          SingleObject.new(data)
-        when Array
-          all_types = data.map(&:class).uniq
-          return ObjectList.new(data) if all_types.eql?([Hash])
+      class << self
+        # Class method to automatically determine result type from data
+        # @param data [Object] the data to analyze and format
+        # @return [Result]
+        def auto(data)
+          case data
+          when NilClass
+            Null.new
+          when Hash
+            SingleObject.new(data)
+          when Array
+            all_types = data.map(&:class).uniq
+            return ObjectList.new(data) if all_types.eql?([Hash])
 
-          scalar_types = [String, Integer, Symbol]
-          unsupported_types = all_types - scalar_types
-          return ValueList.new(data, name: 'list') if unsupported_types.empty?
+            scalar_types = [String, Integer, Symbol]
+            unsupported_types = all_types - scalar_types
+            return ValueList.new(data, name: 'list') if unsupported_types.empty?
 
-          Aspera.error_unexpected_value(unsupported_types){'list item types'}
-        when String, Integer, Symbol
-          Text.new(data)
-        else
-          Aspera.error_unexpected_value(data.class.name){'result type'}
+            Aspera.error_unexpected_value(unsupported_types){'list item types'}
+          when String, Integer, Symbol
+            Text.new(data)
+          else
+            Aspera.error_unexpected_value(data.class.name){'result type'}
+          end
         end
       end
     end
