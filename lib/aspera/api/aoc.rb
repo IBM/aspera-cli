@@ -346,9 +346,9 @@ module Aspera
           # basic auth required for /token
           auth_params[:auth] = {type: :basic, username: client_id, password: client_secret}
         when :boot
-          auth_params.clear
-          auth_params[:type] = :none
-          base_args[:headers] = {'Cookie'=>'aoc.token=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjIwMTgtMDYtMDdUMjE6MjY6MTIrMDA6MDAifQ.eyJ1c2VyX2lkIjoiMTEzNTAxIiwic2NvcGUiOiJhZG1pbi11c2VyOmFsbCB1c2VyOmFsbCIsInV1aWQiOiJkYzM5NjBkMC05YWFmLTQ5NWMtOWYyYi00MDU3ZjAyODU3MjEiLCJvcmdhbml6YXRpb25faWQiOiIyODQ1MyIsImV4cGlyZXNfYXQiOiIyMDI2LTA3LTAxVDAwOjI3OjMxWiIsImV4cCI6MTc4Mjg2NTY1MSwic3ViIjoibGF1cmVudC5tYXJ0aW4uYXNwZXJhQGZyLmlibS5jb20iLCJuYW1lIjoiTGF1cmVudCBNYXJ0aW4iLCJnaXZlbl9uYW1lIjoiTGF1cmVudCIsImZhbWlseV9uYW1lIjoiTWFydGluIiwiYXVkIjoiZjQuY29tIiwiaWF0IjoxNzgyODIyNDUxLCJpc3MiOiJodHRwczovL2FwaS5pYm1hc3BlcmEuY29tL2FwaS92MS9vYXV0aDIvdG9rZW4iLCJpZCI6ImFvYy0xMTM1MDEiLCJyZWFsbWlkIjoiYW9jLXNhbWwiLCJpZGVudGlmaWVyIjoiMTEzNTAxIiwic3JzX2VuYWJsZWQiOnRydWUsIm9yZ19hcHBzIjpbImZpbGVzIiwicGFja2FnZXMiLCJhY3Rpdml0eSIsImF1dG9tYXRpb24iXX0.tx79oX0SxRwjgL7jPPX2TCF_HZodL541B7lu3eyn65mC_mHnx-YravwohDa-rtNCqDp4a1mG4-7dgwobxzrY1C9LGyIQMPQndVaKo4_pGx7nY7wxSflJw_ShY4jIUNiOTKiC32rRh4DINPolEyYE9Myn_MwdctAMnV-wAh8FO9kgWKlTOFNW50Wqb6T5NFMRPcr7j3jWsra4TLpM-fNHT8bOmpTGhFBBP0RD6ZEJCCZBKyd5-br4xaqjp1uoreM8Aiwr8QX3O_nzIiQ7mOW1Z1HBS5y1jo2bjy9Pio_gU8tFS2J27Y13qEE6i7RUpniwHj1Pfusa2dW3a7HA08d9nw'}
+          # cookie is optional: if absent, existing cache is used
+          auth_params[:cookie] = password unless password.nil?
+          auth_params[:username] = username unless username.nil?
         else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: web, jwt, boot'}
         end
         super(**base_args)
