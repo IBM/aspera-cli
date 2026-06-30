@@ -2,6 +2,7 @@
 
 require 'aspera/cli/extended_value'
 require 'aspera/cli/error'
+require 'aspera/cli/terminal_formatter'
 require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'aspera/log'
@@ -647,7 +648,7 @@ module Aspera
         if !@ask_missing_mandatory
           message = "Missing #{default_prompt}"
           message = self.class.multi_choice_assert_msg(message, accept_list) if accept_list
-          message += "\nGive `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
+          message += "\n#{TerminalFormatter::HINT}Give `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
           raise Cli::MissingArgument, message
         end
         # ask interactively
