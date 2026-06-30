@@ -87,6 +87,7 @@ module Aspera
         email_notifications
         alternate_addresses
         webhooks
+        file_processing
       ].freeze
       # states for jobs not in final state
       JOB_RUNNING = %w[queued working].freeze

@@ -375,16 +375,17 @@ module Aspera
         end
 
         def package_action
-          command = options.get_next_command(%i[show browse status delete receive send list])
+          command = options.get_next_command(%i[show browse status delete receive send list file_processing])
           package_id =
-            if %i[receive show browse status delete].include?(command)
+            unless %i[send list].include?(command)
               @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
             end
+          package_instance = "packages/#{package_id}"
           case command
           when :show
-            return Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))
+            return Result::SingleObject.new(@api_v5.read(package_instance))
           when :browse
-            return browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
+            return browse_folder("#{package_instance}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
           when :status
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             status = wait_package_status(package_id, status_list: status_list)
@@ -412,10 +413,17 @@ module Aspera
             fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
             fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
             return Result::ObjectList.new(list, total: total, fields: fields)
+          when :file_processing
+            result, count = @api_v5.list_entities_limit_offset_total_count(
+              entity: "#{package_instance}/file_statuses",
+              items_key: 'files'
+            )
+            return Result::ObjectList.new(result, total: count)
           end
         end
 
         def execute_resource(res_sym)
+          # Arguments for Plugin::Base::entity_execute
           exec_args = {
             api:    @api_v5,
             entity: res_sym.to_s
@@ -448,6 +456,11 @@ module Aspera
             available_commands += %i[shared_folders browse]
           when :jobs
             exec_args[:display_fields] = %w[id job_name job_type status]
+          when :file_processing
+            available_commands = %i[next modify]
+            # schema for modify
+            exec_args[:schema] = Schema::Registry.req_body(Schema::Registry::FASPEX, 'file_processing.put')
+            exec_args[:is_singleton] = true
           end
           res_command = options.get_next_command(available_commands)
           return Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
@@ -464,22 +477,22 @@ module Aspera
             node_id = options.instance_identifier do |field, value|
               @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
             end
-            shfld_entity = "nodes/#{node_id}/shared_folders"
+            shared_folder_entity = "nodes/#{node_id}/shared_folders"
             sh_command = options.get_next_command(Operations::ALL + [:user])
             case sh_command
             when *Operations::ALL
               return entity_execute(
                 api: @api_v5,
-                entity: shfld_entity,
+                entity: shared_folder_entity,
                 command: sh_command
               ) do |field, value|
-                       @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
+                       @api_v5.lookup_entity_by_field(entity: shared_folder_entity, field: field, value: value)['id']
                      end
             when :user
               sh_id = options.instance_identifier do |field, value|
-                @api_v5.lookup_entity_by_field(entity: shfld_entity, field: field, value: value)['id']
+                @api_v5.lookup_entity_by_field(entity: shared_folder_entity, field: field, value: value)['id']
               end
-              user_path = "#{shfld_entity}/#{sh_id}/custom_access_users"
+              user_path = "#{shared_folder_entity}/#{sh_id}/custom_access_users"
               return entity_execute(api: @api_v5, entity: user_path, items_key: 'users') do |field, value|
                        @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
                      end
@@ -550,6 +563,13 @@ module Aspera
             contact_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
             @api_v5.create("accounts/#{contact_id}/reset_password", {})
             return Result::Status.new('password reset, user shall check email')
+          when :next
+            result, count = @api_v5.list_entities_limit_offset_total_count(
+              entity: exec_args[:entity],
+              operation: 'POST',
+              items_key: 'files'
+            )
+            return Result::ObjectList.new(result, total: count)
           end
           Aspera.error_unreachable_line
         end

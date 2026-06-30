@@ -50,6 +50,7 @@ module Aspera
     # @return [Array<(Array<Hash>, Integer)>] items, total_count
     def list_entities_limit_offset_total_count(
       entity:,
+      operation: 'GET',
       items_key: nil,
       query: nil
     )
@@ -67,9 +68,15 @@ module Aspera
       # Merge default parameters, by default 100 per page
       query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
       total_count = nil
+      call_args = {
+        operation: operation,
+        subpath:   entity,
+        query:     query,
+        headers:   {'Accept' => Mime::JSON}
+      }
       loop do
         query['offset'] = offset
-        page_result = read(entity, query)
+        page_result = call(**call_args)
         Aspera.assert_type(page_result[items_key], Array)
         result.concat(page_result[items_key])
         # Reach the limit set by user ?

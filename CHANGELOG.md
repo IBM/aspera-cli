@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+`faspex5`: New commands `admin file_processing` and `packages file_processing`.
+
 ### Issues Fixed
 
 ### Breaking Changes
