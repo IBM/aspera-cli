@@ -2,6 +2,7 @@
 
 # cspell:ignore jsonpp
 require 'aspera/cli/special_values'
+require 'aspera/cli/terminal_formatter'
 require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/environment'
@@ -9,7 +10,6 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/markdown'
 require 'aspera/dot_container'
-require 'aspera/formatter_interface'
 require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
@@ -19,75 +19,8 @@ require 'word_wrap'
 
 module Aspera
   module Cli
-    # Terminal formatter with ANSI colors and Unicode support
-    # @see FormatterInterface
-    # @see MarkdownFormatter (in build/lib/doc_helper.rb)
-    module TerminalFormatter
-      include FormatterInterface
-
-      # Format boolean with colored symbol (✓/✗ or Y/ )
-      def tick(yes)
-        result =
-          if Environment.terminal_supports_unicode?
-            yes ? "\u2713" : "\u2717"
-          else
-            yes ? 'Y' : ' '
-          end
-        return result.green if yes
-        return result.red
-      end
-
-      # Format special values with colors (dim for empty, reverse for others)
-      def special_format(what)
-        result = "<#{what}>"
-        return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
-      end
-
-      # Prepare table row for terminal display (word wrap arrays)
-      def check_row(row)
-        row.each_key do |k|
-          row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
-        end
-      end
-
-      # Convert Markdown to terminal format (**bold** -> blue, `code` -> bold)
-      # @param match [MatchData, String]
-      def markdown_text(match)
-        if match.is_a?(String)
-          match = Markdown::FORMATS.match(match)
-          Aspera.assert(match)
-        end
-        Aspera.assert_type(match, MatchData)
-        if match[:entity]
-          Aspera.assert_values(match[:entity], %w[bsol])
-          '\\'
-        elsif match[:bold]
-          match[:bold].to_s.blue
-        elsif match[:code]
-          match[:code].to_s.bold
-        else
-          Aspera.error_unexpected_value(match.to_s)
-        end
-      end
-
-      module_function :tick, :special_format, :check_row, :markdown_text
-    end
-
     # Take care of CLI output on terminal
     class Formatter
-      # remove a fields from the list
-      FIELDS_LESS = '-'
-      # supported output formats
-      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
-      # user output levels
-      DISPLAY_LEVELS = %i[info data error].freeze
-      # column names for single object display in table
-      SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
-      # Terminal: vertical separator for list of strings.
-      STR_LST_SEP_VERT = "\n"
-
-      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
-
       class << self
         # Replace special values with a readable version on terminal
         def replace_specific_for_terminal(input_hash, string_list_separator)
@@ -459,6 +392,19 @@ module Aspera
         end
         nil
       end
+
+      # remove a fields from the list
+      FIELDS_LESS = '-'
+      # supported output formats
+      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
+      # user output levels
+      DISPLAY_LEVELS = %i[info data error].freeze
+      # column names for single object display in table
+      SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
+      # Terminal: vertical separator for list of strings.
+      STR_LST_SEP_VERT = "\n"
+
+      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
     end
   end
 end
