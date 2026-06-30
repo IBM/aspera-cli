@@ -267,11 +267,12 @@ module Aspera
       attr_accessor :ws_ids
 
       # By default: no workspace
+      # @param
       def initialize(
         scope: nil,
         subpath: API_V1,
         secret_finder: nil,
-        # below: OAuth::AUTH_OPTIONS
+        # parameters below: OAuth::AUTH_OPTIONS
         url:,
         auth:,
         client_id: nil,
@@ -298,28 +299,28 @@ module Aspera
         # Used only for init: provided by user
         @ws_ids = {id: nil, name: nil}
         @home_info = nil
-        auth_params = {
-          type:   :oauth2,
-          params: {
-            client_id:     client_id,
-            client_secret: client_secret,
-            scope:         scope
-          }
-        }
         # analyze type of url
         url_info = AoC.link_info(url)
         Log.dump(:url_info, url_info)
         @private_link = url_info[:private_link]
-        auth_params[:grant_method] = if url_info.key?(:token)
-          :url_json
-        else
-          Aspera.assert(auth, 'Missing mandatory option: auth', type: ParameterError)
-          auth
-        end
+        Aspera.assert(auth, 'Missing mandatory option: auth', type: ParameterError) unless url_info.key?(:token)
         # this is the base API url
         api_url_base = self.class.api_base_url(api_domain: url_info[:instance_domain])
-        # auth URL
-        auth_params[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}"
+        base_args = {
+          base_url: "#{api_url_base}/#{subpath}",
+          auth:     {
+            type:         :oauth2,
+            grant_method: url_info.key?(:token) ? :url_json : auth,
+            base_url:     "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}",
+            params:       {
+              client_id:     client_id,
+              client_secret: client_secret,
+              scope:         scope
+            }
+          }
+        }
+        # shortcut alias
+        auth_params = base_args[:auth]
         # fill other auth parameters based on OAuth method
         case auth_params[:grant_method]
         when :web
@@ -344,12 +345,13 @@ module Aspera
           auth_params[:json][:password] = password unless password.nil?
           # basic auth required for /token
           auth_params[:auth] = {type: :basic, username: client_id, password: client_secret}
-        else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: :web, :jwt'}
+        when :boot
+          auth_params.clear
+          auth_params[:type] = :none
+          base_args[:headers] = {'Cookie'=>'aoc.token=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjIwMTgtMDYtMDdUMjE6MjY6MTIrMDA6MDAifQ.eyJ1c2VyX2lkIjoiMTEzNTAxIiwic2NvcGUiOiJhZG1pbi11c2VyOmFsbCB1c2VyOmFsbCIsInV1aWQiOiJkYzM5NjBkMC05YWFmLTQ5NWMtOWYyYi00MDU3ZjAyODU3MjEiLCJvcmdhbml6YXRpb25faWQiOiIyODQ1MyIsImV4cGlyZXNfYXQiOiIyMDI2LTA3LTAxVDAwOjI3OjMxWiIsImV4cCI6MTc4Mjg2NTY1MSwic3ViIjoibGF1cmVudC5tYXJ0aW4uYXNwZXJhQGZyLmlibS5jb20iLCJuYW1lIjoiTGF1cmVudCBNYXJ0aW4iLCJnaXZlbl9uYW1lIjoiTGF1cmVudCIsImZhbWlseV9uYW1lIjoiTWFydGluIiwiYXVkIjoiZjQuY29tIiwiaWF0IjoxNzgyODIyNDUxLCJpc3MiOiJodHRwczovL2FwaS5pYm1hc3BlcmEuY29tL2FwaS92MS9vYXV0aDIvdG9rZW4iLCJpZCI6ImFvYy0xMTM1MDEiLCJyZWFsbWlkIjoiYW9jLXNhbWwiLCJpZGVudGlmaWVyIjoiMTEzNTAxIiwic3JzX2VuYWJsZWQiOnRydWUsIm9yZ19hcHBzIjpbImZpbGVzIiwicGFja2FnZXMiLCJhY3Rpdml0eSIsImF1dG9tYXRpb24iXX0.tx79oX0SxRwjgL7jPPX2TCF_HZodL541B7lu3eyn65mC_mHnx-YravwohDa-rtNCqDp4a1mG4-7dgwobxzrY1C9LGyIQMPQndVaKo4_pGx7nY7wxSflJw_ShY4jIUNiOTKiC32rRh4DINPolEyYE9Myn_MwdctAMnV-wAh8FO9kgWKlTOFNW50Wqb6T5NFMRPcr7j3jWsra4TLpM-fNHT8bOmpTGhFBBP0RD6ZEJCCZBKyd5-br4xaqjp1uoreM8Aiwr8QX3O_nzIiQ7mOW1Z1HBS5y1jo2bjy9Pio_gU8tFS2J27Y13qEE6i7RUpniwHj1Pfusa2dW3a7HA08d9nw'}
+        else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: web, jwt, boot'}
         end
-        super(
-          base_url: "#{api_url_base}/#{subpath}",
-          auth: auth_params
-          )
+        super(**base_args)
       end
 
       # Read using the query and paging
