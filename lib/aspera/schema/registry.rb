@@ -18,6 +18,8 @@ module Aspera
           LOCATIONS.key?(sym)
         end
 
+        # Get path to request body, no check if it exists
+        # @return [String] path to request body
         def req_body(component, endpoint)
           "#{component}:paths./#{endpoint}.requestBody.content.application/json.schema"
         end
