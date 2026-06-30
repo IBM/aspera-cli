@@ -5395,6 +5395,25 @@ To delete them use the same method as before.
 ╰────────┴─────────────────────────╯
 ```
 
+#### User client settings
+
+The `aoc user settings` sub-command manages persistent client-side settings stored server-side in AoC.
+
+```shell
+<%=cmd%> aoc user settings list
+<%=cmd%> aoc user settings show <id>
+<%=cmd%> aoc user settings modify <id> @json:'{"value":"..."}'
+```
+
+> [!NOTE]
+> The AoC API endpoint `client_settings` filters entries by two implicit criteria:
+>
+> - **User identity**: derived from the OAuth bearer token (the authenticated user).
+> - **Application identity**: derived from the `client_id` used during authentication.
+>
+> This means that settings stored by one client application (e.g., the AoC web UI) are not visible to another (e.g., <%=tool%> using a different `client_id`).
+> By default, <%=tool%> uses the pre-registered global `client_id` (see `--use-generic-client`).
+
 #### Example: Create a sub access key in a `node`
 
 Creation of a sub-access key is like creation of access key with the following difference: authentication to Node API is made with access key (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
