@@ -47,7 +47,7 @@ def build_in_container(build_script_path, app_dir, output_file)
   container_output_path = "#{container_output_dir}/#{output_file.basename}"
 
   # Build the container command
-  cmd = [
+  [
     CONTAINER_TOOL, 'run', '--rm', '--interactive', '--tty',
     '--volume', "#{host_build_dir}:#{container_build_dir}",
     '--volume', "#{Paths::RELEASE}:#{container_output_dir}",
