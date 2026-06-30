@@ -131,6 +131,7 @@ module Aspera
           id_as_arg: false,
           is_singleton: false,
           list_query: nil,
+          schema: nil,
           &block
         )
           command = options.get_next_command(Operations::ALL) if command.nil?
@@ -145,7 +146,7 @@ module Aspera
           case command
           when :create
             raise BadArgument, 'cannot create singleton' if is_singleton
-            return do_bulk_operation(command: command, descr: 'data', fields: display_fields) do |params|
+            return do_bulk_operation(command: command, descr: 'data', fields: display_fields, schema: schema) do |params|
               api.create(entity, params)
             end
           when :delete
@@ -186,7 +187,7 @@ module Aspera
               Aspera.error_unexpected_value(data.class.name){'list type'}
             end
           when :modify
-            parameters = value_create_modify(command: command)
+            parameters = value_create_modify(command: command, schema: schema)
             api.update(one_res_path, parameters)
             return Result::Status.new('modified')
           else
