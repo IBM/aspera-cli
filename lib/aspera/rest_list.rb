@@ -104,7 +104,7 @@ module Aspera
     # @param query     [Hash]   Additional query parameters (Default: `:default`)
     def lookup_entity_by_field(entity:, value:, field: 'name', items_key: nil, query: :default)
       if query.eql?(:default)
-        Aspera.assert(field.eql?('name'), 'Default query is on name only')
+        Aspera.assert_values(field, ['name']){'Default query field'}
         query = {'q'=> value}
       end
       lookup_entity_generic(entity: entity, field: field, value: value){list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first}

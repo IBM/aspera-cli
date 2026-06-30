@@ -289,7 +289,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return options.instance_identifier do |field, value|
-            Aspera.assert(field.eql?('name'), 'only selection by name is supported', type: BadArgument)
+            Aspera.assert_values(field, ['name'], type: BadArgument){'selector field'}
             aoc_api.lookup_with_q(resource_class_path, value: value)['id']
           end
         end

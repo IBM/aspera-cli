@@ -193,6 +193,6 @@ module Aspera
       end
     end
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    Factory.instance.register_decoder(lambda{ |token| parts = token.split('.'); Aspera.assert(parts.length.eql?(3), 'not JWS token'); JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon
+    Factory.instance.register_decoder(lambda{ |token| parts = token.split('.'); Aspera.assert_values(parts.length, [3]){'JWS token parts'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon
   end
 end
