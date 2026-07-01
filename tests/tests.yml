@@ -1935,6 +1935,16 @@ aew_user_suite:
   args:
     - aoc
     - --preset=aew_user
+aoc_ats_suite:
+  instanciate: ats_suite_tmpl
+  args:
+    - aoc
+    - admin
+    - ats
+ats_suite:
+  instanciate: ats_suite_tmpl
+  args:
+    - ats
 f4_servers:
   args:
     - aoc
@@ -2051,52 +2061,52 @@ aoc_webauthb:
     - show
     - --http-options=@json:{"token_refresh_threshold":10000000000}
 aocfbr:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - /
 aocfbr1:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - "@preset:aoc.remote_folder"
 aocfbr1b:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - "@extend:@preset:aoc.remote_folder@/"
 aocfbr1c:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - "@preset:aoc.remote_file"
 aocfbt:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - bearer_token_node
     - /
     - --cache-tokens=no
 aocffin:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - find
     - /sample_video
 aocffinb:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - find
     - /sample_video
     - \.partial$
 aocffinc:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - find
     - /sample_video
@@ -2105,8 +2115,8 @@ aoc_testsrc_cleanup:
   tags:
     - pre_cleanup
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - delete
     - /testsrc
@@ -2115,8 +2125,8 @@ aoc_some_folder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - delete
     - /some_folder
@@ -2124,8 +2134,8 @@ aoc_testdst_cleanup:
   tags:
     - pre_cleanup
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - delete
     - /testdst
@@ -2133,8 +2143,8 @@ aoc_testdst_cleanup:
 aoc_testsrc_create:
   depends_on:
     - aoc_testsrc_cleanup
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - mkdir
     - /testsrc
@@ -2143,8 +2153,8 @@ aoc_some_folder_create:
     - aoc_some_folder_cleanup
   tags:
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - mkdir
     - /some_folder
@@ -2157,8 +2167,8 @@ aoc_testdst_check:
     - aoc_testdst_cleanup
   tags:
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - /
@@ -2166,8 +2176,8 @@ aoc_testdst_check:
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - modify
     - /some_folder
@@ -2175,8 +2185,8 @@ aoc_somefolder_mount:
 aoc_rename_testdst:
   depends_on:
     - aoc_somefolder_mount
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - rename
     - /some_folder
@@ -2184,8 +2194,8 @@ aoc_rename_testdst:
 aoc_testsrc_upload:
   depends_on:
     - aoc_testsrc_create
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --to-folder=/testsrc
@@ -2193,8 +2203,8 @@ aoc_testsrc_upload:
 aoc_testsrc_upload_2:
   depends_on:
     - aoc_testsrc_upload
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --to-folder=/testsrc
@@ -2203,8 +2213,8 @@ aoc_testsrc_upload_2:
 aoc_files_transfer:
   depends_on:
     - aoc_testsrc_upload_2
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - transfer
     - push
@@ -2216,8 +2226,8 @@ aocftrb:
     - aoc_testsrc_upload_2
   tags:
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --to-folder=/testdst
@@ -2228,8 +2238,8 @@ aoc_files_node_info:
   tags:
     - save_output
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - node_info
     - /testdst
@@ -2240,8 +2250,8 @@ aocndinfb:
     - nodoc
   depends_on:
     - aoc_files_node_info
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --workspace=@preset:aoc.other_workspace
@@ -2253,22 +2263,22 @@ aocfdel:
   depends_on:
     - aoc_files_transfer
     - aoc_files_node_info
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - delete
     - /testsrc
 aocfbearnode:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - bearer
     - /
 aocfdownd:
   depends_on:
     - aoc_files_transfer
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - download
     - --to-folder=$(TMP)
@@ -2277,8 +2287,8 @@ aocfdownd:
 aocfdowndb:
   tags:
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - download
     - --to-folder=$(TMP)
@@ -2290,8 +2300,8 @@ aocfdownc:
     PATH_DOWN_TST_ASC.delete rescue nil
     run('killall', 'asperaconnect', exception: false)
     sleep 1
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - download
     - --transfer=connect
@@ -2300,8 +2310,8 @@ aocfdowna:
   depends_on:
     - aoc_testdst_cleanup
   pre: PATH_DOWN_TST_ASC.delete rescue nil
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - download
     - --transfer=desktop
@@ -2309,14 +2319,14 @@ aocfdowna:
 aoc_files_cat:
   depends_on:
     - aoc_files_transfer
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - cat
     - testdst/$(FILENAME_ASCII)
 aoc_files_v3_info:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - v3
     - info
@@ -2324,8 +2334,8 @@ aoc_sync_pull_conf_parms:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - sync
     - pull
@@ -2333,8 +2343,8 @@ aoc_sync_pull_conf_parms:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_parmsb:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - sync
     - admin
@@ -2344,8 +2354,8 @@ aoc_sync_conf_pull_params:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - sync
     - pull
@@ -2353,8 +2363,8 @@ aoc_sync_conf_pull_params:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_paramsb:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - sync
     - admin
@@ -2366,8 +2376,8 @@ aoc_file_id:
   tags:
     - save_output
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - br
     - testdst/$(FILENAME_ASCII)
@@ -2377,24 +2387,24 @@ aoc_file_id:
 aoc_file_id_2:
   depends_on:
     - aoc_files_transfer
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - show
     - "%id:$(read_value_from :aoc_file_id)"
 aoc_file_id_3:
   depends_on:
     - aoc_files_transfer
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - show
     - /
 aoc_file_id_4:
   depends_on:
     - aoc_files_transfer
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - show
     - testdst/$(FILENAME_ASCII)
@@ -2402,8 +2412,8 @@ aoc_testfolder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - delete
     - "@preset:aoc.test_folder"
@@ -2414,8 +2424,8 @@ aoc_file_id_5:
   depends_on:
     - aoc_files_transfer
     - aoc_testfolder_cleanup
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - mkdir
     - "@preset:aoc.test_folder"
@@ -2424,8 +2434,8 @@ aoc_file_upload_video:
     - nodoc
   depends_on:
     - aoc_file_id_5
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --to-folder=@preset:aoc.test_folder
@@ -2440,8 +2450,8 @@ aoc_file_id_7:
     - nodoc
   depends_on:
     - aoc_file_id_5
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - upload
     - --to-folder=@preset:aoc.test_folder
@@ -2451,8 +2461,8 @@ aoc_file_id_7:
 aoc_file_id_8:
   depends_on:
     - aoc_file_id_5
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - permission
     - "@preset:aoc.test_folder"
@@ -2463,8 +2473,8 @@ aoc_file_id_9:
     - aoc_file_upload_video
   tags:
     - flaky
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
@@ -2473,8 +2483,8 @@ aoc_file_id_10:
     - rmagick
   depends_on:
     - aoc_file_upload_video
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
@@ -2485,8 +2495,8 @@ aoc_file_id_11:
     - rmagick
   depends_on:
     - aoc_file_upload_video
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
@@ -2499,8 +2509,8 @@ aoc_file_id_12:
     - rmagick
   depends_on:
     - aoc_file_upload_video
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - thumbnail
     - "@extend:@preset:aoc.test_folder@/video_file.mpg"
@@ -2532,15 +2542,15 @@ aocfpubc:
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_folder_no_pass
 aoc_lnk_priv:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - browse
     - /
     - --url=@preset:aoc.private_link
 aocshlk2:
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - short_link
     - /testdst
@@ -2550,8 +2560,8 @@ aoc_short_link_pub_create:
   $comment: "access_levels: unit unitary levels to test unitary set."
   tags:
     - save_output
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - short_link
     - /testdst
@@ -2564,8 +2574,8 @@ aoc_short_link_pub_create:
 aoc_short_link_pub_modify:
   depends_on:
     - aoc_short_link_pub_create
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - short_link
     - /testdst
@@ -2578,8 +2588,8 @@ aocshlk1:
   depends_on:
     - aocshlk2
     - aoc_short_link_pub_create
+  template: f4_user_suite
   args:
-    - aoc
     - files
     - short_link
     - /testdst
@@ -2587,8 +2597,8 @@ aocshlk1:
     - list
 aoc_pack_send1:
   $comment: Send package to normal user.
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - '@:'
@@ -2598,16 +2608,16 @@ aoc_pack_send1:
     - END
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - '@json:@extend:{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_external@"]}'
     - --new-user-option=@json:{"package_contact":true}
     - $(PATH_TST_ASC_LCL)
 aocp2:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - list
 package_id3:
@@ -2617,8 +2627,8 @@ package_id3:
     - save_output
     - wait_value
     - nodoc
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - list
     - --format=csv
@@ -2628,8 +2638,8 @@ package_id3:
 aocp3b:
   depends_on:
     - package_id3
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - receive
     - $(read_value_from :package_id3)
@@ -2637,8 +2647,8 @@ aocp3b:
 aoc_pack_recv_id3:
   depends_on:
     - package_id3
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - receive
     - $(read_value_from :package_id3)
@@ -2647,15 +2657,15 @@ aoc_pack_recv_id3:
 aocp3d:
   depends_on:
     - package_id3
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - browse
     - $(read_value_from :package_id3)
     - /
 aocp4:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - receive
     - ALL
@@ -2669,8 +2679,8 @@ aocp5:
   $comment: "TODO: generate new token based package receive"
   tags:
     - flaky
+  template: f4_user_suite
   args:
-    - aoc
     - organization
     - -N
     - --url=@preset:aoc.public_link_recv_from_aoc_user
@@ -2694,8 +2704,8 @@ aocp_send_pub_usr:
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
 aocp_recv_init:
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - receive
     - INIT
@@ -2704,8 +2714,8 @@ aocp_recv_init:
 aocp_send_shbx:
   depends_on:
     - aocp_recv_init
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
@@ -2714,8 +2724,8 @@ aocp_send_shbx:
 aocp_send_sh_meta_long:
   depends_on:
     - aocp_recv_init
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
@@ -2725,8 +2735,8 @@ aocp_send_sh_meta_long:
 aocp_send_sh_meta_short:
   depends_on:
     - aocp_recv_init
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
@@ -2741,8 +2751,8 @@ aocp_send_sh_meta_short2:
   expect: "missing mandatory field: Project Id"
   depends_on:
     - aocp_recv_init
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - send
     - --workspace=@preset:aoc.workspace_shared_inbox
@@ -2754,8 +2764,8 @@ aocp_recv_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - receive
     - ALL
@@ -2769,8 +2779,8 @@ aocp_list_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
+  template: f4_user_suite
   args:
-    - aoc
     - packages
     - list
     - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
@@ -3398,33 +3408,25 @@ aocadmndsh4:
     - delete
     - test_shared_folder
 aocat4:
+  template: ats_suite_tmpl
   args:
-    - aoc
-    - admin
-    - ats
     - cluster
     - list
 aocat5:
+  template: ats_suite_tmpl
   args:
-    - aoc
-    - admin
-    - ats
     - cluster
     - clouds
 aocat6:
+  template: ats_suite_tmpl
   args:
-    - aoc
-    - admin
-    - ats
     - cluster
     - show
     - --cloud=aws
     - --region=eu-west-1
 aocat7:
+  template: ats_suite_tmpl
   args:
-    - aoc
-    - admin
-    - ats
     - cluster
     - show
     - 1f412ae7-869a-445c-9c05-02ad16813be2
@@ -3746,34 +3748,11 @@ orch_workstep_cancel:
     - workstep
     - cancel
     - 1
-at4:
-  args:
-    - ats
-    - cluster
-    - list
 at4b:
   args:
     - ats
     - aws_trust_policy
     - --region=us-east-1
-at5:
-  args:
-    - ats
-    - cluster
-    - clouds
-at6:
-  args:
-    - ats
-    - cluster
-    - show
-    - --cloud=aws
-    - --region=eu-west-1
-at7:
-  args:
-    - ats
-    - cluster
-    - show
-    - 1f412ae7-869a-445c-9c05-02ad16813be2
 at2:
   args:
     - ats
