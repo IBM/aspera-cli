@@ -729,15 +729,13 @@ properties:
     description: >-
       Metadata for transfer as JSON.
       Key `aspera` is reserved.
-      Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
+      Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.
     type: object
     x-cli-option: --tags64
     x-cli-convert: json64
   tags64:
     description: >-
-      Metadata for transfer as JSON.
-      Key `aspera` is reserved.
-      Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.
+      Base64 string for `tags`.
     type: string
     x-agents:
       - direct
@@ -763,11 +761,12 @@ properties:
       - connect
       - transferd
   token:
-    description: "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)"
+    $comment: Also arg -W
+    description: Authorization token. Type is Bearer, Basic or ATM.
     type: string
     x-cli-envvar: ASPERA_SCP_TOKEN
   use_ascp4:
-    description: Specify version of protocol. Do not use `ascp4`.
+    description: Specify version of protocol. `ascp4` will be deprecated.
     type: boolean
     default: false
     x-agents:
@@ -891,7 +890,7 @@ properties:
   xfer_max_retries:
     description: >-
       Maximum number of retries, for node API initiated transfers.
-      Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 5).
+      Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 3).
     type: integer
     x-agents:
       - node

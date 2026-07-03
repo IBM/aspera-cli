@@ -1010,10 +1010,12 @@ module Aspera
           when :reminder
             # send an email reminder with list of orgs
             user_email = options.get_option(:username, mandatory: true)
-            Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").create('organization_reminders', {email: user_email})
+            no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
+            no_auth_api.create('organization_reminders', {email: user_email})
             return Result::Status.new("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
-            return Result::ObjectList.new(Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers'))
+            no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
+            return Result::ObjectList.new(no_auth_api.read('servers'))
           when :bearer_token
             return Result::Text.new(aoc_api.oauth.authorization)
           when :organization

@@ -1927,11 +1927,11 @@ aoc_faspex_gatewayb:
     - faux:///test1?1m
   post: stop_process :aoc_faspex_gateway
 aoc_test:
-  instanciate: f4_user_suite
+  instanciate: aocwa_user_suite
   args:
     - aoc
 aew_user_suite:
-  instanciate: f4_user_suite
+  instanciate: aocwa_user_suite
   args:
     - aoc
     - --preset=aew_user
@@ -1945,97 +1945,97 @@ ats_suite:
   instanciate: ats_suite_tmpl
   args:
     - ats
-f4_servers:
+aoc_servers:
   args:
     - aoc
     - servers
     - -N
-f4_remind:
-  template: f4_user_suite
+aocwa_remind:
+  template: aocwa_user_suite
   args:
     - -N
     - remind
     - --username=@preset:aoc.user_email
-f4_bearer:
-  template: f4_user_suite
+aocwa_bearer:
+  template: aocwa_user_suite
   args:
     - bearer_token
     - --display=data
-f4_admin_bearer:
-  template: f4_user_suite
+aocwa_admin_bearer:
+  template: aocwa_user_suite
   args:
     - --preset=aoc_admin
     - admin
     - bearer_token
     - --display=data
-f4_org:
-  template: f4_user_suite
+aocwa_org:
+  template: aocwa_user_suite
   args:
     - organization
-f4_org_image:
-  template: f4_user_suite
+aocwa_org_image:
+  template: aocwa_user_suite
   args:
     - organization
     - --format=image
     - --fields=background_image_url
     - --ui=text
-f4_tiers:
-  template: f4_user_suite
+aocwa_tiers:
+  template: aocwa_user_suite
   args:
     - tier_restrictions
-f4_ws_list:
-  template: f4_user_suite
+aocwa_ws_list:
+  template: aocwa_user_suite
   args:
     - user
     - workspaces
     - list
 aoc_user_profile:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - user
     - profile
     - show
-f4_usr_prof_mod:
-  template: f4_user_suite
+aocwa_usr_prof_mod:
+  template: aocwa_user_suite
   args:
     - user
     - profile
     - modify
     - '@json:{"name":"dummy change"}'
-f4_usr_prof_show:
-  template: f4_user_suite
+aocwa_usr_prof_show:
+  template: aocwa_user_suite
   args:
     - user
     - pref
     - show
-f4_usr_prof_mod_lang:
-  template: f4_user_suite
+aocwa_usr_prof_mod_lang:
+  template: aocwa_user_suite
   args:
     - user
     - pref
     - modify
     - '@json:{"default_language":"en-us"}'
-f4_usr_ctct_list:
-  template: f4_user_suite
+aocwa_usr_ctct_list:
+  template: aocwa_user_suite
   args:
     - user
     - contacts
     - list
-f4_shbox_list:
-  template: f4_user_suite
+aocwa_shbox_list:
+  template: aocwa_user_suite
   args:
     - packages
     - shared_inboxes
     - list
-f4_shbox_show:
-  template: f4_user_suite
+aocwa_shbox_show:
+  template: aocwa_user_suite
   args:
     - packages
     - shared_inboxes
     - show
     - "%name:@preset:aoc.shared_inbox_name"
-f4_ws_current:
-  template: f4_user_suite
+aocwa_ws_current:
+  template: aocwa_user_suite
   args:
     - user
     - workspaces
@@ -2061,51 +2061,51 @@ aoc_webauthb:
     - show
     - --http-options=@json:{"token_refresh_threshold":10000000000}
 aocfbr:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
     - /
 aocfbr1:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
     - "@preset:aoc.remote_folder"
 aocfbr1b:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
     - "@extend:@preset:aoc.remote_folder@/"
 aocfbr1c:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
     - "@preset:aoc.remote_file"
 aocfbt:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - bearer_token_node
     - /
     - --cache-tokens=no
 aocffin:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - find
     - /sample_video
 aocffinb:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - find
     - /sample_video
     - \.partial$
 aocffinc:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - find
@@ -2115,7 +2115,7 @@ aoc_testsrc_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - delete
@@ -2125,7 +2125,7 @@ aoc_some_folder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - delete
@@ -2134,7 +2134,7 @@ aoc_testdst_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - delete
@@ -2143,7 +2143,7 @@ aoc_testdst_cleanup:
 aoc_testsrc_create:
   depends_on:
     - aoc_testsrc_cleanup
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - mkdir
@@ -2153,7 +2153,7 @@ aoc_some_folder_create:
     - aoc_some_folder_cleanup
   tags:
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - mkdir
@@ -2167,7 +2167,7 @@ aoc_testdst_check:
     - aoc_testdst_cleanup
   tags:
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
@@ -2176,7 +2176,7 @@ aoc_testdst_check:
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - modify
@@ -2185,7 +2185,7 @@ aoc_somefolder_mount:
 aoc_rename_testdst:
   depends_on:
     - aoc_somefolder_mount
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - rename
@@ -2194,7 +2194,7 @@ aoc_rename_testdst:
 aoc_testsrc_upload:
   depends_on:
     - aoc_testsrc_create
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2203,7 +2203,7 @@ aoc_testsrc_upload:
 aoc_testsrc_upload_2:
   depends_on:
     - aoc_testsrc_upload
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2213,7 +2213,7 @@ aoc_testsrc_upload_2:
 aoc_files_transfer:
   depends_on:
     - aoc_testsrc_upload_2
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - transfer
@@ -2226,7 +2226,7 @@ aocftrb:
     - aoc_testsrc_upload_2
   tags:
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2238,7 +2238,7 @@ aoc_files_node_info:
   tags:
     - save_output
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - node_info
@@ -2250,7 +2250,7 @@ aocndinfb:
     - nodoc
   depends_on:
     - aoc_files_node_info
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2263,13 +2263,13 @@ aocfdel:
   depends_on:
     - aoc_files_transfer
     - aoc_files_node_info
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - delete
     - /testsrc
 aocfbearnode:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - bearer
@@ -2277,7 +2277,7 @@ aocfbearnode:
 aocfdownd:
   depends_on:
     - aoc_files_transfer
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - download
@@ -2287,7 +2287,7 @@ aocfdownd:
 aocfdowndb:
   tags:
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - download
@@ -2300,7 +2300,7 @@ aocfdownc:
     PATH_DOWN_TST_ASC.delete rescue nil
     run('killall', 'asperaconnect', exception: false)
     sleep 1
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - download
@@ -2310,7 +2310,7 @@ aocfdowna:
   depends_on:
     - aoc_testdst_cleanup
   pre: PATH_DOWN_TST_ASC.delete rescue nil
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - download
@@ -2319,13 +2319,13 @@ aocfdowna:
 aoc_files_cat:
   depends_on:
     - aoc_files_transfer
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - cat
     - testdst/$(FILENAME_ASCII)
 aoc_files_v3_info:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - v3
@@ -2334,7 +2334,7 @@ aoc_sync_pull_conf_parms:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - sync
@@ -2343,7 +2343,7 @@ aoc_sync_pull_conf_parms:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_parmsb:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - sync
@@ -2354,7 +2354,7 @@ aoc_sync_conf_pull_params:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - sync
@@ -2363,7 +2363,7 @@ aoc_sync_conf_pull_params:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_paramsb:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - sync
@@ -2376,7 +2376,7 @@ aoc_file_id:
   tags:
     - save_output
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - br
@@ -2387,7 +2387,7 @@ aoc_file_id:
 aoc_file_id_2:
   depends_on:
     - aoc_files_transfer
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - show
@@ -2395,7 +2395,7 @@ aoc_file_id_2:
 aoc_file_id_3:
   depends_on:
     - aoc_files_transfer
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - show
@@ -2403,7 +2403,7 @@ aoc_file_id_3:
 aoc_file_id_4:
   depends_on:
     - aoc_files_transfer
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - show
@@ -2412,7 +2412,7 @@ aoc_testfolder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - delete
@@ -2424,7 +2424,7 @@ aoc_file_id_5:
   depends_on:
     - aoc_files_transfer
     - aoc_testfolder_cleanup
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - mkdir
@@ -2434,7 +2434,7 @@ aoc_file_upload_video:
     - nodoc
   depends_on:
     - aoc_file_id_5
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2450,7 +2450,7 @@ aoc_file_id_7:
     - nodoc
   depends_on:
     - aoc_file_id_5
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - upload
@@ -2461,7 +2461,7 @@ aoc_file_id_7:
 aoc_file_id_8:
   depends_on:
     - aoc_file_id_5
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - permission
@@ -2473,7 +2473,7 @@ aoc_file_id_9:
     - aoc_file_upload_video
   tags:
     - flaky
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - thumbnail
@@ -2483,7 +2483,7 @@ aoc_file_id_10:
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - thumbnail
@@ -2495,7 +2495,7 @@ aoc_file_id_11:
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - thumbnail
@@ -2509,7 +2509,7 @@ aoc_file_id_12:
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - thumbnail
@@ -2542,14 +2542,14 @@ aocfpubc:
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_folder_no_pass
 aoc_lnk_priv:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - browse
     - /
     - --url=@preset:aoc.private_link
 aocshlk2:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - short_link
@@ -2560,7 +2560,7 @@ aoc_short_link_pub_create:
   $comment: "access_levels: unit unitary levels to test unitary set."
   tags:
     - save_output
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - short_link
@@ -2574,7 +2574,7 @@ aoc_short_link_pub_create:
 aoc_short_link_pub_modify:
   depends_on:
     - aoc_short_link_pub_create
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - short_link
@@ -2588,7 +2588,7 @@ aocshlk1:
   depends_on:
     - aocshlk2
     - aoc_short_link_pub_create
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - files
     - short_link
@@ -2597,7 +2597,7 @@ aocshlk1:
     - list
 aoc_pack_send1:
   $comment: Send package to normal user.
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2608,7 +2608,7 @@ aoc_pack_send1:
     - END
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2616,7 +2616,7 @@ aoc_pack_send2:
     - --new-user-option=@json:{"package_contact":true}
     - $(PATH_TST_ASC_LCL)
 aocp2:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - list
@@ -2627,7 +2627,7 @@ package_id3:
     - save_output
     - wait_value
     - nodoc
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - list
@@ -2638,7 +2638,7 @@ package_id3:
 aocp3b:
   depends_on:
     - package_id3
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - receive
@@ -2647,7 +2647,7 @@ aocp3b:
 aoc_pack_recv_id3:
   depends_on:
     - package_id3
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - receive
@@ -2657,14 +2657,14 @@ aoc_pack_recv_id3:
 aocp3d:
   depends_on:
     - package_id3
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - browse
     - $(read_value_from :package_id3)
     - /
 aocp4:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - receive
@@ -2679,7 +2679,7 @@ aocp5:
   $comment: "TODO: generate new token based package receive"
   tags:
     - flaky
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - organization
     - -N
@@ -2704,7 +2704,7 @@ aocp_send_pub_usr:
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
 aocp_recv_init:
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - receive
@@ -2714,7 +2714,7 @@ aocp_recv_init:
 aocp_send_shbx:
   depends_on:
     - aocp_recv_init
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2724,7 +2724,7 @@ aocp_send_shbx:
 aocp_send_sh_meta_long:
   depends_on:
     - aocp_recv_init
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2735,7 +2735,7 @@ aocp_send_sh_meta_long:
 aocp_send_sh_meta_short:
   depends_on:
     - aocp_recv_init
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2751,7 +2751,7 @@ aocp_send_sh_meta_short2:
   expect: "missing mandatory field: Project Id"
   depends_on:
     - aocp_recv_init
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - send
@@ -2764,7 +2764,7 @@ aocp_recv_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - receive
@@ -2779,7 +2779,7 @@ aocp_list_shbx:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  template: f4_user_suite
+  template: aocwa_user_suite
   args:
     - packages
     - list
@@ -6425,20 +6425,20 @@ alee_entitlement:
   args:
     - alee
     - entitlement
-f4_health:
+aocwa_health:
   tags:
     - health
   args:
     - faspex
     - health
-f4_health_bad:
+aocwa_health_bad:
   tags:
     - nodoc
   args:
     - faspex
     - health
     - --url=https://wrong.example.com
-f4_detect:
+aocwa_detect:
   tags:
     - faspex
     - nodoc
@@ -6446,7 +6446,7 @@ f4_detect:
     - config
     - detect
     - "@preset:faspex4_user.url"
-f4_wizard:
+aocwa_wizard:
   tags:
     - faspex
   args:
@@ -6456,13 +6456,13 @@ f4_wizard:
     - faspex
     - --username=test
     - --password=test
-f4_pack_list:
+aocwa_pack_list:
   args:
     - faspex
     - package
     - list
     - --query.max=5
-f4_pack_send:
+aocwa_pack_send:
   args:
     - faspex
     - package
@@ -6470,9 +6470,9 @@ f4_pack_send:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 8
-f4_package_id:
+aocwa_package_id:
   depends_on:
-    - f4_pack_send
+    - aocwa_pack_send
   tags:
     - save_output
     - nodoc
@@ -6484,14 +6484,14 @@ f4_package_id:
     - --fields=package_id
     - --display=data
     - --format=csv
-f4_prsb:
+aocwa_prsb:
   args:
     - faspex
     - package
     - receive
-    - $(read_value_from :f4_package_id)
+    - $(read_value_from :aocwa_package_id)
     - --to-folder=$(TMP)
-f4_package_id2:
+aocwa_package_id2:
   tags:
     - save_output
     - nodoc
@@ -6504,15 +6504,15 @@ f4_package_id2:
     - --fields=package_id
     - --display=data
     - --format=csv
-f4_prsd:
+aocwa_prsd:
   args:
     - faspex
     - package
     - receive
-    - $(read_value_from :f4_package_id2)
+    - $(read_value_from :aocwa_package_id2)
     - --to-folder=$(TMP)
     - --box=sent
-f4_package_id3:
+aocwa_package_id3:
   tags:
     - save_output
     - nodoc
@@ -6524,14 +6524,14 @@ f4_package_id3:
     - --fields=package_id
     - --display=data
     - --format=csv
-f4_prib:
+aocwa_prib:
   args:
     - faspex
     - package
     - receive
-    - $(read_value_from :f4_package_id3)
+    - $(read_value_from :aocwa_package_id3)
     - --to-folder=$(TMP)
-f4_prl:
+aocwa_prl:
   tags:
     - nodoc
   args:
@@ -6540,7 +6540,7 @@ f4_prl:
     - receive
     - --to-folder=$(TMP)
     - --link=@preset:faspex4.link_recv_from_user
-f4_prall:
+aocwa_prall:
   args:
     - faspex
     - package
@@ -6549,7 +6549,7 @@ f4_prall:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --query.max=10
-f4_pslu:
+aocwa_pslu:
   args:
     - faspex
     - package
@@ -6557,7 +6557,7 @@ f4_pslu:
     - --link=@preset:faspex4.link_send_to_user
     - --delivery-info=@json:{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
-f4_psld:
+aocwa_psld:
   args:
     - faspex
     - package
@@ -6565,19 +6565,19 @@ f4_psld:
     - --link=@preset:faspex4.link_send_to_dropbox
     - --delivery-info=@json:{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
-f4_remote_src:
+aocwa_remote_src:
   args:
     - faspex
     - source
     - list
-f4_remote_srcb:
+aocwa_remote_srcb:
   args:
     - faspex
     - source
     - info
     - "%name:@preset:faspex4.src"
     - --storage=@preset:faspex4_storage
-f4_remote_srcc:
+aocwa_remote_srcc:
   args:
     - faspex
     - source
@@ -6586,7 +6586,7 @@ f4_remote_srcc:
     - br
     - /
     - --storage=@preset:faspex4_storage
-f4_remote_srcd:
+aocwa_remote_srcd:
   args:
     - faspex
     - package
@@ -6594,73 +6594,73 @@ f4_remote_srcd:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["@preset:misc.email_internal@"]}
     - --remote-source=@extend:%name:@preset:faspex4.src
     - sample_source.txt
-f4_misc:
+aocwa_misc:
   args:
     - faspex
     - me
-f4_miscb:
+aocwa_miscb:
   args:
     - faspex
     - address_book
-f4_miscc:
+aocwa_miscc:
   args:
     - faspex
     - login_methods
-f4_v4:
+aocwa_v4:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dropbox
     - list
-f4_v4b:
+aocwa_v4b:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dmembership
     - list
-f4_v4c:
+aocwa_v4c:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - workgroup
     - list
-f4_v4d:
+aocwa_v4d:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - wmembership
     - list
-f4_v4e:
+aocwa_v4e:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - user
     - list
-f4_v4f:
+aocwa_v4f:
   args:
     - faspex
     - v4
     - metadata_profile
     - list
-f4_db1:
+aocwa_db1:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-f4_db1b:
+aocwa_db1b:
   args:
     - faspex
     - package
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*@preset:faspex4.dbx@]}
     - $(PATH_TST_ASC_LCL)
-f4_package_id4:
+aocwa_package_id4:
   tags:
     - save_output
     - nodoc
@@ -6672,21 +6672,21 @@ f4_package_id4:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-f4_db1d:
+aocwa_db1d:
   args:
     - faspex
     - package
     - receive
-    - $(read_value_from :f4_package_id4)
+    - $(read_value_from :aocwa_package_id4)
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
-f4_db1e:
+aocwa_db1e:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-f4_db1f:
+aocwa_db1f:
   args:
     - faspex
     - package
@@ -6694,7 +6694,7 @@ f4_db1f:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*@preset:faspex4.wkg@]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 10
-f4_package_id5:
+aocwa_package_id5:
   tags:
     - save_output
     - nodoc
@@ -6706,12 +6706,12 @@ f4_package_id5:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-f4_db1h:
+aocwa_db1h:
   args:
     - faspex
     - package
     - receive
-    - $(read_value_from :f4_package_id5)
+    - $(read_value_from :aocwa_package_id5)
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
 github_smoke_test:

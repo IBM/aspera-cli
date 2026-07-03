@@ -113,8 +113,10 @@ module Aspera
           return client_key, DataRepository.instance.item(client_key)
         end
 
-        # base API url depends on domain, which could be "qa.xxx" or self-managed domain
-        def api_base_url(api_domain: SAAS_DOMAIN_PROD)
+        # Base API url depends on domain, which could be "qa.xxx" or self-managed domain
+        # @param api_domain [String] the AoC domain (e.g. "ibmaspera.com" (SAAS_DOMAIN_PROD) or a self-managed domain)
+        # @return [String] the base URL for the AoC API
+        def api_base_url(api_domain)
           return "https://api.#{api_domain}"
         end
 
@@ -285,7 +287,14 @@ module Aspera
       )
         # Test here because link may set url
         Aspera.assert(url, 'Missing mandatory option: url', type: ParameterError)
-        Aspera.assert(scope, 'Missing mandatory option: scope', type: ParameterError)
+        # analyze type of url
+        url_info = self.class.link_info(url)
+        Log.dump(:url_info, url_info)
+        @private_link = url_info[:private_link]
+        Aspera.assert(auth, 'Missing mandatory option: auth', type: ParameterError) unless url_info.key?(:token)
+        # this is the base API url
+        api_url_base = self.class.api_base_url(url_info[:instance_domain])
+        Aspera.assert(scope, 'Missing mandatory option: scope', type: ParameterError) unless auth.eql?(:none)
         # default values for client id
         client_id, client_secret = self.class.get_client_info if client_id.nil?
         # access key secrets are provided out of band to get node api access
@@ -299,13 +308,6 @@ module Aspera
         # Used only for init: provided by user
         @ws_ids = {id: nil, name: nil}
         @home_info = nil
-        # analyze type of url
-        url_info = AoC.link_info(url)
-        Log.dump(:url_info, url_info)
-        @private_link = url_info[:private_link]
-        Aspera.assert(auth, 'Missing mandatory option: auth', type: ParameterError) unless url_info.key?(:token)
-        # this is the base API url
-        api_url_base = self.class.api_base_url(api_domain: url_info[:instance_domain])
         base_args = {
           base_url: "#{api_url_base}/#{subpath}",
           auth:     {
@@ -349,6 +351,9 @@ module Aspera
           # cookie is optional: if absent, existing cache is used
           auth_params[:cookie] = password unless password.nil?
           auth_params[:username] = username unless username.nil?
+        when :none
+          auth_params.clear
+          auth_params[:type] = :none
         else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: web, jwt, boot'}
         end
         super(**base_args)
