@@ -288,6 +288,7 @@ class DocHelper
     generate_help(:asession)
   end
 
+  # code in ERB readme that require replacement
   REPLACEMENTS_YAML = [
     ['@extend:', ''],
     ['.$(SecureRandom.uuid)', ''],
@@ -314,8 +315,7 @@ class DocHelper
     ['$(TMP / "localhost.p12")', '.../localhost.p12'],
     ['$(remote_host)', 'app.example.com'],
     ['"my_password"', '"my_password_here"'],
-    ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
-    ['$(name) $(TIMESTEMP_TEST_RUN)', 'package title'],
+    ['$(name) $(TIMESTAMP_TEST_RUN)', 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]

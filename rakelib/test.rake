@@ -32,7 +32,7 @@ include BuildTools
 PATH_CLI_HOME = TMP / "#{Aspera::Cli::Info::CMD_NAME}_home"
 PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.txt'
 # Package title for faspex and aoc
-TIMESTEMP_TEST_RUN = Time.now.to_s
+TIMESTAMP_TEST_RUN = Time.now.to_s
 FILENAME_ASCII = 'data_file.bin'
 # A medium sized file for testing with unicode characters in file name
 FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ"
