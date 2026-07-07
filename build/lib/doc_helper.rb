@@ -292,7 +292,8 @@ class DocHelper
     ['@extend:', ''],
     ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
-    [/\$\(read_value_from[ (]'([^']+)'.*\)$/, '\1'],
+    [/\$\(read_value_from( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
+    [/\$\(read_value_from( :|\(')([^\)']+)'?.*\)/, '<\2>'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
     [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
@@ -308,10 +309,13 @@ class DocHelper
     ['$(FILENAME_ASCII)', 'test_file.bin'],
     ['$(PATH_FILE_LIST)', 'file_list.txt'],
     ['$(PATH_VAULT_FILE)', '/secure/vault_file'],
+    ['$(PATH_SCRIPTS)', '/path/to/scripts'],
     ['$(path_file_pair_list)', 'file_pair_list.txt'],
+    ['$(TMP / "localhost.p12")', '.../localhost.p12'],
     ['$(remote_host)', 'app.example.com'],
     ['"my_password"', '"my_password_here"'],
     ['$(name) $(PACKAGE_TITLE_BASE)', 'package title'],
+    ['$(name) $(TIMESTEMP_TEST_RUN)', 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]

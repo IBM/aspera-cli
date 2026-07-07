@@ -4201,7 +4201,7 @@ In order to activate a PVCL library, place the corresponding shared library in t
 Example:
 
 ```shell
-cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(<%=tool%> conf ascp info --fields=root)
+cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(<%=cmd%> conf ascp info --fields=root)
 ```
 
 Then check available modules as shown previously (`ascp info`).
@@ -9096,9 +9096,9 @@ It had the advantage of being relatively easy to installed, as a single executab
 Enjoy a coffee on me:
 
 ```shell
-<%=cmd%> config coffee --ui=text
-<%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
 <%=cmd%> config coffee
+<%=cmd%> config coffee --ui=text
+<%=cmd%> config coffee --ui=text --image.text=true
 ```
 
 ### References

@@ -732,7 +732,7 @@
       "x-cli-option": "--check-sshfp"
     },
     "symlink_policy": {
-      "description": "Handle source side symbolic links.",
+      "description": "Handle source side symbolic links. Refer to HSTS manual for more details.\n- `follow`: Follow a symbolic link and transfer the contents of the linked file or directory when the link target is in the user's docroot.\n- `copy`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link does not replace the file.\n- `skip`: Skip-symbolic links. The link or the file to which it points are not transferred.\n- `copy+force`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link replaces the file. If the file of the same name at the destination is a symbolic link to a directory, it is not replaced.",
       "type": "string",
       "enum": [
         "follow",
@@ -744,13 +744,13 @@
       "x-cli-option": "--symbolic-links"
     },
     "tags": {
-      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
+      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a \"retry timeout\" but is not actually used for node API initiated transfers.",
       "type": "object",
       "x-cli-option": "--tags64",
       "x-cli-convert": "json64"
     },
     "tags64": {
-      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.",
+      "description": "Base64 string for `tags`.",
       "type": "string",
       "x-agents": [
         "direct",
@@ -787,12 +787,13 @@
       ]
     },
     "token": {
-      "description": "Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)",
+      "$comment": "Also arg -W",
+      "description": "Authorization token. Type is Bearer, Basic or ATM.",
       "type": "string",
       "x-cli-envvar": "ASPERA_SCP_TOKEN"
     },
     "use_ascp4": {
-      "description": "Specify version of protocol. Do not use `ascp4`.",
+      "description": "Specify version of protocol. `ascp4` will be deprecated.",
       "type": "boolean",
       "default": false,
       "x-agents": [
@@ -830,7 +831,7 @@
       "x-cli-special": true
     },
     "xfer_max_retries": {
-      "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 5).",
+      "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 3).",
       "type": "integer",
       "x-agents": [
         "node"

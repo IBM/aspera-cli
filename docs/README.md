@@ -3915,18 +3915,18 @@ ascli config ascp schema transferd --format=jsonpp
 | `ssh_private_key_path` | `string` | Path to private key for SSH.<br/>(A, T)<br/>(`-i {string}`) |
 | `ssh_private_key` | `string` | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...<br/>Note the JSON encoding: &bsol;n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | `sshfp` | `string` | Check it against server SSH host key fingerprint.<br/>(`--check-sshfp={string}`) |
-| `symlink_policy` | `string` | Handle source side symbolic links.<br/>Allowed values: `follow`, `copy`, `copy+force`, `skip`.<br/>Default: `follow`.<br/>(`--symbolic-links={enum}`) |
-| `tags64` | `string` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.<br/>(A, T)<br/>(`--tags64={string}`) |
-| `tags` | `object` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node API initiated transfers.<br/>(`--tags64=(conversion){object}`) |
+| `symlink_policy` | `string` | Handle source side symbolic links. Refer to HSTS manual for more details.<br/>- `follow`: Follow a symbolic link and transfer the contents of the linked file or directory when the link target is in the user's docroot.<br/>- `copy`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link does not replace the file.<br/>- `skip`: Skip-symbolic links. The link or the file to which it points are not transferred.<br/>- `copy+force`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link replaces the file. If the file of the same name at the destination is a symbolic link to a directory, it is not replaced.<br/>Allowed values: `follow`, `copy`, `copy+force`, `skip`.<br/>Default: `follow`.<br/>(`--symbolic-links={enum}`) |
+| `tags64` | `string` | Base64 string for `tags`.<br/>(A, T)<br/>(`--tags64={string}`) |
+| `tags` | `object` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.<br/>(`--tags64=(conversion){object}`) |
 | `target_rate_cap_kbps` | `integer` | Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.<br/>(C, T) |
 | `target_rate_kbps` | `integer` | Specifies desired speed for the transfer.<br/>(`-l {integer}`) |
 | `title` | `string` | Title of the transfer.<br/>(C, N, T) |
-| `token` | `string` | Authorization token. Type: Bearer, Basic or ATM. (Also arg -W)<br/>(env:`ASPERA_SCP_TOKEN`) |
-| `use_ascp4` | `boolean` | Specify version of protocol. Do not use `ascp4`.<br/>(A, N, T)<br/>Default: `false`. |
+| `token` | `string` | Authorization token. Type is Bearer, Basic or ATM.<br/>(env:`ASPERA_SCP_TOKEN`) |
+| `use_ascp4` | `boolean` | Specify version of protocol. `ascp4` will be deprecated.<br/>(A, N, T)<br/>Default: `false`. |
 | `use_system_ssh` | `boolean` | Use an external `ssh` program instead of the built-in `libssh2` implementation to establish the connection to the remote host. The desired `ssh` program must be in the environment's `PATH`.<br/>To enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH`) |
 | `wss_enabled` | `boolean` | Server has Web Socket service enabled.<br/>(special:`--ws-connect`) |
 | `wss_port` | `integer` | TCP port used for Web Socket service feed. |
-| `xfer_max_retries` | `integer` | Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 5).<br/>(N) |
+| `xfer_max_retries` | `integer` | Maximum number of retries, for node API initiated transfers. Shall not exceed `aspera.conf` parameter `transfer_manager_max_retries` (default 3).<br/>(N) |
 
 #### Destination folder for transfers
 
@@ -4470,7 +4470,7 @@ In order to activate a PVCL library, place the corresponding shared library in t
 Example:
 
 ```shell
-cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(`ascli` conf ascp info --fields=root)
+cp /opt/aspera/lib/pvcl/libpvcl_cloud.so $(ascli conf ascp info --fields=root)
 ```
 
 Then check available modules as shown previously (`ascp info`).
@@ -5592,6 +5592,37 @@ ascli config preset update <AOC_ORG> --auth=jwt --private-key=@val:@file:~/.aspe
 
 After this last step, commands do not require web login anymore.
 
+#### AoC bootstrap authentication
+
+For quick access using an existing browser session, use `--auth=boot`.
+
+- Open a Web browser and log in to your AoC instance
+- Open the browser developer tools
+- In **Network**, select any request to `api.ibmaspera.com`.
+- In **Headers**, right click on the `Cookie` Request Header, and select **Copy Value**
+
+Alternatively:
+
+- Go to the **Application** tab &rarr; **Cookies**
+- Copy the full cookie string, all values on one line, separated by `"; "` (semi-colon + space).
+
+For a simpler use, configure a preset with the `url` option, and optionally `username`.
+(If the username is not provided, then the subject from the token is used, else both must match.)
+
+Use the cookie string for option `password` value, the env var can be used, as the value is temporary anyway:
+
+```shell
+export ASCLI_PASSWORD="...; aoc.token=...; aoc.refresh=...; ..."
+
+ascli aoc user profile show --auth=boot
+```
+
+> [!NOTE]
+> The cookie string contains `aoc.token` (bearer JWT, mandatory) and `aoc.refresh` (refresh token, optional).
+> Only those two are used.
+> On first use, the tokens are cached locally.
+> Subsequent calls reuse the cache and refresh automatically: The `password` option is used only to get the `username` unless the option `username` is already provided.
+
 #### Public and private links
 
 AoC gives the possibility to generate public links for both the `Files` and `Packages` modules.
@@ -5915,6 +5946,25 @@ ascli aoc user workspaces list
 │ 149699 │ Secret Project          │
 ╰────────┴─────────────────────────╯
 ```
+
+#### User client settings
+
+The `aoc user settings` sub-command manages persistent client-side settings stored server-side in AoC.
+
+```shell
+ascli aoc user settings list
+ascli aoc user settings show <id>
+ascli aoc user settings modify <id> @json:'{"value":"..."}'
+```
+
+> [!NOTE]
+> The AoC API endpoint `client_settings` filters entries by two implicit criteria:
+>
+> - **User identity**: derived from the OAuth bearer token (the authenticated user).
+> - **Application identity**: derived from the `client_id` used during authentication.
+>
+> This means that settings stored by one client application (e.g., the AoC web UI) are not visible to another (e.g., `ascli` using a different `client_id`).
+> By default, `ascli` uses the pre-registered global `client_id` (see `--use-generic-client`).
 
 #### Example: Create a sub access key in a `node`
 
@@ -6865,7 +6915,7 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```shell
 admin analytics application_events
-admin analytics files organization '' '$(read_value_from :aoc_transfer_id)'
+admin analytics files organization '' <id>
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application instance list
@@ -6887,7 +6937,7 @@ admin bearer_token --display=data
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-admin client_registration_token delete '$(read_value_from :client_reg_id)'
+admin client_registration_token delete <id>
 admin client_registration_token list
 admin contact list
 admin dropbox list
@@ -6925,12 +6975,12 @@ admin user modify %name:my_user_email @json:'{"deactivated":false}'
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
-admin workspace shared_folder %name:my_other_workspace member '$(read_value_from :shared_folder_id)' list
+admin workspace shared_folder %name:my_other_workspace member <id> list
 admin workspace_membership list
 admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-automation workflow action '$(read_value_from :wf_id)' create @json:'{"name":"toto"}'
+automation workflow action <id> create @json:'{"name":"toto"}'
 automation workflow create @json:'{"name":"test_workflow"}'
-automation workflow delete '$(read_value_from :wf_id)'
+automation workflow delete <id>
 automation workflow list
 automation workflow list --query=@json:'{"show_org_workflows":"true"}'
 automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id
@@ -6959,8 +7009,8 @@ files rename /some_folder testdst
 files short_link /testdst private create
 files short_link /testdst private list
 files short_link /testdst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
-files short_link /testdst public modify '$(read_value_from :aoc_short_link_pub_create)' @: access_levels=edit
-files show '%id:$(read_value_from :aoc_file_id)'
+files short_link /testdst public modify <aoc_short_link_pub_create> @: access_levels=edit
+files show %id:<id>
 files show /
 files show testdst/test_file.bin
 files sync admin status /data/local_sync
@@ -6976,21 +7026,21 @@ gateway @json:'{"url":"https://localhost:12347/aspera/faspex"}'
 organization
 organization --format=image --fields=background_image_url --ui=text
 organization --url=my_public_link_recv_from_aoc_user
-packages browse '$(read_value_from :package_id3)' /
+packages browse <id> /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-packages receive '$(read_value_from :package_id3)' --to-folder=.
-packages receive '$(read_value_from :package_id3)' --to-folder=. /
+packages receive <id> --to-folder=.
+packages receive <id> --to-folder=. /
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
-packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
-packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
-packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_shared_inbox_name"]}' test_file.bin
-packages send @: 'name=$(name) $(TIMESTEMP_TEST_RUN)' recipients.0=my_username 'note=some notes' END test_file.bin
-packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
-packages send @json:'{"name":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin --url=my_public_link_send_shared_inbox
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
+packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
+packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
+packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_shared_inbox
 packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
 remind --username=my_user_email
@@ -7188,7 +7238,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ```shell
 browse /
-browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys='$(read_value_from :serv_key_path)'
+browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=<serv_key_path>
 browse my_inside_folder/test_file.bin
 browse my_upload_folder/target_hot
 cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
@@ -7779,7 +7829,7 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > Add `ascli node` in front of the following commands:
 
 ```shell
---url=https://tst.example.com/path --password='Bearer $(read_value_from :node_bearer_token)' --root-id='$(read_value_from :bearer_root_id)' access_key do self browse /
+--url=https://tst.example.com/path --password='Bearer <node_bearer_token>' --root-id=<id> access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
 access_key do my_ak_name browse / --secret=my_ak_secret
@@ -7797,7 +7847,7 @@ access_key do my_ak_name node_info / --secret=my_ak_secret
 access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=my_ak_secret
 access_key do my_ak_name show %id:1 --secret=my_ak_secret
 access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --node-api.standard_ports=false --secret=my_ak_secret
-access_key do self permission '%id:$(read_value_from :bearer_root_id)' create @json:'{"access_type":"user","access_id":"666"}'
+access_key do self permission %id:<id> create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / modify 1 @: 'access_levels=@list: read list'
 access_key do self permission / show 1
@@ -7853,12 +7903,12 @@ sync admin status /data/local_sync
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_sync_session_name","reset":true}'
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"reset":true}'
 transfer bandwidth_average
-transfer cancel '$(read_value_from :nd_xfer_id)'
+transfer cancel <id>
 transfer list --query=@json:'{"active_only":true}'
 transfer list --query=@json:'{"reset":true}' --once-only=yes
-transfer modify '$(read_value_from :nd_xfer_id)' @json:'{"target_rate_kbps":10000}'
+transfer modify <id> @json:'{"target_rate_kbps":10000}'
 transfer sessions
-transfer show '$(read_value_from :nd_xfer_id)'
+transfer show <id>
 transport
 upload 'faux:///testfile1?1m' --to-folder=my_local_path
 upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
@@ -8147,16 +8197,16 @@ gateway @json:'{"url":"https://localhost:12346/aspera/faspex"}'
 health --url=https://faspex5.example.com/path
 invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
-packages browse '$(read_value_from :f5_package_id)' --query=@json:'{"recursive":true}'
-packages delete '$(read_value_from :f5_package_id)'
+packages browse <id> --query=@json:'{"recursive":true}'
+packages delete <id>
 packages list --box=ALL
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
 packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
-packages receive '$(read_value_from :f5_package_id)' --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
-packages receive --box=my_shared_box_name '$(read_value_from :f5_pack_shboxc)' --to-folder=.
-packages receive --box=my_workgroup --group-type=workgroups '$(read_value_from :workgroup_package_id1)' --to-folder=.
+packages receive --box=my_shared_box_name <f5_pack_shboxc> --to-folder=.
+packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
+packages receive <id> --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages receive ALL --once-only=yes --to-folder=.
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
@@ -8165,12 +8215,12 @@ packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
-packages show '$(read_value_from :f5_package_id)'
-packages show --box=my_shared_box_name '$(read_value_from :f5_pack_shboxc)'
-packages show --box=my_workgroup --group-type=workgroups '$(read_value_from :workgroup_package_id1)'
-packages status '$(read_value_from :f5_p3a)' @list:,failed,completed
-packages status '$(read_value_from :f5_package_id)'
-postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "localhost.p12")","key":"changeit"}'
+packages show --box=my_shared_box_name <f5_pack_shboxc>
+packages show --box=my_workgroup --group-type=workgroups <id>
+packages show <id>
+packages status <f5_p3a> @list:,failed,completed
+packages status <id>
+postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"/path/to/scripts","cert":".../localhost.p12","key":"changeit"}'
 shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
@@ -8811,18 +8861,17 @@ health
 login_methods
 me
 package list --query.max=5
-package receive '$(read_value_from :f4_package_id)' --to-folder=.
-package receive '$(read_value_from :f4_package_id2)' --to-folder=. --box=sent
-package receive '$(read_value_from :f4_package_id3)' --to-folder=.
-package receive '$(read_value_from :f4_package_id4)' --recipient='*my_dbx' --to-folder=.
-package receive '$(read_value_from :f4_package_id5)' --recipient='*my_wkg' --to-folder=.
+package receive <id> --recipient='*my_dbx' --to-folder=.
+package receive <id> --recipient='*my_wkg' --to-folder=.
+package receive <id> --to-folder=.
+package receive <id> --to-folder=. --box=sent
 package receive ALL --once-only=yes --to-folder=. --query.max=10
-package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal","my_username"]}' test_file.bin
-package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
-package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*my_dbx]}' test_file.bin
-package send --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)","recipients":[*my_wkg]}' test_file.bin
-package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin
-package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(name) $(TIMESTEMP_TEST_RUN)"}' test_file.bin
+package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal","my_username"]}' test_file.bin
+package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
+package send --delivery-info=@json:'{"title":"package title","recipients":[*my_dbx]}' test_file.bin
+package send --delivery-info=@json:'{"title":"package title","recipients":[*my_wkg]}' test_file.bin
+package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
+package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
 source info %name:my_src --storage=@preset:faspex4_storage
 source list
 source node %name:my_src br / --storage=@preset:faspex4_storage
@@ -8925,10 +8974,10 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ```shell
 health
-transfer current files console_xfer_id
+transfer current files <id>
 transfer current list --query.filter='(transfer_name contain aoc)'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
-transfer current show console_xfer_id
+transfer current show <id>
 transfer smart list
 transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_selected
 ```
@@ -8957,10 +9006,10 @@ workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
 workflow workorders my_workflow_id --fields=id --query.max_results=1
-workorder cancel '$(read_value_from :orch_workorder_id)'
-workorder output '$(read_value_from :orch_workorder_id)'
-workorder reset '$(read_value_from :orch_workorder_id)'
-workorder status '$(read_value_from :orch_workorder_id)'
+workorder cancel <id>
+workorder output <id>
+workorder reset <id>
+workorder status <id>
 workstep cancel 1
 workstep status 1
 ```
@@ -9119,7 +9168,7 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 
 ```shell
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
-bridges delete --bulk=yes @json:'$(read_value_from :faspio_bclean_list)'
+bridges delete --bulk=yes @json:<faspio_bclean_list>
 bridges list
 health
 ```
@@ -10302,9 +10351,9 @@ It had the advantage of being relatively easy to installed, as a single executab
 Enjoy a coffee on me:
 
 ```shell
-ascli config coffee --ui=text
-ascli config coffee --ui=text --image=@json:'{"text":true}'
 ascli config coffee
+ascli config coffee --ui=text
+ascli config coffee --ui=text --image.text=true
 ```
 
 ### References
