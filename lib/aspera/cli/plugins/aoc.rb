@@ -27,12 +27,14 @@ module Aspera
           client
           client_access_key
           client_registration_token
+          configuration_policy
           contact
           dropbox
           dropbox_membership
           group
           group_membership
           kms_profile
+          network_policy
           node
           operation
           organization
@@ -413,6 +415,7 @@ module Aspera
           supported_operations = Operations::ALL
           # API path
           resource_class_path = "#{resource_type}s"
+          resource_class_path = resource_class_path.gsub(/ys$/, 'ies')
           # path in openapi where post is located to get creation schema
           create_schema_path = resource_class_path
           case resource_type
@@ -428,6 +431,8 @@ module Aspera
           when :contact
             list_default_fields = %w[source_type source_id name email]
             # list_default_query = {'include_only_user_personal_contacts' => true} if @scope == Api::AoC::Scope::USER
+          when :configuration_policy, :network_policy
+            list_default_fields = nil
           when :dropbox
             require_workspace_id = true
             resource_class_path = "#{resource_type}es"

@@ -3256,6 +3256,85 @@ aoc_adm_res_05c:
     - admin
     - kms_profile
     - list
+aoc_adm_res_05d:
+  description: List configuration policies
+  tags:
+    - aoc_policies
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - configuration_policy
+    - list
+aoc_conf_policy_id:
+  description: Save one configuration policy id
+  tags:
+    - save_output
+    - nodoc
+  depends_on:
+    - aoc_adm_res_05d
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - configuration_policy
+    - list
+    - --fields=id
+    - --format=csv
+    - --query.max=1
+aoc_conf_policy_show:
+  description: Show one configuration policy
+  tags:
+    - aoc_policies
+  depends_on:
+    - aoc_conf_policy_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - configuration_policy
+    - show
+    - $(read_value_from('aoc_conf_policy_id').split("\n").first)
+aoc_adm_res_05e:
+  description: List network policies
+  tags:
+    - aoc_policies
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - list
+aoc_net_policy_id:
+  description: Save one network policy id
+  tags:
+    - save_output
+    - nodoc
+  depends_on:
+    - aoc_adm_res_05e
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - list
+    - --fields=id
+    - --format=csv
+    - --query.max=1
+aoc_net_policy_show:
+  description: Show one network policy
+  tags:
+    - aoc_policies
+  depends_on:
+    - aoc_net_policy_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - show
+    - $(read_value_from('aoc_net_policy_id').split("\n").first)
+
 aoc_clt_reg_tok_create:
   args:
     - --preset=aoc_admin
