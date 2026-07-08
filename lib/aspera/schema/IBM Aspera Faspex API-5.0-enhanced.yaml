@@ -32651,7 +32651,12 @@ components:
                       maxLength: 255
                       minLength: 1
               expiration_policy:
-                description: The expiration policy for the package. Default is "none" for no expiration policy (a package will not be marked for deletion based on recipient downloads), "delete_after_all_download" for deleting a package after ALL users do a full download of the package (download of all files/folders in the package), "delete_after_any_download" for deleting a package after ANY user fully downloads and "delete_after_expiration_date" for deleting a package after the date set in expiration_date parameter.
+                description: |-
+                  The expiration policy for the package.
+                  * `none`: Default, for no expiration policy (a package will not be marked for deletion based on recipient downloads).
+                  * `delete_after_all_download` for deleting a package after ALL users do a full download of the package (download of all files/folders in the package).
+                  * `delete_after_any_download` for deleting a package after ANY user fully downloads.
+                  * `delete_after_expiration_date` for deleting a package after the date set in expiration_date parameter.
                 type: string
                 default: none
                 enum:
@@ -40726,9 +40731,9 @@ components:
           type: boolean
         can_have_public_url:
           description: |-
-            Specifies whether the user can share public submission submission links.\
-                                                        A user can share public submission links to invite external users to \
-                                                        send packages to the user.
+            Specifies whether the user can share public submission submission links.
+            A user can share public submission links to invite external users to
+            send packages to the user.
           type: string
           default: default
           enum:

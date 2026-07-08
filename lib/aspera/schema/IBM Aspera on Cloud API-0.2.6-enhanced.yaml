@@ -4853,6 +4853,328 @@ paths:
       tags:
         - Contacts
         - Contacts
+  /configuration_policies:
+    get:
+      operationId: get_configuration_policies
+      summary: List Configuration Policies
+      description: Get a listing of configuration policies for your organization.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/configuration_policy_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Configuration Policies
+    post:
+      operationId: create_configuration_policy
+      summary: Create a Configuration Policy
+      description: Create a new configuration policy for your organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/configuration_policy_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/configuration_policy_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+      tags:
+        - Configuration Policies
+  /configuration_policies/{id}:
+    delete:
+      operationId: delete_configuration_policy
+      summary: Delete a Configuration Policy
+      description: Delete a specific configuration policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Configuration Policies
+    get:
+      operationId: get_configuration_policy
+      summary: Get a Configuration Policy
+      description: Get a specific configuration policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/configuration_policy_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Configuration Policies
+    put:
+      operationId: update_configuration_policy
+      summary: Update a Configuration Policy
+      description: Update a specific configuration policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/configuration_policy_params'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/configuration_policy_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+      tags:
+        - Configuration Policies
+  /network_policies:
+    get:
+      operationId: get_network_policies
+      summary: List Network Policies
+      description: Get a listing of network policies for your organization.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/network_policy_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Network Policies
+    post:
+      operationId: create_network_policy
+      summary: Create a Network Policy
+      description: Create a new network policy for your organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/network_policy_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/network_policy_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+      tags:
+        - Network Policies
+  /network_policies/{id}:
+    delete:
+      operationId: delete_network_policy
+      summary: Delete a Network Policy
+      description: Delete a specific network policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Network Policies
+    get:
+      operationId: get_network_policy
+      summary: Get a Network Policy
+      description: Get a specific network policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/network_policy_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Network Policies
+    put:
+      operationId: update_network_policy
+      summary: Update a Network Policy
+      description: Update a specific network policy by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/network_policy_params'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/network_policy_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+      tags:
+        - Network Policies
 components:
   schemas:
     UnauthorizedError:
@@ -8815,6 +9137,226 @@ components:
         - name
         - source_id
         - source_type
+    configuration_policy_response:
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the configuration policy.
+          type: string
+          examples:
+            - '7'
+        name:
+          description: Name of the configuration policy.
+          type: string
+          examples:
+            - Server-Side Encryption At Rest w/150Mbps target rate
+        organization_id:
+          description: ID of the organization this policy belongs to.
+          type: string
+          examples:
+            - '28453'
+        activity_event_logging:
+          description: Whether activity event logging is enabled.
+          type: boolean
+          examples:
+            - true
+        aej_logging_enabled:
+          description: Whether AEJ logging is enabled.
+          type: boolean
+          examples:
+            - true
+        aggressiveness:
+          description: Transfer aggressiveness factor (0.0 to 1.0). Null means use node default.
+          type: number
+          format: float
+          nullable: true
+          examples:
+            - 0.15
+        cipher:
+          description: Encryption cipher used for transfers.
+          type: string
+          enum:
+            - aes-128
+            - aes-192
+            - aes-256
+          examples:
+            - aes-128
+        content_protection_secret:
+          description: Secret used for content protection (server-side encryption at rest). Null if not set.
+          type: string
+          nullable: true
+          examples:
+            - aspera-1
+        default_target_rate_kbps:
+          description: Default target transfer rate in kbps. Null means no limit.
+          type: integer
+          nullable: true
+          examples:
+            - 150000
+        enable_iteration_token_pagination:
+          description: Whether iteration token pagination is enabled for directory listings.
+          type: boolean
+          examples:
+            - false
+        recursive_counts:
+          description: Whether recursive file counts are enabled.
+          type: boolean
+          examples:
+            - true
+        remove_skipped:
+          description: Whether skipped files are removed from transfer results.
+          type: boolean
+          examples:
+            - false
+        created_at:
+          description: Date at which the configuration policy was created.
+          type: string
+          format: date-time
+          examples:
+            - '2018-05-03T16:07:03.000Z'
+        updated_at:
+          description: Date at which the configuration policy was last updated.
+          type: string
+          format: date-time
+          examples:
+            - '2018-05-03T16:07:03.000Z'
+    configuration_policy_params:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          description: Name of the configuration policy.
+          type: string
+          examples:
+            - Server-Side Encryption At Rest w/150Mbps target rate
+        activity_event_logging:
+          description: Whether activity event logging is enabled.
+          type: boolean
+          examples:
+            - true
+        aej_logging_enabled:
+          description: Whether AEJ logging is enabled.
+          type: boolean
+          examples:
+            - true
+        aggressiveness:
+          description: Transfer aggressiveness factor (0.0 to 1.0). Null means use node default.
+          type: number
+          format: float
+          nullable: true
+          examples:
+            - 0.15
+        cipher:
+          description: Encryption cipher used for transfers.
+          type: string
+          enum:
+            - aes-128
+            - aes-192
+            - aes-256
+          examples:
+            - aes-128
+        content_protection_secret:
+          description: Secret used for content protection (server-side encryption at rest). Null if not set.
+          type: string
+          nullable: true
+          examples:
+            - aspera-1
+        default_target_rate_kbps:
+          description: Default target transfer rate in kbps. Null means no limit.
+          type: integer
+          nullable: true
+          examples:
+            - 150000
+        enable_iteration_token_pagination:
+          description: Whether iteration token pagination is enabled for directory listings.
+          type: boolean
+          examples:
+            - false
+        recursive_counts:
+          description: Whether recursive file counts are enabled.
+          type: boolean
+          examples:
+            - true
+        remove_skipped:
+          description: Whether skipped files are removed from transfer results.
+          type: boolean
+          examples:
+            - false
+    network_policy_response:
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the network policy.
+          type: string
+          examples:
+            - '35'
+        name:
+          description: Name of the network policy.
+          type: string
+          examples:
+            - Receive server initiates
+        organization_id:
+          description: ID of the organization this policy belongs to.
+          type: string
+          examples:
+            - '28453'
+        initiation_policy_type:
+          description: Defines which side initiates the transfer connection.
+          type: string
+          enum:
+            - all
+            - none
+            - listed
+          examples:
+            - all
+        access_control_type:
+          description: Defines the access control behaviour for this network policy.
+          type: string
+          enum:
+            - allow_following
+            - none
+          examples:
+            - allow_following
+        created_at:
+          description: Date at which the network policy was created.
+          type: string
+          format: date-time
+          examples:
+            - '2018-05-03T16:07:03.000Z'
+        updated_at:
+          description: Date at which the network policy was last updated.
+          type: string
+          format: date-time
+          examples:
+            - '2018-05-03T16:07:03.000Z'
+    network_policy_params:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          description: Name of the network policy.
+          type: string
+          examples:
+            - Receive server initiates
+        initiation_policy_type:
+          description: Defines which side initiates the transfer connection.
+          type: string
+          enum:
+            - all
+            - none
+            - listed
+          examples:
+            - all
+        access_control_type:
+          description: Defines the access control behaviour for this network policy.
+          type: string
+          enum:
+            - allow_following
+            - none
+          examples:
+            - allow_following
   requestBodies:
     clients_params:
       content:
