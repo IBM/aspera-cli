@@ -2077,19 +2077,19 @@ Example: display the schema of the transfer-spec option `ts`:
 
 ```text
 INFO Schema: option: ts
-+--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
-| name                           | type    | description                                                                                                              |
-+--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
-| apply_local_docroot            | boolean | Apply local docroot to source paths.                                                                                     |
-|                                |         | (A, T)                                                                                                                   |
-| authentication                 | string  | Set to token for SSH bypass keys, else password asked if not provided.                                                   |
-|                                |         | (C)                                                                                                                      |
-| cipher                         | string  | In transit encryption algorithms.                                                                                        |
-|                                |         | Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        |
-|                                |         | aes-256-gcm.                                                                                                             |
-|                                |         | Default: none.                                                                                                           |
+╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                           │ type    │ description                                                                                                              │
+╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
+│                                │         │ (A, T)                                                                                                                   │
+│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
+│                                │         │ (C)                                                                                                                      │
+│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
+│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        │
+│                                │         │ aes-256-gcm.                                                                                                             │
+│                                │         │ Default: none.                                                                                                           │
 ...
-+--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
+╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 This works the same way for any `Hash` option or positional parameter that has a defined schema.
