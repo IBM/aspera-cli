@@ -142,7 +142,7 @@ module Aspera
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
-        rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing', usage: true}
+        rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing'}
         rescue Cli::BadIdentifier => e;             exception_info = {e: e, t: 'Identifier'}
         rescue Cli::SchemaRequest => e;             exception_info = {e: e, t: 'Schema'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
@@ -159,7 +159,7 @@ module Aspera
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"} unless exception_info[:e].is_a?(Cli::SchemaRequest)
           Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
-          @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage] && !exception_info[:e].message.include?(TerminalFormatter::HINT)
+          @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
           # Requested help for a Hash parameter/option ?
