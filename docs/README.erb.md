@@ -2078,7 +2078,6 @@ When a mandatory `Hash` argument is missing, <%=tool%> automatically hints to us
 ```text
 ERRR Missing argument: parameters for send (Hash)
 HINT Give `help` as argument to retrieve the schema of the missing argument.
-Use option -h to get help.
 ```
 
 Following the hint and passing `help` as the argument displays the schema:

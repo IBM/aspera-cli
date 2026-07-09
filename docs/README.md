@@ -2112,6 +2112,73 @@ EOF
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
+#### Schema Discovery with `help`
+
+Any option or **Command Parameter** that expects a `Hash` value accepts the special value `help`.
+Instead of performing the action, `ascli` displays the schema of the expected `Hash` as a table (field name, type, description), then exits with an error.
+
+When a mandatory `Hash` argument is missing, `ascli` automatically hints to use `help`:
+
+```shell
+ascli aoc packages send
+```
+
+```text
+ERRR Missing argument: parameters for send (Hash)
+HINT Give `help` as argument to retrieve the schema of the missing argument.
+Use option -h to get help.
+```
+
+Following the hint and passing `help` as the argument displays the schema:
+
+```shell
+ascli aoc packages send help
+```
+
+```text
+INFO Schema: argument: parameters for send (Hash)
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+| name                                           | type    | description                                                                                                             |
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+| bcc_recipients                                 | array   | <empty string>                                                                                                          |
+| bcc_recipients[].id                            | string  | The ID of the recipient.                                                                                                |
+| bcc_recipients[].type                          | string  | The entity type of the recipient.                                                                                       |
+|                                                |         | Allowed values: user, group.                                                                                            |
+| name                                           | string  | Package name. Required for POST. Optional for PUT.                                                                      |
+| note                                           | string  | The sender's message to recipients to include with the package. Maximum characters: 65535.                              |
+| recipients                                     | array   | <empty string>                                                                                                          |
+| recipients[].id                                | string  | The ID of the recipient.                                                                                                |
+| recipients[].type                              | string  | The entity type of the recipient.                                                                                       |
+|                                                |         | Allowed values: user, group.                                                                                            |
+...
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+```
+
+The same applies to options: display the schema of the transfer-spec option `ts`:
+
+```shell
+ascli --ts=help
+```
+
+```text
+INFO Schema: option: ts
+╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                           │ type    │ description                                                                                                              │
+╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
+│                                │         │ (A, T)                                                                                                                   │
+│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
+│                                │         │ (C)                                                                                                                      │
+│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
+│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        │
+│                                │         │ aes-256-gcm.                                                                                                             │
+│                                │         │ Default: none.                                                                                                           │
+...
+╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+This works for any `Hash` option or positional parameter that has a defined schema.
+
 #### Testing Extended Value
 
 In case of doubt of argument values after parsing, one can test using command `config echo`.
@@ -5135,29 +5202,8 @@ JSON itself has some special syntax: for example `"` is used to enclose a `Strin
 
 The [dot-path](#dot-path-notation) can also be used and can be easier to use because it does usually not require special characters.
 
-Some parameters or options can provide the expected structure of the Extended Value by providing the special value: `help`.
-
-Example:
-
-```shell
-ascli --ts=help
-```
-
-```text
-ERRR Schema: option: ts
-╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ name                           │ type    │ description                                                                                                              │
-╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
-│                                │         │ (A, T)                                                                                                                   │
-│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
-│                                │         │ (C)                                                                                                                      │
-│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
-│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb,                                                            │
-│                                │         │ aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm.                                                         │
-│                                │         │ Default: none.                                                                                                           │
-...
-╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯```
+Any option or **Command Parameter** expecting a `Hash` value accepts the special value `help` to display its schema.
+See [Schema Discovery with `help`](#schema-discovery-with-help).
 
 #### Using a shell variable, parsed by shell, in an Extended Value
 
@@ -6939,12 +6985,16 @@ admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 admin client_registration_token delete <id>
 admin client_registration_token list
+admin configuration_policy list
+admin configuration_policy show <id>
 admin contact list
 admin dropbox list
 admin dropbox_membership list
 admin group list
 admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 admin kms_profile list
+admin network_policy list
+admin network_policy show <id>
 admin node bearer_token %name:my_node_name user:all
 admin node do %name:my_node_name --secret=my_ak_secret browse /
 admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-api.cache=false
