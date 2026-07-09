@@ -2064,6 +2064,36 @@ EOF
 {"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
+#### Schema Discovery with `help`
+
+Any option or **Command Parameter** that expects a `Hash` value accepts the special value `help`.
+Instead of performing the action, <%=tool%> displays the schema of the expected `Hash` as a table (field name, type, description), then exits with an error.
+
+Example: display the schema of the transfer-spec option `ts`:
+
+```shell
+<%=cmd%> --ts=help
+```
+
+```text
+INFO Schema: option: ts
++--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
+| name                           | type    | description                                                                                                              |
++--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
+| apply_local_docroot            | boolean | Apply local docroot to source paths.                                                                                     |
+|                                |         | (A, T)                                                                                                                   |
+| authentication                 | string  | Set to token for SSH bypass keys, else password asked if not provided.                                                   |
+|                                |         | (C)                                                                                                                      |
+| cipher                         | string  | In transit encryption algorithms.                                                                                        |
+|                                |         | Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        |
+|                                |         | aes-256-gcm.                                                                                                             |
+|                                |         | Default: none.                                                                                                           |
+...
++--------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------+
+```
+
+This works the same way for any `Hash` option or positional parameter that has a defined schema.
+
 #### Testing Extended Value
 
 In case of doubt of argument values after parsing, one can test using command `config echo`.
@@ -4583,29 +4613,8 @@ JSON itself has some special syntax: for example `"` is used to enclose a `Strin
 
 The [dot-path](#dot-path-notation) can also be used and can be easier to use because it does usually not require special characters.
 
-Some parameters or options can provide the expected structure of the Extended Value by providing the special value: `help`.
-
-Example:
-
-```shell
-ascli --ts=help
-```
-
-```text
-ERRR Schema: option: ts
-╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ name                           │ type    │ description                                                                                                              │
-╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
-│                                │         │ (A, T)                                                                                                                   │
-│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
-│                                │         │ (C)                                                                                                                      │
-│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
-│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb,                                                            │
-│                                │         │ aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm.                                                         │
-│                                │         │ Default: none.                                                                                                           │
-...
-╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯```
+Any option or **Command Parameter** expecting a `Hash` value accepts the special value `help` to display its schema.
+See [Schema Discovery with `help`](#schema-discovery-with-help).
 
 #### Using a shell variable, parsed by shell, in an Extended Value
 
