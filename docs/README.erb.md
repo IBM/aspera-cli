@@ -2069,7 +2069,44 @@ EOF
 Any option or **Command Parameter** that expects a `Hash` value accepts the special value `help`.
 Instead of performing the action, <%=tool%> displays the schema of the expected `Hash` as a table (field name, type, description), then exits with an error.
 
-Example: display the schema of the transfer-spec option `ts`:
+When a mandatory `Hash` argument is missing, <%=tool%> automatically hints to use `help`:
+
+```shell
+<%=cmd%> aoc packages send
+```
+
+```text
+ERRR Missing argument: parameters for send (Hash)
+HINT Give `help` as argument to retrieve the schema of the missing argument.
+Use option -h to get help.
+```
+
+Following the hint and passing `help` as the argument displays the schema:
+
+```shell
+<%=cmd%> aoc packages send help
+```
+
+```text
+INFO Schema: argument: parameters for send (Hash)
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+| name                                           | type    | description                                                                                                             |
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+| bcc_recipients                                 | array   | <empty string>                                                                                                          |
+| bcc_recipients[].id                            | string  | The ID of the recipient.                                                                                                |
+| bcc_recipients[].type                          | string  | The entity type of the recipient.                                                                                       |
+|                                                |         | Allowed values: user, group.                                                                                            |
+| name                                           | string  | Package name. Required for POST. Optional for PUT.                                                                      |
+| note                                           | string  | The sender's message to recipients to include with the package. Maximum characters: 65535.                              |
+| recipients                                     | array   | <empty string>                                                                                                          |
+| recipients[].id                                | string  | The ID of the recipient.                                                                                                |
+| recipients[].type                              | string  | The entity type of the recipient.                                                                                       |
+|                                                |         | Allowed values: user, group.                                                                                            |
+...
++------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+```
+
+The same applies to options: display the schema of the transfer-spec option `ts`:
 
 ```shell
 <%=cmd%> --ts=help
@@ -2092,7 +2129,7 @@ INFO Schema: option: ts
 ╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-This works the same way for any `Hash` option or positional parameter that has a defined schema.
+This works for any `Hash` option or positional parameter that has a defined schema.
 
 #### Testing Extended Value
 
