@@ -1950,6 +1950,7 @@ aoc_servers:
     - aoc
     - servers
     - -N
+    - --url=@preset:aoc_user.url
 aocwa_remind:
   template: aocwa_user_suite
   args:
