@@ -52,6 +52,10 @@ module Aspera
         when :yaml
           formatter.display_message(:data, YAML.dump(filtered_data))
         when :image
+          if @data.nil?
+            formatter.display_message(:data, formatter.special_format('null (no image)'))
+            return
+          end
           Aspera.assert_type(@data, String){'image: URL or blob'}
           # Check if URL
           data =
@@ -179,7 +183,7 @@ module Aspera
       # Image result (URL or blob)
       class Image < Result
         def initialize(data)
-          Aspera.assert_type(data, String){'image result data'}
+          Aspera.assert_type(data, String, NilClass){'image result data'}
           super(data: data)
         end
 
