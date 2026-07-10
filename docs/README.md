@@ -2126,7 +2126,6 @@ ascli aoc packages send
 ```text
 ERRR Missing argument: parameters for send (Hash)
 HINT Give `help` as argument to retrieve the schema of the missing argument.
-Use option -h to get help.
 ```
 
 Following the hint and passing `help` as the argument displays the schema:
@@ -7093,8 +7092,8 @@ packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_lin
 packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_shared_inbox
 packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
-remind --username=my_user_email
-servers
+remind --username=my_user_email --url=https://aoc.example.com/path
+servers --url=https://aoc.example.com/path
 tier_restrictions
 user contacts list
 user pref modify @json:'{"default_language":"en-us"}'

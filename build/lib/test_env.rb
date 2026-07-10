@@ -14,6 +14,84 @@ module TestEnv
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions: See tests/README.md for detailed documentation
   ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instanciate}.freeze
+
+  # Execution context for a running test case, injected as `t` in every eval binding.
+  #
+  # Holds the current test's full name and its optional instance prefix (set when the
+  # test was generated from a template instantiation, e.g. `aoc_test` → `aocwa_user_suite`).
+  #
+  # All file-based helpers operate on test-case names → state files under PATH_TMP_STATES.
+  # When called without argument they target the current test; when called with a bare
+  # sibling name from `tests.yml` they qualify it with the instance prefix first:
+  #
+  #   t.out_file                        # PATH_TMP_STATES/aoc_test.current_test.out
+  #   t.out_file('other_test')          # PATH_TMP_STATES/aoc_test.other_test.out
+  #   t.saved_output('other_test')   # reads  aoc_test.other_test.out
+  #   t.stop_process('background')      # kills  aoc_test.background
+  class Context
+    # @param name   [String] fully-qualified name of the current test case
+    # @param prefix [String, nil] instance prefix for cross-references, or nil
+    def initialize(name, prefix)
+      @name   = name
+      @prefix = prefix
+    end
+
+    # Resolve a test-case name to its fully-qualified form.
+    # When called without argument (nil sentinel), returns the current test name unchanged.
+    # When called with a bare sibling name from tests.yml, prepends the instance prefix.
+    # @param name [String, Symbol, nil] bare sibling name, or nil to mean the current test
+    # @return [String] fully-qualified test-case name
+    def resolve(name)
+      return @name if name.nil?
+      @prefix ? "#{@prefix}.#{name}" : name.to_s
+    end
+
+    # @return [Pathname] .out file for the current test (no arg) or a named sibling
+    def out_file(name = nil)
+      PATH_TMP_STATES / "#{resolve(name)}.out"
+    end
+
+    # @return [Pathname] .err file for the current test (no arg) or a named sibling
+    def err_file(name = nil)
+      PATH_TMP_STATES / "#{resolve(name)}.err"
+    end
+
+    # @return [Pathname] .pid file for the current test (no arg) or a named sibling
+    def pid_file(name = nil)
+      PATH_TMP_STATES / "#{resolve(name)}.pid"
+    end
+
+    # @return [Integer] PID stored by a `noblock` test case
+    def pid_of_test(name = nil)
+      pid_file(name).read.to_i
+    end
+
+    # Read the value saved by a `save_output` test case
+    def saved_output(name = nil)
+      state_file = out_file(name)
+      value = state_file.read.chomp
+      Aspera::Log.instance.logger.info("Read: #{state_file}: #{value}")
+      value
+    end
+
+    # Terminate the process started by a `noblock` test case
+    def stop_process(name = nil)
+      Aspera::Log.instance.logger.info("Stopping process for test case: #{resolve(name)}")
+      pid = pid_of_test(name)
+      Process.kill('TERM', pid)
+      _, status = Process.waitpid2(pid)
+      Aspera::Log.instance.logger.info("Status: #{status}")
+    rescue Errno::ECHILD
+      nil
+    end
+
+    # Check that the process started by a `noblock` test case is still running
+    def check_process(name = nil)
+      pid = pid_of_test(name)
+      r = Process.kill(0, pid)
+      Aspera::Log.instance.logger.info("Kill 0 : #{r}")
+    end
+  end
   # Regular expression pattern that plugin names must match (lowercase alphanumeric and underscores only)
   PLUGIN_NAME_PATTERN = /\A[a-z0-9_]+\z/
 
@@ -101,6 +179,7 @@ module TestEnv
             template_names.include?(dependency) ? "#{instance_name}.#{dependency}" : dependency
           end
         end
+        generated_properties[:instance_prefix] = instance_name
         normalized_tests[test_name] = generated_properties
       end
     end

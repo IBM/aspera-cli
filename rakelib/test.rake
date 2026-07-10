@@ -128,50 +128,6 @@ def eval_macro(value, user_binding)
   # log.info "Eval: #{value} -> [#{x}]"
 end
 
-# @return the Pathname to pid file generated for the given test case
-def pid_file(name)
-  PATH_TMP_STATES / "#{name}.pid"
-end
-
-def pid_of_test(name)
-  pid_file(name).read.to_i
-end
-
-# @return the Pathname to output file generated for the given test case
-def out_file(name)
-  PATH_TMP_STATES / "#{name}.out"
-end
-
-def err_file(name)
-  PATH_TMP_STATES / "#{name}.err"
-end
-
-# Read the value generated in output for the given test case
-def read_value_from(name)
-  state_file = out_file(name)
-  value = state_file.read.chomp
-  log.info("Read: #{state_file}: #{value}")
-  value
-end
-
-# Terminates the process of previous test case
-def stop_process(name)
-  log.info("Stopping process for test case: #{name}")
-  pid = pid_of_test(name)
-  Process.kill('TERM', pid)
-  _, status = Process.waitpid2(pid)
-  log.info("Status: #{status}")
-rescue Errno::ECHILD
-  # ignore if process was started by another instance
-  nil
-end
-
-def check_process(name)
-  pid = pid_of_test(name)
-  r = Process.kill(0, pid)
-  log.info("Kill 0 : #{r}")
-end
-
 # @param pathname [Pathname] Folder
 def ls_l(pathname)
   puts pathname.children.map{ |p| format('%10d %s %s', p.lstat.size, p.lstat.mtime.strftime('%b %e %H:%M'), p.basename)}
@@ -315,6 +271,7 @@ namespace TEST_CASE_NS do
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
       log.info("[EXEC] #{info[:args]&.join(' ')}")
       exec_binding = binding
+      t = TestEnv::Context.new(name, info[:instance_prefix])
       if info[:pre]
         Aspera.assert_type(info[:pre], String)
         log.info("Pre: Executing: #{info[:pre]}")
@@ -342,12 +299,12 @@ namespace TEST_CASE_NS do
         PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
       command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
-      command_line += ["--output=#{out_file(name)}"] if tags[:save_output]
+      command_line += ["--output=#{t.out_file}"] if tags[:save_output]
       command_line += ['--format=csv', '--display=data'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=')}
       run_options = {}
       if tags[:noblock]
         run_options[:mode] = :background
-        command_line.push("--pid-file=#{pid_file(name)}")
+        command_line.push("--pid-file=#{t.pid_file}")
       end
       if info[:stdin]
         stdinfile = TMP / "#{name}.stdin"
@@ -357,7 +314,7 @@ namespace TEST_CASE_NS do
         log.info("in: #{input}")
       end
       if tags[:must_fail] || tags[:pre_cleanup]
-        run_options[:err] = err_file(name).to_s
+        run_options[:err] = t.err_file.to_s
         log.info("err: #{run_options[:err]}")
       end
       # This test case can potentially be executed repeatedly, e.g. if we wait for a value
@@ -367,7 +324,7 @@ namespace TEST_CASE_NS do
         # Give time to start
         if tags[:noblock]
           sleep(1)
-          raise 'Process not started' unless pid_file(name).exist?
+          raise 'Process not started' unless t.pid_file.exist?
         end
         if info[:post]
           Aspera.assert_type(info[:post], String)
@@ -375,7 +332,7 @@ namespace TEST_CASE_NS do
           Aspera::Environment.secure_eval(info[:post], __FILE__, __LINE__, exec_binding)
         end
         if tags[:save_output]
-          saved_value = read_value_from(name)
+          saved_value = t.saved_output
           if saved_value.empty?
             message = 'Empty result'
             if tags[:wait_value]
@@ -388,7 +345,7 @@ namespace TEST_CASE_NS do
           end
           log.info("Saved: #{saved_value}")
           if info[:expect]
-            raise "not match[#{info[:expect]}][#{out_file(name).read}]" unless info[:expect].eql?(out_file(name).read.chomp)
+            raise "not match[#{info[:expect]}][#{t.out_file.read}]" unless info[:expect].eql?(t.out_file.read.chomp)
           end
         end
         STATES[name] = 'passed'
@@ -403,7 +360,7 @@ namespace TEST_CASE_NS do
           raise
         end
         if tags[:must_fail]
-          stderr = err_file(name).read
+          stderr = t.err_file.read
           raise "Missing :expect: #{stderr}" unless info[:expect]
           raise "Expected message not found in stderr: #{info[:expect]}\nHave: #{stderr}" unless stderr.include?(info[:expect])
         end

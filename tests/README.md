@@ -59,10 +59,15 @@ Some tags have special meaning; others are only for grouping (e.g. to skip or se
 | `tmp_conf`    | Use a temporary config file (config may be modified).             |
 | `noblock`     | Do not wait for completion; save PID for later stop.              |
 
-In `pre`/`post` Ruby code, `read_value_from(name)` reads output saved by a test with `save_output`; `stop_process(name)` stops a process started with `noblock`.
+In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `noblock`.
 
 Values inside `$(...)` in YAML strings are evaluated as Ruby expressions.
 Constants and helpers are defined in `rakelib/test.rake` and are available in `pre`/`post` and in `$(...)`.
+
+A `t` variable (a `TestEnv::Context` instance) is always available in `pre`/`post` and `$(...)` expressions.
+For template members, `t.saved_output('name')` and `t.stop_process('name')` automatically prepend the
+instance prefix so that sibling outputs are resolved correctly (e.g. `aoc_test.name.out`).
+For non-instantiated tests, `t` delegates to the global helpers unchanged.
 
 ## Running Tests
 
