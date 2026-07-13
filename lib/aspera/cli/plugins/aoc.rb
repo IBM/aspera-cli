@@ -628,8 +628,10 @@ module Aspera
             when :show
               return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
             when :create
-              aoc_api.update(resource_path, options.get_next_argument('membership properties', validation: Hash))
-              return Result::Status.new('modified')
+              data = options.get_next_argument('membership properties', validation: Hash)
+              app_type = data.delete('app_type')
+              Aspera.assert_type(app_type, String){'app_type'}
+              return Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
             end
           end
         end

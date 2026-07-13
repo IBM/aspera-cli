@@ -8,11 +8,13 @@ Released: [Place date of release here]
 
 ### New Features
 
-`faspex5`: New commands `admin file_processing` and `packages file_processing`.
-`aoc`: Command `user settings` now support `create`, `delete`, `list`, `show`, `modify`.
-`aoc`: New command `network_policy` and `configuration_policy` in `admin`.
+* `faspex5`: New commands `admin file_processing` and `packages file_processing`.
+* `aoc`: Command `user settings` now support `create`, `delete`, `list`, `show`, `modify`.
+* `aoc`: New command `network_policy` and `configuration_policy` in `admin`.
 
 ### Issues Fixed
+
+* `aoc`: Fixed `admin application membership create`.
 
 ### Breaking Changes
 
