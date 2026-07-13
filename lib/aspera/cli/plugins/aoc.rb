@@ -581,13 +581,14 @@ module Aspera
 
         def execute_application_action
           apps_info = aoc_api.read('admin/apps')
-          all_app_types = apps_info.map{ |i| i['app_type'].to_sym}
+          # List of allowed symbols for app type
+          all_app_syms = apps_info.map{ |i| i['app_type'].to_sym}
           command_apps = options.get_next_command(%i[types settings instance membership])
           case command_apps
           when :types
             return Result::ObjectList.new(apps_info)
           when :settings
-            app_type = options.get_next_command(all_app_types)
+            app_type = options.get_next_command(all_app_syms)
             cmd_path = "/apps/#{app_type}/settings"
             command_app_settings = options.get_next_command(Operations::SINGLETON)
             case command_app_settings
@@ -603,7 +604,7 @@ module Aspera
             command_app_instances = options.get_next_command(%i[list] + Operations::SINGLETON)
             resource_path = 'admin/apps_new'
             if Operations::SINGLETON.include?(command_app_instances)
-              app_type = options.get_next_command(all_app_types)
+              app_type = options.get_next_command(all_app_syms)
               resource_path = "#{resource_path}/#{app_type}/#{options.instance_identifier(description: "#{app_type} identifier")}"
             end
             case command_app_instances
@@ -623,7 +624,7 @@ module Aspera
             when :list
               return result_list(resource_path)
             when :delete
-              aoc_api.delete("#{resource_path}}")
+              aoc_api.delete(resource_path)
               return Result::Status.new('deleted')
             when :show
               return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
@@ -631,6 +632,7 @@ module Aspera
               data = options.get_next_argument('membership properties', validation: Hash)
               app_type = data.delete('app_type')
               Aspera.assert_type(app_type, String){'app_type'}
+              Aspera.assert_values(app_type.to_sym, all_app_syms){'app_type'}
               return Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
             end
           end
