@@ -579,9 +579,14 @@ paths:
       parameters:
         - name: aspera_app_type
           in: query
-          description: Can be "activity" or "automation".
+          description: Can be "activity", "automation", "files" or "packages".
           schema:
             type: string
+            enum:
+              - activity
+              - automation
+              - files
+              - packages
         - name: created_at
           in: query
           schema:
@@ -610,9 +615,13 @@ paths:
             type: string
         - name: member_type
           in: query
-          description: Can be "user" or "group".
+          description: Can be "user", "group" or "workspace".
           schema:
             type: string
+            enum:
+              - user
+              - group
+              - workspace
         - name: q
           in: query
           description: Searches member.email and member.name.
@@ -723,7 +732,7 @@ paths:
       operationId: add_app_membership
       summary: Create a New App Membership
       description: |
-        Create an app membership. Requires organization admin permission.
+        Create an app membership. Requires organization admin or workspace manager permission.
       parameters:
         - name: aspera_app_type
           in: path
@@ -733,6 +742,8 @@ paths:
             enum:
               - activity
               - automation
+              - files
+              - packages
       requestBody:
         required: true
         content:
@@ -762,6 +773,179 @@ paths:
                 $ref: '#/components/schemas/NotFoundError'
         '409':
           description: Conflict
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+      tags:
+        - App Memberships
+    get:
+      operationId: get_app_memberships_by_app_type
+      summary: Get a Listing of App Memberships Filtered by App Type
+      description: |
+        Get a listing of app memberships for a specific app type. For organization admins, all app memberships for the entire organization are available to view. For all other users, only your own app memberships are returned.
+      parameters:
+        - name: aspera_app_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - activity
+              - automation
+              - files
+              - packages
+        - name: inherited
+          in: query
+          description: |
+            Set to false if you want to filter out inherited memberships.
+          schema:
+            type: boolean
+        - name: member_id
+          in: query
+          description: Filter by member ID.
+          schema:
+            type: string
+        - name: member_type
+          in: query
+          description: Can be "user", "group" or "workspace".
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: Searches member.email and member.name (and workspace/group name).
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Specify a field for sorting results.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/app_memberships_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - App Memberships
+  /apps/{aspera_app_type}/app_memberships/{id}:
+    get:
+      operationId: get_app_membership_by_app_type_and_id
+      summary: Get Information About a Specific App Membership by App Type
+      description: |
+        Get information about a specific app membership, specified by app type and membership ID.
+      parameters:
+        - name: aspera_app_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - activity
+              - automation
+              - files
+              - packages
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/app_memberships_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - App Memberships
+    put:
+      operationId: update_app_membership
+      summary: Update a Specific App Membership
+      description: |
+        Update an app membership, specified by app type and membership ID. Requires organization admin or workspace manager permission.
+        Note: changing the member is not allowed.
+      parameters:
+        - name: aspera_app_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - activity
+              - automation
+              - files
+              - packages
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/app_memberships_params'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/app_memberships_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
         '422':
           description: Unprocessable Entity
         '500':
@@ -5910,6 +6094,7 @@ components:
           enum:
             - user
             - group
+            - workspace
     app_memberships_response:
       type: object
       properties:
@@ -5926,6 +6111,8 @@ components:
           enum:
             - activity
             - automation
+            - files
+            - packages
         id:
           description: ID of the app membership.
           type: string
@@ -5936,7 +6123,12 @@ components:
           examples:
             - '213'
         member_type:
+          description: Type of member. Can be "user", "group" or "workspace".
           type: string
+          enum:
+            - user
+            - group
+            - workspace
     app_settings_base:
       type: object
       description: Common settings properties for all application types
