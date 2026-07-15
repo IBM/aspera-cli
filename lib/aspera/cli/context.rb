@@ -7,7 +7,7 @@ module Aspera
     # Global objects shared with plugins
     class Context
       # @type [Array<Symbol>]
-      MEMBERS = %i[options transfer config formatter persistency man_header].freeze
+      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config].freeze
       # @!attribute [rw] options
       #   @return [Manager] the command line options manager
       # @!attribute [rw] transfer
@@ -20,6 +20,10 @@ module Aspera
       #   @return [Object] # whatever the type is
       # @!attribute [rw] man_header
       #   @return [Boolean] whether to display the manual header in plugin help
+      # @!attribute [rw] presets
+      #   @return [PresetManager] manages the YAML config file and preset resolution
+      # @!attribute [rw] http_config
+      #   @return [Http] manages HTTP/S and TLS runtime options
       attr_accessor(*MEMBERS)
 
       # Initialize all members to nil, so that they are defined and can be validated later

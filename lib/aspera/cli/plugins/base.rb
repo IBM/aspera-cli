@@ -48,6 +48,10 @@ module Aspera
         def formatter; @context.formatter; end
         # @return [Aspera::PersistencyFolder]
         def persistency; @context.persistency; end
+        # @return [Aspera::Cli::PresetManager]
+        def presets; @context.presets; end
+        # @return [Aspera::Cli::Http]
+        def http_config; @context.http_config; end
 
         def add_manual_header(has_options = true)
           # Manual header for all plugins

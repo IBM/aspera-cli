@@ -11,6 +11,8 @@ require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
+require 'aspera/cli/preset_manager'
+require 'aspera/cli/http_config'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
 require 'aspera/products/transferd'
@@ -81,24 +83,12 @@ module Aspera
         def initialize(**_)
           # We need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super
-          @use_plugin_defaults = true
-          @config_presets = {}
-          @config_checksum_on_disk = nil
           @vault_instance = nil
           @pac_exec = nil
           @sdk_default_location = false
-          @option_insecure = false
-          @option_warn_insecure_cert = true
-          @option_ignore_cert_host_port = []
-          @option_http_options = {}
-          @ssl_warned_urls = []
           @option_cache_tokens = true
           @main_folder = nil
           @option_config_file = nil
-          # Store is used for ruby https (OpenSSL::X509::Store)
-          @certificate_store = nil
-          # Paths are used for ascp
-          @certificate_paths = nil
           @progress_bar = nil
           # Option to set main folder
           options.declare(
@@ -116,8 +106,10 @@ module Aspera
             default: File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
           )
           options.parse_options!
-          # Read config file (set @config_presets)
-          read_config_file
+          # Instantiate PresetManager (reads config file) and inject into context
+          context.presets = PresetManager.new(config_file: @option_config_file)
+          # Instantiate Http and inject into context
+          context.http_config = Http.new
           setup_extended_value_handlers
           # Vault options
           options.declare(:secret, 'Secret for access keys')
@@ -127,7 +119,7 @@ module Aspera
           # Declare generic plugin options only after handlers are declared
           Base.declare_options(options)
           # Configuration options
-          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){@use_plugin_defaults = false}
+          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){ presets.use_plugin_defaults = false }
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
@@ -144,13 +136,8 @@ module Aspera
           options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash)
           options.declare(:notify_to, 'Email: Recipient for notification of transfers')
           options.declare(:notify_template, 'Email: ERB template for notification of transfers')
-          # HTTP options
-          options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_insecure}, default: false)
-          options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :option_ignore_cert_host_port})
-          options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_warn_insecure_cert}, default: true)
-          options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: Allowed::TYPES_STRING_ARRAY, handler: {o: self, m: :trusted_cert_locations})
-          options.declare(:http_options, 'HTTP/S: Options for HTTP/S socket', allowed: Hash, handler: {o: self, m: :option_http_options}, default: {})
-          options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', handler: {o: self, m: :option_http_proxy})
+          # HTTP options — declared by HttpConfig itself
+          context.http_config.declare_options(options)
           options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
@@ -169,7 +156,7 @@ module Aspera
         end
 
         def setup_extended_value_handlers
-          ExtendedValue.instance.on(EXTEND_PRESET){ |v| preset_by_name(v)}
+          ExtendedValue.instance.on(EXTEND_PRESET){ |v| presets.by_name(v)}
           ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
           ExtendedValue.instance.on(EXTEND_ARGS){ |v| options.args_as_extended(v)}
           add_plugin_default_preset(CONF_GLOBAL_SYM)
@@ -191,11 +178,12 @@ module Aspera
         def setup_rest_and_transfer_runtime
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
-          RestParameters.instance.session_cb = ->(http_session){update_http_session(http_session)}
+          RestParameters.instance.session_cb = ->(http_session){ context.http_config.update_session(http_session)}
           RestParameters.instance.spinner_cb = ->(title = nil, action: :spin){formatter.long_operation(title, action: action)}
-          # Check http options that are global
+          # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
+          http_opts = context.http_config.http_options
           keys_to_delete = []
-          @option_http_options.each do |k, v|
+          http_opts.each do |k, v|
             method = "#{k}=".to_sym
             if RestParameters.instance.respond_to?(method)
               keys_to_delete.push(k)
@@ -208,7 +196,7 @@ module Aspera
               OAuth::Factory.instance.parameters[k.to_sym] = v
             end
           end
-          keys_to_delete.each{ |k| @option_http_options.delete(k)}
+          keys_to_delete.each{ |k| http_opts.delete(k)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, FILE_LIST_FOLDER_NAME)
@@ -219,8 +207,20 @@ module Aspera
 
         public
 
-        attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
-        attr_reader :option_ignore_cert_host_port, :progress_bar
+        attr_accessor :main_folder, :option_cache_tokens
+        attr_reader :progress_bar
+
+        # Delegations to http_config kept for backward compatibility with transfer_agent and plugins
+        def option_insecure;            context.http_config.insecure; end
+        def option_insecure=(v);        context.http_config.insecure = v; end
+        def option_warn_insecure_cert;  context.http_config.warn_insecure; end
+        def option_warn_insecure_cert=(v); context.http_config.warn_insecure = v; end
+        def option_http_options;        context.http_config.http_options; end
+        def option_http_options=(v);    context.http_config.http_options = v; end
+        def option_ignore_cert_host_port; context.http_config.ignore_cert_host_port; end
+        def ignore_cert?(address, port); context.http_config.ignore_cert?(address, port); end
+        def trusted_cert_locations;     context.http_config.trusted_cert_locations; end
+        def trusted_cert_locations=(v); context.http_config.trusted_cert_locations = v; end
 
         def set_sdk_dir
           # Check SDK folder is set or not, for compatibility, we check in two places
@@ -243,114 +243,6 @@ module Aspera
           end
         end
 
-        # Add files, folders or default locations to the certificate store
-        # @param path_list [Array<String>] List of paths to add
-        # @return the list of paths
-        def trusted_cert_locations=(path_list)
-          Aspera.assert_type(path_list, Array){'cert locations'}
-          if @certificate_store.nil?
-            Log.log.debug('Creating SSL Cert store')
-            @certificate_store = OpenSSL::X509::Store.new
-            @certificate_paths = []
-          end
-
-          path_list.each do |path|
-            Aspera.assert_type(path, String){'Expecting a String for certificate location'}
-            paths_to_add = [path]
-            Log.log.debug{"Adding cert location: #{path}"}
-            if path.eql?(SpecialValues::DEF)
-              @certificate_store.set_default_paths
-              paths_to_add = [OpenSSL::X509::DEFAULT_CERT_DIR]
-              # JRuby cert file seems not to be PEM
-              paths_to_add.push(OpenSSL::X509::DEFAULT_CERT_FILE) unless defined?(JRUBY_VERSION)
-              paths_to_add.select!{ |f| File.exist?(f)}
-            elsif File.file?(path)
-              @certificate_store.add_file(path)
-            elsif File.directory?(path)
-              @certificate_store.add_path(path)
-            else
-              raise "No such file or folder: #{path}"
-            end
-            paths_to_add.each do |p|
-              pp = [File.realpath(p)]
-              if File.directory?(p)
-                pp = Dir.entries(p)
-                  .map{ |e| File.realpath(File.join(p, e))}
-                  .select{ |entry| File.file?(entry)}
-                  .select{ |entry| CERT_EXT.any?{ |ext| entry.end_with?(ext)}}
-              end
-              @certificate_paths.concat(pp)
-            end
-          end
-          @certificate_paths.uniq!
-        end
-
-        # @return only files
-        def trusted_cert_locations
-          locations = @certificate_paths
-          if locations.nil?
-            # Compute default locations
-            self.trusted_cert_locations = [SpecialValues::DEF]
-            locations = @certificate_paths
-            # Restore defaults
-            @certificate_paths = @certificate_store = nil
-          end
-          return locations
-        end
-
-        def option_http_proxy
-          return ENV['http_proxy']
-        end
-
-        def option_http_proxy=(value)
-          URI.parse(value)
-          ENV['http_proxy'] = value
-        end
-
-        def option_ignore_cert_host_port=(url_list)
-          url_list.each do |url|
-            uri = URI.parse(url)
-            raise "Expecting https scheme: #{url}" unless uri.scheme.eql?('https')
-            @option_ignore_cert_host_port.push([uri.host, uri.port].freeze)
-          end
-        end
-
-        def ignore_cert?(address, port)
-          endpoint = [address, port].freeze
-          ignore_cert = false
-          if @option_insecure || @option_ignore_cert_host_port.any?(endpoint)
-            ignore_cert = true
-            if @option_warn_insecure_cert
-              base_url = "https://#{address}:#{port}"
-              if !@ssl_warned_urls.include?(base_url)
-                Log.log.warn{"Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production."}
-                @ssl_warned_urls.push(base_url)
-              end
-            end
-          end
-          Log.log.debug{"ignore cert? #{endpoint} -> #{ignore_cert}"}
-          return ignore_cert
-        end
-
-        # Called every time a new REST HTTP session is opened to set user-provided options
-        # @param http_session [Net::HTTP] the newly created HTTP/S session object
-        def update_http_session(http_session)
-          http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
-          # Rest.io_http_session(http_session).debug_output = Log.log
-          http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
-          http_session.cert_store = @certificate_store if @certificate_store
-          Log.log.debug{"Using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
-          @option_http_options.each do |k, v|
-            method = "#{k}=".to_sym
-            # Check if accessor is a method of Net::HTTP
-            # continue_timeout= read_timeout= write_timeout=
-            if http_session.respond_to?(method)
-              http_session.send(method, v)
-            else
-              Log.log.error{"Unknown HTTP session attribute: #{k}"}
-            end
-          end
-        end
 
         def check_gem_version
           latest_version =
@@ -401,88 +293,44 @@ module Aspera
           end if check_data[:need_update]
         end
 
-        # Loads default parameters of plugin if no -P parameter
-        # and if there is a section defined for the plugin in the "default" section
-        # Try to find: conf[conf["default"][plugin_str]]
-        # @param plugin_name_sym : symbol for plugin name
+        # Delegation to PresetManager: loads default preset options for a plugin
         def add_plugin_default_preset(plugin_name_sym)
-          default_config_name = get_plugin_default_config_name(plugin_name_sym)
+          default_config_name = presets.plugin_default_name(plugin_name_sym)
           Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
-          options.add_option_preset(preset_by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
-          return
+          options.add_option_preset(presets.by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
         end
 
-        # Get the default global preset, or set default one
-        def global_default_preset
-          result = get_plugin_default_config_name(CONF_GLOBAL_SYM)
-          if result.nil?
-            result = CONF_PRESET_GLOBAL
-            set_preset_key(CONF_PRESET_DEFAULTS, CONF_GLOBAL_SYM, result)
-          end
-          return result
-        end
-
+        # Delegations to PresetManager kept for backward compatibility
         def defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
-          @config_presets[CONF_PRESET_DEFAULTS] ||= {}
-          raise Cli::Error, "A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
-            if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name)
-          raise Cli::Error, "Preset already exists: #{preset_name}  (use --override=yes or provide alternate name on command line)" \
-            if !option_override && @config_presets.key?(preset_name)
-          if option_default
-            Log.log.info("Setting config preset as default for #{plugin_name}")
-            @config_presets[CONF_PRESET_DEFAULTS][plugin_name.to_s] = preset_name
-          end
-          @config_presets[preset_name] = preset_values
+          presets.defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
         end
 
         def set_preset_key(preset, param_name, param_value)
-          Aspera.assert_type(param_name, String, Symbol){'parameter'}
-          param_name = param_name.to_s
-          selected_preset = @config_presets[preset]
-          if selected_preset.nil?
-            Log.log.debug{"Unknown preset name: #{preset}, initializing"}
-            selected_preset = @config_presets[preset] = {}
-          end
-          Aspera.assert_type(selected_preset, Hash){"#{preset}.#{param_name}"}
-          if selected_preset.key?(param_name)
-            if selected_preset[param_name].eql?(param_value)
-              Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
-              return
-            end
-            Log.log.warn{"overwriting value for #{param_name}: #{selected_preset[param_name]}"}
-          end
-          selected_preset[param_name] = param_value
-          Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
-          nil
+          presets.set_key(preset, param_name, param_value)
         end
 
-        # Set parameter and value in global config
-        # Creates one if none already created
-        # @return preset name that contains global default
         def set_global_default(key, value)
-          set_preset_key(global_default_preset, key, value)
+          presets.set_global_default(key, value)
         end
 
-        # $HOME/.aspera/`program_name`
+        def preset_by_name(config_name, include_path = [])
+          presets.by_name(config_name, include_path)
+        end
+
+        def get_plugin_default_config_name(plugin_name_sym)
+          presets.plugin_default_name(plugin_name_sym)
+        end
+
+        def save_config_file_if_needed
+          presets.save_if_needed
+        end
+
+        def lookup_preset(url:, username:)
+          presets.lookup_preset(url: url, username: username)
+        end
+
         attr_reader :gem_url
         attr_accessor :option_config_file
-
-        # @param config_name name of the preset in config file
-        # @param include_path used to detect and avoid include loops
-        # @return copy of the hash from name (also expands possible includes)
-        def preset_by_name(config_name, include_path = [])
-          raise Cli::Error, 'loop in include' if include_path.include?(config_name)
-          include_path = include_path.clone # Avoid messing up if there are multiple branches
-          current = @config_presets
-          config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            Aspera.assert_type(current, Hash, type: Cli::Error){"sub key: #{include_path}"}
-            include_path.push(name)
-            current = current[name]
-            raise Cli::Error, "Unknown config preset: #{include_path}" if current.nil?
-          end
-          current = self.class.deep_clone(current) unless current.is_a?(String)
-          return ExtendedValue.instance.evaluate(current, context: 'preset')
-        end
 
         def option_plugin_folder=(value)
           value = [value] unless value.is_a?(Array)
@@ -505,65 +353,6 @@ module Aspera
           else
             raise BadArgument, 'Preset definition must be a String for preset name, or Hash for set of values'
           end
-        end
-
-        # @return [Integer]
-        def config_checksum
-          Digest::SHA1.hexdigest(JSON.generate(@config_presets))
-        end
-
-        # Read config file and validate format
-        def read_config_file
-          Log.log.debug{"config file is: #{@option_config_file}".red}
-          # Files search for configuration, by default the one given by user
-          search_files = [@option_config_file]
-          # Find first existing file (or nil)
-          conf_file_to_load = search_files.find{ |f| File.exist?(f)}
-          # If no file found, create default config
-          if conf_file_to_load.nil?
-            Log.log.warn{"No config file found. New configuration file: #{@option_config_file}"}
-            @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => 'new file'}}
-            # @config_checksum_on_disk is nil
-          else
-            Log.log.debug{"loading #{@option_config_file}"}
-            @config_presets = YAML.load_file(conf_file_to_load)
-            @config_checksum_on_disk = config_checksum
-          end
-          files_to_copy = []
-          Log.dump(:available_presets, @config_presets, level: :trace1)
-          Aspera.assert_type(@config_presets, Hash){'config file YAML'}
-          # Check there is at least the config section
-          Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
-          version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-          raise Error, 'No version found in config section.' if version.nil?
-          Log.log.debug{"conf version: #{version}"}
-          # VVV if there are any conversion needed, those happen here.
-          # Fix bug in 4.4 (creating key "true" in "default" preset)
-          @config_presets[CONF_PRESET_DEFAULTS].delete(true) if @config_presets[CONF_PRESET_DEFAULTS].is_a?(Hash)
-          # ^^^ Place new compatibility code before this line
-          # Set version to current
-          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = Cli::VERSION
-          unless files_to_copy.empty?
-            Log.log.warn('Copying referenced files')
-            files_to_copy.each do |file|
-              FileUtils.cp(file, @main_folder)
-              Log.log.warn{"#{file} -> #{@main_folder}"}
-            end
-          end
-          return
-        rescue Psych::SyntaxError => e
-          Log.log.error('YAML error in config file')
-          raise e
-        rescue StandardError => e
-          Log.log.debug{"-> #{e.class.name} : #{e}"}
-          if File.exist?(@option_config_file)
-            # Then there is a problem with that file.
-            new_name = "#{@option_config_file}.pre#{Cli::VERSION}.manual_conversion_needed"
-            File.rename(@option_config_file, new_name)
-            Log.log.warn{"Renamed config file to #{new_name}."}
-            Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
-          end
-          raise Cli::Error, e.to_s
         end
 
         def install_transfer_sdk
@@ -642,17 +431,18 @@ module Aspera
         PRESET_ALL_ACTIONS = (PRESET_GBL_ACTIONS + PRESET_INSTANCE_ACTIONS).freeze
 
         def execute_preset(action: nil, name: nil)
+          cp = presets.config_presets
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           name = options.instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
-          name = global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+          name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
           # Those operations require existing option
-          raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
+          raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !cp.key?(name)
           case action
           when :list
-            return Result::ValueList.new(@config_presets.keys, name: 'name')
+            return Result::ValueList.new(cp.keys, name: 'name')
           when :overview
             # Display process modifies the value (hide secrets): we do not want to save removed secrets
-            data = self.class.deep_clone(@config_presets)
+            data = PresetManager.deep_clone(cp)
             formatter.hide_secrets(data)
             result = []
             data.each do |config, preset|
@@ -662,13 +452,13 @@ module Aspera
             end
             return Result::ObjectList.new(result, fields: CONF_OVERVIEW_KEYS)
           when :show
-            return Result::SingleObject.new(self.class.deep_clone(@config_presets[name]))
+            return Result::SingleObject.new(PresetManager.deep_clone(cp[name]))
           when :delete
-            @config_presets.delete(name)
+            cp.delete(name)
             return Result::Status.new("Deleted: #{name}")
           when :get
             param_name = options.get_next_argument('parameter name')
-            value = @config_presets[name][param_name]
+            value = cp[name][param_name]
             raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
             when Numeric, String then return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
@@ -676,7 +466,7 @@ module Aspera
             return Result::SingleObject.new(value)
           when :unset
             param_name = options.get_next_argument('parameter name')
-            @config_presets[name].delete(param_name)
+            cp[name].delete(param_name)
             return Result::Status.new("Removed: #{name}: #{param_name}")
           when :set
             param_name = options.get_next_argument('parameter name')
@@ -686,22 +476,21 @@ module Aspera
             return Result::Nothing.new
           when :initialize
             config_value = options.get_next_argument('extended value', validation: Hash)
-            Log.log.warn{"configuration already exists: #{name}, overwriting"} if @config_presets.key?(name)
-            @config_presets[name] = config_value
+            Log.log.warn{"configuration already exists: #{name}, overwriting"} if cp.key?(name)
+            cp[name] = config_value
             return Result::Status.new("Modified: #{@option_config_file}")
           when :update
-            #  get unprocessed options
             unprocessed_options = options.unprocessed_options_with_value
             Log.log.debug{"opts=#{unprocessed_options}"}
-            @config_presets[name] ||= {}
-            @config_presets[name].merge!(unprocessed_options)
+            cp[name] ||= {}
+            cp[name].merge!(unprocessed_options)
             return Result::Status.new("Updated: #{name}")
           when :ask
             options.ask_missing_mandatory = true
-            @config_presets[name] ||= {}
+            cp[name] ||= {}
             options.get_next_argument('option names', multiple: true).each do |option_name|
               option_value = options.get_interactive(option_name, check_option: true)
-              @config_presets[name][option_name] = option_value
+              cp[name][option_name] = option_value
             end
             return Result::Status.new("Updated: #{name}")
           when :lookup
@@ -713,10 +502,10 @@ module Aspera
             return Result::SingleObject.new(result)
           when :secure
             identifier = options.get_next_argument('config name', mandatory: false)
-            preset_names = identifier.nil? ? @config_presets.keys : [identifier]
+            preset_names = identifier.nil? ? cp.keys : [identifier]
             secret_keywords = %w[password secret].freeze
             preset_names.each do |preset_name|
-              preset = @config_presets[preset_name]
+              preset = cp[preset_name]
               next unless preset.is_a?(Hash)
               preset.each_key do |option_name|
                 secret_keywords.each do |keyword|
@@ -729,7 +518,6 @@ module Aspera
                   end
                   to_set = {label: vault_label, password: preset[option_name]}
                   puts "need to encode #{preset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
-                  # to_copy=%i[]
                   vault.set(to_set)
                   preset[option_name] = "@vault:#{vault_label}.password"
                 end
@@ -913,23 +701,24 @@ module Aspera
           when :check_update
             return Result::SingleObject.new(check_gem_version)
           when :initdemo
-            if @config_presets.key?(DEMO_PRESET)
+            cp = presets.config_presets
+            if cp.key?(DEMO_PRESET)
               Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
             else
               Log.log.info{"Creating Demo server preset: #{DEMO_PRESET}"}
-              @config_presets[DEMO_PRESET] = {
+              cp[DEMO_PRESET] = {
                 'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
                 'username'                               => ASPERA,
                 'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
               }
             end
-            @config_presets[CONF_PRESET_DEFAULTS] ||= {}
-            if @config_presets[CONF_PRESET_DEFAULTS].key?(SERVER_COMMAND)
-              Log.log.warn{"Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND]}"}
+            cp[PresetManager::CONF_PRESET_DEFAULTS] ||= {}
+            if cp[PresetManager::CONF_PRESET_DEFAULTS].key?(SERVER_COMMAND)
+              Log.log.warn{"Server default preset already set to: #{cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND]}"}
               Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
-                DEMO_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND])
+                DEMO_PRESET.eql?(cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND])
             else
-              @config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
+              cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
               Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
             end
             return Result::Status.new('Done')
@@ -1021,51 +810,6 @@ module Aspera
           nil
         end
 
-        # Save current configuration to config file
-        # @return true if file was saved
-        def save_config_file_if_needed
-          raise Error, 'no configuration loaded' if @config_presets.nil?
-          current_checksum = config_checksum
-          return false if @config_checksum_on_disk.eql?(current_checksum)
-          FileUtils.mkdir_p(@main_folder)
-          Environment.restrict_file_access(@main_folder)
-          Log.log.info{"Saving config file: #{@option_config_file}"}
-          Environment.write_file_restricted(@option_config_file, force: true){@config_presets.to_yaml}
-          @config_checksum_on_disk = current_checksum
-          return true
-        end
-
-        # @return [String] name if config_presets has default
-        # @return nil if there is no config or bypass default params
-        def get_plugin_default_config_name(plugin_name_sym)
-          Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
-          if !@use_plugin_defaults
-            Log.log.debug('skip default config')
-            return
-          end
-          if !@config_presets.key?(CONF_PRESET_DEFAULTS)
-            Log.log.debug('No default section')
-            return
-          end
-          Aspera.assert_type(@config_presets[CONF_PRESET_DEFAULTS], Hash){'default section'}
-          if !@config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
-            Log.log.debug("No default for #{plugin_name_sym}")
-            return
-          end
-          default_config_name = @config_presets[CONF_PRESET_DEFAULTS][plugin_name_sym.to_s]
-          if !@config_presets.key?(default_config_name)
-            Log.log.error do
-              "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
-                "Please fix the issue: either create preset with one parameter:\n" \
-                "#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}'\n" \
-                "or remove default:\n#{Info::CMD_NAME} config id default remove #{plugin_name_sym}"
-            end
-            raise Cli::Error, "No such preset: #{default_config_name}"
-          end
-          Aspera.assert_type(@config_presets[default_config_name], Hash, type: Cli::Error){'preset type'}
-          return default_config_name
-        end
-
         # @return [Hash] result of execution of vault command
         def execute_vault
           command = options.get_next_command(%i[info list show create delete password])
@@ -1131,25 +875,6 @@ module Aspera
           end
         end
 
-        # Version of URL without trailing "/" and removing default port
-        def canonical_url(url)
-          url.chomp('/').sub(%r{^(https://[^/]+):443$}, '\1')
-        end
-
-        # Look for a preset that has the corresponding URL and username
-        # @return the first one matching
-        def lookup_preset(url:, username:)
-          # Remove extra info to maximize match
-          url = canonical_url(url)
-          Log.log.debug{"Lookup preset for #{username}@#{url}"}
-          @config_presets.each_value do |v|
-            next unless v.is_a?(Hash)
-            conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
-            return self.class.deep_clone(v) if conf_url.eql?(url) && v['username'].eql?(username)
-          end
-          nil
-        end
-
         # Lookup the corresponding secret for the given URL and usernames
         # @param url      [String] Server URL
         # @param username [String] Username
@@ -1157,7 +882,7 @@ module Aspera
         def lookup_secret(url:, username:)
           secret = options.get_option(:secret)
           if secret.eql?('PRESET')
-            conf = lookup_preset(url: url, username: username)
+            conf = presets.lookup_preset(url: url, username: username)
             if conf.is_a?(Hash)
               Log.log.debug{"Found preset #{conf} with URL and username"}
               secret = conf['password']
@@ -1165,17 +890,11 @@ module Aspera
           end
           return secret
         end
-        # Private
-        # Folder in $HOME for application files (config, cache)
+        # Folder in $HOME for application files (~/.aspera)
         ASPERA_HOME_FOLDER_NAME = '.aspera'
-        # Default config file
+        # Default config file name
         DEFAULT_CONFIG_FILENAME = 'config.yaml'
-        # Reserved preset names
-        CONF_PRESET_CONFIG = 'config'
-        CONF_PRESET_VERSION = 'version'
-        CONF_PRESET_DEFAULTS = 'default'
-        CONF_PRESET_GLOBAL = 'global_common_defaults'
-        # Special name to identify value of default
+        # Used in execute_preset / execute_action to identify the global default keyword
         GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
         CONF_GLOBAL_SYM = :config
         # Folder containing custom plugins in user's config folder
@@ -1199,43 +918,32 @@ module Aspera
         EXTEND_PRESET = :preset
         EXTEND_VAULT = :vault
         EXTEND_ARGS = :''
-        PRESET_DIG_SEPARATOR = '.'
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'
-        # For testing only
-        SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
         CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
         SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
-        CERT_EXT = %w[crt cer pem der].freeze
         private_constant :ASPERA_HOME_FOLDER_NAME,
           :DEFAULT_CONFIG_FILENAME,
-          :CONF_PRESET_CONFIG,
-          :CONF_PRESET_VERSION,
-          :CONF_PRESET_DEFAULTS,
-          :CONF_PRESET_GLOBAL,
+          :GLOBAL_DEFAULT_KEYWORD,
+          :CONF_GLOBAL_SYM,
           :ASPERA_PLUGINS_FOLDERNAME,
+          :PERSISTENCY_FOLDER,
           :FILE_LIST_FOLDER_NAME,
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
+          :SERVER_COMMAND,
+          :TRANSFERD_APP_NAME,
           :DEMO_SERVER,
           :DEMO_PRESET,
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
           :EXTEND_VAULT,
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
-          :SERVER_COMMAND,
-          :PRESET_DIG_SEPARATOR,
           :COFFEE_IMAGE_URL,
-          :SELF_SIGNED_CERT,
-          :PERSISTENCY_FOLDER,
-          :CONF_OVERVIEW_KEYS,
-          :SMTP_CONF_PARAMS,
-          :TRANSFERD_APP_NAME,
-          :GLOBAL_DEFAULT_KEYWORD,
-          :CONF_GLOBAL_SYM,
           :GEM_CHECK_DATE_FMT,
-          :CERT_EXT
+          :CONF_OVERVIEW_KEYS,
+          :SMTP_CONF_PARAMS
       end
     end
   end
