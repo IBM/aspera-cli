@@ -1792,8 +1792,8 @@ nd_ak_bearer_perm_modify:
     - /
     - modify
     - 1
-    - '@:'
-    - 'access_levels=@list: read list'
+    - "@:"
+    - "access_levels=@list: read list"
 node_bearer_token:
   depends_on:
     - nd_ak_bearer_create
@@ -2604,7 +2604,7 @@ aoc_pack_send1:
   args:
     - packages
     - send
-    - '@:'
+    - "@:"
     - name=$(name) $(TIMESTAMP_TEST_RUN)
     - recipients.0=@preset:aoc_user.username
     - note=some notes
@@ -3536,7 +3536,7 @@ aocat8b:
     - create
     - --cloud=softlayer
     - --region=@preset:icos.region
-    - '@:'
+    - "@:"
     - id=ak1ibmcloud
     - secret=@preset:misc.secret_here
     - name="my test key"
@@ -3992,7 +3992,7 @@ nd_async_id_error:
     - node
     - async
     - show
-    - '%foo:bar'
+    - "%foo:bar"
 nd_async_list:
   args:
     - node
@@ -6165,7 +6165,7 @@ f5_adm_sh_invite:
     - shared_inboxes
     - invite
     - "@extend:%name:@preset:faspex5.shared_box_name@"
-    - '@:'
+    - "@:"
     - email_address=johnny@example.com
   post: sleep 10
 f5_adm_shbox_member_del:
@@ -6507,20 +6507,20 @@ alee_entitlement:
   args:
     - alee
     - entitlement
-aocwa_health:
+fx4_health:
   tags:
     - health
   args:
     - faspex
     - health
-aocwa_health_bad:
+fx4_health_bad:
   tags:
     - nodoc
   args:
     - faspex
     - health
     - --url=https://wrong.example.com
-aocwa_detect:
+fx4_detect:
   tags:
     - faspex
     - nodoc
@@ -6528,7 +6528,7 @@ aocwa_detect:
     - config
     - detect
     - "@preset:faspex4_user.url"
-aocwa_wizard:
+fx4_wizard:
   tags:
     - faspex
   args:
@@ -6538,13 +6538,13 @@ aocwa_wizard:
     - faspex
     - --username=test
     - --password=test
-aocwa_pack_list:
+fx4_pack_list:
   args:
     - faspex
     - package
     - list
     - --query.max=5
-aocwa_pack_send:
+fx4_pack_send:
   args:
     - faspex
     - package
@@ -6552,9 +6552,9 @@ aocwa_pack_send:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 8
-aocwa_package_id:
+fx4_package_id:
   depends_on:
-    - aocwa_pack_send
+    - fx4_pack_send
   tags:
     - save_output
     - nodoc
@@ -6566,14 +6566,14 @@ aocwa_package_id:
     - --fields=package_id
     - --display=data
     - --format=csv
-aocwa_prsb:
+fx4_prsb:
   args:
     - faspex
     - package
     - receive
-    - $(t.saved_output :aocwa_package_id)
+    - $(t.saved_output :fx4_package_id)
     - --to-folder=$(TMP)
-aocwa_package_id2:
+fx4_package_id2:
   tags:
     - save_output
     - nodoc
@@ -6586,15 +6586,15 @@ aocwa_package_id2:
     - --fields=package_id
     - --display=data
     - --format=csv
-aocwa_prsd:
+fx4_prsd:
   args:
     - faspex
     - package
     - receive
-    - $(t.saved_output :aocwa_package_id2)
+    - $(t.saved_output :fx4_package_id2)
     - --to-folder=$(TMP)
     - --box=sent
-aocwa_package_id3:
+fx4_package_id3:
   tags:
     - save_output
     - nodoc
@@ -6606,14 +6606,14 @@ aocwa_package_id3:
     - --fields=package_id
     - --display=data
     - --format=csv
-aocwa_prib:
+fx4_prib:
   args:
     - faspex
     - package
     - receive
-    - $(t.saved_output :aocwa_package_id3)
+    - $(t.saved_output :fx4_package_id3)
     - --to-folder=$(TMP)
-aocwa_prl:
+fx4_prl:
   tags:
     - nodoc
   args:
@@ -6622,7 +6622,7 @@ aocwa_prl:
     - receive
     - --to-folder=$(TMP)
     - --link=@preset:faspex4.link_recv_from_user
-aocwa_prall:
+fx4_prall:
   args:
     - faspex
     - package
@@ -6631,7 +6631,7 @@ aocwa_prall:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --query.max=10
-aocwa_pslu:
+fx4_pslu:
   args:
     - faspex
     - package
@@ -6639,7 +6639,7 @@ aocwa_pslu:
     - --link=@preset:faspex4.link_send_to_user
     - --delivery-info=@json:{"title":"$(name) $(TIMESTAMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
-aocwa_psld:
+fx4_psld:
   args:
     - faspex
     - package
@@ -6647,19 +6647,19 @@ aocwa_psld:
     - --link=@preset:faspex4.link_send_to_dropbox
     - --delivery-info=@json:{"title":"$(name) $(TIMESTAMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
-aocwa_remote_src:
+fx4_remote_src:
   args:
     - faspex
     - source
     - list
-aocwa_remote_srcb:
+fx4_remote_srcb:
   args:
     - faspex
     - source
     - info
     - "%name:@preset:faspex4.src"
     - --storage=@preset:faspex4_storage
-aocwa_remote_srcc:
+fx4_remote_srcc:
   args:
     - faspex
     - source
@@ -6668,7 +6668,7 @@ aocwa_remote_srcc:
     - br
     - /
     - --storage=@preset:faspex4_storage
-aocwa_remote_srcd:
+fx4_remote_srcd:
   args:
     - faspex
     - package
@@ -6676,73 +6676,73 @@ aocwa_remote_srcd:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:misc.email_internal@"]}
     - --remote-source=@extend:%name:@preset:faspex4.src
     - sample_source.txt
-aocwa_misc:
+fx4_misc:
   args:
     - faspex
     - me
-aocwa_miscb:
+fx4_miscb:
   args:
     - faspex
     - address_book
-aocwa_miscc:
+fx4_miscc:
   args:
     - faspex
     - login_methods
-aocwa_v4:
+fx4_v4:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dropbox
     - list
-aocwa_v4b:
+fx4_v4b:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dmembership
     - list
-aocwa_v4c:
+fx4_v4c:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - workgroup
     - list
-aocwa_v4d:
+fx4_v4d:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - wmembership
     - list
-aocwa_v4e:
+fx4_v4e:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - user
     - list
-aocwa_v4f:
+fx4_v4f:
   args:
     - faspex
     - v4
     - metadata_profile
     - list
-aocwa_db1:
+fx4_db1:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-aocwa_db1b:
+fx4_db1b:
   args:
     - faspex
     - package
     - send
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":[*@preset:faspex4.dbx@]}
     - $(PATH_TST_ASC_LCL)
-aocwa_package_id4:
+fx4_package_id4:
   tags:
     - save_output
     - nodoc
@@ -6754,21 +6754,21 @@ aocwa_package_id4:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-aocwa_db1d:
+fx4_db1d:
   args:
     - faspex
     - package
     - receive
-    - $(t.saved_output :aocwa_package_id4)
+    - $(t.saved_output :fx4_package_id4)
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
-aocwa_db1e:
+fx4_db1e:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-aocwa_db1f:
+fx4_db1f:
   args:
     - faspex
     - package
@@ -6776,7 +6776,7 @@ aocwa_db1f:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":[*@preset:faspex4.wkg@]}
     - $(PATH_TST_ASC_LCL)
   post: sleep 10
-aocwa_package_id5:
+fx4_package_id5:
   tags:
     - save_output
     - nodoc
@@ -6788,12 +6788,12 @@ aocwa_package_id5:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-aocwa_db1h:
+fx4_db1h:
   args:
     - faspex
     - package
     - receive
-    - $(t.saved_output :aocwa_package_id5)
+    - $(t.saved_output :fx4_package_id5)
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
 github_smoke_test:
