@@ -14,21 +14,20 @@ module Aspera
     # Extracted from Plugins::Config so it can be referenced independently
     # via Context#presets without coupling to the plugin machinery.
     class PresetManager
-      # Reserved preset / section names
-      CONF_PRESET_CONFIG   = 'config'
-      CONF_PRESET_VERSION  = 'version'
-      CONF_PRESET_DEFAULTS = 'default'
-      CONF_PRESET_GLOBAL   = 'global_common_defaults'
+      # Reserved keys in the YAML config file
+      module Key
+        CONFIG   = 'config'
+        VERSION  = 'version'
+        DEFAULTS = 'default'
+        GLOBAL   = 'global_common_defaults'
+      end
+
       GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
-      CONF_GLOBAL_SYM      = :config
+      CONF_GLOBAL_SYM        = :config
       # Separator for dot-notation digging into presets
       PRESET_DIG_SEPARATOR = '.'
 
-      private_constant :CONF_PRESET_CONFIG,
-        :CONF_PRESET_VERSION,
-        :CONF_PRESET_DEFAULTS,
-        :CONF_PRESET_GLOBAL,
-        :PRESET_DIG_SEPARATOR
+      private_constant :PRESET_DIG_SEPARATOR
 
       # @param config_file [String]       absolute path to the YAML config file
       # @param use_plugin_defaults [Boolean] if false, skip default preset lookup
@@ -62,7 +61,7 @@ module Aspera
           @checksum_on_disk = checksum
         else
           Log.log.warn{"No config file found. New configuration file: #{@config_file}"}
-          @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => 'new file'}}
+          @config_presets = {Key::CONFIG => {Key::VERSION => 'new file'}}
           # @checksum_on_disk remains nil → will be saved on first write
         end
         validate_config_presets!
@@ -102,10 +101,10 @@ module Aspera
       def plugin_default_name(plugin_name_sym)
         Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
         return nil unless @use_plugin_defaults
-        return nil unless @config_presets.key?(CONF_PRESET_DEFAULTS)
-        Aspera.assert_type(@config_presets[CONF_PRESET_DEFAULTS], Hash){'default section'}
-        return nil unless @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
-        default_name = @config_presets[CONF_PRESET_DEFAULTS][plugin_name_sym.to_s]
+        return nil unless @config_presets.key?(Key::DEFAULTS)
+        Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash){'default section'}
+        return nil unless @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
+        default_name = @config_presets[Key::DEFAULTS][plugin_name_sym.to_s]
         unless @config_presets.key?(default_name)
           Log.log.error do
             "Default config name [#{default_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
@@ -163,8 +162,8 @@ module Aspera
       def global_default_preset
         result = plugin_default_name(CONF_GLOBAL_SYM)
         if result.nil?
-          result = CONF_PRESET_GLOBAL
-          set_key(CONF_PRESET_DEFAULTS, CONF_GLOBAL_SYM, result)
+          result = Key::GLOBAL
+          set_key(Key::DEFAULTS, CONF_GLOBAL_SYM, result)
         end
         result
       end
@@ -176,14 +175,14 @@ module Aspera
 
       # Create / overwrite a preset and optionally set it as plugin default.
       def defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
-        @config_presets[CONF_PRESET_DEFAULTS] ||= {}
+        @config_presets[Key::DEFAULTS] ||= {}
         raise Cli::Error, "A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
-          if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name)
+          if !option_override && option_default && @config_presets[Key::DEFAULTS].key?(plugin_name)
         raise Cli::Error, "Preset already exists: #{preset_name}  (use --override=yes or provide alternate name on command line)" \
           if !option_override && @config_presets.key?(preset_name)
         if option_default
           Log.log.info("Setting config preset as default for #{plugin_name}")
-          @config_presets[CONF_PRESET_DEFAULTS][plugin_name.to_s] = preset_name
+          @config_presets[Key::DEFAULTS][plugin_name.to_s] = preset_name
         end
         @config_presets[preset_name] = preset_values
       end
@@ -222,14 +221,14 @@ module Aspera
       def validate_config_presets!
         Log.dump(:available_presets, @config_presets, level: :trace1)
         Aspera.assert_type(@config_presets, Hash){'config file YAML'}
-        Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
-        version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
+        Aspera.assert(@config_presets.key?(Key::CONFIG)){"Cannot find key: #{Key::CONFIG}"}
+        version = @config_presets[Key::CONFIG][Key::VERSION]
         raise Cli::Error, 'No version found in config section.' if version.nil?
         Log.log.debug{"conf version: #{version}"}
         # Fix bug in 4.4 (creating key "true" in "default" preset)
-        @config_presets[CONF_PRESET_DEFAULTS].delete(true) if @config_presets[CONF_PRESET_DEFAULTS].is_a?(Hash)
+        @config_presets[Key::DEFAULTS].delete(true) if @config_presets[Key::DEFAULTS].is_a?(Hash)
         # Stamp with current version
-        @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = Cli::VERSION
+        @config_presets[Key::CONFIG][Key::VERSION] = Cli::VERSION
       end
     end
   end

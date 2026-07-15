@@ -712,13 +712,13 @@ module Aspera
                 'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
               }
             end
-            cp[PresetManager::CONF_PRESET_DEFAULTS] ||= {}
-            if cp[PresetManager::CONF_PRESET_DEFAULTS].key?(SERVER_COMMAND)
-              Log.log.warn{"Server default preset already set to: #{cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND]}"}
+            cp[PresetManager::Key::DEFAULTS] ||= {}
+            if cp[PresetManager::Key::DEFAULTS].key?(SERVER_COMMAND)
+              Log.log.warn{"Server default preset already set to: #{cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND]}"}
               Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
-                DEMO_PRESET.eql?(cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND])
+                DEMO_PRESET.eql?(cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND])
             else
-              cp[PresetManager::CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
+              cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
               Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
             end
             return Result::Status.new('Done')
