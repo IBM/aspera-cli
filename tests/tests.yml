@@ -1905,6 +1905,7 @@ aoc_wizard_2c:
 aoc_faspex_gateway:
   tags:
     - noblock
+    - fxgateway
   args:
     - aoc
     - gateway
@@ -1914,7 +1915,7 @@ aoc_faspex_gatewayb:
     - aoc_faspex_gateway
   tags:
     - nodoc
-    - cross
+    - fxgateway
   args:
     - -N
     - faspex
@@ -6317,6 +6318,7 @@ f5_fxgw_start:
   description: Start a faspex4->faspex5 gateway in background.
   tags:
     - noblock
+    - fxgateway
   args:
     - faspex5
     - gateway
@@ -6325,7 +6327,7 @@ f5_fxgw_test:
   description: Test the faspex4->faspex5 gateway.
   tags:
     - nodoc
-    - cross
+    - fxgateway
   depends_on:
     - f5_fxgw_start
   args:

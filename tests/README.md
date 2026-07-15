@@ -97,8 +97,7 @@ killall ascli;sleep 2
 bundle exec rake clobber
 
 # skip some tests
-bundle exec rake test:skip'[tag faspex]'
-bundle exec rake test:reset'[tag cross]'
+bundle exec rake test:skip'[tag faspex fxgateway]'
 
 # run some tests first
 bundle exec rake test:run'[tag interactive]'
