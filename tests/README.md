@@ -98,6 +98,7 @@ bundle exec rake clobber
 
 # skip some tests
 bundle exec rake test:skip'[tag faspex]'
+bundle exec rake test:reset'[tag cross]'
 
 # run some tests first
 bundle exec rake test:run'[tag interactive]'
