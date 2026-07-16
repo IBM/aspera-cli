@@ -296,7 +296,7 @@ class DocHelper
     [/\$\(t\.saved_output( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
     [/\$\(t\.saved_output( :|\(')([^\)']+)'?.*\)/, '<\2>'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
-    [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
+    [/@preset:(?:[a-z0-9_]+|\$\([a-z_]+\))\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
     [%r{\$\(PATH_TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],

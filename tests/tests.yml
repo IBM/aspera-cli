@@ -389,7 +389,7 @@ serv_wizard:
     - server
     - --username=@preset:server_user.username
     - --password=@preset:server_user.password
-serv_wizard2:
+serv_wizard_password:
   tags:
     - nodoc
   args:
@@ -883,7 +883,7 @@ serv_key:
     - "--password=@none:"
     - --ssh-options=@json:{"number_of_password_prompts":0}
     - --ssh-keys=$(t.saved_output :serv_key_path)
-serv_pr1:
+serv_upload_progress_quiet:
   tags:
     - nodoc
   args:
@@ -895,7 +895,7 @@ serv_pr1:
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
     - --transfer-info=@json:{"quiet":false}
     - --progress=no
-serv_pr2:
+serv_upload_progress:
   tags:
     - nodoc
   args:
@@ -969,7 +969,7 @@ cons_cur_show_one:
     - current
     - show
     - $(t.saved_output('console_xfer_id').split("\n").last)
-cons_cur_show_one1:
+cons_xfer_current_files:
   depends_on:
     - console_xfer_id
   args:
@@ -978,7 +978,7 @@ cons_cur_show_one1:
     - current
     - files
     - $(t.saved_output('console_xfer_id').split("\n").last)
-cons_cur_show_one2:
+cons_xfer_current_resume:
   $comment: Gives 500 Internal Server Error
   tags:
     - nodoc
@@ -991,13 +991,13 @@ cons_cur_show_one2:
     - current
     - resume
     - $(t.saved_output('console_xfer_id').split("\n").last)
-cons_sma_lst:
+cons_smart_list:
   args:
     - console
     - transfer
     - smart
     - list
-cons_sma_sta:
+cons_smart_sub:
   $comment: Smart transfer does not exist
   tags:
     - flaky
@@ -1043,42 +1043,42 @@ nd_info:
     - node
     - info
     - --fpac=function FindProxyForURL(url,host){return "DIRECT"}
-nd_lic:
+nd_license:
   $comment: Requires special node ACL.
   args:
     - node
     - license
     - --preset=node_ak_adm
-nd_det:
+nd_api_details:
   args:
     - node
     - api_details
-nd_tra:
+nd_transport:
   args:
     - node
     - transport
-nd_spec:
+nd_spec_show:
   args:
     - node
     - spec
-nd_bro:
+nd_browse:
   args:
     - node
     - browse
     - /
     - --log-level=trace2
-nd_sea:
+nd_search:
   args:
     - node
     - search
     - /
     - --query=@json:{"sort":"mtime"}
-nd_spa:
+nd_space:
   args:
     - node
     - space
     - /
-nd_del_err:
+nd_delete_error:
   tags:
     - pre_cleanup
     - nodoc
@@ -1088,7 +1088,7 @@ nd_del_err:
     - "@extend:@preset:server.upload_folder@/a_folder"
 nd_folder:
   depends_on:
-    - nd_del_err
+    - nd_delete_error
   args:
     - node
     - mkdir
@@ -1128,7 +1128,7 @@ nd_folder5:
     - node
     - delete
     - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
-nd2:
+nd_upload_ascii:
   tags:
     - nodoc
   args:
@@ -1137,17 +1137,17 @@ nd2:
     - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_cap_kbps":10000}
-nd2b:
+nd_download_ascii:
   depends_on:
-    - nd2
+    - nd_upload_ascii
   args:
     - node
     - download
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
-nd2c:
+nd_delete_ascii:
   depends_on:
-    - nd2b
+    - nd_download_ascii
   args:
     - node
     - delete
@@ -1156,7 +1156,7 @@ nd_slash:
   args:
     - node
     - slash
-nd2_http:
+nd_http_upload:
   tags:
     - nodoc
   args:
@@ -1165,16 +1165,16 @@ nd2_http:
     - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_cap_kbps":10000}
-nd2_httpb:
+nd_http_cat:
   depends_on:
-    - nd2_http
+    - nd_http_upload
   args:
     - node
     - cat
     - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
-nd2_httpc:
+nd_http_delete:
   depends_on:
-    - nd2_httpb
+    - nd_http_cat
   args:
     - node
     - delete
@@ -1267,7 +1267,7 @@ nd_xfer_lst:
     - transfer
     - list
     - --query=@json:{"active_only":true}
-nd_xfer_lstb:
+nd_xfer_list_once:
   args:
     - node
     - transfer
@@ -1278,7 +1278,7 @@ nd_xfer_lst_once1:
   tags:
     - nodoc
   depends_on:
-    - nd_xfer_lstb
+    - nd_xfer_list_once
   args:
     - node
     - transfer
@@ -1294,12 +1294,12 @@ nd_xfer_lst_once2:
     - transfer
     - list
     - --once-only=yes
-nd_xfer_sess_lst:
+nd_xfer_sessions:
   args:
     - node
     - transfer
     - sessions
-nd_xfer_ops:
+nd_xfer_upload_bg:
   tags:
     - nodoc
     - noblock
@@ -1311,9 +1311,9 @@ nd_xfer_ops:
     - faux:///bigfile?10G
     - --progress=no
   post: sleep 5
-nd_xfer_id:
+nd_xfer_active_id:
   depends_on:
-    - nd_xfer_ops
+    - nd_xfer_upload_bg
   tags:
     - save_output
     - nodoc
@@ -1323,81 +1323,81 @@ nd_xfer_id:
     - list
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
-nd_xfer_ops3:
+nd_xfer_show:
   depends_on:
-    - nd_xfer_id
+    - nd_xfer_active_id
   args:
     - node
     - transfer
     - show
-    - $(t.saved_output :nd_xfer_id)
-nd_xfer_ops4:
+    - $(t.saved_output :nd_xfer_active_id)
+nd_xfer_modify:
   depends_on:
-    - nd_xfer_id
+    - nd_xfer_active_id
   args:
     - node
     - transfer
     - modify
-    - $(t.saved_output :nd_xfer_id)
+    - $(t.saved_output :nd_xfer_active_id)
     - '@json:{"target_rate_kbps":10000}'
-nd_xfer_ops5:
+nd_xfer_show_after_modify:
   depends_on:
-    - nd_xfer_id
+    - nd_xfer_active_id
   args:
     - node
     - transfer
     - show
-    - $(t.saved_output :nd_xfer_id)
-nd_xfer_ops6:
+    - $(t.saved_output :nd_xfer_active_id)
+nd_xfer_cancel:
   depends_on:
-    - nd_xfer_id
-    - nd_xfer_ops3
-    - nd_xfer_ops4
-    - nd_xfer_ops5
+    - nd_xfer_active_id
+    - nd_xfer_show
+    - nd_xfer_modify
+    - nd_xfer_show_after_modify
   args:
     - node
     - transfer
     - cancel
-    - $(t.saved_output :nd_xfer_id)
-  post: t.stop_process :nd_xfer_ops
-nd_xfer_ops7:
+    - $(t.saved_output :nd_xfer_active_id)
+  post: t.stop_process :nd_xfer_upload_bg
+nd_xfer_bandwidth:
   args:
     - node
     - transfer
     - bandwidth_average
-nd_xfer_ops8:
+nd_xfer_sessions_after:
   args:
     - node
     - transfer
     - sessions
-node_basic_token:
+nd_basic_token:
   args:
     - node
     - basic_token
-nd_browser:
+nd_asperabrowser:
   args:
     - node
     - asperabrowser
-nd8:
+nd_upload_ak_creds:
   args:
     - node
     - upload
-    - --username=@preset:aoc.ak_name
-    - --password=@preset:aoc.ak_secret
+    - --username=@preset:awa.ak_name
+    - --password=@preset:awa.ak_secret
     - $(PATH_TST_ASC_LCL)
-nd_central_1:
+nd_central_session_list:
   args:
     - node
     - central
     - session
     - list
-nd_central_1b:
+nd_central_file_list:
   args:
     - node
     - central
     - file
     - list
-nd_central_1c:
+nd_central_file_modify:
   args:
     - node
     - central
@@ -1411,7 +1411,7 @@ nd_watch_list:
     - watch_folder
     - list
     - --preset=node_ak_adm
-nd_watch_1b:
+nd_watch_folder_create:
   $comment: Fails because watchfolderd is not running
   tags:
     - flaky
@@ -1422,39 +1422,39 @@ nd_watch_1b:
     - create
     - '@json:{"source":{"path":"/src1"},"target":{"path":"/dst1"}}'
     - --preset=node_ak_adm
-nd_stream_1:
+nd_stream_list:
   args:
     - --preset=node_ak_adm
     - node
     - stream
     - list
-nd_ak:
+nd_ak_list:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - list
-nd_akb:
+nd_ak_node_info:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - node_info
     - /
-    - --secret=@preset:aoc.ak_secret
-nd_akc:
+    - --secret=@preset:awa.ak_secret
+nd_ak_browse:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - browse
     - /
-    - --secret=@preset:aoc.ak_secret
-nd_akd:
+    - --secret=@preset:awa.ak_secret
+nd_ak_find:
   $comment: TODO Check
   tags:
     - must_fail
@@ -1465,42 +1465,42 @@ nd_akd:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - find
     - "@json:{}"
-nd_ake:
+nd_ak_find_ruby:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - find
-    - "@preset:aoc.test_folder"
+    - "@preset:awa.test_folder"
     - |
       @ruby:->(f){f["name"].end_with?(".jpg")}
-    - --secret=@preset:aoc.ak_secret
-nd_akf:
+    - --secret=@preset:awa.ak_secret
+nd_ak_find_regex:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - find
-    - "@preset:aoc.test_folder"
+    - "@preset:awa.test_folder"
     - '@re:\.jpg$'
-    - --secret=@preset:aoc.ak_secret
-nd_akg:
+    - --secret=@preset:awa.ak_secret
+nd_ak_find_all:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - find
-    - "@preset:aoc.test_folder"
-    - --secret=@preset:aoc.ak_secret
+    - "@preset:awa.test_folder"
+    - --secret=@preset:awa.ak_secret
 nd_ak_mkdir_cleanup:
   tags:
     - pre_cleanup
@@ -1510,10 +1510,10 @@ nd_ak_mkdir_cleanup:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - delete
     - /tst_nd_ak
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkdirb:
   depends_on:
@@ -1523,10 +1523,10 @@ nd_ak_mkdirb:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - mkdir
     - /tst_nd_ak
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile:
   tags:
@@ -1537,10 +1537,10 @@ nd_ak_mkfile:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - delete
     - /mkfile.txt
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mkfileb:
   args:
@@ -1548,11 +1548,11 @@ nd_ak_mkfileb:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - mkfile
     - /mkfile.txt
     - hello world
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mklink:
   depends_on:
@@ -1565,10 +1565,10 @@ nd_ak_mklink:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - delete
     - /mklink.txt
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mklinkb:
   args:
@@ -1576,11 +1576,11 @@ nd_ak_mklinkb:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - mklink
     - /mklink.txt
     - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
   post: sleep TEMPORIZE_CREATE
 nd_ak_mvdir:
   tags:
@@ -1592,22 +1592,22 @@ nd_ak_mvdir:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - browse
     - /
     - --node-api.cache=false
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 nd_ak_mvdirb:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - rename
     - /tst_nd_ak
     - test_nd_ak2
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 nd_ak_deldir:
   depends_on:
     - nd_ak_mvdir
@@ -1616,66 +1616,66 @@ nd_ak_deldir:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - delete
     - /test_nd_ak2
-    - --secret=@preset:aoc.ak_secret
-nd_ak3:
+    - --secret=@preset:awa.ak_secret
+nd_ak_upload:
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - upload
     - "faux:///test_nd_ak3?100k"
     - --node-api.standard_ports=false
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 node_ak_download:
   depends_on:
-    - nd_ak3
+    - nd_ak_upload
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - download
     - test_nd_ak3
     - --to-folder=$(TMP)
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 node_ak_upload:
   tags:
     #- flaky
     - nodoc
   depends_on:
-    - nd_ak3
+    - nd_ak_upload
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - show
     - /test_nd_ak3
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 node_ak_thumbnail:
   $comment: No preview is available.
   tags:
     - flaky
     - nodoc
   depends_on:
-    - nd_ak3
+    - nd_ak_upload
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - thumbnail
     - /test_nd_ak3
-    - --secret=@preset:aoc.ak_secret
-nd_ak3e:
+    - --secret=@preset:awa.ak_secret
+nd_ak_upload_cleanup:
   depends_on:
     - node_ak_download
     - node_ak_upload
@@ -1685,22 +1685,22 @@ nd_ak3e:
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - delete
     - test_nd_ak3
-    - --secret=@preset:aoc.ak_secret
-nd_ak4:
+    - --secret=@preset:awa.ak_secret
+nd_ak_show:
   depends_on:
-    - nd_ak3e
+    - nd_ak_upload_cleanup
   args:
     - --preset=node_ak_adm
     - node
     - access_key
     - do
-    - "@preset:aoc.ak_name"
+    - "@preset:awa.ak_name"
     - show
     - "%id:1"
-    - --secret=@preset:aoc.ak_secret
+    - --secret=@preset:awa.ak_secret
 nd_ak_bearer_reset:
   $comment: Marked interactive as it requires to check if local node is running
   tags:
@@ -1750,7 +1750,7 @@ nd_ak_bearer_set_key:
     - set_bearer_key
     - self
     - "@file:@preset:file.private_key"
-bearer_root_id:
+nd_ak_bearer_root_id:
   depends_on:
     - nd_ak_bearer_create
   tags:
@@ -1779,7 +1779,7 @@ nd_ak_bearer_perm_create:
     - do
     - self
     - permission
-    - "%id:$(t.saved_output :bearer_root_id)"
+    - "%id:$(t.saved_output :nd_ak_bearer_root_id)"
     - create
     - '@json:{"access_type":"user","access_id":"666"}'
 nd_ak_bearer_perm_show:
@@ -1828,7 +1828,7 @@ node_bearer_token:
     - bearer_token
     - "@file:@preset:file.private_key"
     - '@json:{"user_id":"666"}'
-nd_ak_beareri:
+nd_ak_bearer_browse:
   depends_on:
     - nd_ak_bearer_create
   args:
@@ -1836,7 +1836,7 @@ nd_ak_beareri:
     - node
     - --url=@preset:tst_node_preview.url
     - --password=Bearer $(t.saved_output :node_bearer_token)
-    - --root-id=$(t.saved_output :bearer_root_id)
+    - --root-id=$(t.saved_output :nd_ak_bearer_root_id)
     - access_key
     - do
     - self
@@ -1844,7 +1844,7 @@ nd_ak_beareri:
     - /
 nd_ak_bearer_del_perm:
   depends_on:
-    - nd_ak_beareri
+    - nd_ak_bearer_browse
   args:
     - -N
     - --preset=tst_node_preview
@@ -1857,7 +1857,7 @@ nd_ak_bearer_del_perm:
     - /
     - delete
     - 1
-nd_ak_bearerk:
+nd_ak_bearer_delete:
   depends_on:
     - nd_ak_bearer_del_perm
   args:
@@ -1872,35 +1872,35 @@ aoc_detect:
   args:
     - config
     - detect
-    - "@preset:aoc.org"
+    - "@preset:awa.org"
     - aoc
 aoc_wizard:
   args:
     - config
     - tokens
     - flush
-aoc_wizardb:
+aoc_config_tokens_list:
   args:
     - config
     - tokens
     - list
-aoc_wizardc:
+aoc_wizard_generic_client:
   args:
     - config
     - wizard
-    - "@preset:aoc.org"
+    - "@preset:awa.org"
     - aoc
     - --key-path=@preset:file.private_key
-    - --username=@preset:aoc.user_email
+    - --username=@preset:awa.user_email
     - --use-generic-client=yes
-aoc_wizard_2:
+aoc_config_tokens_flush:
   tags:
     - nodoc
   args:
     - config
     - tokens
     - flush
-aoc_wizard_2b:
+aoc_config_tokens_show:
   description: Try to show non existing token
   tags:
     - must_fail
@@ -1911,17 +1911,17 @@ aoc_wizard_2b:
     - tokens
     - show
     - foobar
-aoc_wizard_2c:
+aoc_wizard_preset:
   depends_on:
-    - aoc_wizard_2
+    - aoc_config_tokens_flush
   args:
     - config
     - wizard
-    - "@preset:aoc.org"
+    - "@preset:awa.org"
     - aoc
     - mypreset
     - --key-path=@preset:file.private_key
-    - --username=@preset:aoc.user_email
+    - --username=@preset:awa.user_email
 aoc_faspex_gateway:
   tags:
     - noblock
@@ -1948,16 +1948,20 @@ aoc_faspex_gatewayb:
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
   post: t.stop_process :aoc_faspex_gateway
-aoc_test:
-  instanciate: aocwa_user_suite
+aoc_help:
+  instanciate: awa_user_suite
+  vars:
+    secret_preset: aoc
   args:
     - aoc
 aew_user_suite:
-  instanciate: aocwa_user_suite
+  instanciate: awa_user_suite
+  vars:
+    secret_preset: aew
   args:
     - aoc
     - --preset=aew_user
-    - --workspace=Demo AEW
+    - --workspace=eudemo
 aoc_ats_suite:
   instanciate: ats_suite_tmpl
   args:
@@ -1974,98 +1978,98 @@ aoc_servers:
     - aoc
     - servers
     - --url=@preset:aoc_user.url
-aocwa_remind:
-  template: aocwa_user_suite
+awa_remind:
+  template: awa_user_suite
   args:
     - -N
     - remind
-    - --username=@preset:aoc.user_email
+    - --username=@preset:awa.user_email
     - --url=@preset:aoc_user.url
-aocwa_bearer:
-  template: aocwa_user_suite
+awa_bearer:
+  template: awa_user_suite
   args:
     - bearer_token
     - --display=data
-aocwa_admin_bearer:
-  template: aocwa_user_suite
+awa_admin_bearer:
+  template: awa_user_suite
   args:
     - --preset=aoc_admin
     - admin
     - bearer_token
     - --display=data
-aocwa_org:
-  template: aocwa_user_suite
+awa_org:
+  template: awa_user_suite
   args:
     - organization
-aocwa_org_image:
-  template: aocwa_user_suite
+awa_org_image:
+  template: awa_user_suite
   args:
     - organization
     - --format=image
     - --fields=background_image_url
     - --ui=text
-aocwa_tiers:
-  template: aocwa_user_suite
+awa_tiers:
+  template: awa_user_suite
   args:
     - tier_restrictions
-aocwa_ws_list:
-  template: aocwa_user_suite
+awa_ws_list:
+  template: awa_user_suite
   args:
     - user
     - workspaces
     - list
 aoc_user_profile:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - user
     - profile
     - show
-aocwa_usr_prof_mod:
-  template: aocwa_user_suite
+awa_usr_prof_mod:
+  template: awa_user_suite
   args:
     - user
     - profile
     - modify
     - '@json:{"name":"dummy change"}'
-aocwa_usr_prof_show:
-  template: aocwa_user_suite
+awa_usr_prof_show:
+  template: awa_user_suite
   args:
     - user
     - pref
     - show
-aocwa_usr_prof_mod_lang:
-  template: aocwa_user_suite
+awa_usr_prof_mod_lang:
+  template: awa_user_suite
   args:
     - user
     - pref
     - modify
     - '@json:{"default_language":"en-us"}'
-aocwa_usr_ctct_list:
-  template: aocwa_user_suite
+awa_usr_ctct_list:
+  template: awa_user_suite
   args:
     - user
     - contacts
     - list
-aocwa_shbox_list:
-  template: aocwa_user_suite
+awa_shbox_list:
+  template: awa_user_suite
   args:
     - packages
     - shared_inboxes
     - list
-aocwa_shbox_show:
-  template: aocwa_user_suite
+awa_shbox_show:
+  template: awa_user_suite
   args:
     - packages
     - shared_inboxes
     - show
-    - "%name:@preset:aoc.shared_inbox_name"
-aocwa_ws_current:
-  template: aocwa_user_suite
+    - "%name:@preset:awa.shared_inbox_name"
+awa_ws_current:
+  template: awa_user_suite
   args:
     - user
     - workspaces
     - current
-aoc_webauth:
+aoc_webauth_profile:
   tags:
     - interactive
   args:
@@ -2074,7 +2078,7 @@ aoc_webauth:
     - user
     - profile
     - show
-aoc_webauthb:
+aoc_webauth_profile_refresh:
   tags:
     - interactive
     - nodoc
@@ -2085,62 +2089,62 @@ aoc_webauthb:
     - profile
     - show
     - --http-options=@json:{"token_refresh_threshold":10000000000}
-aocfbr:
-  template: aocwa_user_suite
+aoc_files_browse_root:
+  template: awa_user_suite
   args:
     - files
     - browse
     - /
-aocfbr1:
-  template: aocwa_user_suite
+aoc_files_browse_remote:
+  template: awa_user_suite
   args:
     - files
     - browse
-    - "@preset:aoc.remote_folder"
-aocfbr1b:
-  template: aocwa_user_suite
+    - "@preset:awa.remote_folder"
+awa_files_browse_folder:
+  template: awa_user_suite
   args:
     - files
     - browse
-    - "@extend:@preset:aoc.remote_folder@/"
-aocfbr1c:
-  template: aocwa_user_suite
+    - "@extend:@preset:awa.remote_folder@/"
+awa_files_browse_file:
+  template: awa_user_suite
   args:
     - files
     - browse
-    - "@preset:aoc.remote_file"
-aocfbt:
-  template: aocwa_user_suite
+    - "@preset:awa.remote_file"
+awa_files_bearer:
+  template: awa_user_suite
   args:
     - files
     - bearer_token_node
     - /
     - --cache-tokens=no
-aocffin:
-  template: aocwa_user_suite
+awa_files_find_folder:
+  template: awa_user_suite
   args:
     - files
     - find
     - /sample_video
-aocffinb:
-  template: aocwa_user_suite
+awa_files_find_ext:
+  template: awa_user_suite
   args:
     - files
     - find
     - /sample_video
     - \.partial$
-aocffinc:
-  template: aocwa_user_suite
+awa_files_find_lambda:
+  template: awa_user_suite
   args:
     - files
     - find
     - /sample_video
     - '@ruby:->(f){f["type"].eql?("file")}'
-aoc_testsrc_cleanup:
+awa_testsrc_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - delete
@@ -2150,7 +2154,7 @@ aoc_some_folder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - delete
@@ -2159,7 +2163,7 @@ aoc_testdst_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - delete
@@ -2167,8 +2171,8 @@ aoc_testdst_cleanup:
   post: sleep TEMPORIZE_FILE
 aoc_testsrc_create:
   depends_on:
-    - aoc_testsrc_cleanup
-  template: aocwa_user_suite
+    - awa_testsrc_cleanup
+  template: awa_user_suite
   args:
     - files
     - mkdir
@@ -2178,7 +2182,7 @@ aoc_some_folder_create:
     - aoc_some_folder_cleanup
   tags:
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - mkdir
@@ -2188,11 +2192,11 @@ aoc_testdst_check:
   $comment: no-cache ensure we read the folder content on storage, not redis
   depends_on:
     - aoc_some_folder_create
-    - aoc_testsrc_cleanup
+    - awa_testsrc_cleanup
     - aoc_testdst_cleanup
   tags:
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - browse
@@ -2201,7 +2205,7 @@ aoc_testdst_check:
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - modify
@@ -2210,7 +2214,7 @@ aoc_somefolder_mount:
 aoc_rename_testdst:
   depends_on:
     - aoc_somefolder_mount
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - rename
@@ -2219,7 +2223,7 @@ aoc_rename_testdst:
 aoc_testsrc_upload:
   depends_on:
     - aoc_testsrc_create
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - upload
@@ -2228,7 +2232,7 @@ aoc_testsrc_upload:
 aoc_testsrc_upload_2:
   depends_on:
     - aoc_testsrc_upload
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - upload
@@ -2238,7 +2242,7 @@ aoc_testsrc_upload_2:
 aoc_files_transfer:
   depends_on:
     - aoc_testsrc_upload_2
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - transfer
@@ -2246,12 +2250,12 @@ aoc_files_transfer:
     - /testsrc
     - --to-folder=/testdst
     - $(FILENAME_ASCII)
-aocftrb:
+aoc_files_upload_utf:
   depends_on:
     - aoc_testsrc_upload_2
   tags:
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - upload
@@ -2263,79 +2267,79 @@ aoc_files_node_info:
   tags:
     - save_output
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - node_info
     - /testdst
     - --format=json
     - --display=data
-aocndinfb:
+aoc_files_upload_other_ws:
   tags:
     - nodoc
   depends_on:
     - aoc_files_node_info
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - upload
-    - --workspace=@preset:aoc.other_workspace
-    - --to-folder=@preset:aoc.other_folder
+    - --workspace=@preset:awa.other_workspace
+    - --to-folder=@preset:awa.other_folder
     - $(FILENAME_ASCII)
     - --transfer=node
     - --transfer-info=@json:$(t.saved_output('aoc_files_node_info'))
-aocfdel:
+awa_files_delete_folder:
   depends_on:
     - aoc_files_transfer
     - aoc_files_node_info
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - delete
     - /testsrc
-aocfbearnode:
-  template: aocwa_user_suite
+aoc_files_bearer:
+  template: awa_user_suite
   args:
     - files
     - bearer
     - /
-aocfdownd:
+aoc_files_download_multi:
   depends_on:
     - aoc_files_transfer
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - download
     - --to-folder=$(TMP)
     - testdst/$(FILENAME_ASCII)
     - testdst/$(FILENAME_UNICODE)
-aocfdowndb:
+aoc_files_download_ascii:
   tags:
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - download
     - --to-folder=$(TMP)
     - testdst/$(FILENAME_ASCII)
-aocfdownc:
+aoc_files_download_connect:
   depends_on:
     - aoc_testdst_cleanup
   pre: |
     PATH_DOWN_TST_ASC.delete rescue nil
     run('killall', 'asperaconnect', exception: false)
     sleep 1
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - download
     - --transfer=connect
     - testdst/$(FILENAME_ASCII)
-aocfdowna:
+aoc_files_download_desktop:
   depends_on:
     - aoc_testdst_cleanup
   pre: PATH_DOWN_TST_ASC.delete rescue nil
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - download
@@ -2344,13 +2348,13 @@ aocfdowna:
 aoc_files_cat:
   depends_on:
     - aoc_files_transfer
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - cat
     - testdst/$(FILENAME_ASCII)
 aoc_files_v3_info:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - v3
@@ -2359,7 +2363,7 @@ aoc_sync_pull_conf_parms:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms').mkdir
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - sync
@@ -2368,7 +2372,7 @@ aoc_sync_pull_conf_parms:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_parms')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_parmsb:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - sync
@@ -2379,7 +2383,7 @@ aoc_sync_conf_pull_params:
   pre: |
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').rmtree
     (PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params').mkdir
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - sync
@@ -2388,20 +2392,20 @@ aoc_sync_conf_pull_params:
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_paramsb:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - sync
     - admin
     - status
     - $(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params')
-aoc_file_id:
+aoc_file_browse_id:
   depends_on:
     - aoc_files_transfer
   tags:
     - save_output
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - br
@@ -2409,26 +2413,26 @@ aoc_file_id:
     - --fields=id
     - --format=csv
     - --display=data
-aoc_file_id_2:
+aoc_file_show_by_id:
   depends_on:
     - aoc_files_transfer
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - show
-    - "%id:$(t.saved_output('aoc_file_id'))"
-aoc_file_id_3:
+    - "%id:$(t.saved_output('aoc_file_browse_id'))"
+aoc_file_show_root:
   depends_on:
     - aoc_files_transfer
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - show
     - /
-aoc_file_id_4:
+aoc_file_show_by_path:
   depends_on:
     - aoc_files_transfer
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - show
@@ -2437,96 +2441,96 @@ aoc_testfolder_cleanup:
   tags:
     - pre_cleanup
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - delete
-    - "@preset:aoc.test_folder"
+    - "@preset:awa.test_folder"
   post: sleep TEMPORIZE_CREATE
-aoc_file_id_5:
+aoc_files_mkdir:
   tags:
     - nodoc
   depends_on:
     - aoc_files_transfer
     - aoc_testfolder_cleanup
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - mkdir
-    - "@preset:aoc.test_folder"
+    - "@preset:awa.test_folder"
 aoc_file_upload_video:
   tags:
     - nodoc
   depends_on:
-    - aoc_file_id_5
-  template: aocwa_user_suite
+    - aoc_files_mkdir
+  template: awa_user_suite
   args:
     - files
     - upload
-    - --to-folder=@preset:aoc.test_folder
+    - --to-folder=@preset:awa.test_folder
     - --src-type=pair
     - "@preset:file.mpg"
     - video_file.mpg
   post: |
     puts 'waiting for preview'
     sleep 60
-aoc_file_id_7:
+aoc_files_upload_pair:
   tags:
     - nodoc
   depends_on:
-    - aoc_file_id_5
-  template: aocwa_user_suite
+    - aoc_files_mkdir
+  template: awa_user_suite
   args:
     - files
     - upload
-    - --to-folder=@preset:aoc.test_folder
+    - --to-folder=@preset:awa.test_folder
     - --src-type=pair
     - "@preset:file.jpg"
     - image_file.jpg
-aoc_file_id_8:
+aoc_files_permission_list:
   depends_on:
-    - aoc_file_id_5
-  template: aocwa_user_suite
+    - aoc_files_mkdir
+  template: awa_user_suite
   args:
     - files
     - permission
-    - "@preset:aoc.test_folder"
+    - "@preset:awa.test_folder"
     - list
-aoc_file_id_9:
+aoc_files_thumbnail_video:
   $comment: no preview
   depends_on:
     - aoc_file_upload_video
   tags:
     - flaky
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - thumbnail
-    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
-aoc_file_id_10:
+    - "@extend:@preset:awa.test_folder@/video_file.mpg"
+aoc_files_thumbnail_text_double:
   tags:
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - thumbnail
-    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - "@extend:@preset:awa.test_folder@/video_file.mpg"
     - --query=@json:{"text":true,"double":true}
-aoc_file_id_11:
+aoc_files_thumbnail_text_single:
   tags:
     - nodoc
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - thumbnail
-    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
+    - "@extend:@preset:awa.test_folder@/video_file.mpg"
     - --query=@json:{"text":true,"double":false}
-aoc_file_id_12:
+aoc_files_thumbnail_video2:
   env:
     TERM_PROGRAM: null
     LC_TERMINAL: null
@@ -2534,13 +2538,13 @@ aoc_file_id_12:
     - rmagick
   depends_on:
     - aoc_file_upload_video
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - thumbnail
-    - "@extend:@preset:aoc.test_folder@/video_file.mpg"
-#	 aoc files modify @preset:aoc.test_folder
-aocfpub:
+    - "@extend:@preset:awa.test_folder@/video_file.mpg"
+#	 aoc files modify @preset:awa.test_folder
+aoc_files_pub_browse_no_pass:
   args:
     - -N
     - aoc
@@ -2548,7 +2552,7 @@ aocfpub:
     - browse
     - /
     - --url=@preset:aoc.public_link_folder_no_pass
-aocfpubb:
+aoc_files_pub_browse_pass:
   args:
     - -N
     - aoc
@@ -2557,7 +2561,7 @@ aocfpubb:
     - /
     - --url=@preset:aoc.public_link_folder_pass
     - --password=@preset:aoc.public_link_password
-aocfpubc:
+aoc_files_pub_upload:
   args:
     - -N
     - aoc
@@ -2567,14 +2571,14 @@ aocfpubc:
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_folder_no_pass
 aoc_lnk_priv:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - browse
     - /
-    - --url=@preset:aoc.private_link
-aocshlk2:
-  template: aocwa_user_suite
+    - --url=@preset:$(secret_preset).private_link
+aoc_short_link_priv_create:
+  template: awa_user_suite
   args:
     - files
     - short_link
@@ -2585,7 +2589,7 @@ aoc_short_link_pub_create:
   $comment: "access_levels: unit unitary levels to test unitary set."
   tags:
     - save_output
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - short_link
@@ -2599,7 +2603,7 @@ aoc_short_link_pub_create:
 aoc_short_link_pub_modify:
   depends_on:
     - aoc_short_link_pub_create
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - short_link
@@ -2609,11 +2613,11 @@ aoc_short_link_pub_modify:
     - $(t.saved_output('aoc_short_link_pub_create'))
     - "@:"
     - access_levels=edit
-aocshlk1:
+aoc_short_link_priv_list:
   depends_on:
-    - aocshlk2
+    - aoc_short_link_priv_create
     - aoc_short_link_pub_create
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - files
     - short_link
@@ -2622,7 +2626,7 @@ aocshlk1:
     - list
 aoc_pack_send1:
   $comment: Send package to normal user.
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
@@ -2633,26 +2637,26 @@ aoc_pack_send1:
     - END
     - $(PATH_TST_ASC_LCL)
 aoc_pack_send2:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
     - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:misc.email_external@"]}'
     - --new-user-option=@json:{"package_contact":true}
     - $(PATH_TST_ASC_LCL)
-aocp2:
-  template: aocwa_user_suite
+aoc_pack_list:
+  template: awa_user_suite
   args:
     - packages
     - list
-package_id3:
+aoc_pack_recv_id:
   depends_on:
     - aoc_pack_send1
   tags:
     - save_output
     - wait_value
     - nodoc
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - list
@@ -2660,36 +2664,36 @@ package_id3:
     - --fields=id
     - --display=data
     - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
-aocp3b:
+aoc_pack_recv:
   depends_on:
-    - package_id3
-  template: aocwa_user_suite
+    - aoc_pack_recv_id
+  template: awa_user_suite
   args:
     - packages
     - receive
-    - $(t.saved_output('package_id3'))
+    - $(t.saved_output('aoc_pack_recv_id'))
     - --to-folder=$(TMP)
-aoc_pack_recv_id3:
+aoc_pack_recv_root:
   depends_on:
-    - package_id3
-  template: aocwa_user_suite
+    - aoc_pack_recv_id
+  template: awa_user_suite
   args:
     - packages
     - receive
-    - $(t.saved_output('package_id3'))
+    - $(t.saved_output('aoc_pack_recv_id'))
     - --to-folder=$(TMP)
     - /
-aocp3d:
+aoc_pack_browse:
   depends_on:
-    - package_id3
-  template: aocwa_user_suite
+    - aoc_pack_recv_id
+  template: awa_user_suite
   args:
     - packages
     - browse
-    - $(t.saved_output('package_id3'))
+    - $(t.saved_output('aoc_pack_recv_id'))
     - /
-aocp4:
-  template: aocwa_user_suite
+aoc_pack_recv_all:
+  template: awa_user_suite
   args:
     - packages
     - receive
@@ -2700,15 +2704,15 @@ aocp4:
     - --package-folder.fld.0=name
     - --package-folder.fld.1=id
     - --package-folder.opt=true
-aocp5:
+aoc_pack_recv_public:
   $comment: "TODO: generate new token based package receive"
   tags:
     - flaky
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - organization
     - -N
-    - --url=@preset:aoc.public_link_recv_from_aoc_user
+    - --url=@preset:$(secret_preset).public_link_recv_from_aoc_user
 aocp_send_pub_sh:
   args:
     - -N
@@ -2729,44 +2733,44 @@ aocp_send_pub_usr:
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
 aocp_recv_init:
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - receive
     - INIT
     - --once-only=yes
-    - --query.dropbox_name=@preset:aoc.shared_inbox_name
+    - --query.dropbox_name=@preset:awa.shared_inbox_name
 aocp_send_shbx:
   depends_on:
     - aocp_recv_init
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
-    - --workspace=@preset:aoc.workspace_shared_inbox
-    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_name@"]}'
+    - --workspace=@preset:awa.workspace_shared_inbox
+    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:awa.shared_inbox_name@"]}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_long:
   depends_on:
     - aocp_recv_init
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
-    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --workspace=@preset:awa.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:awa.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short:
   depends_on:
     - aocp_recv_init
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
-    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --workspace=@preset:awa.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:awa.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(PATH_TST_ASC_LCL)
 aocp_send_sh_meta_short2:
   description: Fails because missing metadata "Project Id"
@@ -2776,20 +2780,20 @@ aocp_send_sh_meta_short2:
   expect: "missing mandatory field: Project Id"
   depends_on:
     - aocp_recv_init
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - send
-    - --workspace=@preset:aoc.workspace_shared_inbox
+    - --workspace=@preset:awa.workspace_shared_inbox
     - --validate-metadata=yes
-    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
+    - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:awa.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}'
     - $(PATH_TST_ASC_LCL)
 aocp_recv_shbx:
   depends_on:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - receive
@@ -2797,18 +2801,18 @@ aocp_recv_shbx:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --lock-port=50101
-    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
+    - --query=@json:@extend:{"dropbox_name":"@preset:awa.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
     - --ts=@json:{"resume_policy":"sparse_csum","target_rate_kbps":50000}
 aocp_list_shbx:
   depends_on:
     - aocp_send_shbx
     - aocp_send_sh_meta_long
     - aocp_send_sh_meta_short
-  template: aocwa_user_suite
+  template: awa_user_suite
   args:
     - packages
     - list
-    - --query=@json:@extend:{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
+    - --query=@json:@extend:{"dropbox_name":"@preset:awa.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}
 aoc_adm_authp_lst:
   args:
     - --preset=aoc_admin
@@ -2852,7 +2856,7 @@ aoc_adm_ws_lst2:
     - admin
     - workspace
     - dropbox
-    - "%name:@preset:aoc.other_workspace"
+    - "%name:@preset:awa.other_workspace"
     - list
 aoc_adm_ws_lst3:
   args:
@@ -2861,9 +2865,9 @@ aoc_adm_ws_lst3:
     - admin
     - workspace
     - shared_folder
-    - "%name:@preset:aoc.other_workspace"
+    - "%name:@preset:awa.other_workspace"
     - list
-shared_folder_id:
+aoc_adm_shared_folder_id:
   tags:
     - save_output
     - nodoc
@@ -2873,7 +2877,7 @@ shared_folder_id:
     - admin
     - workspace
     - shared_folder
-    - "%name:@preset:aoc.other_workspace"
+    - "%name:@preset:awa.other_workspace"
     - list
     - --query.max=1
     - --fields=id
@@ -2884,9 +2888,9 @@ aoc_adm_ws_lst5:
     - admin
     - workspace
     - shared_folder
-    - "%name:@preset:aoc.other_workspace"
+    - "%name:@preset:awa.other_workspace"
     - member
-    - $(t.saved_output :shared_folder_id)
+    - $(t.saved_output :aoc_adm_shared_folder_id)
     - list
 aoc_adm_nd_events:
   args:
@@ -2895,8 +2899,8 @@ aoc_adm_nd_events:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - v3
     - events
 aoc_adm_ak_create:
@@ -2906,8 +2910,8 @@ aoc_adm_ak_create:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - mkdir
     - /folder_sub
 aoc_adm_ak_browse:
@@ -2919,8 +2923,8 @@ aoc_adm_ak_browse:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - browse
     - /folder_sub
     - --node-api.cache=false
@@ -2933,8 +2937,8 @@ aoc_adm_ak_sub_ak:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - v3
     - access_key
     - create
@@ -2950,8 +2954,8 @@ aoc_adm_ak_del:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - v3
     - access_key
     - delete
@@ -2965,8 +2969,8 @@ aoc_adm_ak_dir_del:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - delete
     - /folder_sub
 aoc_adm_nd_br:
@@ -2976,8 +2980,8 @@ aoc_adm_nd_br:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - browse
     - /
 aoc_adm_nd_mkdir_prep:
@@ -2990,8 +2994,8 @@ aoc_adm_nd_mkdir_prep:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - delete
     - /folder1
     - --node-api.cache=false
@@ -3005,8 +3009,8 @@ aoc_adm_nd_mkdir:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - mkdir
     - /folder1
   post: sleep TEMPORIZE_CREATE
@@ -3021,8 +3025,8 @@ aoc_adm_nd_brse:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - browse
     - /
     - --node-api.cache=false
@@ -3036,8 +3040,8 @@ aoc_adm_nd_rmdir:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
-    - --secret=@preset:aoc.ak_secret
+    - "%name:@preset:awa.node_name"
+    - --secret=@preset:awa.ak_secret
     - delete
     - /folder1
 aoc_adm_wsm_lst:
@@ -3058,7 +3062,7 @@ aoc_adm_grm_lst:
     - list
     - --fields=ALL
     - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
-aoc15:
+aoc_adm_analytics_xfer_org:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3070,14 +3074,14 @@ aoc15:
     - --notify-to=@preset:misc.email_external
     - |
       --notify-template=@ruby:%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}
-aoc15bb:
+aoc_adm_analytics_app_events:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - analytics
     - application_events
-aoc_transfer_id:
+aoc_adm_analytics_xfer_id:
   tags:
     - save_output
     - wait_value
@@ -3093,7 +3097,7 @@ aoc_transfer_id:
     - --fields=uuid
 aoc_ana_files:
   depends_on:
-    - aoc_transfer_id
+    - aoc_adm_analytics_xfer_id
   args:
     - --preset=aoc_admin
     - aoc
@@ -3102,8 +3106,8 @@ aoc_ana_files:
     - files
     - organization
     - ""
-    - $(t.saved_output :aoc_transfer_id)
-aoc16:
+    - $(t.saved_output :aoc_adm_analytics_xfer_id)
+aoc_adm_analytics_xfer_users:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3113,79 +3117,79 @@ aoc16:
     - users
     - --once-only=yes
 #	 --preset=aoc_admin aoc admin analytics transfers nodes
-aoc_adm_res_01:
+aoc_adm_self_show:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - self
     - show
-aoc_adm_res_01b:
+aoc_adm_org_show:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - organization
     - show
-aoc_adm_res_01c:
+aoc_adm_user_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - user
     - list
-aoc_adm_res_01d:
+aoc_adm_user_modify:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - user
     - modify
-    - "@extend:%name:@preset:aoc.user_email@"
+    - "@extend:%name:@preset:awa.user_email@"
     - '@json:{"deactivated":false}'
-aoc_adm_res_02:
+aoc_adm_group_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - group
     - list
-aoc_adm_res_02b:
+aoc_adm_client_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - client
     - list
-aoc_adm_res_02c:
+aoc_adm_contact_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - contact
     - list
-aoc_adm_res_02d:
+aoc_adm_dropbox_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - dropbox
     - list
-aoc_adm_res_03:
+aoc_adm_node_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - node
     - list
-aoc_adm_res_03b:
+aoc_adm_operation_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - operation
     - list
-aoc_adm_res_03c:
+aoc_adm_package_list:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3193,28 +3197,28 @@ aoc_adm_res_03c:
     - package
     - list
     - --http-options=@json:{"read_timeout":120.0}
-aoc_adm_res_03d:
+aoc_adm_saml_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - saml_configuration
     - list
-aoc_adm_res_04:
+aoc_adm_dropbox_membership_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - dropbox_membership
     - list
-aoc_adm_res_04b:
+aoc_adm_workspace_membership_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - workspace_membership
     - list
-aoc_adm_res_04c:
+aoc_adm_short_link_list:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3267,21 +3271,21 @@ aoc_admin_app_member_list:
     - application
     - membership
     - list
-aoc_adm_res_05b:
+aoc_adm_client_access_key_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - client_access_key
     - list
-aoc_adm_res_05c:
+aoc_adm_kms_profile_list:
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - kms_profile
     - list
-aoc_adm_res_05d:
+aoc_adm_config_policy_list:
   description: List configuration policies
   tags:
     - aoc_policies
@@ -3297,7 +3301,7 @@ aoc_conf_policy_id:
     - save_output
     - nodoc
   depends_on:
-    - aoc_adm_res_05d
+    - aoc_adm_config_policy_list
   args:
     - --preset=aoc_admin
     - aoc
@@ -3320,7 +3324,7 @@ aoc_conf_policy_show:
     - configuration_policy
     - show
     - $(t.saved_output('aoc_conf_policy_id').split("\n").first)
-aoc_adm_res_05e:
+aoc_adm_network_policy_list:
   description: List network policies
   tags:
     - aoc_policies
@@ -3336,7 +3340,7 @@ aoc_net_policy_id:
     - save_output
     - nodoc
   depends_on:
-    - aoc_adm_res_05e
+    - aoc_adm_network_policy_list
   args:
     - --preset=aoc_admin
     - aoc
@@ -3377,7 +3381,7 @@ aoc_clt_reg_tok_list:
     - admin
     - client_registration_token
     - list
-client_reg_id:
+aoc_clt_reg_id:
   depends_on:
     - aoc_clt_reg_tok_list
   tags:
@@ -3392,17 +3396,17 @@ client_reg_id:
     - --fields=id
     - --display=data
     - --query.max=1
-aoccltregd:
+aoc_clt_reg_tok_delete:
   depends_on:
     - aoc_clt_reg_tok_list
-    - client_reg_id
+    - aoc_clt_reg_id
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - client_registration_token
     - delete
-    - $(t.saved_output :client_reg_id)
+    - $(t.saved_output :aoc_clt_reg_id)
 aoc_adm_node_bearer:
   $comment: TODO fix this
   tags:
@@ -3412,7 +3416,7 @@ aoc_adm_node_bearer:
     - admin
     - node
     - bearer_token
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - user:all
 aoc_adm_nd_tstshrfld_cleanup:
   tags:
@@ -3424,11 +3428,11 @@ aoc_adm_nd_tstshrfld_cleanup:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - delete
     - test_shared_folder
     - --node-api.cache=false
-aocadmndcrc:
+aoc_adm_nd_shrfld_mkdir:
   depends_on:
     - aoc_adm_nd_tstshrfld_cleanup
   args:
@@ -3437,10 +3441,10 @@ aocadmndcrc:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - mkdir
     - test_shared_folder
-aocadmndcrd:
+aoc_adm_nd_shrfld_browse:
   tags:
     - nodoc
   args:
@@ -3449,11 +3453,11 @@ aocadmndcrd:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - browse
     - test_shared_folder
     - --node-api.cache=false
-aocadmndsh1:
+aoc_adm_nd_shrfld_perm_inbox:
   depends_on:
     - aoc_adm_nd_tstshrfld_cleanup
   args:
@@ -3462,80 +3466,80 @@ aocadmndsh1:
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - perm
     - test_shared_folder
     - create
     - '@json:{"with":"","as":"other_name_shared"}'
-    - --workspace=@preset:aoc.workspace_shared_inbox
-aocadmndsh2:
+    - --workspace=@preset:awa.workspace_shared_inbox
+aoc_adm_nd_shrfld_perm_user:
   depends_on:
-    - aocadmndsh1
+    - aoc_adm_nd_shrfld_perm_inbox
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - perm
     - test_shared_folder
     - create
-    - '@json:@extend:{"with":"@preset:aoc.user_email@","as":"other_name_shared"}'
-    - --workspace=@preset:aoc.workspace_shared_inbox
-aocadmndsh3:
+    - '@json:@extend:{"with":"@preset:awa.user_email@","as":"other_name_shared"}'
+    - --workspace=@preset:awa.workspace_shared_inbox
+aoc_adm_nd_shrfld_perm_group:
   depends_on:
-    - aocadmndsh1
+    - aoc_adm_nd_shrfld_perm_inbox
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - perm
     - test_shared_folder
     - create
-    - '@json:@extend:{"with":"@preset:aoc.user_group@","as":"other_name_shared"}'
-    - --workspace=@preset:aoc.workspace_shared_inbox
-aocadmndsh4:
+    - '@json:@extend:{"with":"@preset:awa.user_group@","as":"other_name_shared"}'
+    - --workspace=@preset:awa.workspace_shared_inbox
+aoc_adm_nd_shrfld_delete:
   depends_on:
-    - aocadmndsh2
-    - aocadmndsh3
+    - aoc_adm_nd_shrfld_perm_user
+    - aoc_adm_nd_shrfld_perm_group
   args:
     - --preset=aoc_admin
     - aoc
     - admin
     - node
     - do
-    - "%name:@preset:aoc.node_name"
+    - "%name:@preset:awa.node_name"
     - delete
     - test_shared_folder
-aocat4:
+aoc_ats_cluster_list:
   template: ats_suite_tmpl
   args:
     - cluster
     - list
-aocat5:
+aoc_ats_cluster_clouds:
   template: ats_suite_tmpl
   args:
     - cluster
     - clouds
-aocat6:
+aoc_ats_cluster_show_aws:
   template: ats_suite_tmpl
   args:
     - cluster
     - show
     - --cloud=aws
     - --region=eu-west-1
-aocat7:
+aoc_ats_cluster_show_id:
   template: ats_suite_tmpl
   args:
     - cluster
     - show
     - 1f412ae7-869a-445c-9c05-02ad16813be2
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
-aocat8:
+aoc_ats_ak_delete_ibm:
   tags:
     - pre_cleanup
   args:
@@ -3546,9 +3550,9 @@ aocat8:
     - access_key
     - delete
     - ak1ibmcloud
-aocat8b:
+aoc_ats_ak_create_ibm:
   depends_on:
-    - aocat8
+    - aoc_ats_ak_delete_ibm
   args:
     - --preset=aoc_admin
     - aoc
@@ -3567,7 +3571,7 @@ aocat8b:
     - storage.credentials.access_key_id=@preset:icos.access_key
     - storage.credentials.secret_access_key=@preset:icos.secret_key
     - storage.path=/
-aocat9:
+aoc_ats_ak_create_aws:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3581,7 +3585,7 @@ aocat9:
     - --cloud=aws
     - --region=@preset:aws.region
     - '@json:@extend:{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
-aocat10:
+aoc_ats_ak_list:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3593,7 +3597,7 @@ aocat10:
     - access_key
     - list
     - --fields=name,id
-aocat11:
+aoc_ats_ak_browse_ibm:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3605,7 +3609,7 @@ aocat11:
     - --secret=@preset:misc.secret_here
     - browse
     - /
-aocat13:
+aoc_ats_ak_delete_ibm2:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3618,7 +3622,7 @@ aocat13:
     - access_key
     - delete
     - ak1ibmcloud
-aocauto1:
+aoc_auto_wf_create:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3626,11 +3630,11 @@ aocauto1:
     - workflow
     - create
     - '@json:{"name":"test_workflow"}'
-wf_id:
+aoc_auto_wf_id:
   tags:
     - save_output
   depends_on:
-    - aocauto1
+    - aoc_auto_wf_create
   args:
     - --preset=aoc_admin
     - aoc
@@ -3639,14 +3643,14 @@ wf_id:
     - list
     - --select=@json:{"name":"test_workflow"}
     - --fields=id
-aocauto2:
+aoc_auto_wf_list:
   args:
     - --preset=aoc_admin
     - aoc
     - automation
     - workflow
     - list
-aocauto2b:
+aoc_auto_wf_list_org:
   args:
     - --preset=aoc_admin
     - aoc
@@ -3654,10 +3658,10 @@ aocauto2b:
     - workflow
     - list
     - --query=@json:{"show_org_workflows":"true"}
-aocauto3:
+aoc_auto_wf_action_create:
   $comment: Verify what it should do, and not fail.
   depends_on:
-    - wf_id
+    - aoc_auto_wf_id
   tags:
     - flaky
   args:
@@ -3666,23 +3670,23 @@ aocauto3:
     - automation
     - workflow
     - action
-    - $(t.saved_output :wf_id)
+    - $(t.saved_output :aoc_auto_wf_id)
     - create
     - '@json:{"name":"toto"}'
 #		| tee action.info
 #	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info > tmp_action_id.txt
 #	rm -f action.info
 #	rm -f tmp_action_id.txt
-aocauto10:
+aoc_auto_wf_delete:
   depends_on:
-    - wf_id
+    - aoc_auto_wf_id
   args:
     - --preset=aoc_admin
     - aoc
     - automation
     - workflow
     - delete
-    - $(t.saved_output :wf_id)
+    - $(t.saved_output :aoc_auto_wf_id)
 orch_health:
   args:
     - orchestrator
@@ -3852,27 +3856,27 @@ orch_workstep_cancel:
     - workstep
     - cancel
     - 1
-at4b:
+ats_aws_trust_policy:
   args:
     - ats
     - aws_trust_policy
     - --region=us-east-1
-at2:
+ats_api_key_instances:
   args:
     - ats
     - api_key
     - instances
-at1:
+ats_api_key_list:
   args:
     - ats
     - api_key
     - list
-at3:
+ats_api_key_create:
   args:
     - ats
     - api_key
     - create
-at8_prep:
+ats_ak_delete_prep:
   tags:
     - pre_cleanup
     - nodoc
@@ -3882,9 +3886,9 @@ at8_prep:
     - delete
     - ak2ibmcloud
   post: sleep TEMPORIZE_CREATE
-at8b:
+ats_ak_create_ibm:
   depends_on:
-    - at8_prep
+    - ats_ak_delete_prep
   args:
     - ats
     - access_key
@@ -3893,23 +3897,23 @@ at8b:
     - --region=@preset:icos.region
     - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
   post: sleep TEMPORIZE_CREATE
-at8c:
+ats_ak_show_ibm:
   depends_on:
-    - at8b
+    - ats_ak_create_ibm
   args:
     - ats
     - access_key
     - show
     - ak2ibmcloud
-at8d:
+ats_ak_entitlement_ibm:
   depends_on:
-    - at8b
+    - ats_ak_create_ibm
   args:
     - ats
     - access_key
     - entitlement
     - ak2ibmcloud
-at9:
+ats_ak_create_aws:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3920,7 +3924,7 @@ at9:
     - --cloud=aws
     - --region=@preset:aws.region
     - '@json:@extend:{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'
-at10:
+ats_ak_list:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3929,7 +3933,7 @@ at10:
     - access_key
     - list
     - --fields=name,id
-at11:
+ats_ak_browse_ibm:
   args:
     - ats
     - access_key
@@ -3938,14 +3942,14 @@ at11:
     - browse
     - /
     - --secret=@preset:misc.secret_here
-at12:
+ats_ak_cluster_ibm:
   args:
     - ats
     - access_key
     - cluster
     - ak2ibmcloud
     - --secret=@preset:misc.secret_here
-at13:
+ats_ak_delete_ibm:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -3954,7 +3958,7 @@ at13:
     - access_key
     - delete
     - ak2ibmcloud
-at14:
+ats_ak_delete_aws:
   $comment: Fails for unknown reason on ATS side
   tags:
     - flaky
@@ -5684,7 +5688,7 @@ f5_pack_rcv_init:
     - receive
     - INIT
     - --once-only=yes
-f5_p1:
+f5_pack_send:
   args:
     - faspex5
     - packages
@@ -5723,7 +5727,7 @@ f5_sh_folder_br:
     - shared_folders
     - browse
     - "@extend:%name:@preset:faspex5.shared_folder_name@"
-f5_p3a:
+f5_pack_send_shared:
   tags:
     - save_output
     - nodoc
@@ -5737,18 +5741,18 @@ f5_p3a:
     - --fields=id
     - --display=data
   post: 'puts "Sent package with id: #{t.saved_output "f5_p3a"}"'
-f5_p3aa:
+f5_pack_send_shared_status:
   depends_on:
-    - f5_p3a
+    - f5_pack_send_shared
   args:
     - faspex5
     - packages
     - status
-    - $(t.saved_output :f5_p3a)
+    - $(t.saved_output :f5_pack_send_shared)
     - "@list:,failed,completed"
 f5_package_id:
   depends_on:
-    - f5_p3a
+    - f5_pack_send_shared
   tags:
     - save_output
     - nodoc
@@ -5758,7 +5762,7 @@ f5_package_id:
     - list
     - --query=@json:{"status":"completed","max":1}
     - --fields=id
-f5_p3c:
+f5_pack_show:
   depends_on:
     - f5_package_id
   args:
@@ -5766,7 +5770,7 @@ f5_p3c:
     - packages
     - show
     - $(t.saved_output :f5_package_id)
-f5_p3d:
+f5_pack_status:
   depends_on:
     - f5_package_id
   args:
@@ -5774,7 +5778,7 @@ f5_p3d:
     - packages
     - status
     - $(t.saved_output :f5_package_id)
-f5_p3e:
+f5_pack_browse:
   depends_on:
     - f5_package_id
   args:
@@ -5783,7 +5787,7 @@ f5_p3e:
     - browse
     - $(t.saved_output :f5_package_id)
     - --query=@json:{"recursive":true}
-f5_p3f:
+f5_pack_recv:
   depends_on:
     - f5_package_id
   args:
@@ -5793,7 +5797,7 @@ f5_p3f:
     - $(t.saved_output :f5_package_id)
     - --to-folder=$(TMP)
     - --ts=@json:{"content_protection_password":"my_secret_here"}
-f5_p3g:
+f5_pack_recv_all:
   depends_on:
     - f5_package_id
   args:
@@ -5803,9 +5807,9 @@ f5_p3g:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
-f5_p3h:
+f5_pack_delete:
   depends_on:
-    - f5_p3g
+    - f5_pack_recv_all
   args:
     - faspex5
     - packages
@@ -5898,7 +5902,7 @@ f5_pack_wrkgrpb:
     - list
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-workgroup_package_id1:
+f5_workgroup_pack_id:
   depends_on:
     - f5_pack_wrkgrp
   tags:
@@ -5914,31 +5918,31 @@ workgroup_package_id1:
     - --fields=id
 f5_pack_wrkgrpd:
   depends_on:
-    - workgroup_package_id1
+    - f5_workgroup_pack_id
   args:
     - faspex5
     - packages
     - show
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(t.saved_output :workgroup_package_id1)
+    - $(t.saved_output :f5_workgroup_pack_id)
 f5_pack_wrkgrpe:
   depends_on:
-    - workgroup_package_id1
+    - f5_workgroup_pack_id
   args:
     - faspex5
     - packages
     - receive
     - --box=@preset:faspex5.workgroup
     - --group-type=workgroups
-    - $(t.saved_output :workgroup_package_id1)
+    - $(t.saved_output :f5_workgroup_pack_id)
     - --to-folder=$(TMP)
-f5_sh_fold:
+f5_shared_list:
   args:
     - faspex5
     - shared
     - list
-f5_sh_foldb:
+f5_shared_browse:
   args:
     - faspex5
     - shared
@@ -6590,7 +6594,7 @@ fx4_package_id:
     - --fields=package_id
     - --display=data
     - --format=csv
-fx4_prsb:
+fx4_pack_recv_inbox:
   args:
     - faspex
     - package
@@ -6610,7 +6614,7 @@ fx4_package_id2:
     - --fields=package_id
     - --display=data
     - --format=csv
-fx4_prsd:
+fx4_pack_recv_sent:
   args:
     - faspex
     - package
@@ -6630,14 +6634,14 @@ fx4_package_id3:
     - --fields=package_id
     - --display=data
     - --format=csv
-fx4_prib:
+fx4_pack_recv_recvd:
   args:
     - faspex
     - package
     - receive
     - $(t.saved_output :fx4_package_id3)
     - --to-folder=$(TMP)
-fx4_prl:
+fx4_pack_recv_link:
   tags:
     - nodoc
   args:
@@ -6646,7 +6650,7 @@ fx4_prl:
     - receive
     - --to-folder=$(TMP)
     - --link=@preset:faspex4.link_recv_from_user
-fx4_prall:
+fx4_pack_recv_all:
   args:
     - faspex
     - package
@@ -6655,7 +6659,7 @@ fx4_prall:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --query.max=10
-fx4_pslu:
+fx4_pack_send_link_user:
   args:
     - faspex
     - package
@@ -6663,7 +6667,7 @@ fx4_pslu:
     - --link=@preset:faspex4.link_send_to_user
     - --delivery-info=@json:{"title":"$(name) $(TIMESTAMP_TEST_RUN)"}
     - $(PATH_TST_ASC_LCL)
-fx4_psld:
+fx4_pack_send_link_dropbox:
   args:
     - faspex
     - package
@@ -6700,66 +6704,66 @@ fx4_remote_srcd:
     - --delivery-info=@json:@extend:{"title":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:misc.email_internal@"]}
     - --remote-source=@extend:%name:@preset:faspex4.src
     - sample_source.txt
-fx4_misc:
+fx4_me:
   args:
     - faspex
     - me
-fx4_miscb:
+fx4_address_book:
   args:
     - faspex
     - address_book
-fx4_miscc:
+fx4_login_methods:
   args:
     - faspex
     - login_methods
-fx4_v4:
+fx4_adm_dropbox_list:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dropbox
     - list
-fx4_v4b:
+fx4_adm_dropbox_membership:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - dmembership
     - list
-fx4_v4c:
+fx4_adm_workgroup_list:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - workgroup
     - list
-fx4_v4d:
+fx4_adm_workgroup_membership:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - wmembership
     - list
-fx4_v4e:
+fx4_adm_user_list:
   args:
     - --preset=faspex4_admin
     - faspex
     - v4
     - user
     - list
-fx4_v4f:
+fx4_adm_metadata_profile:
   args:
     - faspex
     - v4
     - metadata_profile
     - list
-fx4_db1:
+fx4_dropbox_list:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-fx4_db1b:
+fx4_dropbox_pack_send:
   args:
     - faspex
     - package
@@ -6778,7 +6782,7 @@ fx4_package_id4:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-fx4_db1d:
+fx4_dropbox_pack_recv:
   args:
     - faspex
     - package
@@ -6786,13 +6790,13 @@ fx4_db1d:
     - $(t.saved_output :fx4_package_id4)
     - --recipient=@extend:*@preset:faspex4.dbx@
     - --to-folder=$(TMP)
-fx4_db1e:
+fx4_dropbox_list2:
   args:
     - faspex
     - dropbox
     - list
     - --recipient=@extend:*@preset:faspex4.dbx@
-fx4_db1f:
+fx4_workgroup_pack_send:
   args:
     - faspex
     - package
@@ -6812,7 +6816,7 @@ fx4_package_id5:
     - --format=csv
     - --fields=package_id
     - --query.max=1
-fx4_db1h:
+fx4_workgroup_pack_recv:
   args:
     - faspex
     - package

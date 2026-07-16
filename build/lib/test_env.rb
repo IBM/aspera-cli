@@ -13,7 +13,7 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions: See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instanciate}.freeze
+  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instanciate vars}.freeze
 
   # Execution context for a running test case, injected as `t` in every eval binding.
   #
@@ -174,6 +174,7 @@ module TestEnv
         generated_properties.delete(:instanciate)
         generated_properties[:tags].unshift(instance_name.to_sym) unless generated_properties[:tags].include?(instance_name.to_sym)
         generated_properties[:args] = instance_properties[:args] + generated_properties[:args]
+        generated_properties[:vars] = instance_properties[:vars] if instance_properties.key?(:vars)
         if generated_properties.key?(:depends_on)
           generated_properties[:depends_on] = generated_properties[:depends_on].map do |dependency|
             template_names.include?(dependency) ? "#{instance_name}.#{dependency}" : dependency

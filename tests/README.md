@@ -41,6 +41,7 @@ The following keys are supported in each test entry:
 | `command`     | `String` | Executable name (default: `ascli`).              |
 | `args`        | `Array`  | Command-line arguments.                          |
 | `env`         | `Hash`   | Environment variables for this test.             |
+| `vars`        | `Hash`   | Ruby variables injected into `$(...)` expressions, `pre`, and `post`. For `instanciate` entries, propagated to all generated tests. |
 | `pre`         | `String` | Ruby code to run before the test.                |
 | `post`        | `String` | Ruby code to run after the test.                 |
 | `stdin`       | `String` | Standard input to the command.                   |
