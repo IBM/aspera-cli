@@ -166,9 +166,18 @@ properties:
         description: Peer record ID for this entry.
         type: integer
       state:
-        description: >-
+        description: |
           Sync state of the entry.
-          Values: 0=Nil, 1-18=Pending variants, 19=Syncd, 20=Error, 21=Conflict, 22=PotentialConflict, 23-24=Pending variants.
+
+          | Value | Name              |
+          |-------|-------------------|
+          | 0     | Nil               |
+          | 1–18  | Pending (variant) |
+          | 19    | Syncd             |
+          | 20    | Error             |
+          | 21    | Conflict          |
+          | 22    | PotentialConflict |
+          | 23–24 | Pending (variant) |
         type: integer
       version:
         description: Schema version field (not used).

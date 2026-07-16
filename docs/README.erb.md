@@ -8669,6 +8669,16 @@ The only exception is `find`, which takes a plain directory path and lists all `
 | `counters`  | `sqlite3`     | Display synchronization counters from `sync_snap_counters_table`                                       |
 | `file_info` | `sqlite3`     | List the synchronization state of each file from `sync_snapdb_table` (state, record ID, path, message) |
 | `overview`  | `sqlite3`     | List all tables and their columns in the snap database                                                 |
+| `query`     | `sqlite3`     | Execute an arbitrary SQL statement against the snap database and return the result rows                |
+
+The `query` subcommand requires `--sql` with the full SQL statement to execute.
+The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` optionally to append a SQL fragment (e.g. a `WHERE` or `ORDER BY` clause):
+
+```shell
+<%=cmd%> ... sync admin query <%=ph :folder%> --sql="SELECT * FROM sync_snapdb_table WHERE state=20"
+<%=cmd%> ... sync admin file_info <%=ph :folder%> --sql="WHERE state=20"
+<%=cmd%> ... sync admin file_info <%=ph :folder%> --sql="WHERE state=20 ORDER BY f_meta_path"
+```
 
 **Snap database schema:** The snap database (`snap.db`) contains the following tables:
 

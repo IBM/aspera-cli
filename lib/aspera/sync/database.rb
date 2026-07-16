@@ -35,12 +35,12 @@ class SqLite3Wrapper
   end
 
   # The table contains a single row
-  def single_table(table_name)
-    execute("SELECT * FROM #{table_name} LIMIT 1").first
+  def single_table(table_name, sql_suffix = nil)
+    execute(["SELECT * FROM #{table_name}", sql_suffix, 'LIMIT 1'].compact.join(' ')).first
   end
 
-  def full_table(table_name)
-    execute("SELECT * FROM #{table_name}")
+  def full_table(table_name, sql_suffix = nil)
+    execute(["SELECT * FROM #{table_name}", sql_suffix].compact.join(' '))
   end
 
   private
@@ -68,16 +68,20 @@ module Aspera
         end
       end
 
-      def meta
-        @db.single_table('sync_snapmeta_table')
+      def meta(sql_suffix = nil)
+        @db.single_table('sync_snapmeta_table', sql_suffix)
       end
 
-      def counters
-        @db.single_table('sync_snap_counters_table')
+      def counters(sql_suffix = nil)
+        @db.single_table('sync_snap_counters_table', sql_suffix)
       end
 
-      def file_info
-        @db.full_table('sync_snapdb_table')
+      def file_info(sql_suffix = nil)
+        @db.full_table('sync_snapdb_table', sql_suffix)
+      end
+
+      def execute(sql)
+        @db.execute(sql)
       end
     end
   end

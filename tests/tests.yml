@@ -727,6 +727,26 @@ serv_sync_pull_conf_fileinfo:
     - admin
     - file_info
     - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_fileinfo_sql:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - file_info
+    - --sql=WHERE state=19
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_query:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - query
+    - "--sql=SELECT name FROM sqlite_master WHERE type='table'"
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
 serv_upload_ex_list:
   depends_on:
     - serv_mkdir

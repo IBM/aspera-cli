@@ -11,6 +11,8 @@ Released: [Place date of release here]
 * `faspex5`: New commands `admin file_processing` and `packages file_processing`.
 * `aoc`: Command `user settings` now support `create`, `delete`, `list`, `show`, `modify`.
 * `aoc`: New command `network_policy` and `configuration_policy` in `admin`.
+* `sync` : New command `admin query` to execute an arbitrary SQL command on the snap DB.
+* `sync` : Option `sql` to add arbitrary SQL suffix/addon to sync actions.
 
 ### Issues Fixed
 

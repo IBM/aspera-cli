@@ -4765,6 +4765,7 @@ OPTIONS:
         --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
         --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
         --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
+        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
 
 
 COMMAND: ats
@@ -4912,6 +4913,7 @@ OPTIONS:
         --ssh-keys=VALUE             SSH key path list (Array)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
+        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
 
 
 COMMAND: shares
@@ -7367,8 +7369,10 @@ md5sum my_inside_folder/test_file.bin
 mkdir my_inside_folder --logger=stdout
 mkdir my_upload_folder/target_hot
 mv my_upload_folder/200KB.2 my_upload_folder/to.delete
+sync admin file_info --sql='WHERE state=19' /data/local_sync
 sync admin file_info /data/local_sync
 sync admin overview /data/local_sync
+sync admin query /data/local_sync 'SELECT name FROM sqlite_master WHERE type='table''
 sync admin status /data/local_sync
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
@@ -9966,6 +9970,20 @@ The only exception is `find`, which takes a plain directory path and lists all `
 | `counters`  | `sqlite3`     | Display synchronization counters from `sync_snap_counters_table`                                       |
 | `file_info` | `sqlite3`     | List the synchronization state of each file from `sync_snapdb_table` (state, record ID, path, message) |
 | `overview`  | `sqlite3`     | List all tables and their columns in the snap database                                                 |
+| `query`     | `sqlite3`     | Execute an arbitrary SQL statement against the snap database and return the result rows                |
+
+The `query` subcommand takes an extra positional argument: the SQL statement to run.
+
+```shell
+ascli ... sync admin query <FOLDER> [<SYNC_INFO>] "SELECT * FROM sync_snapdb_table WHERE state > 0"
+```
+
+The sqlite3-based subcommands (`meta`, `counters`, `file_info`) also accept `--sql` to append a SQL fragment to the generated statement (e.g. a `WHERE` or `ORDER BY` clause):
+
+```shell
+ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20"
+ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_path"
+```
 
 **Snap database schema:** The snap database (`snap.db`) contains the following tables:
 
@@ -10083,7 +10101,7 @@ The only exception is `find`, which takes a plain directory path and lists all `
 | `scn_completed` | `integer` | Set to 1 when the scan of this directory entry has completed. |
 | `scn_not_visited` | `integer` | Set to 1 when the scanner has not yet visited this entry in the current scan pass. |
 | `scn_required` | `integer` | Set to 1 when a rescan of this entry is required. |
-| `state` | `integer` | Sync state of the entry. Values: 0=Nil, 1-18=Pending variants, 19=Syncd, 20=Error, 21=Conflict, 22=PotentialConflict, 23-24=Pending variants. |
+| `state` | `integer` | Sync state of the entry.<br/><br/>\| Value \| Name              \|<br/>\|-------\|-------------------\|<br/>\| 0     \| Nil               \|<br/>\| 1–18  \| Pending (variant) \|<br/>\| 19    \| Syncd             \|<br/>\| 20    \| Error             \|<br/>\| 21    \| Conflict          \|<br/>\| 22    \| PotentialConflict \|<br/>\| 23–24 \| Pending (variant) \| |
 | `tobe_deleted` | `integer` | Set to 1 when the record is flagged for deletion (garbage collection pending). |
 | `version` | `integer` | Schema version field (not used). |
 

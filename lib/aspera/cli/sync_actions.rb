@@ -15,7 +15,8 @@ module Aspera
         %w[Syncd Error Confl Pconf] +
         (23..24).map{ |i| "P(#{i})"}).freeze
       class << self
-        def declare_options(_options)
+        def declare_options(options)
+          options.declare(:sql, 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
         end
       end
 
@@ -94,8 +95,9 @@ module Aspera
       end
 
       def execute_sync_admin
-        command2 = options.get_next_command(%i[status find meta counters file_info overview])
+        command2 = options.get_next_command(%i[status find meta counters file_info overview query])
         require 'aspera/sync/database' unless command2.eql?(:status)
+        sql_suffix = options.get_option(:sql)
         case command2
         when :status
           return Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args))
@@ -104,9 +106,9 @@ module Aspera
           dbs = Sync::Operations.list_db_files(folder)
           return Result::ObjectList.new(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
         when :meta, :counters
-          return Result::SingleObject.new(db_from_args.send(command2))
+          return Result::SingleObject.new(db_from_args.send(command2, sql_suffix))
         when :file_info
-          result = db_from_args.send(command2)
+          result = db_from_args.file_info(sql_suffix)
           result.each do |r|
             r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
           end
@@ -119,6 +121,8 @@ module Aspera
             db_from_args.overview,
             fields: %w[table name type]
           )
+        when :query
+          return Result.auto(db_from_args.execute(options.get_option(:sql, mandatory: true)))
         else Aspera.error_unexpected_value(command2)
         end
       end
