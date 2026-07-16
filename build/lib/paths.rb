@@ -44,7 +44,8 @@ module Paths
   MD_MANUAL = DOC / 'README.md'
   MD_ERB = DOC / 'README.erb.md'
   TSPEC_YAML_SCHEMA = LIB / 'aspera/transfer/spec.schema.yaml'
-  ASYNC_YAML_SCHEMA = LIB / 'aspera/sync/conf.schema.yaml'
+  ASYNC_YAML_SCHEMA        = LIB / 'aspera/sync/conf.schema.yaml'
+  ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/schema/async_tables.yaml'
   COMMAND = BIN / Aspera::Cli::Info::CMD_NAME
   ASESSION = BIN / 'asession'
 end

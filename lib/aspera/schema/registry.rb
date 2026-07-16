@@ -26,12 +26,13 @@ module Aspera
       end
 
       LOCATIONS = {
-        spec:   'aspera/transfer/spec.schema.yaml',
-        args:   'aspera/sync/args.schema.yaml',
-        conf:   'aspera/sync/conf.schema.yaml',
-        opts:   'aspera/cli/options.schema.yaml',
-        aoc:    'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
-        faspex: 'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml'
+        spec:         'aspera/transfer/spec.schema.yaml',
+        args:         'aspera/sync/args.schema.yaml',
+        conf:         'aspera/sync/conf.schema.yaml',
+        opts:         'aspera/cli/options.schema.yaml',
+        aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
+        faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
+        async_tables: 'aspera/schema/async_tables.yaml'
       }
 
       OPTIONS = 'opts'
@@ -40,6 +41,7 @@ module Aspera
       SYNC_ARGS = 'args'
       AOC = 'aoc'
       FASPEX = 'faspex'
+      ASYNC_TABLES = 'async_tables'
       TRANSFER_INFO = "#{OPTIONS}:components.schemas.TransferInfo"
 
       REQ_BODY = '.requestBody.content.application/json.schema'

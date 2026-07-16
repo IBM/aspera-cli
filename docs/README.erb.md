@@ -1345,7 +1345,7 @@ A resource type can also be a grouping of other resource types, for example `adm
 Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional verbs.
 When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
+For example subcommands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
 
 Typically, the `create` verb takes a resource creation data as a parameter.
 `show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
@@ -8631,29 +8631,58 @@ Parameter `name` is set to a default value if not provided in `sync_info`.
 
 #### Sync management and monitoring: `admin`
 
-The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
-(With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
+The `admin` command provides subcommands to inspect the state of an Async sync session.
+Most subcommands read the local snap database (`snap.db`) directly — no server connection is required.
+The exception is `status`, which calls the `asyncadmin` utility available only on server products.
 
-This command does not require any communication to the server and accesses only the local database.
-It can be executed also from the `config` plugin:
+These commands can also be run from the `config` plugin:
 
 ```shell
 <%=cmd%> config sync admin
 ```
 
-To use the `admin` command, the gem `sqlite3` shall be installed:
+**Prerequisites:** Most `admin` subcommands require the `sqlite3` gem:
 
 ```shell
 gem install sqlite3
 ```
 
-In order to use the `admin` commands, the user must provide the path to the database folder:
+**Usage:** All `admin` subcommands share the same argument structure:
 
-- i.e. a folder containing a subfolder named `.private-asp`.
-- By default, it is the local synchronized folder.
-- If an alternate folder is specified for the database, then specify it.
-- If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-- Else, the user must specify a session name in the optional `Hash`, in the `name` key.
+```shell
+<%=cmd%> ... sync admin <%=ph :command%> <%=ph :folder%> [<%=ph :sync_info%>]
+```
+
+- `<%=ph :command%>` — one of the subcommands listed below.
+- `<%=ph :folder%>` — path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
+- `[<%=ph :sync_info%>]` — optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<%=ph :session_name%>`.
+
+The only exception is `find`, which takes a plain directory path and lists all `<%=ph :session_name%>` found inside it.
+
+**Subcommands:**
+
+| Command     | Uses          | Description                                                                                            |
+|-------------|---------------|--------------------------------------------------------------------------------------------------------|
+| `find`      | filesystem    | Search a directory for existing sync sessions and list their names and paths                           |
+| `status`    | `asyncadmin`  | Retrieve the status of a running sync session (requires a server-side product)                         |
+| `meta`      | `sqlite3`     | Display session metadata from `sync_snapmeta_table`                                                    |
+| `counters`  | `sqlite3`     | Display synchronization counters from `sync_snap_counters_table`                                       |
+| `file_info` | `sqlite3`     | List the synchronization state of each file from `sync_snapdb_table` (state, record ID, path, message) |
+| `overview`  | `sqlite3`     | List all tables and their columns in the snap database                                                 |
+
+**Snap database schema:** The snap database (`snap.db`) contains the following tables:
+
+**`sync_snapmeta_table`** — one row per session, written at start and updated at stop:
+
+<%=schema_to_table('async_tables:properties.meta')%>
+
+**`sync_snap_counters_table`** — one row, updated live during a session:
+
+<%=schema_to_table('async_tables:properties.counters')%>
+
+**`sync_snapdb_table`** — one row per tracked file or directory:
+
+<%=schema_to_table('async_tables:properties.file_info')%>
 
 ### Hot folder
 

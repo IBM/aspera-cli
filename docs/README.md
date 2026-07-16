@@ -1393,7 +1393,7 @@ A resource type can also be a grouping of other resource types, for example `adm
 Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional verbs.
 When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
-For example sub-commands appear after resource selection (identifier), e.g. `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a sub-command of `node`.
+For example subcommands appear after resource selection (identifier), e.g. `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a sub-command of `node`.
 
 Typically, the `create` verb takes a resource creation data as a parameter.
 `show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
@@ -6959,6 +6959,69 @@ For instructions, refer to section `find` for plugin `node`.
 > Add `ascli aoc` in front of the following commands:
 
 ```shell
+--workspace='Demo AEW' admin bearer_token --display=data
+--workspace='Demo AEW' bearer_token --display=data
+--workspace='Demo AEW' files bearer /
+--workspace='Demo AEW' files bearer_token_node / --cache-tokens=no
+--workspace='Demo AEW' files browse /
+--workspace='Demo AEW' files browse / --url=my_private_link
+--workspace='Demo AEW' files browse my_remote_file
+--workspace='Demo AEW' files browse my_remote_folder
+--workspace='Demo AEW' files browse my_remote_folder/
+--workspace='Demo AEW' files cat testdst/test_file.bin
+--workspace='Demo AEW' files delete /testsrc
+--workspace='Demo AEW' files download --to-folder=. testdst/test_file.bin testdst/test_file.bin
+--workspace='Demo AEW' files download --transfer=connect testdst/test_file.bin
+--workspace='Demo AEW' files download --transfer=desktop testdst/test_file.bin
+--workspace='Demo AEW' files find /sample_video
+--workspace='Demo AEW' files find /sample_video '\.partial$'
+--workspace='Demo AEW' files find /sample_video @ruby:'->(f){f["type"].eql?("file")}'
+--workspace='Demo AEW' files mkdir /testsrc
+--workspace='Demo AEW' files modify /some_folder @json:'{"mount_point":false}'
+--workspace='Demo AEW' files permission my_test_folder list
+--workspace='Demo AEW' files rename /some_folder testdst
+--workspace='Demo AEW' files short_link /testdst private create
+--workspace='Demo AEW' files short_link /testdst private list
+--workspace='Demo AEW' files short_link /testdst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
+--workspace='Demo AEW' files short_link /testdst public modify <aoc_short_link_pub_create> @: access_levels=edit
+--workspace='Demo AEW' files show %id:<id>
+--workspace='Demo AEW' files show /
+--workspace='Demo AEW' files show testdst/test_file.bin
+--workspace='Demo AEW' files sync admin status /data/local_sync
+--workspace='Demo AEW' files sync pull /testdst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
+--workspace='Demo AEW' files thumbnail my_test_folder/video_file.mpg
+--workspace='Demo AEW' files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
+--workspace='Demo AEW' files transfer push /testsrc --to-folder=/testdst test_file.bin
+--workspace='Demo AEW' files upload --to-folder=/testsrc test_file.bin
+--workspace='Demo AEW' files upload --to-folder=/testsrc test_file.bin test_file.bin
+--workspace='Demo AEW' files v3 info
+--workspace='Demo AEW' organization
+--workspace='Demo AEW' organization --format=image --fields=background_image_url --ui=text
+--workspace='Demo AEW' organization --url=my_public_link_recv_from_aoc_user
+--workspace='Demo AEW' packages browse <id> /
+--workspace='Demo AEW' packages list
+--workspace='Demo AEW' packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+--workspace='Demo AEW' packages receive <id> --to-folder=.
+--workspace='Demo AEW' packages receive <id> --to-folder=. /
+--workspace='Demo AEW' packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
+--workspace='Demo AEW' packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+--workspace='Demo AEW' packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
+--workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+--workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+--workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
+--workspace='Demo AEW' packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
+--workspace='Demo AEW' packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
+--workspace='Demo AEW' packages shared_inboxes list
+--workspace='Demo AEW' packages shared_inboxes show %name:my_shared_inbox_name
+--workspace='Demo AEW' remind --username=my_user_email --url=https://aoc.example.com/path
+--workspace='Demo AEW' tier_restrictions
+--workspace='Demo AEW' user contacts list
+--workspace='Demo AEW' user pref modify @json:'{"default_language":"en-us"}'
+--workspace='Demo AEW' user pref show
+--workspace='Demo AEW' user profile modify @json:'{"name":"dummy change"}'
+--workspace='Demo AEW' user profile show
+--workspace='Demo AEW' user workspaces current
+--workspace='Demo AEW' user workspaces list
 admin analytics application_events
 admin analytics files organization '' <id>
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
@@ -9865,29 +9928,164 @@ Parameter `name` is set to a default value if not provided in `sync_info`.
 
 #### Sync management and monitoring: `admin`
 
-The `admin` command provides several sub commands that access directly the Async snap database (`snap.db`).
-(With the exception of `status` which uses the utility `asyncadmin`, available only on server products.)
+The `admin` command provides subcommands to inspect the state of an Async sync session.
+Most subcommands read the local snap database (`snap.db`) directly — no server connection is required.
+The exception is `status`, which calls the `asyncadmin` utility available only on server products.
 
-This command does not require any communication to the server and accesses only the local database.
-It can be executed also from the `config` plugin:
+These commands can also be run from the `config` plugin:
 
 ```shell
 ascli config sync admin
 ```
 
-To use the `admin` command, the gem `sqlite3` shall be installed:
+**Prerequisites:** Most `admin` subcommands require the `sqlite3` gem:
 
 ```shell
 gem install sqlite3
 ```
 
-In order to use the `admin` commands, the user must provide the path to the database folder:
+**Usage:** All `admin` subcommands share the same argument structure:
 
-- i.e. a folder containing a subfolder named `.private-asp`.
-- By default, it is the local synchronized folder.
-- If an alternate folder is specified for the database, then specify it.
-- If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
-- Else, the user must specify a session name in the optional `Hash`, in the `name` key.
+```shell
+ascli ... sync admin <COMMAND> <FOLDER> [<SYNC_INFO>]
+```
+
+- `<COMMAND>` — one of the subcommands listed below.
+- `<FOLDER>` — path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
+- `[<SYNC_INFO>]` — optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<SESSION_NAME>`.
+
+The only exception is `find`, which takes a plain directory path and lists all `<SESSION_NAME>` found inside it.
+
+**Subcommands:**
+
+| Command     | Uses          | Description                                                                                            |
+|-------------|---------------|--------------------------------------------------------------------------------------------------------|
+| `find`      | filesystem    | Search a directory for existing sync sessions and list their names and paths                           |
+| `status`    | `asyncadmin`  | Retrieve the status of a running sync session (requires a server-side product)                         |
+| `meta`      | `sqlite3`     | Display session metadata from `sync_snapmeta_table`                                                    |
+| `counters`  | `sqlite3`     | Display synchronization counters from `sync_snap_counters_table`                                       |
+| `file_info` | `sqlite3`     | List the synchronization state of each file from `sync_snapdb_table` (state, record ID, path, message) |
+| `overview`  | `sqlite3`     | List all tables and their columns in the snap database                                                 |
+
+**Snap database schema:** The snap database (`snap.db`) contains the following tables:
+
+**`sync_snapmeta_table`** — one row per session, written at start and updated at stop:
+
+| Field | Type | Description |
+|-------------------------|---------|----------------------------------------------------------------------------------|
+| `ascp_sids` | `string` | Last known FASP (ascp) session IDs. |
+| `byte_peerxfer` | `integer` | Number of bytes transferred by the peer. |
+| `byte_synced` | `integer` | Number of bytes successfully synchronized. |
+| `byte_xferres` | `integer` | Number of bytes for which transfer was resumed. |
+| `checksum` | `string` | Checksum algorithm.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none`. |
+| `cip_true_val` | `integer` | Candidate-in-progress counter true value (internal). |
+| `condition` | `string` | Last known session condition.<br/>Allowed values: `running`, `stopped`. |
+| `dbversion` | `string` | Database schema version. |
+| `direction` | `string` | Sync direction.<br/>Allowed values: `push`, `pull`, `bidi`. |
+| `exclude_dirs_older_than` | `integer` | Exclude directories with modification time older than this epoch value (0 = disabled). |
+| `file_peerxfer` | `integer` | Number of files transferred by the peer. |
+| `file_synced` | `integer` | Number of files successfully synchronized. |
+| `file_xferres` | `integer` | Number of files for which transfer was resumed. |
+| `filters` | `string` | Active include/exclude filter patterns. |
+| `inode_format` | `string` | Inode format used by the session. |
+| `ldir` | `string` | Local directory path. |
+| `max_recid` | `integer` | Highest record ID allocated in the snapshot table. |
+| `pairname` | `string` | Sync session name. |
+| `path_peerxfer` | `integer` | Number of paths transferred by the peer. |
+| `path_synced` | `integer` | Number of paths successfully synchronized. |
+| `path_xferres` | `integer` | Number of paths for which transfer was resumed. |
+| `rdir` | `string` | Remote directory path. |
+| `rhost` | `string` | Remote host. |
+| `scn_true_val` | `integer` | Scan counter true value (internal). |
+| `start_time` | `string` | Session start timestamp. |
+| `stop_time` | `string` | Session stop timestamp (written when session ends). |
+| `sync_point` | `integer` | Synchronization point sequence number. |
+| `sync_uuid` | `string` | UUID identifying this sync pair. |
+
+**`sync_snap_counters_table`** — one row, updated live during a session:
+
+| Field | Type | Description |
+|--------------------------|---------|--------------------------------------------------|
+| `conflict` | `integer` | Number of paths in the `Conflict` state. |
+| `error` | `integer` | Number of paths in the `Error` state. |
+| `files_conflict` | `integer` | Number of files in the `Conflict` state. |
+| `files_error` | `integer` | Number of files in the `Error` state. |
+| `files_pending` | `integer` | Number of files still pending synchronization. |
+| `files_potential_conflict` | `integer` | Number of files in the `Potential conflict` state. |
+| `files_syncd` | `integer` | Number of files in the `Syncd` state. |
+| `pending` | `integer` | Number of paths still pending synchronization. |
+| `potential_conflict` | `integer` | Number of paths in the `Potential conflict` state. |
+| `syncd` | `integer` | Number of paths in the `Syncd` state. |
+| `unused` | `integer` | Reserved (unused counter slot). |
+
+**`sync_snapdb_table`** — one row per tracked file or directory:
+
+| Field | Type | Description |
+|------------------------|---------|----------------------------------------------------------------------------------|
+| `c_cont_csum` | `string` | Current content — checksum. |
+| `c_cont_mtime` | `integer` | Current content — modification time (epoch). |
+| `c_cont_size` | `integer` | Current content — file size in bytes. |
+| `c_cont_timestamp` | `integer` | Current content — internal timestamp. |
+| `c_meta_atime` | `integer` | Current metadata — access time (epoch). |
+| `c_meta_attrs` | `string` | Current metadata — file attributes. |
+| `c_meta_ctime` | `integer` | Current metadata — change time (epoch). |
+| `c_meta_gid` | `integer` | Current metadata — group ID (Unix). |
+| `c_meta_mtime` | `integer` | Current metadata — modification time (epoch). |
+| `c_meta_object_metadata` | `string` | Current metadata — object metadata (JSON). |
+| `c_meta_ol_legal_hold` | `integer` | Current metadata — object lock legal hold flag. |
+| `c_meta_ol_mode` | `integer` | Current metadata — object lock mode. |
+| `c_meta_ol_retain_until` | `integer` | Current metadata — object lock retain-until date (epoch). |
+| `c_meta_parentrid` | `integer` | Current metadata — parent record ID. |
+| `c_meta_path` | `string` | Current metadata — file path as known to the snapshot. |
+| `c_meta_type` | `integer` | Current metadata — file type (file, directory, …). |
+| `c_meta_uid` | `integer` | Current metadata — user ID (Unix). |
+| `c_meta_xattrs_cksum` | `string` | Current metadata — checksum of extended attributes. |
+| `c_meta_xattrs` | `integer` | Current metadata — extended attributes (not used). |
+| `candidate_in_prog` | `integer` | Set to 1 when this record is currently in the candidate transfer list. |
+| `commit_version` | `integer` | Local commit version for this entry. |
+| `f_cont_csum` | `string` | Filesystem content — checksum. |
+| `f_cont_mtime` | `integer` | Filesystem content — modification time (epoch). |
+| `f_cont_size` | `integer` | Filesystem content — file size in bytes. |
+| `f_cont_timestamp` | `integer` | Filesystem content — internal timestamp. |
+| `f_meta_atime` | `integer` | Filesystem metadata — access time (epoch). |
+| `f_meta_attrs` | `string` | Filesystem metadata — file attributes. |
+| `f_meta_ctime` | `integer` | Filesystem metadata — change time (epoch). |
+| `f_meta_gid` | `integer` | Filesystem metadata — group ID (Unix). |
+| `f_meta_mtime` | `integer` | Filesystem metadata — modification time (epoch). |
+| `f_meta_object_metadata` | `string` | Filesystem metadata — object metadata (JSON). |
+| `f_meta_ol_legal_hold` | `integer` | Filesystem metadata — object lock legal hold flag. |
+| `f_meta_ol_mode` | `integer` | Filesystem metadata — object lock mode. |
+| `f_meta_ol_retain_until` | `integer` | Filesystem metadata — object lock retain-until date (epoch). |
+| `f_meta_parentrid` | `integer` | Filesystem metadata — parent record ID. |
+| `f_meta_path` | `string` | Filesystem metadata — file path as seen on disk (displayed by `file_info`). |
+| `f_meta_type` | `integer` | Filesystem metadata — file type. |
+| `f_meta_uid` | `integer` | Filesystem metadata — user ID (Unix). |
+| `f_meta_xattrs_cksum` | `string` | Filesystem metadata — checksum of extended attributes. |
+| `f_meta_xattrs` | `integer` | Filesystem metadata — extended attributes (not used). |
+| `message` | `string` | Error or status message associated with this entry. |
+| `meta_lastreq_no` | `integer` | Sequence number of the last metadata request sent. |
+| `meta_lastresp_no` | `integer` | Sequence number of the last metadata response received. |
+| `nodeid` | `integer` | Local filesystem node ID. |
+| `p_cont_csum` | `string` | Pending content — checksum. |
+| `p_cont_mtime` | `integer` | Pending content — modification time (epoch). |
+| `p_cont_size` | `integer` | Pending content — file size in bytes. |
+| `p_cont_timestamp` | `integer` | Pending content — internal timestamp. |
+| `pcr_reqno` | `integer` | Peer content request sequence number. |
+| `peer_commit_version` | `integer` | Peer commit version for this entry. |
+| `peer_nodeid` | `integer` | Peer filesystem node ID. |
+| `peer_rid` | `integer` | Peer record ID for this entry. |
+| `pp_cont_csum` | `string` | Peer pending content — checksum. |
+| `pp_cont_mtime` | `integer` | Peer pending content — modification time (epoch). |
+| `pp_cont_size` | `integer` | Peer pending content — file size in bytes. |
+| `pp_cont_timestamp` | `integer` | Peer pending content — internal timestamp. |
+| `record_id` | `integer` | Primary key (auto-increment). |
+| `recursive_mtime` | `integer` | Most recent modification time across all descendants (directories only). |
+| `scn_completed` | `integer` | Set to 1 when the scan of this directory entry has completed. |
+| `scn_not_visited` | `integer` | Set to 1 when the scanner has not yet visited this entry in the current scan pass. |
+| `scn_required` | `integer` | Set to 1 when a rescan of this entry is required. |
+| `state` | `integer` | Sync state of the entry. Values: 0=Nil, 1-18=Pending variants, 19=Syncd, 20=Error, 21=Conflict, 22=PotentialConflict, 23-24=Pending variants. |
+| `tobe_deleted` | `integer` | Set to 1 when the record is flagged for deletion (garbage collection pending). |
+| `version` | `integer` | Schema version field (not used). |
 
 ### Hot folder
 

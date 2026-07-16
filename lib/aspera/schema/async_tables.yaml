@@ -1,0 +1,352 @@
+# Schema for the SQLite tables inside the Async snap database (snap.db).
+# Sources:
+#   include/async/session/Sqlite3_SSDB.h  (SYNC_SQLITE3_META_SCHEMA, SYNC_SQLITE3_COUNTERS_SCHEMA, SYNC_SQLITE3_SCHEMA_1_0)
+#   include/async/common/Sync_types.h     (SSSTATE values)
+#   Verified against a live snap.db using: ascli config sync admin overview <path>
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/schema/async_tables.yaml
+title: Async snap database tables
+description: Schemas for the SQLite tables stored inside the Async snap database (`snap.db`).
+type: object
+properties:
+  meta:
+    title: sync_snapmeta_table
+    description: One row per session, written at start and updated at stop.
+    type: object
+    properties:
+      dbversion:
+        description: Database schema version.
+        type: string
+      pairname:
+        description: Sync session name.
+        type: string
+      ldir:
+        description: Local directory path.
+        type: string
+      rhost:
+        description: Remote host.
+        type: string
+      rdir:
+        description: Remote directory path.
+        type: string
+      direction:
+        description: Sync direction.
+        type: string
+        enum:
+          - push
+          - pull
+          - bidi
+      inode_format:
+        description: Inode format used by the session.
+        type: string
+      checksum:
+        description: Checksum algorithm.
+        type: string
+        enum:
+          - sha1
+          - md5
+          - sha1_sparse
+          - md5_sparse
+          - none
+      start_time:
+        description: Session start timestamp.
+        type: string
+        format: date-time
+      stop_time:
+        description: Session stop timestamp (written when session ends).
+        type: string
+        format: date-time
+      condition:
+        description: Last known session condition.
+        type: string
+        enum:
+          - running
+          - stopped
+      scn_true_val:
+        description: Scan counter true value (internal).
+        type: integer
+      sync_point:
+        description: Synchronization point sequence number.
+        type: integer
+      max_recid:
+        description: Highest record ID allocated in the snapshot table.
+        type: integer
+      sync_uuid:
+        description: UUID identifying this sync pair.
+        type: string
+      cip_true_val:
+        description: Candidate-in-progress counter true value (internal).
+        type: integer
+      exclude_dirs_older_than:
+        description: Exclude directories with modification time older than this epoch value (0 = disabled).
+        type: integer
+      path_synced:
+        description: Number of paths successfully synchronized.
+        type: integer
+      byte_synced:
+        description: Number of bytes successfully synchronized.
+        type: integer
+      filters:
+        description: Active include/exclude filter patterns.
+        type: string
+      path_peerxfer:
+        description: Number of paths transferred by the peer.
+        type: integer
+      byte_peerxfer:
+        description: Number of bytes transferred by the peer.
+        type: integer
+      path_xferres:
+        description: Number of paths for which transfer was resumed.
+        type: integer
+      byte_xferres:
+        description: Number of bytes for which transfer was resumed.
+        type: integer
+      file_synced:
+        description: Number of files successfully synchronized.
+        type: integer
+      file_peerxfer:
+        description: Number of files transferred by the peer.
+        type: integer
+      file_xferres:
+        description: Number of files for which transfer was resumed.
+        type: integer
+      ascp_sids:
+        description: Last known FASP (ascp) session IDs.
+        type: string
+  counters:
+    title: sync_snap_counters_table
+    description: One row, updated live during the session with path and file counts per state.
+    type: object
+    properties:
+      syncd:
+        description: Number of paths in the `Syncd` state.
+        type: integer
+      conflict:
+        description: Number of paths in the `Conflict` state.
+        type: integer
+      potential_conflict:
+        description: Number of paths in the `Potential conflict` state.
+        type: integer
+      error:
+        description: Number of paths in the `Error` state.
+        type: integer
+      pending:
+        description: Number of paths still pending synchronization.
+        type: integer
+      unused:
+        description: Reserved (unused counter slot).
+        type: integer
+      files_syncd:
+        description: Number of files in the `Syncd` state.
+        type: integer
+      files_conflict:
+        description: Number of files in the `Conflict` state.
+        type: integer
+      files_potential_conflict:
+        description: Number of files in the `Potential conflict` state.
+        type: integer
+      files_error:
+        description: Number of files in the `Error` state.
+        type: integer
+      files_pending:
+        description: Number of files still pending synchronization.
+        type: integer
+  file_info:
+    title: sync_snapdb_table
+    description: One row per tracked file or directory. Primary source for the `file_info` command.
+    type: object
+    properties:
+      record_id:
+        description: Primary key (auto-increment).
+        type: integer
+      nodeid:
+        description: Local filesystem node ID.
+        type: integer
+      peer_rid:
+        description: Peer record ID for this entry.
+        type: integer
+      state:
+        description: >-
+          Sync state of the entry.
+          Values: 0=Nil, 1-18=Pending variants, 19=Syncd, 20=Error, 21=Conflict, 22=PotentialConflict, 23-24=Pending variants.
+        type: integer
+      version:
+        description: Schema version field (not used).
+        type: integer
+      c_meta_type:
+        description: Current metadata — file type (file, directory, …).
+        type: integer
+      c_meta_parentrid:
+        description: Current metadata — parent record ID.
+        type: integer
+      c_meta_path:
+        description: Current metadata — file path as known to the snapshot.
+        type: string
+      c_meta_attrs:
+        description: Current metadata — file attributes.
+        type: string
+      c_meta_uid:
+        description: Current metadata — user ID (Unix).
+        type: integer
+      c_meta_gid:
+        description: Current metadata — group ID (Unix).
+        type: integer
+      c_meta_mtime:
+        description: Current metadata — modification time (epoch).
+        type: integer
+      c_meta_atime:
+        description: Current metadata — access time (epoch).
+        type: integer
+      c_meta_ctime:
+        description: Current metadata — change time (epoch).
+        type: integer
+      c_meta_xattrs:
+        description: Current metadata — extended attributes (not used).
+        type: integer
+      c_meta_xattrs_cksum:
+        description: Current metadata — checksum of extended attributes.
+        type: string
+      c_meta_ol_legal_hold:
+        description: Current metadata — object lock legal hold flag.
+        type: integer
+      c_meta_ol_mode:
+        description: Current metadata — object lock mode.
+        type: integer
+      c_meta_ol_retain_until:
+        description: Current metadata — object lock retain-until date (epoch).
+        type: integer
+      c_meta_object_metadata:
+        description: Current metadata — object metadata (JSON).
+        type: string
+      c_cont_size:
+        description: Current content — file size in bytes.
+        type: integer
+      c_cont_csum:
+        description: Current content — checksum.
+        type: string
+      c_cont_mtime:
+        description: Current content — modification time (epoch).
+        type: integer
+      c_cont_timestamp:
+        description: Current content — internal timestamp.
+        type: integer
+      p_cont_size:
+        description: Pending content — file size in bytes.
+        type: integer
+      p_cont_csum:
+        description: Pending content — checksum.
+        type: string
+      p_cont_mtime:
+        description: Pending content — modification time (epoch).
+        type: integer
+      p_cont_timestamp:
+        description: Pending content — internal timestamp.
+        type: integer
+      f_meta_type:
+        description: Filesystem metadata — file type.
+        type: integer
+      f_meta_parentrid:
+        description: Filesystem metadata — parent record ID.
+        type: integer
+      f_meta_path:
+        description: Filesystem metadata — file path as seen on disk (displayed by `file_info`).
+        type: string
+      f_meta_attrs:
+        description: Filesystem metadata — file attributes.
+        type: string
+      f_meta_uid:
+        description: Filesystem metadata — user ID (Unix).
+        type: integer
+      f_meta_gid:
+        description: Filesystem metadata — group ID (Unix).
+        type: integer
+      f_meta_mtime:
+        description: Filesystem metadata — modification time (epoch).
+        type: integer
+      f_meta_atime:
+        description: Filesystem metadata — access time (epoch).
+        type: integer
+      f_meta_ctime:
+        description: Filesystem metadata — change time (epoch).
+        type: integer
+      f_meta_xattrs:
+        description: Filesystem metadata — extended attributes (not used).
+        type: integer
+      f_meta_xattrs_cksum:
+        description: Filesystem metadata — checksum of extended attributes.
+        type: string
+      f_meta_ol_legal_hold:
+        description: Filesystem metadata — object lock legal hold flag.
+        type: integer
+      f_meta_ol_mode:
+        description: Filesystem metadata — object lock mode.
+        type: integer
+      f_meta_ol_retain_until:
+        description: Filesystem metadata — object lock retain-until date (epoch).
+        type: integer
+      f_meta_object_metadata:
+        description: Filesystem metadata — object metadata (JSON).
+        type: string
+      f_cont_size:
+        description: Filesystem content — file size in bytes.
+        type: integer
+      f_cont_csum:
+        description: Filesystem content — checksum.
+        type: string
+      f_cont_mtime:
+        description: Filesystem content — modification time (epoch).
+        type: integer
+      f_cont_timestamp:
+        description: Filesystem content — internal timestamp.
+        type: integer
+      pcr_reqno:
+        description: Peer content request sequence number.
+        type: integer
+      pp_cont_size:
+        description: Peer pending content — file size in bytes.
+        type: integer
+      pp_cont_csum:
+        description: Peer pending content — checksum.
+        type: string
+      pp_cont_mtime:
+        description: Peer pending content — modification time (epoch).
+        type: integer
+      pp_cont_timestamp:
+        description: Peer pending content — internal timestamp.
+        type: integer
+      tobe_deleted:
+        description: Set to 1 when the record is flagged for deletion (garbage collection pending).
+        type: integer
+      scn_not_visited:
+        description: Set to 1 when the scanner has not yet visited this entry in the current scan pass.
+        type: integer
+      scn_required:
+        description: Set to 1 when a rescan of this entry is required.
+        type: integer
+      scn_completed:
+        description: Set to 1 when the scan of this directory entry has completed.
+        type: integer
+      candidate_in_prog:
+        description: Set to 1 when this record is currently in the candidate transfer list.
+        type: integer
+      meta_lastreq_no:
+        description: Sequence number of the last metadata request sent.
+        type: integer
+      meta_lastresp_no:
+        description: Sequence number of the last metadata response received.
+        type: integer
+      commit_version:
+        description: Local commit version for this entry.
+        type: integer
+      peer_commit_version:
+        description: Peer commit version for this entry.
+        type: integer
+      peer_nodeid:
+        description: Peer filesystem node ID.
+        type: integer
+      recursive_mtime:
+        description: Most recent modification time across all descendants (directories only).
+        type: integer
+      message:
+        description: Error or status message associated with this entry.
+        type: string
