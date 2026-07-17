@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'openssl'
 require_relative 'lib/aspera/cli/version'
 require_relative 'lib/aspera/cli/info'
 
