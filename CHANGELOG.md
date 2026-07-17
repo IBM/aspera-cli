@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.27.0.pre
+## 4.26.2
 
-Released: [Place date of release here]
+Released: 2026-07-17
 
 ### New Features
 
