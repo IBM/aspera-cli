@@ -173,6 +173,11 @@ module TestEnv
         generated_properties.delete(:template)
         generated_properties.delete(:instanciate)
         generated_properties[:tags].unshift(instance_name.to_sym) unless generated_properties[:tags].include?(instance_name.to_sym)
+        # Inherit extra tags declared on the instanciate entry (excluding instance_name already added)
+        extra_tags = (instance_properties[:tags] || []).map(&:to_sym) - [instance_name.to_sym]
+        extra_tags.each do |tag|
+          generated_properties[:tags].push(tag) unless generated_properties[:tags].include?(tag)
+        end
         generated_properties[:args] = instance_properties[:args] + generated_properties[:args]
         generated_properties[:vars] = instance_properties[:vars] if instance_properties.key?(:vars)
         if generated_properties.key?(:depends_on)

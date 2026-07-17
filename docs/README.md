@@ -6961,69 +6961,6 @@ For instructions, refer to section `find` for plugin `node`.
 > Add `ascli aoc` in front of the following commands:
 
 ```shell
---workspace='Demo AEW' admin bearer_token --display=data
---workspace='Demo AEW' bearer_token --display=data
---workspace='Demo AEW' files bearer /
---workspace='Demo AEW' files bearer_token_node / --cache-tokens=no
---workspace='Demo AEW' files browse /
---workspace='Demo AEW' files browse / --url=my_private_link
---workspace='Demo AEW' files browse my_remote_file
---workspace='Demo AEW' files browse my_remote_folder
---workspace='Demo AEW' files browse my_remote_folder/
---workspace='Demo AEW' files cat testdst/test_file.bin
---workspace='Demo AEW' files delete /testsrc
---workspace='Demo AEW' files download --to-folder=. testdst/test_file.bin testdst/test_file.bin
---workspace='Demo AEW' files download --transfer=connect testdst/test_file.bin
---workspace='Demo AEW' files download --transfer=desktop testdst/test_file.bin
---workspace='Demo AEW' files find /sample_video
---workspace='Demo AEW' files find /sample_video '\.partial$'
---workspace='Demo AEW' files find /sample_video @ruby:'->(f){f["type"].eql?("file")}'
---workspace='Demo AEW' files mkdir /testsrc
---workspace='Demo AEW' files modify /some_folder @json:'{"mount_point":false}'
---workspace='Demo AEW' files permission my_test_folder list
---workspace='Demo AEW' files rename /some_folder testdst
---workspace='Demo AEW' files short_link /testdst private create
---workspace='Demo AEW' files short_link /testdst private list
---workspace='Demo AEW' files short_link /testdst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
---workspace='Demo AEW' files short_link /testdst public modify <aoc_short_link_pub_create> @: access_levels=edit
---workspace='Demo AEW' files show %id:<id>
---workspace='Demo AEW' files show /
---workspace='Demo AEW' files show testdst/test_file.bin
---workspace='Demo AEW' files sync admin status /data/local_sync
---workspace='Demo AEW' files sync pull /testdst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
---workspace='Demo AEW' files thumbnail my_test_folder/video_file.mpg
---workspace='Demo AEW' files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
---workspace='Demo AEW' files transfer push /testsrc --to-folder=/testdst test_file.bin
---workspace='Demo AEW' files upload --to-folder=/testsrc test_file.bin
---workspace='Demo AEW' files upload --to-folder=/testsrc test_file.bin test_file.bin
---workspace='Demo AEW' files v3 info
---workspace='Demo AEW' organization
---workspace='Demo AEW' organization --format=image --fields=background_image_url --ui=text
---workspace='Demo AEW' organization --url=my_public_link_recv_from_aoc_user
---workspace='Demo AEW' packages browse <id> /
---workspace='Demo AEW' packages list
---workspace='Demo AEW' packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
---workspace='Demo AEW' packages receive <id> --to-folder=.
---workspace='Demo AEW' packages receive <id> --to-folder=. /
---workspace='Demo AEW' packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
---workspace='Demo AEW' packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
---workspace='Demo AEW' packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
---workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
---workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
---workspace='Demo AEW' packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
---workspace='Demo AEW' packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
---workspace='Demo AEW' packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
---workspace='Demo AEW' packages shared_inboxes list
---workspace='Demo AEW' packages shared_inboxes show %name:my_shared_inbox_name
---workspace='Demo AEW' remind --username=my_user_email --url=https://aoc.example.com/path
---workspace='Demo AEW' tier_restrictions
---workspace='Demo AEW' user contacts list
---workspace='Demo AEW' user pref modify @json:'{"default_language":"en-us"}'
---workspace='Demo AEW' user pref show
---workspace='Demo AEW' user profile modify @json:'{"name":"dummy change"}'
---workspace='Demo AEW' user profile show
---workspace='Demo AEW' user workspaces current
---workspace='Demo AEW' user workspaces list
 admin analytics application_events
 admin analytics files organization '' <id>
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
@@ -7372,7 +7309,7 @@ mv my_upload_folder/200KB.2 my_upload_folder/to.delete
 sync admin file_info --sql='WHERE state=19' /data/local_sync
 sync admin file_info /data/local_sync
 sync admin overview /data/local_sync
-sync admin query /data/local_sync 'SELECT name FROM sqlite_master WHERE type='table''
+sync admin query --sql='SELECT name FROM sqlite_master WHERE type='table'' /data/local_sync
 sync admin status /data/local_sync
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
@@ -8334,7 +8271,7 @@ packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_
 packages show --box=my_shared_box_name <f5_pack_shboxc>
 packages show --box=my_workgroup --group-type=workgroups <id>
 packages show <id>
-packages status <f5_p3a> @list:,failed,completed
+packages status <f5_pack_send_shared> @list:,failed,completed
 packages status <id>
 postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"/path/to/scripts","cert":".../localhost.p12","key":"changeit"}'
 shared browse %name:my_src
@@ -9972,15 +9909,11 @@ The only exception is `find`, which takes a plain directory path and lists all `
 | `overview`  | `sqlite3`     | List all tables and their columns in the snap database                                                 |
 | `query`     | `sqlite3`     | Execute an arbitrary SQL statement against the snap database and return the result rows                |
 
-The `query` subcommand takes an extra positional argument: the SQL statement to run.
+The `query` subcommand requires `--sql` with the full SQL statement to execute.
+The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` optionally to append a SQL fragment (e.g. a `WHERE` or `ORDER BY` clause):
 
 ```shell
-ascli ... sync admin query <FOLDER> [<SYNC_INFO>] "SELECT * FROM sync_snapdb_table WHERE state > 0"
-```
-
-The sqlite3-based subcommands (`meta`, `counters`, `file_info`) also accept `--sql` to append a SQL fragment to the generated statement (e.g. a `WHERE` or `ORDER BY` clause):
-
-```shell
+ascli ... sync admin query <FOLDER> --sql="SELECT * FROM sync_snapdb_table WHERE state=20"
 ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20"
 ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_path"
 ```

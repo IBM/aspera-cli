@@ -1948,7 +1948,7 @@ aoc_faspex_gatewayb:
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
   post: t.stop_process :aoc_faspex_gateway
-aoc_help:
+aoc_user_suite:
   instanciate: awa_user_suite
   vars:
     secret_preset: aoc
@@ -1958,6 +1958,8 @@ aew_user_suite:
   instanciate: awa_user_suite
   vars:
     secret_preset: aew
+  tags:
+    - nodoc
   args:
     - aoc
     - --preset=aew_user

@@ -293,7 +293,7 @@ class DocHelper
     ['@extend:', ''],
     ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
-    [/\$\(t\.saved_output( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
+    [/\$\(\(?t\.saved_output( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
     [/\$\(t\.saved_output( :|\(')([^\)']+)'?.*\)/, '<\2>'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
     [/@preset:(?:[a-z0-9_]+|\$\([a-z_]+\))\.([a-z0-9_]+)@?/, 'my_\1'],
@@ -324,7 +324,7 @@ class DocHelper
     return @commands unless @commands.nil?
     @commands = {}
     all_tests = TestEnv.descriptions
-    all_tests.select{ |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin]}.each_value do |test|
+    all_tests.select{ |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin]}.each do |name, test|
       # Cleanup command line
       line = test[:args].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
         next cmd unless cmd.is_a?(String)
@@ -333,6 +333,7 @@ class DocHelper
         cmd
       end.join(' ')
       line = line.strip.squeeze(' ')
+      #line = line + name
       Aspera::Log.log.debug(line)
       plugin = test[:plugin]
       @commands[plugin] ||= []

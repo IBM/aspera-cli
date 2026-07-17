@@ -36,7 +36,7 @@ The following keys are supported in each test entry:
 |---------------|----------|--------------------------------------------------|
 | `description` | `String` | Human-readable description.                      |
 | `$comment`    | `String` | Internal comment (e.g. for maintainers).         |
-| `tags`        | `Array`  | Group tests or enable special behavior.          |
+| `tags`        | `Array`  | Group tests or enable special behavior. For `instanciate` entries, inherited by all generated test cases (in addition to the instance name tag added automatically). |
 | `depends_on`  | `Array`  | Test case names that must run before this one.   |
 | `command`     | `String` | Executable name (default: `ascli`).              |
 | `args`        | `Array`  | Command-line arguments.                          |
