@@ -10,7 +10,7 @@ Released: [Place date of release here]
 * `aoc`: Command `user settings` now support `create`, `delete`, `list`, `show`, `modify`.
 * `aoc`: New command `network_policy` and `configuration_policy` in `admin`.
 * `sync` : New command `admin query` to execute an arbitrary SQL command on the snap DB.
-* `sync` : Option `sql` to add arbitrary SQL suffix/addon to sync actions.
+* `sync` : Option `sql` to add arbitrary SQL suffixes to sync actions with snapshot DB.
 
 ### Issues Fixed
 

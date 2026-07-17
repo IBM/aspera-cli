@@ -65,7 +65,7 @@ This manual is organized into the following sections:
 > If you are developing an application, prefer the APIs or SDKs instead.
 
 <%=tool%> is designed for command-line interaction with IBM Aspera products, enabling users to execute remote commands and perform high-performance file transfers.
-It supports both interactive terminal operations (e.g., maintenance tasks on VT100-compatible terminals) and scripting use cases (e.g., batch jobs via shell scripts or `cron`).
+It supports both interactive terminal operations (for example, maintenance tasks on VT100-compatible terminals) and scripting use cases (for example, batch jobs via shell scripts or `cron`).
 
 Internally, <%=tool%> integrates several components:
 
@@ -83,7 +83,7 @@ These include:
 These APIs are generally more suitable for long-term development and maintenance.
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
-For scripting and ad-hoc command-line tasks, <%=tool%> is ideal.
+For scripting and ad hoc command-line tasks, <%=tool%> is ideal.
 It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
 ### CLI landscape overview: `ascp`
@@ -506,7 +506,7 @@ Upon RVM installation, open a new terminal or initialize with:
 source ~/.rvm/scripts/rvm
 ```
 
-It is advised to get one of the pre-compiled Ruby version, you can list with:
+It is advised to use one of the precompiled Ruby versions; you can list them with:
 
 ```shell
 rvm list --remote
@@ -620,7 +620,7 @@ Choose the latest version from:
 > [!NOTE]
 > JRuby can be [installed](https://www.jruby.org/getting-started) using `rvm`.
 
-Example: start <%=tool%> with JRuby and reduce startup time:
+Example: Start <%=tool%> with JRuby and reduce startup time:
 
 ```shell
 export JRUBY_OPTS=--dev
@@ -635,7 +635,7 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 
 #### Optional gems
 
-Some additional gems are required for either development, or some runtime specific features.
+Some additional gems are required for either development or specific runtime features.
 For JRuby, some replacement gems are proposed, or are not available at all.
 Those are not installed as part of dependencies because they involve compilation of native code but concern less-used features.
 
@@ -663,7 +663,7 @@ To upgrade to the latest version:
 gem update <%=gemspec.name%>
 ```
 
-During its execution, <%=tool%> checks every week if a new version is available and notifies the user in a WARN log.
+During execution, <%=tool%> checks weekly whether a new version is available and notifies the user via a WARN log entry.
 To deactivate this feature, globally set the option `version_check_days` to `0`, or specify a different period in days.
 
 To check if a new version is available (independently of `version_check_days`):
@@ -708,7 +708,7 @@ On Windows, download the link, that saves the file: `aspera-cli-beta.gem`, then 
 
 File transfers are primarily performed using the **FASP** protocol via the `ascp` utility.
 
-To execute an Aspera transfer, only two additional files are required, both included with the Aspera Transfer Daemon:
+To execute an Aspera transfer, only two additional files are required; both are included with the Aspera Transfer Daemon:
 
 - `ascp` - the transfer executable
 
@@ -851,7 +851,7 @@ source ~/.rvm/scripts/rvm
 
 Installation without network:
 
-It is essentially the same procedure as installation for Windows with internet, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
+It is essentially the same procedure as the internet-connected Windows installation, but instead of downloading files from the internet, copy them from a machine with internet access and install from those archives:
 
 - Download the Ruby installer from <https://rubyinstaller.org/downloads/>
 
@@ -1344,8 +1344,8 @@ A resource type can also be a grouping of other resource types, for example `adm
 
 Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional verbs.
-When those additional commands are related to a resource also reachable in another context, then those commands are located below command `do`.
-For example subcommands appear after resource selection (identifier), e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a sub-command of `node`.
+When such additional commands relate to a resource also accessible in another context, they are placed under the `do` command.
+For example, subcommands appear after the resource identifier, e.g. `<%=cmd%> aoc admin node do <%=ph :node_id%> browse /`: `browse` is a subcommand of `node`.
 
 Typically, the `create` verb takes a resource creation data as a parameter.
 `show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
@@ -1384,10 +1384,10 @@ For example, in the following command, `<%=ph :user_id%>` is the user's identifi
 **Command Parameters** are typically mandatory values for a command, such as resource creation data.
 
 > [!NOTE]
-> It could also have been designed as an option.
-> But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
-> The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
-> [Extended Value](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
+> A Command Parameter could also have been designed as an option.
+> However, since it is mandatory and such data typically do not need to be stored in a configuration file, using a Command Parameter is the better design choice.
+> The advantages over an option are: a shorter command line (no option name, only position), a clearly mandatory value, and a position that unambiguously indicates its role.
+> [Extended Value](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or an environment variable (using `@env:`).
 
 If a **Command Parameter** begins with `-`, then either use the `@val:` syntax (see [Extended Value](#extended-value-syntax)), or use the `--` separator (see below).
 
@@ -1592,7 +1592,7 @@ A command line argument is typically designed as option if:
 ### Interactive Input
 
 Some options and **Command Parameters** are mandatory and other optional.
-By default, <%=tool%> will ask for missing mandatory options or **Command Parameters** for interactive execution.
+By default, <%=tool%> prompts for missing mandatory options or **Command Parameters** during interactive execution.
 
 The behavior can be controlled with:
 
@@ -1683,7 +1683,7 @@ For example, to display a table with thick Unicode borders:
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-By default, is the terminal is detected to support unicode, then `border=unicode_round` is used.
+By default, if the terminal is detected to support Unicode, then `border=unicode_round` is used.
 
 A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
 It defines how list of strings are displayed.
@@ -1849,9 +1849,9 @@ Display with `yes` (multiple Simple):
 
 Output messages are categorized in 3 types:
 
-- `info` output contain additional information, such as number of elements in a table
-- `data` output contain the actual output of the command (object, or list of objects)
-- `error`output contain error messages
+- `info` output contains additional information, such as the number of elements in a table
+- `data` output contains the actual output of the command (object, or list of objects)
+- `error` output contains error messages
 
 The option `display` controls the level of output:
 
@@ -1914,7 +1914,7 @@ Example:
 > [!NOTE]
 > Option `select` filters elements from the result of command, while the `query` option gives filtering parameters to the API when listing elements.
 
-In above example, the same result is obtained with option:
+In the above example, the same result is obtained with option:
 
 ```shell
 --select=@ruby:'->(i){i["ats_admin"]}'
@@ -2151,9 +2151,10 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 `config echo` displays the value of the **first** argument using the current output `format`.
 
 > [!NOTE]
-> It gets its value after shell command line parsing and <%=tool%> [Extended Value](#extended-value-syntax) parsing.
+> It gets its value after shell command-line parsing and <%=tool%> [Extended Value](#extended-value-syntax) parsing.
+
 In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
-For all example, most special character handling is not specific to <%=tool%>:
+For all examples, most special character handling is not specific to <%=tool%>:
 It depends on the underlying syntax: shell, JSON, etc.
 Depending on the case, a different `format` option is used to display the actual value.
 
@@ -3101,7 +3102,7 @@ Example, using command line option:
 ```
 
 ```text
-PROXY proxy.example.com:8080;DIRECT
+PROXY proxy.example.com:3128;DIRECT
 ```
 
 ```shell
@@ -4105,7 +4106,7 @@ crontab<<EOF
 EOF
 ```
 
-Linux may also provide anacron for daily or hourly jobs that must run even if the system was previously offline.
+Linux also provides `anacron` for daily or hourly jobs that must run even if the system was previously offline.
 
 > [!NOTE]
 > Logging options are specified directly in the `cron` entry so command output remains visible when running the command manually.
@@ -4121,9 +4122,7 @@ For example, below `<%=ph :name%>` is `<%=cmd%>_svc`.
 
 A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_<%=ph :name%>.sh`:
 
-**Service Definition**
-
-`/etc/systemd/system/<%=ph :name%>.service`
+Service definition at `/etc/systemd/system/<%=ph :name%>.service`:
 
 ```ini
 [Unit]
@@ -4827,7 +4826,7 @@ The wizard accepts two optional positional arguments:
 
 - **Plugin Name**: Specify `aoc` to bypass automatic application detection.
 
-If the URL omitted, the wizard will prompt for it interactively.
+If the URL is omitted, the wizard will prompt for it interactively.
 
 #### Example: Standard Configuration
 
@@ -5241,9 +5240,9 @@ New resources (users, groups, workspaces, etc.) can be created using a command l
 ```
 
 Some API endpoints are described in [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22).
-Sadly, not all.
+Not all endpoints are documented there.
 
-Nevertheless, it is possible to guess the structure of the creation value by simply dumping an existing resource, and use the same parameters for the creation.
+Nevertheless, it is possible to infer the structure of the creation payload by dumping an existing resource and using the same parameters for creation.
 
 ```shell
 <%=cmd%> aoc admin group show 12345 --format=json
@@ -5755,7 +5754,7 @@ The following command will create and display a secret token to register a self-
 
 #### Example: Create an ATS Node
 
-AoC nodes as actually composed with two related entities:
+AoC nodes are actually composed of two related entities:
 
 - An access key created on the Transfer Server (HSTS/ATS)
 - A `node` resource in the AoC application.
@@ -5784,7 +5783,7 @@ Once executed, the access key `id` and `secret`, randomly generated by the Node 
 
 - Create the AoC node resource
 
-First, Retrieve the ATS node address
+First, retrieve the ATS node address:
 
 ```shell
 <%=cmd%> aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
@@ -5840,7 +5839,7 @@ General syntax:
 <%=cmd%> aoc packages send <%=ph :package_extended_value%> <%=ph :options%> <%=ph :file_list%>
 ```
 
-Package creation parameter are sent as **Command Parameter**.
+Package creation parameters are sent as a **Command Parameter**.
 See the AoC package creation API, or display an existing package in JSON to list attributes.
 
 List allowed shared inbox destinations with:
@@ -5874,7 +5873,7 @@ If a user recipient (email) is not already registered and the workspace allows e
 ```
 
 It is also possible to use identifiers and API parameters.
-For exemple, sending to a shared inbox by ID with metadata:
+For example, sending to a shared inbox by ID with metadata:
 
 ```shell
 <%=cmd%> aoc packages send --workspace="<%=ph :workspace_name%>" @json:'{"name":"<%=ph :title%>","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
@@ -6377,17 +6376,17 @@ Procedure to send a file from org1 to org2:
 
 Explanation:
 
-- <%=tool%> is the command to execute by the shell
-- `-Porg1` load options for preset `org1` (url and credentials)
-- `aoc` use Aspera on Cloud plugin
-- `files node_info /<%=ph :dest_folder%>` generate transfer information including Node API credential and root ID, suitable for the next command
-- `--format=json` format the output in JSON (instead of default text table)
-- `--display=data` display only the result, and remove other information, such as workspace name
-- `|` the standard output of the first command is fed into the second one
-- `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
-- `files upload <%=ph :source_file%>` upload the file named `<%=ph :source_file%>` (located in `org2`) to `org1`
-- `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agent-direct)
-- `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. Node API credentials, those are expected in JSON format and read from standard input
+- <%=tool%> is the command executed by the shell
+- `-Porg1` loads options for preset `org1` (URL and credentials)
+- `aoc` uses the Aspera on Cloud plugin
+- `files node_info /<%=ph :dest_folder%>` generates transfer information including the Node API credential and root ID, suitable for the next command
+- `--format=json` formats the output as JSON (instead of the default text table)
+- `--display=data` displays only the result, removing other information such as workspace name
+- `|` pipes the standard output of the first command into the second one
+- `-Porg2 aoc` uses the Aspera on Cloud plugin and loads credentials for `org2`
+- `files upload <%=ph :source_file%>` uploads the file named `<%=ph :source_file%>` (located in `org2`) to `org1`
+- `--transfer=node` uses transfer agent type `node` instead of the default [`direct`](#agent-direct)
+- `--transfer-info=@json:@stdin:` provides `node` transfer agent information (Node API credentials), expected as JSON and read from standard input
 
 #### Find Files
 
@@ -7010,7 +7009,7 @@ Bearer tokens can be generated using <%=tool%> command `bearer_token`: it takes 
 An access key shall be created to grant access for transfers to its storage.
 The access key and its secret represent administrative access to the storage as it has access rights to the whole storage of the access key.
 
-They way to create access keys depend slightly on the type of HSTS:
+The way to create access keys depends slightly on the type of HSTS:
 
 - If a self-managed Aspera node is used, then a **node user admin** must be created:
   It has no `docroot` but has at least one file restriction (for testing, one can use `*` to accept creation of an access key with any storage root path).
@@ -7197,7 +7196,7 @@ product> faspex5
 When Faspex is detected, it would ask for the path to a private key.
 If you don't have a private key, then leave that field blank, and it will generate one or use one that was previously generated.
 
-```test
+```text
 Using: Faspex at https://faspex5.example.com/aspera/faspex
 Please provide the path to your private RSA key, or nothing to generate one:
 option: key_path>
@@ -7840,7 +7839,7 @@ As inboxes may be large, it is possible to use the following query parameters:
 
 The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under **Services (API v.3)**.
 
-If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`).
+If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which results in paged API calls (using parameters: `count` and `page`).
 By default, `count` is `0` (`10`), it can be increased to issue less HTTP calls.
 
 #### Example: List packages in dropbox
@@ -7871,7 +7870,7 @@ If the package is in a specific **dropbox**/**workgroup**, add option `recipient
 <%=cmd%> faspex package recv 125 --recipient='*dropbox_name'
 ```
 
-If `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
+If `id` is set to `ALL`, then all packages are downloaded, and if option `once_only` is used, a persistency file is created to keep track of already downloaded packages.
 
 ### Sending a Package
 
@@ -8019,7 +8018,7 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 <%=include_commands_for_plugin(:console)%>
 
-## Plugin: `orchestrator`:IBM Aspera Orchestrator
+## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
 <%=include_commands_for_plugin(:orchestrator)%>
 
@@ -8935,11 +8934,11 @@ It aims at simplifying the startup of a FASP session from a programmatic standpo
 - Common to Aspera Connect API (browser JavaScript `startTransfer`)
 - Easy to generate by using any third party language specific JSON library
 
-Hopefully, IBM integrates this directly in `ascp`, and this tool is made redundant.
+Ideally, IBM will integrate this directly into `ascp`, making this tool redundant.
 
-This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
+This makes it easy to integrate with any language, provided that one can spawn a subprocess, write to its STDIN, read from STDOUT, and generate and parse JSON.
 
-<%=tool%> expect one single argument: a session specification that contains parameters and a [**transfer-spec**](#transfer-specification).
+<%=tool%> expects a single argument: a session specification that contains parameters and a [**transfer-spec**](#transfer-specification).
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted on stdin.
 
@@ -9138,7 +9137,7 @@ For example, when using the container, override that file with a volume and remo
 Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
 
 > [!NOTE]
-> If one relies on `--lock-port` when using containers to avoir parallel transfers in a cron job, this can be the problem, as `lock_port` does not lock between containers.
+> If one relies on `--lock-port` when using containers to avoid parallel transfers in a cron job, this may be the cause, as `lock_port` does not lock across containers.
 > Use `flock` instead.
 
 ## About
@@ -9157,25 +9156,25 @@ When you hear Hootput’s call, you know your data is already in flight.
 
 ### History
 
-When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
-Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
-Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
-Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
+When I joined Aspera, there was only one CLI: `ascp`, the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
+At some point, Serban (founder) provided a shell script able to create a Faspex package using the Faspex REST API.
+Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for FASP transfers.
+Also, because `ascp` already existed, I conceived an extended tool: `eascp.pl`, which accepted all `ascp` options for transfers but was also able to transfer to Faspex and Shares (the destination was a kind of URI for the applications).
 
 There were a few pitfalls:
 
-- <%=tool%> was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
-- <%=tool%> was only for transfers, but not able to call other products APIs
+- `eascp.pl` was written in the aging `perl` language, while most Aspera web application products (other than the Transfer Server) are written in `ruby`.
+- It was only for transfers and was not able to call other product APIs.
 
 So, it evolved into <%=tool%>:
 
 - Portable: works on platforms supporting `ruby` (and `ascp`)
 - Easy to install with the `gem` utility
-- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable, more standard)
+- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents); this is why transfer parameters moved from the `ascp` command line to the [**transfer-spec**](#transfer-specification) (more reliable, more standard)
 - `ruby` is consistent with other Aspera products
 
-Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
-It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
+Over time, a supported command-line tool `aspera` was developed in C++ and later deprecated.
+It had the advantage of being relatively easy to install as a single executable (still using `ascp`), but it was too limited in scope and lacked many of the features of this CLI.
 
 Enjoy a coffee on me:
 
