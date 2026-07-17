@@ -12,6 +12,8 @@ jobs:
   check-and-renew:
     name: Check and renew certificate
     runs-on: ubuntu-latest
+    env:
+      BUNDLE_WITHOUT: optional:development:special
     permissions:
       contents: write
       pull-requests: write
@@ -25,7 +27,6 @@ jobs:
         with:
           ruby-version: "4.0.6"
           bundler-cache: true
-          bundler-without: "development optional special"
 
       - name: Renew if needed
         env:
