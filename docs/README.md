@@ -3,7 +3,7 @@
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_DEFAULTS_BEGIN
 metadata:
-  subtitle: "ascli 4.26.2"
+  subtitle: "ascli 4.27.0.pre"
   author: "Laurent Martin"
 PANDOC_DEFAULTS_END
 -->
@@ -137,8 +137,8 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar zxvf ascli.4.26.2.linux-x86_64.tgz
-mv ascli.4.26.2.linux-x86_64 $HOME/bin/ascli
+tar zxvf ascli.4.27.0.pre.linux-x86_64.tgz
+mv ascli.4.27.0.pre.linux-x86_64 $HOME/bin/ascli
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -152,7 +152,7 @@ ascli -v
 ```
 
 ```text
-4.26.2
+4.27.0.pre
 ```
 
 - Install the latest Aspera transfer runtime, as it is not included in the `ascli` package:
@@ -310,7 +310,7 @@ This executable includes the Ruby runtime.
 > See [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ```shell
-curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.26.2.osx-arm64
+curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.27.0.pre.osx-arm64
 chmod a+x ascli
 ./ascli config transferd install
 ```
@@ -852,11 +852,11 @@ Necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.26.2 --no-document --install-dir temp_folder
+gem install aspera-cli:4.27.0.pre --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.26.2-gems
+mv temp_folder/cache aspera-cli-4.27.0.pre-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.26.2-gems aspera-cli-4.26.2-gems.tgz
+tar zcvf aspera-cli-4.27.0.pre-gems aspera-cli-4.27.0.pre-gems.tgz
 ```
 
 #### Unix-like
@@ -998,7 +998,7 @@ ascli -v
 ```
 
 ```text
-4.26.2
+4.27.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -4637,7 +4637,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.26.2)
+        ascli -- a command line tool for Aspera Applications (v4.27.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
