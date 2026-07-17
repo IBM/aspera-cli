@@ -95,7 +95,7 @@ shares_admin_group_users:
     - group
     - all
     - users
-    - $(t.saved_output('shares_admin_group_id').split("\n").first)
+    - $((t.saved_output :shares_admin_group_id).split("\n").first)
     - list
 shares_admin_group_ldap:
   tags:
@@ -968,7 +968,7 @@ cons_cur_show_one:
     - transfer
     - current
     - show
-    - $(t.saved_output('console_xfer_id').split("\n").last)
+    - $((t.saved_output :console_xfer_id).split("\n").last)
 cons_xfer_current_files:
   depends_on:
     - console_xfer_id
@@ -977,7 +977,7 @@ cons_xfer_current_files:
     - transfer
     - current
     - files
-    - $(t.saved_output('console_xfer_id').split("\n").last)
+    - $((t.saved_output :console_xfer_id).split("\n").last)
 cons_xfer_current_resume:
   $comment: Gives 500 Internal Server Error
   tags:
@@ -990,7 +990,7 @@ cons_xfer_current_resume:
     - transfer
     - current
     - resume
-    - $(t.saved_output('console_xfer_id').split("\n").last)
+    - $((t.saved_output :console_xfer_id).split("\n").last)
 cons_smart_list:
   args:
     - console
@@ -2287,7 +2287,7 @@ aoc_files_upload_other_ws:
     - --to-folder=@preset:awa.other_folder
     - $(FILENAME_ASCII)
     - --transfer=node
-    - --transfer-info=@json:$(t.saved_output('aoc_files_node_info'))
+    - --transfer-info=@json:$(t.saved_output :aoc_files_node_info)
 awa_files_delete_folder:
   depends_on:
     - aoc_files_transfer
@@ -2420,7 +2420,7 @@ aoc_file_show_by_id:
   args:
     - files
     - show
-    - "%id:$(t.saved_output('aoc_file_browse_id'))"
+    - "%id:$(t.saved_output :aoc_file_browse_id)"
 aoc_file_show_root:
   depends_on:
     - aoc_files_transfer
@@ -2610,7 +2610,7 @@ aoc_short_link_pub_modify:
     - /testdst
     - public
     - modify
-    - $(t.saved_output('aoc_short_link_pub_create'))
+    - $(t.saved_output :aoc_short_link_pub_create)
     - "@:"
     - access_levels=edit
 aoc_short_link_priv_list:
@@ -2671,7 +2671,7 @@ aoc_pack_recv:
   args:
     - packages
     - receive
-    - $(t.saved_output('aoc_pack_recv_id'))
+    - $(t.saved_output :aoc_pack_recv_id)
     - --to-folder=$(TMP)
 aoc_pack_recv_root:
   depends_on:
@@ -2680,7 +2680,7 @@ aoc_pack_recv_root:
   args:
     - packages
     - receive
-    - $(t.saved_output('aoc_pack_recv_id'))
+    - $(t.saved_output :aoc_pack_recv_id)
     - --to-folder=$(TMP)
     - /
 aoc_pack_browse:
@@ -2690,7 +2690,7 @@ aoc_pack_browse:
   args:
     - packages
     - browse
-    - $(t.saved_output('aoc_pack_recv_id'))
+    - $(t.saved_output :aoc_pack_recv_id)
     - /
 aoc_pack_recv_all:
   template: awa_user_suite
@@ -3323,7 +3323,7 @@ aoc_conf_policy_show:
     - admin
     - configuration_policy
     - show
-    - $(t.saved_output('aoc_conf_policy_id').split("\n").first)
+    - $((t.saved_output :aoc_conf_policy_id).split("\n").first)
 aoc_adm_network_policy_list:
   description: List network policies
   tags:
@@ -3362,7 +3362,7 @@ aoc_net_policy_show:
     - admin
     - network_policy
     - show
-    - $(t.saved_output('aoc_net_policy_id').split("\n").first)
+    - $((t.saved_output :aoc_net_policy_id).split("\n").first)
 
 aoc_clt_reg_tok_create:
   args:
@@ -4368,7 +4368,7 @@ conf_ascp_sdk_folder_save:
 conf_ascp_install_113:
   depends_on:
     - conf_ascp_sdk_folder_save
-  pre: puts(t.saved_output('conf_ascp_sdk_folder_save'))
+  pre: puts((t.saved_output :conf_ascp_sdk_folder_save))
   args:
     - config
     - ascp
@@ -5740,7 +5740,7 @@ f5_pack_send_shared:
     - "@preset:faspex5.shared_folder_file"
     - --fields=id
     - --display=data
-  post: 'puts "Sent package with id: #{t.saved_output "f5_p3a"}"'
+  post: 'puts "Sent package with id: #{t.saved_output :f5_pack_send_shared}"'
 f5_pack_send_shared_status:
   depends_on:
     - f5_pack_send_shared
