@@ -155,37 +155,6 @@ module Aspera
         end
       end
 
-      # Parse Link header according to RFC 8288 to extract a specific relation
-      # @param link_header [String, nil] The Link header value
-      # @param rel [String] The relation to look for (default: 'next')
-      # @return [String, nil] The URL of the link with the specified relation, or nil
-      def parse_link_header(link_header, rel: 'next')
-        return if link_header.nil? || link_header.empty?
-        # RFC 8288: Link header format is: <URI>; param1=value1; param2=value2, <URI2>; ...
-        # We look for the link with the specified rel
-        link_header.split(',').each do |link_part|
-          link_part = link_part.strip
-          # Extract URL between < and >
-          url_match = link_part.match(/<([^>]+)>/)
-          next unless url_match
-          url = url_match[1]
-          # Extract parameters after the URL
-          params_str = link_part[url_match.end(0)..]
-          # Check if this link has the specified rel (with or without quotes, case insensitive)
-          next unless /;\s*rel\s*=\s*"?#{Regexp.escape(rel)}"?/i.match?(params_str)
-          return url
-        end
-        # Fallback: if no rel found and looking for 'next', try the first link (backward compatibility)
-        if rel.eql?('next')
-          first_link = link_header.split(',').first&.strip
-          if first_link
-            url_match = first_link.match(/<([^>]+)>/)
-            return url_match[1] if url_match
-          end
-        end
-        nil
-      end
-
       # Start a HTTP/S session, also used for web sockets
       # @param base_url [String] Base url of HTTP/S session
       # @return [Net::HTTP] A started HTTP session

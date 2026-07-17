@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/link_header'
 require 'aspera/transfer/spec'
 require 'aspera/rest'
 require 'aspera/oauth'
@@ -572,7 +573,7 @@ module Aspera
           # Update progress spinner
           RestParameters.instance.spinner_cb.call(item_list.length)
           # Parse Link header according to RFC 8288 to extract next iteration token
-          next_url = Rest.parse_link_header(http['Link'], rel: 'next')
+          next_url = LinkHeader.parse(http['Link']).find_href(rel: 'next')
           next_iteration_token = nil
           if next_url
             begin
