@@ -665,6 +665,7 @@ module Aspera
           when :ascp
             execute_action_ascp
           when :sync
+            SyncActions.declare_options(options)
             case options.get_next_command(%i[spec admin translate])
             when :spec
               builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
