@@ -1,7 +1,5 @@
 # Changes (Release notes)
 
-<!-- markdownlint-configure-file { "no-duplicate-heading": { "siblings_only": true } } -->
-
 ## 4.27.0.pre
 
 Released: [Place date of release here]
