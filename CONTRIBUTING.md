@@ -112,14 +112,11 @@ The following environment variables and macros control specific build behaviors:
 | `LOG_SECRETS`               | `yes`/`no` | Toggles the logging of secrets in `rake` tasks.              |
 | `LOG_LEVEL`                 | `debug`, ... | Sets the logging verbosity for `rake` tasks.                 |
 | `ENABLE_COVERAGE`           | set/unset  | Enables test coverage analysis when defined.                 |
-| `SIGNING_KEY`               | File path  | Path to the signing key used for building the gem file.      |
-| `SIGNING_KEY_PEM`           | PEM Value  | The PEM content of the signing key.                          |
+| `SIGNING_KEY`               | File path or PEM | Path to the signing key file, or PEM content (starts with `-----BEGIN`). |
 | `DRY_RUN`                   | `1`        | Simulates execution without performing actual operations (`git`, `gh`). |
 | `DEBUG`                     | `1`        | Shows stack trace on errors during documentation generation. |
 
 These values can be set as standard environment variables or passed directly to the `rake` command.
-
-Setting `SIGNING_KEY_PEM` automatically generates a file at `$HOME/.gem/signing_key.pem` and sets the `SIGNING_KEY` variable accordingly.
 
 > [!NOTE]
 > `ASPERA_CLI_TEST_CONF_URL` is typically defined in your shell profile for development, while others are usually for ad-hoc command-line use.

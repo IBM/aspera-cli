@@ -25,7 +25,7 @@ jobs:
       - name: Publish to RubyGems
         if: contains(github.ref, 'refs/tags/v')
         env:
-          SIGNING_KEY_PEM: ${{ secrets.PRIVATE_KEY_PEM }}
+          SIGNING_KEY: ${{ secrets.PRIVATE_KEY_PEM }}
         run: |
           gem_conf="$HOME/.gem"
           mkdir -p "$gem_conf"
