@@ -48,6 +48,11 @@ class Signer
     730
   end
 
+  # @return [Integer] minimum days left before triggering a renewal
+  def cert_min_days
+    30
+  end
+
   # Loads the private key from {private_key_path}.
   # @return [OpenSSL::PKey::PKey] the private key object
   def private_key
@@ -90,6 +95,18 @@ namespace :certs do
   task :days_left do
     expiry = Signer.instance.cert.not_after
     puts ((expiry - Time.now) / 86400).to_i
+  end
+
+  desc "Renew certificate if expiry is within #{Signer.instance.cert_min_days} days (requires SIGNING_KEY)"
+  task :renew_if_needed do
+    expiry = Signer.instance.cert.not_after
+    days_left = ((expiry - Time.now) / 86400).to_i
+    if days_left < Signer.instance.cert_min_days
+      puts "Certificate expires in #{days_left} days, renewing...".red
+      Rake::Task['certs:new'].invoke
+    else
+      puts "Certificate expires in #{days_left} days, no renewal needed.".green
+    end
   end
 
   desc 'Create new certificate'
