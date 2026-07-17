@@ -30,10 +30,10 @@ git checkout v4.23.0
 - Cleanup the current environment:
 
 ```shell
-ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|while read p;do gem uninstall -axI $p;done
 rm -f Gemfile.lock
 rm -fr .bundle tmp
-rm -fr $(gem env gemdir)/gems/*
+gd=$(gem env gemdir)/gems
+ls $gd|while read e;do gem uninstall -axI ${e%-*};rm -fr $gd/$e;done
 ```
 
 - Prepare the Ruby environment:
