@@ -86,21 +86,10 @@ module BuildTools
     log.info("Version set to: #{BuildTools.build_version}")
   end
 
-  # Ensure that env var `SIGNING_KEY` (path to signing key file) is set.
-  # If env var `SIGNING_KEY_PEM` is set, creates sur file in $HOME/.gem/signing_key.pem
+  # Ensure that env var `SIGNING_KEY` is set (path to key file, or PEM content).
   def check_gem_signing_key
     return if dry_run?
-    if ENV.key?('SIGNING_KEY_PEM')
-      gem_conf_dir = Pathname.new(Dir.home) / '.gem'
-      gem_conf_dir.mkpath
-      signing_key_file = gem_conf_dir / 'signing_key.pem'
-      # Atomically create file with right perms
-      File.open(signing_key_file, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |f|
-        f.write(ENV.fetch('SIGNING_KEY_PEM'))
-      end
-      ENV['SIGNING_KEY'] = signing_key_file.to_s
-    end
-    raise 'Please set env var: SIGNING_KEY or SIGNING_KEY_PEM to build a signed gem file' unless ENV.key?('SIGNING_KEY')
+    raise 'Please set env var: SIGNING_KEY (path to key file or PEM content) to build a signed gem file' unless ENV.key?('SIGNING_KEY')
   end
 
   # .gem file built by bundler target `build`

@@ -30,7 +30,8 @@ This creates two files in folder `/path/to/vault` (e.g. `$HOME/.ssh`):
 > [!NOTE]
 > Alternatively, use an existing key or generate one, pointed with `SIGNING_KEY`, and then `rake certs:new`
 
-Subsequently, the private key path is specified using the `SIGNING_KEY` env var.
+Subsequently, the private key is specified using the `SIGNING_KEY` env var,
+either as a path to the PEM file, or directly as PEM content (starts with `-----BEGIN `).
 
 Show the current certificate contents:
 
@@ -52,14 +53,11 @@ bundle exec rake certs:check_key SIGNING_KEY=/path/to/vault/gem-private_key.pem
 The maintainer can renew the certificate when it is expired using the same private key:
 
 ```bash
-bundle exec rake certs:update SIGNING_KEY=/path/to/vault/gem-private_key.pem
-```
-
-Alternatively, to generate a new certificate with the same key:
-
-```bash
 bundle exec rake certs:new SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
+
+> [!NOTE]
+> `gem cert --re-sign` is not used because it ignores `--days` on RubyGems 4.
 
 ## Build Procedure
 

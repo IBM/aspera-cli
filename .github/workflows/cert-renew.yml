@@ -1,0 +1,55 @@
+# Workflow to renew the gem signing certificate
+# Triggered manually or automatically 30 days before expiry
+name: Renew Gem Signing Certificate
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run every day at 08:00 UTC
+    - cron: '0 8 * * *'
+
+jobs:
+  check-and-renew:
+    name: Check and renew certificate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.6"
+          bundler-cache: true
+          bundler-with: "build"
+
+      - name: Check days left
+        id: check
+        run: |
+          days_left=$(bundle exec rake certs:days_left)
+          echo "days_left=${days_left}" >> "$GITHUB_OUTPUT"
+          echo "Certificate expires in ${days_left} days"
+
+      - name: Renew certificate
+        if: ${{ fromJSON(steps.check.outputs.days_left) < 30 }}
+        env:
+          SIGNING_KEY: ${{ secrets.PRIVATE_KEY_PEM }}
+        run: bundle exec rake certs:new
+
+      - name: Create Pull Request
+        if: ${{ fromJSON(steps.check.outputs.days_left) < 30 }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          commit-message: "chore: renew gem signing certificate"
+          branch: cert-renew
+          title: "chore: renew gem signing certificate"
+          body: |
+            The gem signing certificate was expiring in ${{ steps.check.outputs.days_left }} days.
+
+            Renewed automatically by the `cert-renew` workflow.
+            Please review and merge.
+          labels: maintenance
