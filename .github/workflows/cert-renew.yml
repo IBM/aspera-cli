@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   schedule:
     # Run every Monday at 08:00 UTC
-    - cron: '0 8 * * 1'
+    - cron: "0 8 * * 1"
 
 jobs:
   check-and-renew:
@@ -17,7 +17,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -38,25 +37,21 @@ jobs:
         run: echo "changed=$(git diff --quiet certs/aspera-cli-public-cert.pem && echo false || echo true)" >> "$GITHUB_OUTPUT"
 
       - name: Create Pull Request
-        id: pr
-        if: steps.check.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          commit-message: "chore: renew gem signing certificate"
-          branch: cert-renew
-          title: "chore: renew gem signing certificate"
-          body: |
-            The gem signing certificate was renewed automatically by the `cert-renew` workflow.
-            Please review and merge.
-          labels: maintenance
-
-      - name: Open issue to notify maintainer
         if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b cert-renew
+          git add certs/aspera-cli-public-cert.pem
+          git commit -m "chore: renew gem signing certificate"
+          git push origin cert-renew --force
+          pr_url=$(gh pr create \
+            --title "chore: renew gem signing certificate" \
+            --body "The gem signing certificate was renewed automatically by the \`cert-renew\` workflow. Please review and merge." \
+            --label maintenance)
           gh issue create \
             --title "⚠️ Gem signing certificate expiring soon — please merge cert-renew PR" \
-            --body "A new gem signing certificate has been generated and a pull request is ready: ${{ steps.pr.outputs.pull-request-url }}" \
+            --body "A new gem signing certificate has been generated and a pull request is ready: ${pr_url}" \
             --label maintenance
