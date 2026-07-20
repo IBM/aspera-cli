@@ -13,6 +13,9 @@ require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/preset_manager'
 require 'aspera/cli/http'
+require 'aspera/cli/mailer'
+require 'aspera/cli/vault_manager'
+require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
 require 'aspera/products/transferd'
@@ -36,8 +39,6 @@ require 'aspera/ssl'
 require 'openssl'
 require 'digest'
 require 'open3'
-require 'date'
-require 'erb'
 require 'net/http'
 
 module Aspera
@@ -46,6 +47,9 @@ module Aspera
       # Manage the CLI config file
       class Config < Base
         include SyncActions
+        include Mailer
+        include VaultManager
+        include GemChecker
 
         class << self
           # Folder containing plugins in the gem's main folder
@@ -240,55 +244,6 @@ module Aspera
             Log.log.debug{"Using: #{sdk_dir}"}
             Products::Transferd.sdk_directory = sdk_dir
           end
-        end
-
-        def check_gem_version
-          latest_version =
-            begin
-              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{Info::GEM_NAME}/latest.json")['version']
-            rescue StandardError
-              Log.log.warn('Could not retrieve latest gem version on rubygems.')
-              '0'
-            end
-          if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(Info::RUBY_FUTURE_MINIMUM_VERSION)
-            Log.log.warn do
-              "Note that a future version will require Ruby version #{Info::RUBY_FUTURE_MINIMUM_VERSION} at minimum, " \
-                "you are using #{Environment.ruby_version}"
-            end
-          end
-          return {
-            name:        Info::GEM_NAME,
-            current:     Cli::VERSION,
-            latest:      latest_version,
-            need_update: Gem::Version.new(Cli::VERSION) < Gem::Version.new(latest_version)
-          }
-        end
-
-        def periodic_check_newer_gem_version
-          # Get verification period
-          delay_days = options.get_option(:version_check_days, mandatory: true).to_i
-          # Check only if not zero day
-          return if delay_days.eql?(0)
-          # Get last date from persistency
-          last_check_array = []
-          check_date_persist = PersistencyActionOnce.new(
-            manager: persistency,
-            data:    last_check_array,
-            id:      'version_last_check'
-          )
-          # Get persisted date or nil
-          current_date = Date.today
-          last_check_days = (current_date - Date.strptime(last_check_array.first, GEM_CHECK_DATE_FMT)) rescue nil
-          Log.log.debug{"gem check new version: #{delay_days}, #{last_check_days}, #{current_date}, #{last_check_array}"}
-          return if !last_check_days.nil? && last_check_days < delay_days
-          # Generate timestamp
-          last_check_array[0] = current_date.strftime(GEM_CHECK_DATE_FMT)
-          check_date_persist.save
-          # Compare this version and the one on internet
-          check_data = check_gem_version
-          Log.log.warn do
-            "A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}"
-          end if check_data[:need_update]
         end
 
         # Delegation to PresetManager: loads default preset options for a plugin
@@ -747,118 +702,6 @@ module Aspera
           end
         end
 
-        # @return [Hash] email server setting with defaults if not defined
-        def email_settings
-          smtp = options.get_option(:smtp, mandatory: true)
-          # Change keys from string into symbol
-          smtp = smtp.symbolize_keys
-          unsupported = smtp.keys - SMTP_CONF_PARAMS
-          raise Cli::Error, "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" unless unsupported.empty?
-          # Defaults
-          # smtp[:ssl] = nil (false)
-          smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
-          smtp[:port] ||= if smtp[:tls]
-            587
-          elsif smtp[:ssl]
-            465
-          else
-            25
-          end
-          smtp[:from_email] ||= smtp[:username] if smtp.key?(:username)
-          smtp[:from_name] ||= smtp[:from_email].sub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
-          smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
-          # Check minimum required
-          %i[server port domain].each do |n|
-            Aspera.assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
-          end
-          Log.log.debug{"smtp=#{smtp}"}
-          return smtp
-        end
-
-        # Send email using ERB template
-        # @param email_template_default [String] default template, can be overridden by option
-        # @param values [Hash] values to be used in template, keys with default: to, from_name, from_email
-        def send_email_template(email_template_default: nil, values: {})
-          values[:to] ||= options.get_option(:notify_to, mandatory: true)
-          notify_template = options.get_option(:notify_template, mandatory: email_template_default.nil?) || email_template_default
-          mail_conf = email_settings
-          values[:from_name] ||= mail_conf[:from_name]
-          values[:from_email] ||= mail_conf[:from_email]
-          %i[to from_email].each do |n|
-            Aspera.assert_type(values[n], String){"Missing email parameter: #{n} in config"}
-          end
-          start_options = [mail_conf[:domain]]
-          start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
-          # Create a binding with only variables defined in values
-          template_binding = Environment.empty_binding
-          # Add variables to binding
-          values.each do |k, v|
-            Aspera.assert_type(k, Symbol)
-            template_binding.local_variable_set(k, v)
-          end
-          # Execute template
-          msg_with_headers = ERB.new(notify_template).result(template_binding)
-          Log.dump(:msg_with_headers, msg_with_headers)
-          require 'net/smtp'
-          smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
-          smtp.enable_starttls if mail_conf[:tls]
-          smtp.enable_tls if mail_conf[:ssl]
-          smtp.start(*start_options) do |smtp_session|
-            smtp_session.send_message(msg_with_headers, values[:from_email], values[:to])
-          end
-          nil
-        end
-
-        # @return [Hash] result of execution of vault command
-        def execute_vault
-          command = options.get_next_command(%i[info list show create delete password])
-          case command
-          when :info
-            return Result::SingleObject.new(vault.info)
-          when :list
-            # , fields: %w(label url username password description)
-            return Result::ObjectList.new(vault.list)
-          when :show
-            return Result::SingleObject.new(vault.get(label: options.get_next_argument('label')))
-          when :create
-            vault.set(options.get_next_argument('info', validation: Hash).symbolize_keys)
-            return Result::Status.new('Secret added')
-          when :delete
-            label_to_delete = options.get_next_argument('label')
-            vault.delete(label: label_to_delete)
-            return Result::Status.new("Secret deleted: #{label_to_delete}")
-          when :password
-            Aspera.assert(vault.respond_to?(:change_password), 'Vault does not support password change')
-            vault.change_password(options.get_next_argument('new_password'))
-            return Result::Status.new('Vault password updated')
-          end
-        end
-
-        # @return [String] value from vault matching <name>.<param>
-        def vault_value(name)
-          m = name.split('.')
-          raise BadArgument, 'vault name shall match <name>.<param>' unless m.length.eql?(2)
-          # This raise exception if label not found:
-          info = vault.get(label: m[0])
-          value = info[m[1].to_sym]
-          raise "no such entry value: #{m[1]}" if value.nil?
-          return value
-        end
-
-        # @return [Object] vault, from options or cache
-        def vault
-          return @vault_instance unless @vault_instance.nil?
-          info = options.get_option(:vault).symbolize_keys
-          info[:type] ||= 'file'
-          require 'aspera/keychain/factory'
-          @vault_instance = Keychain::Factory.create(
-            info,
-            Info::CMD_NAME,
-            @main_folder,
-            options.get_option(:vault_password)
-          )
-        end
-
         # Artificially raise an exception for tests
         def execute_test
           case options.get_next_command(%i[throw web])
@@ -918,9 +761,7 @@ module Aspera
         EXTEND_VAULT = :vault
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
-        GEM_CHECK_DATE_FMT = '%Y/%m/%d'
         CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
-        SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
         private_constant :ASPERA_HOME_FOLDER_NAME,
           :DEFAULT_CONFIG_FILENAME,
           :GLOBAL_DEFAULT_KEYWORD,
@@ -939,9 +780,7 @@ module Aspera
           :EXTEND_VAULT,
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
           :COFFEE_IMAGE_URL,
-          :GEM_CHECK_DATE_FMT,
-          :CONF_OVERVIEW_KEYS,
-          :SMTP_CONF_PARAMS
+          :CONF_OVERVIEW_KEYS
       end
     end
   end
