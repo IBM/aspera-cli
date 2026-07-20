@@ -110,7 +110,6 @@ module Aspera
               # NOTE: it might already exist
               folder = "#{folder}.#{Environment.instance.sanitized_filename(fld[1])}"
             end
-            puts("sub= #{folder}")
             File.join(destination_folder, folder)
           end
         end
@@ -556,7 +555,7 @@ module Aspera
                     if Api::AoC.workspace_access?(item)
                       {'name'=>'[Internal permission]'}
                     else
-                      aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name': 'not found'}
+                      aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name' => 'not found'}
                     end
                   rescue => e
                     {'name'=>e.to_s}

@@ -129,6 +129,7 @@ module Aspera
       class << self
         # @param error [Exception] exception object
         def hint_for(error, formatter)
+          # Loop on known error hints
           ERROR_HINTS.each do |hint|
             next unless error.is_a?(hint[:exception])
             message = error.message
@@ -141,12 +142,11 @@ module Aspera
                 next unless message.eql?(m)
               when Regexp
                 next unless message.match?(m)
-              else Aspera.error_unexpected_value(m)
+              else Aspera.error_unexpected_value(m){'hint match'}
               end
               hint[:remediation].each do |r|
                 Log.log.info{"#{'HINT:'.bg_green.gray.blink.freeze} #{r}"}
               end
-              break
             end
           end
         end

@@ -68,7 +68,7 @@ module Aspera
             end
             error = nil
             urls.each do |base_url|
-              next unless base_url.match?('https?://')
+              next unless base_url.match?(%r{^https?://})
               api = Rest.new(base_url: base_url)
               test_endpoint = 'ping'
               http = api.read(test_endpoint, ret: :resp)
@@ -381,7 +381,6 @@ module Aspera
           when :cat
             remote_path = options.get_next_argument('remote path', validation: String)
             remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
-            File.basename(remote_path)
             http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
             return Result::Text.new(http.body)
           when :transport
@@ -548,7 +547,7 @@ module Aspera
               folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
               link_name = ".#{new_item}.asp-lnk"
               found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
-              raise "A #{found['type']} already exists with name #{new_item}" if found
+              raise Cli::Error, "A #{found['type']} already exists with name #{new_item}" if found
             end
             case command_repo
             when :mkdir

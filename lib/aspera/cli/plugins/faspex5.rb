@@ -626,7 +626,11 @@ module Aspera
               test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
               creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
               result = wait_for_job(creation['job_id'])
-              result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
+              begin
+                result['serialized_args'] = JSON.parse(result['serialized_args'])
+              rescue JSON::ParserError
+                # keep as string if not valid JSON
+              end
               return Result::SingleObject.new(result)
             end
           end

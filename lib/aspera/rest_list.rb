@@ -36,7 +36,7 @@ module Aspera
         case value_matches.length
         when 1 then return value_matches.first
         when 0 then raise Error, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map{ |i| i[field]}.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
-        else raise "Two entities cannot have the same case insensitive #{field}: #{value_matches.map{ |i| i[field]}}"
+        else raise Error, "Two entities cannot have the same case insensitive #{field}: #{value_matches.map{ |i| i[field]}}"
         end
       end
     end

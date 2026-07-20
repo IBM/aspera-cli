@@ -23,7 +23,7 @@ module Aspera
             urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
             error = nil
             urls.each do |base_url|
-              next unless base_url.match?('https?://')
+              next unless base_url.match?(%r{^https?://})
               api = Rest.new(base_url: base_url)
               data, http = api.read(TEST_ENDPOINT, query: {format: :json}, ret: :both)
               next unless data['remote_orchestrator_info']
