@@ -5,6 +5,7 @@ require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/yaml'
 require 'digest'
 require 'yaml'
 
@@ -57,7 +58,7 @@ module Aspera
         Log.log.debug{"config file is: #{@config_file}".red}
         if File.exist?(@config_file)
           Log.log.debug{"loading #{@config_file}"}
-          @config_presets   = YAML.load_file(@config_file)
+          @config_presets   = Yaml.safe_load(File.read(@config_file))
           @checksum_on_disk = checksum
         else
           Log.log.warn{"No config file found. New configuration file: #{@config_file}"}
@@ -88,7 +89,7 @@ module Aspera
         FileUtils.mkdir_p(File.dirname(@config_file))
         Environment.restrict_file_access(File.dirname(@config_file))
         Log.log.info{"Saving config file: #{@config_file}"}
-        Environment.write_file_restricted(@config_file, force: true){ @config_presets.to_yaml }
+        Environment.write_file_restricted(@config_file, force: true){@config_presets.to_yaml}
         @checksum_on_disk = current
         true
       end
@@ -100,10 +101,10 @@ module Aspera
       # @return [String, nil] name of the default preset for a plugin, or nil
       def plugin_default_name(plugin_name_sym)
         Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
-        return nil unless @use_plugin_defaults
-        return nil unless @config_presets.key?(Key::DEFAULTS)
+        return unless @use_plugin_defaults
+        return unless @config_presets.key?(Key::DEFAULTS)
         Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash){'default section'}
-        return nil unless @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
+        return unless @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
         default_name = @config_presets[Key::DEFAULTS][plugin_name_sym.to_s]
         unless @config_presets.key?(default_name)
           Log.log.error do

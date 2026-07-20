@@ -313,7 +313,7 @@ module Aspera
         when Proc
           begin
             data.select!{ |i| @options[:select].call(i)}
-          rescue Exception => e # rubocop:disable Lint/RescueException
+          rescue StandardError => e
             raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
           end
         when Hash

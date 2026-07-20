@@ -3,6 +3,7 @@
 # cspell:ignore csvt jsonpp stdbin
 require 'aspera/uri_reader'
 require 'aspera/environment'
+require 'aspera/yaml'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/cli/error'
@@ -104,7 +105,7 @@ module Aspera
           s:      lambda(&:to_s),
           secret: lambda{ |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{ |i| ExtendedValue.read_stdin(i)},
-          yaml:   lambda{ |i| YAML.load(i)},
+          yaml:   lambda{ |i| YAML.safe_load(i)},
           zlib:   lambda{ |i| Zlib::Inflate.inflate(i)},
           extend: lambda{ |i| ExtendedValue.instance.evaluate_extend(i)}
         }

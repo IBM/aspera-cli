@@ -160,7 +160,7 @@ module Aspera
       # @param where [String] Where the value is assigned from
       # @return [nil]
       def assign_value(value, where:)
-        Aspera.assert(!@deprecation, type: warn){"Option #{@option} is deprecated: #{@deprecation}"}
+        Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"}
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
         Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
         new_value = BoolValue.true?(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
@@ -448,7 +448,7 @@ module Aspera
       # @yieldparam value [String] The value from percent selector
       # @yieldreturn [String] Resolved identifier
       def instance_identifier(description: 'identifier', &block)
-        res_id = get_next_argument(description, multiple: get_option(:bulk)) if res_id.nil?
+        res_id = get_next_argument(description, multiple: get_option(:bulk))
         # Can be an Array
         if res_id.is_a?(String) && (m = Manager.percent_selector(res_id))
           Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
