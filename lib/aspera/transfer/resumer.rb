@@ -19,13 +19,13 @@ module Aspera
         sleep_factor:  2,
         sleep_max:     60
       )
-        Aspera.assert_type(iter_max, Integer){k}
+        Aspera.assert_type(iter_max, Integer){'iter_max'}
         @iter_max = iter_max
-        Aspera.assert_type(sleep_initial, Integer){k}
+        Aspera.assert_type(sleep_initial, Integer){'sleep_initial'}
         @sleep_initial = sleep_initial
-        Aspera.assert_type(sleep_factor, Integer){k}
+        Aspera.assert_type(sleep_factor, Integer){'sleep_factor'}
         @sleep_factor = sleep_factor
-        Aspera.assert_type(sleep_max, Integer){k}
+        Aspera.assert_type(sleep_max, Integer){'sleep_max'}
         @sleep_max = sleep_max
       end
 

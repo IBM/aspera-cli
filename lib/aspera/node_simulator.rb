@@ -128,6 +128,7 @@ module Aspera
 
     # Process event from management port
     def process_event(event)
+      # Code duplicated on purpose, as implementation goes, blocks will be replaced
       case event['Type']
       when 'NOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
       # rubocop:disable Lint/DuplicateBranch

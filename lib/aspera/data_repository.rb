@@ -3,6 +3,7 @@
 require 'aspera/assert'
 require 'singleton'
 require 'openssl'
+require 'zlib'
 
 module Aspera
   # a simple binary data repository

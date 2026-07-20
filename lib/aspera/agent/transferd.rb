@@ -55,7 +55,7 @@ module Aspera
           # if transferd is external: do not start it, or other error
           raise if !start || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
-          Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
+          Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}"}
           Log.log.warn('no daemon present, starting daemon...') if !start
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")

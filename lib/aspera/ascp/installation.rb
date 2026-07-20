@@ -170,13 +170,11 @@ module Aspera
         Aspera.assert_type(exe_path, String)
         Aspera.assert_type(vers_arg, String)
         return unless File.exist?(exe_path)
-        exe_version = nil
-        cmd_out = %x("#{exe_path}" #{vers_arg})
-        raise "An error occurred when testing #{exe_path}: #{cmd_out}" unless $CHILD_STATUS == 0
+        cmd_out, _err, status = Environment.secure_execute(exe_path, vers_arg, mode: :capture, exception: false)
+        raise "An error occurred when testing #{exe_path}: #{cmd_out}" unless status.success?
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m = cmd_out.match(/ version ([0-9.]+)/)
-        exe_version = m[1].gsub(/\.$/, '') unless m.nil?
-        return exe_version
+        m.nil? ? nil : m[1].gsub(/\.$/, '')
       end
 
       # Extract some stings from ascp logs

@@ -49,6 +49,7 @@ module Aspera
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
         Log.dump(:webhook_parameters, webhook_parameters)
+        process_status = nil
         if request.query.key?('lambda')
           # Code can throw exception, source code must return a lambda
           Environment.secure_eval(File.read(script_path), __FILE__, __LINE__).call(webhook_parameters)
@@ -66,7 +67,7 @@ module Aspera
         end
         response.status = 200
         response.content_type = Mime::JSON
-        response.body = JSON.generate({status: 'success', script: script_path, exit_code: process_status.exitstatus})
+        response.body = JSON.generate({status: 'success', script: script_path, exit_code: process_status&.exitstatus})
         Log.log.debug{'Script executed successfully'}
       rescue => e
         Log.log.error("Script failed: #{e.class}:#{e.message}")

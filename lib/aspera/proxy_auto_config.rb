@@ -114,7 +114,8 @@ END_OF_JAVASCRIPT
       proxy_list_str.split(';').each do |item|
         # strip and split by space
         parts = item.strip.split
-        case parts.shift
+        proxy_type = parts.shift
+        case proxy_type
         when 'DIRECT'
           Aspera.assert(parts.empty?, 'DIRECT has no param')
           Log.log.debug('ignoring proxy DIRECT')
@@ -136,7 +137,7 @@ END_OF_JAVASCRIPT
           rescue StandardError => e
             Log.log.warn{"PAC: cannot parse #{addr_port} #{e}"}
           end
-        else Log.log.warn{"PAC: ignoring proxy type #{parts.first}: not supported"}
+        else Log.log.warn{"PAC: ignoring proxy type #{proxy_type}: not supported"}
         end
       end
       Log.log.debug{"Proxies: #{uri_list}"}

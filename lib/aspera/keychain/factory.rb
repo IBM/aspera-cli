@@ -24,19 +24,19 @@ module Aspera
             info[:password] = password
             # this module requires compilation, so it is optional
             require 'aspera/keychain/encrypted_hash'
-            @vault = Keychain::EncryptedHash.new(**info)
+            Keychain::EncryptedHash.new(**info)
           when 'system'
             case Environment.instance.os
             when Environment::OS_MACOS
               info[:name] ||= name
-              @vault = Keychain::MacosSystem.new(**info)
+              Keychain::MacosSystem.new(**info)
             else
               raise Error, 'not implemented for this OS'
             end
           when 'vault'
             require 'aspera/keychain/hashicorp_vault'
             info[:token] ||= password
-            @vault = Keychain::HashicorpVault.new(**info)
+            Keychain::HashicorpVault.new(**info)
           else Aspera.error_unexpected_value(vault_type)
           end
         end

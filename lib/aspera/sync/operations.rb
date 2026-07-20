@@ -216,7 +216,7 @@ module Aspera
               return sync_info['local_db_dir']
             elsif (local_path = sync_info.dig('local', 'path'))
               return local_path
-            elsif exception
+            else
               raise Error, 'Missing either local_db_dir or local.path'
             end
           else
@@ -226,11 +226,10 @@ module Aspera
               return session['local_db_dir']
             elsif session.key?('local_dir')
               return session['local_dir']
-            elsif exception
+            else
               raise Error, 'Missing either local_db_dir or local_dir'
             end
           end
-          nil
         end
 
         def session_name(sync_info)
