@@ -119,7 +119,7 @@ module Aspera
           # Declare generic plugin options only after handlers are declared
           Base.declare_options(options)
           # Configuration options
-          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){ presets.use_plugin_defaults = false }
+          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
@@ -158,7 +158,6 @@ module Aspera
         def setup_extended_value_handlers
           ExtendedValue.instance.on(EXTEND_PRESET){ |v| presets.by_name(v)}
           ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
-          ExtendedValue.instance.on(EXTEND_ARGS){ |v| options.args_as_extended(v)}
           add_plugin_default_preset(CONF_GLOBAL_SYM)
         end
 
@@ -178,7 +177,7 @@ module Aspera
         def setup_rest_and_transfer_runtime
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
-          RestParameters.instance.session_cb = ->(http_session){ context.http_config.update_session(http_session)}
+          RestParameters.instance.session_cb = ->(http_session){context.http_config.update_session(http_session)}
           RestParameters.instance.spinner_cb = ->(title = nil, action: :spin){formatter.long_operation(title, action: action)}
           # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
           http_opts = context.http_config.http_options
@@ -242,7 +241,6 @@ module Aspera
             Products::Transferd.sdk_directory = sdk_dir
           end
         end
-
 
         def check_gem_version
           latest_version =
@@ -918,7 +916,6 @@ module Aspera
         # Special extended values
         EXTEND_PRESET = :preset
         EXTEND_VAULT = :vault
-        EXTEND_ARGS = :''
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'

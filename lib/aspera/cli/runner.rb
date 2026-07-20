@@ -25,13 +25,6 @@ module Aspera
     class Runner
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
-      COMMAND_CONFIG = :config
-      COMMAND_HELP = :help
-      # Types that go to result of type = text
-      SCALAR_TYPES = [String, Integer, Symbol].freeze
-      USER_INTERFACES = %i[text graphical].freeze
-
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
         # Process statuses of finished transfer sessions
@@ -229,6 +222,7 @@ module Aspera
         @context.formatter = Formatter.new
         # Create command line manager with arguments
         @context.options = Manager.new(Info::CMD_NAME, @argv)
+        ExtendedValue.instance.on(EXTEND_ARGS){ |v| @context.options.args_as_extended(v)}
         # Formatter adds options
         @context.formatter.declare_options(@context.options)
         # Compare $0 with expected name
@@ -334,6 +328,14 @@ module Aspera
         command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
       end
+      COMMAND_CONFIG = :config
+      COMMAND_HELP = :help
+      # Types that go to result of type = text
+      SCALAR_TYPES = [String, Integer, Symbol].freeze
+      USER_INTERFACES = %i[text graphical].freeze
+      EXTEND_ARGS = :''
+
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS
     end
   end
 end
