@@ -119,7 +119,7 @@ module Aspera
         data = persist_mgr.current_items(PERSIST_CATEGORY_TOKEN)
         data.each.map do |k, v|
           info = {id: k}
-          info.merge!(JSON.parse(v)) rescue nil
+          begin; info.merge!(JSON.parse(v)); rescue StandardError; nil; end
           d = decode_token(info.delete(TOKEN_FIELD))
           info.merge(d) if d
           info
@@ -165,7 +165,7 @@ module Aspera
       # @return [Hash, nil] Decoded token data or nil if no decoder succeeded
       def decode_token(token)
         @decoders.each do |decoder|
-          result = decoder.call(token) rescue nil
+          result = begin; decoder.call(token); rescue StandardError; nil; end
           return result unless result.nil?
         end
         return

@@ -106,7 +106,7 @@ module Aspera
                 json_data = http.body
                 token_data = JSON.parse(json_data)
                 Factory.instance.persist_mgr.put(@token_cache_id, json_data)
-              rescue => e
+              rescue StandardError => e
                 # Refresh token can fail.
                 Log.log.warn{"Refresh failed: #{e}"}
               end

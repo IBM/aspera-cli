@@ -75,7 +75,7 @@ module Aspera
           # try base64
           data = begin
             Base64.strict_decode64(data)
-          rescue
+          rescue ArgumentError
             data
           end
           # here, data is the image blob

@@ -84,7 +84,7 @@ module Aspera
           response.status = 200
           response.content_type = Mime::JSON
           response.body = JSON.generate(faspex_package_create_result)
-        rescue => e
+        rescue StandardError => e
           response.status = 500
           response['Content-Type'] = Mime::JSON
           response.body = {error: e.message, stacktrace: e.backtrace}.to_json
