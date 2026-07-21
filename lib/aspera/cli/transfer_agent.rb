@@ -46,11 +46,12 @@ module Aspera
         end
       end
 
-      # @param opt_mgr       [Manager] Option manager
-      # @param config_plugin [Config]  Config plugin
-      def initialize(opt_mgr, config_plugin)
-        @opt_mgr = opt_mgr
-        @config = config_plugin
+      # @param context [Context] Application context
+      def initialize(context)
+        Aspera.assert_type(context, Context){'context'}
+        Aspera.assert_type(context.options, Manager){'context.options'}
+        Aspera.assert_type(context.config, Plugins::Config){'context.config'}
+        @context = context
         # Command line can override transfer spec
         @user_transfer_spec = {
           'create_dir'    => true,
@@ -64,17 +65,17 @@ module Aspera
         @transfer_paths = nil
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
-        @opt_mgr.declare(:ts, 'Override transfer spec values', allowed: Hash, handler: {o: self, m: :user_transfer_spec}, schema: Schema::Registry::TRANSFER_SPEC)
-        @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
-        @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
-        @opt_mgr.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
-        @opt_mgr.declare(:transfer, 'Type of transfer agent', allowed: Agent::Factory::ALL.keys, default: :direct)
-        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_info}, schema: Schema::Registry::TRANSFER_INFO)
-        @opt_mgr.parse_options!
+        @context.options.declare(:ts, 'Override transfer spec values', allowed: Hash, handler: {o: self, m: :user_transfer_spec}, schema: Schema::Registry::TRANSFER_SPEC)
+        @context.options.declare(:to_folder, 'Destination folder for transferred files')
+        @context.options.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
+        @context.options.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
+        @context.options.declare(:transfer, 'Type of transfer agent', allowed: Agent::Factory::ALL.keys, default: :direct)
+        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_info}, schema: Schema::Registry::TRANSFER_INFO)
+        @context.options.parse_options!
         @notification_cb = nil
-        if !@opt_mgr.get_option(:notify_to).nil?
+        if !@context.options.get_option(:notify_to).nil?
           @notification_cb = ->(transfer_spec, global_status) do
-            @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
+            @context.config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
               subject: "#{Info::CMD_NAME} transfer: #{global_status}",
               status:  global_status,
               ts:      transfer_spec
@@ -92,25 +93,25 @@ module Aspera
       # analyze options and create new agent if not already created or set
       def agent_instance
         return @agent unless @agent.nil?
-        agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
+        agent_type = @context.options.get_option(:transfer, mandatory: true)
         # set keys as symbols
-        agent_options = @opt_mgr.get_option(:transfer_info).symbolize_keys
-        agent_options[:progress] = @config.progress_bar
-        agent_options[:config_dir] = @config.main_folder
+        agent_options = @context.options.get_option(:transfer_info).symbolize_keys
+        agent_options[:progress] = @context.progress_bar
+        agent_options[:config_dir] = @context.main_folder
         # special cases
         case agent_type
         when :node
           if !agent_options.key?(:url)
-            param_set_name = @config.get_plugin_default_config_name(:node)
+            param_set_name = @context.presets.plugin_default_name(:node)
             raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
-            agent_options.merge!(@config.preset_by_name(param_set_name).symbolize_keys)
+            agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
           # by default do not display ascp native progress bar
           agent_options[:quiet] = true unless agent_options.key?(:quiet)
-          agent_options[:check_ignore_cb] = ->(host, port){@config.ignore_cert?(host, port)}
+          agent_options[:check_ignore_cb] = ->(host, port){@context.http_config.ignore_cert?(host, port)}
           # JRuby
-          agent_options[:trusted_certs] = @config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
+          agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
         when :httpgw
           unless agent_options.key?(:url) || @httpgw_url_lambda.nil?
             Log.log.debug('retrieving HTTPGW URL from webapp')
@@ -127,7 +128,7 @@ module Aspera
       # @param direction [String] `send`` or `receive``
       # @return [String] Destination folder for transfers (with default based on direction)
       def destination_folder(direction)
-        dest_folder = @opt_mgr.get_option(:to_folder)
+        dest_folder = @context.options.get_option(:to_folder)
         # do not expand path, if user wants to expand path: user @path:
         return dest_folder unless dest_folder.nil?
         dest_folder = @user_transfer_spec['destination_root']
@@ -157,7 +158,7 @@ module Aspera
       # Transform the list of paths to a list of hash with source/dest
       # @param file_list [Array<Hash>]
       def list_to_paths(file_list)
-        source_type = @opt_mgr.get_option(:src_type, mandatory: true)
+        source_type = @context.options.get_option(:src_type, mandatory: true)
         @transfer_paths =
           case source_type
           when :list
@@ -181,22 +182,22 @@ module Aspera
         # start with lower priority : get paths from transfer spec on command line
         @transfer_paths = @user_transfer_spec['paths'] if @user_transfer_spec.key?('paths')
         # is there a source list option ?
-        sources = @opt_mgr.get_option(:sources)
+        sources = @context.options.get_option(:sources)
         @transfer_paths =
           case sources
           when FILE_LIST_FROM_ARGS
             Log.log.debug('getting file list as parameters')
             Aspera.assert_type(default, Array, NilClass)
             # get remaining arguments
-            list = @opt_mgr.get_next_argument('source file list', multiple: true, default: default)
+            list = @context.options.get_next_argument('source file list', multiple: true, default: default)
             raise Cli::BadArgument, 'specify at least one file on command line or use ' \
               "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !list.is_a?(Array) || list.empty?
             list_to_paths(list)
           when FILE_LIST_FROM_TRANSFER_SPEC
             Log.log.debug('assume list provided in transfer spec')
             special_case_direct_with_list =
-              @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
-              Transfer::Parameters.ascp_args_file_list?(@opt_mgr.get_option(:transfer_info)['ascp_args'])
+              @context.options.get_option(:transfer, mandatory: true).eql?(:direct) &&
+              Transfer::Parameters.ascp_args_file_list?(@context.options.get_option(:transfer_info)['ascp_args'])
             raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
             # can be nil
             @transfer_paths
@@ -243,7 +244,7 @@ module Aspera
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
-        transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
+        transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"

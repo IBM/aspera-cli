@@ -52,7 +52,7 @@ module Aspera
         @vault_instance = Keychain::Factory.create(
           info,
           Info::CMD_NAME,
-          @main_folder,
+          context.main_folder,
           options.get_option(:vault_password)
         )
       end

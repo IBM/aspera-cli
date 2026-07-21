@@ -11,6 +11,8 @@ require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
+require 'aspera/cli/ascp_actions'
+require 'aspera/cli/preset_actions'
 require 'aspera/cli/preset_manager'
 require 'aspera/cli/http'
 require 'aspera/cli/mailer'
@@ -50,6 +52,8 @@ module Aspera
         include Mailer
         include VaultManager
         include GemChecker
+        include AscpActions
+        include PresetActions
 
         class << self
           # Folder containing plugins in the gem's main folder
@@ -91,23 +95,21 @@ module Aspera
           @pac_exec = nil
           @sdk_default_location = false
           @option_cache_tokens = true
-          @main_folder = nil
           @option_config_file = nil
-          @progress_bar = nil
-          # Option to set main folder
+          # Option to set main folder — written directly into context
           options.declare(
             :home, 'Home folder for tool',
-            handler: {o: self, m: :main_folder},
+            handler: {o: context, m: :main_folder},
             default: self.class.default_app_main_folder(app_name: Info::CMD_NAME)
           )
           options.parse_options!
-          Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
+          Log.log.debug{"#{Info::CMD_NAME} folder: #{context.main_folder}"}
           setup_persistency_and_plugin_folders
           # Option to set config file
           options.declare(
             :config_file, 'Path to YAML file with preset configuration',
             handler: {o: self, m: :option_config_file},
-            default: File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
+            default: File.join(context.main_folder, DEFAULT_CONFIG_FILENAME)
           )
           options.parse_options!
           # Instantiate PresetManager (reads config file) and inject into context
@@ -128,7 +130,7 @@ module Aspera
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
           # Declare wizard options
-          @wizard = Wizard.new(self, @main_folder)
+          @wizard = Wizard.new(self, context.main_folder)
           # Transfer SDK options
           options.declare(:sdk_url, 'Ascp: URL to get Aspera Transfer Executables', default: SpecialValues::DEF)
           options.parse_options!
@@ -146,7 +148,7 @@ module Aspera
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!
-          @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
+          context.progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           setup_pac_executor
           setup_rest_and_transfer_runtime
         end
@@ -154,9 +156,9 @@ module Aspera
         private
 
         def setup_persistency_and_plugin_folders
-          context.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
+          context.persistency = PersistencyFolder.new(File.join(context.main_folder, PERSISTENCY_FOLDER))
           Plugins::Factory.instance.add_lookup_folder(self.class.gem_plugins_folder)
-          Plugins::Factory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
+          Plugins::Factory.instance.add_lookup_folder(File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME))
         end
 
         def setup_extended_value_handlers
@@ -180,7 +182,7 @@ module Aspera
 
         def setup_rest_and_transfer_runtime
           RestParameters.instance.user_agent = Info::CMD_NAME
-          RestParameters.instance.progress_bar = @progress_bar
+          RestParameters.instance.progress_bar = context.progress_bar
           RestParameters.instance.session_cb = ->(http_session){context.http_config.update_session(http_session)}
           RestParameters.instance.spinner_cb = ->(title = nil, action: :spin){formatter.long_operation(title, action: action)}
           # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
@@ -202,16 +204,15 @@ module Aspera
           keys_to_delete.each{ |k| http_opts.delete(k)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-          Transfer::Parameters.file_list_folder = File.join(@main_folder, FILE_LIST_FOLDER_NAME)
-          RestErrorAnalyzer.instance.log_file = File.join(@main_folder, REST_EXCEPTIONS_LOG_FILENAME)
+          Transfer::Parameters.file_list_folder = File.join(context.main_folder, FILE_LIST_FOLDER_NAME)
+          RestErrorAnalyzer.instance.log_file = File.join(context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
           # Register aspera REST call error handlers
           RestErrorsAspera.register_handlers
         end
 
         public
 
-        attr_accessor :main_folder, :option_cache_tokens
-        attr_reader :progress_bar
+        attr_accessor :option_cache_tokens
 
         # Delegations to http_config kept for backward compatibility with transfer_agent and plugins
         def option_insecure;            context.http_config.insecure; end
@@ -224,27 +225,6 @@ module Aspera
         def ignore_cert?(address, port); context.http_config.ignore_cert?(address, port); end
         def trusted_cert_locations;     context.http_config.trusted_cert_locations; end
         def trusted_cert_locations=(v); context.http_config.trusted_cert_locations = v; end
-
-        def set_sdk_dir
-          # Check SDK folder is set or not, for compatibility, we check in two places
-          sdk_dir = Products::Transferd.sdk_directory rescue nil
-          if sdk_dir.nil?
-            @sdk_default_location = true
-            Log.log.debug('SDK folder is not set, checking default')
-            # New location
-            sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
-            Log.log.debug{"Checking: #{sdk_dir}"}
-            if !Dir.exist?(sdk_dir)
-              Log.log.debug{"No such folder: #{sdk_dir}"}
-              # Former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
-              Log.log.debug{"Checking: #{former_sdk_folder}"}
-              sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
-            end
-            Log.log.debug{"Using: #{sdk_dir}"}
-            Products::Transferd.sdk_directory = sdk_dir
-          end
-        end
 
         # Delegation to PresetManager: loads default preset options for a plugin
         def add_plugin_default_preset(plugin_name_sym)
@@ -305,178 +285,6 @@ module Aspera
             options.add_option_preset(preset_by_name(value), 'set_by_name')
           else
             raise BadArgument, 'Preset definition must be a String for preset name, or Hash for set of values'
-          end
-        end
-
-        def install_transfer_sdk
-          asked_version = options.get_next_argument('transferd version', mandatory: false)
-          sdk_url = options.get_option(:sdk_url, mandatory: true)
-          sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
-          name, version, folder = Ascp::Installation.instance.retrieve_sdk(url: sdk_url, version: asked_version)
-          return Result::Status.new("Installed #{name} version #{version} in #{folder}")
-        end
-
-        def execute_action_ascp
-          command = options.get_next_command(%i[show products info install spec schema errors])
-          case command
-          when :show
-            return Result::Text.new(Ascp::Installation.instance.path(:ascp))
-          when :info
-            # Collect info from ascp executable
-            data = Ascp::Installation.instance.ascp_info
-            # Add command line transfer spec
-            data['ts'] = transfer.user_transfer_spec
-            # Add keys
-            DataRepository::ELEMENTS.each_with_object(data){ |i, h| h[i.to_s] = DataRepository.instance.item(i)}
-            # Declare those as secrets
-            SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
-            return Result::SingleObject.new(data)
-          when :products
-            command = options.get_next_command(%i[list])
-            case command
-            when :list
-              return Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
-            end
-          when :install
-            return install_transfer_sdk
-          when :spec
-            builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
-            return Result::ObjectList.new(builder.rows, fields: builder.columns)
-          when :schema
-            schema = Transfer::Spec::SCHEMA.current.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
-            agent = options.get_next_argument('transfer agent name', mandatory: false)
-            schema['properties'] = schema['properties'].select{ |_k, v| CommandLineBuilder.supported_by_agent(agent, v)} unless agent.nil?
-            schema['properties'] = schema['properties'].sort.to_h
-            return Result::SingleObject.new(schema)
-          when :errors
-            error_data = []
-            Ascp::Management::ERRORS.each_pair do |code, prop|
-              error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
-            end
-            return Result::ObjectList.new(error_data)
-          else Aspera.error_unexpected_value(command)
-          end
-          Aspera.error_unreachable_line
-        end
-
-        def execute_action_transferd
-          command = options.get_next_command(%i[list install])
-          case command
-          when :install
-            return install_transfer_sdk
-          when :list
-            sdk_list = Ascp::Installation.instance.sdk_locations
-            return Result::ObjectList.new(
-              sdk_list,
-              fields: sdk_list.first.keys - ['url']
-            )
-          else Aspera.error_unexpected_value(command)
-          end
-          Aspera.error_unreachable_line
-        end
-
-        # Legacy actions available globally
-        PRESET_GBL_ACTIONS = %i[list overview lookup secure].freeze
-        # Operations requiring that preset exists
-        PRESET_EXIST_ACTIONS = %i[show delete get unset].freeze
-        # require id
-        PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXIST_ACTIONS).freeze
-        PRESET_ALL_ACTIONS = (PRESET_GBL_ACTIONS + PRESET_INSTANCE_ACTIONS).freeze
-
-        def execute_preset(action: nil, name: nil)
-          cp = presets.config_presets
-          action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
-          name = options.instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
-          name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
-          # Those operations require existing option
-          raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !cp.key?(name)
-          case action
-          when :list
-            return Result::ValueList.new(cp.keys, name: 'name')
-          when :overview
-            # Display process modifies the value (hide secrets): we do not want to save removed secrets
-            data = PresetManager.deep_clone(cp)
-            formatter.hide_secrets(data)
-            result = []
-            data.each do |config, preset|
-              preset.each do |parameter, value|
-                result.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
-              end
-            end
-            return Result::ObjectList.new(result, fields: CONF_OVERVIEW_KEYS)
-          when :show
-            return Result::SingleObject.new(PresetManager.deep_clone(cp[name]))
-          when :delete
-            cp.delete(name)
-            return Result::Status.new("Deleted: #{name}")
-          when :get
-            param_name = options.get_next_argument('parameter name')
-            value = cp[name][param_name]
-            raise "no such option in preset #{name} : #{param_name}" if value.nil?
-            case value
-            when Numeric, String then return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
-            end
-            return Result::SingleObject.new(value)
-          when :unset
-            param_name = options.get_next_argument('parameter name')
-            cp[name].delete(param_name)
-            return Result::Status.new("Removed: #{name}: #{param_name}")
-          when :set
-            param_name = options.get_next_argument('parameter name')
-            param_name = Manager.option_line_to_name(param_name)
-            param_value = options.get_next_argument('parameter value', validation: nil)
-            set_preset_key(name, param_name, param_value)
-            return Result::Nothing.new
-          when :initialize
-            config_value = options.get_next_argument('extended value', validation: Hash)
-            Log.log.warn{"configuration already exists: #{name}, overwriting"} if cp.key?(name)
-            cp[name] = config_value
-            return Result::Status.new("Modified: #{@option_config_file}")
-          when :update
-            unprocessed_options = options.unprocessed_options_with_value
-            Log.log.debug{"opts=#{unprocessed_options}"}
-            cp[name] ||= {}
-            cp[name].merge!(unprocessed_options)
-            return Result::Status.new("Updated: #{name}")
-          when :ask
-            options.ask_missing_mandatory = true
-            cp[name] ||= {}
-            options.get_next_argument('option names', multiple: true).each do |option_name|
-              option_value = options.get_interactive(option_name, check_option: true)
-              cp[name][option_name] = option_value
-            end
-            return Result::Status.new("Updated: #{name}")
-          when :lookup
-            BasicAuth.declare_options(options)
-            url = options.get_option(:url, mandatory: true)
-            user = options.get_option(:username, mandatory: true)
-            result = lookup_preset(url: url, username: user)
-            raise Error, 'no such config found' if result.nil?
-            return Result::SingleObject.new(result)
-          when :secure
-            identifier = options.get_next_argument('config name', mandatory: false)
-            preset_names = identifier.nil? ? cp.keys : [identifier]
-            secret_keywords = %w[password secret].freeze
-            preset_names.each do |preset_name|
-              preset = cp[preset_name]
-              next unless preset.is_a?(Hash)
-              preset.each_key do |option_name|
-                secret_keywords.each do |keyword|
-                  next unless option_name.end_with?(keyword)
-                  vault_label = preset_name
-                  incr = 0
-                  until vault.get(label: vault_label, exception: false).nil?
-                    vault_label = "#{preset_name}#{incr}"
-                    incr += 1
-                  end
-                  to_set = {label: vault_label, password: preset[option_name]}
-                  puts "need to encode #{preset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
-                  vault.set(to_set)
-                  preset[option_name] = "@vault:#{vault_label}.password"
-                end
-              end
-            end
-            return Result::Status.new('Secrets secured in vault: Make sure to save the vault password securely.')
           end
         end
 
@@ -584,7 +392,7 @@ module Aspera
               return Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
             when :create
               plugin_name = options.get_next_argument('name').downcase
-              destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
+              destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
               plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
               content = <<~END_OF_PLUGIN_CODE
                 require 'aspera/cli/plugins/base'
@@ -639,7 +447,7 @@ module Aspera
             else Aspera.error_unreachable_line
             end
           when :folder
-            return Result::Text.new(@main_folder)
+            return Result::Text.new(context.main_folder)
           when :file
             return Result::Text.new(@option_config_file)
           when :email_test
@@ -736,8 +544,6 @@ module Aspera
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # Default config file name
         DEFAULT_CONFIG_FILENAME = 'config.yaml'
-        # Used in execute_preset / execute_action to identify the global default keyword
-        GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
         CONF_GLOBAL_SYM = :config
         # Folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
@@ -746,7 +552,6 @@ module Aspera
         REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
-        TRANSFERD_APP_NAME = 'sdk'
         DEMO_SERVER = 'demo'
         DEMO_PRESET = 'demoserver' # cspell: disable-line
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
@@ -761,10 +566,8 @@ module Aspera
         EXTEND_VAULT = :vault
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
-        CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
         private_constant :ASPERA_HOME_FOLDER_NAME,
           :DEFAULT_CONFIG_FILENAME,
-          :GLOBAL_DEFAULT_KEYWORD,
           :CONF_GLOBAL_SYM,
           :ASPERA_PLUGINS_FOLDERNAME,
           :PERSISTENCY_FOLDER,
@@ -772,15 +575,13 @@ module Aspera
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
           :SERVER_COMMAND,
-          :TRANSFERD_APP_NAME,
           :DEMO_SERVER,
           :DEMO_PRESET,
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
           :EXTEND_VAULT,
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
-          :COFFEE_IMAGE_URL,
-          :CONF_OVERVIEW_KEYS
+          :COFFEE_IMAGE_URL
       end
     end
   end

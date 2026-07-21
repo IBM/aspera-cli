@@ -7,7 +7,8 @@ module Aspera
     # Global objects shared with plugins
     class Context
       # @type [Array<Symbol>]
-      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config].freeze
+      # Members that must be non-nil after bootstrap (validated in #validate)
+      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder].freeze
       # @!attribute [rw] options
       #   @return [Manager] the command line options manager
       # @!attribute [rw] transfer
@@ -25,14 +26,17 @@ module Aspera
       # @!attribute [rw] http_config
       #   @return [Http] manages HTTP/S and TLS runtime options
       attr_accessor(*MEMBERS)
+      # Optional: nil when progress bar is disabled
+      attr_accessor :progress_bar
 
       # Initialize all members to nil, so that they are defined and can be validated later
       # @return [nil]
       def initialize
         MEMBERS.each{ |i| instance_variable_set(:"@#{i}", nil)}
+        @progress_bar = nil
       end
 
-      # Validate that all members are set, raise exception if not
+      # Validate that all mandatory members are non-nil (detect bootstrap bugs)
       # @raise [Aspera::AssertionError] if any member is not set
       # @return [nil]
       def validate

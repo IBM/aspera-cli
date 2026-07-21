@@ -28,6 +28,8 @@ module Aspera
         end
 
         def initialize(context:)
+          Aspera.assert_type(context, Context){'context'}
+          Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
           # Check presence in descendant of mandatory method and constant
           Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
           Aspera.assert(self.class.const_defined?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
@@ -52,6 +54,8 @@ module Aspera
         def presets; @context.presets; end
         # @return [Aspera::Cli::Http]
         def http_config; @context.http_config; end
+        # @return [Aspera::Cli::TransferProgress, nil]
+        def progress_bar; @context.progress_bar; end
 
         def add_manual_header(has_options = true)
           # Manual header for all plugins
