@@ -22,6 +22,7 @@ module Aspera
       '$comment',       # [String]
       'x-cli-envvar',   # [String]       Name of env var
       'x-cli-option',   # [String]       Command line option (starts with "-")
+      'x-cli-false',    # [String].      Option to use when switch value is false
       'x-cli-short',    # [String]       Command line option (starts with "-")
       'x-cli-switch',   # [Boolean]      `true` if option has no arg, else by default option has a value
       'x-cli-special',  # [Boolean]      `true` if special handling (deferred)
@@ -50,6 +51,7 @@ module Aspera
 
       private
 
+      # `ascp`: mandatory type
       DIRECT_PROPERTIES = %w[x-cli-option x-cli-envvar x-cli-special].freeze
 
       # Fill default values for some fields in the schema
@@ -192,15 +194,13 @@ module Aspera
         # set in env var
         @result[:env][properties['x-cli-envvar']] = parameter_value
       elsif properties['x-cli-switch']
-        # if present and true : just add option without value
-        add_param = false
         case parameter_value
-        when false then nil # nothing to put on command line, no creation by default
-        when true then add_param = true
+        when true
+          add_command_line_options(properties['x-cli-option'])
+        when false
+          add_command_line_options(properties['x-cli-false']) if properties.key?('x-cli-false')
         else Aspera.error_unexpected_value(parameter_value){name}
         end
-        # add_param = !add_param if properties[:add_on_false]
-        add_command_line_options(properties['x-cli-option']) if add_param
       else
         # transform into command line option with value
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
