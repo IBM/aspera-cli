@@ -68,7 +68,7 @@ module Aspera
           Agent::Factory::ALL.each_key do |sym|
             agents.push(sym) if node['x-agents'].nil? || node['x-agents'].include?(sym.to_s)
           end
-          Aspera.assert(agents.include?(:direct)){"#{name}: x-cli-option requires agent direct (or nil)"} if node['x-cli-option']
+          Aspera.assert(agents.include?(:direct)){"#{property_full_name}: x-cli-option requires agent direct (or nil)"} if node['x-cli-option']
           if @agent_columns
             Agent::Factory::ALL.each do |sym, names|
               item[names[:short]] = @formatter.tick(agents.include?(sym))
@@ -77,7 +77,7 @@ module Aspera
             item[:description].push("(#{agents.map{ |i| Agent::Factory::ALL[i][:short].to_s.upcase}.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
           end
           # Only keep lines that are usable in supported agents
-          next false if agents.empty?
+          next if agents.empty?
           item[:description].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
           item[:description].push("Default: #{code.call(node['default'])}.") if node.key?('default')
           if @include_option
@@ -87,10 +87,10 @@ module Aspera
                 envvar_prefix = 'env:'
                 node['x-cli-envvar']
               elsif node['x-cli-switch']
-                node['x-cli-option']
+                false_part = node.key?('x-cli-false') ? " / #{node['x-cli-false']}" : ''
+                "#{node['x-cli-option']}#{false_part}"
               elsif node['x-cli-option']
                 arg_type = node.key?('enum') ? '{enum}' : "{#{[node['type']].flatten.join('|')}}"
-                # conversion_tag = node['x-cli-convert']
                 conversion_tag = node.key?('x-cli-convert') ? 'conversion' : nil
                 sep = node['x-cli-option'].start_with?('--') ? '=' : ' '
                 "#{node['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
