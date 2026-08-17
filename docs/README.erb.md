@@ -154,7 +154,7 @@ export PATH=$PATH:$HOME/bin
 <%=build_version%>
 ```
 
-- Install the latest Aspera transfer runtime, as it is not included in the <%=tool%> package:
+- Install the Aspera transfer runtime (tested version), as it is not included in the <%=tool%> package:
 
 ```shell
 <%=cmd%> config transferd install
@@ -731,7 +731,7 @@ The installation of the transfer binaries follows those steps:
   - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
   - If the value is `DEF`, <%=tool%> downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
-    - If an additional positional parameter is provided, it specifies the SDK version to use; otherwise the latest version is selected.
+    - The SDK version is selected as follows: if an additional positional parameter is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of <%=tool%> is used.
     - The package URL matching the current system architecture is then used.
 - **Extract the archive**
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.

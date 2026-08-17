@@ -25,14 +25,22 @@ module Aspera
         end
       end
 
+      # Install the transfer SDK (ascp + transferd) from a URL or using the default source.
+      # Version defaults to +Info::SDK_VERSION+; pass +LATEST+ as argument to install the latest available version.
+      # @return [Result::Status] installation result message
       def install_transfer_sdk
         asked_version = options.get_next_argument('transferd version', mandatory: false)
+        # nil means "latest" for download_sdk; default to the tested SDK version
+        asked_version = Info::SDK_VERSION if asked_version.nil?
+        asked_version = nil if asked_version.eql?(SpecialValues::LATEST)
         sdk_url = options.get_option(:sdk_url, mandatory: true)
         sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
-        name, version, folder = Ascp::Installation.instance.retrieve_sdk(url: sdk_url, version: asked_version)
+        name, version, folder = Ascp::Installation.instance.install_sdk(url: sdk_url, version: asked_version)
         return Result::Status.new("Installed #{name} version #{version} in #{folder}")
       end
 
+      # Dispatch CLI sub-commands for the `ascp` action group
+      # @return [Result] command result
       def execute_action_ascp
         command = options.get_next_command(%i[show products info install spec schema errors])
         case command
@@ -72,6 +80,8 @@ module Aspera
         Aspera.error_unreachable_line
       end
 
+      # Dispatch CLI sub-commands for the `transferd` action group
+      # @return [Result] command result
       def execute_action_transferd
         command = options.get_next_command(%i[list install])
         case command

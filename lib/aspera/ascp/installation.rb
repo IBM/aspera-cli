@@ -280,15 +280,14 @@ module Aspera
         end
       end
 
-      # Retrieves ascp binary for current system architecture from URL or file
+      # Downloads and extracts the SDK archive for the current platform into +folder+
       # @param folder  [String]      Destination folder path
       # @param url     [nil, String] URL to SDK archive, if nil: default url for version
       # @param version [nil, String] Specific version, if nil: latest version
       # @param backup  [Boolean]     If destination folder exists, then rename
       # @yieldparam entry_name [String] File path from archive
       # @yieldreturn [String, nil] Destination sub folder (end with /) or file, or nil to not extract
-      # @return [Array] name, ascp version (from execution), folder
-      def install_sdk(folder:, url: nil, version: nil, backup: true)
+      def download_sdk(folder:, url: nil, version: nil, backup: true)
         url ||= sdk_url_for_platform(version: version)
         # Rename old install
         if backup && Dir.exist?(folder) && !Dir.empty?(folder)
@@ -370,12 +369,13 @@ module Aspera
         end
       end
 
-      # Retrieve SDK either from specified URL, or specified version from standard location, or latest version
-      # @param url [nil, String] URL
-      # @param version [nil, String] URL
-      def retrieve_sdk(url: nil, version: nil)
+      # Downloads, installs and configures the SDK, returns name, version and install folder
+      # @param url     [nil, String] URL to SDK archive, if nil: default url for version
+      # @param version [nil, String] Specific version, if nil: latest version
+      # @return [Array<String>] sdk name, sdk version, install folder
+      def install_sdk(url: nil, version: nil)
         folder = Products::Transferd.sdk_directory
-        install_sdk(folder: folder, url: url, version: version)
+        download_sdk(folder: folder, url: url, version: version)
         # Ensure necessary files are there, or generate them, restrict file access on SDK executables
         SDK_FILES.each do |file_id_sym|
           file_path = path(file_id_sym)

@@ -9,6 +9,7 @@ module Aspera
       ALL = 'ALL'
       DEF = 'DEF'
       EOA = 'END'
+      LATEST = 'LATEST'
     end
   end
 end

@@ -155,7 +155,7 @@ ascli -v
 4.27.0.pre
 ```
 
-- Install the latest Aspera transfer runtime, as it is not included in the `ascli` package:
+- Install the Aspera transfer runtime (tested version), as it is not included in the `ascli` package:
 
 ```shell
 ascli config transferd install
@@ -779,7 +779,7 @@ The installation of the transfer binaries follows those steps:
   - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
   - If the value is `DEF`, `ascli` downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
-    - If an additional positional parameter is provided, it specifies the SDK version to use; otherwise the latest version is selected.
+    - The SDK version is selected as follows: if an additional positional parameter is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of `ascli` is used.
     - The package URL matching the current system architecture is then used.
 - **Extract the archive**
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
@@ -3943,7 +3943,7 @@ ascli config ascp schema transferd --format=jsonpp
 | `overwrite` | `string` | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- `always` : Always overwrite the file.<br/>- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.<br/>- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.<br/>- `older` : Overwrite the file if its timestamp is older than the source timestamp.<br/>If you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:<br/>`none` : The source and destination files are always considered different and  the destination file is always overwritten<br/>`attributes` : The source and destination files are compared based on file attributes <br/>`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)<br/>`full_checksum` : The source and destination files are compared based on full checksums<br/>Allowed values: `never`, `always`, `diff`, `older`, `diff+older`.<br/>Default: `diff`.<br/>(`--overwrite={enum}`) |
 | `password` | `string` | Password for local Windows user when transfer user associated with node API user is not the same as the one running `asperanoded`.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node API only.<br/>(N) |
 | `paths` | `array` | Array of path to the source (required) and a path to the destination (optional). |
-| `precalculate_job_size` | `boolean` | Specifies whether to precalculate the job size.<br/>(`--precalculate-job-size`) |
+| `precalculate_job_size` | `boolean` | Specifies whether to precalculate the job size.<br/>(`--precalculate-job-size / --precalculate-disable`) |
 | `preserve_access_time` | `boolean` | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.<br/>(`--preserve-access-time`) |
 | `preserve_acls` | `string` | Preserve access control lists.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(`--preserve-acls={enum}`) |
 | `preserve_creation_time` | `boolean` | Preserve source-file creation timestamps at the destination.<br/>Only Windows systems retain information about creation time. If the destination is not a Windows computer, this option is ignored.<br/>(`--preserve-creation-time`) |
@@ -4659,7 +4659,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, preset, vault, 
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, , preset, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -4681,7 +4681,7 @@ OPTIONS: global
     -h, --help                       Show this message
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: graphical, [text]
+        --ui=ENUM                    Method to start browser: [graphical], text
         --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)

@@ -6,6 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` as argument to install the latest available version.
+
 ### Issues Fixed
 
 ### Breaking Changes

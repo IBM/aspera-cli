@@ -15,6 +15,8 @@ module Aspera
       # Set this to warn in advance when minimum required ruby version will increase
       # See also required_ruby_version in gemspec file
       RUBY_FUTURE_MINIMUM_VERSION = '3.2'
+      # Version with which this version of CLI was tested
+      SDK_VERSION = '1.1.9'
     end
   end
 end
