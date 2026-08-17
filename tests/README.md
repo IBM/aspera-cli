@@ -84,8 +84,9 @@ To run all tests (but a few), in a given order:
 
 ```shell
 # Cleanup installed gems:
-ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u|xargs -n 1 gem uninstall -axI
-d="$(gem env gemdir)/gems";ls $d|while read e;do rm -fr $d/$e;done
+d="$(gem env gemdir)/gems"
+ls "$d"|sed -e 's/-[^-]*$//'|sort -u|xargs -n 1 gem uninstall -axI
+ls "$d"|while read e;do rm -fr $d/$e;done
 
 # clean Gemfile.lock
 rm -f Gemfile.lock
