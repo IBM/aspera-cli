@@ -52,7 +52,7 @@ module Aspera
         end
       end
 
-      # @return Path to file with content at URL
+      # @return [String] path to file with content at URL
       def read_as_file(url)
         if url.start_with?(SCHEME_FILE_PFX1)
           # for file scheme, return directly the path

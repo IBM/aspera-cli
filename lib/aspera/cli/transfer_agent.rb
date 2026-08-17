@@ -212,8 +212,8 @@ module Aspera
       end
 
       # Start a transfer and wait for completion, plugins shall use this method
-      # @param transfer_spec [Hash]
-      # @param rest_token    [Rest] if oauth token regeneration supported
+      # @param transfer_spec [Hash] transfer specification
+      # @param rest_token    [Rest, nil] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
         Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}

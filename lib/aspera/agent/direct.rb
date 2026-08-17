@@ -166,7 +166,7 @@ module Aspera
       end
 
       # wait for completion of all jobs started
-      # @return list of :success or error message
+      # @return [Array] list of :success or error message
       def wait_for_transfers_completion
         Log.log.debug('wait_for_transfers_completion')
         # set to non-nil to exit loop
@@ -216,7 +216,7 @@ module Aspera
       private
 
       # transfer thread entry
-      # @param session information
+      # @param session [Hash] transfer session information
       def transfer_thread_entry(session)
         begin
           # set name for logging
@@ -244,7 +244,7 @@ module Aspera
       # @param env     [Hash]   Environment variables (comes from ascp_args)
       # @param args    [Array]  Command line arguments (comes from ascp_args)
       # @return [nil] when process has exited
-      # @raise FaspError on error
+      # @raise [Transfer::FaspError] on error
       def start_and_monitor_process(
         session:,
         name:,

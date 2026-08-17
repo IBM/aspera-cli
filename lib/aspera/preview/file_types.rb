@@ -78,7 +78,7 @@ module Aspera
 
       # @param filepath [String] Full path to file
       # @param mimetype [String] MIME typre provided by node API
-      # @return file type, one of enum CONVERSION_TYPES
+      # @return [Symbol] file type, one of enum CONVERSION_TYPES
       # @raise [RuntimeError] if no conversion type found
       def conversion_type(filepath, mimetype)
         Log.log.debug{"conversion_type(#{filepath},mime=#{mimetype},magic=#{@use_mimemagic})"}

@@ -84,7 +84,7 @@ module Aspera
 
     private
 
-    # @param object_id String or Array
+    # @param object_id [String, Array] identifier or list of identifiers
     def id_to_filepath(object_id)
       Aspera.assert_type(object_id, String)
       FileUtils.mkdir_p(@folder)

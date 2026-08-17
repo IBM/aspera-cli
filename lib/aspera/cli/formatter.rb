@@ -242,12 +242,12 @@ module Aspera
         @options[:image].symbolize_keys
       end
 
-      # @return all fields of all objects in list of objects
+      # @return [Array<String>] all fields of all objects in list of objects
       def all_fields(data)
         data.each_with_object({}){ |v, m| v.each_key{ |c| m[c] = true}}.keys
       end
 
-      # @return the list of fields to display
+      # @return [Array<String>] the list of fields to display
       # @param data    [Array<Hash>]         data to display
       # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)

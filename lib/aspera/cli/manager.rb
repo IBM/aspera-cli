@@ -40,7 +40,7 @@ module Aspera
       # `false` and `true`
       TYPES = [FalseClass, TrueClass].freeze
       SYMBOLS = [NO_SYM, YES_SYM].freeze
-      # @return `true` if value is a value for `true` in ALL
+      # @return [Boolean] `true` if value is a value for `true` in ALL
       def true?(enum)
         Aspera.assert_values(enum, ALL){'boolean'}
         TRUE_VALUES.include?(enum)
@@ -52,7 +52,7 @@ module Aspera
         TRUE_VALUES.include?(enum) ? YES_SYM : NO_SYM
       end
 
-      # @return `true` if value is a value for `true` or `false` in ALL
+      # @return [Boolean] `true` if value is a value for `true` or `false` in ALL
       def symbol?(sym)
         ALL.include?(sym)
       end
@@ -381,7 +381,7 @@ module Aspera
       # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
-      # @return one value, list or nil (if optional and no default)
+      # @return [Object, Array, nil] one value, list or nil (if optional and no default)
       def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Allowed::TYPES_STRING, aliases: nil, default: nil, schema: nil)
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
@@ -688,7 +688,7 @@ module Aspera
 
       # Using dotted hash notation, convert value to bool, int, float or extended value
       # @param value [String] The value to convert to appropriate type
-      # @return the converted value
+      # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
       def smart_convert(value)
         case value
         when 'true'  then true

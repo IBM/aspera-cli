@@ -42,7 +42,7 @@ module Aspera
         cert
       end
 
-      # @return a list of Certificates from chain file
+      # @return [Array<OpenSSL::X509::Certificate>] list of Certificates from chain file
       def read_chain_file(chain)
         File.read(chain).scan(/-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----/m).map{ |i| OpenSSL::X509::Certificate.new(i)}
       end

@@ -57,7 +57,7 @@ module Aspera
         # Find installed products and provide paths for it.
         # @param scan_locations [Array] Array of Hash with keys: expected, app_root, sub_bin, ascp_path, name, version
         # @return [Array] of products found, with filled missing fields
-        # @raise Exception if no installed product found
+        # @raise [RuntimeError] if no installed product found
         def find(scan_locations)
           product_names = []
           found = scan_locations.select do |item|

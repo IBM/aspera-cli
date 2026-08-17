@@ -47,7 +47,7 @@ module Aspera
       end
 
       # Wait for completion of all jobs started
-      # @return list of :success or error message
+      # @return [Array] list of :success or error message
       def wait_for_transfers_completion
         # well ... transfer was done in "start"
         return [:success]

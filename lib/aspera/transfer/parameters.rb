@@ -112,7 +112,7 @@ module Aspera
         @builder.add_command_line_options("#{file_list_option}=#{file_list_file}") unless file_list_option.nil?
       end
 
-      # @return the list of certificates (option `-i`) to use when token/ssh or wss are used
+      # @return [Array<String>] the list of certificates (option `-i`) to use when token/ssh or wss are used
       def remote_certificates
         certificates_to_use = []
         # use web socket secure for session ?

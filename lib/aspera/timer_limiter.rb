@@ -3,7 +3,7 @@
 module Aspera
   # trigger returns true only if the delay has passed since the last trigger
   class TimerLimiter
-    # @param delay in seconds (float)
+    # @param delay [Float] delay in seconds
     def initialize(delay)
       @delay = delay
       @last_trigger_time = nil

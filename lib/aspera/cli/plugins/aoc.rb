@@ -286,8 +286,8 @@ module Aspera
         end
 
         # Get resource identifier from command line, either directly specifying the `id` or from `name` (percent selector).
-        # @param resource_class_path url path for resource
-        # @return identifier
+        # @param resource_class_path [String] url path for resource
+        # @return [String] identifier
         def get_resource_id_from_args(resource_class_path)
           return options.instance_identifier do |field, value|
             Aspera.assert_values(field, ['name'], type: BadArgument){'selector field'}
@@ -301,10 +301,10 @@ module Aspera
         end
 
         # List all entities, given additional, default and user's queries
-        # @param resource_class_path path to query on API
-        # @param fields fields to display
-        # @param base_query a query applied always
-        # @param default_query default query unless overridden by user
+        # @param resource_class_path [String]     path to query on API
+        # @param fields              [Array, nil] fields to display
+        # @param base_query          [Hash]       a query applied always
+        # @param default_query       [Hash]       default query unless overridden by user
         # @yieldparam query [Hash] The user's or default query for modification
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)
@@ -330,7 +330,6 @@ module Aspera
         end
 
         # List all packages according to `query` option.
-        # @param <none>
         # @return [Hash] {items,total} with all packages according to combination of user's query and default query
         def list_all_packages_with_query
           query = query_read_delete(default: {})
@@ -980,7 +979,7 @@ module Aspera
           end
         end
 
-        # @return persistency object if option `once_only` is used.
+        # @return [PersistencyActionOnce, nil] persistency object if option `once_only` is used.
         def package_persistency
           return unless options.get_option(:once_only, mandatory: true)
           # TODO: add query info to id

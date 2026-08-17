@@ -15,7 +15,7 @@ module Aspera
     # @param value [String] Value of field of searched entity
     # @param field [String] Field of searched entity
     # @param query [Hash] Optional additional search query parameters
-    # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
+    # @return [Hash] A single entity matching the search, or an exception if not found or multiple found
     def lookup_with_q(entity, value:, field: 'name', query: {})
       Aspera.assert_type(query, Hash){'query'}
       Aspera.assert_type(field, String){'field'}

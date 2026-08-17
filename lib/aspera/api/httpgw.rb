@@ -81,7 +81,7 @@ module Aspera
       end
 
       # Check header ourself and give precise error message, as websocket will only throw error without details
-      # @param [String] Response Header
+      # @param header [String] Response Header
       # @return [String] Response Header
       def validated_ws_response_header(header)
         first_line = header.split("\r\n").first
@@ -291,7 +291,7 @@ module Aspera
         return @api_info
       end
 
-      # @return the base url of the gateway
+      # @return [String] the base url of the gateway
       def base_url
         return @gw_root_url
       end

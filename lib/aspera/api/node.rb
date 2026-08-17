@@ -128,8 +128,8 @@ module Aspera
         end
 
         # For access keys: provide expression to match entry in folder
-        # @param match_expression one of supported types
-        # @return lambda function
+        # @param match_expression [Proc, Regexp, String] one of supported types
+        # @return [Proc] lambda function
         def file_matcher(match_expression)
           case match_expression
           when Proc then return match_expression
@@ -241,7 +241,7 @@ module Aspera
         return tspec
       end
 
-      # @returns [Node, nil] a Node Api object or nil if no App defined
+      # @return [Node, nil] a Node Api object or nil if no App defined
       def node_id_to_node(node_id)
         if !@app_info.nil?
           return self if node_id.eql?(@app_info.node_info['id'])
@@ -630,7 +630,7 @@ module Aspera
       private
 
       # Method called in loop for each entry for `resolve_api_fid`
-      # @return `true` to continue digging, `false` to stop processing: set state[:result] if found
+      # @return [Boolean] `true` to continue digging, `false` to stop processing: set state[:result] if found
       def process_api_fid(entry, path, state)
         # Stop digging here if not in right path
         return false unless entry['name'].eql?(state[:path].first)

@@ -248,7 +248,7 @@ module Aspera
     # Base common headers of API
     attr_reader :headers
 
-    # @return creation parameters
+    # @return [Hash] creation parameters
     def params
       return {
         base_url:       @base_url,       # String
@@ -303,7 +303,7 @@ module Aspera
       @oauth = nil
     end
 
-    # @return the OAuth object (create, or cached if already created)
+    # @return [OAuth::Base] the OAuth object (create, or cached if already created)
     def oauth
       if @oauth.nil?
         Aspera.assert(@auth_params[:type].eql?(:oauth2), 'no OAuth defined')

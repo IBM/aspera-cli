@@ -52,7 +52,7 @@ module Aspera
     end
 
     # Ensure that provided folder exists, or create it, generate a unique filename
-    # @return path to that unique file
+    # @return [String] path to that unique file
     def new_file_path_in_folder(temp_folder, prefix: nil, suffix: nil)
       FileUtils.mkdir_p(temp_folder)
       new_file = File.join(temp_folder, [prefix, SecureRandom.uuid, suffix].compact.join('-'))

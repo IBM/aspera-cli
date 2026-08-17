@@ -480,7 +480,7 @@ module Aspera
       # @param workspace_name [String,nil] workspace name
       # @param scope          [String,nil] e.g. Node::Scope::USER, or Node::Scope::ADMIN, or nil (requires secret)
       # @param package_info   [Hash,nil] created package information
-      # @returns [Node] a node API for access key
+      # @return [Node] a node API for access key
       def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::Scope::USER, package_info: nil)
         Aspera.assert_type(node_id, String)
         node_info = read("nodes/#{node_id}")
@@ -545,7 +545,7 @@ module Aspera
       # @param package_data    [Hash]   The whole package creation payload
       # @param rcpt_lst_field  [String] The field in structure, i.e. recipients or bcc_recipients
       # @param new_user_option [Hash]   Additional fields for contact creation
-      # @return nil, `package_data` is modified
+      # @return [nil] `package_data` is modified in place
       def resolve_package_recipients(package_data, rcpt_lst_field, new_user_option)
         return unless package_data.key?(rcpt_lst_field)
         Aspera.assert_type(package_data[rcpt_lst_field], Array){rcpt_lst_field}
@@ -609,7 +609,7 @@ module Aspera
       # @param package_data [Hash] package creation (with extensions...)
       # @param validate_meta [TrueClass,FalseClass] true to validate parameters locally
       # @param new_user_option [Hash,NilClass] options if an unknown user is specified
-      # @return transfer spec, node api and package information
+      # @return [Array] transfer spec, node api and package information
       def create_package_simple(package_data, validate_meta, new_user_option)
         update_package_metadata_for_api(package_data)
         # list of files to include in package, optional

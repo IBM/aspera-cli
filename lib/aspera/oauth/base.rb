@@ -49,7 +49,7 @@ module Aspera
 
       # Helper method to create token as per RFC
       # @return [HTTPResponse]
-      # @raise RestError if not 2XX code
+      # @raise [RestCallError] if not 2XX code
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
@@ -73,8 +73,8 @@ module Aspera
       # get an OAuth v2 token (generated, cached, refreshed)
       # call token() to get a token.
       # if a token is expired (api returns 4xx), call again token(refresh: true)
-      # @param cache set to false to disable cache
-      # @param refresh set to true to force refresh or re-generation (if previous failed)
+      # @param cache   [Boolean] set to false to disable cache
+      # @param refresh [Boolean] set to true to force refresh or re-generation (if previous failed)
       def token(cache: true, refresh: false)
         # get token info from cache (or nil), decoded with date and expiration status
         token_info = Factory.instance.get_token_info(@token_cache_id) if cache

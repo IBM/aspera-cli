@@ -22,7 +22,7 @@ module Aspera
         options.declare(:key_path, 'Wizard: path to private key for JWT')
       end
 
-      # @return false if in test mode to avoid interactive input
+      # @return [Boolean] false if in test mode to avoid interactive input
       def required
         !ENV['ASCLI_WIZ_TEST']
       end

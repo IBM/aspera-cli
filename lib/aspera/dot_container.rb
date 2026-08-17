@@ -48,7 +48,7 @@ module Aspera
       end
     end
 
-    # @param [Hash,Array] Container object
+    # @param container [Hash,Array] Container object
     def initialize(container)
       Aspera.assert_type(container, Hash)
       # tail (pop,push) contains the next element to display

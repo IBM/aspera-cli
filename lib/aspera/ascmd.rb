@@ -87,8 +87,8 @@ module Aspera
 
     # execute an "as" command on a remote server
     # Version 2 allows use of reverse proxy with multiple addresses.
-    # @param [Symbol] one of OPERATIONS
-    # @param [Array] parameters for "as" command
+    # @param action_sym [Symbol] one of OPERATIONS
+    # @param arguments  [Array]  parameters for "as" command
     # @return [Boolean,Array,Hash] result of command, type depends on command
     def execute_single(action_sym, arguments, version: 1, host: nil)
       arguments = [] if arguments.nil?
@@ -169,7 +169,10 @@ module Aspera
     end
 
     class << self
-      # Get description of structure's field, @param struct_name, @param typed_buffer provides field name
+      # Get description of structure's field
+      # @param struct_name   [Symbol] name of the structure type
+      # @param typed_buffer  [Hash]   typed buffer providing the field name via `:btype`
+      # @return [Hash] field description
       def field_description(struct_name, typed_buffer)
         result = TYPES_DESCR[struct_name][:fields][typed_buffer[:btype] - ENUM_START]
         raise "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" if result.nil?
@@ -177,7 +180,7 @@ module Aspera
       end
 
       # Decodes the provided buffer as provided type name
-      # @return a decoded type: single, Array, or Hash
+      # @return [Boolean, Array, Hash] a decoded type: single, Array, or Hash
       def parse(buffer, type_name, indent_level = nil)
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]

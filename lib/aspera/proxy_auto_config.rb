@@ -63,7 +63,7 @@ END_OF_JAVASCRIPT
 
     attr_writer :proxy_user, :proxy_pass
 
-    # @param proxy_auto_config the proxy auto config script to be evaluated
+    # @param proxy_auto_config [String] the proxy auto config script to be evaluated
     def initialize(proxy_auto_config)
       # user provided javascript with FindProxyForURL function
       @proxy_auto_config = proxy_auto_config
@@ -79,7 +79,7 @@ END_OF_JAVASCRIPT
     end
 
     # execute proxy auto config script for the given URL : https://en.wikipedia.org/wiki/Proxy_auto-config
-    # @return either nil, or a String formatted following PAC standard
+    # @return [String, nil] either nil, or a String formatted following PAC standard
     def find_proxy_for_url(service_url)
       uri = URI.parse(service_url)
       simple_url = "#{uri.scheme}://#{uri.host}"
@@ -99,7 +99,7 @@ END_OF_JAVASCRIPT
     end
 
     # used to replace URI::Generic.find_proxy
-    # @return Array of URI, possibly empty
+    # @return [Array<URI>] list of URIs, possibly empty
     def get_proxies(service_url)
       # prepare result
       uri_list = []

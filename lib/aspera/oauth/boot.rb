@@ -12,7 +12,7 @@ module Aspera
     class Boot < Base
       # @param cookie   [String, nil] Raw cookie string (--password), nil to rely on existing cache
       # @param username [String, nil] Expected subject; if provided, must match token's `sub` claim
-      # @param **base_params          Forwarded to Base (base_url:, params: {client_id:, scope:}, etc.)
+      # @param **base_params [Hash] Forwarded to Base (base_url:, params: {client_id:, scope:}, etc.)
       def initialize(cookie: nil, username: nil, **base_params)
         if cookie.nil?
           # No cookie: rely on existing cache, identified by username if provided

@@ -25,9 +25,9 @@ module Aspera
       end
 
       # Called by user of progress bar with a status on a transfer session
-      # @param session_id the unique identifier of a transfer session
+      # @param session_id [String] the unique identifier of a transfer session
       # @param type [Symbol] one of: sessions_init, session_start, session_size, transfer, session_end and end
-      # @param info optional specific additional info for the given event type
+      # @param info [Object, nil] optional specific additional info for the given event type
       def event(type, session_id: nil, info: nil)
         Log.log.trace1{"progress: #{type} #{session_id} #{info}"}
         return if @completed

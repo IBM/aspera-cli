@@ -64,7 +64,7 @@ module Aspera
           silent_execute(:ffmpeg, *gl_p, *in_p, '-i', in_f, *out_p, out_f)
         end
 
-        # @return Float in seconds
+        # @return [Float] duration in seconds
         def video_get_duration(input_file)
           return execute(
             :ffprobe,

@@ -153,7 +153,7 @@ module Aspera
           end
         end
 
-        # @param [String] job identifier
+        # @param job_id [String] job identifier
         # @return [Hash] result of API call for job status
         def wait_for_job(job_id)
           result = nil

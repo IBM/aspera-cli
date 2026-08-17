@@ -232,7 +232,7 @@ module Aspera
         return ascp_data
       end
 
-      # @return the url for download of SDK archive for the given platform and version
+      # @return [String] the url for download of SDK archive for the given platform and version
       def sdk_url_for_platform(platform: nil, version: nil)
         all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
@@ -431,7 +431,7 @@ module Aspera
 
       public
 
-      # @return the list of installed products in format of product_locations_on_current_os
+      # @return [Array<Hash>] the list of installed products in format of product_locations_on_current_os
       def installed_products
         return @found_products unless @found_products.nil?
         # :expected  M app name is taken from the manifest if present, else defaults to this value

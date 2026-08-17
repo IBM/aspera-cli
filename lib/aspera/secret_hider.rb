@@ -45,7 +45,7 @@ module Aspera
     private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :KEY_FALSE_POSITIVES, :REGEX_LOG_REPLACES
     attr_accessor :log_secrets
 
-    # @return new log formatter that hides secrets
+    # @return [Proc] new log formatter that hides secrets
     def log_formatter(original_formatter)
       original_formatter ||= Logger::Formatter.new
       # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
@@ -63,7 +63,7 @@ module Aspera
       return value.gsub(REGEX_LOG_REPLACES.first){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
     end
 
-    # @return true if the key denotes a secret
+    # @return [Boolean] true if the key denotes a secret
     def secret?(keyword, value)
       keyword = keyword.to_s if keyword.is_a?(Symbol)
       # only Strings can be secrets, not booleans, or hash, arrays

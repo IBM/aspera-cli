@@ -185,7 +185,7 @@ module Aspera
         Log.log.warn(e.message)
       end
 
-      # @return true if we are in a terminal
+      # @return [Boolean] true if we are in a terminal
       def terminal?
         $stdout.tty?
       end
@@ -195,7 +195,7 @@ module Aspera
         I18N_VARS.each{ |var| ENV[var] = 'C'}
       end
 
-      # @return true if we can display Unicode characters
+      # @return [Boolean] true if we can display Unicode characters
       # Uses Encoding.locale_charmap for OS-independent detection.
       # Falls back to locale env vars for systems where charmap is not available.
       # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
@@ -207,7 +207,7 @@ module Aspera
 
       private
 
-      # @return true if the locale charmap resolves to UTF-8
+      # @return [Boolean] true if the locale charmap resolves to UTF-8
       # Unix: nl_langinfo(CODESET) returns "UTF-8"
       # Windows: GetACP returns "CP65001" which Encoding.find resolves as UTF-8
       def locale_charmap_utf8?

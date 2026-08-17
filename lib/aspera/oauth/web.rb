@@ -11,8 +11,8 @@ module Aspera
       class << self
         attr_accessor :additional_info
       end
-      # @param redirect_uri    url to receive the code after auth (to be exchanged for token)
-      # @param path_authorize  path to login page on web app
+      # @param redirect_uri   [String] url to receive the code after auth (to be exchanged for token)
+      # @param path_authorize [String] path to login page on web app
       def initialize(
         redirect_uri:,
         path_authorize: 'authorize',

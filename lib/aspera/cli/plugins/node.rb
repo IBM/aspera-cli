@@ -252,9 +252,9 @@ module Aspera
         end
 
         # Create async transfer spec request from direction and folders
-        # @param sync_direction one of push pull bidi
-        # @param local_path local folder to sync
-        # @param remote_path remote folder to sync
+        # @param sync_direction [Symbol] one of push pull bidi
+        # @param local_path     [String] local folder to sync
+        # @param remote_path    [String] remote folder to sync
         def sync_spec_request(sync_direction, local_path, remote_path)
           case sync_direction
           when :push then {

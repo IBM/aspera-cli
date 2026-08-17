@@ -61,7 +61,7 @@ module Aspera
             File.dirname(File.expand_path(__FILE__))
           end
 
-          # @return main folder where code is, i.e. .../lib
+          # @return [String] main folder where code is, i.e. .../lib
           # Go up as many times as englobing modules (not counting class, as it is a file)
           def gem_src_root
             # Module.nesting[2] is Cli::Plugins
@@ -73,7 +73,7 @@ module Aspera
             return Marshal.load(Marshal.dump(val))
           end
 
-          # @return product family folder (~/.aspera)
+          # @return [String] product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
             Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}

@@ -12,7 +12,7 @@ module Aspera
       # @param iter_max      [Integer] Maximum number of executions
       # @param sleep_initial [Integer] Initial wait to re-execute
       # @param sleep_factor  [Integer] Multiplier
-      # @param sleep_max.    [Integer] Max iterations
+      # @param sleep_max     [Integer] Max iterations
       def initialize(
         iter_max: 7,
         sleep_initial: 2,

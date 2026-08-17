@@ -134,7 +134,7 @@ module Aspera
 
       private
 
-      # @return the file path of local connect where API's URI can be read
+      # @return [String] the file path of local connect where API's URI can be read
       def connect_api_url
         folder = File.join(Products::Other.find(Products::Connect.locations).first[:run_root], 'var', 'run')
         ['', 's'].each do |ext|

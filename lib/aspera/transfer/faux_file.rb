@@ -11,7 +11,7 @@ module Aspera
       SIZE_UNITS = %w[k m g t p e].freeze
       private_constant :SCHEME, :PREFIX, :SIZE_UNITS
       class << self
-        # @return nil if not a faux: scheme, else a FauxFile instance
+        # @return [FauxFile, nil] nil if not a faux: scheme, else a FauxFile instance
         def create(name)
           return unless name.start_with?(PREFIX)
           name_params = name.delete_prefix(PREFIX).split('?', 2)

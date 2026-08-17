@@ -11,9 +11,9 @@ module Aspera
     class << self
       attr_accessor :additional_info
     end
-    # @param context         The `context` query parameter in public link
-    # @param redirect_uri    URI of web UI login
-    # @param path_authorize  Path to provide passcode
+    # @param context        [String] The `context` query parameter in public link
+    # @param redirect_uri   [String] URI of web UI login
+    # @param path_authorize [String] Path to provide passcode
     def initialize(
       context:,
       redirect_uri:,
@@ -125,7 +125,7 @@ module Aspera
         mfa_code
       ]
       class << self
-        # @return true if the URL is a public link
+        # @return [Boolean] true if the URL is a public link
         def public_link?(url)
           url.include?('?context=')
         end

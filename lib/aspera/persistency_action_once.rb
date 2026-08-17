@@ -14,13 +14,13 @@ module Aspera
     MANAGER_METHODS = %i[get put delete]
     private_constant :DELETE_DEFAULT, :PARSE_DEFAULT, :FORMAT_DEFAULT, :MERGE_DEFAULT, :MANAGER_METHODS
 
-    # @param :manager  Mandatory Database
-    # @param :data     Mandatory object to persist, must be same object from begin to end (assume array by default)
-    # @param :id       Mandatory identifiers
-    # @param :delete   Optional  delete persistency condition
-    # @param :parse    Optional  parse method (default to JSON)
-    # @param :format   Optional  dump method (default to JSON)
-    # @param :merge    Optional  merge data from file to current data
+    # @param manager [Object]  Mandatory Database (must respond to get/put/delete)
+    # @param data    [Object]  Mandatory object to persist, must be same object from begin to end (assume array by default)
+    # @param id      [String]  Mandatory identifier
+    # @param delete  [Proc]    Optional delete persistency condition
+    # @param parse   [Proc]    Optional parse method (default to JSON)
+    # @param format  [Proc]    Optional dump method (default to JSON)
+    # @param merge   [Proc]    Optional merge data from file to current data
     def initialize(manager:, data:, id:, delete: DELETE_DEFAULT, parse: PARSE_DEFAULT, format: FORMAT_DEFAULT, merge: MERGE_DEFAULT)
       Aspera.assert(MANAGER_METHODS.all?{ |i| manager.respond_to?(i)}){"Manager must answer to #{MANAGER_METHODS}"}
       Aspera.assert(!data.nil?, 'data must not be nil')
@@ -48,7 +48,7 @@ module Aspera
       end
     end
 
-    # @return internal persisted object, in order to modify its content
+    # @return [Array, Hash] internal persisted object, in order to modify its content
     def data
       return @persisted_object
     end

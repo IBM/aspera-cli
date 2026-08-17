@@ -99,7 +99,7 @@ module Aspera
     end
 
     # Add processed parameters to env and args, warns about unused parameters
-    # @param [Hash] env_args with :env and :args
+    # @param env_args [Hash] with :env and :args
     def add_env_args(env_args)
       Log.dump(:env_args, @result)
       # warn about non translated arguments

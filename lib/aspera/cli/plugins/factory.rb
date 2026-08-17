@@ -51,13 +51,13 @@ module Aspera
           end
         end
 
-        # @return path to source file of plugin
+        # @return [String] path to source file of plugin
         def plugin_source(plugin_name_sym)
           Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement){"plugin not found: #{plugin_name_sym}"}
           @plugins[plugin_name_sym][:source]
         end
 
-        # @return Class object for plugin
+        # @return [Class] class object for plugin
         def plugin_class(plugin_name_sym)
           Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement){"plugin not found: #{plugin_name_sym}"}
           require @plugins[plugin_name_sym][:require_stanza]

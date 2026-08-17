@@ -26,9 +26,9 @@ module Aspera
       end
       DEFAULT_PRIV_KEY_LENGTH = 4096
       GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
-      # @param private_key_obj private key object
-      # @param payload payload to be included in the JWT
-      # @param headers headers to be included in the JWT
+      # @param private_key_obj [OpenSSL::PKey::RSA] private key object
+      # @param payload         [Hash] payload to be included in the JWT
+      # @param headers         [Hash] headers to be included in the JWT
       def initialize(
         private_key_obj:,
         payload:,
