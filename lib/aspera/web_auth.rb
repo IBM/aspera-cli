@@ -6,8 +6,8 @@ require 'aspera/assert'
 module Aspera
   # servlet called on callback: it records the callback request
   class WebAuthServlet < WEBrick::HTTPServlet::AbstractServlet
-    # @param server [WEBrick::HTTPServer]
-    # @param web_auth [WebAuth]
+    # @param server   [WEBrick::HTTPServer] the HTTP server instance
+    # @param web_auth [WebAuth]             the WebAuth instance to record the callback
     def initialize(server, web_auth)
       Log.log.debug('WebAuthServlet initialize')
       super(server)

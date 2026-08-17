@@ -143,13 +143,14 @@ module Aspera
       end
 
       # default bypass key phrase
-      # @return [String]
+      # @return [String] UUID used as bypass key phrase for SSH certificate
       def ssh_cert_uuid
         return DataRepository.instance.item(:uuid)
       end
 
       # get paths of SSH keys to use for ascp client
-      # @param types [Symbol] types to use
+      # @param types [Symbol] types to use (one of CLIENT_SSH_KEY_OPTIONS)
+      # @return [Array<String>] list of private key file paths
       def aspera_token_ssh_key_paths(types)
         Aspera.assert_values(types, CLIENT_SSH_KEY_OPTIONS)
         return case types

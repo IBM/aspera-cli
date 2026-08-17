@@ -40,8 +40,8 @@ module Aspera
         # @param api [Api::Aoc] Rest Api object
         # @param package [Hash,nil] package information or nil
         # @param node_info [Hash] Result of GET /nodes/:id
-        # @param workspace_id [String]
-        # @param workspace_name [String]
+        # @param workspace_id   [String]     Workspace identifier
+        # @param workspace_name [String]     Workspace name
         def initialize(api, package, node_info, workspace_id, workspace_name)
           @api = api
           @package = package
@@ -269,7 +269,6 @@ module Aspera
       attr_accessor :ws_ids
 
       # By default: no workspace
-      # @param
       def initialize(
         scope: nil,
         subpath: API_V1,

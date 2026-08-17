@@ -111,7 +111,7 @@ module Aspera
         end
 
         # @param wizard  [Wizard] The wizard object
-        # @param app_url [Wizard] The wizard object
+        # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {
@@ -1105,7 +1105,7 @@ module Aspera
 
         # Response has key `paths`.
         # From those, check if there is an error
-        # @return [Array] of Hash with 2 keys: `path` and `result`
+        # @return [Array<Hash>] list of hashes with 2 keys: `path` and `result`
         def response_to_result(response, success_msg)
           errors = []
           obj_list = []

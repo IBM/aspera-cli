@@ -138,15 +138,15 @@ module Aspera
       end
       attr_reader :pub_link_context
 
-      # @param url             Faspex URL, can be a public link
-      # @param auth            Authentication method: :boot (token in header), :web (open browser), :jwt (client_id + private key), :public_link (context in URL)
-      # @param password        For :boot auth, the token copied directly from browser in developer mode
-      # @param client_id       For :web and :jwt auth, the client_id of web UI application
-      # @param client_secret   For :web auth, the client_secret of web UI application (not needed for :jwt)
-      # @param redirect_uri    For :web auth, the redirect_uri of web UI application (must be the same as in application configuration)
-      # @param username        For :jwt auth, the username of the user to impersonate
-      # @param private_key     For :jwt auth, the private key to sign JWT token
-      # @param passphrase      For :jwt auth, the passphrase of the private key
+      # @param url            [String] Faspex URL, can be a public link
+      # @param auth           [Symbol] Authentication method: :boot (token in header), :web (open browser), :jwt (client_id + private key), :public_link (context in URL)
+      # @param password       [String, nil] For :boot auth, the token copied directly from browser in developer mode
+      # @param client_id      [String, nil] For :web and :jwt auth, the client_id of web UI application
+      # @param client_secret  [String, nil] For :web auth, the client_secret of web UI application (not needed for :jwt)
+      # @param redirect_uri   [String, nil] For :web auth, the redirect_uri of web UI application (must be the same as in application configuration)
+      # @param username       [String, nil] For :jwt auth, the username of the user to impersonate
+      # @param private_key    [String, nil] For :jwt auth, the private key to sign JWT token
+      # @param passphrase     [String, nil] For :jwt auth, the passphrase of the private key
       def initialize(
         url:,
         auth:,

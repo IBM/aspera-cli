@@ -37,7 +37,9 @@ module Aspera
 
     class << self
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
-      # @return [Aspera::Schema::Reader]
+      # @param name_sym [Symbol]  name of the schema to read
+      # @param ascp     [Boolean] `true` if `ascp` mode
+      # @return [Aspera::Schema::Reader] validated schema reader
       def read_schema(name_sym, ascp: false)
         validate_schema(Schema::Registry.instance.reader(name_sym), ascp: ascp)
       end

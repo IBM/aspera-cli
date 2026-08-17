@@ -48,7 +48,7 @@ module Aspera
       attr_reader :path_token
 
       # Helper method to create token as per RFC
-      # @return [HTTPResponse]
+      # @return [Net::HTTPResponse] raw HTTP response with token
       # @raise [RestCallError] if not 2XX code
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}

@@ -32,9 +32,9 @@ module Aspera
     # Use this method to analyze a EST result and raise an exception
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
-    # @param req  [Net::HTTPRequest]
-    # @param data [Object]
-    # @param http [Net::HTTPResponse]
+    # @param req  [Net::HTTPRequest]  the HTTP request
+    # @param data [Object]            the parsed response body
+    # @param http [Net::HTTPResponse] the raw HTTP response
     def raise_on_error(req, data, http)
       Log.log.debug{"raise_on_error #{req.method} #{req.path} #{http.code}"}
       context = {

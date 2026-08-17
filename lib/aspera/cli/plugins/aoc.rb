@@ -99,7 +99,7 @@ module Aspera
           # or a sequential number if extension == :seq
           # @param package_info       [Hash]   Package information
           # @param destination_folder [String] Base folder
-          # @param fld.               [Array]  List of fields of package
+          # @param fld                [Array]  List of fields of package
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
             Aspera.assert_array_all(fld, String, type: BadArgument){'fld'}
             Aspera.assert_values(fld.length, [1, 2]){'fld length'}

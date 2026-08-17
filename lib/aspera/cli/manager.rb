@@ -217,8 +217,8 @@ module Aspera
         end
 
         # Change option name with dash to name with underscore
-        # @param name [String] option name
-        # @return [String]
+        # @param name [String] option name with dash separators
+        # @return [String] option name with underscore separators
         def option_line_to_name(name)
           name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
         end
@@ -443,7 +443,7 @@ module Aspera
       #
       # @param description [String] description of the identifier
       # @param block       [Proc] block to search for identifier based on attribute value
-      # @return   [String, Array<String>] identifier or list of IDs (if `bulk` option is set)
+      # @return [String, Array<String>] identifier or list of IDs (if `bulk` option is set)
       # @yieldparam field [String] The field name from percent selector
       # @yieldparam value [String] The value from percent selector
       # @yieldreturn [String] Resolved identifier
@@ -460,7 +460,7 @@ module Aspera
       def get_next_command(command_list, aliases: nil); get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
       # Get an option definition by name
-      # @param option_symbol [Symbol]
+      # @param option_symbol [Symbol] name of the option
       # @return [OptionValue] Option definition
       # @raise [Cli::BadArgument] if option not found
       def option_def(option_symbol)
@@ -471,7 +471,7 @@ module Aspera
       # Get an option value by name
       # either return value or calls handler, can return nil
       # ask interactively if requested/required
-      # @param option_symbol [Symbol]
+      # @param option_symbol [Symbol] name of the option to retrieve
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false)
         Aspera.assert_type(option_symbol, Symbol)

@@ -34,7 +34,8 @@ module Aspera
 
       # Declare all HTTP/S CLI options, with handlers pointing to self.
       # Called once from Config#initialize after this object is instantiated.
-      # @param options [Aspera::Cli::Manager]
+      # @param options [Aspera::Cli::Manager] CLI options manager to declare options into
+      # @return [void]
       def declare_options(options)
         options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :insecure}, default: false)
         options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :ignore_cert_host_port})
@@ -90,7 +91,8 @@ module Aspera
       # ------------------------------------------------------------------
 
       # Add files, folders or the default OS locations to the cert store.
-      # @param path_list [Array<String>]
+      # @param path_list [Array<String>] list of file/folder paths to add to the certificate store
+      # @return [void]
       def trusted_cert_locations=(path_list)
         Aspera.assert_type(path_list, Array){'cert locations'}
         if @certificate_store.nil?
@@ -145,7 +147,8 @@ module Aspera
       # Called every time a new Net::HTTP session is opened.
       # ------------------------------------------------------------------
 
-      # @param http_session [Net::HTTP]
+      # @param http_session [Net::HTTP] HTTP session to configure
+      # @return [void]
       def update_session(http_session)
         http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
         if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)

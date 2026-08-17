@@ -147,7 +147,8 @@ module Aspera
         end
 
         # Split path into folder + filename
-        # @return [Array] containing folder + inside folder/file
+        # @param path [String] file path to split
+        # @return [Array(String, String)] containing folder + inside folder/file
         def split_folder(path)
           folder = path.split(PATH_SEPARATOR)
           inside = folder.pop
@@ -161,7 +162,8 @@ module Aspera
         end
 
         # Decode node scope into access key and scope
-        # @return [Hash]
+        # @param scope [String] scope string to decode
+        # @return [Hash] decoded scope with access key and scope parts
         def decode_scope(scope)
           items = scope.split(Scope::SEPARATOR, 2)
           Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
