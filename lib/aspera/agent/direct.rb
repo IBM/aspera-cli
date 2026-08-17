@@ -3,6 +3,7 @@
 require 'aspera/agent/base'
 require 'aspera/ascp/installation'
 require 'aspera/ascp/management'
+require 'aspera/exec_spec'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
@@ -135,7 +136,7 @@ module Aspera
           io:                nil,               # management port server socket
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
           # env vars and args for ascp (from transfer spec)
-          env_args:          Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
+          exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
 
         if multi_session_info.nil?
@@ -151,12 +152,11 @@ module Aspera
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session = session.clone
             this_session[:ts] = this_session[:ts].clone
-            env_args = this_session[:env_args] = this_session[:env_args].clone
-            args = env_args[:args] = env_args[:args].clone
+            exec_spec = this_session[:exec_spec] = this_session[:exec_spec].deep_clone
             # set multi session part
-            args.unshift("-C#{i}:#{multi_session_info[:count]}")
+            exec_spec.args.unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
-            args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
+            exec_spec.args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
             this_session[:thread] = Thread.new{transfer_thread_entry(this_session)}
             @sessions.push(this_session)
@@ -224,7 +224,7 @@ module Aspera
           Log.log.debug{"ENTER (#{Thread.current[:name]})"}
           # start transfer with selected resumer policy
           @resume_policy.execute_with_resume do
-            start_and_monitor_process(session: session, **session[:env_args])
+            start_and_monitor_process(session: session, exec_spec: session[:exec_spec])
           end
           Log.log.debug('transfer ok'.bg_green)
         rescue => e
@@ -239,18 +239,17 @@ module Aspera
       # This is the low level method to start the transfer process.
       # Typically started in a thread.
       # Start process with management port.
-      # @param session [Hash]   This session information, keys :io and :token_regenerator
-      # @param name    [Symbol] Name of executable: :ascp, :ascp4 or :async (comes from ascp_args)
-      # @param env     [Hash]   Environment variables (comes from ascp_args)
-      # @param args    [Array]  Command line arguments (comes from ascp_args)
+      # @param session  [Hash]            This session information, keys :io and :token_regenerator
+      # @param exec_spec [ExecSpec] Executable, environment variables and arguments (comes from ascp_args)
       # @return [nil] when process has exited
       # @raise [Transfer::FaspError] on error
       def start_and_monitor_process(
         session:,
-        name:,
-        env:,
-        args:
+        exec_spec:
       )
+        exec = exec_spec.exec
+        env  = exec_spec.env
+        args = exec_spec.args
         Aspera.assert_type(session, Hash)
         notify_progress(:sessions_init, info: 'starting')
         # Do not use `capture_stderr`
@@ -259,7 +258,7 @@ module Aspera
         spawn_args = {}
         command_pid = nil
         # Get location of command executable (ascp, async)
-        command_path = Ascp::Installation.instance.path(name)
+        command_path = Ascp::Installation.instance.path(exec)
         command_arguments = [command_path]
         begin
           if @monitor
@@ -271,7 +270,7 @@ module Aspera
             # make port ready to accept connections, before starting ascp
             mgt_server_socket.listen(1)
             # build arguments and add mgt port
-            command_arguments = if name.eql?(:async)
+            command_arguments = if exec.eql?(:async)
               [command_path, "--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
             else
               [command_path, '-M', mgt_server_socket.local_address.ip_port.to_s]
@@ -286,7 +285,7 @@ module Aspera
           command_pid = Environment.secure_execute(*command_arguments, mode: :background, env: env, **spawn_args)
           # close here, but still used in other process (pipe)
           stderr_w&.close
-          notify_progress(:sessions_init, info: "waiting for #{name} to start")
+          notify_progress(:sessions_init, info: "waiting for #{exec} to start")
           # "ensure" block will wait for process
           return unless @monitor
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
@@ -359,16 +358,16 @@ module Aspera
               # process stderr of ascp
               stderr_flag = false
               stderr_r.each_line do |line|
-                Log.log.error{"BEGIN stderr #{name}"} unless stderr_flag
+                Log.log.error{"BEGIN stderr #{exec}"} unless stderr_flag
                 Log.log.error{line.chomp}
                 stderr_flag = true
               end
-              Log.log.error{"END stderr #{name}"} if stderr_flag
+              Log.log.error{"END stderr #{exec}"} if stderr_flag
               stderr_r.close
             end
             # status is nil if an exception occurred before starting command
             if !status&.success?
-              message = "#{name} failed (#{status})"
+              message = "#{exec} failed (#{status})"
               # raise error only if there was not already an exception (`$ERROR_INFO`)
               raise Transfer::Error, message unless $ERROR_INFO
               # else display this message also, as main exception is already here

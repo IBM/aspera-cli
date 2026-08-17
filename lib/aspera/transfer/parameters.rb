@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/exec_spec'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/transfer/error'
@@ -150,11 +151,7 @@ module Aspera
 
       # Translate transfer spec to env vars and command line arguments for `ascp`
       def ascp_args
-        env_args = {
-          args: [],
-          env:  {},
-          name: :ascp
-        }
+        exec_spec = Aspera::ExecSpec.new(exec: :ascp)
 
         # Special cases
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
@@ -165,7 +162,7 @@ module Aspera
         # Add ssh or wss certificates
         # (reverse, to keep order, as we unshift)
         remote_certificates&.reverse_each do |cert|
-          env_args[:args].unshift('-i', cert)
+          exec_spec.args.unshift('-i', cert)
         end
 
         case (delete_source = @builder.read_param('delete_source'))
@@ -183,9 +180,9 @@ module Aspera
         base64_destination = false
         # symbol must be index of Ascp::Installation.paths
         if @builder.read_param('use_ascp4')
-          env_args[:name] = :ascp4
+          exec_spec.exec = :ascp4
         else
-          env_args[:name] = :ascp
+          exec_spec.exec = :ascp
           base64_destination = true
         end
         # destination will be base64 encoded, put this before source path arguments
@@ -200,17 +197,17 @@ module Aspera
         destination_folder = Base64.strict_encode64(destination_folder) if base64_destination
         # destination MUST be last command line argument to ascp
         @builder.add_command_line_options(destination_folder)
-        @builder.add_env_args(env_args)
-        env_args[:args].unshift('-q') if @quiet
+        @builder.add_to_exec_spec(exec_spec)
+        exec_spec.args.unshift('-q') if @quiet
         # add fallback cert and key as arguments if needed
         if HTTP_FALLBACK_ACTIVATION_VALUES.include?(@job_spec['http_fallback'])
-          env_args[:args].unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))
-          env_args[:args].unshift('-I', Ascp::Installation.instance.path(:fallback_certificate))
+          exec_spec.args.unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))
+          exec_spec.args.unshift('-I', Ascp::Installation.instance.path(:fallback_certificate))
         end
         # disable redis in client, only for ascp, this makes ascp4 fail
-        env_args[:env]['ASPERA_TEST_REDIS_DISABLE'] = 'true' if env_args[:name].eql?(:ascp)
-        Log.log.debug{"ascp args: #{env_args}"}
-        return env_args
+        exec_spec.env['ASPERA_TEST_REDIS_DISABLE'] = 'true' if exec_spec.exec.eql?(:ascp)
+        Log.log.debug{"ascp args: #{exec_spec}"}
+        return exec_spec
       end
       DELETE_EQUIV = %w[remove_after_transfer remove_empty_directories remove_empty_source_directory]
       # `ascp` options to provide a file list

@@ -3,12 +3,13 @@
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/schema/registry'
+require 'aspera/exec_spec'
 require 'yaml'
 module Aspera
   # Helper class to build command line from a parameter list (key-value hash)
   # Constructor takes hash: `{ 'param1':'value1', ...}`
   # `process_param` is called repeatedly with all known parameters
-  # `add_env_args` is called to get resulting param list and env var (also checks that all params were used)
+  # `add_to_exec_spec` is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
     # Supported keys in JSON schema
     PROPERTY_KEYS = [
@@ -84,10 +85,7 @@ module Aspera
       @object = object # keep reference so that it can be modified by caller before calling `process_params`
       @schema = schema
       @convert = convert
-      @result = {
-        env:  {},
-        args: []
-      }
+      @result = ExecSpec.new
       @processed_parameters = []
     end
 
@@ -101,16 +99,16 @@ module Aspera
     end
 
     # Add processed parameters to env and args, warns about unused parameters
-    # @param env_args [Hash] with :env and :args
-    def add_env_args(env_args)
-      Log.dump(:env_args, @result)
+    # @param exec_spec [ExecSpec]
+    def add_to_exec_spec(exec_spec)
+      Log.dump(:exec_spec, @result)
       # warn about non translated arguments
       @object.each_pair do |name, value|
         Log.log.warn{"Unknown transfer spec parameter: #{name} = \"#{value}\""} unless @processed_parameters.include?(name)
       end
       # set result
-      env_args[:env].merge!(@result[:env])
-      env_args[:args].concat(@result[:args])
+      exec_spec.env.merge!(@result.env)
+      exec_spec.args.concat(@result.args)
       return
     end
 
@@ -118,7 +116,7 @@ module Aspera
     def add_command_line_options(*options)
       options = options.first if options.first.is_a?(Array) && options.length.eql?(1)
       Aspera.assert_type(options, Array)
-      options.each{ |o| @result[:args].push(o.to_s)}
+      options.each{ |o| @result.args.push(o.to_s)}
     end
 
     def process_params
@@ -194,7 +192,7 @@ module Aspera
         return
       elsif properties.key?('x-cli-envvar')
         # set in env var
-        @result[:env][properties['x-cli-envvar']] = parameter_value
+        @result.env[properties['x-cli-envvar']] = parameter_value
       elsif properties['x-cli-switch']
         case parameter_value
         when true

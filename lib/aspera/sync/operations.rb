@@ -4,6 +4,7 @@
 
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
+require 'aspera/exec_spec'
 require 'aspera/command_line_converter'
 require 'aspera/command_line_builder'
 require 'aspera/log'
@@ -90,10 +91,7 @@ module Aspera
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)
           Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
-          env_args = {
-            args: [],
-            env:  {}
-          }
+          exec_spec = ExecSpec.new(exec: :async)
           if sync_info.key?('local')
             # `conf` format
             Aspera.assert_type(sync_info['local'], Hash){'local'}
@@ -115,10 +113,10 @@ module Aspera
               remote['private_key_paths'].concat(add_certificates)
             end
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
-            env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
+            exec_spec.args = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
             Log.dump(:sync_conf, sync_info)
             agent = Agent::Direct.new
-            agent.start_and_monitor_process(session: {}, name: :async, **env_args)
+            agent.start_and_monitor_process(session: {}, exec_spec: exec_spec)
           else
             # `args` format
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
@@ -141,16 +139,16 @@ module Aspera
               Aspera.assert_type(sync_info['instance'], Hash)
               instance_builder = CommandLineBuilder.new(sync_info['instance'], ARGS_INSTANCE_SCHEMA, CommandLineConverter)
               instance_builder.process_params
-              instance_builder.add_env_args(env_args)
+              instance_builder.add_to_exec_spec(exec_spec)
             end
             sync_info['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name'), 'session must contain at least: name')
               session_builder = CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, CommandLineConverter)
               session_builder.process_params
-              session_builder.add_env_args(env_args)
+              session_builder.add_to_exec_spec(exec_spec)
             end
-            Environment.secure_execute(Ascp::Installation.instance.path(:async), *env_args[:args], env: env_args[:env])
+            Environment.secure_execute(Ascp::Installation.instance.path(:async), *exec_spec.args, env: exec_spec.env)
           end
           return
         end
