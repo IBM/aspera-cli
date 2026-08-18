@@ -30,7 +30,7 @@ module Aspera
 
         # add a folder to the list of folders to look for plugins
         def add_lookup_folder(folder)
-          @lookup_folders.unshift(folder)
+          @lookup_folders.unshift(folder) unless @lookup_folders.include?(folder)
         end
 
         # find plugins in defined paths
@@ -45,7 +45,7 @@ module Aspera
               plugin_symbol = File.basename(path, Environment::RB_EXT).to_sym
               next if IGNORE_PLUGINS.include?(plugin_symbol)
               req = path.sub(/#{Environment::RB_EXT}$/o, '')
-              Aspera.assert(!@plugins.key?(plugin_symbol), type: :warn){"Plugin already registered: #{plugin_symbol}"}
+              next if @plugins.key?(plugin_symbol)
               @plugins[plugin_symbol] = {source: path, require_stanza: req}
             end
           end

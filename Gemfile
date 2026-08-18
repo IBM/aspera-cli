@@ -26,6 +26,8 @@ end
 
 # Optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
+  gem('mcp', '~> 1.2')  # for ascli mcp server (MCP protocol support)
+  gem('rack', '~> 3.0') # for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport)
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
   gem('bigdecimal', '~> 3.1') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?

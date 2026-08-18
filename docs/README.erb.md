@@ -8487,6 +8487,76 @@ Nevertheless, <%=tool%> may or may not have direct file system access to the acc
 
 <%=include_commands_for_plugin(:preview)%>
 
+## Plugin: `mcp`: Model Context Protocol server
+
+The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants and LLM-based tools.
+The server registers a single tool, `execute_ascli_command`, which executes any <%=tool%> command in-process and returns the result as text.
+
+> [!NOTE]
+> The `mcp` gem is required.
+> Install it with: `gem install mcp`
+
+### Usage
+
+```shell
+<%=cmd%> mcp server
+<%=cmd%> mcp server @json:'{"instructions":"Use this server to manage Aspera transfers"}'
+<%=cmd%> mcp server @json:'{"transport":"http","port":3000}'
+```
+
+### `server` command options
+
+The `server` command accepts an optional [Hash](#extended-value-syntax) argument with the following keys:
+
+#### General
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
+| `instructions` | `string` | — | Hint shown to the AI client describing what the server does |
+| `protocol_version` | `string` | — | MCP protocol version to advertise, e.g. `2024-11-05` |
+| `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
+
+#### `stdio` transport
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `max_line_bytes` | `integer` | 4194304 (4 MiB) | Maximum JSON frame size in bytes |
+
+#### `http` transport (Streamable HTTP)
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `port` | `integer` | `3000` | TCP port to listen on |
+| `bind` | `string` | `127.0.0.1` | Bind address |
+| `stateless` | `boolean` | `false` | Enable stateless mode |
+| `allowed_origins` | `Array<string>` | — | List of allowed origins |
+| `allowed_hosts` | `Array<string>` | — | List of allowed hostnames |
+| `session_idle_timeout` | `integer` | — | Idle session timeout in seconds |
+| `max_sessions` | `integer` | — | Maximum number of concurrent sessions |
+
+### Examples
+
+Start an MCP server over `stdio` (default — suitable for use as an MCP server in an IDE or AI tool):
+
+```shell
+<%=cmd%> mcp server
+```
+
+Start an MCP server over HTTP on port 8080:
+
+```shell
+<%=cmd%> mcp server @json:'{"transport":"http","port":8080,"bind":"0.0.0.0"}'
+```
+
+Start with custom instructions and a specific protocol version:
+
+```shell
+<%=cmd%> mcp server @json:'{"instructions":"Aspera transfer automation","protocol_version":"2024-11-05"}'
+```
+
+<%=include_commands_for_plugin(:mcp)%>
+
 ## Operational Utilities
 
 This section covers the specialized modules and utilities used to integrate <%=tool%> into your broader operational infrastructure.

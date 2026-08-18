@@ -65,73 +65,72 @@ module Aspera
         @context = Context.new
       end
 
-      # This is the main function called by initial script just after constructor
-      # Processes command line arguments, executes commands, and handles exceptions
+      # Execute the command and return the raw `Result` object.
+      # Pure computation: no display, no Process.exit — raises on any error.
+      # @return [Result, nil] the result of the command, or nil if nothing to execute
+      def run_with_result
+        init_agents_and_options
+        Plugins::Factory.instance.add_plugins_from_lookup_folders
+        # Help requested without command? Show full usage immediately
+        return result_usage(all: true) if @option_help && @context.options.command_or_arg_empty?
+        @context.config.periodic_check_newer_gem_version
+        command_sym =
+          if @option_show_config && @context.options.command_or_arg_empty?
+            COMMAND_CONFIG
+          else
+            @context.options.get_next_command(Plugins::Factory.instance.plugin_list.unshift(COMMAND_HELP))
+          end
+        @context.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
+        case command_sym
+        when COMMAND_HELP
+          return result_usage(all: true)
+        when COMMAND_CONFIG
+          command_plugin = @context.config
+        else
+          command_plugin = get_plugin_instance_with_options(command_sym)
+          @context.options.parse_options!
+        end
+        return result_usage(all: false) if @option_help
+        if @option_show_config
+          result = Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys)
+          @context.config.save_config_file_if_needed
+          @context.transfer.shutdown
+          return result
+        end
+        execute_command = true
+        lock_port = @context.options.get_option(:lock_port)
+        if !lock_port.nil?
+          begin
+            Log.log.debug{"Opening lock port #{lock_port}"}
+            @tcp_server = TCPServer.new('127.0.0.1', lock_port)
+          rescue StandardError => e
+            execute_command = false
+            Log.log.warn{"Another instance is already running (#{e.message})."}
+          end
+        end
+        pid_file = @context.options.get_option(:pid_file)
+        if !pid_file.nil?
+          File.write(pid_file, Process.pid)
+          Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
+          at_exit{File.delete(pid_file)}
+        end
+        begin
+          result = command_plugin.execute_action if execute_command
+        ensure
+          @context.config.save_config_file_if_needed
+          @context.transfer.shutdown
+          TempFileManager.instance.cleanup
+        end
+        return result
+      end
+
+      # Main entry point: execute the command, display results, exit on error.
       # @return [nil]
       def run
-        # Catch exception information , if any
         exception_info = nil
-        # False if command shall not be executed (e.g. --show-config)
-        execute_command = true
-        # Catch exceptions
         begin
-          init_agents_and_options
-          # Find plugins, shall be after parse! ?
-          Plugins::Factory.instance.add_plugins_from_lookup_folders
-          # Help requested without command ? (plugins must be known here)
-          show_usage if @option_help && @context.options.command_or_arg_empty?
-          @context.config.periodic_check_newer_gem_version
-          command_sym =
-            if @option_show_config && @context.options.command_or_arg_empty?
-              COMMAND_CONFIG
-            else
-              @context.options.get_next_command(Plugins::Factory.instance.plugin_list.unshift(COMMAND_HELP))
-            end
-          # Command will not be executed, but we need manual
-          @context.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
-          # Main plugin is not dynamically instantiated
-          case command_sym
-          when COMMAND_HELP
-            show_usage
-          when COMMAND_CONFIG
-            command_plugin = @context.config
-          else
-            # Get plugin, set options, etc
-            command_plugin = get_plugin_instance_with_options(command_sym)
-            # Parse plugin specific options
-            @context.options.parse_options!
-          end
-          # Help requested for current plugin
-          show_usage(all: false) if @option_help
-          if @option_show_config
-            @context.formatter.display_results(Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys))
-            execute_command = false
-          end
-          # Locking for single execution (only after "per plugin" option, in case lock port is there)
-          lock_port = @context.options.get_option(:lock_port)
-          if !lock_port.nil?
-            begin
-              # No need to close later, will be freed on process exit. must save in member else it is garbage collected
-              Log.log.debug{"Opening lock port #{lock_port}"}
-              # Loopback address, could also be 'localhost'
-              @tcp_server = TCPServer.new('127.0.0.1', lock_port)
-            rescue StandardError => e
-              execute_command = false
-              Log.log.warn{"Another instance is already running (#{e.message})."}
-            end
-          end
-          pid_file = @context.options.get_option(:pid_file)
-          if !pid_file.nil?
-            File.write(pid_file, Process.pid)
-            Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
-            at_exit{File.delete(pid_file)}
-          end
-          # Execute and display (if not exclusive execution)
-          @context.formatter.display_results(command_plugin.execute_action) if execute_command
-          # Save config file if command modified it
-          @context.config.save_config_file_if_needed
-          # Finish
-          @context.transfer.shutdown
+          result = run_with_result
+          @context.formatter.display_results(result) if result
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
@@ -145,17 +144,13 @@ module Aspera
         rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}
         rescue Interrupt => e;                      exception_info = {e: e, t: 'Interruption', debug: true}
         end
-        # Cleanup file list files
-        TempFileManager.instance.cleanup
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"} unless exception_info[:e].is_a?(Cli::SchemaRequest)
           Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
-          # Is that a known error condition with proposal for remediation ?
           Hints.hint_for(exception_info[:e], @context.formatter)
-          # Requested help for a Hash parameter/option ?
           if exception_info[:e].is_a?(Cli::SchemaRequest)
             Log.log.info{"#{exception_info[:t]}: #{exception_info[:e].message}"}
             schema_path = exception_info[:e].path
@@ -167,50 +162,54 @@ module Aspera
             end
           end
         end
-        # 2- processing of command not processed (due to exception or bad command line)
-        if execute_command || @option_show_config
-          @context.options.final_errors.each do |msg|
-            Log.log.error{"Argument: #{msg}"}
-            # Add code as exception if there is not already an error
-            exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
-          end
+        # 2- processing of unprocessed arguments
+        @context.options&.final_errors&.each do |msg|
+          Log.log.error{"Argument: #{msg}"}
+          exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
         end
-        # 3- in case of error, fail the process status
+        # 3- exit on error
         unless exception_info.nil?
-          # Show stack trace in debug mode
           raise exception_info[:e] if Log.log.debug?
-          # Else give hint and exit
           @context.formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)
         end
         return
       end
 
-      # Display usage information and help
+      # Display usage information and exit (used by the interactive CLI).
       # @param all [Boolean] if true, show help for all plugins; if false, show only current plugin
-      # @param exit [Boolean] if true, exit the process after displaying help
       # @return [nil]
-      def show_usage(all: true, exit: true)
-        # Display main plugin options (+config)
-        @context.formatter.display_message(:error, @context.options.parser)
-        if all
-          @context.only_manual!
-          # List plugins that have a "require" field, i.e. all but main plugin
-          Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
-            # Config was already included in the global options
-            next if plugin_name_sym.eql?(COMMAND_CONFIG)
-            # Override main option parser with a brand new, to avoid having global options
-            @context.options = Manager.new(Info::CMD_NAME)
-            @context.options.parser.banner = '' # Remove default banner
-            get_plugin_instance_with_options(plugin_name_sym)
-            # Display generated help for plugin options
-            @context.formatter.display_message(:error, @context.options.parser.help)
-          end
-        end
-        Process.exit(0) if exit
+      def show_usage(all: true)
+        @context.formatter.display_message(:error, usage_text(all: all))
+        Process.exit(0)
+      end
+
+      # Return usage as a Result::Text (used by run_with_result, no display, no exit).
+      # @param all [Boolean] if true, include all plugins; if false, only the current plugin
+      # @return [Result::Text]
+      def result_usage(all: true)
+        Result::Text.new(usage_text(all: all))
       end
 
       private
+
+      # Collect usage/help text for all or just the current plugin.
+      # @param all [Boolean] if true, include all plugins
+      # @return [String] the full help text
+      def usage_text(all: true)
+        lines = [@context.options.parser.to_s]
+        if all
+          @context.only_manual!
+          Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
+            next if plugin_name_sym.eql?(COMMAND_CONFIG)
+            @context.options = Manager.new(Info::CMD_NAME)
+            @context.options.parser.banner = ''
+            get_plugin_instance_with_options(plugin_name_sym)
+            lines << @context.options.parser.help
+          end
+        end
+        lines.join("\n")
+      end
 
       # Initialize agents and options
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method

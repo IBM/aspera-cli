@@ -7,6 +7,7 @@ Released: [Place date of release here]
 ### New Features
 
 * `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` as argument to install the latest available version.
+* `mcp`: New plugin - starts a [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes a single tool `execute_ascli_command`, allowing AI assistants to drive `ascli` in-process. Supports both `stdio` (default) and `http` (Streamable HTTP) transports.
 
 ### Issues Fixed
 

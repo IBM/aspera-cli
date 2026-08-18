@@ -459,6 +459,13 @@ module Aspera
 
       def get_next_command(command_list, aliases: nil); get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
+      # Check whether an option has already been declared in this manager
+      # @param option_symbol [Symbol] name of the option
+      # @return [Boolean]
+      def option_declared?(option_symbol)
+        @declared_options.key?(option_symbol)
+      end
+
       # Get an option definition by name
       # @param option_symbol [Symbol] name of the option
       # @return [OptionValue] Option definition

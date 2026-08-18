@@ -88,8 +88,7 @@ module Aspera
           end
 
           def declare_options(options)
-            return if @options_declared
-            @options_declared = true
+            return if options.option_declared?(:root_id)
             @dynamic_key = nil
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
