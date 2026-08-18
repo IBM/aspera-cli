@@ -24,7 +24,7 @@ class Signer
     if signing_key.start_with?('-----BEGIN ')
       key_path = Pathname.new(Dir.home) / '.gem' / 'signing_key.pem'
       key_path.dirname.mkpath
-      File.open(key_path, File::WRONLY | File::CREAT | File::TRUNC, 0o600) { |f| f.write(signing_key) }
+      File.open(key_path, File::WRONLY | File::CREAT | File::TRUNC, 0o600){ |f| f.write(signing_key)}
       return key_path
     end
     key_path = Pathname.new(signing_key)

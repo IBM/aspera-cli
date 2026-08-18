@@ -324,7 +324,7 @@ class DocHelper
     return @commands unless @commands.nil?
     @commands = {}
     all_tests = TestEnv.descriptions
-    all_tests.select{ |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin]}.each do |name, test|
+    all_tests.select{ |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin]}.each_value do |test|
       # Cleanup command line
       line = test[:args].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
         next cmd unless cmd.is_a?(String)
@@ -333,7 +333,6 @@ class DocHelper
         cmd
       end.join(' ')
       line = line.strip.squeeze(' ')
-      #line = line + name
       Aspera::Log.log.debug(line)
       plugin = test[:plugin]
       @commands[plugin] ||= []

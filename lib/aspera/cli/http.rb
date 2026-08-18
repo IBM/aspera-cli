@@ -151,9 +151,7 @@ module Aspera
       # @return [void]
       def update_session(http_session)
         http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
-        if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
-          http_session.verify_mode = SELF_SIGNED_CERT
-        end
+        http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
         http_session.cert_store = @certificate_store if @certificate_store
         Log.log.debug{"Using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
         @http_options.each do |k, v|

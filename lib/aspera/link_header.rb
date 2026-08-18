@@ -20,7 +20,7 @@ module Aspera
 
       # Retrieve an attribute value by name, case-insensitively.
       def [](key)
-        pair = @attr_pairs.detect { |k, _v| k.casecmp?(key) }
+        pair = @attr_pairs.detect{ |k, _v| k.casecmp?(key)}
         pair&.last
       end
     end
@@ -37,7 +37,7 @@ module Aspera
     # @param rel [String]
     # @return [String, nil]
     def find_href(rel: 'next')
-      @links.detect { |link| link['rel']&.casecmp?(rel) }&.href
+      @links.detect{ |link| link['rel']&.casecmp?(rel)}&.href
     end
 
     class << self
