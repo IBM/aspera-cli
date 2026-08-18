@@ -1,18 +1,18 @@
 ---
 include:
-- "**/*.rb"
+  - "**/*.rb"
 exclude:
-- spec/**/*
-- tests/**/*
-- ".bundle/**/*"
-- ".ruby-lsp/**/*"
-- ".tmp-openapi-venv/**/*"
-- "build/**/*"
-- "rakelib/**/*"
+  - spec/**/*
+  - tests/**/*
+  - ".bundle/**/*"
+  - ".ruby-lsp/**/*"
+  - ".tmp-openapi-venv/**/*"
+  - "build/**/*"
+  - "rakelib/**/*"
 require: []
 domains: []
 reporters:
-- require_not_found
+  - require_not_found
 formatter:
   rubocop:
     cops: safe
