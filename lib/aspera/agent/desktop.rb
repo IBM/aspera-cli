@@ -3,7 +3,7 @@
 require 'aspera/agent/base'
 require 'aspera/rest'
 require 'aspera/environment'
-require 'aspera/json_rpc'
+require 'aspera/json_rpc/client'
 require 'aspera/products/desktop'
 require 'aspera/transfer/spec'
 require 'securerandom'
@@ -27,7 +27,7 @@ module Aspera
         begin
           # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'
           # https://playground.open-rpc.org/?schemaUrl=http://127.0.0.1:33024
-          @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
+          @client_app_api = Aspera::JsonRpc::Client.new(Aspera::Rest.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
           Log.dump(:client_version, client_info)
           Log.log.debug('Client was reached') if method_index > 0
