@@ -299,7 +299,7 @@ If you do not have internet access, see [Installation without internet access](#
 > Available only on a limited number of platforms.
 
 <%=tool%> is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
-This executable includes the Ruby runtime.
+This executable includes the Ruby runtime and gems, but not the transfer SDK.
 
 #### Installation
 
@@ -797,32 +797,34 @@ See [Transfer Agents](#transfer-clients-agents)
 
 For an air-gapped installation there are 2 alternatives:
 
-- Either retrieve the single executable in the release, if it exists
-- Or, get the installation components from a system with internet access:
-  - Ruby installation packages (depends on system)
-  - Gems
+1. Get the installation components from a system with internet access:
 
-    Use the gem pack of the release.
-    It includes the `<%=gemspec.name%>` gem.
-    Unzip, and then:
+   - Ruby installation packages (depends on system)
+   - Gems
 
-    ```shell
-    gem install *.gem
-    ```
+      Use the gem pack of the release.
+      It includes the `<%=gemspec.name%>` gem.
+      On the air-gapped system, unzip and then:
 
-  - Transfer SDK
+      ```shell
+      gem install *.gem
+      ```
 
-    Retrieve the archive with `ascp` on a system with internet with: (adapt the platform and version to your needs)
+   - Transfer SDK
 
-    ```shell
-    <%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
-    ```
+      Retrieve the archive with `ascp` on a system with internet with: (adapt the platform and version to your needs)
 
-    The installation will be done on the air-gapped system by providing option: `sdk_url` with the downloaded file:
+      ```shell
+      <%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
+      ```
 
-    ```shell
-    <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
-    ```
+      The installation will be done on the air-gapped system by providing option: `sdk_url` with the downloaded file:
+
+      ```shell
+      <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+      ```
+
+2. Retrieve the [single file executable](#single-file-executable) in the release, if it exists and the SDK (not included) as above.
 
 #### Gem files and dependencies
 
@@ -4045,7 +4047,7 @@ Save as:
 /home/xfer/bin/<%=cmd%>_tool
 ```
 
-and make it executable.
+Then, make it executable.
 
 #### Windows: Scheduler
 
