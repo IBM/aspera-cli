@@ -855,6 +855,7 @@ For an air-gapped installation there are 2 alternatives:
   - Gems
 
     Use the gem pack of the release.
+    It includes the `aspera-cli` gem.
     Unzip, and then:
 
     ```shell

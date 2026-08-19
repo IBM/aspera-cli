@@ -381,7 +381,7 @@ Manual installation:
 - Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
 - Execute the installer, which installs by default in: `C:\RubyVV-x64` (`VV` is the version number)
 - At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and `mingw`)
-- Then install the `aspera-cli` gem and Aspera Transfer Daemon (see next sections)
+- Then install the `<%=gemspec.name%>` gem and Aspera Transfer Daemon (see next sections)
 
 Automated installation (with internet access):
 
@@ -803,6 +803,7 @@ For an air-gapped installation there are 2 alternatives:
   - Gems
 
     Use the gem pack of the release.
+    It includes the `<%=gemspec.name%>` gem.
     Unzip, and then:
 
     ```shell
@@ -5131,7 +5132,7 @@ For a simpler use, configure a preset with the `url` option, and optionally `use
 Use the cookie string for option `password` value, the env var can be used, as the value is temporary anyway:
 
 ```shell
-export ASCLI_PASSWORD="...; aoc.token=...; aoc.refresh=...; ..."
+export <%=opt_env :password%>="...; aoc.token=...; aoc.refresh=...; ..."
 
 <%=cmd%> aoc user profile show --auth=boot
 ```
@@ -8517,7 +8518,7 @@ Nevertheless, <%=tool%> may or may not have direct file system access to the acc
 ## Plugin: `mcp`: Model Context Protocol server
 
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants and LLM-based tools.
-The server registers a single tool, `execute_ascli_command`, which executes any <%=tool%> command in-process and returns the result as text.
+The server registers a single tool, `execute_<%=cmd%>_command`, which executes any <%=tool%> command in-process and returns the result as text.
 
 > [!NOTE]
 > The `mcp` gem is required.
@@ -9143,7 +9144,7 @@ If Ruby was installed as a Linux Packages, then also install Ruby development pa
 
 There are a few aspects concerning ED25519 keys.
 
-By default, the `aspera-cli` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of <%=tool%>, especially when using JRuby.
+By default, the `<%=gemspec.name%>` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of <%=tool%>, especially when using JRuby.
 See [this](https://github.com/net-ssh/net-ssh/issues/565).
 If you want to use `ed25519` keys, then install the required gems:
 
