@@ -301,12 +301,12 @@ If you do not have internet access, see [Installing in an air-gapped environment
 <%=tool%> is available as a single **platform-dependent executable** in the [Releases](https://github.com/IBM/aspera-cli/releases).
 This executable includes the Ruby runtime and gems, but not the transfer SDK.
 
-#### Installation
+#### Installing the single file executable
 
 > [!NOTE]
 > Replace the URL with the one for your platform.
 > Installation of `ascp` is still required separately.
-> See [Install `ascp`](#installation-of-ascp-through-transferd).
+> See [Install `ascp`](#installing-ascp-through-transferd).
 
 ```shell
 curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.<%=build_version%>.osx-arm64
@@ -314,7 +314,7 @@ chmod a+x <%=cmd%>
 ./<%=cmd%> config transferd install
 ```
 
-#### Linux: GLIBC version
+#### Linux: Checking the GLIBC version
 
 > [!WARNING]
 > On Linux, the executable requires a minimum GLIBC version, specified in the executable name on download site.
@@ -633,7 +633,7 @@ or
 JRUBY_OPTS=--dev <%=cmd%> -v
 ```
 
-#### Optional gems
+#### Installing optional gems
 
 Some additional gems are required for either development or specific runtime features.
 For JRuby, some replacement gems are proposed, or are not available at all.
@@ -672,7 +672,7 @@ To check if a new version is available (independently of `version_check_days`):
 <%=cmd%> config check_update
 ```
 
-#### Gem installation with signature verification
+#### Verifying gem installation signature
 
 The gem is signed with a private key, and the public certificate is available in the GitHub repository (`certs/aspera-cli-public-cert.pem`).
 When installing the gem, the signature may optionally be verified.
@@ -691,7 +691,7 @@ The user installs the gem with `HighSecurity` or `MediumSecurity`: this will suc
 gem install -P MediumSecurity <%=gemspec.name%>
 ```
 
-#### Beta release of gem
+#### Installing a beta release of the gem
 
 Beta version of gem can be found here: <https://ibm.biz/aspera-cli-beta>
 
@@ -716,7 +716,7 @@ To execute an Aspera transfer, only two additional files are required; both are 
 
 These components can be installed either by installing the Aspera transfer software or by running the <%=tool%> command.
 
-#### Installation of `ascp` through `transferd`
+#### Installing `ascp` through `transferd`
 
 The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
 Install it using <%=tool%> (for the current platform) with:
@@ -773,7 +773,7 @@ The format is: `file:///<%=ph :path%>`, where `<%=ph :path%>` can be either a re
 
 Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
-#### Installation of `ascp` through other component
+#### Installing `ascp` through another component
 
 If the embedded method is not used, the following packages are also suitable:
 
@@ -853,7 +853,7 @@ The following procedure applies when using RVM for the Ruby installation:
    cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
    ```
 
-3. Download the Transfer Daemon archive for the target architecture. See [Install `ascp`](#installation-of-ascp-through-transferd).
+3. Download the Transfer Daemon archive for the target architecture. See [Install `ascp`](#installing-ascp-through-transferd).
 
 4. Transfer the two archive files to the target system.
 
@@ -872,7 +872,7 @@ The following procedure applies when using RVM for the Ruby installation:
    source ~/.rvm/scripts/rvm
    ```
 
-#### Windows: Air-gapped installation
+#### Windows: Installing in an air-gapped environment
 
 The procedure is similar to the internet-connected Windows installation. Copy the required files from a system with internet access, then install them on the target system.
 
@@ -885,7 +885,7 @@ The procedure is similar to the internet-connected Windows installation. Copy th
 
 2. Create a gem archive as described in [Packaging gem files and dependencies](#packaging-gem-files-and-dependencies).
 
-3. Download the Transfer Daemon. See [Install `ascp`](#installation-of-ascp-through-transferd).
+3. Download the Transfer Daemon. See [Install `ascp`](#installing-ascp-through-transferd).
 
 4. Create a Zip archive containing all the files above and transfer it to the target system.
 
@@ -1068,7 +1068,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 > Do not use too many volumes, as the legacy `aufs` driver limits their number.
 > (anyway, prefer to use `overlay2`)
 
-#### Container: Offline installation
+#### Container: Installing in an air-gapped environment
 
 - First create the image archive:
 
@@ -1127,7 +1127,7 @@ Or get a shell with access to <%=tool%> like this:
 singularity shell <%=cmd%>.sif
 ```
 
-### SSL library
+### Configuring the SSL library
 
 <%=tool%> uses the Ruby `openssl` gem which uses by default the system's `openssl` library and its CA certificate bundle.
 
@@ -1161,7 +1161,7 @@ Then install the `openssl` gem with:
 gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p')
 ```
 
-### SSL CA certificate bundle
+### Configuring the SSL CA certificate bundle
 
 SSL certificates are validated using a certificate store.
 By default, it is the one of the system's `openssl` library.
@@ -2436,7 +2436,7 @@ Operations on this preset are done using regular `config` operations:
 "_default_preset_for_plugin_"
 ```
 
-### Invalid Filename Characters
+### Handling invalid filename characters
 
 Some commands of <%=tool%> may create files or folders based on input that may contain invalid characters for the local file system.
 The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
@@ -2449,7 +2449,7 @@ The default value is `_<>:"/\|?*`, corresponding to replacement character `_` an
 > [!NOTE]
 > This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
 
-### Temporary files
+### Managing temporary files
 
 Some temporary files may be needed during runtime.
 The temporary folder may be specified with option: `temp_folder`.
@@ -4014,7 +4014,7 @@ Two common execution modes are supported:
 
 - Daemon/service mode – run <%=tool%> continuously as a server.
 
-#### Wrapping script
+#### Creating a wrapping script
 
 Before configuring scheduling or services, it is often useful to create a wrapper script that prepares the environment and optionally enforces execution limits.
 
@@ -4144,7 +4144,7 @@ On Linux this is typically done using [`systemd`](https://systemd.io/).
 
 For example, below `<%=ph :name%>` is `<%=cmd%>_svc`.
 
-A [wrapping script](#wrapping-script), again, is convenient: `/usr/local/bin/start_<%=ph :name%>.sh`:
+A [wrapping script](#creating-a-wrapping-script), again, is convenient: `/usr/local/bin/start_<%=ph :name%>.sh`:
 
 Service definition at `/etc/systemd/system/<%=ph :name%>.service`:
 
@@ -6971,7 +6971,7 @@ Previews are mainly used in AoC, this also works with AoC:
 > [!NOTE]
 > To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
 
-### Create access key
+### Creating an access key
 
 ```shell
 <%=cmd%> node access_key create @json:'{"id":"<%=ph :access_key%>","secret":"<%=ph :secret%>","storage":{"type":"local","path":"/data/mydir"}}'
@@ -6995,7 +6995,7 @@ The list of supported options can be displayed using command:
 <%=cmd%> node info --field=@ruby:'/^access_key_configuration_capabilities.*/'
 ```
 
-### Generate and use bearer token
+### Generating and using a bearer token
 
 Bearer tokens are part of the **gen4/access key** API.
 It follows the model of OAuth 2.
@@ -8805,7 +8805,7 @@ A hot folder being defined as a tool that:
 
 In addition: the detection should be made **continuously** or on specific time/date.
 
-#### Setup procedure
+#### Setting up a hot folder
 
 The general idea is to rely on :
 
