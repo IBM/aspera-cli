@@ -232,7 +232,7 @@ Saving config file.
 
 - Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
 
-### Option C — Test with Aspera on Cloud
+### Option C - Test with Aspera on Cloud
 
 If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](#aoc-configuration-using-wizard) section.
 
@@ -270,7 +270,7 @@ By providing the documentation as a direct reference, you reduce "hallucinations
 
 - Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
 
-- Explore plugins: Jump to the section for the product you're working with — Aspera on Cloud, Faspex, and more — under [Application Plugins](#plugins).
+- Explore plugins: Jump to the section for the product you're working with - Aspera on Cloud, Faspex, and more - under [Application Plugins](#plugins).
 
 ## Installation
 
@@ -731,7 +731,7 @@ The installation of the transfer binaries follows those steps:
   - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
   - If the value is `DEF`, <%=tool%> downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
-    - The SDK version is selected as follows: if an additional positional parameter is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of <%=tool%> is used.
+    - The SDK version is selected as follows: if an additional **positional parameter** is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of <%=tool%> is used.
     - The package URL matching the current system architecture is then used.
 - **Extract the archive**
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
@@ -754,13 +754,13 @@ To install a specific version, e.g. 1.1.3:
 To get the download URL for a specific platform and version:
 
 ```shell
-<%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+<%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
 ```
 
 To download it, pipe to `config download`:
 
 ```shell
-<%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
+<%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
 ```
 
 If installation from a local file is preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
@@ -795,12 +795,39 @@ See [Transfer Agents](#transfer-clients-agents)
 
 ### Installation in an air-gapped environment
 
-> [!NOTE]
-> No pre-packaged version is provided yet.
+For an air-gapped installation there are 2 alternatives:
+
+- Either retrieve the single executable in the release, if it exists
+- Or, get the installation components from a system with internet access:
+  - Ruby installation packages (depends on system)
+  - Gems
+
+    Use the gem pack of the release.
+    Unzip, and then:
+
+    ```shell
+    gem install *.gem
+    ```
+
+  - Transfer SDK
+
+    Retrieve the archive with `ascp` on a system with internet with: (adapt the platform and version to your needs)
+
+    ```shell
+    <%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
+    ```
+
+    The installation will be done on the air-gapped system by providing option: `sdk_url` with the downloaded file:
+
+    ```shell
+    <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+    ```
 
 #### Gem files and dependencies
 
-Necessary gems can be packed in a `tar.gz` like this:
+Releases include gem packs: `gempack.zip` it contains the minimal bundle of required gems.
+
+Else, necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
@@ -811,7 +838,7 @@ rm -fr temp_folder
 tar zcvf <%=gemspec.name%>-<%=build_version%>-gems <%=gemspec.name%>-<%=build_version%>-gems.tgz
 ```
 
-#### Unix-like
+#### Unix-like: Alternative when using `rvm`
 
 A method to build one is provided here:
 
@@ -8500,8 +8527,8 @@ The server registers a single tool, `execute_ascli_command`, which executes any 
 
 ```shell
 <%=cmd%> mcp server
-<%=cmd%> mcp server @json:'{"instructions":"Use this server to manage Aspera transfers"}'
-<%=cmd%> mcp server @json:'{"transport":"http","port":3000}'
+<%=cmd%> mcp server @: instructions="Use this server to manage Aspera transfers"
+<%=cmd%> mcp server @: transport=http port=3000
 ```
 
 ### `server` command options
@@ -8513,8 +8540,8 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
-| `instructions` | `string` | — | Hint shown to the AI client describing what the server does |
-| `protocol_version` | `string` | — | MCP protocol version to advertise, e.g. `2024-11-05` |
+| `instructions` | `string` | - | Hint shown to the AI client describing what the server does |
+| `protocol_version` | `string` | - | MCP protocol version to advertise, e.g. `2024-11-05` |
 | `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
 
 #### `stdio` transport
@@ -8530,14 +8557,14 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
 | `stateless` | `boolean` | `false` | Enable stateless mode |
-| `allowed_origins` | `Array<string>` | — | List of allowed origins |
-| `allowed_hosts` | `Array<string>` | — | List of allowed hostnames |
-| `session_idle_timeout` | `integer` | — | Idle session timeout in seconds |
-| `max_sessions` | `integer` | — | Maximum number of concurrent sessions |
+| `allowed_origins` | `Array<string>` | - | List of allowed origins |
+| `allowed_hosts` | `Array<string>` | - | List of allowed hostnames |
+| `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
+| `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
 
 ### Examples
 
-Start an MCP server over `stdio` (default — suitable for use as an MCP server in an IDE or AI tool):
+Start an MCP server over `stdio` (default - suitable for use as an MCP server in an IDE or AI tool):
 
 ```shell
 <%=cmd%> mcp server
@@ -8546,13 +8573,13 @@ Start an MCP server over `stdio` (default — suitable for use as an MCP server 
 Start an MCP server over HTTP on port 8080:
 
 ```shell
-<%=cmd%> mcp server @json:'{"transport":"http","port":8080,"bind":"0.0.0.0"}'
+<%=cmd%> mcp server @: transport=http port=8080 bind=0.0.0.0
 ```
 
 Start with custom instructions and a specific protocol version:
 
 ```shell
-<%=cmd%> mcp server @json:'{"instructions":"Aspera transfer automation","protocol_version":"2024-11-05"}'
+<%=cmd%> mcp server @: instructions="Aspera transfer automation" protocol_version=2024-11-05
 ```
 
 <%=include_commands_for_plugin(:mcp)%>
@@ -8701,7 +8728,7 @@ Parameter `name` is set to a default value if not provided in `sync_info`.
 #### Sync management and monitoring: `admin`
 
 The `admin` command provides subcommands to inspect the state of an Async sync session.
-Most subcommands read the local snap database (`snap.db`) directly — no server connection is required.
+Most subcommands read the local snap database (`snap.db`) directly - no server connection is required.
 The exception is `status`, which calls the `asyncadmin` utility available only on server products.
 
 These commands can also be run from the `config` plugin:
@@ -8722,9 +8749,9 @@ gem install sqlite3
 <%=cmd%> ... sync admin <%=ph :command%> <%=ph :folder%> [<%=ph :sync_info%>]
 ```
 
-- `<%=ph :command%>` — one of the subcommands listed below.
-- `<%=ph :folder%>` — path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
-- `[<%=ph :sync_info%>]` — optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<%=ph :session_name%>`.
+- `<%=ph :command%>` - one of the subcommands listed below.
+- `<%=ph :folder%>` - path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
+- `[<%=ph :sync_info%>]` - optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<%=ph :session_name%>`.
 
 The only exception is `find`, which takes a plain directory path and lists all `<%=ph :session_name%>` found inside it.
 
@@ -8751,15 +8778,15 @@ The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` o
 
 **Snap database schema:** The snap database (`snap.db`) contains the following tables:
 
-**`sync_snapmeta_table`** — one row per session, written at start and updated at stop:
+**`sync_snapmeta_table`** - one row per session, written at start and updated at stop:
 
 <%=schema_to_table('async_tables:properties.meta')%>
 
-**`sync_snap_counters_table`** — one row, updated live during a session:
+**`sync_snap_counters_table`** - one row, updated live during a session:
 
 <%=schema_to_table('async_tables:properties.counters')%>
 
-**`sync_snapdb_table`** — one row per tracked file or directory:
+**`sync_snapdb_table`** - one row per tracked file or directory:
 
 <%=schema_to_table('async_tables:properties.file_info')%>
 
@@ -9218,7 +9245,7 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
+It doesn’t chatter; it hoots-clear, precise, and always on time.
 
 Like <%=tool%>, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.

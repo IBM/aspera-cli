@@ -233,7 +233,7 @@ Saving config file.
 
 - Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
 
-### Option C — Test with Aspera on Cloud
+### Option C - Test with Aspera on Cloud
 
 If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](#aoc-configuration-using-wizard) section.
 
@@ -271,7 +271,7 @@ By providing the documentation as a direct reference, you reduce "hallucinations
 
 - Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
 
-- Explore plugins: Jump to the section for the product you're working with — Aspera on Cloud, Faspex, and more — under [Application Plugins](#plugins).
+- Explore plugins: Jump to the section for the product you're working with - Aspera on Cloud, Faspex, and more - under [Application Plugins](#plugins).
 
 ## Installation
 
@@ -646,7 +646,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](../Gemfile):
 
 | name | version | comment |
-|----------------------|----------|-----------------------------------------------------|
+|----------------------|----------|-------------------------------------------------------------------------------|
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
@@ -658,6 +658,8 @@ See [Gemfile](../Gemfile):
 | rubocop-shopify | ~> 2.0 |  |
 | simplecov | ~> 0.22 |  |
 | solargraph | ~> 0.48 | (no jruby) |
+| mcp | ~> 1.2 | for ascli mcp server (MCP protocol support) |
+| rack | ~> 3.0 | for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport) |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
@@ -684,6 +686,8 @@ gem install rubocop-performance -v '~> 1.10'
 gem install rubocop-shopify -v '~> 2.0'
 gem install simplecov -v '~> 0.22'
 gem install solargraph -v '~> 0.48'
+gem install mcp -v '~> 1.2'
+gem install rack -v '~> 3.0'
 gem install grpc -v '~> 1.71'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1'
@@ -779,7 +783,7 @@ The installation of the transfer binaries follows those steps:
   - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
   - If the value is `DEF`, `ascli` downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
-    - The SDK version is selected as follows: if an additional positional parameter is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of `ascli` is used.
+    - The SDK version is selected as follows: if an additional **positional parameter** is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of `ascli` is used.
     - The package URL matching the current system architecture is then used.
 - **Extract the archive**
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
@@ -802,13 +806,13 @@ ascli config transferd install 1.1.3
 To get the download URL for a specific platform and version:
 
 ```shell
-ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+ascli config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
 ```
 
 To download it, pipe to `config download`:
 
 ```shell
-ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | ascli config download @stdin:
+ascli config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | ascli config download @stdin:
 ```
 
 If installation from a local file is preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
@@ -843,12 +847,39 @@ See [Transfer Agents](#transfer-clients-agents)
 
 ### Installation in an air-gapped environment
 
-> [!NOTE]
-> No pre-packaged version is provided yet.
+For an air-gapped installation there are 2 alternatives:
+
+- Either retrieve the single executable in the release, if it exists
+- Or, get the installation components from a system with internet access:
+  - Ruby installation packages (depends on system)
+  - Gems
+
+    Use the gem pack of the release.
+    Unzip, and then:
+
+    ```shell
+    gem install *.gem
+    ```
+
+  - Transfer SDK
+
+    Retrieve the archive with `ascp` on a system with internet with: (adapt the platform and version to your needs)
+
+    ```shell
+    ascli config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | ascli config download @stdin:
+    ```
+
+    The installation will be done on the air-gapped system by providing option: `sdk_url` with the downloaded file:
+
+    ```shell
+    ascli config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+    ```
 
 #### Gem files and dependencies
 
-Necessary gems can be packed in a `tar.gz` like this:
+Releases include gem packs: `gempack.zip` it contains the minimal bundle of required gems.
+
+Else, necessary gems can be packed in a `tar.gz` like this:
 
 ```shell
 mkdir temp_folder
@@ -859,7 +890,7 @@ rm -fr temp_folder
 tar zcvf aspera-cli-4.27.0.pre-gems aspera-cli-4.27.0.pre-gems.tgz
 ```
 
-#### Unix-like
+#### Unix-like: Alternative when using `rvm`
 
 A method to build one is provided here:
 
@@ -4735,12 +4766,14 @@ COMMAND: config
 SUBCOMMANDS: ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
 
 
+
 COMMAND: alee
 SUBCOMMANDS: entitlement health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
+
 
 
 COMMAND: aoc
@@ -4767,6 +4800,7 @@ OPTIONS:
         --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
 
 
+
 COMMAND: ats
 SUBCOMMANDS: access_key api_key aws_trust_policy cluster
 OPTIONS:
@@ -4776,6 +4810,13 @@ OPTIONS:
         --ats-secret=VALUE           ATS key secret
         --cloud=VALUE                Cloud provider
         --region=VALUE               Cloud region
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
+        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
+        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
+        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+
 
 
 COMMAND: console
@@ -4784,6 +4825,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
+
 
 
 COMMAND: cos
@@ -4796,6 +4838,13 @@ OPTIONS:
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
+        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
+        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
+        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+
 
 
 COMMAND: faspex
@@ -4810,6 +4859,7 @@ OPTIONS:
         --storage=VALUE              Faspex local storage definition (for browsing source)
         --recipient=VALUE            Use if recipient is a dropbox (with *)
         --box=ENUM                   Package box: archive, [inbox], sent
+
 
 
 COMMAND: faspex5
@@ -4829,6 +4879,7 @@ OPTIONS:
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 
 
+
 COMMAND: faspio
 SUBCOMMANDS: bridges health
 OPTIONS:
@@ -4841,10 +4892,18 @@ OPTIONS:
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
 
 
+
 COMMAND: httpgw
 SUBCOMMANDS: health info
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
+
+
+
+COMMAND: mcp
+SUBCOMMANDS: server
+OPTIONS:
+
 
 
 COMMAND: node
@@ -4853,6 +4912,13 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
         --password=VALUE             User's password
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
+        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
+        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
+        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+
 
 
 COMMAND: orchestrator
@@ -4865,6 +4931,7 @@ OPTIONS:
         --synchronous=ENUM           Wait for completion: [no], yes
         --ret-style=ENUM             How return type is requested in api: [arg], ext, header
         --auth-style=ENUM            Authentication type: apikey, arg_pass, [head_basic]
+
 
 
 COMMAND: preview
@@ -4903,6 +4970,7 @@ OPTIONS:
         --clips-length=VALUE         Mp4: clips: length in seconds of each clips
 
 
+
 COMMAND: server
 SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
 OPTIONS:
@@ -4913,6 +4981,7 @@ OPTIONS:
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
         --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+
 
 
 COMMAND: shares
@@ -9592,6 +9661,84 @@ test my_mxf mp4 --base=test --video-conversion=blend --query=@json:'{"text":true
 trevents --once-only=yes --skip-types=office --log-level=info
 ```
 
+## Plugin: `mcp`: Model Context Protocol server
+
+The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes `ascli` to AI assistants and LLM-based tools.
+The server registers a single tool, `execute_ascli_command`, which executes any `ascli` command in-process and returns the result as text.
+
+> [!NOTE]
+> The `mcp` gem is required.
+> Install it with: `gem install mcp`
+
+### Usage
+
+```shell
+ascli mcp server
+ascli mcp server @: instructions="Use this server to manage Aspera transfers"
+ascli mcp server @: transport=http port=3000
+```
+
+### `server` command options
+
+The `server` command accepts an optional [Hash](#extended-value-syntax) argument with the following keys:
+
+#### General
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
+| `instructions` | `string` | - | Hint shown to the AI client describing what the server does |
+| `protocol_version` | `string` | - | MCP protocol version to advertise, e.g. `2024-11-05` |
+| `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
+
+#### `stdio` transport
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `max_line_bytes` | `integer` | 4194304 (4 MiB) | Maximum JSON frame size in bytes |
+
+#### `http` transport (Streamable HTTP)
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `port` | `integer` | `3000` | TCP port to listen on |
+| `bind` | `string` | `127.0.0.1` | Bind address |
+| `stateless` | `boolean` | `false` | Enable stateless mode |
+| `allowed_origins` | `Array<string>` | - | List of allowed origins |
+| `allowed_hosts` | `Array<string>` | - | List of allowed hostnames |
+| `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
+| `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
+
+### Examples
+
+Start an MCP server over `stdio` (default - suitable for use as an MCP server in an IDE or AI tool):
+
+```shell
+ascli mcp server
+```
+
+Start an MCP server over HTTP on port 8080:
+
+```shell
+ascli mcp server @: transport=http port=8080 bind=0.0.0.0
+```
+
+Start with custom instructions and a specific protocol version:
+
+```shell
+ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2024-11-05
+```
+
+### Tested commands for `mcp`
+
+> [!NOTE]
+> Add `ascli mcp` in front of the following commands:
+
+```shell
+server @: transport=bad
+server @: transport=http port=13777
+```
+
 ## Operational Utilities
 
 This section covers the specialized modules and utilities used to integrate `ascli` into your broader operational infrastructure.
@@ -9869,7 +10016,7 @@ Parameter `name` is set to a default value if not provided in `sync_info`.
 #### Sync management and monitoring: `admin`
 
 The `admin` command provides subcommands to inspect the state of an Async sync session.
-Most subcommands read the local snap database (`snap.db`) directly — no server connection is required.
+Most subcommands read the local snap database (`snap.db`) directly - no server connection is required.
 The exception is `status`, which calls the `asyncadmin` utility available only on server products.
 
 These commands can also be run from the `config` plugin:
@@ -9890,9 +10037,9 @@ gem install sqlite3
 ascli ... sync admin <COMMAND> <FOLDER> [<SYNC_INFO>]
 ```
 
-- `<COMMAND>` — one of the subcommands listed below.
-- `<FOLDER>` — path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
-- `[<SYNC_INFO>]` — optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<SESSION_NAME>`.
+- `<COMMAND>` - one of the subcommands listed below.
+- `<FOLDER>` - path to the local database folder (a folder containing a `.private-asp` subfolder). By default this is the local synchronized folder; if a separate database folder was configured, specify that path instead.
+- `[<SYNC_INFO>]` - optional `Hash` to identify the session. If the folder contains only one session it is selected automatically; otherwise provide `@: name=<SESSION_NAME>`.
 
 The only exception is `find`, which takes a plain directory path and lists all `<SESSION_NAME>` found inside it.
 
@@ -9919,7 +10066,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 
 **Snap database schema:** The snap database (`snap.db`) contains the following tables:
 
-**`sync_snapmeta_table`** — one row per session, written at start and updated at stop:
+**`sync_snapmeta_table`** - one row per session, written at start and updated at stop:
 
 | Field | Type | Description |
 |-------------------------|---------|----------------------------------------------------------------------------------|
@@ -9952,7 +10099,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 | `sync_point` | `integer` | Synchronization point sequence number. |
 | `sync_uuid` | `string` | UUID identifying this sync pair. |
 
-**`sync_snap_counters_table`** — one row, updated live during a session:
+**`sync_snap_counters_table`** - one row, updated live during a session:
 
 | Field | Type | Description |
 |--------------------------|---------|--------------------------------------------------|
@@ -9968,7 +10115,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 | `syncd` | `integer` | Number of paths in the `Syncd` state. |
 | `unused` | `integer` | Reserved (unused counter slot). |
 
-**`sync_snapdb_table`** — one row per tracked file or directory:
+**`sync_snapdb_table`** - one row per tracked file or directory:
 
 | Field | Type | Description |
 |------------------------|---------|----------------------------------------------------------------------------------|
@@ -10517,7 +10664,7 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
-It doesn’t chatter; it hoots—clear, precise, and always on time.
+It doesn’t chatter; it hoots-clear, precise, and always on time.
 
 Like `ascli`, Hootput is built for action: launching transfers, parsing options, and navigating APIs without hesitation.
 Light on feathers but heavy on wisdom, it turns complexity into simple one-liners.
