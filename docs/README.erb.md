@@ -291,7 +291,7 @@ There are several ways to install <%=tool%>:
 The following sections describe the various installation methods.
 
 An internet connection is required during installation.
-If you do not have internet access, see [Installation without internet access](#installation-in-an-air-gapped-environment).
+If you do not have internet access, see [Installing in an air-gapped environment](#installing-in-an-air-gapped-environment).
 
 ### Single file executable
 
@@ -793,9 +793,9 @@ Several methods are provided to start a transfer.
 Use of a local client ([`direct`](#agent-direct) transfer agent) is one of them, but other methods are available.
 See [Transfer Agents](#transfer-clients-agents)
 
-### Installation in an air-gapped environment
+### Installing in an air-gapped environment
 
-For an air-gapped installation there are 2 alternatives:
+For an air-gapped installation, two alternatives are available:
 
 1. Get the installation components from a system with internet access:
 
@@ -804,7 +804,7 @@ For an air-gapped installation there are 2 alternatives:
 
       Use the gem pack of the release.
       It includes the `<%=gemspec.name%>` gem.
-      On the air-gapped system, unzip and then:
+      On the air-gapped system, extract the archive and run:
 
       ```shell
       gem install *.gem
@@ -812,25 +812,25 @@ For an air-gapped installation there are 2 alternatives:
 
    - Transfer SDK
 
-      Retrieve the archive with `ascp` on a system with internet with: (adapt the platform and version to your needs)
+      On a system with internet access, retrieve the SDK archive for the target platform and version:
 
       ```shell
-      <%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
+      <%=cmd%> config transferd list --select.platform=<%=ph :platform%> --select.version=<%=ph :version%> --fields=url | <%=cmd%> config download @stdin:
       ```
 
-      The installation will be done on the air-gapped system by providing option: `sdk_url` with the downloaded file:
+      On the air-gapped system, install from the downloaded file using option `--sdk-url`:
 
       ```shell
-      <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+      <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
       ```
 
-2. Retrieve the [single file executable](#single-file-executable) in the release, if it exists and the SDK (not included) as above.
+2. Retrieve the [single file executable](#single-file-executable) from the release, if available, and the SDK (not included) as described above.
 
-#### Gem files and dependencies
+#### Packaging gem files and dependencies
 
-Releases include gem packs: `gempack.zip` it contains the minimal bundle of required gems.
+Releases include gem packs: `gempack.zip` contains the minimal bundle of required gems.
 
-Else, necessary gems can be packed in a `tar.gz` like this:
+Alternatively, the necessary gems can be packaged into a `tar.gz` archive as follows:
 
 ```shell
 mkdir temp_folder
@@ -841,81 +841,75 @@ rm -fr temp_folder
 tar zcvf <%=gemspec.name%>-<%=build_version%>-gems <%=gemspec.name%>-<%=build_version%>-gems.tgz
 ```
 
-#### Unix-like: Alternative when using `rvm`
+#### Unix-like: Alternative installation using `rvm`
 
-A method to build one is provided here:
+The following procedure applies when using RVM for the Ruby installation:
 
-The procedure:
+1. Follow the non-root installation procedure with RVM, including gem installation.
 
-- Follow the non-root installation procedure with RVM, including gem
+2. Archive the main RVM folder (includes <%=cmd%>):
 
-- Archive (zip, tar) the main RVM folder (includes <%=cmd%>):
+   ```shell
+   cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
+   ```
 
-```shell
-cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
-```
+3. Download the Transfer Daemon archive for the target architecture. See [Install `ascp`](#installation-of-ascp-through-transferd).
 
-- Download the Transfer Daemon archive for the selected architecture, follow [Install `ascp`](#installation-of-ascp-through-transferd)
+4. Transfer the two archive files to the target system.
 
-- Transfer those 2 files to the target system
+5. On the target system, run:
 
-- On target system
+   ```shell
+   cd $HOME
+   tar zxvf rvm-<%=cmd%>.tgz
+   source ~/.rvm/scripts/rvm
+   <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
+   ```
 
-```shell
-cd $HOME
+6. Add the following line to the shell environment file (`.profile`):
 
-tar zxvf rvm-<%=cmd%>.tgz
+   ```shell
+   source ~/.rvm/scripts/rvm
+   ```
 
-source ~/.rvm/scripts/rvm
+#### Windows: Air-gapped installation
 
-<%=cmd%> config transferd install --sdk-url=file:///[SDK archive file path]
-```
+The procedure is similar to the internet-connected Windows installation. Copy the required files from a system with internet access, then install them on the target system.
 
-- Add those lines to shell environment (`.profile`)
+1. Download the Ruby installer from <https://rubyinstaller.org/downloads/>:
 
-```shell
-source ~/.rvm/scripts/rvm
-```
+   ```shell
+   v=$(curl -s https://rubyinstaller.org/downloads/ | sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p' | head -n 1)
+   curl -o ${v##*/} $v
+   ```
 
-#### Windows
+2. Create a gem archive as described in [Packaging gem files and dependencies](#packaging-gem-files-and-dependencies).
 
-Installation without network:
+3. Download the Transfer Daemon. See [Install `ascp`](#installation-of-ascp-through-transferd).
 
-It is essentially the same procedure as the internet-connected Windows installation, but instead of downloading files from the internet, copy them from a machine with internet access and install from those archives:
+4. Create a Zip archive containing all the files above and transfer it to the target system.
 
-- Download the Ruby installer from <https://rubyinstaller.org/downloads/>
+On the target system:
 
-  ```shell
-  v=$(curl -s https://rubyinstaller.org/downloads/ | sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p' | head -n 1)
-  curl -o ${v##*/} $v
-  ```
+1. Extract the archive.
 
-- Create an archive with necessary gems like in previous section
+2. Run the Ruby installer:
 
-- Download the Transfer Daemon following: [Install `ascp`](#installation-of-ascp-through-transferd)
+   ```batchfile
+   <%=ph :ruby_installer_exe%> /silent /currentuser /noicons /dir=<%=ph :install_dir%>
+   ```
 
-- Create a Zip with all those files and transfer to the target system.
+3. Install the gems: extract the gem archive, then run:
 
-Then, on the target system:
+   ```batchfile
+   gem install --force --local *.gem
+   ```
 
-- Unzip the archive
-- Execute the installer:
+4. Install the Aspera Transfer Daemon SDK:
 
-```batchfile
-rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
-```
-
-- Install the gems: Extract the gem archive and then:
-
-```batchfile
-gem install --force --local *.gem
-```
-
-- Install the Aspera Transfer Daemon SDK
-
-```shell
-<%=cmd%> config transferd install --sdk-url=file:///sdk.zip
-```
+   ```shell
+   <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
+   ```
 
 ### Container
 
