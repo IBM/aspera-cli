@@ -6826,6 +6826,38 @@ fx4_workgroup_pack_recv:
     - $(t.saved_output :fx4_package_id5)
     - --recipient=@extend:*@preset:faspex4.wkg@
     - --to-folder=$(TMP)
+# MCP -------------------------------------------------------
+mcp_bad_transport:
+  description: Reject an unknown MCP transport option.
+  tags:
+    - must_fail
+  expect: "Unknown transport: bad"
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=bad
+mcp_http_server:
+  description: Start MCP HTTP server, call execute_ascli_command with conf gem version, stop server.
+  tags:
+    - noblock
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13777
+  post: |
+    sleep 1
+    require 'aspera/rest'
+    mcp_api = Aspera::Rest.new(base_url: 'http://127.0.0.1:13777', headers: {'Accept' => 'application/json, text/event-stream'})
+    init_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, body: {jsonrpc: '2.0', id: 1, method: 'initialize', params: {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}}, exception: false, ret: :resp)
+    session_id = init_resp['mcp-session-id']
+    call_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, headers: {'Mcp-Session-Id' => session_id}, body: {jsonrpc: '2.0', id: 2, method: 'tools/call', params: {name: 'execute_ascli_command', arguments: {args: ['config', 'gem', 'version']}}}, exception: false, ret: :resp)
+    result = JSON.parse(call_resp.body.sub(/\Adata: /, ''))
+    raise "Unexpected result: #{result}" unless result.dig('result', 'content', 0, 'text') == Aspera::Cli::VERSION
+    t.stop_process :mcp_http_server
+
 github_smoke_test:
   command: null
   depends_on:
