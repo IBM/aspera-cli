@@ -57,11 +57,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :server
-            begin
-              require 'mcp'
-            rescue LoadError
-              raise Cli::Error, "The 'mcp' gem is required. Install it with: gem install mcp"
-            end
+            require 'aspera/cli/mcp_tool'
             # Optional Hash argument — all keys optional, unknown keys raise an error
             mcp_options = options.get_next_argument('mcp options', mandatory: false, validation: [Hash]) || {}
             mcp_options = mcp_options.transform_keys(&:to_sym)
@@ -82,7 +78,7 @@ module Aspera
         # @param mcp_options [Hash] symbolized options
         # @return [MCP::Server]
         def build_mcp_server(mcp_options)
-          tool = build_tool
+          tool = Cli::McpTool
           config_opts = mcp_options.slice(*CONFIG_KEYS)
           server_opts = mcp_options.slice(*SERVER_KEYS)
           configuration = config_opts.empty? ? nil : MCP::Configuration.new(**config_opts)
@@ -126,10 +122,28 @@ module Aspera
             %w[GET POST DELETE].each do |http_method|
               define_method(:"do_#{http_method}") do |req, res|
                 env = rack_env_from_webrick(req)
-                status, headers, body = @app.call(env)
+                status, headers, rack_body = @app.call(env)
                 res.status = status
                 headers.each{ |k, v| res[k] = v}
-                res.body = body.sum('')
+                if rack_body.respond_to?(:call)
+                  # Rack streaming body (SSE): wrap the WEBrick socket in a stream object
+                  # that exposes write/flush/close, then hand off a Proc to WEBrick so it
+                  # calls us back with the raw socket once headers have been flushed.
+                  rack_proc = rack_body
+                  res.chunked = true
+                  res.body = proc do |socket|
+                    stream = Object.new
+                    stream.define_singleton_method(:write){ |data| socket.write(data)}
+                    stream.define_singleton_method(:flush){socket.flush rescue nil}
+                    stream.define_singleton_method(:close){socket.close rescue nil}
+                    rack_proc.call(stream)
+                  end
+                else
+                  buf = +''
+                  rack_body.each{ |chunk| buf << chunk}
+                  rack_body.close if rack_body.respond_to?(:close)
+                  res.body = buf
+                end
               end
             end
             define_method(:rack_env_from_webrick) do |req|
@@ -159,10 +173,18 @@ module Aspera
               end
             end
           end
+          # WEBrick logs Errno::ECONNRESET as ERROR when a client disconnects mid-stream
+          # (normal for SSE/streaming connections). Suppress those noisy non-fatal errors.
+          quiet_logger = WEBrick::Log.new($stderr).tap do |log|
+            log.define_singleton_method(:error) do |msg|
+              return if msg.to_s.include?('ECONNRESET') || msg.to_s.include?('Broken pipe')
+              super(msg)
+            end
+          end
           webrick = WEBrick::HTTPServer.new(
             BindAddress: bind,
             Port:        port,
-            Logger:      WEBrick::Log.new($stderr),
+            Logger:      quiet_logger,
             AccessLog:   []
           )
           webrick.mount('/', rack_servlet, app)
@@ -170,51 +192,6 @@ module Aspera
           trap('INT'){webrick.shutdown}
           trap('TERM'){webrick.shutdown}
           webrick.start
-        end
-
-        # Build the execute_ascli_command MCP::Tool subclass.
-        # Defined at runtime because `require 'mcp'` is deferred.
-        def build_tool
-          Class.new(MCP::Tool) do
-            tool_name 'execute_ascli_command'
-
-            description <<~DESC.strip
-              Execute an ascli (Aspera CLI) command in-process.
-              Provide arguments exactly as on the command line, but as a JSON array of strings.
-              For structured output, include "--format=json" in the args.
-              Examples:
-                ["config", "version"]
-                ["aoc", "packages", "list", "--format=json"]
-                ["server", "browse", "/", "--url=https://host", "--username=user", "--password=secret", "--format=json"]
-            DESC
-
-            input_schema(
-              properties: {
-                args: {
-                  type:        'array',
-                  items:       {type: 'string'},
-                  minItems:    1,
-                  description: 'ascli arguments, e.g. ["aoc", "packages", "list", "--format=json"]'
-                }
-              },
-              required: ['args']
-            )
-
-            define_singleton_method(:call) do |args:, server_context: nil| # rubocop:disable Lint/UnusedBlockArgument
-              result = Runner.new(args).run_with_result
-              text =
-                case result
-                when Result::Nothing, Result::Empty, NilClass                    then ''
-                when Result::SingleObject, Result::ObjectList, Result::ValueList then JSON.generate(result.data)
-                else                                                                  result.data.to_s
-                end
-              MCP::Tool::Response.new([{type: 'text', text: text}])
-            rescue SystemExit => e
-              MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
-            rescue => e
-              MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
-            end
-          end
         end
       end
     end
