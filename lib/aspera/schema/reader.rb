@@ -8,10 +8,10 @@ module Aspera
       attr_reader :current
 
       # Shortcut to access current value at path
-      # @param x [String] path element
+      # @param key [String] path element
       # @return [Hash, Array, String, Integer] current value at path
-      def [](x)
-        @current[x]
+      def [](key)
+        @current[key]
       end
 
       # Find sub path relative to current

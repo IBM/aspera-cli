@@ -106,18 +106,18 @@ module Aspera
 
       # Get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independent)
-      # @param k [Symbol] key of the resource file
+      # @param file_type [Symbol] key of the resource file
       # @return [String, nil] Full path to the resource file or nil if not found
-      def path(k)
+      def path(file_type)
         file_is_required = true
-        case k
+        case file_type
         when *EXE_FILES
-          file_is_required = k.eql?(:ascp)
+          file_is_required = file_type.eql?(:ascp)
           file = Products::Transferd.transferd_path
-          file = File.join(File.dirname(file), Environment.instance.exe_file(k.to_s)) unless k.eql?(:transferd)
+          file = File.join(File.dirname(file), Environment.instance.exe_file(file_type.to_s)) unless file_type.eql?(:transferd)
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
-          type = k.to_s[-3..].to_sym
+          type = file_type.to_s[-3..].to_sym
           file = check_or_create_sdk_file("aspera_bypass_#{type}.pem"){DataRepository.instance.item(type)}
         when :aspera_license
           file = check_or_create_sdk_file('aspera-license'){DataRepository.instance.item(:license)}

@@ -79,12 +79,12 @@ module Aspera
         attr_reader :api_options
         attr_reader :use_dynamic_key
 
-        def api_options=(h)
-          Aspera.assert_type(h, Hash)
-          h.each do |k, v|
-            Aspera.assert(@api_options.key?(k.to_sym)){"unknown api option: #{k} (#{OPTIONS.join(', ')})"}
-            Aspera.assert_type(v, TrueClass, FalseClass){"api options value for #{k} should be boolean"}
-            @api_options[k.to_sym] = v
+        def api_options=(options_hash)
+          Aspera.assert_type(options_hash, Hash)
+          options_hash.each do |key, val|
+            Aspera.assert(@api_options.key?(key.to_sym)){"unknown api option: #{key} (#{OPTIONS.join(', ')})"}
+            Aspera.assert_type(val, TrueClass, FalseClass){"api options value for #{key} should be boolean"}
+            @api_options[key.to_sym] = val
           end
         end
 
@@ -106,25 +106,25 @@ module Aspera
         end
 
         # Adds fields `public_keys` in provided Hash, if dynamic key is set.
-        # @param h [Hash] Hash to add public key to
+        # @param parameters [Hash] Hash to add public key to
         # @return [Hash] Hash with public key added
-        def add_public_key(h)
+        def add_public_key(parameters)
           if @dynamic_key
             ssh_key = Net::SSH::Buffer.from(:key, @dynamic_key)
             # Get pub key in OpenSSH public key format (authorized_keys)
-            h['public_keys'] = [
+            parameters['public_keys'] = [
               ssh_key.read_string,
               Base64.strict_encode64(ssh_key.to_s)
             ].join(' ')
           end
-          return h
+          return parameters
         end
 
         # Adds fields `ssh_private_key` in provided Hash, if dynamic key is set.
-        # @param h [Hash] Hash to add private key to
-        def add_private_key(h)
-          h['ssh_private_key'] = @dynamic_key.to_pem if @dynamic_key
-          return h
+        # @param parameters [Hash] Hash to add private key to
+        def add_private_key(parameters)
+          parameters['ssh_private_key'] = @dynamic_key.to_pem if @dynamic_key
+          return parameters
         end
 
         # For access keys: provide expression to match entry in folder
