@@ -310,7 +310,8 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 > See [Install `ascp`](#installing-ascp-through-transferd).
 
 ```shell
-curl -o ascli https://eudemo.asperademo.com/download/aspera-cli/ascli.4.27.0.pre.osx-arm64
+tar zxvf ascli-<VERSION>-<PLATFORM>.tgz
+mv ascli-<VERSION>-<PLATFORM> ascli
 chmod a+x ascli
 ./ascli config transferd install
 ```
@@ -9959,10 +9960,10 @@ ascli config sync spec
 | `remove_after_transfer` | `boolean` | Remove source files after they are successfully synchronized.<br/>Default: `false`.<br/>(`--remove-after-transfer`) |
 | `reset` | `boolean` | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot<br/>Default: `false`.<br/>(`--reset`)(-x) |
 | `resume.enabled` | `boolean` | Enable the possibility of resuming individual file transfers between async sessions.<br/>Default: `false`. |
-| `resume.max_age` | `integer` | Sets the age limit in days for temporary files that will be preserved on cleanup (usually at async's start and stop) for potential transfer resume. Temp files older than the given value will be removed regardless of whether they might be resumeable.<br/>Default: `5`.<br/>(`--resume-age-days={integer}`) |
+| `resume.max_age` | `integer` | Sets the age limit in days for temporary files that will be preserved on cleanup (usually at async's start and stop) for potential transfer resume. Temp files older than the given value will be removed regardless of whether they might be resumable.<br/>Default: `5`.<br/>(`--resume-age-days={integer}`) |
 | `resume.min_size` | `integer` | This field specifies the minimum size of files that will be allowed to resume.<br/>Default: `1048576`.<br/>(`--support-resume={integer}`) |
 | `resume_scan` | `boolean` | Resume the scan from where the previous execution left off.<br/>Default: `false`.<br/>(`--resume-scan`) |
-| `resume` | `object` | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumeable, but only if async is then restarted with 'reset' disabled. |
+| `resume` | `object` | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumable, but only if async is then restarted with 'reset' disabled. |
 | `scan_dir_rename` | `boolean` | Enable the detection of renamed directories and files compared. to the previous scan, based on matching inodes<br/>Default: `false`.<br/>(`--scan-dir-rename`) |
 | `scan_file_rename` | `boolean` | Enable the detection of renamed files compared to the previous scan, based on matching inodes.<br/>Default: `false`.<br/>(`--scan-file-rename`) |
 | `scan_intensity` | `string` | Scan at the set intensity. `vlow` minimizes system activity. `vhigh` maximizes system activity by continuously scanning files without rest.<br/>Allowed values: `vlow`, `low`, `medium`, `high`, `vhigh`.<br/>Default: `medium`.<br/>(`--scan-intensity={enum}`)(-H) |
@@ -10655,7 +10656,7 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 
 ## About
 
-### Houtput, the mascot
+### Hootput, the mascot
 
 ![Hootput the Owl](mascot.svg)
 

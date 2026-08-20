@@ -309,7 +309,8 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 > See [Install `ascp`](#installing-ascp-through-transferd).
 
 ```shell
-curl -o <%=cmd%> https://eudemo.asperademo.com/download/aspera-cli/<%=cmd%>.<%=build_version%>.osx-arm64
+tar zxvf <%=cmd%>-<%=ph :version%>-<%=ph :platform%>.tgz
+mv <%=cmd%>-<%=ph :version%>-<%=ph :platform%> <%=cmd%>
 chmod a+x <%=cmd%>
 ./<%=cmd%> config transferd install
 ```
@@ -9236,7 +9237,7 @@ Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args"
 
 ## About
 
-### Houtput, the mascot
+### Hootput, the mascot
 
 ![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
 
