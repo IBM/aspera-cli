@@ -189,7 +189,7 @@ module Aspera
 
         def format(formatter)
           # Force image format for Image results
-          formatter.set_format_type(:image)
+          formatter.format_type = :image
           super
         end
       end

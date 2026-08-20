@@ -218,7 +218,7 @@ module Aspera
       end
 
       # Set the format type (used by Image result)
-      def set_format_type(format)
+      def format_type=(format)
         @options[:format] = format
       end
 

@@ -1,13 +1,53 @@
 ---
 detectors:
+  # --- Disabled: equivalent to rubocop Metrics/ClassLength disabled ---
+  TooManyMethods:
+    enabled: false
+  TooManyInstanceVariables:
+    enabled: true
+    max_instance_variables: 10
+    exclude:
+      - Aspera::Agent::Direct # 12: complex ascp process manager
+      - Aspera::Cli::Manager::OptionValue # 11: full CLI option descriptor
+      - Aspera::Cli::Plugins::Preview # 17: preview generator with many config fields
+      - Aspera::Cli::OptionValue
+  # --- Disabled: equivalent to rubocop Metrics/MethodLength + Metrics/AbcSize disabled ---
+  TooManyStatements:
+    enabled: false
+
+  # --- Disabled: equivalent to rubocop Metrics/CyclomaticComplexity + Metrics/BlockLength disabled ---
+  RepeatedConditional:
+    enabled: false
+  NestedIterators:
+    enabled: false
+
+  # --- Disabled: equivalent to rubocop Naming/PredicateMethod disabled ---
+  UncommunicativeParameterName:
+    enabled: true
+  UncommunicativeMethodName:
+    enabled: false
+  UncommunicativeVariableName:
+    enabled: false
+  UncommunicativeModuleName:
+    enabled: false
+
+  # --- Disabled: no active rubocop equivalent ---
+  DataClump:
+    enabled: false
+  InstanceVariableAssumption:
+    enabled: false
+  MissingSafeMethod:
+    enabled: false
+  UnusedParameters:
+    enabled: false
+  LongYieldList:
+    enabled: false
+
+  # --- Already disabled ---
   ManualDispatch:
     enabled: false
   DuplicateMethodCall:
     enabled: false
-    exclude:
-      - Log.log
-  TooManyStatements:
-    max_statements: 80
   Attribute:
     enabled: false
   FeatureEnvy:
@@ -18,23 +58,6 @@ detectors:
     enabled: false
   TooManyConstants:
     enabled: false
-  UncommunicativeVariableName:
-    accept:
-      - _
-      - a
-      - b
-      - e
-      - h
-      - i
-      - k
-      - m
-      - v
-    enabled: false
-  UncommunicativeMethodName:
-    accept:
-      - base64
-  NestedIterators:
-    max_allowed_nesting: 3
   UtilityFunction:
     enabled: false
   ControlParameter:
@@ -43,5 +66,3 @@ detectors:
     enabled: false
   LongParameterList:
     enabled: false
-  TooManyInstanceVariables:
-    max_instance_variables: 15
