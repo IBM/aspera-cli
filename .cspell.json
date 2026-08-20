@@ -5,6 +5,8 @@
     "lib/aspera/data",
     "lib/transfer_pb.rb",
     "lib/transfer_services_pb.rb",
+    "lib/transferd_pb.rb",
+    "lib/transferd_services_pb.rb",
     "**/*.tex",
     "**/*.html",
     "**/*.pptx"

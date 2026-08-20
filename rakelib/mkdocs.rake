@@ -10,11 +10,11 @@ VENV_DIR = Paths::TMP / '.venv_mkdocs'
 VENV_FLAG = VENV_DIR / 'bin/activate'
 
 def run_venv(*args)
-  nenwenv = {
+  newenv = {
     'PATH'        => [VENV_DIR / 'bin', ENV['PATH']].join(':'),
     'VIRTUAL_ENV' => VENV_DIR.to_s
   }
-  run(*args, env: nenwenv)
+  run(*args, env: newenv)
 end
 
 namespace :doc do

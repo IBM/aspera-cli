@@ -13,7 +13,7 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions: See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instanciate vars}.freeze
+  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instantiate vars}.freeze
 
   # Execution context for a running test case, injected as `t` in every eval binding.
   #
@@ -157,23 +157,23 @@ module TestEnv
       if properties.key?(:template)
         templates[properties[:template]] ||= {}
         templates[properties[:template]][name] = properties
-      elsif properties.key?(:instanciate)
+      elsif properties.key?(:instantiate)
         instances[name] = properties
       else
         normalized_tests[name] = properties
       end
     end
     instances.each do |instance_name, instance_properties|
-      template_name = instance_properties[:instanciate]
+      template_name = instance_properties[:instantiate]
       raise "Unknown template suite: #{template_name} in #{instance_name}" unless templates.key?(template_name)
       template_names = templates[template_name].keys
       templates[template_name].each do |template_test_name, template_properties|
         test_name = "#{instance_name}.#{template_test_name}"
         generated_properties = Marshal.load(Marshal.dump(template_properties))
         generated_properties.delete(:template)
-        generated_properties.delete(:instanciate)
+        generated_properties.delete(:instantiate)
         generated_properties[:tags].unshift(instance_name.to_sym) unless generated_properties[:tags].include?(instance_name.to_sym)
-        # Inherit extra tags declared on the instanciate entry (excluding instance_name already added)
+        # Inherit extra tags declared on the instantiate entry (excluding instance_name already added)
         extra_tags = (instance_properties[:tags] || []).map(&:to_sym) - [instance_name.to_sym]
         extra_tags.each do |tag|
           generated_properties[:tags].push(tag) unless generated_properties[:tags].include?(tag)

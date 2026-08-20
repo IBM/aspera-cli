@@ -35,7 +35,7 @@ PATH_VERSION_CHECK_PERSIST = PATH_CLI_HOME / 'persist_store/version_last_check.t
 TIMESTAMP_TEST_RUN = Time.now.to_s
 FILENAME_ASCII = 'data_file.bin'
 # A medium sized file for testing with unicode characters in file name
-FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ"
+FILENAME_UNICODE = "\u{1242B}spécial{#\u{1F600}تツ" # cspell:disable-line
 # Testing file generated locally
 PATH_TST_ASC_LCL = TMP / FILENAME_ASCII
 # Default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
@@ -240,7 +240,7 @@ namespace :test do
       revdep = ALL_TESTS.filter_map do |name, info|
         name if info[:depends_on]&.intersect?(to_reset)
       end
-      # end if no new dependecy
+      # end if no new dependency
       break if (revdep - to_reset).empty?
       to_reset |= revdep
     end

@@ -320,10 +320,10 @@ RSpec.describe(Aspera::Rest) do
 end
 
 RSpec.describe(String) do
-  it 'converts capilalized to snake' do
+  it 'converts capitalized to snake' do
     expect('BonjourLaBelgique'.capital_to_snake).to(eq('bonjour_la_belgique'))
   end
-  it 'converts snake to capilalized' do
+  it 'converts snake to capitalized' do
     expect('bonjour_la_france'.snake_to_capital).to(eq('BonjourLaFrance'))
   end
 end

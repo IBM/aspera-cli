@@ -637,7 +637,7 @@ properties:
       Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early.
       Note that transfer resumption can only happen if the `reset` option is disabled.
       If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that
-      session will be resumeable, but only if async is then restarted with 'reset' disabled.
+      session will be resumable, but only if async is then restarted with 'reset' disabled.
     type: object
     properties:
       enabled:
@@ -654,7 +654,7 @@ properties:
           Sets the age limit in days for temporary files that will be preserved
           on cleanup (usually at async's start and stop) for potential transfer resume.
           Temp files older than the given value will be removed
-          regardless of whether they might be resumeable.
+          regardless of whether they might be resumable.
         type: integer
         default: "5"
         x-cli-option: --resume-age-days

@@ -1949,13 +1949,13 @@ aoc_faspex_gatewayb:
     - faux:///test1?1m
   post: t.stop_process :aoc_faspex_gateway
 aoc_user_suite:
-  instanciate: awa_user_suite
+  instantiate: awa_user_suite
   vars:
     secret_preset: aoc
   args:
     - aoc
 aew_user_suite:
-  instanciate: awa_user_suite
+  instantiate: awa_user_suite
   vars:
     secret_preset: aew
   tags:
@@ -1965,13 +1965,13 @@ aew_user_suite:
     - --preset=aew_user
     - --workspace=eudemo
 aoc_ats_suite:
-  instanciate: ats_suite_tmpl
+  instantiate: ats_suite_tmpl
   args:
     - aoc
     - admin
     - ats
 ats_suite:
-  instanciate: ats_suite_tmpl
+  instantiate: ats_suite_tmpl
   args:
     - ats
 aoc_servers:

@@ -213,7 +213,7 @@ module Aspera
 
       private
 
-      # Normalise a URL for comparison
+      # Normalize a URL for comparison
       def canonical_url(url)
         url.chomp('/').sub(%r{^(https://[^/]+):443$}, '\1')
       end
