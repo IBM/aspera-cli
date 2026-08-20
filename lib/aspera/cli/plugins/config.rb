@@ -219,11 +219,11 @@ module Aspera
         def option_insecure=(value);    context.http_config.insecure = value; end
         def option_warn_insecure_cert;  context.http_config.warn_insecure; end
         def option_warn_insecure_cert=(value); context.http_config.warn_insecure = value; end
-        def option_http_options;        context.http_config.http_options; end
+        def option_http_options; context.http_config.http_options; end
         def option_http_options=(value); context.http_config.http_options = value; end
         def option_ignore_cert_host_port; context.http_config.ignore_cert_host_port; end
         def ignore_cert?(address, port); context.http_config.ignore_cert?(address, port); end
-        def trusted_cert_locations;     context.http_config.trusted_cert_locations; end
+        def trusted_cert_locations; context.http_config.trusted_cert_locations; end
         def trusted_cert_locations=(value); context.http_config.trusted_cert_locations = value; end
 
         # Delegation to PresetManager: loads default preset options for a plugin
