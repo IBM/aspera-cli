@@ -3367,7 +3367,8 @@ This is useful to debug if a transfer fails.
 To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
 
 > [!NOTE]
-> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided using `transfer_info` parameter `ascp_args`).
+> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer_info` parameter `ascp_args`.
+> To place source paths directly on the `ascp` command line instead of using a temp file, set `file_list` to `false` in `transfer_info`: `--transfer-info=@json:'{"file_list":false}'`.
 
 In addition to standard methods described in section [File List](#list-of-files-for-transfers), it is possible to specify the list of file using those additional methods:
 
@@ -4386,6 +4387,41 @@ Examples:
 
 ```shell
 <%=cmd%> server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=/Upload
+```
+
+### `file:` for growing files
+
+The built-in `file` PVCL adapter allows referencing a local file using a URI-style path with optional query parameters.
+This is particularly useful for transferring **growing files** — files that are still being written at the time of transfer (e.g. live recordings, log files, streaming output).
+
+The source parameter syntax is:
+
+```shell
+file:///<%=ph :path%>?grow=<%=ph :wait_time%>[&wait_start=[mtime|null_read]][&confirm_stop=[true|false]]
+```
+
+A transfer is considered complete when the source file has not changed for `wait_time` seconds.
+See [HSTS `ascp` command reference](https://www.ibm.com/docs/en/ahts/4.4.x?topic=line-ascp-command-reference) for full details.
+
+> [!NOTE]
+> The source file must reside on a **native file system**.
+
+Key query parameters:
+
+| Parameter      | Description |
+|----------------|-------------|
+| `grow`         | **(Required)** Wait time in seconds after last file change before the transfer is declared complete. Default wait time is 10 s if set to a non-numeric string. |
+| `wait_start`   | How the wait time is measured: `mtime` (default, file modification time) or `null_read` (first zero-byte read). |
+| `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
+
+> [!NOTE]
+> Because the `file:` URI is passed directly to `ascp` on the command line (not via a file list), `--transfer-info.file_list=false` is required.
+> The native `ascp` progress bar can then be used: `--transfer-info.quiet=false --progress=no`.
+
+Example: upload a growing file `./growing`, waiting up to 120 seconds after it stops growing:
+
+```shell
+<%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer-info.file_list=false --transfer-info.quiet=false --progress=no
 ```
 
 ### Usage

@@ -8,10 +8,15 @@ Released: [Place date of release here]
 
 * `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` as argument to install the latest available version.
 * `mcp`: New plugin - starts a [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes a single tool `execute_ascli_command`, allowing AI assistants to drive `ascli` in-process. Supports both `stdio` (default) and `http` (Streamable HTTP) transports.
+* **global**: Support for growing files using the `file` PVCL adapter (`file:///path?grow=<seconds>`). Use with `--transfer-info.file_list=false`.
 
 ### Issues Fixed
 
 ### Breaking Changes
+
+### Other Changes
+
+* `direct` agent: New `transfer_info` parameter `file_list` (default: `true`). Set to `false` to place source paths directly on the `ascp` command line instead of using a temp file list.
 
 ## 4.26.2
 

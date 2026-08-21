@@ -48,7 +48,9 @@ module Aspera
 
       # @param job_spec        [Hash]          Transfer specification
       # @param ascp_args       [Array]         Other `ascp` args
+      # @param wss             [Boolean]       `true`: if both SSH and wss in ts: prefer wss
       # @param quiet           [Boolean]       Remove `ascp` progress bar if `true`
+      # @param file_list       [Boolean]       `true`: provide source list via a temp file, `false`: place directly on command line
       # @param client_ssh_key  [:rsa,:dsa]     Type of Aspera Client SSH key to use.
       # @param trusted_certs   [Array<String>] List of path to trusted certificates stores when using WSS
       # @param check_ignore_cb [Proc]          Callback to check if WSS connection shall ignore certificate validity
@@ -57,6 +59,7 @@ module Aspera
         ascp_args:       nil,
         wss:             true,
         quiet:           true,
+        file_list:       true,
         trusted_certs:   nil,
         client_ssh_key:  nil,
         check_ignore_cb: nil
@@ -67,6 +70,7 @@ module Aspera
         Aspera.assert_array_all(@ascp_args, String){'ascp_args'}
         @wss = wss
         @quiet = quiet
+        @file_list = file_list
         @trusted_certs = trusted_certs.nil? ? [] : trusted_certs
         Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
         @client_ssh_key = client_ssh_key.nil? ? :rsa : client_ssh_key.to_sym
@@ -75,7 +79,7 @@ module Aspera
         @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, CommandLineConverter)
       end
 
-      # either place source files on command line, or add file list file
+      # Place source files on command line or in a temp file list, controlled by @file_list and file_list_folder
       def process_file_list
         # is the file list provided through ascp parameters?
         ascp_file_list_provided = self.class.ascp_args_file_list?(@ascp_args)
@@ -90,7 +94,7 @@ module Aspera
           Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}, "All elements of paths must have a 'source' key")
           is_pair_list = ts_paths_array.any?{ |i| i.key?('destination')}
           raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')}
-          if self.class.file_list_folder.nil?
+          if !@file_list || self.class.file_list_folder.nil?
             Aspera.assert(!is_pair_list, 'file pair list is not supported when file list folder is not set')
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug('placing source file list on command line (no file list file)')

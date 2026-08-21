@@ -18,6 +18,13 @@ components:
           type: boolean
           description: Suppress the `ascp` progress bar display.
           default: false
+        file_list:
+          type: boolean
+          description: >-
+            If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.
+            
+            If `false`, source paths are placed directly on the `ascp` command line.
+          default: true
         trusted_certs:
           type: array
           description: List of trusted certificate repositories.

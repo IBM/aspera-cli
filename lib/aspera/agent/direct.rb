@@ -31,6 +31,7 @@ module Aspera
       # @param ascp_args         [Array]   (Args) Optional Additional arguments to ascp
       # @param wss               [Boolean] (Args) `true`: if both SSH and wss in ts: prefer wss
       # @param quiet             [Boolean] (Args) By default no native `ascp` progress bar
+      # @param file_list         [Boolean] (Args) true: provide file list in a file, else on command line.
       # @param client_ssh_key    [String]  (Args) Client SSH key option (from CLIENT_SSH_KEY_OPTIONS)
       # @param trusted_certs     [Array<String>] (Args) (WSS) Optional list of files with trusted certificates (stores)
       # @param check_ignore_cb   [Proc]    (Args) (WSS) Callback with host,port to check if WSS connection shall ignore certificate validity
@@ -45,6 +46,7 @@ module Aspera
         ascp_args:         nil,
         wss:               true,
         quiet:             true,
+        file_list:         true,
         client_ssh_key:    nil,
         trusted_certs:     nil,
         check_ignore_cb:   nil,
@@ -62,6 +64,7 @@ module Aspera
           ascp_args:       ascp_args,
           wss:             wss,
           quiet:           quiet,
+          file_list:       file_list,
           trusted_certs:   trusted_certs,
           client_ssh_key:  client_ssh_key,
           check_ignore_cb: check_ignore_cb
