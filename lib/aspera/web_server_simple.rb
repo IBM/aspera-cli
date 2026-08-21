@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
 require 'webrick'
-require 'webrick/https'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/hash_ext'
-require 'openssl'
 
 module Aspera
   # Simple WEBrick server with HTTPS support
@@ -66,6 +64,11 @@ module Aspera
       when 'http'
         Log.log.debug('HTTP mode')
       when 'https'
+        # Required lazily: webrick/ssl.rb reads OpenSSL::OPENSSL_VERSION at load time,
+        # a constant CosmoRuby's OpenSSL shim does not define, so requiring it
+        # unconditionally at file load would break any command in a Cosmo build
+        # even when no HTTPS server is ever started.
+        require 'webrick/https'
         webrick_options[:SSLEnable] = true
         if cert.nil? && key.nil?
           webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
