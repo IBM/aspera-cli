@@ -12,7 +12,7 @@ The architecture diagram illustrates the layered structure of `ascli` and its in
 
 ## Architectural Layers
 
-### 1. Local System Layer
+### Local System Layer
 
 The foundation layer consists of the local execution environment:
 
@@ -27,37 +27,47 @@ The foundation layer consists of the local execution environment:
   - Desktop: Aspera Desktop Client integration
   - Node: Direct Node API transfers
 
-### 2. Core Application Layer (`aspera-cli` gem)
+### Core Application Layer (`aspera-cli` gem)
 
 The central green component in the diagram represents the Ruby gem that implements all CLI functionality.
 
-#### 2.1 Entry Point
+#### Entry Point
 
 **File**: [`bin/ascli`](../bin/ascli)
 
 The main executable script that:
 
 - Sets up UTF-8 encoding for internationalization
-- Initializes logging subsystem
-- Parses early command-line options (log level, format)
+- Pre-parses early options (`--log-level`, `--log-format`, `--logger`) before full initialization
+- Fixes the home directory on Windows via `Environment.instance.fix_home`
 - Delegates to the main CLI processor
 
 ```ruby
 #!/usr/bin/env ruby
-Encoding.default_internal = Encoding::UTF_8
-Encoding.default_external = Encoding::UTF_8
 require 'aspera/cli/runner'
-Aspera::Cli::Runner.new(ARGV).process_command_line
+Aspera::Environment.instance.fix_home
+Aspera::Cli::Runner.new(ARGV).run
 ```
 
-#### 2.2 CLI Manager
+#### Runner and Context
+
+**Files**: [`lib/aspera/cli/runner.rb`](../lib/aspera/cli/runner.rb), [`lib/aspera/cli/context.rb`](../lib/aspera/cli/context.rb)
+
+The `Runner` class orchestrates the full command lifecycle:
+
+- **`run`**: Main entry point — calls `run_with_result`, displays the result via `Formatter`, handles all exceptions, and exits with the appropriate status code.
+- **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server to run commands in-process.
+
+All shared objects (options manager, transfer agent, config plugin, formatter, preset manager, HTTP config, etc.) are held in a `Context` instance and passed to plugins by reference.
+
+#### CLI Manager
 
 **File**: [`lib/aspera/cli/manager.rb`](../lib/aspera/cli/manager.rb)
 
 The CLI Manager handles:
 
 - **Option Parsing**: Command-line argument processing using `OptionParser`
-- **Extended Value Syntax**: Support for complex parameter types (JSON, YAML, Ruby expressions)
+- **Extended Value Syntax**: Support for complex parameter types (JSON, YAML, Ruby expressions, `@preset:`, `@vault:`, `@args:`)
 - **Option Validation**: Type checking and value constraints
 - **Configuration Management**: Integration with persistent configuration
 
@@ -68,7 +78,7 @@ Key responsibilities:
 - Handle sensitive data (passwords, secrets) with masking
 - Provide option inheritance and defaults
 
-#### 2.3 Plugin System
+#### Plugin System
 
 **Directory**: [`lib/aspera/cli/plugins/`](../lib/aspera/cli/plugins/)
 
@@ -84,6 +94,7 @@ The plugin architecture enables modular command implementation for different Asp
 **Product Plugins**:
 
 - [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud / ATS
+- [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
 - [`faspex.rb`](../lib/aspera/cli/plugins/faspex.rb) - Faspex 4
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
 - [`shares.rb`](../lib/aspera/cli/plugins/shares.rb) - Aspera Shares
@@ -93,14 +104,17 @@ The plugin architecture enables modular command implementation for different Asp
 - [`server.rb`](../lib/aspera/cli/plugins/server.rb) - HSTS (High-Speed Transfer Server)
 - [`cos.rb`](../lib/aspera/cli/plugins/cos.rb) - IBM Cloud Object Storage
 - [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
+- [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
+- [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
 
 **Utility Plugins**:
 
-- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management
+- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `AscpActions`, `PresetActions`, `GemChecker`, `Mailer`, `VaultManager`, `SyncActions` mixins)
 - [`preview.rb`](../lib/aspera/cli/plugins/preview.rb) - File preview generation
 - [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - OAuth authentication
+- [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
-#### 2.4 Transfer Agent Abstraction
+#### Transfer Agent Abstraction
 
 **File**: [`lib/aspera/cli/transfer_agent.rb`](../lib/aspera/cli/transfer_agent.rb)
 
@@ -118,14 +132,17 @@ The Transfer Agent provides a unified interface for initiating transfers across 
 
 ```ruby
 class Base
-  # Start a transfer asynchronously
+  # Start a transfer asynchronously (must be implemented by subclass)
   def start_transfer(transfer_spec)
-  
-  # Wait for all transfers to complete
+
+  # Wait for all transfers to complete and return per-session statuses (must be implemented)
   def wait_for_transfers_completion
-  
-  # Progress notification callback
-  def notify_progress(event_data)
+
+  # Wait for completion and validate statuses (public API)
+  def wait_for_completion
+
+  # Optional: release resources
+  def shutdown
 end
 ```
 
@@ -136,11 +153,11 @@ end
 - **Node**: Node API-based transfers
 - **HTTPGW**: HTTP Gateway for restricted networks
 - **Desktop**: Aspera Desktop Client
-- **Transfer Daemon (trSDK)**: gRPC-based transfer service
+- **Transfer Daemon (trSDK)**: gRPC-based transfer service ([`transferd.rb`](../lib/aspera/agent/transferd.rb))
 
-### 3. API Communication Layer
+### API Communication Layer
 
-#### 3.1 REST Client
+#### REST Client
 
 **File**: [`lib/aspera/rest.rb`](../lib/aspera/rest.rb)
 
@@ -160,7 +177,7 @@ Features:
 - Support for streaming large file transfers
 - Configurable retry policies for transient failures
 
-#### 3.2 Node API Client
+#### Node API Client
 
 **File**: [`lib/aspera/api/node.rb`](../lib/aspera/api/node.rb)
 
@@ -173,7 +190,7 @@ Specialized client for Aspera Node API with:
 - **Transfer Spec Generation**: Automatic transfer parameter creation
 - **Caching**: Optional Redis-based response caching
 
-#### 3.3 OAuth Implementation
+#### OAuth Implementation
 
 **Directory**: [`lib/aspera/oauth/`](../lib/aspera/oauth/)
 
@@ -184,9 +201,9 @@ Modular OAuth 2.0 support:
 - **Web** ([`web.rb`](../lib/aspera/oauth/web.rb)): Browser-based OAuth flows
 - **URL JSON** ([`url_json.rb`](../lib/aspera/oauth/url_json.rb)): Token from URL
 
-### 4. FASP Transfer Layer
+### FASP Transfer Layer
 
-#### 4.1 ASCP Installation Manager
+#### ASCP Installation Manager
 
 **File**: [`lib/aspera/ascp/installation.rb`](../lib/aspera/ascp/installation.rb)
 
@@ -201,11 +218,11 @@ Supported product detection:
 
 - Aspera Desktop Client
 - Aspera Connect
-- Transfer SDK (transferd)
-- IBM Aspera CLI SDK
-- HSTS/ATS installations
+- Aspera Transfer SDK (`transferd`)
+- Aspera for Desktop
+- Aspera HSTS/ATS installations
 
-#### 4.2 Transfer Specification
+#### Transfer Specification
 
 **File**: [`lib/aspera/transfer/spec.rb`](../lib/aspera/transfer/spec.rb)
 
@@ -219,11 +236,11 @@ Transfer specifications define all parameters for a FASP transfer:
 - Authentication credentials
 - Protocol options (UDP/TCP ports, SSH options)
 
-### 5. Remote Systems Layer
+### Remote Systems Layer
 
 The CLI communicates with various IBM Aspera components:
 
-#### 5.1 Web Applications (HTTPS)
+#### Web Applications (HTTPS)
 
 - **Aspera on Cloud (AoC)**: Cloud-based file sharing and collaboration
 - **Aspera Transfer Service (ATS)**: Managed transfer service
@@ -238,7 +255,7 @@ Communication via:
 - OAuth 2.0 authentication
 - JSON request/response payloads
 
-#### 5.2 Transfer Servers (FASP Protocol)
+#### Transfer Servers (FASP Protocol)
 
 - **IBM Cloud Object Storage (COS)**: S3-compatible object storage with FASP
 - **Aspera Transfer Server (ATS)**: Dedicated transfer endpoints
@@ -250,9 +267,10 @@ Communication via:
 - Node API (HTTPS) for control operations
 - SSH for authentication and session management
 
-#### 5.3 Third-Party Integrations
+#### Third-Party Integrations
 
 - **gRPC**: Transfer Daemon communication
+- **MCP**: Model Context Protocol for AI assistant integration
 - **External Tools**: Integration with system utilities
 
 ## Data Flow
@@ -261,43 +279,43 @@ Communication via:
 
 1. **Command Parsing**:
 
-   ```
-   User Input → bin/ascli → CLI Manager → Option Parsing
+   ```text
+   User Input &rarr; bin/ascli &rarr; CLI Manager &rarr; Option Parsing
    ```
 
 2. **Plugin Selection**:
 
-   ```
-   Command → Plugin Factory → Specific Plugin (e.g., aoc, faspex)
+   ```text
+   Command &rarr; Plugin Factory &rarr; Specific Plugin (e.g., aoc, faspex)
    ```
 
 3. **API Communication**:
 
-   ```
-   Plugin → REST Client → Remote API → JSON Response
+   ```text
+   Plugin &rarr; REST Client &rarr; Remote API &rarr; JSON Response
    ```
 
 4. **Transfer Initiation**:
 
-   ```
-   Plugin → Transfer Agent → Agent Selection → ascp/trSDK/Connect
+   ```text
+   Plugin &rarr; Transfer Agent &rarr; Agent Selection &rarr; ascp/trSDK/Connect
    ```
 
 5. **Transfer Execution**:
 
-   ```
-   Transfer Agent → FASP Protocol → Remote Server → Progress Updates
+   ```text
+   Transfer Agent &rarr; FASP Protocol &rarr; Remote Server &rarr; Progress Updates
    ```
 
 6. **Result Formatting**:
 
-   ```
-   Response Data → Formatter → Output (table/json/yaml/csv)
+   ```text
+   Response Data &rarr; Formatter &rarr; Output (table/json/yaml/csv)
    ```
 
 ## Key Design Patterns
 
-### 1. Plugin Architecture
+### Plugin Architecture
 
 Each Aspera product is implemented as a plugin inheriting from `Plugins::Base`:
 
@@ -305,7 +323,7 @@ Each Aspera product is implemented as a plugin inheriting from `Plugins::Base`:
 - Standard CRUD operations
 - Extensible for product-specific features
 
-### 2. Factory Pattern
+### Factory Pattern
 
 Used for creating instances based on configuration:
 
@@ -313,7 +331,7 @@ Used for creating instances based on configuration:
 - **OAuth Factory**: Creates authentication handlers
 - **Plugin Factory**: Instantiates product plugins
 
-### 3. Singleton Pattern
+### Singleton Pattern
 
 Used for global configuration and state:
 
@@ -321,7 +339,7 @@ Used for global configuration and state:
 - **RestParameters**: HTTP client settings
 - **Log**: Logging configuration
 
-### 4. Strategy Pattern
+### Strategy Pattern
 
 Transfer agents implement a common interface with different strategies:
 
@@ -330,7 +348,7 @@ Transfer agents implement a common interface with different strategies:
 - API-based via Node
 - Gateway-based via HTTPGW
 
-### 5. Template Method Pattern
+### Template Method Pattern
 
 Base plugin defines the operation flow, subclasses implement specifics:
 
@@ -347,6 +365,13 @@ class Faspex < Base
   end
 end
 ```
+
+### Mixin / Module Pattern
+
+Large classes are decomposed into focused mixins included by the host class:
+
+- `Config` plugin includes `AscpActions`, `PresetActions`, `GemChecker`, `Mailer`, `VaultManager`, `SyncActions`
+- Each mixin owns a single responsibility and depends on `options`, `context`, and other accessors provided by the host
 
 ## Configuration Management
 
@@ -385,14 +410,15 @@ Integration with secure storage:
 
 ### Error Hierarchy
 
-```
+```text
 StandardError
-├── Aspera::Error (base)
-│   ├── Cli::Error (CLI-specific)
-│   │   ├── BadArgument
-│   │   └── NoSuchIdentifier
-│   ├── RestCallError (HTTP errors)
-│   └── EntityNotFound
+├── Aspera::Cli::Error (CLI base)
+│   ├── BadArgument
+│   ├── MissingArgument
+│   ├── NoSuchElement
+│   └── BadIdentifier
+├── RestCallError (HTTP errors)
+└── Transfer::Error (transfer failures)
 ```
 
 ### Error Analysis
@@ -409,10 +435,14 @@ Analyzes API errors and provides:
 
 ### Log Levels
 
+- `trace2`: Finest-grained tracing (most verbose)
+- `trace1`: Fine-grained tracing
 - `debug`: Detailed debugging information
 - `info`: General informational messages
 - `warn`: Warning messages
 - `error`: Error messages
+- `fatal`: Fatal errors
+- `unknown`: Unknown severity
 
 ### Debug Features
 

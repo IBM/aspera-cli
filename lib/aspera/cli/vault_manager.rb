@@ -7,7 +7,7 @@ require 'aspera/assert'
 module Aspera
   module Cli
     # Mixin providing vault/keychain functionality to Plugin::Config.
-    # Depends on `options` and `@main_folder` being available in the including class.
+    # Depends on `options` and `context.main_folder` being available in the including class.
     module VaultManager
       # @return [Result] result of vault sub-command
       def execute_vault

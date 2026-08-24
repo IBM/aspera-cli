@@ -374,7 +374,6 @@ properties:
     type: array
     x-cli-special: true
   precalculate_job_size:
-    $comment: "TODO: if false, use option: --precalculate-disable"
     description: Specifies whether to precalculate the job size.
     type: boolean
     x-cli-switch: true
