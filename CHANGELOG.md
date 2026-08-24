@@ -9,6 +9,7 @@ Released: [Place date of release here]
 * `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` as argument to install the latest available version.
 * `mcp`: New plugin - starts a [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes a single tool `execute_ascli_command`, allowing AI assistants to drive `ascli` in-process. Supports both `stdio` (default) and `http` (Streamable HTTP) transports.
 * **global**: Support for growing files using the `file` PVCL adapter (`file:///path?grow=<seconds>`). Use with `--transfer-info.file_list=false`.
+* **global**: New composite option `--log` supporting [dot-path notation](docs/README.md#dot-path-notation) sub-properties: `level` (`--log.level`), `type` (`--log.type`), `format` (`--log.format`). These are aliases for `--log-level`, `--logger`, and `--log-format` respectively. Individual options are preserved for backward compatibility.
 
 ### Issues Fixed
 

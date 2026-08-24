@@ -2959,6 +2959,17 @@ The following options control logging:
 
 Option `logger` defines the destination of logs.
 
+> [!TIP]
+> Options `log_level`, `log_format`, and `logger` can also be set together using the composite option `log` with [dot-path notation](#dot-path-notation):
+>
+> | Sub-property | Equivalent option |
+> |--------------|-------------------|
+> | `log.level`  | `log_level`       |
+> | `log.type`   | `logger`          |
+> | `log.format` | `log_format`      |
+>
+> Example: `--log.level=debug --log.type=stdout`
+
 #### `log_level` and `log_secrets`
 
 To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env :log_level%>`, or an [Option Preset](#option-preset)).
@@ -2996,10 +3007,24 @@ Available formatters for `log_format`:
 <%=cmd%> config pre over --log-level=debug --logger=stdout
 ```
 
+Or equivalently using dot-path notation:
+
+```shell
+<%=cmd%> config pre over --log.level=debug --log.type=stdout
+```
+
 - Log errors to `syslog`:
 
 ```shell
 <%=cmd%> config pre over --log-level=error --logger=syslog
+```
+
+Or using the composite option in a preset:
+
+```yaml
+log:
+  level: error
+  type: syslog
 ```
 
 > [!NOTE]

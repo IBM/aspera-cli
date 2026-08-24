@@ -95,6 +95,7 @@ module Aspera
           result = Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys)
           @context.config.save_config_file_if_needed
           @context.transfer.shutdown
+          TempFileManager.instance.cleanup
           return result
         end
         execute_command = true
@@ -162,10 +163,12 @@ module Aspera
             end
           end
         end
-        # 2- processing of unprocessed arguments
-        @context.options&.final_errors&.each do |msg|
-          Log.log.error{"Argument: #{msg}"}
-          exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
+        # 2- processing of unprocessed arguments (skip when help was displayed: sub-commands are not consumed)
+        unless @option_help
+          @context.options&.final_errors&.each do |msg|
+            Log.log.error{"Argument: #{msg}"}
+            exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
+          end
         end
         # 3- exit on error
         unless exception_info.nil?
@@ -192,6 +195,30 @@ module Aspera
       end
 
       private
+
+      # Composite option handler for the `log` option (dot-notation sub-properties).
+      # Supported sub-properties: +level+, +type+, +format+
+      # @param _option_sym [Symbol] Option name (unused, always :log)
+      # @param operation   [Symbol] +:set+ or +:get+
+      # @param value       [Hash,nil] Hash of sub-properties to set (only for +:set+)
+      def option_log(_option_sym, operation, value = nil)
+        Aspera.assert_values(operation, %i[set get])
+        case operation
+        when :set
+          Aspera.assert_type(value, Hash)
+          value.each do |k, v|
+            case k.to_sym
+            when :level  then Log.instance.level = v.to_sym
+            when :type   then Log.instance.logger_type = v.to_sym
+            when :format then Log.instance.formatter = v
+            else Aspera.error_unexpected_value(k){'log sub-option (level, type, format)'}
+            end
+          end
+        when :get
+          return {level: Log.instance.level, type: Log.instance.logger_type, format: Log.instance.formatter}
+        end
+        nil
+      end
 
       # Collect usage/help text for all or just the current plugin.
       # @param all [Boolean] if true, include all plugins
@@ -300,6 +327,7 @@ module Aspera
         @context.options.declare(:log_level, 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
         @context.options.declare(:log_format, 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
         @context.options.declare(:logger, 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        @context.options.declare(:log, 'Logging options (dot-notation: level, type, format)', allowed: Hash, handler: {o: self, m: :option_log})
         @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
         @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
         @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})

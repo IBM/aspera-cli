@@ -20,9 +20,9 @@ Aspera::Log.instance.program_name = Aspera::Cli::Info::CMD_NAME
 ARGV.each do |arg|
   case arg
   when '--' then break
-  when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
-  when /^--log-format=(.*)/ then Aspera::Log.instance.formatter = Regexp.last_match(1) unless Regexp.last_match(1).start_with?('@ruby:')
-  when /^--logger=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
+  when /^--log-level=(.*)/, /^--log\.level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
+  when /^--log-format=(.*)/, /^--log\.format=(.*)/ then Aspera::Log.instance.formatter = Regexp.last_match(1) unless Regexp.last_match(1).start_with?('@ruby:')
+  when /^--logger=(.*)/, /^--log\.type=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
   end
 rescue => e
   $stderr.puts("Error: #{e}") # rubocop:disable Style/StderrPuts
