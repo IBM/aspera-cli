@@ -6,6 +6,25 @@ info:
 paths: {}
 components:
   schemas:
+    LogOptions:
+      type: object
+      description: Logging options. Use dot-notation to set individual keys (e.g. `--log.level=debug --log.type=stdout`).
+      properties:
+        level:
+          type: string
+          description: Minimum log level displayed.
+          enum: [trace2, trace1, debug, info, warn, error, fatal, unknown]
+          default: warn
+        type:
+          type: string
+          description: Log output destination.
+          enum: [stderr, stdout, syslog]
+          default: stderr
+        format:
+          type: string
+          description: Log line formatter. Use `@ruby:` for a custom lambda.
+          enum: [default, caller, standard]
+          default: default
     TransferOptions:
       type: object
       description: >-
