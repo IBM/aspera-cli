@@ -52,8 +52,8 @@ DOC_FILES = [
   Paths::GEMFILE
 ]
 
-# Source file that contain constants used to generate doc
-CONST_SOURCES = %w[info version manager].map{ |i| Paths::LIB / "aspera/cli/#{i}.rb"}
+# Source file that contain constants used to generate doc (version, urls)
+CONST_SOURCES = %w[info version].map{ |i| Paths::LIB / "aspera/cli/#{i}.rb"}
 
 namespace :doc do
   rule '.pdf' => '.md' do |t|

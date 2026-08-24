@@ -356,7 +356,6 @@
       "x-cli-special": true
     },
     "precalculate_job_size": {
-      "$comment": "TODO: if false, use option: --precalculate-disable",
       "description": "Specifies whether to precalculate the job size.",
       "type": "boolean",
       "x-cli-switch": true,
@@ -759,6 +758,11 @@
         "transferd"
       ],
       "x-cli-option": "--tags64"
+    },
+    "target_rate": {
+      "description": "Pseudo-parameter: desired transfer rate as a human-readable string with an optional unit suffix. Converted to `target_rate_kbps` before the transfer is started, overriding it if both are present. Accepted formats: plain integer (kbps), or integer followed by `k`/`K` (kbps), `m`/`M` (x1000 kbps), `g`/`G` (x1000000 kbps). Examples: `100000`, `100000k`, `100m`, `1g`.",
+      "type": "string",
+      "x-cli-special": true
     },
     "target_rate_cap_kbps": {
       "description": "Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.",

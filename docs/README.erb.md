@@ -4416,13 +4416,21 @@ Key query parameters:
 | `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
 
 > [!NOTE]
-> Because the `file:` URI is passed directly to `ascp` on the command line (not via a file list), `--transfer.file_list=false` is required.
-> The native `ascp` progress bar can then be used: `--transfer.quiet=false --progress=no`.
+> `ascp` requires that all sources in a single transfer session share the same URI scheme.
+> This means the `file:` URI (with its query parameters) must be specified either directly on the command line, or uniformly as a source prefix — it cannot be mixed with plain paths in a file list.
 
-Example: upload a growing file `./growing`, waiting up to 120 seconds after it stops growing:
+**Option 1 — URI directly on the command line** (single file, `--transfer.file_list=false` required):
 
 ```shell
 <%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
+```
+
+**Option 2 — File list with `source_root`** (one or more files, query parameters go into the prefix):
+
+Place only the bare filename(s) in the file list, and pass the `file:` URI as the source root so that the query parameters apply uniformly to every entry:
+
+```shell
+<%=cmd%> server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer.quiet=false
 ```
 
 ### Usage
