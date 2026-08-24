@@ -102,7 +102,7 @@ Using <%=tool%> with the `server` plugin instead of raw `ascp` provides several 
 - Choice of transfer agents
 - Built-in multi-session support
 
-All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
+All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer`).
 
 ### Notations, Shell, Examples
 
@@ -1097,7 +1097,7 @@ echo '<CONF/>' > $HOME/.aspera/<%=cmd%>/aspera.conf
 Then, tell `ascp` to use that other configuration file:
 
 ```shell
---transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/<%=cmd%>/aspera.conf"]}'
+--transfer=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/<%=cmd%>/aspera.conf"]}'
 ```
 
 #### Container: Singularity
@@ -3183,7 +3183,7 @@ If the proxy found with the PAC requires credentials, then use option `proxy_cre
 
 #### Proxy for Legacy Aspera HTTP/S Fallback
 
-Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`.
+Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer=@json:'{"ascp_args":["-x","url_here"]}'`.
 
 #### FASP proxy (forward) for transfers
 
@@ -3198,7 +3198,7 @@ For example, for an Aspera forward proxy not encrypted (HTTP) without authentica
 Or, alternatively, (prefer transfer spec like above, generally):
 
 ```shell
---transfer-info=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
+--transfer=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
 ```
 
 ### FASP configuration
@@ -3320,10 +3320,10 @@ The following agents are supported and selected with option `transfer`:
 All above agents (including `direct`) receive transfer parameters as a [**transfer-spec**](#transfer-specification).
 Parameters in transfer-spec can be modified with option `ts`.
 
-**Specific** options for agents are provided with option `transfer_info`.
+**Specific** options for agents are provided with option `transfer` (as a `Hash`, optionally with an `agent` key).
 
 > [!NOTE]
-> Parameters in `transfer_info` are specific for each agent type and are described in the agents respective sections.
+> Parameters in `transfer` are specific for each agent type and are described in the agents respective sections.
 
 #### Agent: Direct
 
@@ -3332,11 +3332,11 @@ This is the default agent for <%=tool%> (option `--transfer=direct`).
 <%=tool%> will locally search installed Aspera products, including SDK, and use `ascp` from that component.
 See [FASP](#fasp-configuration).
 
-##### Agent: Direct: `transfer_info`
+##### Agent: Direct: `transfer`
 
-The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
+The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-<%=schema_to_table(Aspera::Schema::Registry::TRANSFER_INFO)%>
+<%=schema_to_table(Aspera::Schema::Registry::TRANSFER_OPTIONS)%>
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -3348,22 +3348,22 @@ max( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 To display the native progress bar of `ascp`, use:
 
 ```shell
---progress-bar=no --transfer-info=@json:'{"quiet":false}'`
+--progress-bar=no --transfer.quiet=false`
 ```
 
 To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
 In that, use the native progress bar:
 
 ```shell
---transfer-info=@json:'{"monitor":false,"quiet":false}'`
+--transfer.monitor=false --transfer.quiet=false`
 ```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
-In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer_info`.
+In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
 To use `ascp`'s default, use option:
 
 ```shell
---transfer-info=@json:'{"trusted_certs":null}'`.
+--transfer.trusted_certs=@none:
 ```
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
@@ -3376,31 +3376,31 @@ The list of known protocol errors and retry level can be listed:
 Examples:
 
 ```shell
-<%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
-<%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
+<%=cmd%> ... --transfer.wss=true --transfer.resume.iter_max=20
+<%=cmd%> ... --transfer.spawn_delay_sec=2.5 --transfer.multi_incr_udp=false
 ```
 
 This can be useful to activate logging using option `-L` of `ascp`.
 For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
 
 ```shell
---transfer-info=@json:'{"ascp_args":["-DDL-"]}'
+--transfer=@json:'{"ascp_args":["-DDL-"]}'
 ```
 
 This is useful to debug if a transfer fails.
 
-To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
+To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
 
 > [!NOTE]
-> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer_info` parameter `ascp_args`.
-> To place source paths directly on the `ascp` command line instead of using a temp file, set `file_list` to `false` in `transfer_info`: `--transfer-info=@json:'{"file_list":false}'`.
+> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer` parameter `ascp_args`.
+> To place source paths directly on the `ascp` command line instead of using a temp file, set `file_list` to `false` in `transfer`: `--transfer.file_list=false`.
 
 In addition to standard methods described in section [File List](#list-of-files-for-transfers), it is possible to specify the list of file using those additional methods:
 
-- Using option `transfer_info` parameter `ascp_args`
+- Using option `transfer` parameter `ascp_args`
 
 ```shell
---sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","myfilelist"]}'
+--sources=@ts --transfer=@json:'{"ascp_args":["--file-list","myfilelist"]}'
 ```
 
 > [!NOTE]
@@ -3415,7 +3415,7 @@ In addition to standard methods described in section [File List](#list-of-files-
 ##### Agent: Direct: Management messages
 
 By default, <%=tool%> gets notification from `ascp` on its management port.
-This can be disabled with parameter: `monitor=false` of `transfer_info`.
+This can be disabled with parameter: `monitor=false` of `transfer`.
 
 It is also possible to send messages to `ascp` using this management port.
 A typical use is to change the target rate of a running transfer.
@@ -3577,19 +3577,19 @@ So, for example:
 #### Agent: Connect Client
 
 By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed **IBM Aspera Connect Client**.
-There are no option for `transfer_info`.
+There are no specific parameters for option `transfer`.
 
 #### Agent: Desktop Client
 
 By specifying option: `--transfer=desktop`, <%=tool%> will start transfers using the locally installed **IBM Aspera Desktop Client**.
-There are no option for `transfer_info`.
+There are no specific parameters for option `transfer`.
 
 #### Agent: Node API
 
 By specifying option: `--transfer=node`, <%=tool%> starts transfers in an Aspera Transfer Server using the Node API, either on a local or remote node.
 This is especially useful for direct node-to-node transfers.
 
-Parameters provided in option `transfer_info` are:
+Parameters provided in option `transfer` are:
 
 | Parameter  | Type     | Description                                        |
 |------------|----------|----------------------------------------------------|
@@ -3598,19 +3598,19 @@ Parameters provided in option `transfer_info` are:
 | `password` | `String` | Password, secret or bearer token<%=br%>Mandatory   |
 | `root_id`  | `String` | Root file ID<%=br%>Mandatory only for bearer token |
 
-Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
+Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
 ```shell
---transfer-info=@preset:_name_here_
+--transfer=@preset:_name_here_
 ```
 
 It can also directly use the [Extended Value](#extended-value-syntax) syntax:
 
 ```shell
---transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"<%=ph :password%>"}'
+--transfer=@json:'{"url":"https://...","username":"_user_here_","password":"<%=ph :password%>"}'
 ```
 
-If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
+If `transfer` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
 If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the file ID of the top folder to use on the node using this access key.
 It can be either the access key's root file ID, or any authorized file ID underneath it.
@@ -3621,7 +3621,7 @@ The Aspera HTTP Gateway is a service that allows sending and receiving files usi
 
 By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using the Aspera HTTP Gateway.
 
-Parameters provided in option `transfer_info` are:
+Parameters provided in option `transfer` are:
 
 | Name                | Type      | Description                                               |
 |---------------------|-----------|-----------------------------------------------------------|
@@ -3633,20 +3633,20 @@ Parameters provided in option `transfer_info` are:
 Example:
 
 ```shell
-<%=cmd%> faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy"}'
+<%=cmd%> faspex package recv 323 --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy --transfer=httpgw
 ```
 
 > [!NOTE]
 > The gateway only supports transfers authorized with a token.
 
-If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then <%=tool%> will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer_info` becomes optional.
+If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then <%=tool%> will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer` URL becomes optional.
 
 #### Agent: Transfer Daemon
 
 Another possibility is to use the Transfer Daemon (`transferd`).
 Set option `transfer` to `transferd`.
 
-Options for `transfer_info` are:
+Options for `transfer` are:
 
 | Name     | Type     | Description                                  |
 |----------|----------|----------------------------------------------|
@@ -3661,7 +3661,7 @@ Options for `transfer_info` are:
 For example, to use an external, already running `transferd`, use option:
 
 ```shell
---transfer-info=@json:'{"url":":55002","start":false,"stop":false}'
+--transfer=@json:'{"url":":55002","start":false,"stop":false}'
 ```
 
 The gem `grpc` is not part of default dependencies, as it requires compilation of a native part.
@@ -3719,17 +3719,17 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 <%=cmd%> config ascp info --fields=ts --flat-hash=no
 ```
 
-It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
+It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer` option parameter: `ascp_args`.
 Example:
 
-```json
---transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+```shell
+--transfer=@json:'{"ascp_args":["-l","100m"]}'
 ```
 
 Or an equivalent (using dotted expression):
 
-```json
---transfer-info.ascp_args=@list:' -l 100m'
+```shell
+--transfer.ascp_args=@list:' -l 100m'
 ```
 
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
@@ -4440,13 +4440,13 @@ Key query parameters:
 | `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
 
 > [!NOTE]
-> Because the `file:` URI is passed directly to `ascp` on the command line (not via a file list), `--transfer-info.file_list=false` is required.
-> The native `ascp` progress bar can then be used: `--transfer-info.quiet=false --progress=no`.
+> Because the `file:` URI is passed directly to `ascp` on the command line (not via a file list), `--transfer.file_list=false` is required.
+> The native `ascp` progress bar can then be used: `--transfer.quiet=false --progress=no`.
 
 Example: upload a growing file `./growing`, waiting up to 120 seconds after it stops growing:
 
 ```shell
-<%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer-info.file_list=false --transfer-info.quiet=false --progress=no
+<%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
 ```
 
 ### Usage
@@ -5987,7 +5987,7 @@ Find files in Files app:
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
 
 ```shell
-<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
 ```
 
 #### Receive packages
@@ -6457,7 +6457,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-<%=cmd%> -Porg1 aoc files node_info <%=ph :dest_folder%> --format=json --display=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --transfer=node --transfer-info=@json:@stdin:
+<%=cmd%> -Porg1 aoc files node_info <%=ph :dest_folder%> --format=json --display=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --transfer=@json:@stdin:
 ```
 
 Explanation:
@@ -6471,8 +6471,7 @@ Explanation:
 - `|` pipes the standard output of the first command into the second one
 - `-Porg2 aoc` uses the Aspera on Cloud plugin and loads credentials for `org2`
 - `files upload <%=ph :source_file%>` uploads the file named `<%=ph :source_file%>` (located in `org2`) to `org1`
-- `--transfer=node` uses transfer agent type `node` instead of the default [`direct`](#agent-direct)
-- `--transfer-info=@json:@stdin:` provides `node` transfer agent information (Node API credentials), expected as JSON and read from standard input
+- `--transfer=@json:@stdin:` provides `node` transfer agent information (Node API credentials including `"agent":"node"`), expected as JSON and read from standard input
 
 #### Find Files
 
@@ -6998,7 +6997,7 @@ Create another configuration for the Azure ATS instance: in section **node**, na
 Then execute the following command:
 
 ```shell
-<%=cmd%> node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=node --transfer-info=@preset:azure_ats
+<%=cmd%> node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=@preset:azure_ats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
@@ -8898,7 +8897,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 > Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
 
 > [!TIP]
-> Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info`.
+> Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer`.
 
 ##### Server side and configuration
 
@@ -9108,7 +9107,7 @@ Top level parameters supported by `asession`:
 | Parameter          | Description                                                            |
 |--------------------|------------------------------------------------------------------------|
 | `spec`             | The [**transfer-spec**](#transfer-specification)                       |
-| `agent`            | Same parameters as transfer-info for agent `direct`                    |
+| `agent`            | Same parameters as `transfer` option for agent `direct`                |
 | `loglevel`         | Log level of `asession`                                                |
 | `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<%=br%>Default: `[system tmp folder]/[username]_asession_filelists` |
 
@@ -9290,7 +9289,7 @@ In container, this is located in `/ibm_aspera`.
 One possibility to avoid that error is to disable partial filename suffix... But that only hides the problem.
 
 For example, when using the container, override that file with a volume and remove the line for extension.
-Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
+Another possibility is to add this option: `--transfer=@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
 
 > [!NOTE]
 > If one relies on `--lock-port` when using containers to avoid parallel transfers in a cron job, this may be the cause, as `lock_port` does not lock across containers.

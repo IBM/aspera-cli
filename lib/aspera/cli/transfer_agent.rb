@@ -57,8 +57,8 @@ module Aspera
           'create_dir'    => true,
           'resume_policy' => 'sparse_csum'
         }
-        # options for transfer agent
-        @transfer_info = {}
+        # options for transfer agent (agent type + agent-specific parameters)
+        @transfer_options = {}
         # the currently selected transfer agent
         @agent = nil
         # source/destination pair, like "paths" of transfer spec
@@ -69,8 +69,10 @@ module Aspera
         @context.options.declare(:to_folder, 'Destination folder for transferred files')
         @context.options.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
         @context.options.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
-        @context.options.declare(:transfer, 'Type of transfer agent', allowed: Agent::Factory::ALL.keys, default: :direct)
-        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_info}, schema: Schema::Registry::TRANSFER_INFO)
+        # String value: agent type shorthand (e.g. --transfer=node); Hash value: full agent params incl. optional 'agent' key
+        @context.options.declare(:transfer, 'Transfer agent type, or agent parameters with optional agent key', allowed: [Hash, String], handler: {o: self, m: :option_transfer}, schema: Schema::Registry::TRANSFER_OPTIONS)
+        # Deprecated: use --transfer instead
+        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_options}, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_OPTIONS)
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?
@@ -84,7 +86,23 @@ module Aspera
         end
       end
 
-      attr_accessor :user_transfer_spec, :transfer_info
+      attr_accessor :user_transfer_spec, :transfer_options
+
+      # Composite option handler for :transfer
+      # String value  -> shorthand for agent type, stored as {'agent' => value}
+      # Hash value    -> merged into @transfer_options (may include 'agent' key)
+      def option_transfer(_option_sym, operation, value = nil)
+        Aspera.assert_values(operation, %i[set get])
+        case operation
+        when :set
+          value = {'agent' => value} if value.is_a?(String)
+          Aspera.assert_type(value, Hash)
+          @transfer_options = @transfer_options.deep_merge(value)
+        when :get
+          return @transfer_options
+        end
+        nil
+      end
 
       def agent_instance=(instance)
         @agent = instance
@@ -93,9 +111,11 @@ module Aspera
       # analyze options and create new agent if not already created or set
       def agent_instance
         return @agent unless @agent.nil?
-        agent_type = @context.options.get_option(:transfer, mandatory: true)
-        # set keys as symbols
-        agent_options = @context.options.get_option(:transfer_info).symbolize_keys
+        # agent type: from composite option 'agent' key, fallback to deprecated :transfer_type, default :direct
+        raw_type = @transfer_options['agent'] || @context.options.get_option(:transfer_type) || :direct
+        agent_type = Manager.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
+        # set keys as symbols, strip internal 'agent' key
+        agent_options = @transfer_options.except('agent').symbolize_keys
         agent_options[:progress] = @context.progress_bar
         agent_options[:config_dir] = @context.main_folder
         # special cases
@@ -103,7 +123,7 @@ module Aspera
         when :node
           if !agent_options.key?(:url)
             param_set_name = @context.presets.plugin_default_name(:node)
-            raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
+            raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer)}.url or #{Manager.option_name_to_line(:transfer)}" if param_set_name.nil?
             agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
@@ -196,8 +216,8 @@ module Aspera
           when FILE_LIST_FROM_TRANSFER_SPEC
             Log.log.debug('assume list provided in transfer spec')
             special_case_direct_with_list =
-              @context.options.get_option(:transfer, mandatory: true).eql?(:direct) &&
-              Transfer::Parameters.ascp_args_file_list?(@context.options.get_option(:transfer_info)['ascp_args'])
+              (@transfer_options['agent'] || :direct).to_sym.eql?(:direct) &&
+              Transfer::Parameters.ascp_args_file_list?(@transfer_options['ascp_args'])
             raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
             # can be nil
             @transfer_paths

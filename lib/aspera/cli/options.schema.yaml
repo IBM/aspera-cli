@@ -6,9 +6,13 @@ info:
 paths: {}
 components:
   schemas:
-    TransferInfo:
+    TransferOptions:
       type: object
-      description: Optional parameters to control multi-session transfers, Web Socket Session, resume policy, and additional arguments for `ascp`.
+      description: >-
+        Transfer agent selector and parameters.
+        When set to a `String`, it selects the agent type (e.g. `direct`, `node`).
+        When set to a `Hash`, the optional `agent` key selects the agent type and the remaining keys are agent-specific parameters.
+        Use dot-notation to set individual keys (e.g. `--transfer.agent=node --transfer.url=https://...`).
       properties:
         wss:
           type: boolean

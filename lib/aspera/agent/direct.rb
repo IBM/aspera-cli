@@ -25,7 +25,7 @@ module Aspera
       SELECT_AVAILABLE_PORT = 0
       private_constant :LISTEN_LOCAL_ADDRESS, :SELECT_AVAILABLE_PORT
 
-      # Options: same as values in option `transfer_info`
+      # Options: same as values in option `transfer`
       # (Args) : Options that influence `ascp` arguments.
       #
       # @param ascp_args         [Array]   (Args) Optional Additional arguments to ascp

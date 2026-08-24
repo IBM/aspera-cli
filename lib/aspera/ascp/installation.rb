@@ -134,11 +134,11 @@ module Aspera
             check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true){private_key.to_pem}
             check_or_create_sdk_file('aspera_fallback_cert.pem', force: true){cert.to_pem}
           end
-          file = k.eql?(:fallback_certificate) ? file_cert : file_key
-        else Aspera.error_unexpected_value(k)
+          file = file_type.eql?(:fallback_certificate) ? file_cert : file_key
+        else Aspera.error_unexpected_value(file_type)
         end
         return unless file_is_required || File.exist?(file)
-        Aspera.assert(File.exist?(file), type: Errno::ENOENT){"#{k} not found (#{file})"}
+        Aspera.assert(File.exist?(file), type: Errno::ENOENT){"#{file_type} not found (#{file})"}
         return file
       end
 

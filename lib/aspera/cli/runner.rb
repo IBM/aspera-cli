@@ -194,8 +194,6 @@ module Aspera
         Result::Text.new(usage_text(all: all))
       end
 
-      private
-
       # Composite option handler for the `log` option (dot-notation sub-properties).
       # Supported sub-properties: +level+, +type+, +format+
       # @param _option_sym [Symbol] Option name (unused, always :log)
@@ -219,6 +217,8 @@ module Aspera
         end
         nil
       end
+
+      private
 
       # Collect usage/help text for all or just the current plugin.
       # @param all [Boolean] if true, include all plugins

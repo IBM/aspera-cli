@@ -42,7 +42,7 @@ module Aspera
       AOC = 'aoc'
       FASPEX = 'faspex'
       ASYNC_TABLES = 'async_tables'
-      TRANSFER_INFO = "#{OPTIONS}:components.schemas.TransferInfo"
+      TRANSFER_OPTIONS = "#{OPTIONS}:components.schemas.TransferOptions"
 
       REQ_BODY = '.requestBody.content.application/json.schema'
 
