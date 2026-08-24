@@ -15,8 +15,6 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
-* **global**: Fixed two remaining `Manager` references in `transfer_agent.rb` that were missed when `Cli::Manager` was renamed to `Options` (caused `NameError` when selecting a transfer agent).
-
 ### Breaking Changes
 
 ### Other Changes
