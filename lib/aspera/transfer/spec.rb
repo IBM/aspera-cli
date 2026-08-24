@@ -34,7 +34,13 @@ module Aspera
           'sparse_csum' => 'sparse_checksum',
           'full_csum'   => 'full_checksum'
         }
-        private_constant :POLICY_FIX
+        # Multipliers for target_rate suffix (result is in kbps)
+        RATE_SUFFIX_KBPS = {
+          'k' => 1,
+          'm' => 1_000,
+          'g' => 1_000_000
+        }.freeze
+        private_constant :POLICY_FIX, :RATE_SUFFIX_KBPS
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)
           XFER_TYPE_TO_DIR.fetch(transfer_type)
@@ -43,6 +49,17 @@ module Aspera
         # translate send/receive to upload/download
         def direction_to_transfer_type(direction)
           XFER_DIR_TO_TYPE.fetch(direction)
+        end
+
+        # Parse a human-readable rate string (as accepted by ascp -l) into an integer kbps value.
+        # Accepted: plain integer (kbps), or integer + suffix k/K (kbps), m/M (×1000 kbps), g/G (×1000000 kbps).
+        # @param value [String] e.g. "100m", "500000", "1g"
+        # @return [Integer] value in kbps
+        def rate_string_to_kbps(value)
+          m = value.to_s.strip.match(/\A(\d+)([kKmMgG])?\z/)
+          raise "Invalid rate value: #{value.inspect}. Expected integer with optional suffix k/K, m/M or g/G." unless m
+          multiplier = m[2] ? RATE_SUFFIX_KBPS.fetch(m[2].downcase) : 1
+          return m[1].to_i * multiplier
         end
 
         def fix_transferd_resume_policy(transfer_spec)

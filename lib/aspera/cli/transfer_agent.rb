@@ -113,7 +113,7 @@ module Aspera
         return @agent unless @agent.nil?
         # agent type: from composite option 'agent' key, default :direct
         raw_type = @transfer_options['agent'] || :direct
-        agent_type = Manager.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
+        agent_type = Options.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
         # set keys as symbols, strip internal 'agent' key
         agent_options = @transfer_options.except('agent').symbolize_keys
         agent_options[:progress] = @context.progress_bar
@@ -123,7 +123,7 @@ module Aspera
         when :node
           if !agent_options.key?(:url)
             param_set_name = @context.presets.plugin_default_name(:node)
-            raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer)}.url or #{Manager.option_name_to_line(:transfer)}" if param_set_name.nil?
+            raise Cli::BadArgument, "No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}" if param_set_name.nil?
             agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
@@ -261,6 +261,8 @@ module Aspera
         @user_transfer_spec['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
         transfer_spec.deep_merge!(@user_transfer_spec)
+        # resolve pseudo-parameter: target_rate -> target_rate_kbps (overrides target_rate_kbps if both are present)
+        transfer_spec['target_rate_kbps'] = Transfer::Spec.rate_string_to_kbps(transfer_spec.delete('target_rate')) if transfer_spec.key?('target_rate')
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided

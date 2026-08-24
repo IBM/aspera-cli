@@ -754,6 +754,14 @@ properties:
     description: Specifies desired speed for the transfer.
     type: integer
     x-cli-option: -l
+  target_rate:
+    description: >-
+      Pseudo-parameter: desired transfer rate as a human-readable string with an optional unit suffix.
+      Converted to `target_rate_kbps` before the transfer is started, overriding it if both are present.
+      Accepted formats: plain integer (kbps), or integer followed by `k`/`K` (kbps), `m`/`M` (x1000 kbps), `g`/`G` (x1000000 kbps).
+      Examples: `100000`, `100000k`, `100m`, `1g`.
+    type: string
+    x-cli-special: true
   title:
     description: Title of the transfer.
     type: string
