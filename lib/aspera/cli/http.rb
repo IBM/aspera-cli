@@ -34,7 +34,7 @@ module Aspera
 
       # Declare all HTTP/S CLI options, with handlers pointing to self.
       # Called once from Config#initialize after this object is instantiated.
-      # @param options [Aspera::Cli::Manager] CLI options manager to declare options into
+      # @param options [Aspera::Cli::Options] CLI options manager to declare options into
       # @return [void]
       def declare_options(options)
         options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :insecure}, default: false)

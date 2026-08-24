@@ -40,7 +40,7 @@ module Aspera
         # Global objects
         attr_reader :context
 
-        # @return [Aspera::Cli::Manager]
+        # @return [Aspera::Cli::Options]
         def options; @context.options; end
         # @return [Aspera::Cli::TransferAgent]
         def transfer; @context.transfer; end

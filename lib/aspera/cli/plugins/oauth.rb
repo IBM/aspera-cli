@@ -9,7 +9,7 @@ module Aspera
       class Oauth < BasicAuth
         class << self
           # Get command line `options` specified by `AUTH_OPTIONS`
-          # @param options [Cli::Manager] Object to get command line options.
+          # @param options [Cli::Options] Object to get command line options.
           # @return [Hash{Symbol => Object}] Options
           # @raise [Cli::Error] if a required option is missing
           def kwargs_from_options(options)

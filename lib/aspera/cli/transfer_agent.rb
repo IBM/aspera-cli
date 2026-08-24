@@ -49,7 +49,7 @@ module Aspera
       # @param context [Context] Application context
       def initialize(context)
         Aspera.assert_type(context, Context){'context'}
-        Aspera.assert_type(context.options, Manager){'context.options'}
+        Aspera.assert_type(context.options, Options){'context.options'}
         Aspera.assert_type(context.config, Plugins::Config){'context.config'}
         @context = context
         # Command line can override transfer spec

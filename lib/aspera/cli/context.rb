@@ -10,7 +10,7 @@ module Aspera
       # Members that must be non-nil after bootstrap (validated in #validate)
       MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder].freeze
       # @!attribute [rw] options
-      #   @return [Manager] the command line options manager
+      #   @return [Options] the command line options manager
       # @!attribute [rw] transfer
       #   @return [TransferAgent] the transfer agent, used by transfer plugins
       # @!attribute [rw] config

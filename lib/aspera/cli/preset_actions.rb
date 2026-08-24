@@ -56,7 +56,7 @@ module Aspera
           return Result::Status.new("Removed: #{name}: #{param_name}")
         when :set
           param_name = options.get_next_argument('parameter name')
-          param_name = Manager.option_line_to_name(param_name)
+          param_name = Options.option_line_to_name(param_name)
           param_value = options.get_next_argument('parameter value', validation: nil)
           set_preset_key(name, param_name, param_value)
           return Result::Nothing.new

@@ -529,7 +529,7 @@ module Aspera
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
-                if (m = Manager.percent_selector(user))
+                if (m = Options.percent_selector(user))
                   @api_v5.lookup_entity_by_field(
                     entity: 'accounts',
                     field: m[:field],

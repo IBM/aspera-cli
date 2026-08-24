@@ -238,7 +238,7 @@ module Aspera
           # User set a workspace ?
           # @type [String, nil]
           workspace = options.get_option(:workspace)
-          if !workspace.nil? && (m = Manager.percent_selector(workspace))
+          if !workspace.nil? && (m = Options.percent_selector(workspace))
             case m[:field]
             when 'name' then api.ws_ids[:name] = m[:value]
             when 'id' then api.ws_ids[:id] = m[:value]

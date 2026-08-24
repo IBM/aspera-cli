@@ -194,7 +194,7 @@ module Aspera
     # parse command line options
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
-    class Manager
+    class Options
       class << self
         # Find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
@@ -450,7 +450,7 @@ module Aspera
       def instance_identifier(description: 'identifier', &block)
         res_id = get_next_argument(description, multiple: get_option(:bulk))
         # Can be an Array
-        if res_id.is_a?(String) && (m = Manager.percent_selector(res_id))
+        if res_id.is_a?(String) && (m = Options.percent_selector(res_id))
           Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
           res_id = yield(m[:field], m[:value])
         end

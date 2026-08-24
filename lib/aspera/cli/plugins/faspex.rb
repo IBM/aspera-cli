@@ -307,7 +307,7 @@ module Aspera
                 first_source = delivery_info['sources'].first
                 first_source['paths'].concat(transfer.source_list)
                 source_id = options.get_option(:remote_source)
-                if source_id && (m = Manager.percent_selector(source_id))
+                if source_id && (m = Options.percent_selector(source_id))
                   Aspera.assert_values(m[:field], ['name'], type: Cli::BadArgument){'selector field'}
                   source_list = api_v3.read('source_shares')['items']
                   source_id = self.class.get_source_id_by_name(m[:value], source_list)

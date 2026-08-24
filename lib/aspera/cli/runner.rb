@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/context'
-require 'aspera/cli/manager'
+require 'aspera/cli/options'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
@@ -248,7 +248,7 @@ module Aspera
         # Create formatter, in case there is an exception, it is used to display.
         @context.formatter = Formatter.new
         # Create command line manager with arguments
-        @context.options = Manager.new(Info::CMD_NAME, @argv)
+        @context.options = Options.new(Info::CMD_NAME, @argv)
         ExtendedValue.instance.on(EXTEND_ARGS){ |v| @context.options.args_as_extended(v)}
         # Formatter adds options
         @context.formatter.declare_options(@context.options)
