@@ -12,14 +12,11 @@ Released: [Place date of release here]
 * **global**: New composite option `--log` supporting [dot-path notation](docs/README.md#dot-path-notation) sub-properties: `level` (`--log.level`), `type` (`--log.type`), `format` (`--log.format`). These are aliases for `--log-level`, `--logger`, and `--log-format` respectively. Individual options are preserved for backward compatibility.
 * **global**: Option `--transfer` now accepts both a `String` (agent type shorthand, e.g. `--transfer=node`) and a `Hash` (agent parameters, e.g. `--transfer=@json:'{"agent":"node","url":"..."}'` or via dot-notation `--transfer.agent=node --transfer.url=...`). Option `--transfer-info` is deprecated in favor of `--transfer`.
 * **global**: New pseudo transfer-spec parameter `target_rate` (type: `String`). Accepts a rate with an optional unit suffix (`k`/`K` = Kbps, `m`/`M` = ×1000 Kbps, `g`/`G` = *1 000 000 Kbps) and is converted to `target_rate_kbps` before the transfer starts, overriding it if both are present. Example: `--ts.target_rate=100m` sets 100 000 Kbps.
+* `direct` agent: New `transfer` parameter `file_list` (default: `true`). Set to `false` to place source paths directly on the `ascp` command line instead of using a temp file list. (useful when doing growing files transfer).
 
 ### Issues Fixed
 
 ### Breaking Changes
-
-### Other Changes
-
-* `direct` agent: New `transfer` parameter `file_list` (default: `true`). Set to `false` to place source paths directly on the `ascp` command line instead of using a temp file list.
 
 ## 4.26.2
 
