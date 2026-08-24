@@ -206,14 +206,15 @@ module Aspera
           Aspera.assert_type(value, Hash)
           value.each do |k, v|
             case k.to_sym
-            when :level  then Log.instance.level = v.to_sym
-            when :type   then Log.instance.logger_type = v.to_sym
-            when :format then Log.instance.formatter = v
-            else Aspera.error_unexpected_value(k){'log sub-option (level, type, format)'}
+            when :level   then Log.instance.level = v.to_sym
+            when :type    then Log.instance.logger_type = v.to_sym
+            when :format  then Log.instance.formatter = v
+            when :secrets then SecretHider.instance.log_secrets = BoolValue.true?(v)
+            else Aspera.error_unexpected_value(k){'log sub-option (level, type, format, secrets)'}
             end
           end
         when :get
-          return {level: Log.instance.level, type: Log.instance.logger_type, format: Log.instance.formatter}
+          return {level: Log.instance.level, type: Log.instance.logger_type, format: Log.instance.formatter, secrets: SecretHider.instance.log_secrets}
         end
         nil
       end
@@ -327,7 +328,7 @@ module Aspera
         @context.options.declare(:log_level, 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
         @context.options.declare(:log_format, 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
         @context.options.declare(:logger, 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @context.options.declare(:log, 'Logging options (dot-notation: level, type, format)', allowed: Hash, handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
+        @context.options.declare(:log, 'Logging options (dot-notation: level, type, format, secrets)', allowed: Hash, handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
         @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
         @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
         @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})

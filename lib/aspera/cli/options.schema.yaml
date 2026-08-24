@@ -25,6 +25,10 @@ components:
           description: Log line formatter. Use `@ruby:` for a custom lambda.
           enum: [default, caller, standard]
           default: default
+        secrets:
+          type: boolean
+          description: Show passwords and secrets in logs.
+          default: false
     TransferOptions:
       type: object
       description: >-

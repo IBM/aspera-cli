@@ -2948,27 +2948,12 @@ It is also possible to force the graphical mode with option `ui` :
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
-The following options control logging:
+The composite option `log` groups all logging parameters (use `--log=help` to display this schema):
 
-| Option        | Values | Description                                                             |
-|---------------|--------|-------------------------------------------------------------------------|
-| `logger`      | `stdout`<%=br%>`stderr`<%=br%>`syslog` | Type of output.<%=br%>Default: `stderr` |
-| `log_level`   | `trace2`<%=br%>`trace1`<%=br%>`debug`<%=br%>`info`<%=br%>`warn`<%=br%>`error` | Minimum level displayed.<%=br%>Default: `warn` |
-| `log_secrets` | `yes`<%=br%>`no` | Show or hide secrets in logs.<%=br%>Default: `no` (Hide) |
-| `log_format`  | <%=log_formatters%><%=br%>`Proc` | The name of a formatter or a lambda function that formats the log (see [below](#log_format)).<%=br%>Default: `default`<%=br%>Alternative: `standard` |
-
-Option `logger` defines the destination of logs.
+<%=schema_to_table(Aspera::Schema::Registry::LOG_OPTIONS)%>
 
 > [!TIP]
-> Options `log_level`, `log_format`, and `logger` can also be set together using the composite option `log` with [dot-path notation](#dot-path-notation):
->
-> | Sub-property | Equivalent option |
-> |--------------|-------------------|
-> | `log.level`  | `log_level`       |
-> | `log.type`   | `logger`          |
-> | `log.format` | `log_format`      |
->
-> Example: `--log.level=debug --log.type=stdout`
+> Individual options `log_level`, `log_format`, `logger`, and `log_secrets` are also available as aliases for `log.level`, `log.format`, `log.type`, and `log.secrets` respectively.
 
 #### `log_level` and `log_secrets`
 
@@ -2982,22 +2967,13 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 
 #### `log_format`
 
-Option `log_format` support a few pre-defined formatters or a custom one using `@ruby:`.
+Option `log_format` (alias for `log.format`) supports a few pre-defined formatters or a custom one using `@ruby:`.
 A custom formatter is a lambda that takes 4 arguments; see [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb): `severity`, `time`, `progname`, `msg`.
 The default formatter is:
 
 ```ruby
 ->(s, _d, _p, m){"#{s[0..2]}#{s[-1]} #{m}\n"}
 ```
-
-Available formatters for `log_format`:
-
-| Name      | Description                                                              |
-|-----------|--------------------------------------------------------------------------|
-| `default` | Default formatter: Colorized 4-letters level followed by message on the same line. |
-| `caller`  | Colorized 4-letters level followed by caller, and then on next line: message.      |
-| `standard`| Standard Ruby formatter.                                                 |
-| `Proc`    | Custom lambda.                                                           |
 
 #### Logging examples
 
