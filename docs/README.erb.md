@@ -1535,6 +1535,13 @@ The general syntax for this argument is:
 > [!CAUTION]
 > In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
 
+> [!WARNING]
+> **Do not use `@:` as an option value.**
+> Options and positional arguments are split into two separate lists at startup.
+> When `@:` is used in an option value, it consumes **all** positional arguments (sub-commands included), and `END` has no effect since it lives in the positional list, not the options list.
+> For example, `<%=cmd%> aoc tier --query=@: a=b` fails because `@:` consumes `aoc`, `tier` and `a=b`.
+> Use `@json:` instead: `--query=@json:{"a":"b"}`.
+
 #### Options
 
 Command-line options, such as `--log-level=debug`, follow these conventions:

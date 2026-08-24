@@ -103,7 +103,7 @@ Using `ascli` with the `server` plugin instead of raw `ascp` provides several ad
 - Choice of transfer agents
 - Built-in multi-session support
 
-All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer_info`).
+All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer`).
 
 ### Notations, Shell, Examples
 
@@ -1149,7 +1149,7 @@ echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
 Then, tell `ascp` to use that other configuration file:
 
 ```shell
---transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
+--transfer=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
 ```
 
 #### Container: Singularity
@@ -1586,6 +1586,13 @@ ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file
 
 > [!CAUTION]
 > In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
+
+> [!WARNING]
+> **Do not use `@:` as an option value.**
+> Options and positional arguments are split into two separate lists at startup.
+> When `@:` is used in an option value, it consumes **all** positional arguments (sub-commands included), and `END` has no effect since it lives in the positional list, not the options list.
+> For example, `ascli aoc tier --query=@: a=b` fails because `@:` consumes `aoc`, `tier` and `a=b`.
+> Use `@json:` instead: `--query=@json:{"a":"b"}`.
 
 #### Options
 
@@ -2575,8 +2582,8 @@ check_update
 coffee
 coffee --log-level=trace2 --log-format=caller
 coffee --ui=text
+coffee --ui=text --image.text=true
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
-coffee --ui=text --image=@json:'{"text":true}'
 detect app.example.com
 detect https://faspex5.example.com/path
 detect https://faspex5.example.com/path faspex5
@@ -3108,16 +3115,17 @@ It is also possible to force the graphical mode with option `ui` :
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
-The following options control logging:
+The composite option `log` groups all logging parameters (use `--log=help` to display this schema):
 
-| Option        | Values | Description                                                             |
-|---------------|--------|-------------------------------------------------------------------------|
-| `logger`      | `stdout`<br/>`stderr`<br/>`syslog` | Type of output.<br/>Default: `stderr` |
-| `log_level`   | `trace2`<br/>`trace1`<br/>`debug`<br/>`info`<br/>`warn`<br/>`error` | Minimum level displayed.<br/>Default: `warn` |
-| `log_secrets` | `yes`<br/>`no` | Show or hide secrets in logs.<br/>Default: `no` (Hide) |
-| `log_format`  | `standard`<br/>`default`<br/>`caller`<br/>`Proc` | The name of a formatter or a lambda function that formats the log (see [below](#log_format)).<br/>Default: `default`<br/>Alternative: `standard` |
+| Field | Type | Description |
+|---------|---------|---------------------------------------------------------------------------|
+| `format` | `string` | Log line formatter. Use `@ruby:` for a custom lambda.<br/>Allowed values: `default`, `caller`, `standard`.<br/>Default: `default`. |
+| `level` | `string` | Minimum log level displayed.<br/>Allowed values: `trace2`, `trace1`, `debug`, `info`, `warn`, `error`, `fatal`, `unknown`.<br/>Default: `warn`. |
+| `secrets` | `boolean` | Show passwords and secrets in logs.<br/>Default: `false`. |
+| `type` | `string` | Log output destination.<br/>Allowed values: `stderr`, `stdout`, `syslog`.<br/>Default: `stderr`. |
 
-Option `logger` defines the destination of logs.
+> [!TIP]
+> Individual options `log_level`, `log_format`, `logger`, and `log_secrets` are also available as aliases for `log.level`, `log.format`, `log.type`, and `log.secrets` respectively.
 
 #### `log_level` and `log_secrets`
 
@@ -3131,22 +3139,13 @@ Set option `log_secrets` to `yes` to include secrets in logs.
 
 #### `log_format`
 
-Option `log_format` support a few pre-defined formatters or a custom one using `@ruby:`.
+Option `log_format` (alias for `log.format`) supports a few pre-defined formatters or a custom one using `@ruby:`.
 A custom formatter is a lambda that takes 4 arguments; see [Ruby Formatter](https://github.com/ruby/logger/blob/master/lib/logger/formatter.rb): `severity`, `time`, `progname`, `msg`.
 The default formatter is:
 
 ```ruby
 ->(s, _d, _p, m){"#{s[0..2]}#{s[-1]} #{m}\n"}
 ```
-
-Available formatters for `log_format`:
-
-| Name      | Description                                                              |
-|-----------|--------------------------------------------------------------------------|
-| `default` | Default formatter: Colorized 4-letters level followed by message on the same line. |
-| `caller`  | Colorized 4-letters level followed by caller, and then on next line: message.      |
-| `standard`| Standard Ruby formatter.                                                 |
-| `Proc`    | Custom lambda.                                                           |
 
 #### Logging examples
 
@@ -3156,10 +3155,24 @@ Available formatters for `log_format`:
 ascli config pre over --log-level=debug --logger=stdout
 ```
 
+Or equivalently using dot-path notation:
+
+```shell
+ascli config pre over --log.level=debug --log.type=stdout
+```
+
 - Log errors to `syslog`:
 
 ```shell
 ascli config pre over --log-level=error --logger=syslog
+```
+
+Or using the composite option in a preset:
+
+```yaml
+log:
+  level: error
+  type: syslog
 ```
 
 > [!NOTE]
@@ -3318,7 +3331,7 @@ ascli --proxy-credentials=@list::__username_here__:__password_here__ ...
 
 #### Proxy for Legacy Aspera HTTP/S Fallback
 
-Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`.
+Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer=@json:'{"ascp_args":["-x","url_here"]}'`.
 
 #### FASP proxy (forward) for transfers
 
@@ -3333,7 +3346,7 @@ For example, for an Aspera forward proxy not encrypted (HTTP) without authentica
 Or, alternatively, (prefer transfer spec like above, generally):
 
 ```shell
---transfer-info=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
+--transfer=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
 ```
 
 ### FASP configuration
@@ -3455,10 +3468,10 @@ The following agents are supported and selected with option `transfer`:
 All above agents (including `direct`) receive transfer parameters as a [**transfer-spec**](#transfer-specification).
 Parameters in transfer-spec can be modified with option `ts`.
 
-**Specific** options for agents are provided with option `transfer_info`.
+**Specific** options for agents are provided with option `transfer` (as a `Hash`, optionally with an `agent` key).
 
 > [!NOTE]
-> Parameters in `transfer_info` are specific for each agent type and are described in the agents respective sections.
+> Parameters in `transfer` are specific for each agent type and are described in the agents respective sections.
 
 #### Agent: Direct
 
@@ -3467,9 +3480,9 @@ This is the default agent for `ascli` (option `--transfer=direct`).
 `ascli` will locally search installed Aspera products, including SDK, and use `ascp` from that component.
 See [FASP](#fasp-configuration).
 
-##### Agent: Direct: `transfer_info`
+##### Agent: Direct: `transfer`
 
-The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
+The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Field | Type | Description |
 |----------------------|---------|----------------------------------------------------------------------------------|
@@ -3499,22 +3512,22 @@ max( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 To display the native progress bar of `ascp`, use:
 
 ```shell
---progress-bar=no --transfer-info=@json:'{"quiet":false}'`
+--progress-bar=no --transfer.quiet=false`
 ```
 
 To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
 In that, use the native progress bar:
 
 ```shell
---transfer-info=@json:'{"monitor":false,"quiet":false}'`
+--transfer.monitor=false --transfer.quiet=false`
 ```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
-In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer_info`.
+In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
 To use `ascp`'s default, use option:
 
 ```shell
---transfer-info=@json:'{"trusted_certs":null}'`.
+--transfer.trusted_certs=@none:
 ```
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
@@ -3527,31 +3540,31 @@ ascli config ascp errors
 Examples:
 
 ```shell
-ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
-ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
+ascli ... --transfer.wss=true --transfer.resume.iter_max=20
+ascli ... --transfer.spawn_delay_sec=2.5 --transfer.multi_incr_udp=false
 ```
 
 This can be useful to activate logging using option `-L` of `ascp`.
 For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
 
 ```shell
---transfer-info=@json:'{"ascp_args":["-DDL-"]}'
+--transfer=@json:'{"ascp_args":["-DDL-"]}'
 ```
 
 This is useful to debug if a transfer fails.
 
-To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
+To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
 
 > [!NOTE]
-> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer_info` parameter `ascp_args`.
-> To place source paths directly on the `ascp` command line instead of using a temp file, set `file_list` to `false` in `transfer_info`: `--transfer-info=@json:'{"file_list":false}'`.
+> When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer` parameter `ascp_args`.
+> To place source paths directly on the `ascp` command line instead of using a temp file, set `file_list` to `false` in `transfer`: `--transfer.file_list=false`.
 
 In addition to standard methods described in section [File List](#list-of-files-for-transfers), it is possible to specify the list of file using those additional methods:
 
-- Using option `transfer_info` parameter `ascp_args`
+- Using option `transfer` parameter `ascp_args`
 
 ```shell
---sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","myfilelist"]}'
+--sources=@ts --transfer=@json:'{"ascp_args":["--file-list","myfilelist"]}'
 ```
 
 > [!NOTE]
@@ -3566,7 +3579,7 @@ In addition to standard methods described in section [File List](#list-of-files-
 ##### Agent: Direct: Management messages
 
 By default, `ascli` gets notification from `ascp` on its management port.
-This can be disabled with parameter: `monitor=false` of `transfer_info`.
+This can be disabled with parameter: `monitor=false` of `transfer`.
 
 It is also possible to send messages to `ascp` using this management port.
 A typical use is to change the target rate of a running transfer.
@@ -3728,19 +3741,19 @@ So, for example:
 #### Agent: Connect Client
 
 By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed **IBM Aspera Connect Client**.
-There are no option for `transfer_info`.
+There are no specific parameters for option `transfer`.
 
 #### Agent: Desktop Client
 
 By specifying option: `--transfer=desktop`, `ascli` will start transfers using the locally installed **IBM Aspera Desktop Client**.
-There are no option for `transfer_info`.
+There are no specific parameters for option `transfer`.
 
 #### Agent: Node API
 
 By specifying option: `--transfer=node`, `ascli` starts transfers in an Aspera Transfer Server using the Node API, either on a local or remote node.
 This is especially useful for direct node-to-node transfers.
 
-Parameters provided in option `transfer_info` are:
+Parameters provided in option `transfer` are:
 
 | Parameter  | Type     | Description                                        |
 |------------|----------|----------------------------------------------------|
@@ -3749,19 +3762,19 @@ Parameters provided in option `transfer_info` are:
 | `password` | `String` | Password, secret or bearer token<br/>Mandatory   |
 | `root_id`  | `String` | Root file ID<br/>Mandatory only for bearer token |
 
-Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
+Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
 ```shell
---transfer-info=@preset:_name_here_
+--transfer=@preset:_name_here_
 ```
 
 It can also directly use the [Extended Value](#extended-value-syntax) syntax:
 
 ```shell
---transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"<PASSWORD>"}'
+--transfer=@json:'{"url":"https://...","username":"_user_here_","password":"<PASSWORD>"}'
 ```
 
-If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
+If `transfer` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
 If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the file ID of the top folder to use on the node using this access key.
 It can be either the access key's root file ID, or any authorized file ID underneath it.
@@ -3772,7 +3785,7 @@ The Aspera HTTP Gateway is a service that allows sending and receiving files usi
 
 By specifying option: `--transfer=httpgw`, `ascli` will start transfers using the Aspera HTTP Gateway.
 
-Parameters provided in option `transfer_info` are:
+Parameters provided in option `transfer` are:
 
 | Name                | Type      | Description                                               |
 |---------------------|-----------|-----------------------------------------------------------|
@@ -3784,20 +3797,20 @@ Parameters provided in option `transfer_info` are:
 Example:
 
 ```shell
-ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy"}'
+ascli faspex package recv 323 --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy --transfer=httpgw
 ```
 
 > [!NOTE]
 > The gateway only supports transfers authorized with a token.
 
-If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer_info` becomes optional.
+If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer` URL becomes optional.
 
 #### Agent: Transfer Daemon
 
 Another possibility is to use the Transfer Daemon (`transferd`).
 Set option `transfer` to `transferd`.
 
-Options for `transfer_info` are:
+Options for `transfer` are:
 
 | Name     | Type     | Description                                  |
 |----------|----------|----------------------------------------------|
@@ -3812,7 +3825,7 @@ Options for `transfer_info` are:
 For example, to use an external, already running `transferd`, use option:
 
 ```shell
---transfer-info=@json:'{"url":":55002","start":false,"stop":false}'
+--transfer=@json:'{"url":":55002","start":false,"stop":false}'
 ```
 
 The gem `grpc` is not part of default dependencies, as it requires compilation of a native part.
@@ -3870,17 +3883,17 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 ascli config ascp info --fields=ts --flat-hash=no
 ```
 
-It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
+It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer` option parameter: `ascp_args`.
 Example:
 
-```json
---transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+```shell
+--transfer=@json:'{"ascp_args":["-l","100m"]}'
 ```
 
 Or an equivalent (using dotted expression):
 
-```json
---transfer-info.ascp_args=@list:' -l 100m'
+```shell
+--transfer.ascp_args=@list:' -l 100m'
 ```
 
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
@@ -4018,6 +4031,7 @@ ascli config ascp schema transferd --format=jsonpp
 | `tags` | `object` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.<br/>(`--tags64=(conversion){object}`) |
 | `target_rate_cap_kbps` | `integer` | Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.<br/>(C, T) |
 | `target_rate_kbps` | `integer` | Specifies desired speed for the transfer.<br/>(`-l {integer}`) |
+| `target_rate` | `string` | Pseudo-parameter: desired transfer rate as a human-readable string with an optional unit suffix. Converted to `target_rate_kbps` before the transfer is started, overriding it if both are present. Accepted formats: plain integer (kbps), or integer followed by `k`/`K` (kbps), `m`/`M` (x1000 kbps), `g`/`G` (x1000000 kbps). Examples: `100000`, `100000k`, `100m`, `1g`. |
 | `title` | `string` | Title of the transfer.<br/>(C, N, T) |
 | `token` | `string` | Authorization token. Type is Bearer, Basic or ATM.<br/>(env:`ASPERA_SCP_TOKEN`) |
 | `use_ascp4` | `boolean` | Specify version of protocol. `ascp4` will be deprecated.<br/>(A, N, T)<br/>Default: `false`. |
@@ -4692,10 +4706,10 @@ Key query parameters:
 > `ascp` requires that all sources in a single transfer session share the same URI scheme.
 > This means the `file:` URI (with its query parameters) must be specified either directly on the command line, or uniformly as a source prefix — it cannot be mixed with plain paths in a file list.
 
-**Option 1 — URI directly on the command line** (single file, `--transfer-info.file_list=false` required):
+**Option 1 — URI directly on the command line** (single file, `--transfer.file_list=false` required):
 
 ```shell
-ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer-info.file_list=false --transfer-info.quiet=false --progress=no
+ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
 ```
 
 **Option 2 — File list with `source_root`** (one or more files, query parameters go into the prefix):
@@ -4703,7 +4717,7 @@ ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer-
 Place only the bare filename(s) in the file list, and pass the `file:` URI as the source root so that the query parameters apply uniformly to every entry:
 
 ```shell
-ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer-info.quiet=false
+ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer.quiet=false
 ```
 
 ### Usage
@@ -4760,6 +4774,7 @@ OPTIONS: global
         --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
         --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
         --logger=ENUM                Logging method: [stderr], stdout, syslog
+        --log=VALUE                  Logging options (dot-notation: level, type, format, secrets) (Hash)
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
@@ -4802,8 +4817,8 @@ OPTIONS: global
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: connect, desktop, [direct], httpgw, node, transferd
-        --transfer-info=VALUE        Parameters for transfer agent (Hash)
+        --transfer=VALUE             Transfer agent type, or agent parameters with optional agent key (Hash)
+        --transfer-info=VALUE        Parameters for transfer agent (Hash) (deprecated: use --transfer instead)
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
@@ -6055,7 +6070,7 @@ ascli aoc admin user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"
 #### Example: Find with filter and delete
 
 ```shell
-ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+ascli aoc admin user list --query.q=dummyuser --fields=id,email
 ```
 
 ```text
@@ -6068,7 +6083,7 @@ ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
 ```shell
-ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | ascli aoc admin user delete @lines:@stdin: --bulk=yes
+ascli aoc admin user list --query.q=dummyuser --fields=id --display=data --format=csv | ascli aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
 ```text
@@ -6523,7 +6538,7 @@ ascli will resolve the list of email addresses and dropbox names to the expected
 
 If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and:
 
-- if the option `new_user_option` is `@json:{"package_contact":true}` (**default**), then a public link is sent and the external user does not need to create an account
+- if the option `new_user_option` is `--new-user-option.package_contact=true` (**default**), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
 ##### Example: Send a package with one file to two users, using their email
@@ -6567,7 +6582,7 @@ ascli aoc files browse /src_folder
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
 
 ```shell
-ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
 ```
 
 #### Receive packages
@@ -7037,7 +7052,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-ascli -Porg1 aoc files node_info <DEST_FOLDER> --format=json --display=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --transfer=node --transfer-info=@json:@stdin:
+ascli -Porg1 aoc files node_info <DEST_FOLDER> --format=json --display=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --transfer=@json:@stdin:
 ```
 
 Explanation:
@@ -7051,8 +7066,7 @@ Explanation:
 - `|` pipes the standard output of the first command into the second one
 - `-Porg2 aoc` uses the Aspera on Cloud plugin and loads credentials for `org2`
 - `files upload <SOURCE_FILE>` uploads the file named `<SOURCE_FILE>` (located in `org2`) to `org1`
-- `--transfer=node` uses transfer agent type `node` instead of the default [`direct`](#agent-direct)
-- `--transfer-info=@json:@stdin:` provides `node` transfer agent information (Node API credentials), expected as JSON and read from standard input
+- `--transfer=@json:@stdin:` provides `node` transfer agent information (Node API credentials including `"agent":"node"`), expected as JSON and read from standard input
 
 #### Find Files
 
@@ -7125,7 +7139,7 @@ admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"
 admin node list
 admin operation list
 admin organization show
-admin package list --http-options=@json:'{"read_timeout":120.0}'
+admin package list --http-options.read_timeout=120.0
 admin saml_configuration list
 admin self show
 admin short_link list
@@ -7133,19 +7147,19 @@ admin subscription account
 admin subscription usage
 admin subscription usage MONTH
 admin user list
-admin user modify %name:my_user_email @json:'{"deactivated":false}'
+admin user modify %name:my_user_email @: deactivated=false
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
 admin workspace shared_folder %name:my_other_workspace member <id> list
 admin workspace_membership list
 admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-automation workflow action <id> create @json:'{"name":"toto"}'
-automation workflow create @json:'{"name":"test_workflow"}'
+automation workflow action <id> create @: name=toto
+automation workflow create @: name=test_workflow
 automation workflow delete <id>
 automation workflow list
-automation workflow list --query=@json:'{"show_org_workflows":"true"}'
-automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id
+automation workflow list --query.show_org_workflows=@val:true
+automation workflow list --select.name=test_workflow --fields=id
 bearer_token --display=data
 files bearer /
 files bearer_token_node / --cache-tokens=no
@@ -7159,13 +7173,13 @@ files browse my_remote_folder/
 files cat testdst/test_file.bin
 files delete /testsrc
 files download --to-folder=. testdst/test_file.bin testdst/test_file.bin
-files download --transfer=connect testdst/test_file.bin
-files download --transfer=desktop testdst/test_file.bin
+files download --transfer.agent=connect testdst/test_file.bin
+files download --transfer.agent=desktop testdst/test_file.bin
 files find /sample_video
 files find /sample_video '\.partial$'
 files find /sample_video @ruby:'->(f){f["type"].eql?("file")}'
 files mkdir /testsrc
-files modify /some_folder @json:'{"mount_point":false}'
+files modify /some_folder @: mount_point=false
 files permission my_test_folder list
 files rename /some_folder testdst
 files short_link /testdst private create
@@ -7184,7 +7198,7 @@ files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 files upload --to-folder=/testsrc test_file.bin
 files upload --to-folder=/testsrc test_file.bin test_file.bin
 files v3 info
-gateway @json:'{"url":"https://localhost:12347/aspera/faspex"}'
+gateway @: url=https://localhost:12347/aspera/faspex
 organization
 organization --format=image --fields=background_image_url --ui=text
 organization --url=my_public_link_recv_from_aoc_user
@@ -7199,19 +7213,19 @@ packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
+packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_shared_inbox
 packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
-packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
-packages send @json:'{"name":"package title"}' test_file.bin --url=my_public_link_send_shared_inbox
+packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option.package_contact=true test_file.bin
 packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
 remind --username=my_user_email --url=https://aoc.example.com/path
 servers --url=https://aoc.example.com/path
 tier_restrictions
 user contacts list
-user pref modify @json:'{"default_language":"en-us"}'
+user pref modify @: default_language=en-us
 user pref show
-user profile modify @json:'{"name":"dummy change"}'
+user profile modify @: 'name=dummy change'
 user profile show
 user workspaces current
 user workspaces list
@@ -7400,15 +7414,15 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ```shell
 browse /
-browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=<serv_key_path>
+browse / --password=@none: --ssh-options.number_of_password_prompts=0 --ssh-keys=<serv_key_path>
 browse my_inside_folder/test_file.bin
 browse my_upload_folder/target_hot
 cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
 delete my_inside_folder
 delete my_upload_folder/to.delete
 df
-download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
-download my_large_file --to-folder=my_upload_folder --transfer=node --ts.resume_policy=none
+download my_inside_folder/test_file.bin --to-folder=. --transfer=@json:'{"wss":false,"resume":{"iter_max":1}}'
+download my_large_file --to-folder=my_upload_folder --transfer.agent=node --ts.resume_policy=none
 du /
 health transfer --to-folder=my_upload_folder
 health transfer --to-folder=my_upload_folder --format=nagios
@@ -7425,14 +7439,14 @@ sync admin status /data/local_sync
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
 upload 'faux:///test.bin?1k' --to-folder=my_upload_folder
-upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","file_list.txt"]}' --to-folder=my_inside_folder
-upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
-upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=transferd
-upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info.quiet=false --progress=no
-upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer-info.ascp_args=@list: -l 100m'
+upload --sources=@ts --transfer.ascp_args=@list:,--file-list,file_list.txt --to-folder=my_inside_folder
+upload --sources=@ts --transfer.ascp_args=@list:,--file-pair-list,file_pair_list.txt
+upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer.agent=transferd
+upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer.quiet=false --progress=no
+upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
-upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","hot_folder"]}' hot_folder
-upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
+upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,hot_folder hot_folder
+upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
 ### Authentication on Server with SSH session
@@ -7789,7 +7803,7 @@ Create another configuration for the Azure ATS instance: in section **node**, na
 Then execute the following command:
 
 ```shell
-ascli node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=node --transfer-info=@preset:azure_ats
+ascli node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=@preset:azure_ats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
@@ -8032,7 +8046,7 @@ basic_token
 browse / --log-level=trace2
 cat my_upload_folder/test_file.bin
 central file list
-central file modify --validator=1 @json:'{"files":[]}'
+central file modify --validator=1 @: files=@list:.
 central session list
 delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 delete my_upload_folder/test_file.bin
@@ -8044,7 +8058,7 @@ mkdir my_upload_folder/a_folder
 mkfile my_upload_folder/a_file1 'hello world'
 mklink my_upload_folder/a_folder my_upload_folder/tdlink
 rename my_upload_folder a_file1 a_file
-search / --query=@json:'{"sort":"mtime"}'
+search / --query.sort=mtime
 service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 service delete service1
 service list
@@ -8064,18 +8078,18 @@ ssync stop %name:my_node_sync
 ssync summary %name:my_node_sync
 stream list
 sync admin status /data/local_sync
+sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @: reset=true
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_sync_session_name","reset":true}'
-sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"reset":true}'
 transfer bandwidth_average
 transfer cancel <id>
-transfer list --query=@json:'{"active_only":true}'
-transfer list --query=@json:'{"reset":true}' --once-only=yes
-transfer modify <id> @json:'{"target_rate_kbps":10000}'
+transfer list --query.active_only=true
+transfer list --query.reset=true --once-only=yes
+transfer modify <id> @: target_rate_kbps=10000
 transfer sessions
 transfer show <id>
 transport
 upload 'faux:///testfile1?1m' --to-folder=my_local_path
-upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
+upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer.agent=node --transfer.url=https://node.example.com/path --transfer.username=my_username --transfer.password=my_password
 upload --username=my_ak_name --password=my_ak_secret test_file.bin
 upload my_mxf my_docx --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none"}'
 watch_folder list
@@ -8323,12 +8337,12 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 admin accounts list
 admin alternate_addresses list
 admin clean_deleted
-admin configuration modify @json:'{"mfa_required":false}'
+admin configuration modify @: mfa_required=false
 admin configuration show
 admin contacts list
 admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
 admin distribution_lists delete %name:test4
-admin distribution_lists list --query=@json:'{"type":"global"}'
+admin distribution_lists list --query.type=global
 admin email_notifications list
 admin email_notifications show welcome_email
 admin event application --query=@ruby:'{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}'
@@ -8346,22 +8360,22 @@ admin registrations list
 admin saml_configs list
 admin shared_inboxes invite %name:my_shared_box_name @: email_address=johnny@example.com
 admin shared_inboxes list
-admin shared_inboxes list --query=@json:'{"all":true}'
+admin shared_inboxes list --query.all=true
 admin shared_inboxes members %name:my_shared_box_name create %name:john@example.com submit_only
 admin shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
 admin shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
 admin shared_inboxes members %name:my_shared_box_name list
 admin smtp create @json:'{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'
-admin smtp modify @json:'{"default_time_zone_offset":"0"}'
+admin smtp modify @: default_time_zone_offset=@val:0
 admin smtp show
 admin smtp test my_email_external
 admin workgroups list
 bearer_token
-gateway @json:'{"url":"https://localhost:12346/aspera/faspex"}'
+gateway @: url=https://localhost:12346/aspera/faspex
 health --url=https://faspex5.example.com/path
 invitation list
-invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
-packages browse <id> --query=@json:'{"recursive":true}'
+invitations create @: email_address=aspera.user1+u@gmail.com
+packages browse <id> --query.recursive=true
 packages delete <id>
 packages list --box=ALL
 packages list --box=my_shared_box_name
@@ -8370,14 +8384,14 @@ packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name <f5_pack_shboxc> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
-packages receive <id> --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
+packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive ALL --once-only=yes --to-folder=.
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
-packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_secret_here"}'
+packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts.content_protection_password=my_secret_here
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
 packages show --box=my_shared_box_name <f5_pack_shboxc>
 packages show --box=my_workgroup --group-type=workgroups <id>
@@ -9034,8 +9048,8 @@ package send --delivery-info=@json:'{"title":"package title","recipients":["my_e
 package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
 package send --delivery-info=@json:'{"title":"package title","recipients":[*my_dbx]}' test_file.bin
 package send --delivery-info=@json:'{"title":"package title","recipients":[*my_wkg]}' test_file.bin
-package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
-package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"package title"}' test_file.bin
+package send --link=https://app.example.com/send_to_dropbox_path --delivery-info.title='package title' test_file.bin
+package send --link=https://app.example.com/send_to_user_path --delivery-info.title='package title' test_file.bin
 source info %name:my_src --storage=@preset:faspex4_storage
 source list
 source node %name:my_src br / --storage=@preset:faspex4_storage
@@ -9095,7 +9109,7 @@ admin share list --fields=DEF,-status,status_message
 admin share user_permissions %name:my_share list
 admin transfer_settings modify @: min_connect_version=3.6.1
 admin transfer_settings show --format=json
-admin user all app_authorizations %username:my_username modify @json:'{"app_login":true}'
+admin user all app_authorizations %username:my_username modify @: app_login=true
 admin user all app_authorizations %username:my_username show
 admin user all list
 admin user all share_permissions %username:my_username list
@@ -9107,14 +9121,14 @@ files browse /
 files delete my_share_folder/new_folder
 files delete my_share_folder/test_file.bin
 files download --to-folder=. my_share_folder/test_file.bin
-files download --to-folder=. my_share_folder/test_file.bin my_share_folder/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files download --to-folder=. my_share_folder/test_file.bin my_share_folder/test_file.bin --transfer.agent=httpgw --transfer.url=https://tst.example.com/path
 files mkdir my_share_folder/new_folder
 files sync push /data/local_sync --to-folder=my_share_folder/synctst
-files sync push /data/local_sync --to-folder=my_share_folder/synctst @json:'{"reset":true}'
-files upload 'faux:///testfile?1m' --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files sync push /data/local_sync --to-folder=my_share_folder/synctst @: reset=true
+files upload 'faux:///testfile?1m' --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000
 files upload --to-folder=my_share_folder test_file.bin
-files upload --to-folder=my_share_folder test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
-files upload send_folder --to-folder=my_share_folder --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload --to-folder=my_share_folder test_file.bin --transfer.agent=httpgw --transfer.url=https://tst.example.com/path
+files upload send_folder --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000
 health --url=https://shares.example.com/path
 info
 ```
@@ -9164,8 +9178,8 @@ workflow export my_workflow_id
 workflow inputs my_workflow_id
 workflow list
 workflow outputs my_workflow_id
-workflow start my_workflow_id @json:'{"Param":"world !"}'
-workflow start my_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+workflow start my_workflow_id @: 'Param=world !'
+workflow start my_workflow_id @: 'Param=world !' --result=ResultStep:Complete_status_message
 workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
@@ -9686,7 +9700,7 @@ Nevertheless, `ascli` may or may not have direct file system access to the acces
 ```shell
 check --skip-types=office
 events --once-only=yes --skip-types=office --log-level=info
-scan --scan-id=1 --skip-types=office --log-level=info {"--file-access=aspera" => nil} --ts=@json:'{"target_rate_kbps":1000000}'
+scan --scan-id=1 --skip-types=office --log-level=info {"--file-access=aspera" => nil} --ts.target_rate_kbps=1000000
 scan --skip-types=office --log-level=info --skip-folder=/special/folder
 show /etc/hosts --base=test
 show my_docx --base=test
@@ -10276,7 +10290,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 > Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
 
 > [!TIP]
-> Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info`.
+> Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer`.
 
 ##### Server side and configuration
 
@@ -10486,7 +10500,7 @@ Top level parameters supported by `asession`:
 | Parameter          | Description                                                            |
 |--------------------|------------------------------------------------------------------------|
 | `spec`             | The [**transfer-spec**](#transfer-specification)                       |
-| `agent`            | Same parameters as transfer-info for agent `direct`                    |
+| `agent`            | Same parameters as `transfer` option for agent `direct`                |
 | `loglevel`         | Log level of `asession`                                                |
 | `file_list_folder` | The folder used to store (for garbage collection) generated file lists.<br/>Default: `[system tmp folder]/[username]_asession_filelists` |
 
@@ -10693,7 +10707,7 @@ In container, this is located in `/ibm_aspera`.
 One possibility to avoid that error is to disable partial filename suffix... But that only hides the problem.
 
 For example, when using the container, override that file with a volume and remove the line for extension.
-Another possibility is to add this option: `--transfer-info==@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
+Another possibility is to add this option: `--transfer=@json:'{"ascp_args":["--partial-file-suffix="]}'` : this overrides the value in config file.
 
 > [!NOTE]
 > If one relies on `--lock-port` when using containers to avoid parallel transfers in a cron job, this may be the cause, as `lock_port` does not lock across containers.
