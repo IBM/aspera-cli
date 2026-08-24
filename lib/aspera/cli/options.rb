@@ -173,7 +173,7 @@ module Aspera
         if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
           new_value = [new_value] if new_value.is_a?(String)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
-          new_value = new_value.map{ |v| Manager.get_from_list(v, @option, @values)}
+          new_value = new_value.map{ |v| Options.get_from_list(v, @option, @values)}
         end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
         if new_value.is_a?(Hash) || new_value.is_a?(Array)

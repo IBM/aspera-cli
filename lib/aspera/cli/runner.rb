@@ -230,7 +230,7 @@ module Aspera
           @context.only_manual!
           Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
             next if plugin_name_sym.eql?(COMMAND_CONFIG)
-            @context.options = Manager.new(Info::CMD_NAME)
+            @context.options = Options.new(Info::CMD_NAME)
             @context.options.parser.banner = ''
             get_plugin_instance_with_options(plugin_name_sym)
             lines << @context.options.parser.help

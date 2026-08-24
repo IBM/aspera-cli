@@ -299,7 +299,7 @@ module Aspera
             return Runner.result_transfer(transfer.start(transfer_spec))
           else
             # send from remote shared folder
-            if (m = Manager.percent_selector(shared_folder))
+            if (m = Options.percent_selector(shared_folder))
               shared_folder = @api_v5.lookup_entity_by_field(
                 entity: 'shared_folders',
                 field: m[:field],
