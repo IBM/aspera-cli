@@ -6,7 +6,7 @@ require 'aspera/log'
 require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'aspera/cli/version'
-require 'aspera/cli/manager'
+require 'aspera/cli/options'
 require_relative 'paths'
 
 module BuildTools

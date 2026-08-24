@@ -60,11 +60,11 @@ The `Runner` class orchestrates the full command lifecycle:
 
 All shared objects (options manager, transfer agent, config plugin, formatter, preset manager, HTTP config, etc.) are held in a `Context` instance and passed to plugins by reference.
 
-#### CLI Manager
+#### CLI Options
 
-**File**: [`lib/aspera/cli/manager.rb`](../lib/aspera/cli/manager.rb)
+**File**: [`lib/aspera/cli/options.rb`](../lib/aspera/cli/options.rb)
 
-The CLI Manager handles:
+The `Cli::Options` class handles:
 
 - **Option Parsing**: Command-line argument processing using `OptionParser`
 - **Extended Value Syntax**: Support for complex parameter types (JSON, YAML, Ruby expressions, `@preset:`, `@vault:`, `@args:`)
@@ -280,7 +280,7 @@ Communication via:
 1. **Command Parsing**:
 
    ```text
-   User Input &rarr; bin/ascli &rarr; CLI Manager &rarr; Option Parsing
+   User Input &rarr; bin/ascli &rarr; CLI Options &rarr; Option Parsing
    ```
 
 2. **Plugin Selection**:
