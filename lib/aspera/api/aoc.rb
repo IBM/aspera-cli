@@ -68,8 +68,8 @@ module Aspera
       GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{ |i| i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
-      # path in URL of public links
-      PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public /public/files /public/package /public/send].freeze
+      # path in URL of public links (warning if not in list)
+      PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public /public/files /public/files/ /public/package /public/send /public/send/package].freeze
       JWT_AUDIENCE = 'https://api.asperafiles.com/api/v1/oauth2/token'
       OAUTH_API_SUBPATH = 'api/v1/oauth2'
       # minimum fields for user info if retrieval fails

@@ -275,23 +275,33 @@ module Aspera
         Log.log.debug{"env=#{@option_pairs_env}".red}
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
+        # For each option string: list (one entry per occurrence) of the number of positional args
+        # that appear before it in original argv. Used by `@:` in option values to skip preceding args.
+        # @type [Hash{String => Array<Integer>}]
+        @args_before_option = {}
         return if argv.nil?
         # true until `--` is found (stop options)
         process_options = true
-        until argv.empty?
-          value = argv.shift
+        arg_count = 0
+        argv.each do |value|
           if process_options && value.start_with?('-')
             Log.log.trace1{"opt: #{value}"}
             if value.eql?(OPTIONS_STOP)
               process_options = false
             else
               @unprocessed_cmd_line_options.push(value)
+              (@args_before_option[value] ||= []).push(arg_count)
             end
           else
             Log.log.trace1{"arg: #{value}"}
             @unprocessed_cmd_line_arguments.push(value)
+            arg_count += 1
           end
         end
+        # Total positional args at parse time — used in args_as_extended to compute how many to skip.
+        @arg_total_count = @unprocessed_cmd_line_arguments.length
+        # Number of original positional args before the option currently being parsed (nil = positional context).
+        @current_option_args_offset = nil
         @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
         Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
         @parser.separator('')
@@ -586,34 +596,41 @@ module Aspera
         consume_option_pairs(@option_pairs_batch, 'set')
         # Then, env var (to override)
         consume_option_pairs(@option_pairs_env, 'env')
-        # Then, command line override
+        # Then, command line override: process one option at a time so that @current_option_args_offset
+        # can be set before each option is evaluated (used by `@:` extended value in option values).
         unknown_options = []
-        begin
-          # remove known options one by one, exception if unknown
-          Log.log.trace1('Before parse')
-          Log.dump(:unprocessed_cmd_line_options, @unprocessed_cmd_line_options, level: :trace1)
-          @parser.parse!(@unprocessed_cmd_line_options)
-          Log.log.trace1('After parse')
-        rescue OptionParser::InvalidOption => e
-          Log.log.trace1{"InvalidOption #{e}".red}
-          # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-          if e.args.first.start_with?(OPTION_PREFIX)
-            name, value = e.args.first.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
-            if !value.nil?
-              path = name.split(DotContainer::SEPARATOR)
-              option_sym = self.class.option_line_to_name(path.shift).to_sym
-              if @declared_options.key?(option_sym)
-                # it's a known option, so let's process it
-                set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
-                # resume to next
-                retry
+        Log.log.trace1('Before parse')
+        Log.dump(:unprocessed_cmd_line_options, @unprocessed_cmd_line_options, level: :trace1)
+        until @unprocessed_cmd_line_options.empty?
+          opt = @unprocessed_cmd_line_options.shift
+          # Expose args_before for this option so `args_as_extended` can skip args preceding it.
+          # Peek (first) without consuming — consumed only if this option is processed (not deferred).
+          @current_option_args_offset = @args_before_option[opt]&.first
+          begin
+            @parser.parse!([opt])
+            @args_before_option[opt]&.shift # consumed: advance to next occurrence
+          rescue OptionParser::InvalidOption => e
+            Log.log.trace1{"InvalidOption #{e}".red}
+            # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
+            if e.args.first.start_with?(OPTION_PREFIX)
+              name, value = e.args.first.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
+              if !value.nil?
+                path = name.split(DotContainer::SEPARATOR)
+                option_sym = self.class.option_line_to_name(path.shift).to_sym
+                if @declared_options.key?(option_sym)
+                  # it's a known option, so let's process it
+                  set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
+                  @args_before_option[opt]&.shift # consumed: advance to next occurrence
+                  next
+                end
               end
             end
+            # Unknown option: defer to next parse_options! round, do not consume the recorded offset
+            unknown_options.push(e.args.first)
           end
-          # Save for later processing
-          unknown_options.push(e.args.first)
-          retry
         end
+        @current_option_args_offset = nil
+        Log.log.trace1('After parse')
         Log.log.trace1{"remains: #{unknown_options}"}
         # Set unprocessed options for next time
         @unprocessed_cmd_line_options = unknown_options
@@ -681,12 +698,24 @@ module Aspera
         # This extended value does not take args (`@:`)
         # ExtendedValue.assert_no_value(end_marker, :p)
         end_marker = SpecialValues::EOA if end_marker.empty?
+        # When called from an option value, skip positional args that appear before the option in argv.
+        # @current_option_args_offset holds the number of original args before the option (nil = positional context).
+        # The number to actually skip = args_before_option - args_already_consumed (clamped to 0).
+        skip_count = if @current_option_args_offset
+          [@current_option_args_offset - (@arg_total_count - @unprocessed_cmd_line_arguments.length), 0].max
+        else
+          0
+        end
+        skipped = skip_count.positive? ? @unprocessed_cmd_line_arguments.shift(skip_count) : []
+        Log.log.trace1{"args_as_extended: skipping #{skipped.length} args before option: #{skipped}"} unless skipped.empty?
         result = nil
         get_next_argument('args', multiple: end_marker).each do |argument|
           Aspera.assert(argument.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{argument} does not include #{OPTION_VALUE_SEPARATOR}"}
           path, value = argument.split(OPTION_VALUE_SEPARATOR, 2)
           result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
         end
+        # Restore skipped args so they remain available for command dispatching
+        @unprocessed_cmd_line_arguments.unshift(*skipped) unless skipped.empty?
         result
       end
 
