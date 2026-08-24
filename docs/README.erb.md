@@ -5451,7 +5451,7 @@ Current Workspace: Default (default)
 #### Example: Find with filter and delete
 
 ```shell
-<%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+<%=cmd%> aoc admin user list --query.q=dummyuser --fields=id,email
 ```
 
 ```text
@@ -5464,7 +5464,7 @@ Current Workspace: Default (default)
 ```
 
 ```shell
-<%=cmd%> aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
+<%=cmd%> aoc admin user list --query.q=dummyuser --fields=id --display=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
 ```text
@@ -5919,7 +5919,7 @@ Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipien
 
 If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and:
 
-- if the option `new_user_option` is `@json:{"package_contact":true}` (**default**), then a public link is sent and the external user does not need to create an account
+- if the option `new_user_option` is `--new-user-option.package_contact=true` (**default**), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
 ##### Example: Send a package with one file to two users, using their email

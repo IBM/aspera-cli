@@ -146,7 +146,8 @@ shares_admin_6:
     - app_authorizations
     - "%username:@preset:shares_admin.username"
     - modify
-    - '@json:{"app_login":true}'
+    - "@:"
+    - app_login=true
 shares_admin_7:
   args:
     - --preset=shares_admin
@@ -262,9 +263,9 @@ shares_5:
     - upload
     - --to-folder=@preset:shares.share_folder
     - $(PATH_TST_ASC_LCL)
-    - --transfer=httpgw
+    - --transfer.agent=httpgw
+    - --transfer.url=@preset:tst_httpgw.url
     - --preset=no_wss
-    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
 shares_6:
   args:
     - shares
@@ -272,9 +273,12 @@ shares_6:
     - upload
     - faux:///testfile?1m
     - --to-folder=@preset:shares.share_folder
-    - --transfer=httpgw
+    - --transfer.agent=httpgw
+    - --transfer.url=@preset:tst_httpgw.url
+    - --transfer.synchronous=true
+    - --transfer.api_version=v1
+    - --transfer.upload_chunk_size=100000
     - --preset=no_wss
-    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}
 shares_6bis:
   args:
     - shares
@@ -282,9 +286,12 @@ shares_6bis:
     - upload
     - $(PATH_TST_LCL_FOLDER)
     - --to-folder=@preset:shares.share_folder
-    - --transfer=httpgw
+    - --transfer.agent=httpgw
+    - --transfer.url=@preset:tst_httpgw.url
+    - --transfer.synchronous=true
+    - --transfer.api_version=v1
+    - --transfer.upload_chunk_size=100000
     - --preset=no_wss
-    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}
 shares_7:
   depends_on:
     - shares_5
@@ -295,9 +302,9 @@ shares_7:
     - --to-folder=$(TMP)
     - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
     - "@extend:@preset:shares.share_folder@/$(FILENAME_ASCII)"
-    - --transfer=httpgw
+    - --transfer.agent=httpgw
+    - --transfer.url=@preset:tst_httpgw.url
     - --preset=no_wss
-    - --transfer-info=@json:@extend:{"url":"@preset:tst_httpgw.url@"}
 shares_8:
   depends_on:
     - shares_7
@@ -350,7 +357,8 @@ shares_sync_1:
     - push
     - $(PATH_SHARES_SYNC)
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
-    - '@json:{"reset":true}'
+    - "@:"
+    - reset=true
 shares_sync_2:
   depends_on:
     - shares_sync_1
@@ -431,7 +439,7 @@ serv_error1:
     - --preset=server3_user
     - upload
     - $(PATH_TST_ASC_LCL)
-    - --transfer-info=@json:{"monitor":false,"resume":{"iter_max":0}}
+    - --transfer=@json:{"monitor":false,"resume":{"iter_max":0}}
 serv_error2:
   description: Try to browse with wrong password.
   tags:
@@ -468,8 +476,8 @@ serv_error4:
     - --url=@preset:server_user.url
     - upload
     - wrong
-    - --ts=@json:{"token":"test"}
-    - --transfer-info=@json:{"resume":{"iter_max":0}}
+    - --ts.token=test
+    - --transfer.resume.iter_max=0
 serv_error5:
   description: Try to upload file that does not exist.
   tags:
@@ -480,7 +488,7 @@ serv_error5:
     - server
     - upload
     - wrong
-    - --transfer-info=@json:{"resume":{"iter_max":0}}
+    - --transfer.resume.iter_max=0
 serv_ls_local:
   tags:
     - nodoc
@@ -505,7 +513,7 @@ serv_upload1:
     - $(PATH_TST_LCL_FILE)
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
-    - --transfer-info=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
+    - --transfer=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
     - --progress-bar=yes
 serv_upload_multi_test:
   tags:
@@ -518,7 +526,7 @@ serv_upload_multi_test:
     - faux:///serv_upload_multi_test?1k
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":2,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
-    - --transfer-info=@json:{"multi_incr_udp":true}
+    - --transfer.multi_incr_udp=true
 serv_upload_multi_test2:
   tags:
     - nodoc
@@ -531,7 +539,7 @@ serv_upload_multi_test2:
     - faux:///serv_upload_multi_test2?100k
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100}
-    - --transfer-info=@json:{"multi_incr_udp":true}
+    - --transfer.multi_incr_udp=true
   post: |
     sleep 2
     pid = t.pid_of_test('serv_upload_multi_test2')
@@ -554,7 +562,7 @@ serv_upload2:
     - $(PATH_TST_LCL_FILE)
     - "@extend:@preset:server.inside_folder@/other_name_2"
     - --notify-to=@preset:misc.email_external
-    - "--transfer-info.ascp_args=@list: -l 100m"
+    - "--transfer.ascp_args=@list: -l 100m"
 serv_upload3_prep:
   tags:
     - pre_cleanup
@@ -573,7 +581,7 @@ serv_upload3:
     - upload
     - --src-type=pair
     - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server.inside_folder@/other_name_3"]
-    - --transfer-info.quiet=false
+    - --transfer.quiet=false
     - --progress=no
 serv_upload4:
   tags:
@@ -585,7 +593,7 @@ serv_upload4:
     - upload
     - --sources=@ts
     - --ts=@json:@extend:{"paths":[{"source":"$(PATH_TST_ASC_LCL)","destination":"@preset:server.inside_folder@/other_name_4"}]}
-    - --transfer=transferd
+    - --transfer.agent=transferd
 serv_upload5:
   depends_on:
     - serv_mkdir
@@ -677,7 +685,8 @@ serv_sync_pull_conf_status_fail:
     - sync
     - admin
     - status
-    - '@json:{"name":"serv_sync_pull_conf"}'
+    - "@:"
+    - name=serv_sync_pull_conf
 serv_sync_pull_conf_status:
   tags:
     - nodoc
@@ -689,7 +698,8 @@ serv_sync_pull_conf_status:
     - admin
     - status
     - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
-    - '@json:{"name":"serv_sync_pull_conf"}'
+    - "@:"
+    - name=serv_sync_pull_conf
 serv_sync_pull_conf_sync:
   depends_on:
     - serv_sync_pull_conf_reset
@@ -754,7 +764,7 @@ serv_upload_ex_list:
     - server
     - upload
     - --sources=@ts
-    - --transfer-info=@json:{"ascp_args":["--file-list","$(PATH_FILE_LIST)"]}
+    - --transfer.ascp_args=@list:,--file-list,$(PATH_FILE_LIST)
     - --to-folder=@preset:server.inside_folder
 serv_upload_ex_pair:
   depends_on:
@@ -763,7 +773,7 @@ serv_upload_ex_pair:
     - server
     - upload
     - --sources=@ts
-    - --transfer-info=@json:{"ascp_args":["--file-pair-list","$(path_file_pair_list)"]}
+    - --transfer.ascp_args=@list:,--file-pair-list,$(path_file_pair_list)
 serv_md5:
   depends_on:
     - serv_upload1
@@ -779,14 +789,14 @@ serv_down_lcl:
     - download
     - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
-    - --transfer-info=@json:{"wss":false,"resume":{"iter_max":1}}
+    - --transfer=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
   args:
     - server
     - download
     - "@preset:server.large_file"
     - --to-folder=@preset:server.upload_folder
-    - --transfer=node
+    - --transfer.agent=node
     - --ts.resume_policy=none
 serv_down_from_node_fail:
   description: Try to download file that does not exist.
@@ -799,7 +809,7 @@ serv_down_from_node_fail:
     - download
     - file_does_not_exist.random
     - --to-folder=@preset:server.upload_folder
-    - --transfer=node
+    - --transfer.agent=node
 serv_cp:
   depends_on:
     - serv_upload1
@@ -881,7 +891,7 @@ serv_key:
     - browse
     - /
     - "--password=@none:"
-    - --ssh-options=@json:{"number_of_password_prompts":0}
+    - --ssh-options.number_of_password_prompts=0
     - --ssh-keys=$(t.saved_output :serv_key_path)
 serv_upload_progress_quiet:
   tags:
@@ -893,7 +903,7 @@ serv_upload_progress_quiet:
     - faux:///test2?100m
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
-    - --transfer-info=@json:{"quiet":false}
+    - --transfer.quiet=false
     - --progress=no
 serv_upload_progress:
   tags:
@@ -1072,7 +1082,7 @@ nd_search:
     - node
     - search
     - /
-    - --query=@json:{"sort":"mtime"}
+    - --query.sort=mtime
 nd_space:
   args:
     - node
@@ -1136,7 +1146,7 @@ nd_upload_ascii:
     - upload
     - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
-    - --ts=@json:{"target_rate_cap_kbps":10000}
+    - --ts.target_rate_cap_kbps=10000
 nd_download_ascii:
   depends_on:
     - nd_upload_ascii
@@ -1164,7 +1174,7 @@ nd_http_upload:
     - upload
     - $(PATH_TST_ASC_LCL)
     - --to-folder=@preset:server.upload_folder
-    - --ts=@json:{"target_rate_cap_kbps":10000}
+    - --ts.target_rate_cap_kbps=10000
 nd_http_cat:
   depends_on:
     - nd_http_upload
@@ -1186,8 +1196,10 @@ nd_2_nd_xfer:
     - --to-folder=@preset:server.upload_folder
     - --sources=@ts
     - --ts=@json:{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}
-    - --transfer=node
-    - --transfer-info=@json:@extend:{"url":"@preset:node_user.url@","username":"@preset:node_user.username@","password":"@preset:node_user.password@"}
+    - --transfer.agent=node
+    - --transfer.url=@preset:node_user.url
+    - --transfer.username=@preset:node_user.username
+    - --transfer.password=@preset:node_user.password
 nd_2_nd_xferb:
   depends_on:
     - nd_2_nd_xfer
@@ -1266,13 +1278,13 @@ nd_xfer_lst:
     - node
     - transfer
     - list
-    - --query=@json:{"active_only":true}
+    - --query.active_only=true
 nd_xfer_list_once:
   args:
     - node
     - transfer
     - list
-    - --query=@json:{"reset":true}
+    - --query.reset=true
     - --once-only=yes
 nd_xfer_lst_once1:
   tags:
@@ -1339,7 +1351,8 @@ nd_xfer_modify:
     - transfer
     - modify
     - $(t.saved_output :nd_xfer_active_id)
-    - '@json:{"target_rate_kbps":10000}'
+    - "@:"
+    - target_rate_kbps=10000
 nd_xfer_show_after_modify:
   depends_on:
     - nd_xfer_active_id
@@ -1404,7 +1417,8 @@ nd_central_file_modify:
     - file
     - modify
     - --validator=1
-    - '@json:{"files":[]}'
+    - "@:"
+    - files=@list:.
 nd_watch_list:
   args:
     - node
@@ -1827,7 +1841,8 @@ node_bearer_token:
     - node
     - bearer_token
     - "@file:@preset:file.private_key"
-    - '@json:{"user_id":"666"}'
+    - "@:"
+    - user_id=@val:666
 nd_ak_bearer_browse:
   depends_on:
     - nd_ak_bearer_create
@@ -1929,7 +1944,8 @@ aoc_faspex_gateway:
   args:
     - aoc
     - gateway
-    - '@json:{"url":"https://localhost:12347/aspera/faspex"}'
+    - "@:"
+    - url=https://localhost:12347/aspera/faspex
 aoc_faspex_gatewayb:
   depends_on:
     - aoc_faspex_gateway
@@ -2032,7 +2048,8 @@ awa_usr_prof_mod:
     - user
     - profile
     - modify
-    - '@json:{"name":"dummy change"}'
+    - "@:"
+    - name=dummy change
 awa_usr_prof_show:
   template: awa_user_suite
   args:
@@ -2045,7 +2062,8 @@ awa_usr_prof_mod_lang:
     - user
     - pref
     - modify
-    - '@json:{"default_language":"en-us"}'
+    - "@:"
+    - default_language=en-us
 awa_usr_ctct_list:
   template: awa_user_suite
   args:
@@ -2090,7 +2108,7 @@ aoc_webauth_profile_refresh:
     - user
     - profile
     - show
-    - --http-options=@json:{"token_refresh_threshold":10000000000}
+    - --http-options.token_refresh_threshold=10000000000
 aoc_files_browse_root:
   template: awa_user_suite
   args:
@@ -2212,7 +2230,8 @@ aoc_somefolder_mount:
     - files
     - modify
     - /some_folder
-    - '@json:{"mount_point":false}'
+    - "@:"
+    - mount_point=false
 aoc_rename_testdst:
   depends_on:
     - aoc_somefolder_mount
@@ -2288,8 +2307,8 @@ aoc_files_upload_other_ws:
     - --workspace=@preset:awa.other_workspace
     - --to-folder=@preset:awa.other_folder
     - $(FILENAME_ASCII)
-    - --transfer=node
-    - --transfer-info=@json:$(t.saved_output :aoc_files_node_info)
+    - --transfer.agent=node
+    - --transfer=@json:$(t.saved_output :aoc_files_node_info)
 awa_files_delete_folder:
   depends_on:
     - aoc_files_transfer
@@ -2335,7 +2354,7 @@ aoc_files_download_connect:
   args:
     - files
     - download
-    - --transfer=connect
+    - --transfer.agent=connect
     - testdst/$(FILENAME_ASCII)
 aoc_files_download_desktop:
   depends_on:
@@ -2345,7 +2364,7 @@ aoc_files_download_desktop:
   args:
     - files
     - download
-    - --transfer=desktop
+    - --transfer.agent=desktop
     - testdst/$(FILENAME_ASCII)
 aoc_files_cat:
   depends_on:
@@ -2644,7 +2663,7 @@ aoc_pack_send2:
     - packages
     - send
     - '@json:@extend:{"name":"$(name) $(TIMESTAMP_TEST_RUN)","recipients":["@preset:misc.email_external@"]}'
-    - --new-user-option=@json:{"package_contact":true}
+    - --new-user-option.package_contact=true
     - $(PATH_TST_ASC_LCL)
 aoc_pack_list:
   template: awa_user_suite
@@ -2721,7 +2740,9 @@ aocp_send_pub_sh:
     - aoc
     - packages
     - send
-    - '@json:{"name":"$(name) $(TIMESTAMP_TEST_RUN)"}'
+    - "@:"
+    - name=$(name) $(TIMESTAMP_TEST_RUN)
+    - END
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_shared_inbox
 aocp_send_pub_usr:
@@ -2730,7 +2751,9 @@ aocp_send_pub_usr:
     - aoc
     - packages
     - send
-    - '@json:{"name":"$(name) $(TIMESTAMP_TEST_RUN)"}'
+    - "@:"
+    - name=$(name) $(TIMESTAMP_TEST_RUN)
+    - END
     - $(PATH_TST_ASC_LCL)
     - --url=@preset:aoc.public_link_send_aoc_user
     - --password=@preset:aoc.public_link_send_use_pass
@@ -3148,7 +3171,8 @@ aoc_adm_user_modify:
     - user
     - modify
     - "@extend:%name:@preset:awa.user_email@"
-    - '@json:{"deactivated":false}'
+    - "@:"
+    - deactivated=false
 aoc_adm_group_list:
   args:
     - --preset=aoc_admin
@@ -3198,7 +3222,7 @@ aoc_adm_package_list:
     - admin
     - package
     - list
-    - --http-options=@json:{"read_timeout":120.0}
+    - --http-options.read_timeout=120.0
 aoc_adm_saml_list:
   args:
     - --preset=aoc_admin
@@ -3631,7 +3655,8 @@ aoc_auto_wf_create:
     - automation
     - workflow
     - create
-    - '@json:{"name":"test_workflow"}'
+    - "@:"
+    - name=test_workflow
 aoc_auto_wf_id:
   tags:
     - save_output
@@ -3643,7 +3668,7 @@ aoc_auto_wf_id:
     - automation
     - workflow
     - list
-    - --select=@json:{"name":"test_workflow"}
+    - --select.name=test_workflow
     - --fields=id
 aoc_auto_wf_list:
   args:
@@ -3659,7 +3684,7 @@ aoc_auto_wf_list_org:
     - automation
     - workflow
     - list
-    - --query=@json:{"show_org_workflows":"true"}
+    - --query.show_org_workflows=@val:true
 aoc_auto_wf_action_create:
   $comment: Verify what it should do, and not fail.
   depends_on:
@@ -3674,7 +3699,8 @@ aoc_auto_wf_action_create:
     - action
     - $(t.saved_output :aoc_auto_wf_id)
     - create
-    - '@json:{"name":"toto"}'
+    - "@:"
+    - name=toto
 #		| tee action.info
 #	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info > tmp_action_id.txt
 #	rm -f action.info
@@ -3753,14 +3779,16 @@ orch_wf_str1:
     - workflow
     - start
     - "@preset:orch.workflow_id"
-    - '@json:{"Param":"world !"}'
+    - "@:"
+    - Param=world !
 orch_wf_str2:
   args:
     - orchestrator
     - workflow
     - start
     - "@preset:orch.workflow_id"
-    - '@json:{"Param":"world !"}'
+    - "@:"
+    - Param=world !
     - --result=ResultStep:Complete_status_message
 orch_plugins:
   args:
@@ -3980,7 +4008,8 @@ nd_sync_pull_conf:
     - pull
     - /aspera-test-dir-tiny
     - --to-folder=$(PATH_TMP_SYNCS / 'nd_sync_pull_conf')
-    - '@json:{"reset":true}'
+    - "@:"
+    - reset=true
 nd_sync_pull_confb:
   depends_on:
     - nd_sync_pull_conf
@@ -4575,7 +4604,7 @@ conf_gem_path:
     - gem
     - path
     - --http-proxy=http://test1
-    - --http-options=@json:{"user_agent":"test1"}
+    - --http-options.user_agent=test1
 conf_ssl_options:
   description: Test of `ssl_options`, `cert-stores` and `insecure`
   args:
@@ -4607,7 +4636,8 @@ conf_vault_macos_prepare:
     - config
     - vault
     - create
-    - '@json:{"label":"foo"}'
+    - "@:"
+    - label=foo
     - --vault.type=system
 conf_vault_macosc:
   depends_on:
@@ -4825,7 +4855,7 @@ conf_coffee_3:
     - config
     - coffee
     - --ui=text
-    - --image=@json:{"text":true}
+    - --image.text=true
 conf_coffee_4:
   args:
     - config
@@ -5486,7 +5516,7 @@ prev_folder:
     - --skip-types=office
     - --log-level=info
     - --file-access=aspera:
-    - --ts=@json:{"target_rate_kbps":1000000}
+    - --ts.target_rate_kbps=1000000
 serv_hot_prep:
   tags:
     - pre_cleanup
@@ -5513,7 +5543,7 @@ serv_hot_run:
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
     - --lock-port=50101
-    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
+    - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
     - $(PATH_HOT_FOLDER)
 serv_hot_check:
   depends_on:
@@ -5533,7 +5563,7 @@ serv_hot_run2:
     - upload
     - --to-folder=@extend:@preset:server.upload_folder@/target_hot
     - --lock-port=50101
-    - --transfer-info=@json:{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","$(PATH_HOT_FOLDER)"]}
+    - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
     - $(PATH_HOT_FOLDER)
 serv_hot_check2:
   depends_on:
@@ -5697,7 +5727,7 @@ f5_pack_send:
     - send
     - '@json:@extend:{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}'
     - $(PATH_TST_ASC_LCL)
-    - --ts=@json:{"content_protection_password":"my_secret_here"}
+    - --ts.content_protection_password=my_secret_here
 f5_pack_list:
   args:
     - faspex5
@@ -5788,7 +5818,7 @@ f5_pack_browse:
     - packages
     - browse
     - $(t.saved_output :f5_package_id)
-    - --query=@json:{"recursive":true}
+    - --query.recursive=true
 f5_pack_recv:
   depends_on:
     - f5_package_id
@@ -5798,7 +5828,7 @@ f5_pack_recv:
     - receive
     - $(t.saved_output :f5_package_id)
     - --to-folder=$(TMP)
-    - --ts=@json:{"content_protection_password":"my_secret_here"}
+    - --ts.content_protection_password=my_secret_here
 f5_pack_recv_all:
   depends_on:
     - f5_package_id
@@ -6006,7 +6036,7 @@ f5_dist_list:
     - admin
     - distribution_lists
     - list
-    - --query=@json:{"type":"global"}
+    - --query.type=global
 f5_dist_delete:
   depends_on:
     - f5_dist_list
@@ -6121,7 +6151,8 @@ f5_adm_email_notif_modif:
     - admin
     - configuration
     - modify
-    - '@json:{"mfa_required":false}'
+    - "@:"
+    - mfa_required=false
 f5_adm_reg_lst:
   args:
     - --preset=f5_admin
@@ -6136,7 +6167,7 @@ f5_adm_sbx_lst:
     - admin
     - shared_inboxes
     - list
-    - --query=@json:{"all":true}
+    - --query.all=true
 f5_adm_sbx_mem:
   args:
     - --preset=f5_admin
@@ -6235,7 +6266,8 @@ f5_smtp_mod:
     - admin
     - smtp
     - modify
-    - '@json:{"default_time_zone_offset":"0"}'
+    - "@:"
+    - default_time_zone_offset=@val:0
 f5_smtp_sh:
   args:
     - --preset=f5_admin
@@ -6281,7 +6313,8 @@ f5_invite_create:
     - faspex5
     - invitations
     - create
-    - '@json:{"email_address":"aspera.user1+u@gmail.com"}'
+    - "@:"
+    - email_address=aspera.user1+u@gmail.com
 f5_invite_list:
   depends_on:
     - f5_invite_create
@@ -6348,7 +6381,8 @@ f5_fxgw_start:
   args:
     - faspex5
     - gateway
-    - '@json:{"url":"https://localhost:12346/aspera/faspex"}'
+    - "@:"
+    - url=https://localhost:12346/aspera/faspex
 f5_fxgw_test:
   description: Test the faspex4->faspex5 gateway.
   tags:
@@ -6667,7 +6701,7 @@ fx4_pack_send_link_user:
     - package
     - send
     - --link=@preset:faspex4.link_send_to_user
-    - --delivery-info=@json:{"title":"$(name) $(TIMESTAMP_TEST_RUN)"}
+    - --delivery-info.title=$(name) $(TIMESTAMP_TEST_RUN)
     - $(PATH_TST_ASC_LCL)
 fx4_pack_send_link_dropbox:
   args:
@@ -6675,7 +6709,7 @@ fx4_pack_send_link_dropbox:
     - package
     - send
     - --link=@preset:faspex4.link_send_to_dropbox
-    - --delivery-info=@json:{"title":"$(name) $(TIMESTAMP_TEST_RUN)"}
+    - --delivery-info.title=$(name) $(TIMESTAMP_TEST_RUN)
     - $(PATH_TST_ASC_LCL)
 fx4_remote_src:
   args:
