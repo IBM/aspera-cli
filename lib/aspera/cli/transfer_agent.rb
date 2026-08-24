@@ -111,8 +111,8 @@ module Aspera
       # analyze options and create new agent if not already created or set
       def agent_instance
         return @agent unless @agent.nil?
-        # agent type: from composite option 'agent' key, fallback to deprecated :transfer_type, default :direct
-        raw_type = @transfer_options['agent'] || @context.options.get_option(:transfer_type) || :direct
+        # agent type: from composite option 'agent' key, default :direct
+        raw_type = @transfer_options['agent'] || :direct
         agent_type = Manager.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
         # set keys as symbols, strip internal 'agent' key
         agent_options = @transfer_options.except('agent').symbolize_keys
