@@ -79,13 +79,13 @@ For programmatic integration with languages such as C/C++, Go, Python, NodeJS, a
 These include:
 
 - REST APIs for products like Aspera on Cloud (AoC), Faspex, and Node
-- The Transfer Daemon with gRPC interfaces and language-specific stubs (C/C++, Python, .NET/C#, Java, Go, Ruby, Rust, etc.)
+- The Transfer Daemon with gRPC interfaces and language-specific stubs (C/C++, Python, .NET/C#, Java, Go, Ruby, Rust, and so on)
 
 These APIs are generally more suitable for long-term development and maintenance.
 Example implementations can be found at: <https://github.com/laurent-martin/aspera-api-examples>.
 
 For scripting and ad hoc command-line tasks, `ascli` is ideal.
-It is developer-friendly and well-suited for quickly testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
+It is developer-friendly and well-suited for testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
 ### CLI landscape overview: `ascp`
 
@@ -114,16 +114,16 @@ Command line examples listed in sections titled **Tested commands for `_plugin_n
 
 Command line arguments formatted as `<NAME>` in examples represent user-provided values, not fixed value commands.
 
-`ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc.)
+`ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, and so on)
 
-Some commands will start an Aspera transfer (e.g. `upload`).
+Some commands will start an Aspera transfer (for example, `upload`).
 The transfer is not implemented directly in `ascli`; rather, `ascli` uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
 
 > [!NOTE]
 > A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
 > It can be local, or remote.
 > For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
-> i.e. using the option `--transfer=node`
+> that is, using the option `--transfer=node`
 
 ## Quick Start
 
@@ -205,7 +205,7 @@ complete
 
 ### Option B - Connecting to Your Own HSTS
 
-To use `ascli` with a server of your own, it's recommended to save its connection details as an [Option Preset](#option-preset).
+To use `ascli` with a server of your own, it is recommended to save its connection details as an [Option Preset](#option-preset).
 This avoids repeating credentials on every command.
 The steps below create a preset, set it as the default for the server plugin, browse a remote directory, and download a file:
 
@@ -271,7 +271,7 @@ By providing the documentation as a direct reference, you reduce "hallucinations
 
 - Learn the CLI: Read [Command Line Interface](#command-line-interface) to understand configuration, options, and commands.
 
-- Explore plugins: Jump to the section for the product you're working with - Aspera on Cloud, Faspex, and more - under [Application Plugins](#plugins).
+- Explore plugins: Jump to the section for the relevant product - Aspera on Cloud, Faspex, and more - under [Application Plugins](#plugins).
 
 ## Installation
 
@@ -332,7 +332,7 @@ ldd --version | head -n1
 ldd (GNU libc) 2.34
 ```
 
-Check an executable's (e.g. `/bin/bash`, `ascli`, `ascp`) minimum required GLIBC version:
+Check an executable's (for example, `/bin/bash`, `ascli`, `ascp`) minimum required GLIBC version:
 
 ```shell
 objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
@@ -426,7 +426,7 @@ brew install ruby
 
 This installs a recent Ruby suitable for `ascli`.
 
-To add Ruby to your `PATH` on Apple Silicon, add the following lines to your shell configuration file (i.e. `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
+To add Ruby to your `PATH` on Apple Silicon, add the following lines to your shell configuration file (that is, `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
 
 ```shell
 PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
@@ -533,7 +533,7 @@ One can install in another location with:
 curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
-As root, make sure this will not collide with other applications using Ruby (e.g. Faspex).
+As root, verify that this will not collide with other applications using Ruby (for example, Faspex).
 If so, one can rename the environment script so that it is not loaded by default:
 
 ```shell
@@ -558,7 +558,7 @@ RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm instal
 
 #### Unix-like: `rbenv`
 
-If you don't have root access, you can install Ruby in your home directory using `rbenv`, see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
+If you do not have root access, you can install Ruby in your home directory using `rbenv`, see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
 ```shell
 curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
@@ -632,7 +632,7 @@ export JRUBY_OPTS=--dev
 ascli -v
 ```
 
-or
+Or:
 
 ```shell
 JRUBY_OPTS=--dev ascli -v
@@ -798,7 +798,7 @@ The installation of the transfer binaries follows those steps:
 
 Available Transfer Daemon versions available from `locations_url` can be listed with: `ascli config transferd list`
 
-To install a specific version, e.g. 1.1.3:
+To install a specific version, for example, 1.1.3:
 
 ```shell
 ascli config transferd install 1.1.3
@@ -976,9 +976,7 @@ podman --version
 
 #### Container: Quick start
 
-**Want to start quickly?** With an interactive shell?
-
-Execute this:
+To start an interactive shell, run:
 
 ```shell
 podman run --rm --tty --interactive --entrypoint bash docker.io/martinlaurent/ascli:latest
@@ -1008,7 +1006,7 @@ That is simple, but there are limitations:
 The container image is built from this [Dockerfile](../build/container/Dockerfile.tmpl.erb).
 The entry point is `ascli` and the default command is `help`.
 
-The container can be executed for individual commands like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)
+The container can be executed for individual commands like this: (add `ascli` commands and options at the end of the command line, for example, `-v` to display the version)
 
 ```shell
 podman run --rm --tty --interactive docker.io/martinlaurent/ascli:latest
@@ -1030,7 +1028,7 @@ ascli -v
 4.27.0.pre
 ```
 
-In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
+To keep persistency of configuration on the host, specify your user's configuration folder as a volume for the container.
 To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/ascli`).
 Add options:
 
@@ -1039,7 +1037,7 @@ Add options:
 ```
 
 > [!NOTE]
-> If you are using a `podman machine`, e.g. on macOS, make sure that the folder is also shared between the VM and the host, so that sharing is:
+> If you are using a `podman machine`, for example, on macOS, ensure that the folder is also shared between the VM and the host, so that sharing is:
 >
 > container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
@@ -1060,7 +1058,7 @@ In this case you also need to specify the shared transfer folder as a volume:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-And if you want all the above, simply use all the options:
+To combine all the above options:
 
 ```shell
 alias asclish="podman run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfiles --entrypoint bash docker.io/martinlaurent/ascli:latest"
@@ -1140,7 +1138,7 @@ podman load -i ascli_image_latest.tar.gz
 
 `ascp`'s configuration file `aspera.conf` is located in the container at: `/ibm_aspera/aspera.conf` (see Dockerfile).
 As the container is immutable, it is not recommended modifying this file.
-If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
+If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, for example, by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
 
 ```shell
 echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
@@ -1225,7 +1223,7 @@ To display trusted certificate store locations:
 ascli --show-config --fields=cert_stores
 ```
 
-Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc.).
+Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, and so on).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
 One can display those default values:
@@ -1235,7 +1233,7 @@ ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
 ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
-In order to get certificate validation, the CA certificate bundle must be up-to-date.
+To get certificate validation, the CA certificate bundle must be up-to-date.
 Check this repository on how to update the system's CA certificate bundle: [https://github.com/millermatt/osca](https://github.com/millermatt/osca).
 
 For example on RHEL/Rocky Linux:
@@ -1295,7 +1293,7 @@ ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output
 
 Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
 
-To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
+To trust a specific certificate (for example, self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```shell
 ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=<SERVER_PRESET_NAME>.pem
@@ -1304,7 +1302,7 @@ ascli config remote_certificate chain https://localhost:9092 --insecure=yes --ou
 > [!NOTE]
 > Use command `name` to display the remote common name of the remote certificate.
 
-Then, use this file as certificate store (e.g. here, Node API):
+Then, use this file as certificate store (for example, here, Node API):
 
 ```shell
 ascli config echo @uri:https://localhost:9092/ping --cert-stores=<SERVER_PRESET_NAME>.pem
@@ -1332,7 +1330,7 @@ The `aspera-cli` gem provides a command line interface (CLI) which interacts wit
 - FASP [Transfer Agents](#transfer-clients-agents) can be: local `ascp`, or Connect Client, or any transfer node
 - Transfer parameters can be altered by modification of [**transfer-spec**](#transfer-specification), this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
-- faspstream creation (using Node API)
+- FASPStream creation (using Node API)
 - **Watchfolder** creation (using Node API)
 - Additional command plugins can be written by the user
 - Download of Faspex and Aspera on Cloud "external" links
@@ -1356,11 +1354,11 @@ Command line arguments are the units of command line typically separated by spac
 `ascli` handles the following types of command line arguments:
 
 - [**Options**](#options): absolute position is not important, but order is important, as a given option may be provided several times
-- [**Plugins**](#plugins) e.g. `config`, on first position
-- [**Resource Types**](#resource-types) e.g. `users`
-- [**Verbs**](#verbs) e.g. `create`, to act on those resources or plugins.
-- [**Identifiers**](#identifiers) e.g. `123`, uniquely identifying a resource
-- [**Command Parameters**](#command-parameters) arguments, e.g. creation data, can be an [Extended Value](#extended-value-syntax).
+- [**Plugins**](#plugins) for example, `config`, on first position
+- [**Resource Types**](#resource-types) for example, `users`
+- [**Verbs**](#verbs) for example, `create`, to act on those resources or plugins.
+- [**Identifiers**](#identifiers) for example, `123`, uniquely identifying a resource
+- [**Command Parameters**](#command-parameters) arguments, for example, creation data, can be an [Extended Value](#extended-value-syntax).
 
 Command line arguments that are not options are referred to as **Positional Arguments**.
 
@@ -1371,7 +1369,7 @@ ascli plugin command verb --option-name=VAL1 VAL2
 ```
 
 - **Positional Arguments**: `plugin command verb VAL2`
-- one **Option**: `option_name` and its **value**: `VAL1`
+- One **Option**: `option_name` and its **value**: `VAL1`
 
 Enumeration values (positional arguments and option names/values) support prefix matching.
 See [Enumerations](#enumerations) for details.
@@ -1422,7 +1420,7 @@ A resource type can also be a grouping of other resource types, for example `adm
 Standard resource **Verbs** are: `create`, `show`, `list`, `modify`, `delete`.
 Some entities also support additional verbs.
 When such additional commands relate to a resource also accessible in another context, they are placed under the `do` command.
-For example, subcommands appear after the resource identifier, e.g. `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a subcommand of `node`.
+For example, subcommands appear after the resource identifier, for example, `ascli aoc admin node do <NODE_ID> browse /`: `browse` is a subcommand of `node`.
 
 Typically, the `create` verb takes a resource creation data as a parameter.
 `show`, `modify` and `delete` take an identifier, unless manipulating a singleton.
@@ -1432,7 +1430,7 @@ Typically, the `create` verb takes a resource creation data as a parameter.
 #### Identifiers
 
 Identifiers uniquely identify a resource.
-They are typically located just after a verb, itself placed after the resource type.
+They are typically located immediately after a verb, itself placed after the resource type.
 Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the **percent selector**.
 
 ##### Percent selector
@@ -1477,8 +1475,8 @@ A few **Command Parameters** are optional, they are always located at the end of
 The following are enumerations:
 
 - **Plugins**, **Resource Types**, and **Verbs** (positional arguments)
-- Option names (e.g., `--log-level`)
-- Some option values (e.g., `debug` for `--log-level`)
+- Option names (for example, `--log-level`)
+- Some option values (for example, `debug` for `--log-level`)
 
 **Prefix matching**: You can use a unique prefix instead of the full value, provided it uniquely identifies the value in that context.
 
@@ -1575,7 +1573,7 @@ The general syntax for this argument is:
   - If another value than `END` is preferred, then specify: `@:<MARKER>` and use `@:<MARKER>` as replacement for `END`.
 
 > [!IMPORTANT]
-> Use `END` whenever any positional argument must follow the object built with `@:` (e.g. a file list, or any other subsequent positional parameter).
+> Use `END` whenever any positional argument must follow the object built with `@:` (for example, a file list, or any other subsequent positional parameter).
 > Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
 
 **Example**: Sending a package with a file list using `@:` for package information.
@@ -1588,7 +1586,7 @@ ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file
 > In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
 
 > [!NOTE]
-> `@:` can also be used as an option value (e.g. `--query=@: a=b`).
+> `@:` can also be used as an option value (for example, `--query=@: a=b`).
 > In that case, only positional arguments **after the option's position** in the original command line are consumed, so sub-commands before the option are not affected.
 > Use `END` as usual to stop collection when further positional arguments must follow: `ascli aoc tier --query=@: a=b END other_arg`.
 
@@ -1603,7 +1601,7 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
   Option name in config file use underscores (`_`) as word separators.
   Example: `--log-level=debug` is `log_level` in config file.
 - **Values**:
-  An option’s value is assigned using `=` (e.g., `--log-level=debug`).
+  An option’s value is assigned using `=` (for example, `--log-level=debug`).
 - **Prefix Usage**:
   Options support prefix matching (see [Enumerations](#enumerations)), though full names are recommended.
 - **Optionality**:
@@ -1620,7 +1618,7 @@ Exceptions and Special Cases:
   See the manual or `-h` for details.
 - **Flags**
 
-  Certain options are flags and do not require a value (e.g., `-N`).
+  Certain options are flags and do not require a value (for example, `-N`).
 - **Option Terminator**
 
   The special option `--` ends option parsing.
@@ -1629,7 +1627,7 @@ Exceptions and Special Cases:
 - **Cumulative Hashes**
 
   When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
-  Setting to `@none:` is equivalent to setting to `@json:{}`, i.e. an empty `Hash`.
+  Setting to `@none:` is equivalent to setting to `@json:{}`, that is, an empty `Hash`.
   This can be used to start from an empty value, and not use the existing default value.
 
 Example:
@@ -1648,7 +1646,7 @@ ascli config echo -- --sample
 Options may have a (hard coded) default value.
 
 Options can be placed anywhere on command line and are evaluated in order.
-Usually the last value evaluated overrides previous values, but some options are cumulative, e.g. `ts`.
+Usually the last value evaluated overrides previous values, but some options are cumulative, for example, `ts`.
 
 Options are typically optional: to change the default behavior.
 But some are mandatory, so they can be placed in a configuration file, for example: connection information.
@@ -1659,7 +1657,7 @@ The value for **any** options can come from the following locations (in this ord
 - Environment variable
 - Command line
 
-Environment variable starting with prefix: ASCLI_ are taken as option values, e.g. `ASCLI_OPTION_NAME` is for `--option-name`.
+Environment variable starting with prefix: ASCLI_ are taken as option values, for example, `ASCLI_OPTION_NAME` is for `--option-name`.
 
 Option `show_config` dry runs the configuration, and then returns currently set values for options.
 
@@ -1669,7 +1667,7 @@ In addition, option `--show-config` can be added at the end of any full command 
 A command line argument is typically designed as option if:
 
 - It is optional, or
-- It is a mandatory parameter with a default value that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
+- It is a mandatory parameter with a default value that would benefit from being set persistently (that is, in a configuration file or environment variable, for example, URL and credentials).
 
 ### Interactive Input
 
@@ -1679,10 +1677,10 @@ By default, `ascli` prompts for missing mandatory options or **Command Parameter
 The behavior can be controlled with:
 
 - `--interactive=<yes|no>` (default=yes if STDIN is a terminal, else no)
-  - yes: missing mandatory parameters/arguments are asked to the user
-  - no: missing mandatory parameters/arguments raise an error message
+  - `yes`: Missing mandatory parameters/arguments are asked to the user.
+  - `no`: Missing mandatory parameters/arguments raise an error message.
 - `--ask-options=<yes|no>` (default=no)
-  - optional parameters/arguments are asked to user
+  - `yes`: Optional parameters/arguments are asked to the user.
 
 ### Output
 
@@ -1958,7 +1956,7 @@ Individual elements of the list can be:
 
 - **property**: add property to the current list
 - `-`**property**: remove property from the current list
-- `DEF`: default list of fields (that's the default, when not set)
+- `DEF`: default list of fields (that is the default, when not set)
 - `ALL`: all fields
 - A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
@@ -2006,7 +2004,7 @@ Option `select` applies the filter after a possible "flattening" with option: `f
 
 ### Extended Value Syntax
 
-Most options and arguments are specified by a simple string (e.g. `username` or `url`).
+Most options and arguments are specified by a simple string (for example, `username` or `url`).
 Sometimes it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
 Some options expect a more complex value such as `Hash` or `Array`.
 
@@ -2034,13 +2032,13 @@ The following decoders are supported:
 |----------|----------|----------|------------------------------------------------------------------------------------------|
 | `base64` | `String` | `String` | Decode a base64 encoded string. |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
-| `env`    | `String` | `String` | Read from a named env var name. e.g. `--password=@env:MYPASSVAR` |
-| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). e.g. `--key=@file:~/.ssh/mykey` |
+| `env`    | `String` | `String` | Read from a named env var name. for example, `--password=@env:MYPASSVAR` |
+| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). for example, `--key=@file:~/.ssh/mykey` |
 | `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
 | `lines`  | `String` | `Array`  | Split a string in multiple lines and return an `Array`. |
 | `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
 | `none`   | None     | Nil      | A `null` value. |
-| `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). e.g. `--config-file=@path:~/sample_config.yml` |
+| `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). for example, `--config-file=@path:~/sample_config.yml` |
 | `preset` | `String` | `Hash`   | Get value from configuration file using [dot-path](#dot-path-notation) notation. |
 | `extend` | `String` | `String` | Evaluates embedded [Extended Value](#extended-value-syntax) syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
@@ -2048,8 +2046,8 @@ The following decoders are supported:
 | `s`      | Any      | `String` | Converts argument to `String`. |
 | `secret` | `String` | `String` | Ask password interactively (hides input). Argument is the prompt. |
 | `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
-| `uri`    | `String` | `String` | Read value from specified URL. e.g. `--fpac=@uri:http://serv/f.pac` |
-| `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| `uri`    | `String` | `String` | Read value from specified URL. for example, `--fpac=@uri:http://serv/f.pac` |
+| `val`    | `String` | `String` | Prevent decoders on the right to be decoded. for example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
 | `<empty>`| None     | Any      | The empty modifier, resulting as argument `@:`, parses remaining positional arguments as a `Hash` or `Array` using [dot-path](#dot-path-notation) notation.<br/>Use `END` to stop collection when further positional arguments must follow. |
@@ -2237,7 +2235,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all examples, most special character handling is not specific to `ascli`:
-It depends on the underlying syntax: shell, JSON, etc.
+It depends on the underlying syntax: shell, JSON, and so on
 Depending on the case, a different `format` option is used to display the actual value.
 
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
@@ -2315,7 +2313,7 @@ A configuration file provides a way to define default values, especially for aut
 The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `config_file`).
 
 The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
-Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (e.g. `<PRESET_NAME>`) using the option `preset`: `--preset=<PRESET_NAME>` or its shortcut: `-P<PRESET_NAME>`.
+Then, instead of specifying some common options on the command line (for example, address, credentials), it is possible to invoke the ones of an [Option Preset](#option-preset) (for example, `<PRESET_NAME>`) using the option `preset`: `--preset=<PRESET_NAME>` or its shortcut: `-P<PRESET_NAME>`.
 
 #### Format of configuration file
 
@@ -2400,7 +2398,7 @@ One can also use [positional arguments with dot-path](#positional-arguments-with
 ascli config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<PASSWORD> ts.precalculate_job_size=true
 ```
 
-The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g.:
+The command `update` creates an [Option Preset](#option-preset) from options provided on the command line, for example:
 
 ```shell
 ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=<PASSWORD> --ts=@json:'{"precalculate_job_size":true}'
@@ -2484,7 +2482,7 @@ ascli config preset set default _plugin_name_ _default_preset_for_plugin_
 ```
 
 > [!NOTE]
-> `default` is not a command, it is simply the name of the special preset.
+> `default` is not a command, it is the name of the special preset.
 
 ```shell
 ascli config preset get default _plugin_name_
@@ -2530,10 +2528,10 @@ When `ascli` starts, it looks for the `default` Option Preset and checks the val
 If set, it loads the options independently of the plugin used.
 
 > [!NOTE]
-> If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
+> If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global options (for example, `config ascp use`)
 
 > [!TIP]
-> If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
+> If you do not know the name of the global preset, you can use `GLOBAL` to refer to it.
 
 Show current default (global) Option Preset (`config` plugin):
 
@@ -2741,7 +2739,7 @@ Options are also available for the wizard:
 | `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
 | `key_path`  | path     | Path to private key for JWT.                                        |
 
-Other plugin-specific options can be provided to the wizard, such as `--username`, etc.
+Other plugin-specific options can be provided to the wizard, such as `--username`, and so on
 They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
@@ -2779,7 +2777,7 @@ This can also be done with one single command:
 ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<PASSWORD>"}'
 ```
 
-or
+Or:
 
 ```shell
 ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=<PASSWORD>
@@ -2805,8 +2803,8 @@ ascli shares repo browse /
 
 ### Secret Vault
 
-Secrets, e.g. passwords, keys, are needed when connecting to applications.
-Those secrets are usually provided as command options, on command line, env vars, files etc.
+Secrets, for example, passwords, keys, are needed when connecting to applications.
+Those secrets are usually provided as command options, on command line, env vars, files and so on
 
 For security reasons, those secrets shall not be exposed in clear, either:
 
@@ -2818,9 +2816,9 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
 Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
-Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
+Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
-It is also possible to enter an option as an environment variable, e.g. `ASCLI_PASSWORD` for option `password` and read the env var like this:
+It is also possible to enter an option as an environment variable, for example, `ASCLI_PASSWORD` for option `password` and read the env var like this:
 
 ```shell
 read -s ASCLI_PASSWORD
@@ -2921,7 +2919,7 @@ The lookup is done by comparing the service URL and username (or access key).
 
 #### Securing passwords and secrets
 
-A password can be saved in clear in an [Option Preset](#option-preset) together with other account information (URL, username, etc.).
+A password can be saved in clear in an [Option Preset](#option-preset) together with other account information (URL, username, and so on).
 Example:
 
 ```shell
@@ -2945,8 +2943,8 @@ ascli config vault create @json:'{"label":"<VAULT_LABEL>","password":"<PASSWORD>
 
 Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
 
-- for SSH: Server
-- for OAuth JWT: AoC, Faspex5, Faspex, Shares
+- For SSH: Server
+- For OAuth JWT: AoC, Faspex5, Faspex, Shares
 
 It consists in using a pair of associated keys: a private key and a public key.
 The same pair can be used for multiple applications.
@@ -2976,7 +2974,7 @@ Several methods can be used to generate a key pair.
 
 The format expected for keys is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail).
 
-If another format is used, such as `DER`, it can be converted to `PEM`, e.g. using `openssl`.
+If another format is used, such as `DER`, it can be converted to `PEM`, for example, using `openssl`.
 
 #### `ascli` for key generation
 
@@ -3012,7 +3010,7 @@ openssl genrsa -passout pass:_passphrase_here_ -out ${KEY_PAIR_PATH} 4096
 openssl rsa -pubout -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.pub
 ```
 
-`openssl` is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
+`openssl` is sometimes compiled to support option `-nodes` (no DES, that is, no passphrase, for example, on macOS).
 In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` to generate a key without passphrase.
 
 If option `-nodes` is not available, the passphrase can be removed using this method:
@@ -3055,7 +3053,7 @@ Parameter `url` (base URL) defines:
 
 - If `http` or `https` is used
 - The local port number (default 443 for HTTPS, 80 for HTTP)
-- The **base path**, i.e. the path under which requests are received, if a reverse proxy is used this can be used to route.
+- The **base path**, that is, the path under which requests are received, if a reverse proxy is used this can be used to route.
 
 ### Image and video thumbnails
 
@@ -3127,7 +3125,7 @@ The composite option `log` groups all logging parameters (use `--log=help` to di
 
 #### `log_level` and `log_secrets`
 
-To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `ASCLI_LOG_LEVEL`, or an [Option Preset](#option-preset)).
+To increase debug level, use option `log_level` (for example, using command line `--log-level=xx`, env var `ASCLI_LOG_LEVEL`, or an [Option Preset](#option-preset)).
 
 > [!NOTE]
 > When using the `direct` agent (`ascp`), additional transfer logs from `ascp` can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
@@ -3187,8 +3185,8 @@ It will display the exact content of HTTP requests and responses.
 
 ### HTTP socket parameters
 
-To ignore SSL certificate for **any** address/port, use option: `insecure`, i.e. `--insecure=yes`.
-To ignore SSL certificate for a list of specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
+To ignore SSL certificate for **any** address/port, use option: `insecure`, that is, `--insecure=yes`.
+To ignore SSL certificate for a list of specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), for example, `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
 > [!NOTE]
 > Ignoring certificate also applies to `ascp` WSS.
@@ -3231,7 +3229,7 @@ ascli aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
 
 The option `ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
 The default initial value is the default of Ruby as specified in `openssl/ssl.rb`.
-Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`, or an `Integer` (e.g. `0` resets to no option).
+Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`, or an `Integer` (for example, `0` resets to no option).
 If the name appears in the list, the option is set.
 If the name appears in the list prefixed with a hyphen (`-`), the option is cleared.
 For example to enable option `SSL_OP_CIPHER_SERVER_PREFERENCE`, add it to the list as `CIPHER_SERVER_PREFERENCE`.
@@ -3281,7 +3279,8 @@ ascli --http-proxy=http://<USERNAME>:<PASSWORD>@host:port ...
 
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) JavaScript value.
 
-Note that proxy credentials are not supported in PAC files.
+> [!NOTE]
+> Proxy credentials are not supported in PAC files.
 
 To read the script from a URL (`http:`, `https:` and `file:`), use prefix: `@uri:`.
 A minimal script can be specified to define the use of a local proxy:
@@ -3351,11 +3350,11 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 `ascli` uses one of the transfer agents to execute transfers.
 
-By default, it uses the `direct` agent, which is basically a local `ascp`.
+By default, it uses the `direct` agent, which is a local `ascp`.
 Nevertheless, `ascli` does not come with `ascp` installed.
 This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`ascli config transferd install`).
 
-By default, `ascli` uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
+By default, `ascli` uses the `ascp` binary found in **well known locations**, that is, typical Aspera product installation paths.
 
 The `config` plugin allows finding and specifying the location of `ascp`.
 It provides the following commands for `ascp` sub-command:
@@ -3520,15 +3519,15 @@ In that, use the native progress bar:
 --transfer.monitor=false --transfer.quiet=false`
 ```
 
-By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
-In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
+By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (for example, WSS).
+To use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
 To use `ascp`'s default, use option:
 
 ```shell
 --transfer.trusted_certs=@none:
 ```
 
-Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
+Some transfer errors are considered **retry-able** (for example, timeout) and some other not (for example, wrong password).
 The list of known protocol errors and retry level can be listed:
 
 ```shell
@@ -3572,7 +3571,7 @@ In addition to standard methods described in section [File List](#list-of-files-
 > Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
 
 > [!NOTE]
-> Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+> Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (that is, local `ascp`) and not for Aspera on Cloud.
 
 ##### Agent: Direct: Management messages
 
@@ -3605,7 +3604,7 @@ echo '{"type":"RATE","Rate":300000}' > ~/.aspera/ascli/send_67470
 When `ascli` detects this file, it uses it during a transfer and then deletes it.
 
 > [!NOTE]
-> The JSON's keys use **snake case**, i.e. lower case with `_` as word separator.
+> The JSON's keys use **snake case**, that is, lower case with `_` as word separator.
 > The list of message `type` can be found in `aspera/ascp/management.rb` : `OPERATIONS`.
 > The list of parameters (capitalized) is `PARAMETERS`.
 
@@ -3679,7 +3678,7 @@ On Windows, it concerns: `* : | < > " ' ?`.
 
 Replacing illegal characters in transferred file names is a built-in feature of Aspera transfers.
 This behavior can be customized with the `aspera.conf` configuration file.
-For example, let's assume we want to replace illegal character: `|` with an underscore `_`.
+For example, to replace illegal character `|` with an underscore `_`:
 
 1. First, locate the configuration file with:
 
@@ -3719,8 +3718,8 @@ The parameter works as follows:
 
 So in this example: `|` will be replaced with `_`.
 
-If the mounted target file system is **Windows** but `ascli` runs on Linux, there are several additional illegal characters you need to handle.
-In that case, you can set the parameter like this (note that XML special characters such as `<`, `>`, `"` and `'` must be escaped properly):
+If the mounted target file system is **Windows** but `ascli` runs on Linux, there are several additional illegal characters to handle.
+In that case, set the parameter as shown below. XML special characters such as `<`, `>`, `"` and `'` must be escaped properly:
 
 ```xml
 <replace_illegal_chars>_*:|&lt;&gt;&quot;&apos;?</replace_illegal_chars>
@@ -3801,7 +3800,7 @@ ascli faspex package recv 323 --transfer.url=https://asperagw.example.com:9443/a
 > [!NOTE]
 > The gateway only supports transfers authorized with a token.
 
-If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer` URL becomes optional.
+If the application, for example, AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer` URL becomes optional.
 
 #### Agent: Transfer Daemon
 
@@ -3851,7 +3850,7 @@ On Windows the compilation may fail for various reasons (3.1.1):
   
 - `conflicting types for 'gettimeofday'`
 
-  &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)`, i.e. change `struct timezone` to `void`
+  &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)`, that is, change `struct timezone` to `void`
 
 <!-- spellchecker: enable -->
 
@@ -3864,7 +3863,7 @@ All parameters necessary for this transfer are described in a [**transfer-spec**
 - Transfer username
 - Credentials
 - File list
-- Etc.
+- And so on
 
 `ascli` builds the [**transfer-spec**](#transfer-specification) internally as a `Hash`.
 It is not necessary to provide additional parameters on the command line for a transfer.
@@ -4054,10 +4053,10 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 When uploading, downloading or sending files, the user must specify the list of files to transfer.
 
-By default, the list of files to transfer is simply provided on the command line.
+By default, the list of files to transfer is provided on the command line.
 
 The list of (source) files to transfer is specified by ([Extended Value](#extended-value-syntax)) option `sources` (default: `@args`).
-The list is either simply the list of source files, or a combined source/destination list (see below) depending on value of option `src_type` (default: `list`).
+The list is either the list of source files, or a combined source/destination list (see below) depending on value of option `src_type` (default: `list`).
 
 In `ascli`, all transfer parameters, including file list, are provided to the transfer agent in a [**transfer-spec**](#transfer-specification) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer daemon...).
 So, eventually, the list of files to transfer is provided to the transfer agent using the [**transfer-spec**](#transfer-specification) field: `"paths"` which is a list (array) of pairs of `"source"` (mandatory) and `"destination"` (optional).
@@ -4066,7 +4065,7 @@ The `sources` and `src_type` options provide convenient ways to populate the tra
 Possible values for option `sources` are:
 
 - `@args` : (default) the list of files (or file pair) is directly provided on the command line (after commands): unused arguments (not starting with `-`) are considered as source files.
-So, by default, the list of files to transfer will be simply specified on the command line.
+By default, the list of files to transfer is specified on the command line.
 
 > [!IMPORTANT]
 > When using `@:` to build a command parameter and `--sources=@args` (default),
@@ -4165,7 +4164,7 @@ But there is one exception: The destination specifies the new item name when the
 
 For this reason it is recommended to set `create_dir` to `true` for consistent behavior between single and multiple items transfer, this is the default in `ascli`.
 
-If a simple source file list is provided (no `destination` in `paths`, i.e. no `file_pair_list` provided), the destination folder is used as destination folder for each source file, and source file folder names are not preserved.
+If a simple source file list is provided (no `destination` in `paths`, that is, no `file_pair_list` provided), the destination folder is used as destination folder for each source file, and source file folder names are not preserved.
 
 The inner structure of source items that are folder is preserved on destination.
 
@@ -4194,7 +4193,7 @@ If transfer spec has a `src_base`, it has the side effect that the simple source
 |-------------------|-------------|------------|-----------------------------|
 | `d1/d2/f2` `d1/d3/f3` | `d`     | `d1`       | `d/d2/f2` `d/d3/f3`         |
 
-Advanced Example: Send files `./file1` and `./folder2/files2` to server (e.g. `/Upload`) and keep the original file names and folders, i.e. send `file1` to `/Upload/file1` and `files2` to `/Upload/folder2/files2`.
+Advanced Example: Send files `./file1` and `./folder2/files2` to server (for example, `/Upload`) and keep the original file names and folders, that is, send `file1` to `/Upload/file1` and `files2` to `/Upload/folder2/files2`.
 
 - If files are specified as `./file1 ./folder2/files2`,
 
@@ -4203,14 +4202,14 @@ Advanced Example: Send files `./file1` and `./folder2/files2` to server (e.g. `/
 - One possibility is to specify a file pair list: `--src-type=pair file1 file1 folder2/files2 folder2/files2`
 - Another possibility is to specify a source base: `--src-base=$PWD $PWD/file1 $PWD/folder2/files2`
 
-  (note that `.` cannot be used as source base)
+  The `.` path cannot be used as a source base.
 
 - Similarly, create a temporary soft link (Linux): `ln -s . tmp_base` and use `--src-base=tmp_base tmp_base/file1 tmp_base/folder2/files2`
 - One can also similarly use `--sources=@ts` and specify the list of files in the `paths` field of transfer spec with both `source` and `destination` for each file.
 
 #### Multi-session transfer
 
-Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on `direct` and `node` agents, not yet on connect.
+Multi session, that is, starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on `direct` and `node` agents, not yet on connect.
 
 - `--transfer=node`
 
@@ -4289,7 +4288,7 @@ Example: parameter to download a Faspex package and decrypt on the fly
 
 File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
-The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc.
+The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, and so on
 
 ### Scheduler
 
@@ -4308,11 +4307,11 @@ Before configuring scheduling or services, it is often useful to create a wrappe
 
 This script may:
 
-- configure environment variables (PATH, Ruby, etc.)
+- Configure environment variables (PATH, Ruby, and so on)
 
-- enforce a maximum runtime
+- Enforce a maximum runtime
 
-- centralize command options
+- Centralize command options
 
 **Example** (Linux)
 
@@ -4471,11 +4470,11 @@ When running scheduled jobs, it may be necessary to ensure that only one instanc
 
 This avoids situations such as:
 
-- multiple instances accumulating and overloading the system
+- Multiple instances accumulating and overloading the system
 
-- duplicate transfers
+- Duplicate transfers
 
-- duplicate `preview` outputs
+- Duplicate `preview` outputs
 
 ##### Option: `lock_port`
 
@@ -4557,7 +4556,7 @@ stdio v1
 stdio-tar v1
 ```
 
-Here we can see the adapters: `process`, `shares`, `noded`, `faux`, `file`, `stdio`, `stdio-tar`.
+The output shows the adapters: `process`, `shares`, `noded`, `faux`, `file`, `stdio`, `stdio-tar`.
 
 Those adapters can be used wherever a file path is used in `ascp` including configuration.
 They act as a **pseudo drive**.
@@ -4573,7 +4572,7 @@ It is a pseudo file system allowing generation of file data without actual stora
 
 Other PVCL modules exist and are implemented in shared libraries.
 Those libraries are available only on HSTS.
-In order to activate a PVCL library, place the corresponding shared library in the same folder as `ascp`.
+To activate a PVCL library, place the corresponding shared library in the same folder as `ascp`.
 
 Example:
 
@@ -4597,7 +4596,7 @@ To send uninitialized data in place of an actual source file, the source file is
 faux:///filename?filesize
 ```
 
-where:
+Where:
 
 - `filename` is the name that will be assigned to the file on the destination
 - `filesize` is the number of bytes that will be sent (in decimal).
@@ -4606,9 +4605,9 @@ where:
 > Characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`).
 > If not, the shell may give error: `no matches found` or equivalent.
 
-For all sizes, a suffix can be added (case-insensitive) to the size: k, m, g, t, p, e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte).
+For all sizes, a suffix can be added (case-insensitive) to the size: k, m, g, t, p, e (values are power of 2, for example, 1M is 2<sup>20</sup>, that is, 1 mebibyte, not megabyte).
 The maximum allowed value is 8\*2<sup>60</sup>.
-Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
+Extremely large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
@@ -4616,7 +4615,7 @@ To send uninitialized data in place of a source directory, the source argument i
 faux:///dirname?<ARG1>=<VAL1>&...
 ```
 
-where:
+Where:
 
 - `dirname` is the folder name and can contain `/` to specify a subfolder.
 - Supported arguments are:
@@ -4636,7 +4635,7 @@ The sequence parameter is applied as follows:
 
   - `size +/- (inc * rand())`
   - Where rand is a random number between 0 and 1
-  - Note that file size must not be negative, inc will be set to size if it is greater than size
+  - File size must not be negative; `inc` is set to `size` if it is greater than `size`.
   - Similarly, overall file size must be less than 8\*2<sup>60</sup>.
   If size + inc is greater, inc will be reduced to limit size + inc to 7\*2<sup>60</sup>.
 
@@ -4644,7 +4643,7 @@ The sequence parameter is applied as follows:
 
   - `size + ((file_index - 1) * inc)`
   - Where first file is index 1
-  - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
+  - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, and so on
   - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less than 8\*2<sup>60</sup>.
 
 Filenames generated are of the form: `<FILE>_<00000 ... count>_<FILESIZE>`
@@ -4678,7 +4677,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ### `file:` for growing files
 
 The built-in `file` PVCL adapter allows referencing a local file using a URI-style path with optional query parameters.
-This is particularly useful for transferring **growing files** — files that are still being written at the time of transfer (e.g. live recordings, log files, streaming output).
+This is particularly useful for transferring **growing files** - files that are still being written at the time of transfer (for example, live recordings, log files, streaming output).
 
 The source parameter syntax is:
 
@@ -4701,22 +4700,23 @@ Key query parameters:
 | `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
 
 > [!NOTE]
-> `ascp` requires that all sources in a single transfer session share the same URI scheme.
-> This means the `file:` URI (with its query parameters) must be specified either directly on the command line, or uniformly as a source prefix — it cannot be mixed with plain paths in a file list.
+> `ascp` requires that all sources in a single transfer session share the same PVCL URI scheme.
+> This means the `file:` URI (with its query parameters) must be specified either directly on the command line, or uniformly as a source prefix - it cannot be mixed with plain paths in a file list.
+> So, use one of the following methods:
 
-**Option 1 — URI directly on the command line** (single file, `--transfer.file_list=false` required):
+- **File list with `source_root` transfer spec** (preferred)
 
-```shell
-ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
-```
+  Place only the bare filename(s) in the file list, and pass the `file:` URI as the source prefix so that the query parameters apply uniformly to every entry:
 
-**Option 2 — File list with `source_root`** (one or more files, query parameters go into the prefix):
+  ```shell
+  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer.quiet=false
+  ```
 
-Place only the bare filename(s) in the file list, and pass the `file:` URI as the source root so that the query parameters apply uniformly to every entry:
+- **URI directly on the command line with `file_list=false`**
 
-```shell
-ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer.quiet=false
-```
+  ```shell
+  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
+  ```
 
 ### Usage
 
@@ -5063,11 +5063,11 @@ It takes either a `Hash`, corresponding to key/value pairs that appear in the qu
 
 For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
 
-If the same parameter needs to be provided several times, then it's possible as well to provide an `Array`.
+If the same parameter needs to be provided several times, then it is also possible to provide an `Array`.
 
 For example: `--query=@json:'{"p":["v1","v2"]}'` leads to query: `?p=v1&p=v2`.
 
-If PHP's style array is expected in the API, then just add `[]` to the name of the parameter.
+If PHP-style arrays are expected in the API, add `[]` to the name of the parameter.
 
 For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
 
@@ -5128,7 +5128,7 @@ A given remote application can sometimes be both a plugin and a transfer agent.
 For example: `node` and `httpgw` are both plugins and transfer agents.
 
 A plugin is invoked as the first positional argument in a command line.
-A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node`).
+A Transfer Agent is used by setting the option `transfer` (for example, `--transfer=node`).
 
 ### Command line parsing, Special Characters
 
@@ -5143,7 +5143,7 @@ It is fully documented in the shell's documentation.
 
 On Unix-like environments, this is typically a POSIX-like shell (`bash`, `zsh`, `ksh`, `sh`).
 A c-shell (`csh`, `tcsh`) or other shell can also be used.
-In this environment the shell parses the command line, possibly replacing variables, etc.
+In this environment the shell parses the command line, possibly replacing variables, and so on
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
 Ruby receives a list command line arguments from shell and gives it to `ascli`.
@@ -5152,7 +5152,7 @@ Special character handling (quotes, spaces, env vars, ...) is handled by the she
 #### Shell parsing for Windows
 
 On Windows, command line parsing first depends on the shell used (see next sections).
-MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
+MS Windows command line parsing differs from Unix-like systems because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
 
 So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable (Ruby).
 Typically, Windows executables use the [Microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
@@ -5178,7 +5178,7 @@ Hello World
 > [!NOTE]
 > Use `pp` instead of `puts` to display as Ruby `Array`.
 
-Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with the whole command line as a single string.
 (Unlike Unix-like systems where the command line is split into arguments by the shell.)
 
 It's up to the program to split arguments:
@@ -5219,16 +5219,16 @@ The following examples give the same result on Windows using `cmd.exe`:
   ```
 
 `cmd.exe` handles some special characters: `^"<>|%&`.
-Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
+It handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
 #### Shell parsing for Windows: PowerShell
 
-For PowerShell, it actually depends on the version of it (5.1, 7.3+).
+For PowerShell, the behavior depends on the version (5.1, 7.3+).
 
 A difficulty is that PowerShell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
-If not using PowerShell features (e.g. variable), one can use the "stop-parsing" token `--%`.
+If not using PowerShell features (for example, variable), one can use the "stop-parsing" token `--%`.
 
 Details can be found here:
 
@@ -5320,7 +5320,7 @@ ascli config echo "@json:$(@{ k = $var; x = $true } | ConvertTo-Json -Compress)"
 
 #### Extended Value (JSON, Ruby, ...)
 
-Some values provided to `ascli` (options, **Command Parameters**) are expected to be [Extended Value](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Some values provided to `ascli` (options, **Command Parameters**) are expected to be [Extended Value](#extended-value-syntax), that is, not a simple `String`, but a composite structure (`Hash`, `Array`).
 
 Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) value.
 JSON itself has some special syntax: for example `"` is used to enclose a `String` which may be difficult to specify in shells for whom it is a special character.
@@ -5383,7 +5383,7 @@ But as `\` is also shell special, then it is protected by another `\`.
 
 Construction of values with special characters is done like this:
 
-- First select a syntax to represent the [Extended Value](#extended-value-syntax), e.g. JSON or Ruby
+- First select a syntax to represent the [Extended Value](#extended-value-syntax), for example, JSON or Ruby
 
 - Write the expression using this syntax, for example, using JSON:
 
@@ -5391,7 +5391,7 @@ Construction of values with special characters is done like this:
 {"title":"Test \" ' & \\"}
 ```
 
-or using Ruby:
+Or, using Ruby:
 
 ```ruby
 {"title"=>"Test \" ' & \\"}
@@ -5414,7 +5414,7 @@ ascli config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
 
 #### Reading special characters interactively
 
-If `ascli` is used interactively (a user typing on terminal), it is easy to require the user to type values:
+If `ascli` is used interactively (a user typing on terminal), values can be entered by the user:
 
 ```shell
 ascli config echo @ruby:"{'title'=>gets.chomp}" --format=json
@@ -5602,21 +5602,21 @@ The first step is to declare `ascli` in Aspera on Cloud using the admin interfac
 
 ([AoC documentation: Registering an API Client](https://ibmaspera.com/help/admin/organization/registering_an_api_client)).
 
-Let's start by a registration with web based authentication (auth=web):
+To register with web-based authentication (auth=web):
 
-- Open a web browser, log to your instance: e.g. `https://<ORG_NAME>.ibmaspera.com/`
+- Open a web browser, log to your instance: for example, `https://<ORG_NAME>.ibmaspera.com/`
   (use your actual AoC instance URL)
 - Go to (Apps) &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click **Create New**
   - **Client Name**: `ascli`
   - **Redirect URIs**: `http://localhost:12345`
   - **Origins**: `localhost`
-  - uncheck **Prompt users to allow client to access**
-  - leave the JWT part for now
+  - Uncheck **Prompt users to allow client to access**
+  - Leave the JWT part for now
 - **Save**
 
 > [!NOTE]
-> For web based authentication, `ascli` listens on a local port (e.g. specified by the `redirect_uri` parameter, in this example: `12345`), and the browser will provide the OAuth code there.
+> For web based authentication, `ascli` listens on a local port (for example, specified by the `redirect_uri` parameter, in this example: `12345`), and the browser will provide the OAuth code there.
 > For `ascli`, HTTP is required, and `12345` is the default port.
 
 Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
@@ -5625,7 +5625,7 @@ Once the client is registered, a **Client ID** and **Secret** are created, these
 
 If you did not use the wizard, you can also manually create an [Option Preset](#option-preset) for `ascli` in its configuration file.
 
-Let's create an [Option Preset](#option-preset) called: `<AOC_ORG>` using `ask` for interactive input (client info from previous step):
+Create an [Option Preset](#option-preset) called `<AOC_ORG>` using `ask` for interactive input (client info from previous step):
 
 ```shell
 ascli config preset ask <AOC_ORG> url client_id client_secret
@@ -5654,7 +5654,7 @@ ascli config preset set default aoc <AOC_ORG>
 
 For a Browser-less, Private Key-based authentication, use the following steps.
 
-In order to use JSON Web Token (JWT) for Aspera on Cloud API client authentication,
+To use JSON Web Token (JWT) for Aspera on Cloud API client authentication,
 a [private/public key pair](#private-key) must be used.
 
 ##### API Client JWT activation
@@ -5667,8 +5667,8 @@ This can be done in two manners:
   - Open a web browser, log to your instance: `https://<ORG_NAME>.ibmaspera.com/`
     (Use your actual AoC instance URL)
   - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
-  - Click on the previously created application
-  - select tab : **JSON Web Token Auth**
+  - Click the previously created application
+  - Select tab: **JSON Web Token Auth**
   - Modify options if necessary, for instance: activate both options in section **Settings**
   - **Save**
 
@@ -5709,10 +5709,10 @@ Open the previously generated public key located here: `$HOME/.aspera/ascli/<PKE
 
 - Open a web browser, log to your instance: `https://<ORG_NAME>.ibmaspera.com/`
   (Use your actual AoC instance URL)
-- Click on the user's icon (top right)
+- Click the user icon (top right)
 - Select **Account Settings**
 - Paste the Public Key PEM value in the **Public Key** section
-- Click on **Submit**
+- Click **Submit**
 
 ##### Using command line
 
@@ -5757,7 +5757,7 @@ ascli config preset update <AOC_ORG> --auth=jwt --private-key=@val:@file:~/.aspe
 
 > [!NOTE]
 > The private key argument represents the actual PEM string.
-> In order to read the content from a file, use the `@file:` prefix.
+> To read the content from a file, use the `@file:` prefix.
 > But if the `@file:` argument is used as is, it will read the file and set in the configuration file.
 > So, to keep the `@file:` tag in the configuration file, the `@val:` prefix is added.
 
@@ -5770,7 +5770,7 @@ For quick access using an existing browser session, use `--auth=boot`.
 - Open a Web browser and log in to your AoC instance
 - Open the browser developer tools
 - In **Network**, select any request to `api.ibmaspera.com`.
-- In **Headers**, right click on the `Cookie` Request Header, and select **Copy Value**
+- In **Headers**, right-click the `Cookie` Request Header and select **Copy Value**
 
 Alternatively:
 
@@ -5845,7 +5845,7 @@ ascli aoc admin node bearer_token <NODE_ID> _node /
 
 The `admin` command allows several administrative tasks (and require admin privilege).
 
-It allows actions (create, update, delete) on **resources**: users, groups, nodes, workspace, etc. with the `admin resource` command.
+It allows actions (create, update, delete) on **resources**: users, groups, nodes, workspace, and so on with the `admin resource` command.
 
 #### Listing resources
 
@@ -5901,7 +5901,7 @@ ascli aoc admin user list --query=@json:'{"member_of_any_workspace":false,"sort"
 
 #### Selecting a resource
 
-Resources are identified by a unique `id`, as well as a unique `name` (case-insensitive).
+Resources are identified by a unique `id` and a unique `name` (case-insensitive).
 
 To execute an action on a specific resource, select it using one of those methods:
 
@@ -5912,7 +5912,7 @@ To execute an action on a specific resource, select it using one of those method
 
 #### Creating a resource
 
-New resources (users, groups, workspaces, etc.) can be created using a command like:
+New resources (users, groups, workspaces, and so on) can be created using a command like:
 
 ```shell
 ascli aoc admin create <RESOURCE_TYPE> @json:'{<...parameters...>}'
@@ -5931,7 +5931,7 @@ ascli aoc admin group show 12345 --format=json
 {"created_at":"2018-07-24T21:46:39.000Z","description":null,"id":"12345","manager":false,"name":"A8Demo WS1","owner":false,"queued_operation_count":0,"running_operation_count":0,"stopped_operation_count":0,"updated_at":"2018-07-24T21:46:39.000Z","saml_group":false,"saml_group_dn":null,"system_group":true,"system_group_type":"workspace_members"}
 ```
 
-Remove the parameters that are either obviously added by the system: `id`, `created_at`, `updated_at` or optional.
+Remove the parameters that are automatically added by the system (`id`, `created_at`, `updated_at`) or optional.
 
 And then craft your command:
 
@@ -5955,7 +5955,7 @@ Well, remove the offending parameters and try again.
 
 #### Access Key secrets
 
-In order to access some administrative actions on **nodes** (in fact, access keys), the associated secret may be required.
+To access some administrative actions on **nodes** (in fact, access keys), the associated secret may be required.
 The secret is provided using the `secret` option.
 For example in a command like:
 
@@ -6134,7 +6134,7 @@ ascli aoc user settings modify <id> @json:'{"value":"..."}'
 > - **User identity**: derived from the OAuth bearer token (the authenticated user).
 > - **Application identity**: derived from the `client_id` used during authentication.
 >
-> This means that settings stored by one client application (e.g., the AoC web UI) are not visible to another (e.g., `ascli` using a different `client_id`).
+> This means that settings stored by one client application (for example, the AoC web UI) are not visible to another (for example, `ascli` using a different `client_id`).
 > By default, `ascli` uses the pre-registered global `client_id` (see `--use-generic-client`).
 
 #### Example: Create a sub access key in a `node`
@@ -6220,7 +6220,7 @@ d- Convert to creation data for second workspace:
 grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
 ```
 
-or, using `jq`:
+Or, using `jq`:
 
 ```shell
 jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
@@ -6269,7 +6269,7 @@ Group: `<GROUP_ID>`
 ascli aoc admin workspace show %name:"<WORKSPACE_NAME>" --fields=id
 ```
 
-Or (similar, but may return several entries, as it's a simple search):
+Or (similar, but may return several entries, as it is a simple search):
 
 ```shell
 ascli aoc admin workspace list --query.q="<WORKSPACE_NAME>" --fields=id
@@ -6299,7 +6299,7 @@ ascli aoc admin group_membership create @json:'{"group_id":<GROUP_ID>,"member_ty
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders
 
-In this example, a user has access to a workspace where two shared folders are located on different sites, e.g. different cloud regions.
+In this example, a user has access to a workspace where two shared folders are located on different sites, for example, different cloud regions.
 
 First, set up the environment (skip if already done)
 
@@ -6417,7 +6417,7 @@ ascli node access_key do self permission / create @: access_type=user access_id=
 
 - Optional next Steps
 
-  To register an Aspera Event Journal (AEJ) as described in the HSTS manual, please refer to:
+  To register an Aspera Event Journal (AEJ) as described in the HSTS manual, refer to:
 
   - [Create a registration key for a tethered node](#example-create-registration-key-to-register-a-tethered-node)
 
@@ -6433,7 +6433,7 @@ ascli aoc admin client_registration_token create @json:'{"data":{"name":"laurent
 
 #### Example: Create an ATS Node
 
-AoC nodes are actually composed of two related entities:
+AoC nodes are composed of two related entities:
 
 - An access key created on the Transfer Server (HSTS/ATS)
 - A `node` resource in the AoC application.
@@ -6442,7 +6442,7 @@ The web UI allows creation of both entities in one shot.
 For more flexibility, `ascli` allows this in two separate steps.
 
 > [!NOTE]
-> When selecting **Use existing access key** in the web UI, this actually skips access key creation (first step).
+> When selecting **Use existing access key** in the web UI, this skips access key creation (first step).
 
 So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
 
@@ -6468,7 +6468,7 @@ First, retrieve the ATS node address:
 ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
 ```
 
-Then use the returned address for the `url` key to actually create the AoC Node resource:
+Then use the returned address for the `url` key to create the AoC Node resource:
 
 ```shell
 ascli aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
@@ -6503,7 +6503,7 @@ This is a two-steps procedure:
 ### List of files to transfer
 
 Source files are provided as a list with the `sources` option.
-By default, simply the list of files on the command line.
+By default, the list of files on the command line.
 See [File list](#list-of-files-for-transfers).
 
 ### Packages app
@@ -6530,14 +6530,14 @@ ascli aoc packages shared_inboxes list
 Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
 
 - Provide either IDs as expected by API: `"recipients":[{"type":"dropbox","id":"<SHBOX_ID>"}]`
-- or just names: `"recipients":["The Dest"]`.
+- or names only: `"recipients":["The Dest"]`.
 
 ascli will resolve the list of email addresses and dropbox names to the expected type/ID list, based on case-insensitive partial match.
 
 If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and:
 
-- if the option `new_user_option` is `--new-user-option.package_contact=true` (**default**), then a public link is sent and the external user does not need to create an account
-- if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
+- If the option `new_user_option` is `--new-user-option.package_contact=true` (**default**), then a public link is sent and the external user does not need to create an account.
+- If the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace.
 
 ##### Example: Send a package with one file to two users, using their email
 
@@ -6577,7 +6577,7 @@ ascli aoc files browse /src_folder
 +---------------+--------+----------------+--------------+----------------------+--------------+
 ```
 
-Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
+To send a package with the file `10M.dat` from subfolder /src_folder:
 
 ```shell
 ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
@@ -6594,8 +6594,8 @@ ascli aoc packages recv <PACKAGE_ID> [<FILE> ...]
 Where `<PACKAGE_ID>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
 Option `once_only` is supported, see below.
 
-To download only some files from the package, just add the path of the files on the command line: `[<FILE> ...]`, see option `sources`.
-By default, all files in the package are downloaded, i.e. `.` is used as the file list.
+To download only some files from the package, add the path of the files on the command line: `[<FILE> ...]`, see option `sources`.
+By default, all files in the package are downloaded, that is, `.` is used as the file list.
 
 ##### Option `package_folder`
 
@@ -6630,7 +6630,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
   - If a folder with that name already exists, the name and ID (`<NAME>.<ID>`) are used instead.
 - `{"fld":["name"],"seq":true,"opt":true}`
   - The subfolder name is the package name if it does not already exist.
-  - If it exists, a sequence number is appended (e.g., `<NAME>.1`, `<NAME>.2`, etc.).
+  - If it exists, a sequence number is appended (for example, `<NAME>.1`, `<NAME>.2`, and so on).
   - Downloading the same package multiple times results in different folders when a conflict occurs.
 
 ##### Example: Receive all packages from a given shared inbox
@@ -6639,7 +6639,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
 ascli aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 ```
 
-To list packages that would be downloaded, without actually downloading them, replace `recv ALL` with `list` (keep options `once_only` and `query`)
+To list packages that would be downloaded, without downloading them, replace `recv ALL` with `list` (keep options `once_only` and `query`)
 
 ##### Receive new packages only (Cargo)
 
@@ -6668,7 +6668,7 @@ ascli aoc package browse xx5CnbeWng /
 
 Use command `find` to list recursively.
 
-For advanced users, it's also possible to pipe node information for the package and use node operations:
+For advanced users, it is also possible to pipe node information for the package and use node operations:
 
 ```shell
 ascli aoc package node_info <PACKAGE_ID> / --format=json --show-secrets=yes --display=data | ascli node -N --preset=@json:@stdin: access_key do self browse /
@@ -6729,7 +6729,7 @@ The Files application presents a **Home** folder to users in a given workspace.
 Files located here are either user's files, or shared folders.
 
 > [!NOTE]
-> All commands under `files` are the same as under `access_keys do self` for plugin `node`, i.e. **gen4/access key** operations.
+> All commands under `files` are the same as under `access_keys do self` for plugin `node`, that is, **gen4/access key** operations.
 
 #### Download Files
 
@@ -6739,7 +6739,7 @@ The general download command is:
 ascli aoc files download <SOURCE_FOLDER_PATH> <SOURCE_FILENAME_1> ...
 ```
 
-i.e., the first argument is the source folder, and the following arguments are the source file names in this folder.
+That is, the first argument is the source folder, and the following arguments are the source file names in this folder.
 
 If a single file or folder is to be downloaded, then a single argument can be provided.
 
@@ -6795,9 +6795,9 @@ When creating a Shared Folder, `ascli` expects a `Hash` payload (typically passe
 | `link_name`     |  `ascli`          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  `ascli`          | Name of the link file created in the user's home folder for admin shared folders. |
 
-In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]`, with a `access_type` of `user`.
+To declare or create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]`, with a `access_type` of `user`.
 This is conveniently set by `ascli` using an **empty string** for field `with`.
-In order to share a folder with a different, special tags are set, but this is conveniently done by `ascli` using the `as` field.
+To share a folder with a different user, special tags are set, but this is conveniently done by `ascli` using the `as` field.
 
 ##### User Shared Folders
 
@@ -6823,7 +6823,7 @@ ascli aoc admin node do <NODE_ID> permission --workspace=<WORKSPACE_NAME> <PATH_
 > The node is identified by identifier.
 > To use a name instead, one can use the percent selector, like `%name:"<NODE_NAME>"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
-> If the ID is left blank: `%id:`, then it means `*`, i.e. "all".
+> If the ID is left blank: `%id:`, then it means `*`, that is, "all".
 
 ##### Example: List permissions on a user shared folder
 
@@ -6875,8 +6875,8 @@ By default, access level is set to `edit`.
 Change the default access level by providing the parameter: `access_levels` in payload.
 `access_levels` can be:
 
-- a single `String`: one of the shortcuts: `edit`, `preview`, `download`, `upload`.
-- an Array: any custom combination of: `delete`, `list`, `mkdir`, `preview`, `read`, `rename`, `write`.
+- A single `String`: one of the shortcuts: `edit`, `preview`, `download`, `upload`.
+- An Array: any custom combination of: `delete`, `list`, `mkdir`, `preview`, `read`, `rename`, `write`.
 
 For example:
 
@@ -6890,7 +6890,7 @@ For example:
 
 An expiration date can be set with parameter `expires_at`, using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
 For example, `2025-08-29T08:10:31.000Z`.
-If only a date is provided, for example: `2025-08-29`, it will be set to midnight UTC of that date, i.e. `2025-08-29T00:00:00.000Z`.
+If only a date is provided, for example: `2025-08-29`, it will be set to midnight UTC of that date, that is, `2025-08-29T00:00:00.000Z`.
 
 ##### Example: Create a workspace admin shared folder
 
@@ -6936,7 +6936,7 @@ In the following commands, replace:
 
 - `<NODE_ID>` with the node ID, or with `%name:<NODE_NAME>`.
 - `<WORKSPACE_NAME>` with the workspace name, or with `%id:<WORKSPACE_ID>`.
-- `<FOLDER_PATH>` with the path of the folder to share on the node (e.g. `/my_folder` or simply `my_folder`). It can also be a folder deeper than level 1.
+- `<FOLDER_PATH>` with the path of the folder to share on the node (for example, `/my_folder` or `my_folder`). It can also be a folder deeper than level 1.
 
 If the shared folder does not exist, then create it:
 
@@ -7043,9 +7043,9 @@ Although optional, the creation of [Option Preset](#option-preset) is recommende
 
 Procedure to send a file from org1 to org2:
 
-- Get access to Organization 1 and create an [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#wizard)
-- Check that access works and locate the source file e.g. `<SOURCE_FILE>`, e.g. using command `files browse`
-- Get access to Organization 2 and create an [Option Preset](#option-preset): e.g. `org2`
+- Get access to Organization 1 and create an [Option Preset](#option-preset): for example, `org1`, for instance, use the [Wizard](#wizard)
+- Check that access works and locate the source file for example, `<SOURCE_FILE>`, for example, using command `files browse`
+- Get access to Organization 2 and create an [Option Preset](#option-preset): for example, `org2`
 - Check that access works and locate the destination folder `<DEST_FOLDER>`
 - Execute the following:
 
@@ -7349,7 +7349,7 @@ Example: create access key on Azure:
 ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"<ACCESS_KEY>","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
-delete all my access keys:
+Delete all access keys:
 
 ```shell
 ascli ats access_key list --field=id --format=csv | ascli ats access_key delete @lines:@stdin: --bulk=yes
@@ -7449,7 +7449,7 @@ upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3
 
 ### Authentication on Server with SSH session
 
-If SSH is the session protocol (by default, i.e. not WSS), then following session authentication methods are supported:
+If SSH is the session protocol (by default, that is, not WSS), then following session authentication methods are supported:
 
 - `password`: SSH password
 - `ssh_keys`: SSH keys (Multiple SSH key paths can be provided.)
@@ -7497,13 +7497,13 @@ On Linux, if you get an error message such as:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-or on Windows:
+Or on Windows:
 
 ```shell
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that your environment suggests using an agent, but you don't have such an SSH agent running, then:
+This means that your environment suggests using an agent, but you do not have such an SSH agent running, then:
 
 - Check env var: `SSH_AGENT_SOCK`
 - Check your file: `$HOME/.ssh/config`
@@ -7562,7 +7562,7 @@ The authentication is `username` and `password` or `access_key` and `secret` thr
 
 > [!NOTE]
 > This plugin can be used with any type of **Aspera Node**, either on-premises or ATS, provided that you have Node API credentials.
-> Those credentials can be either Node API user or Access Key (e.g. on ATS).
+> Those credentials can be either Node API user or Access Key (for example, on ATS).
 
 ### File Operations
 
@@ -7795,7 +7795,7 @@ updated
 
 Scenario: Access to a **Shares on Demand** (SHOD) server on AWS is provided by a partner.
 We need to transfer files from this third party SHOD instance into our Azure BLOB storage.
-Simply create an **Aspera Transfer Service** instance, which provides access to the Node API.
+Create an **Aspera Transfer Service** instance, which provides access to the Node API.
 Then create a configuration for the **SHOD** instance in the configuration file: in section **shares**, a configuration named: `aws_shod`.
 Create another configuration for the Azure ATS instance: in section **node**, named `azure_ats`.
 Then execute the following command:
@@ -7866,7 +7866,7 @@ Bearer tokens are part of the **gen4/access key** API.
 It follows the model of OAuth 2.
 For example, they are used in Aspera on Cloud.
 This is also available for developers for any application integrating Aspera.
-In this API, files, users and groups are identified by an ID (a `String`, e.g. `"125"`, not necessarily numerical).
+In this API, files, users and groups are identified by an ID (a `String`, for example, `"125"`, not necessarily numerical).
 
 Bearer tokens are typically generated by the authenticating application and then recognized by the Node API.
 A bearer token is authorized on the node by creating `permissions` on a **folder**.
@@ -7881,8 +7881,8 @@ Bearer tokens can be generated using `ascli` command `bearer_token`: it takes tw
 | `_scope`               | `user:all`              | Special | Either `user:all` or `admin:all`      |
 | `_validity`            | 86400                   | Special | Validity in seconds from now.         |
 | `user_id`              | -                     | Mandatory | Identifier of user                    |
-| `scope`     | `node.<ACCESS_KEY>:_scope`     | Mandatory | API scope<br/>e.g. `node.<ACCESS_KEY>:<NODE_SCOPE>`         |
-| `expires_at`           | `now+_validity`     | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<br/>e.g. `2021-12-31T23:59:59Z` |
+| `scope`     | `node.<ACCESS_KEY>:_scope`     | Mandatory | API scope<br/>for example, `node.<ACCESS_KEY>:<NODE_SCOPE>`         |
+| `expires_at`           | `now+_validity`     | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ`<br/>for example, `2021-12-31T23:59:59Z` |
 | `auth_type`            | `access_key`          | Optional  | `access_key`, `node_user`             |
 | `group_ids`            | -                     | Optional  | List of group IDs                     |
 | `organization_id`      | -                     | Optional  | Organization ID                       |
@@ -7891,7 +7891,7 @@ Bearer tokens can be generated using `ascli` command `bearer_token`: it takes tw
 > [!NOTE]
 > For convenience, `ascli` provides additional parameters `_scope` and `_validity`.
 > They are not part of the API and are removed from the final payload.
-> They are used respectively to easily set a value for `scope` and `expires_at`.
+> They provide a convenient way to set `scope` and `expires_at`.
 
 #### Bearer token: Environment
 
@@ -7911,11 +7911,11 @@ The way to create access keys depends slightly on the type of HSTS:
 > [!NOTE]
 > See [HSTS manual](https://www.ibm.com/docs/en/ahts): `Access key authentication` section for more details on access key creation.
 
-In the next sections, we will assume that an access key has been created and that `ascli` is configured to use this access key by default using `node`.
+The following sections assume that an access key has been created and that `ascli` is configured to use this access key by default using `node`.
 
 #### Bearer token: Preparation
 
-Let's assume that the access key was created, and a default configuration is set to use this **access key**.
+Assume that the access key was created, and a default configuration is set to use this **access key**.
 Using `ascli`, an access key can be created using the `access_key create` on the node (using main node credentials) or ATS.
 
 Create a private key (organization key) that will be used to sign bearer tokens:
@@ -7949,16 +7949,16 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 
 #### Bearer token: Configuration for user
 
-- Select a folder for which we want to grant access to a user, and get its identifier:
+- Select a folder for which to grant access to a user, and get its identifier:
 
   ```shell
   my_folder_id=$(ascli node access_key do self show / --fields=id)
   ```
 
 > [!NOTE]
-> Here we simply select `/`, but any folder can be selected in the access key storage.
+> This example uses `/`, but any folder can be selected in the access key storage.
 
-- Let's designate a user by its ID:
+- Designate a user by ID:
 
   ```shell
   my_user_id=777
@@ -7987,13 +7987,13 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 
 #### Bearer token: User side
 
-Now, let's assume we are the user, the only information received are:
+Assume the role of the user, with the following information:
 
 - The URL of the Node API
 - A Bearer token
 - A file ID for which we have access
 
-Let's use it:
+To use this information:
 
 ```shell
 ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
@@ -8110,10 +8110,10 @@ The command expects the following parameters provided as a `Hash` positional par
 | `key`       | `String` | -       | Agent key for the backend.                   |
 | `interval`  | `Float`  | 10      | Polling interval in seconds.<br/>`0` for single shot. |
 
-To retrieve OTel backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
-Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, i.e. replace `ingress` with `otlp`.
+To retrieve OTel backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, for example, `endpoint=ingress-blue-saas.instana.io`.
+Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, that is, replace `ingress` with `otlp`.
 
-For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
+For convenience, those parameters can be provided in a preset, for example, named `otel_default`.
 
 ```shell
 ascli config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"*********","interval":1.1}'
@@ -8175,7 +8175,7 @@ product> faspex5
 ```
 
 When Faspex is detected, it would ask for the path to a private key.
-If you don't have a private key, then leave that field blank, and it will generate one or use one that was previously generated.
+If you do not have a private key, leave that field blank, and one will be generated or a previously generated key will be used.
 
 ```text
 Using: Faspex at https://faspex5.example.com/aspera/faspex
@@ -8242,10 +8242,10 @@ Activation is in two steps:
   - Activate JWT
   - There is an option to set a global public key allowing the owner of the private key to impersonate any user.
     Unless you want to do this, leave this field empty.
-  - Click on `Create` Button
+  - Click **Create**
   - Take note of Client ID (and Client Secret, but not used in current version)
 
-- The user will authenticate with a private key and set the public key in his Faspex 5 profile.
+- The user will authenticate with a private key and set the public key in their Faspex 5 profile.
 
   This operation is done by each user using the CLI.
 
@@ -8268,7 +8268,7 @@ Then use these options:
 
 > [!NOTE]
 > Use the `private_key` option to provide the PEM content (not the file path).
-> To load from a file, prefix the path with `@file:`, e.g. `@file:/path/to/key.pem`.
+> To load from a file, prefix the path with `@file:`, for example, `@file:/path/to/key.pem`.
 
 Typically, users create a preset so they don’t have to enter these options each time.
 
@@ -8289,7 +8289,7 @@ For web-based authentication, the administrator must create an **API client** in
 - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 - Do not Activate JWT
 - Set **Redirect URI** to `https://127.0.0.1:8888`
-- Click on `Create` Button
+- Click **Create**
 - Take note of the Client Id (and Client Secret, but not used in current version)
 
 The user will use the following options:
@@ -8604,10 +8604,10 @@ Optionally, provide a folder path.
 ### Faspex 5: Receive a package
 
 To receive one, or several packages at once, use command `faspex5 packages receive`.
-Provide either a single package ID, or an [Extended Value](#extended-value-syntax) `Array` of package IDs, e.g. `@list:,1,2,3` as argument.
+Provide either a single package ID, or an [Extended Value](#extended-value-syntax) `Array` of package IDs, for example, `@list:,1,2,3` as argument.
 
 The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
-i.e., options `box` and `query`, as well as last **Command Parameter** `Proc` (filter).
+That is, options `box` and `query`, and the last **Command Parameter** `Proc` (filter).
 
 Option `--once-only=yes` can be used, for "cargo-like" behavior.
 Special package ID `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
@@ -8688,7 +8688,7 @@ ascli faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_reci
 ```
 
 > [!TIP]
-> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<FIELD>:<VALUE>`. e.g. `--shared-folder=3`
+> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<FIELD>:<VALUE>`. for example, `--shared-folder=3`
 
 ### Faspex 5: Receive all packages (cargo)
 
@@ -8708,7 +8708,7 @@ ascli faspex5 packages receive INIT --once-only=yes
 
 There are two types of invitations of package submission: public or private.
 
-Public invitations are for external users, provide just the email address.
+Public invitations are for external users; provide only the email address.
 
 ```shell
 ascli faspex5 invitations create @json:'{"email_address":"john@example.com"}' --fields=access_url
@@ -8733,7 +8733,7 @@ This parameter can be modified with:
 ascli faspex5 admin configuration modify @json:'{"days_before_deleting_package_records":30}'
 ```
 
-To start package purge, i.e. permanently remove packages marked for deletion older than `days_before_deleting_package_records`, use command:
+To start package purge, that is, permanently remove packages marked for deletion older than `days_before_deleting_package_records`, use command:
 
 ```shell
 ascli faspex5 admin clean_deleted
@@ -8751,7 +8751,7 @@ ascli faspex5 packages list --box=ALL --format=yaml --fields=id | ascli faspex5 
 
 > [!NOTE]
 > Above command will mark all packages for deletion, and will be permanently removed after the configured period (`clean_deleted` command).
-> It is possible to add a filter to the list command to only delete packages matching some criteria, e.g. using `--select=@ruby:'->(p){...}'` on `packages list`.
+> It is possible to add a filter to the list command to only delete packages matching some criteria, for example, using `--select=@ruby:'->(p){...}'` on `packages list`.
 
 ### Faspex 5: Admin: Unlock user
 
@@ -8766,7 +8766,7 @@ ascli faspex5 admin accounts modify %name:some.user@example.com @json:'{"account
 ```
 
 > [!TIP]
-> Here we use the convenient percent selector, but the numerical ID can be used as well.
+> This example uses the percent selector, but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `reset_password` on the `account`.
 
@@ -8776,7 +8776,7 @@ The command `ascli faspex5 postprocessing` emulates Faspex 4 post-processing scr
 It implements a web hook for Faspex 5 and calls a script with the same environment variables as set by Faspex 4.
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 post-processing.
 
-It allows quickly migrating workflows from Faspex 4 to Faspex 5 while preserving scripts.
+It allows migrating workflows from Faspex 4 to Faspex 5 while preserving scripts.
 Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine, using Faspex 5 native web hooks or File Processing.
 
 It is invoked like this:
@@ -8812,7 +8812,7 @@ In Faspex 5, the URL of the webhook endpoint shall be reachable from within Fasp
 For example, if `ascli` in running in the base host, the URL hostname shall not be localhost, as this refers to the local address inside Faspex container.
 Instead, one can specify the **IP address of the host** or `host.containers.internal` (Check `podman` manual).
 
-Let's define the web hook:
+Define the web hook as follows:
 
 **Webhook endpoint URI** : `http://host.containers.internal:8080/processing/script1.sh`
 
@@ -8843,7 +8843,7 @@ There are many limitations:
 
 Behavior:
 The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client.
-The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
+The calling client uses this to start a transfer to HSTS, which is managed by Faspex 5.
 
 For other parameters, see [Web service](#web-service).
 
@@ -9212,7 +9212,7 @@ If you already have these parameters, provide the following options to `ascli`:
 | Option     | Description                                       |
 |------------|---------------------------------------------------|
 | `bucket`   | Bucket name                                       |
-| `endpoint` | Storage endpoint URL<br/>e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud` |
+| `endpoint` | Storage endpoint URL<br/>for example, `https://s3.hkg02.cloud-object-storage.appdomain.cloud` |
 | `apikey`   | API Key                                           |
 | `crn`      | Resource instance ID                              |
 
@@ -9242,7 +9242,7 @@ Steps:
 
 Save the copied JSON value to a file, for example: `$HOME/cos_service_creds.json`
 
-or using the IBM Cloud CLI:
+Or, using the IBM Cloud CLI:
 
 ```shell
 ibmcloud resource service-keys
@@ -9283,7 +9283,7 @@ The required options for this method are:
 | Option                | Description                                    |
 |-----------------------|------------------------------------------------|
 | `bucket`              | Bucket name                                    |
-| `region`              | Bucket region<br/>e.g. `eu-de`               |
+| `region`              | Bucket region<br/>for example, `eu-de`               |
 | `service_credentials` | JSON information saved from IBM Cloud console. |
 
 Example: Create a Default Configuration
@@ -9295,7 +9295,7 @@ ascli config preset set default cos <COS_PRESET_NAME>
 
 ### Operations, transfers
 
-Once you have created a default configuration using one of the previous methods (otherwise, specify the access options directly on the command line), you can perform a subset of `node` plugin operations, which correspond to the Node API.
+After creating a default configuration using one of the previous methods (otherwise, specify the access options directly on the command line), you can perform a subset of `node` plugin operations, which correspond to the Node API.
 
 ```shell
 ascli cos node info
@@ -9304,7 +9304,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 > [!NOTE]
 > The file `sample1G` is a dummy file of size 2 GB, generated using the `faux` PVCL scheme (see previous section and `man ascp`).
-> To upload a real file, simply replace the `faux:///...` URI with the actual file path.
+> To upload a real file, replace the `faux:///...` URI with the actual file path.
 
 ### Tested commands for `cos`
 
@@ -9381,7 +9381,7 @@ You can configure several aspects of the preview generation process:
 
 - Video Preview Generation Methods
   
-  Choose the approach for creating video previews (e.g., transcoding options).
+  Choose the approach for creating video previews (for example, transcoding options).
 
 - Video Handling Parameters
   
@@ -9407,12 +9407,12 @@ asnodeadmin --reload
 
 > [!NOTE]
 > The configuration `preview_dir` is **relative** to the storage root, no need leading or trailing `/`.
-> In general just set the value to `previews`
+> Set the value to `previews`.
 
 If another folder is configured on the HSTS, then specify it to `ascli` using the option `previews_folder`.
 
 The HSTS Node API limits any preview file to a parameter: `max_request_file_create_size_kb` (1 KB is 1024 Bytes).
-This size is internally capped to `1<<24` Bytes (16777216), i.e. 16384 KB, i.e. 16 MB.
+This size is internally capped to `1<<24` Bytes (16777216), that is, 16384 KB, that is, 16 MB.
 
 To change this parameter in `aspera.conf`, use `asconfigurator`.
 To display the value, use `asuserdata`:
@@ -9475,7 +9475,7 @@ If your OS has only ImageMagick v6, then you can create a script called `magick`
 exec "$@"
 ```
 
-make it executable:
+Make it executable:
 
 ```shell
 chmod a+x /usr/local/bin/magick
@@ -9510,7 +9510,7 @@ rm -rf /opt/ffmpeg* /usr/bin/{ffmpeg,ffprobe}
 
 #### Office: `unoconv` and LibreOffice
 
-If you don't want to have preview for office documents or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
+To skip office document preview generation, use option: `--skip-types=office`
 
 The generation of preview in based on the use of LibreOffice's `unoconv`.
 
@@ -9535,12 +9535,12 @@ chmod a+x /usr/bin/unoconv
 
 The preview generator should be executed as a non-user.
 When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights.
-(we will assume this)
+The following procedure uses `xfer` as the running user.
 
 Like any `ascli` commands, options can be passed on command line or using a configuration [Option Preset](#option-preset).
 The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
-The `xfer` user has a special protected shell: `aspshell`, so in order to update the configuration, and when changing identity, specify an alternate shell.
+The `xfer` user has a special protected shell: `aspshell`, so to update the configuration and when changing identity, specify an alternate shell.
 For example:
 
 ```shell
@@ -9551,7 +9551,7 @@ ascli config preset update <PREVIEW_PRESET_NAME> --url=https://localhost:9092 --
 ascli config preset set default preview <PREVIEW_PRESET_NAME>
 ```
 
-Here we assume that Office file generation is disabled, else remove this option.
+This example assumes that Office file generation is disabled. Remove `--skip-types=office` if needed.
 `lock_port` prevents concurrent execution of generation when using a scheduler.
 
 One can check if the access key is well configured using:
@@ -9575,21 +9575,21 @@ It needs to be run on a regular basis to create or update preview files.
 For that use your best reliable scheduler, see [Scheduler](#scheduler).
 
 Typically, for **Access key** access, the system/transfer user is `xfer`.
-So, in order to be consistent, and generate the appropriate access rights, the generation process should be run as user `xfer`.
+To be consistent and generate the appropriate access rights, run the generation process as user `xfer`.
 
-Let's do a one shot test, using the configuration previously created:
+To run a one-shot test using the configuration previously created:
 
 ```shell
 su -s /bin/bash - xfer
 ```
 
-or
+Or:
 
 ```shell
 sudo -u xfer /bin/bash
 ```
 
-and then:
+Then:
 
 ```shell
 ascli preview scan --overwrite=always
@@ -9743,7 +9743,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 |-----|------|---------|-------------|
 | `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
 | `instructions` | `string` | - | Hint shown to the AI client describing what the server does |
-| `protocol_version` | `string` | - | MCP protocol version to advertise, e.g. `2024-11-05` |
+| `protocol_version` | `string` | - | MCP protocol version to advertise, for example, `2024-11-05` |
 | `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
 
 #### `stdio` transport
@@ -9818,7 +9818,7 @@ The `sync` command, available in above plugins, performs the following actions:
 One advantage of using `ascli` over the `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
 Moreover, `ascli` supports sync with application requiring token-based authorization.
 
-Some `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
+Some `sync` parameters are filled by the related plugin using transfer spec parameters (for example, including token).
 
 > [!NOTE]
 > All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
@@ -10111,7 +10111,7 @@ The only exception is `find`, which takes a plain directory path and lists all `
 | `query`     | `sqlite3`     | Execute an arbitrary SQL statement against the snap database and return the result rows                |
 
 The `query` subcommand requires `--sql` with the full SQL statement to execute.
-The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` optionally to append a SQL fragment (e.g. a `WHERE` or `ORDER BY` clause):
+The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` optionally to append a SQL fragment (for example, a `WHERE` or `ORDER BY` clause):
 
 ```shell
 ascli ... sync admin query <FOLDER> --sql="SELECT * FROM sync_snapdb_table WHERE state=20"
@@ -10270,7 +10270,7 @@ The general idea is to rely on :
 Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 - Sending only **new** files
-  - option `-k 1,2,3` (`resume_policy`)
+  - Option `-k 1,2,3` (`resume_policy`)
 - Remove or move files after transfer:
   - `--remove-after-transfer` (`remove_after_transfer`)
   - `--move-after-transfer` (`move_after_transfer`)
@@ -10295,14 +10295,14 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
 
 > [!NOTE]
-> File detection is not based on events (`inotify`, etc.), but on a simple folder scan on source side.
+> File detection is not based on events (`inotify`, and so on), but on a simple folder scan on source side.
 
 > [!TIP]
 > Options may be saved in an [Option Preset](#option-preset) and used with `-P`.
 
 ##### Scheduling
 
-Once `ascli` command line arguments are defined, run the command using the OS native scheduler, e.g. every minute, or 5 minutes, etc.
+Once `ascli` command line arguments are defined, run the command using the OS native scheduler, for example, every minute, or 5 minutes, and so on
 See [Scheduler](#scheduler).
 (on use of option `lock_port`)
 
@@ -10314,7 +10314,7 @@ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 
 
 The local folder (here, relative path: `source_hot`) is sent (upload) to an Aspera server.
 Source files are deleted after transfer.
-Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
+Growing files will be sent only once they do not grow anymore (based on an 8-second cool-off period).
 If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
 #### Example: Unidirectional synchronization (upload) to server
@@ -10335,7 +10335,7 @@ ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --d
 > Option `delete_before_transfer` will delete files locally, if they are not present on remote side.
 
 > [!NOTE]
-> Options `progress` and `display` limit output for headless operation (e.g. cron job)
+> Options `progress` and `display` limit output for headless operation (for example, cron job)
 
 ### Health check and Nagios
 
@@ -10478,15 +10478,15 @@ It aims at simplifying the startup of a FASP session from a programmatic standpo
 
 - Common to Aspera Node API (HTTP POST /ops/transfer)
 - Common to Aspera Connect API (browser JavaScript `startTransfer`)
-- Easy to generate by using any third party language specific JSON library
+- Generated by using any third-party language-specific JSON library
 
 Ideally, IBM will integrate this directly into `ascp`, making this tool redundant.
 
-This makes it easy to integrate with any language, provided that one can spawn a subprocess, write to its STDIN, read from STDOUT, and generate and parse JSON.
+Integration with any language is possible, provided that the language can spawn a subprocess, write to its STDIN, read from STDOUT, and generate and parse JSON.
 
 `ascli` expects a single argument: a session specification that contains parameters and a [**transfer-spec**](#transfer-specification).
 
-If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted on stdin.
+If no argument is provided, it assumes a value of: `@json:@stdin:`, that is, a JSON formatted on stdin.
 
 > [!NOTE]
 > If JSON is the format, specify `@json:` to tell `ascli` to decode the `Hash` using JSON syntax.
@@ -10625,7 +10625,7 @@ If you want to use `ed25519` keys, then install the required gems:
 gem install ed25519 bcrypt_pbkdf
 ```
 
-In addition, if those two gems are not installed, and if you are using Private Keys encoded using the OpenSSH format, then you'll get the message:
+In addition, if those two gems are not installed, and if you are using Private Keys encoded using the OpenSSH format, the following message is displayed:
 
 ```text
 OpenSSH keys only supported if ED25519 is available (NotImplementedError)
@@ -10648,7 +10648,7 @@ Add the following to option `ssh_options`:
 {"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}
 ```
 
-e.g.
+For example:
 
 ```shell
 --ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
