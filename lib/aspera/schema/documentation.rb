@@ -73,9 +73,11 @@ module Aspera
         schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
+          item_type = node['type']
+          item_type = "#{item_type}[#{node.dig('items', 'type')}]" if item_type.eql?('array') && node.dig('items', 'type').is_a?(String)
           item = {
             'name'        => code.call(property_full_name),
-            'type'        => code.call(node['type']),
+            'type'        => code.call(item_type),
             'description' => []
           }
           # Render Markdown formatting and split lines
