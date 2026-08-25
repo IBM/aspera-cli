@@ -3571,12 +3571,7 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer` are:
 
-| Parameter  | Type     | Description                                        |
-|------------|----------|----------------------------------------------------|
-| `url`      | `String` | URL of the Node API<%=br%>Mandatory                |
-| `username` | `String` | Node API user or access key<%=br%>Mandatory        |
-| `password` | `String` | Password, secret or bearer token<%=br%>Mandatory   |
-| `root_id`  | `String` | Root file ID<%=br%>Mandatory only for bearer token |
+<%=schema_to_table(Aspera::Agent::Node::SCHEMA)%>
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -3603,12 +3598,7 @@ By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using 
 
 Parameters provided in option `transfer` are:
 
-| Name                | Type      | Description                                               |
-|---------------------|-----------|-----------------------------------------------------------|
-| `url`               | `String`  | URL of the HTTP GW<%=br%>Mandatory                        |
-| `upload_chunk_size` | `Integer` | Size in bytes of chunks for upload<%=br%>Default: `64000` |
-| `api_version`       | `String`  | Force use of version (`v1`, `v2`)<%=br%>Default: `v2`     |
-| `synchronous`       | `Bool`    | Wait for each message acknowledgment<%=br%>Default: `false` |
+<%=schema_to_table(Aspera::Agent::Httpgw::SCHEMA)%>
 
 Example:
 
@@ -3628,11 +3618,7 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer` are:
 
-| Name     | Type     | Description                                  |
-|----------|----------|----------------------------------------------|
-| `url`    | `String` | IP address and port listened by the daemon<%=br%>Mandatory<%=br%>Default: `:0` |
-| `start`  | `Bool`   | Start a new daemon.<%=br%>Default: `true` |
-| `stop`   | `Bool`   | Stop daemon when exiting <%=tool%><%=br%>Default: `true` |
+<%=schema_to_table(Aspera::Agent::Transferd::SCHEMA)%>
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.

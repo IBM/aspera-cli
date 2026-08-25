@@ -3752,12 +3752,12 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer` are:
 
-| Parameter  | Type     | Description                                        |
-|------------|----------|----------------------------------------------------|
-| `url`      | `String` | URL of the Node API<br/>Mandatory                |
-| `username` | `String` | Node API user or access key<br/>Mandatory        |
-| `password` | `String` | Password, secret or bearer token<br/>Mandatory   |
-| `root_id`  | `String` | Root file ID<br/>Mandatory only for bearer token |
+| Field | Type | Description |
+|----------|--------|---------------------------------------------------------------|
+| `password` | `string` | Password, secret, or bearer token. |
+| `root_id` | `string` | Root file ID. Mandatory only when `password` is a bearer token. |
+| `url` | `string` | URL of the Node API. |
+| `username` | `string` | Node API user or access key. |
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -3784,12 +3784,12 @@ By specifying option: `--transfer=httpgw`, `ascli` will start transfers using th
 
 Parameters provided in option `transfer` are:
 
-| Name                | Type      | Description                                               |
-|---------------------|-----------|-----------------------------------------------------------|
-| `url`               | `String`  | URL of the HTTP GW<br/>Mandatory                        |
-| `upload_chunk_size` | `Integer` | Size in bytes of chunks for upload<br/>Default: `64000` |
-| `api_version`       | `String`  | Force use of version (`v1`, `v2`)<br/>Default: `v2`     |
-| `synchronous`       | `Bool`    | Wait for each message acknowledgment<br/>Default: `false` |
+| Field | Type | Description |
+|-------------------|---------|---------------------------------------------|
+| `api_version` | `string` | Force use of a specific API version.<br/>Allowed values: `v1`, `v2`.<br/>Default: `v2`. |
+| `synchronous` | `boolean` | Wait for acknowledgment after each message.<br/>Default: `false`. |
+| `upload_chunk_size` | `integer` | Size in bytes of each upload chunk.<br/>Default: `64000`. |
+| `url` | `string` | URL of the HTTP Gateway. |
 
 Example:
 
@@ -3809,11 +3809,11 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer` are:
 
-| Name     | Type     | Description                                  |
-|----------|----------|----------------------------------------------|
-| `url`    | `String` | IP address and port listened by the daemon<br/>Mandatory<br/>Default: `:0` |
-| `start`  | `Bool`   | Start a new daemon.<br/>Default: `true` |
-| `stop`   | `Bool`   | Stop daemon when exiting `ascli`<br/>Default: `true` |
+| Field | Type | Description |
+|-------|---------|----------------------------------------------------------------------------------|
+| `start` | `boolean` | Start a new daemon instance.<br/>Default: `true`. |
+| `stop` | `boolean` | Stop the daemon when `ascli` exits.<br/>Default: `true`. |
+| `url` | `string` | Address and port listened by the daemon (e.g. `:55002`). If port is `0`, the daemon listens on a random available port. If no address is given, `127.0.0.1` is used.<br/>Default: `:0`. |
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.

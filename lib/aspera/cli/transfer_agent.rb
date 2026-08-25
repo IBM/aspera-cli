@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require 'aspera/agent/direct'
 require 'aspera/agent/factory'
 require 'aspera/transfer/spec'
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/schema/registry'
 
 module Aspera
   module Cli
@@ -70,9 +70,9 @@ module Aspera
         @context.options.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
         @context.options.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
         # String value: agent type shorthand (e.g. --transfer=node); Hash value: full agent params incl. optional 'agent' key
-        @context.options.declare(:transfer, 'Transfer agent type, or agent parameters with optional agent key', allowed: [Hash, String], handler: {o: self, m: :option_transfer}, schema: Schema::Registry::TRANSFER_OPTIONS)
+        @context.options.declare(:transfer, 'Transfer agent type, or agent parameters with optional agent key', allowed: [Hash, String], handler: {o: self, m: :option_transfer}, schema: Agent::Direct::SCHEMA)
         # Deprecated: use --transfer instead
-        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_options}, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_OPTIONS)
+        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_options}, deprecation: 'use --transfer instead', schema: Agent::Direct::SCHEMA)
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?

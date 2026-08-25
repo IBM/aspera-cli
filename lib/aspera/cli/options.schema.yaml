@@ -114,3 +114,66 @@ components:
           type: boolean
           description: Enable use of the `ascp` management port for transfer monitoring.
           default: true
+    NodeAgentOptions:
+      type: object
+      description: Parameters for the `node` transfer agent (Node API).
+      required:
+        - url
+        - username
+        - password
+      properties:
+        url:
+          type: string
+          description: URL of the Node API.
+        username:
+          type: string
+          description: Node API user or access key.
+        password:
+          type: string
+          description: Password, secret, or bearer token.
+        root_id:
+          type: string
+          description: Root file ID. Mandatory only when `password` is a bearer token.
+    HttpgwAgentOptions:
+      type: object
+      description: Parameters for the `httpgw` transfer agent (HTTP Gateway).
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: URL of the HTTP Gateway.
+        upload_chunk_size:
+          type: integer
+          description: Size in bytes of each upload chunk.
+          default: 64000
+        api_version:
+          type: string
+          description: Force use of a specific API version.
+          enum:
+            - v1
+            - v2
+          default: v2
+        synchronous:
+          type: boolean
+          description: Wait for acknowledgment after each message.
+          default: false
+    TransferdAgentOptions:
+      type: object
+      description: Parameters for the `transferd` transfer agent (Transfer Daemon).
+      properties:
+        url:
+          type: string
+          description: >-
+            Address and port listened by the daemon (e.g. `:55002`).
+            If port is `0`, the daemon listens on a random available port.
+            If no address is given, `127.0.0.1` is used.
+          default: ':0'
+        start:
+          type: boolean
+          description: Start a new daemon instance.
+          default: true
+        stop:
+          type: boolean
+          description: Stop the daemon when `ascli` exits.
+          default: true

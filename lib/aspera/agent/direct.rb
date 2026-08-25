@@ -10,6 +10,7 @@ require 'aspera/transfer/spec'
 require 'aspera/transfer/resumer'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/schema/registry'
 require 'socket'
 require 'securerandom'
 require 'shellwords'
@@ -19,6 +20,8 @@ module Aspera
   module Agent
     # Execute a local `ascp` and use its management port to monitor progress
     class Direct < Base
+      SCHEMA = Schema::Registry::TRANSFER_OPTIONS
+
       # `ascp` started locally, so listen local
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
       # 0 means: use any available port
