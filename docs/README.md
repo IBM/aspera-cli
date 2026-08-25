@@ -3487,15 +3487,15 @@ The `transfer` option accepts the following optional parameters to control multi
 | `client_ssh_key` | `string` | SSH key type to use for token-based transfers.<br/>Allowed values: `rsa`, `dsa_rsa`, `per_client`.<br/>Default: `rsa`. |
 | `file_list` | `boolean` | If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.<br/>If `false`, source paths are placed directly on the `ascp` command line.<br/>Default: `true`. |
 | `monitor` | `boolean` | Enable use of the `ascp` management port for transfer monitoring.<br/>Default: `true`. |
-| `multi_incr_udp` | `boolean` | Multi session - Increment UDP port for each session.<br/>If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).<br/>If `false`, all sessions use the same `fasp_port` (or `ascp` default).<br/>Default: `true`. |
-| `quiet` | `boolean` | Suppress the `ascp` progress bar display.<br/>Default: `false`. |
+| `multi_incr_udp` | `boolean` | Multi session - Increment UDP port for each session.<br/>If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).<br/>If `false`, all sessions use the same `fasp_port` (or `ascp` default).<br/>Default: `true` on Windows, `false` on other platforms. |
+| `quiet` | `boolean` | Suppress the `ascp` progress bar display.<br/>Default: `true`. |
 | `resume.iter_max` | `integer` | Maximum number of retry attempts on error.<br/>Default: `7`. |
 | `resume.sleep_factor` | `integer` | Multiplier applied to sleep duration between consecutive retry attempts.<br/>Default: `2`. |
 | `resume.sleep_initial` | `integer` | Initial sleep duration (in seconds) before first retry.<br/>Default: `2`. |
 | `resume.sleep_max` | `integer` | Maximum sleep duration (in seconds) between retry attempts.<br/>Default: `60`. |
 | `resume` | `object` | Configuration for automatic transfer resume on interruption. |
 | `spawn_delay_sec` | `number` | Multi session - Delay (in seconds) between starting each `ascp` session.<br/>Default: `2`. |
-| `spawn_timeout_sec` | `number` | Multi session - Maximum time (in seconds) to verify that `ascp` is running.<br/>Default: `3`. |
+| `spawn_timeout_sec` | `number` | Multi session - Maximum time (in seconds) to verify that `ascp` is running.<br/>Default: `2`. |
 | `trusted_certs` | `array` | List of trusted certificate repositories. |
 | `wss` | `boolean` | Enable Web Socket Session when available.<br/>Default: `true`. |
 

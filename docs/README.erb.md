@@ -3316,7 +3316,7 @@ See [FASP](#fasp-configuration).
 
 The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-<%=schema_to_table(Aspera::Schema::Registry::TRANSFER_OPTIONS)%>
+<%=schema_to_table(Aspera::Schema::Registry::DIRECT_AGENT_OPTIONS)%>
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -3571,7 +3571,7 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table(Aspera::Agent::Node::SCHEMA)%>
+<%=schema_to_table(Aspera::Schema::Registry::NODE_AGENT_OPTIONS)%>
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -3598,7 +3598,7 @@ By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using 
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table(Aspera::Agent::Httpgw::SCHEMA)%>
+<%=schema_to_table(Aspera::Schema::Registry::HTTPGW_AGENT_OPTIONS)%>
 
 Example:
 
@@ -3618,7 +3618,7 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer` are:
 
-<%=schema_to_table(Aspera::Agent::Transferd::SCHEMA)%>
+<%=schema_to_table(Aspera::Schema::Registry::TRANSFERD_AGENT_OPTIONS)%>
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.

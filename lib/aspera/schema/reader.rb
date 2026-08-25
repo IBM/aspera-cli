@@ -31,6 +31,12 @@ module Aspera
         Reader.new(@root, current)
       end
 
+      # Resolve a $ref string to a Reader
+      def resolve_ref(ref)
+        Aspera.assert(ref.start_with?('#/')){"schema $ref must start with '#/': #{ref}"}
+        Reader.new(@root, @root.dig(*ref[2..].split('/')))
+      end
+
       # Read schema from file or from cache
       # @param root [Hash] root schema
       # @param current [Hash, nil] current position in
@@ -40,15 +46,35 @@ module Aspera
         @current = current || root
       end
 
-      # Recursively traverse schema properties with a block
-      # Handles nested objects and arrays automatically
-      # @param prefix [String] Prefix for property names (e.g., 'parent.child.')
+      # Recursively traverse schema properties with a block.
+      # If the current node has `oneOf`, each variant is traversed in turn and
+      # `on_variant` is called (if given) before each variant's properties.
+      # @param prefix     [String] Prefix for property names (e.g., 'parent.child.')
+      # @param on_variant [Proc, nil] Called with the variant Reader before its properties
       # @yield [property_schema, name, full_name] Yields property info to block
-      # @yieldparam property_schema [Reader] Schema reader for this property (use .current to get node hash)
+      # @yieldparam property_schema [Reader] Schema reader for this property
       # @yieldparam name [String] Property name
       # @yieldparam full_name [String] Full property name with prefix
       # @return [nil]
-      def each_property(prefix = '', &block)
+      def each_property(prefix = '', on_variant: nil, &block)
+        if @current.key?('oneOf')
+          # Build reverse map: $ref -> discriminant value, from discriminator.mapping if present
+          discriminant_by_ref = {}
+          if @current.dig('discriminator', 'mapping').is_a?(Hash)
+            @current['discriminator']['mapping'].each do |value, ref|
+              discriminant_by_ref[ref] = value
+            end
+          end
+          discriminant_property = @current.dig('discriminator', 'propertyName')
+          @current['oneOf'].each do |variant_node|
+            ref = variant_node['$ref']
+            variant_reader = ref ? resolve_ref(ref) : Reader.new(@root, variant_node)
+            discriminant_value = ref ? discriminant_by_ref[ref] : nil
+            on_variant&.call(variant_reader, discriminant_property, discriminant_value)
+            variant_reader.each_property(prefix, on_variant: on_variant, &block)
+          end
+          return
+        end
         properties = dig('properties')
         properties.current.each_key do |name|
           property_full_name = "#{prefix}#{name}"
@@ -61,11 +87,11 @@ module Aspera
           # Recursively process nested structures
           case node['type']
           when 'object'
-            property_schema.each_property("#{property_full_name}.", &block) if node['properties']
+            property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['properties']
           when 'array'
             if node['items']
               array_item_schema = property_schema.dig('items')
-              array_item_schema.each_property("#{property_full_name}[].", &block) if array_item_schema.current['properties']
+              array_item_schema.each_property("#{property_full_name}[].", on_variant: on_variant, &block) if array_item_schema.current['properties']
             end
           end
         end

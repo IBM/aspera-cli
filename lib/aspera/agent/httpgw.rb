@@ -5,13 +5,10 @@ require 'aspera/transfer/spec'
 require 'aspera/api/httpgw'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/schema/registry'
 
 module Aspera
   module Agent
     class Httpgw < Base
-      SCHEMA = Schema::Registry::HTTPGW_AGENT_OPTIONS
-
       def initialize(
         url:,
         api_version: Api::Httpgw::API_V2,

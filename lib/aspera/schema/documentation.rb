@@ -18,25 +18,29 @@ module Aspera
         @include_option = include_option
         @agent_columns = agent_columns
         @code_highlight = code_highlight
-        @columns = %i[name type description]
-        @columns.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short]}.sort) if @agent_columns
-        # @type [Array<Hash<Symbol,String>>]
-        @rows = []
+        @columns = %w[name type description]
+        @columns.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short].to_s}.sort) if @agent_columns
+        # Sections: each entry is {header: row_or_nil, rows: []}
+        # A flat schema produces a single section with no header.
+        @sections = [{header: nil, rows: []}]
       end
 
       def rows
-        @rows.sort_by{ |i| i[:name]}
+        @sections.flat_map do |section|
+          sorted = section[:rows].sort_by{ |i| i['name']}
+          section[:header] ? [section[:header]] + sorted : sorted
+        end
       end
 
       # @return [Array<String>]
       def columns
-        @columns.map(&:to_s)
+        @columns
       end
 
-      # First row is the titles
+      # First row is the titles (for Markdown table generation)
       # @return [Array<Array<String>>]
       def table
-        [@columns.map(&:to_s)] + @rows.sort_by{ |i| i[:name]}.map{ |row| @columns.map{ |field| row[field]}}
+        [@columns] + rows.map{ |row| @columns.map{ |field| row[field]}}
       end
 
       # Generate a documentation table from a JSON schema for transfer specifications
@@ -49,20 +53,37 @@ module Aspera
       def build(schema = nil)
         code = @code_highlight ? ->(c){"`#{c}`"} : ->(c){c}
         schema ||= @schema
-        schema.each_property do |property_schema, _name, property_full_name|
+        render_title = ->(title) { title.gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)} }
+        on_variant = ->(variant_reader, discriminant_property, discriminant_value) do
+          title = variant_reader.current['title'] || variant_reader.current['description']
+          header =
+            if discriminant_property && discriminant_value
+              desc = render_title.call("`#{discriminant_value}`")
+              desc += ": #{render_title.call(title)}" if title
+              @formatter.check_row({
+                'name'        => render_title.call("`#{discriminant_property}`"),
+                'type'        => code.call('string'),
+                'description' => desc
+              })
+            elsif title
+              @formatter.check_row({'name' => "**#{render_title.call(title)}**", 'type' => '&nbsp;', 'description' => '&nbsp;'})
+            end
+          @sections.push({header: header, rows: []})
+        end
+        schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
           item = {
-            name:        code.call(property_full_name),
-            type:        code.call(node['type']),
-            description: []
+            'name'        => code.call(property_full_name),
+            'type'        => code.call(node['type']),
+            'description' => []
           }
           # Render Markdown formatting and split lines
-          item[:description] =
+          item['description'] =
             node['description']
               .gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)}
               .split("\n") if node.key?('description')
-          item[:description].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
+          item['description'].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
           # Add flags for supported agents in doc
           agents = []
           Agent::Factory::ALL.each_key do |sym|
@@ -71,15 +92,15 @@ module Aspera
           Aspera.assert(agents.include?(:direct)){"#{property_full_name}: x-cli-option requires agent direct (or nil)"} if node['x-cli-option']
           if @agent_columns
             Agent::Factory::ALL.each do |sym, names|
-              item[names[:short]] = @formatter.tick(agents.include?(sym))
+              item[names[:short].to_s] = @formatter.tick(agents.include?(sym))
             end
           else
-            item[:description].push("(#{agents.map{ |i| Agent::Factory::ALL[i][:short].to_s.upcase}.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
+            item['description'].push("(#{agents.map{ |i| Agent::Factory::ALL[i][:short].to_s.upcase}.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
           end
           # Only keep lines that are usable in supported agents
           next if agents.empty?
-          item[:description].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
-          item[:description].push("Default: #{code.call(node['default'])}.") if node.key?('default')
+          item['description'].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
+          item['description'].push("Default: #{code.call(node['default'])}.") if node.key?('default')
           if @include_option
             envvar_prefix = ''
             cli_option =
@@ -96,9 +117,9 @@ module Aspera
                 "#{node['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
               end
             short = node.key?('x-cli-short') ? "(#{node['x-cli-short']})" : nil
-            item[:description].push("(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
+            item['description'].push("(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
           end
-          @rows.push(@formatter.check_row(item))
+          @sections.last[:rows].push(@formatter.check_row(item))
         end
         self
       end

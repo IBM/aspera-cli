@@ -8,7 +8,7 @@ components:
   schemas:
     LogOptions:
       type: object
-      description: Logging options. Use dot-notation to set individual keys (e.g. `--log.level=debug --log.type=stdout`).
+      description: Logging options.
       properties:
         level:
           type: string
@@ -29,13 +29,9 @@ components:
           type: boolean
           description: Show passwords and secrets in logs.
           default: false
-    TransferOptions:
+    DirectAgentOptions:
       type: object
-      description: >-
-        Transfer agent selector and parameters.
-        When set to a `String`, it selects the agent type (e.g. `direct`, `node`).
-        When set to a `Hash`, the optional `agent` key selects the agent type and the remaining keys are agent-specific parameters.
-        Use dot-notation to set individual keys (e.g. `--transfer.agent=node --transfer.url=https://...`).
+      description: Parameters for the `ascp` transfer agent.
       properties:
         wss:
           type: boolean
@@ -44,12 +40,12 @@ components:
         quiet:
           type: boolean
           description: Suppress the `ascp` progress bar display.
-          default: false
+          default: true
         file_list:
           type: boolean
           description: >-
             If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.
-            
+
             If `false`, source paths are placed directly on the `ascp` command line.
           default: true
         trusted_certs:
@@ -75,7 +71,7 @@ components:
           type: number
           format: float
           description: Multi session - Maximum time (in seconds) to verify that `ascp` is running.
-          default: 3
+          default: 2
         spawn_delay_sec:
           type: number
           format: float
@@ -85,11 +81,12 @@ components:
           type: boolean
           description: >-
             Multi session - Increment UDP port for each session.
-            
+
             If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).
-            
+
             If `false`, all sessions use the same `fasp_port` (or `ascp` default).
-          default: true
+
+            Default: `true` on Windows, `false` on other platforms.
         resume:
           type: object
           description: Configuration for automatic transfer resume on interruption.
@@ -116,7 +113,7 @@ components:
           default: true
     NodeAgentOptions:
       type: object
-      description: Parameters for the `node` transfer agent (Node API).
+      description: Parameters for the Node API transfer agent.
       required:
         - url
         - username
@@ -136,7 +133,7 @@ components:
           description: Root file ID. Mandatory only when `password` is a bearer token.
     HttpgwAgentOptions:
       type: object
-      description: Parameters for the `httpgw` transfer agent (HTTP Gateway).
+      description: Parameters for the HTTP Gateway transfer agent.
       required:
         - url
       properties:
@@ -160,7 +157,7 @@ components:
           default: false
     TransferdAgentOptions:
       type: object
-      description: Parameters for the `transferd` transfer agent (Transfer Daemon).
+      description: Parameters for the Transfer Daemon transfer agent.
       properties:
         url:
           type: string
@@ -168,7 +165,7 @@ components:
             Address and port listened by the daemon (e.g. `:55002`).
             If port is `0`, the daemon listens on a random available port.
             If no address is given, `127.0.0.1` is used.
-          default: ':0'
+          default: ":0"
         start:
           type: boolean
           description: Start a new daemon instance.
@@ -177,3 +174,20 @@ components:
           type: boolean
           description: Stop the daemon when `ascli` exits.
           default: true
+    TransferAgentOptions:
+      description: >-
+        Transfer agent selector and agent-specific parameters.
+        Set `agent` to select the agent type (default: `direct`).
+        Remaining keys are passed to the selected agent.
+      oneOf:
+        - $ref: "#/components/schemas/DirectAgentOptions"
+        - $ref: "#/components/schemas/NodeAgentOptions"
+        - $ref: "#/components/schemas/HttpgwAgentOptions"
+        - $ref: "#/components/schemas/TransferdAgentOptions"
+      discriminator:
+        propertyName: agent
+        mapping:
+          direct: "#/components/schemas/DirectAgentOptions"
+          node: "#/components/schemas/NodeAgentOptions"
+          httpgw: "#/components/schemas/HttpgwAgentOptions"
+          transferd: "#/components/schemas/TransferdAgentOptions"

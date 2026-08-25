@@ -5,7 +5,6 @@ require 'aspera/agent/base'
 require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
 require 'aspera/transfer/spec'
-require 'aspera/schema/registry'
 require 'json'
 require 'uri'
 require 'transferd_services_pb'
@@ -13,8 +12,6 @@ require 'transferd_services_pb'
 module Aspera
   module Agent
     class Transferd < Base
-      SCHEMA = Schema::Registry::TRANSFERD_AGENT_OPTIONS
-
       # https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'

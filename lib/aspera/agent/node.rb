@@ -7,14 +7,12 @@ require 'aspera/api/node'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
-require 'aspera/schema/registry'
 
 module Aspera
   module Agent
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Base
-      SCHEMA = Schema::Registry::NODE_AGENT_OPTIONS
       # @param url          [String] the base url of the node api
       # @param username     [String] the username to use for the node api
       # @param password     [String] the password to use for the node api
