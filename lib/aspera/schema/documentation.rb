@@ -61,7 +61,7 @@ module Aspera
               desc = render_title.call("`#{discriminant_value}`")
               desc += ": #{render_title.call(title)}" if title
               @formatter.check_row({
-                'name'        => render_title.call("`#{discriminant_property}`"),
+                'name'        => render_title.call("**#{discriminant_property}**"),
                 'type'        => code.call('string'),
                 'description' => desc
               })
@@ -100,7 +100,7 @@ module Aspera
           # Only keep lines that are usable in supported agents
           next if agents.empty?
           item['description'].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
-          item['description'].push("Default: #{code.call(node['default'])}.") if node.key?('default')
+          item['description'].push("Default: #{@formatter.markdown_text("`#{node['default']}`")}.") if node.key?('default')
           if @include_option
             envvar_prefix = ''
             cli_option =
