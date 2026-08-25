@@ -3482,8 +3482,8 @@ See [FASP](#fasp-configuration).
 The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Field | Type | Description |
-|----------------------|---------|----------------------------------------------------------------------------------|
-| `ascp_args` | `array` | List of native `ascp` command-line arguments.<br/>Default: `[]`. |
+|----------------------|---------------|----------------------------------------------------------------------------------|
+| `ascp_args` | `array[string]` | List of native `ascp` command-line arguments.<br/>Default: `[]`. |
 | `client_ssh_key` | `string` | SSH key type to use for token-based transfers.<br/>Allowed values: `rsa`, `dsa_rsa`, `per_client`.<br/>Default: `rsa`. |
 | `file_list` | `boolean` | If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.<br/>If `false`, source paths are placed directly on the `ascp` command line.<br/>Default: `true`. |
 | `monitor` | `boolean` | Enable use of the `ascp` management port for transfer monitoring.<br/>Default: `true`. |
@@ -3496,7 +3496,7 @@ The `transfer` option accepts the following optional parameters to control multi
 | `resume` | `object` | Configuration for automatic transfer resume on interruption. |
 | `spawn_delay_sec` | `number` | Multi session - Delay (in seconds) between starting each `ascp` session.<br/>Default: `2`. |
 | `spawn_timeout_sec` | `number` | Multi session - Maximum time (in seconds) to verify that `ascp` is running.<br/>Default: `2`. |
-| `trusted_certs` | `array` | List of trusted certificate repositories. |
+| `trusted_certs` | `array[string]` | List of trusted certificate repositories. |
 | `wss` | `boolean` | Enable Web Socket Session when available.<br/>Default: `true`. |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
@@ -9917,7 +9917,7 @@ ascli config sync spec
 > The option listed in the **Description** correspond to the equivalent parameters used by the low-level `async` command.
 
 | Field | Type | Description |
-|------------------------------------------|---------|----------------------------------------------------------------------------------|
+|------------------------------------------|---------------|----------------------------------------------------------------------------------|
 | `ascp_dir` | `string` | Directory containing ascp executable to use. |
 | `assume_no_mods` | `boolean` | Assume that the directory structure has not been modified.<br/>Default: `false`.<br/>(`--assume-no-mods`) |
 | `checksum` | `string` | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none`.<br/>Default: `sha1_sparse`.<br/>(`--checksum={enum}`)(-k) |
@@ -9938,7 +9938,7 @@ ascli config sync spec
 | `exclude_dirs_older_than` | `object` | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
 | `filters[].rule` | `string` | The rule for the filter.<br/>Allowed values: `include`, `exclude`, `include_from`, `exclude_from`. |
 | `filters[].value` | `string` | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications |
-| `filters` | `array` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
+| `filters` | `array[object]` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | `ignore_delete` | `boolean` | Do not copy removals to the peer.<br/>Default: `false`.<br/>(`--ignore-delete`) |
 | `ignore_mode` | `boolean` | Source files that have had their mode changed after the initial. transfer will not update the destination file mode.<br/>Default: `false`.<br/>(`--ignore-mode`) |
 | `ignore_remote_host_sync_name` | `boolean` | Do not check that the remote host being used for the current. transfer matches the host used when the local database was created<br/>Default: `false`. |
@@ -9989,7 +9989,7 @@ ascli config sync spec
 | `remote.pass` | `string` | Authenticate the transfer with the specified password.<br/>(`--pass={string}`)(-w) |
 | `remote.path` | `string` | Synchronize the specified directory on the remote host.<br/>(`--remote-dir={string}`)(-r) |
 | `remote.port` | `integer` | Use the specified TCP port for SSH. Used when connect_mode is `ssh`<br/>Default: `22`.<br/>(`--tcp-port={integer}`)(-P) |
-| `remote.private_key_paths` | `array` | Authenticate with the specified SSH private key file.<br/>(`--private-key-path={array}`)(-i) |
+| `remote.private_key_paths` | `array[string]` | Authenticate with the specified SSH private key file.<br/>(`--private-key-path={array}`)(-i) |
 | `remote.proxy.host` | `string` | Use the specified host name or address of the proxy. |
 | `remote.proxy.pass` | `string` | Authenticate to the proxy with the specified password. |
 | `remote.proxy.port` | `integer` | Use the specified port, default is 9091 for dnat, 9092. for dnats |
@@ -10030,13 +10030,13 @@ ascli config sync spec
 | `tags` | `object` | User-defined metadata tags.<br/>(special:`--tags64={object}`) |
 | `transfer_threads[].size` | `integer` | Upper limit. `-1` for infinity.<br/>Default: `-1`. |
 | `transfer_threads[].threads` | `integer` | The number of threads. |
-| `transfer_threads` | `array` | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
+| `transfer_threads` | `array[object]` | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
 | `transport.cipher` | `string` | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`.<br/>Default: `aes128`.<br/>(`--cipher={enum}`)(-c) |
 | `transport.compression` | `string` | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`.<br/>Default: `none`.<br/>(`--compression={enum}`) |
 | `transport.datagram_size` | `integer` | Specify the datagram size (MTU) for FASP. By default it uses the detected path MTU.<br/>(`--datagram-size={integer}`)(-Z) |
 | `transport.min_rate` | `integer` | Attempt to transfer no slower than the specified rate (in bps).<br/>Default: `0`.<br/>(`--min-rate={integer}`)(-m) |
 | `transport.rate_policy` | `string` | Defines how `ascp` will manage the bandwidth.<br/>Allowed values: `fair`, `fixed`, `high`, `low`.<br/>Default: `fair`.<br/>(`--rate-policy={enum}`)(-a) |
-| `transport.raw_options` | `array` | Pass arbitrary arguments to `ascp`.<br/>(special:`--raw-options={array}`) |
+| `transport.raw_options` | `array[string]` | Pass arbitrary arguments to `ascp`.<br/>(special:`--raw-options={array}`) |
 | `transport.read_block_size` | `integer` | Use the specified block size (in bytes) for reading. Default is determined by `aspera.conf`.<br/>(`--read-block-size={integer}`)(-g) |
 | `transport.rexmsg_size` | `integer` | Use the specified size (in bytes) for a retransmission request. Default is determined by `aspera.conf`.<br/>(`--rexmsg-size={integer}`)(-X) |
 | `transport.target_rate` | `integer` | Transfer no faster than the specified rate (in bps).<br/>Default: `10000000`.<br/>(`--target-rate={integer}`)(-l) |
