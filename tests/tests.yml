@@ -6891,6 +6891,52 @@ mcp_http_server:
     result = JSON.parse(call_resp.body.sub(/\Adata: /, ''))
     raise "Unexpected result: #{result}" unless result.dig('result', 'content', 0, 'text') == Aspera::Cli::VERSION
     t.stop_process :mcp_http_server
+mcp_bad_option:
+  description: Reject an unknown MCP option key.
+  tags:
+    - must_fail
+  expect: "Unknown MCP option(s): unknown_key"
+  args:
+    - mcp
+    - server
+    - "@json:{\"unknown_key\":true}"
+mcp_http_tools_list:
+  description: Start MCP HTTP server, verify tools/list contains execute_ascli_command, stop server.
+  tags:
+    - noblock
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13778
+  post: |
+    sleep 1
+    require 'aspera/rest'
+    mcp_api = Aspera::Rest.new(base_url: 'http://127.0.0.1:13778', headers: {'Accept' => 'application/json, text/event-stream'})
+    init_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, body: {jsonrpc: '2.0', id: 1, method: 'initialize', params: {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}}, exception: false, ret: :resp)
+    session_id = init_resp['mcp-session-id']
+    list_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, headers: {'Mcp-Session-Id' => session_id}, body: {jsonrpc: '2.0', id: 2, method: 'tools/list', params: {}}, exception: false, ret: :resp)
+    result = JSON.parse(list_resp.body.sub(/\Adata: /, ''))
+    tool_names = result.dig('result', 'tools').to_a.map{ |t| t['name'] }
+    raise "execute_ascli_command not listed: #{tool_names}" unless tool_names.include?('execute_ascli_command')
+    t.stop_process :mcp_http_tools_list
+mcp_stdio_call:
+  description: MCP stdio transport — initialize then tools/call returns the gem version.
+  stdin: |
+    {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}
+    {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"execute_ascli_command","arguments":{"args":["config","gem","version"]}}}
+  args:
+    - mcp
+    - server
+  post: |
+    lines = t.out_file.read.lines.map(&:chomp).reject(&:empty?)
+    init_line = lines.find{ |l| JSON.parse(l)['id'] == 1 rescue false }
+    raise "No initialize response found" unless init_line
+    call_line = lines.find{ |l| JSON.parse(l)['id'] == 2 rescue false }
+    raise "No tools/call response found" unless call_line
+    result = JSON.parse(call_line)
+    raise "Unexpected result: #{result}" unless result.dig('result', 'content', 0, 'text') == Aspera::Cli::VERSION
 
 github_smoke_test:
   command: null

@@ -313,6 +313,7 @@ namespace TEST_CASE_NS do
         stdinfile.write(input)
         run_options[:in] = stdinfile.to_s
         log.info("in: #{input}")
+        run_options[:out] = t.out_file.to_s unless tags[:noblock]
       end
       if tags[:must_fail] || tags[:pre_cleanup]
         run_options[:err] = t.err_file.to_s
