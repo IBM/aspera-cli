@@ -254,6 +254,19 @@ namespace :test do
   task :noded do
     reset_macos_hsts
   end
+
+  desc 'Show test status: passed, failed, not run'
+  task :status do
+    passed  = STATES.count{ |_, v| v == 'passed'}
+    failed  = STATES.count{ |_, v| v == 'failed'}
+    skipped = STATES.count{ |_, v| v == 'skipped'}
+    not_run = ALL_TESTS.size - STATES.size
+    log.info("Total  : #{ALL_TESTS.size}")
+    log.info("Passed : #{passed}")
+    log.info("Failed : #{failed}")
+    log.info("Skipped: #{skipped}")
+    log.info("Not run: #{not_run}")
+  end
 end
 
 namespace TEST_CASE_NS do
