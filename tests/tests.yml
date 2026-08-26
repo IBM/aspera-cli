@@ -6887,6 +6887,7 @@ mcp_bad_transport:
   description: Reject an unknown MCP transport option.
   tags:
     - must_fail
+    - nodoc
   expect: "Unknown transport: bad"
   args:
     - mcp
@@ -6917,6 +6918,7 @@ mcp_bad_option:
   description: Reject an unknown MCP option key.
   tags:
     - must_fail
+    - nodoc
   expect: "Unknown MCP option(s): unknown_key"
   args:
     - mcp
@@ -6926,6 +6928,7 @@ mcp_http_tools_list:
   description: Start MCP HTTP server, verify tools/list contains execute_ascli_command, stop server.
   tags:
     - noblock
+    - nodoc
   args:
     - mcp
     - server

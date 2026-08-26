@@ -8005,7 +8005,7 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > Add `ascli node` in front of the following commands:
 
 ```shell
---url=https://tst.example.com/path --password='Bearer <node_bearer_token>' --root-id=<id> access_key do self browse /
+--url=https://tst.example.com/path --password='Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
 access_key do my_ak_name browse / --secret=my_ak_secret
@@ -8380,7 +8380,7 @@ packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
 packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
-packages receive --box=my_shared_box_name <f5_pack_shboxc> --to-folder=.
+packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
 packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive ALL --once-only=yes --to-folder=.
@@ -8391,7 +8391,7 @@ packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts.content_protection_password=my_secret_here
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
-packages show --box=my_shared_box_name <f5_pack_shboxc>
+packages show --box=my_shared_box_name <id>
 packages show --box=my_workgroup --group-type=workgroups <id>
 packages show <id>
 packages status <f5_pack_send_shared> @list:,failed,completed
@@ -9790,7 +9790,7 @@ ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2
 > Add `ascli mcp` in front of the following commands:
 
 ```shell
-server @: transport=bad
+server
 server @: transport=http port=13777
 ```
 
