@@ -321,6 +321,7 @@ namespace TEST_CASE_NS do
       end
       # This test case can potentially be executed repeatedly, e.g. if we wait for a value
       # Loop for possible `redo`
+      wait_attempts = 0
       loop do
         run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
         # Give time to start
@@ -338,7 +339,9 @@ namespace TEST_CASE_NS do
           if saved_value.empty?
             message = 'Empty result'
             if tags[:wait_value]
-              log.info("#{message}, retry...")
+              wait_attempts += 1
+              raise "#{message} after #{wait_attempts} attempts" if wait_attempts >= 60
+              log.info("#{message}, retry #{wait_attempts}...")
               sleep(5)
               redo
             else
