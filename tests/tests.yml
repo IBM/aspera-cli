@@ -1973,13 +1973,13 @@ faspex_send_via_aoc_gateway:
 aoc_user_suite:
   instantiate: awa_user_suite
   vars:
-    secret_preset: aoc
+    awa_type: aoc
   args:
     - aoc
 aew_user_suite:
   instantiate: awa_user_suite
   vars:
-    secret_preset: aew
+    awa_type: aew
   tags:
     - nodoc
   args:
@@ -2603,7 +2603,7 @@ aoc_lnk_priv:
     - files
     - browse
     - /
-    - --url=@preset:$(secret_preset).private_link
+    - --url=@preset:$(awa_type).private_link
 aoc_short_link_priv_create:
   template: awa_user_suite
   args:
@@ -2652,14 +2652,14 @@ aoc_short_link_priv_list:
     - private
     - list
 aoc_pack_send_to_user:
-  $comment: Send package to normal user.
+  $comment: Send package to normal user (self-send so aoc_pack_recv_id can find it with the same account).
   template: awa_user_suite
   args:
     - packages
     - send
     - "@:"
     - name=$(name) $(TIMESTAMP_TEST_RUN)
-    - recipients.0=@preset:aoc_user.username
+    - recipients.0=@preset:$(awa_type)_user.username
     - note=some notes
     - END
     - $(PATH_TST_ASC_LCL)
@@ -2739,7 +2739,7 @@ aoc_pack_recv_public:
   args:
     - organization
     - -N
-    - --url=@preset:$(secret_preset).public_link_recv_from_aoc_user
+    - --url=@preset:$(awa_type).public_link_recv_from_aoc_user
 aoc_pack_send_pub_sh:
   args:
     - -N
@@ -6921,7 +6921,7 @@ mcp_bad_option:
   args:
     - mcp
     - server
-    - "@json:{\"unknown_key\":true}"
+    - '@json:{"unknown_key":true}'
 mcp_http_tools_list:
   description: Start MCP HTTP server, verify tools/list contains execute_ascli_command, stop server.
   tags:
