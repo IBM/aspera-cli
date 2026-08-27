@@ -378,7 +378,7 @@ Key properties:
 ## Migration Phases
 
 ### Phase 0a — Data classes and registry
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Define the pure data structures that describe commands. No runtime behavior,
 no changes to `Base` or any plugin. Can be reviewed and tested in complete isolation.
@@ -407,6 +407,7 @@ no changes to `Base` or any plugin. Can be reviewed and tested in complete isola
      including their `aliases` expanded to the parent `get_next_command` format.
    - `validate!` performs cross-spec consistency checks.
 3. Write unit tests for `CommandRegistry` covering all validation rules.
+4. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - DSL parameter tables above (single source of truth for field names and types)
@@ -444,6 +445,7 @@ while keeping all non-migrated plugins working exactly as before.
 6. Modify `Base#execute_action` to check `self.class.command_registry.any?` and delegate
    to `dispatch_from_registry`; otherwise raise `NotImplementedError` as today.
 7. Add `Base#generate_help(path)`.
+8. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/base.rb:30–38` — `initialize` and `execute_action` current behavior
@@ -478,6 +480,7 @@ These plugins have a single dispatch level and no context variables passed betwe
    - The `api` object (built from auth option before dispatch) maps to a `setup:` method `:build_api` that returns `{api: ...}`.
    - Handler methods receive `api:` as a keyword argument from the context hash.
 4. Run full test suite after each plugin migration.
+5. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/httpgw.rb:48–65`
@@ -507,6 +510,7 @@ fully delegates to a REST macro.
    - `:node` command has `delegates_to: [:node_commands]` pointing to `Node`'s `COMMANDS_COS` group.
 3. Ensure `delegates_to:` correctly passes the `ctx` hash (including the constructed `node_plugin`) to the delegated dispatcher.
 4. Run full test suite.
+5. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/cos.rb:27–51`
@@ -534,6 +538,7 @@ levels where a context variable flows from parent to children.
 2. Migrate `server.rb` (handles `ascmd` alias expansion — use the `aliases:` parameter).
 3. Migrate `orchestrator.rb` (3-level nesting, workflow/workorder/step).
 4. Run full test suite after each plugin.
+5. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/server.rb:184–244`
@@ -582,6 +587,7 @@ The context hash accumulates as it flows down:
 2. Document the context accumulation pattern in code comments as a template for Phase 5.
 3. Migrate `faspex.rb`, `faspex5.rb`, `preview.rb`.
 4. Run full test suite after each plugin.
+5. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/shares.rb:103–218`
@@ -626,6 +632,7 @@ instance) separates it cleanly from the simpler `delegates_to:`.
    or `delegate_instance:` as appropriate.
 5. Migrate `aoc.rb` (largest plugin; builds on patterns established in previous phases).
 6. Run full test suite.
+7. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 **Relevant context**:
 - `lib/aspera/cli/plugins/node.rb:489–499` — the `v3` delegation loop
@@ -652,6 +659,7 @@ instance) separates it cleanly from the simpler `delegates_to:`.
 4. Update `Runner` to call `dispatch_from_registry` instead of `execute_action`.
 5. Delete the `NotImplementedError` fallback from `Base`.
 6. Run full test suite and update any test that was checking `ACTIONS` contents directly.
+7. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
 
 ---
 
