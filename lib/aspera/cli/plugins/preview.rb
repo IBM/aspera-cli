@@ -410,12 +410,12 @@ module Aspera
 
         # Commands that connect to the Node API share a common setup.
         # :check, :test and :show work without Node API authentication.
-        command(:scan,     description: 'Scan all files and generate previews', setup: :setup_node_api)
-        command(:events,   description: 'Process file events and generate previews', setup: :setup_node_api)
-        command(:trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api)
-        command(:check,    description: 'Check required tools are installed')
-        command(:test,     description: 'Test preview generation for a source file')
-        command(:show,     description: 'Generate and display preview of a source file')
+        command :scan,     description: 'Scan all files and generate previews', setup: :setup_node_api
+        command :events,   description: 'Process file events and generate previews', setup: :setup_node_api
+        command :trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api
+        command :check,    description: 'Check required tools are installed'
+        command :test,     description: 'Test preview generation for a source file'
+        command :show,     description: 'Generate and display preview of a source file'
 
         # --- setup ---
 

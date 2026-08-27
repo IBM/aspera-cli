@@ -72,27 +72,27 @@ module Aspera
 
         # --- DSL ---
 
-        command(:health,   description: 'Check Console API health', setup: :setup_api)
-        command(:transfer, description: 'Manage transfers',         setup: :setup_api)
+        command :health,   description: 'Check Console API health', setup: :setup_api
+        command :transfer, description: 'Manage transfers',         setup: :setup_api
 
         commands_under(:transfer) do
-          command(:current, description: 'Manage current transfers')
-          command(:smart,   description: 'Manage smart transfers')
+          command :current, description: 'Manage current transfers'
+          command :smart,   description: 'Manage smart transfers'
         end
 
         commands_under(%i[transfer current]) do
-          command(:list)
-          command(:show)
-          command(:files)
-          command(:start)
-          command(:pause)
-          command(:cancel)
-          command(:resume)
-          command(:rerun)
-          command(:change_rate)
-          command(:change_policy)
-          command(:move_forwards)
-          command(:move_back)
+          command :list
+          command :show
+          command :files
+          command :start
+          command :pause
+          command :cancel
+          command :resume
+          command :rerun
+          command :change_rate
+          command :change_policy
+          command :move_forwards
+          command :move_back
         end
 
         # Generate one handler per transfer/current action.
@@ -106,8 +106,8 @@ module Aspera
         end
 
         commands_under(%i[transfer smart]) do
-          command(:list)
-          command(:submit)
+          command :list
+          command :submit
         end
 
         # --- setup ---

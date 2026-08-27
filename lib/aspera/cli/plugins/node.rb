@@ -797,33 +797,33 @@ module Aspera
         # --- DSL command declarations ---
 
         # Gen3 leaf commands
-        command(:search,      description: 'Search for files')
-        command(:space,       description: 'Show space information')
-        command(:mkdir,       description: 'Create a folder (Gen3)')
-        command(:mklink,      description: 'Create a symbolic link (Gen3)')
-        command(:mkfile,      description: 'Create a file (Gen3)')
-        command(:rename,      description: 'Rename a file or folder (Gen3)')
-        command(:delete,      description: 'Delete files or folders (Gen3)')
-        command(:browse,      description: 'Browse files (Gen3)')
-        command(:upload,      description: 'Upload files (Gen3)')
-        command(:download,    description: 'Download files (Gen3)')
-        command(:cat,         description: 'Show file contents (Gen3)')
-        command(:sync,        description: 'Synchronize folders (Gen3)')
-        command(:transport,   description: 'Show transport parameters')
-        command(:spec,        description: 'Show transfer spec base')
+        command :search,      description: 'Search for files'
+        command :space,       description: 'Show space information'
+        command :mkdir,       description: 'Create a folder (Gen3)'
+        command :mklink,      description: 'Create a symbolic link (Gen3)'
+        command :mkfile,      description: 'Create a file (Gen3)'
+        command :rename,      description: 'Rename a file or folder (Gen3)'
+        command :delete,      description: 'Delete files or folders (Gen3)'
+        command :browse,      description: 'Browse files (Gen3)'
+        command :upload,      description: 'Upload files (Gen3)'
+        command :download,    description: 'Download files (Gen3)'
+        command :cat,         description: 'Show file contents (Gen3)'
+        command :sync,        description: 'Synchronize folders (Gen3)'
+        command :transport,   description: 'Show transport parameters'
+        command :spec,        description: 'Show transfer spec base'
         # Other common leaf commands
-        command(:api_details, description: 'Show API details')
-        command(:health,      description: 'Check node health')
-        command(:events,      description: 'List events')
-        command(:info,        description: 'Show node info')
-        command(:slash,       description: 'Show root info')
-        command(:license,     description: 'Show license')
+        command :api_details, description: 'Show API details'
+        command :health,      description: 'Check node health'
+        command :events,      description: 'List events'
+        command :info,        description: 'Show node info'
+        command :slash,       description: 'Show root info'
+        command :license,     description: 'Show license'
         # access_keys sub-tree
-        command(:access_keys, description: 'Manage access keys')
+        command :access_keys, description: 'Manage access keys'
         commands_under(:access_keys) do
-          command(:do,           description: 'Execute Gen4 command via access key', setup: :setup_access_key_do)
-          command(:set_bearer_key, description: 'Set bearer key on access key')
-          Operations::ALL.each{ |op| command(op, description: "#{op.capitalize} access key(s)") }
+          command :do, description: 'Execute Gen4 command via access key', setup: :setup_access_key_do
+          command :set_bearer_key, description: 'Set bearer key on access key'
+          Operations::ALL.each{ |op| command(op, description: "#{op.capitalize} access key(s)")}
         end
 
         commands_under(%i[access_keys do]) do
@@ -832,83 +832,83 @@ module Aspera
           end
         end
         # async (legacy /async)
-        command(:async, description: 'Manage async operations (legacy /async)')
+        command :async, description: 'Manage async operations (legacy /async)'
         commands_under(:async) do
-          command(:list,      description: 'List async sync IDs')
-          command(:show,      description: 'Show async summary')
-          command(:delete,    description: 'Delete async')
-          command(:bandwidth, description: 'Show async bandwidth')
-          command(:files,     description: 'List async files')
-          command(:counters,  description: 'Show async counters')
+          command :list,      description: 'List async sync IDs'
+          command :show,      description: 'Show async summary'
+          command :delete,    description: 'Delete async'
+          command :bandwidth, description: 'Show async bandwidth'
+          command :files,     description: 'List async files'
+          command :counters,  description: 'Show async counters'
         end
         # ssync (/asyncs)
-        command(:ssync, description: 'Manage sync operations (/asyncs)')
+        command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under(:ssync) do
-          command(:start,     description: 'Start a sync')
-          command(:stop,      description: 'Stop a sync')
-          command(:bandwidth, description: 'Show sync bandwidth')
-          command(:counters,  description: 'Show sync counters')
-          command(:files,     description: 'List sync files')
-          command(:state,     description: 'Show sync state')
-          command(:summary,   description: 'Show sync summary')
-          Operations::ALL.reject{ |op| op == :modify }.each{ |op| command(op, description: "#{op.capitalize} ssync") }
+          command :start,     description: 'Start a sync'
+          command :stop,      description: 'Stop a sync'
+          command :bandwidth, description: 'Show sync bandwidth'
+          command :counters,  description: 'Show sync counters'
+          command :files,     description: 'List sync files'
+          command :state,     description: 'Show sync state'
+          command :summary,   description: 'Show sync summary'
+          Operations::ALL.reject{ |op| op == :modify}.each{ |op| command(op, description: "#{op.capitalize} ssync")}
         end
         # stream
-        command(:stream, description: 'Manage stream operations')
+        command :stream, description: 'Manage stream operations'
         commands_under(:stream) do
-          command(:list,   description: 'List streams')
-          command(:create, description: 'Create a stream')
-          command(:show,   description: 'Show a stream')
-          command(:modify, description: 'Modify a stream')
-          command(:cancel, description: 'Cancel a stream')
+          command :list,   description: 'List streams'
+          command :create, description: 'Create a stream'
+          command :show,   description: 'Show a stream'
+          command :modify, description: 'Modify a stream'
+          command :cancel, description: 'Cancel a stream'
         end
         # transfer
-        command(:transfer, description: 'Manage transfer operations')
+        command :transfer, description: 'Manage transfer operations'
         commands_under(:transfer) do
-          command(:list,              description: 'List transfers')
-          command(:cancel,            description: 'Cancel a transfer')
-          command(:show,              description: 'Show a transfer')
-          command(:modify,            description: 'Modify a transfer')
-          command(:bandwidth_average, description: 'Show average bandwidth per period')
-          command(:sessions,          description: 'List transfer sessions')
+          command :list,              description: 'List transfers'
+          command :cancel,            description: 'Cancel a transfer'
+          command :show,              description: 'Show a transfer'
+          command :modify,            description: 'Modify a transfer'
+          command :bandwidth_average, description: 'Show average bandwidth per period'
+          command :sessions,          description: 'List transfer sessions'
         end
         # service
-        command(:service, description: 'Manage services')
+        command :service, description: 'Manage services'
         commands_under(:service) do
-          command(:list,   description: 'List services')
-          command(:create, description: 'Create a service')
-          command(:delete, description: 'Delete a service')
+          command :list,   description: 'List services'
+          command :create, description: 'Create a service'
+          command :delete, description: 'Delete a service'
         end
         # watch_folder
-        command(:watch_folder, description: 'Manage watch folders')
+        command :watch_folder, description: 'Manage watch folders'
         # central
-        command(:central, description: 'Query Central service')
+        command :central, description: 'Query Central service'
         commands_under(:central) do
-          command(:session, description: 'Query sessions')
-          command(:file,    description: 'Query files')
+          command :session, description: 'Query sessions'
+          command :file,    description: 'Query files'
         end
-        commands_under([:central, :session]) { command(:list, description: 'List sessions') }
-        commands_under([:central, :file]) do
-          command(:list,   description: 'List file transfers')
-          command(:modify, description: 'Modify file transfer validation')
+        commands_under(%i[central session]){command :list, description: 'List sessions'}
+        commands_under(%i[central file]) do
+          command :list,   description: 'List file transfers'
+          command :modify, description: 'Modify file transfer validation'
         end
         # Standalone leaf commands
-        command(:asperabrowser, description: 'Open Aspera browser')
-        command(:basic_token,   description: 'Generate basic auth token')
-        command(:bearer_token,  description: 'Generate bearer token')
-        command(:simulator,     description: 'Start node simulator')
-        command(:telemetry,     description: 'Report telemetry to external system')
+        command :asperabrowser, description: 'Open Aspera browser'
+        command :basic_token,   description: 'Generate basic auth token'
+        command :bearer_token,  description: 'Generate bearer token'
+        command :simulator,     description: 'Start node simulator'
+        command :telemetry,     description: 'Report telemetry to external system'
 
         # --- Handler methods ---
 
         # Gen3 leaf commands: dispatch to execute_command_gen3
-        COMMANDS_GEN3.each{ |cmd| define_method(:"handle_#{cmd}"){ execute_command_gen3(cmd) } }
+        COMMANDS_GEN3.each{ |cmd| define_method(:"handle_#{cmd}"){execute_command_gen3(cmd)}}
         def handle_api_details; Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params)); end
-        def handle_health;      execute_simple_common(:health); end
-        def handle_events;      execute_simple_common(:events); end
-        def handle_info;        execute_simple_common(:info); end
-        def handle_slash;       execute_simple_common(:slash); end
-        def handle_license;     execute_simple_common(:license); end
+        def handle_health; execute_simple_common(:health); end
+        def handle_events; execute_simple_common(:events); end
+        def handle_info; execute_simple_common(:info); end
+        def handle_slash; execute_simple_common(:slash); end
+        def handle_license; execute_simple_common(:license); end
         def handle_watch_folder; watch_folder_action; end
 
         # access_keys > CRUD
@@ -956,6 +956,7 @@ module Aspera
           @api_node.update("access_keys/#{access_key_id}", {token_verification_key: key.to_pem})
           Result::Status.new('public key updated')
         end
+
         # async sub-commands: individual handlers
         def handle_async_list
           Result::ValueList.new(@api_node.read('async/list')['sync_ids'])
@@ -1025,7 +1026,7 @@ module Aspera
         end
 
         # ssync CRUD
-        Operations::ALL.reject{ |op| op == :modify }.each do |op|
+        Operations::ALL.reject{ |op| op == :modify}.each do |op|
           define_method(:"handle_ssync_#{op}") do
             entity_execute(api: @api_node, entity: :asyncs, command: op, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}
           end
@@ -1198,7 +1199,6 @@ module Aspera
           @api_node.update('services/rest/transfers/v1/files', request_data)
           Result::Status.new('updated')
         end
-
 
         def handle_asperabrowser
           browse_params = {

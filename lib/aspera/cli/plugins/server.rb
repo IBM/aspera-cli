@@ -182,25 +182,25 @@ module Aspera
         # @server_transfer_spec and @ascmd_executor so that condition methods work.
         root_setup :setup_server
 
-        command(:health,   description: 'Check transfer health')
-        command(:upload,   description: 'Upload files to server',        transfer_paths: :send)
-        command(:download, description: 'Download files from server',    transfer_paths: :receive)
-        command(:sync,     description: 'Synchronize files with server', transfer_paths: :send)
+        command :health,   description: 'Check transfer health'
+        command :upload,   description: 'Upload files to server',        transfer_paths: :send
+        command :download, description: 'Download files from server',    transfer_paths: :receive
+        command :sync,     description: 'Synchronize files with server', transfer_paths: :send
 
         commands_under(:health) do
-          command(:transfer, description: 'Check FASP transfer health')
+          command :transfer, description: 'Check FASP transfer health'
         end
 
         # AsCmd operations (available only when SSH/local — not WSS)
-        command(:ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse])
-        command(:rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete])
-        command(:mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename])
-        command(:cp,     description: 'Copy file(s) on server',          condition: :ascmd_available?)
-        command(:mkdir,  description: 'Create directory on server',       condition: :ascmd_available?)
-        command(:df,     description: 'Show disk usage on server',        condition: :ascmd_available?)
-        command(:du,     description: 'Show file sizes on server',        condition: :ascmd_available?)
-        command(:md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?)
-        command(:info,   description: 'Show server system information',   condition: :ascmd_available?)
+        command :ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse]
+        command :rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete]
+        command :mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename]
+        command :cp,     description: 'Copy file(s) on server',          condition: :ascmd_available?
+        command :mkdir,  description: 'Create directory on server',       condition: :ascmd_available?
+        command :df,     description: 'Show disk usage on server',        condition: :ascmd_available?
+        command :du,     description: 'Show file sizes on server',        condition: :ascmd_available?
+        command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?
+        command :info,   description: 'Show server system information',   condition: :ascmd_available?
 
         # Generate ascmd handlers — convention: handle_<op>
         %i[rm mv cp mkdir].each do |op|

@@ -35,26 +35,26 @@ module Aspera
 
         # --- DSL ---
 
-        command(:cluster,          description: 'Display general ATS cluster information (public API, no auth)')
-        command(:access_key,       description: 'Manage ATS access keys')
-        command(:api_key,          description: 'Manage credential to access ATS API', condition: :api_key_available?)
-        command(:aws_trust_policy, description: 'Show AWS trust policy')
+        command :cluster,          description: 'Display general ATS cluster information (public API, no auth)'
+        command :access_key,       description: 'Manage ATS access keys'
+        command :api_key,          description: 'Manage credential to access ATS API', condition: :api_key_available?
+        command :aws_trust_policy, description: 'Show AWS trust policy'
 
         commands_under(:cluster) do
-          command(:clouds, description: 'List cloud providers')
-          command(:list,   description: 'List ATS servers')
-          command(:show,   description: 'Show a specific server')
+          command :clouds, description: 'List cloud providers'
+          command :list,   description: 'List ATS servers'
+          command :show,   description: 'Show a specific server'
         end
 
         commands_under(:access_key) do
-          command(:create,      description: 'Create an access key')
-          command(:list,        description: 'List access keys')
-          command(:show,        description: 'Show an access key')
-          command(:modify,      description: 'Modify an access key')
-          command(:delete,      description: 'Delete an access key')
-          command(:node,        description: 'Execute node commands via ATS access key', setup: :setup_ak_node)
-          command(:cluster,     description: 'Show cluster info for an access key')
-          command(:entitlement, description: 'Show ATS entitlement for an access key')
+          command :create,      description: 'Create an access key'
+          command :list,        description: 'List access keys'
+          command :show,        description: 'Show an access key'
+          command :modify,      description: 'Modify an access key'
+          command :delete,      description: 'Delete an access key'
+          command :node,        description: 'Execute node commands via ATS access key', setup: :setup_ak_node
+          command :cluster,     description: 'Show cluster info for an access key'
+          command :entitlement, description: 'Show ATS entitlement for an access key'
         end
 
         commands_under(%i[access_key node]) do
@@ -64,11 +64,11 @@ module Aspera
         end
 
         commands_under(:api_key) do
-          command(:instances, description: 'List ATS instances in IBM Cloud')
-          command(:create,    description: 'Create an ATS API key')
-          command(:list,      description: 'List ATS API keys')
-          command(:show,      description: 'Show an ATS API key')
-          command(:delete,    description: 'Delete an ATS API key')
+          command :instances, description: 'List ATS instances in IBM Cloud'
+          command :create,    description: 'Create an ATS API key'
+          command :list,      description: 'List ATS API keys'
+          command :show,      description: 'Show an ATS API key'
+          command :delete,    description: 'Delete an ATS API key'
         end
 
         # --- conditions ---

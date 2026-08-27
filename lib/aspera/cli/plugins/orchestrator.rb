@@ -102,36 +102,36 @@ module Aspera
 
         # --- DSL ---
 
-        command(:health,     description: 'Check Orchestrator API health',               setup: :setup_api)
-        command(:info,       description: 'Ping the remote Orchestrator instance',       setup: :setup_api)
-        command(:processes,  description: 'Show Orchestrator background process status', setup: :setup_api)
-        command(:monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api)
-        command(:plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api)
-        command(:workflows,  description: 'Manage workflows',                            setup: :setup_api)
-        command(:workorders, description: 'Manage work orders',                          setup: :setup_api)
-        command(:workstep,   description: 'Manage work steps',                           setup: :setup_api)
+        command :health,     description: 'Check Orchestrator API health',               setup: :setup_api
+        command :info,       description: 'Ping the remote Orchestrator instance',       setup: :setup_api
+        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api
+        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api
+        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api
+        command :workflows,  description: 'Manage workflows',                            setup: :setup_api
+        command :workorders, description: 'Manage work orders',                          setup: :setup_api
+        command :workstep,   description: 'Manage work steps',                           setup: :setup_api
 
         commands_under(:workflows) do
-          command(:list,       description: 'List all workflows')
-          command(:status,     description: 'Check running status of workflow(s)')
-          command(:inputs,     description: 'Fetch input specification for a workflow')
-          command(:details,    description: 'Check detailed running status of a workflow')
-          command(:start,      description: 'Initiate a work order (sync or async)')
-          command(:export,     description: 'Export a workflow')
-          command(:workorders, description: 'Fetch all work orders from a workflow')
-          command(:outputs,    description: 'Fetch output specification for a workflow')
+          command :list,       description: 'List all workflows'
+          command :status,     description: 'Check running status of workflow(s)'
+          command :inputs,     description: 'Fetch input specification for a workflow'
+          command :details,    description: 'Check detailed running status of a workflow'
+          command :start,      description: 'Initiate a work order (sync or async)'
+          command :export,     description: 'Export a workflow'
+          command :workorders, description: 'Fetch all work orders from a workflow'
+          command :outputs,    description: 'Fetch output specification for a workflow'
         end
 
         commands_under(:workorders) do
-          command(:status, description: 'Check the status of a work order')
-          command(:cancel, description: 'Cancel a work order')
-          command(:reset,  description: 'Reset a work order')
-          command(:output, description: 'Fetch output of a work order')
+          command :status, description: 'Check the status of a work order'
+          command :cancel, description: 'Cancel a work order'
+          command :reset,  description: 'Reset a work order'
+          command :output, description: 'Fetch output of a work order'
         end
 
         commands_under(:workstep) do
-          command(:status, description: 'Check the status of a work step')
-          command(:cancel, description: 'Cancel a work step')
+          command :status, description: 'Check the status of a work step'
+          command :cancel, description: 'Cancel a work step'
         end
 
         # --- setup ---

@@ -640,38 +640,38 @@ module Aspera
 
         # Commands that need @api_v5 carry setup: :setup_api_v5.
         # :health and :postprocessing work without authentication, so they have no setup.
-        command(:health,         description: 'Check Faspex 5 health')
-        command(:version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5)
-        command(:user,           description: 'Manage current user',               setup: :setup_api_v5)
-        command(:bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5)
-        command(:packages,       description: 'Manage packages',                   setup: :setup_api_v5)
-        command(:shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5)
-        command(:admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5)
-        command(:gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5)
-        command(:postprocessing, description: 'Start Faspex 4 post-processing server')
-        command(:invitations,    description: 'Manage invitations', setup: :setup_api_v5)
+        command :health,         description: 'Check Faspex 5 health'
+        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5
+        command :user,           description: 'Manage current user',               setup: :setup_api_v5
+        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5
+        command :packages,       description: 'Manage packages',                   setup: :setup_api_v5
+        command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
+        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
+        command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5
+        command :postprocessing, description: 'Start Faspex 4 post-processing server'
+        command :invitations,    description: 'Manage invitations', setup: :setup_api_v5
 
         commands_under(:invitations) do
-          command(:create, description: 'Create an invitation')
-          command(:resend, description: 'Resend an invitation')
-          Operations::ALL.reject{ |op| op == :create }.each do |op|
+          command :create, description: 'Create an invitation'
+          command :resend, description: 'Resend an invitation'
+          Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
           end
         end
 
         commands_under(:user) do
-          command(:account, description: 'Show account information')
-          command(:profile, description: 'Manage user profile')
+          command :account, description: 'Show account information'
+          command :profile, description: 'Manage user profile'
         end
 
         commands_under(%i[user profile]) do
-          command(:show,   description: 'Show user profile')
-          command(:modify, description: 'Modify user profile')
+          command :show,   description: 'Show user profile'
+          command :modify, description: 'Modify user profile'
         end
 
         commands_under(:shared_folders) do
-          command(:list,   description: 'List shared folders')
-          command(:browse, description: 'Browse a shared folder')
+          command :list,   description: 'List shared folders'
+          command :browse, description: 'Browse a shared folder'
         end
 
         # --- root setup ---
@@ -764,7 +764,7 @@ module Aspera
         end
 
         # CRUD handlers for invitations (list, show, modify, delete)
-        Operations::ALL.reject{ |op| op == :create }.each do |op|
+        Operations::ALL.reject{ |op| op == :create}.each do |op|
           define_method(:"handle_invitations_#{op}") do
             entity_execute(
               api: @api_v5,

@@ -215,99 +215,76 @@ module Aspera
         # DSL command declarations — replaces ACTIONS + execute_action
         # :preset is an opaque handler: execute_preset handles all sub-dispatch internally
         command :preset,
-          description: 'Manage presets of options',
-          handler: :handle_preset
+          description: 'Manage presets of options'
         command :open,
-          description: 'Open the configuration file in the default editor',
-          handler: :handle_open
+          description: 'Open the configuration file in the default editor'
         command :documentation,
           description: 'Open the documentation in the default browser',
-          arguments: [ArgumentSpec.new(name: :section, type: String, mandatory: false)],
-          handler: :handle_documentation
+          arguments: [ArgumentSpec.new(name: :section, type: String, mandatory: false)]
         command :genkey,
           description: 'Generate a new RSA private key',
           arguments: [
             ArgumentSpec.new(name: :private_key_path, type: String),
             ArgumentSpec.new(name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
-          ],
-          handler: :handle_genkey
+          ]
         command :pubkey,
           description: 'Display the public key of an RSA private key',
-          arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)],
-          handler: :handle_pubkey
+          arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)]
         command :remote_certificate,
           description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo,
           description: 'Display the value of a given argument',
-          arguments: [ArgumentSpec.new(name: :value, type: nil)],
-          handler: :handle_echo
+          arguments: [ArgumentSpec.new(name: :value, type: nil)]
         command :download,
           description: 'Download a file from a URL',
           arguments: [
             ArgumentSpec.new(name: :file_url,  type: String),
             ArgumentSpec.new(name: :file_dest, type: String, mandatory: false)
-          ],
-          handler: :handle_download
+          ]
         command :tokens,
           description: 'Manage OAuth tokens'
         command :plugins,
           description: 'Manage CLI plugins'
         command :detect,
-          description: 'Detect the Aspera product from a URL (interactive)',
-          handler: :handle_detect
+          description: 'Detect the Aspera product from a URL (interactive)'
         command :wizard,
-          description: 'Run the setup wizard for an Aspera product (interactive)',
-          handler: :handle_wizard
+          description: 'Run the setup wizard for an Aspera product (interactive)'
         command :coffee,
-          description: 'Display a coffee image',
-          handler: :handle_coffee
+          description: 'Display a coffee image'
         command :image,
           description: 'Display an image',
-          arguments: [ArgumentSpec.new(name: :image_uri, type: nil)],
-          handler: :handle_image
+          arguments: [ArgumentSpec.new(name: :image_uri, type: nil)]
         command :ascp,
-          description: 'Manage the transfer SDK (ascp/transferd)',
-          handler: :handle_ascp
+          description: 'Manage the transfer SDK (ascp/transferd)'
         command :agents,
-          description: 'Display transfer agent information',
-          handler: :handle_agents
+          description: 'Display transfer agent information'
         command :sync,
           description: 'Manage Aspera Sync operations'
         command :transferd,
-          description: 'Manage the transfer daemon (transferd)',
-          handler: :handle_transferd
+          description: 'Manage the transfer daemon (transferd)'
         command :gem,
           description: 'Display gem information'
         command :folder,
-          description: 'Display the configuration folder path',
-          handler: :handle_folder
+          description: 'Display the configuration folder path'
         command :file,
-          description: 'Display the configuration file path',
-          handler: :handle_file
+          description: 'Display the configuration file path'
         command :email_test,
-          description: 'Send a test email',
-          handler: :handle_email_test
+          description: 'Send a test email'
         command :smtp_settings,
-          description: 'Display the current SMTP settings',
-          handler: :handle_smtp_settings
+          description: 'Display the current SMTP settings'
         command :proxy_check,
           description: 'Check the proxy returned by the PAC script for a given URL',
-          arguments: [ArgumentSpec.new(name: :server_url, type: String)],
-          handler: :handle_proxy_check
+          arguments: [ArgumentSpec.new(name: :server_url, type: String)]
         command :check_update,
-          description: 'Check if a newer version of the gem is available',
-          handler: :handle_check_update
+          description: 'Check if a newer version of the gem is available'
         command :initdemo,
-          description: 'Initialize the demo server preset',
-          handler: :handle_initdemo
+          description: 'Initialize the demo server preset'
         command :vault,
-          description: 'Manage the secrets vault',
-          handler: :handle_vault
+          description: 'Manage the secrets vault'
         command :test,
           description: 'Internal test commands'
         command :platform,
-          description: 'Display the current platform/architecture',
-          handler: :handle_platform
+          description: 'Display the current platform/architecture'
         command :completion,
           description: 'Generate shell completion scripts'
 
@@ -315,65 +292,54 @@ module Aspera
         commands_under(:remote_certificate) do
           command :chain,
             description: 'Display the full certificate chain as PEM',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
-            handler: :handle_remote_certificate_chain
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
           command :only,
             description: 'Display only the server certificate as PEM',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
-            handler: :handle_remote_certificate_only
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
           command :name,
             description: 'Display the CN of the server certificate',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
-            handler: :handle_remote_certificate_name
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
         end
 
         # tokens sub-commands
         commands_under(:tokens) do
           command :flush,
-            description: 'Delete all cached OAuth tokens',
-            handler: :handle_tokens_flush
+            description: 'Delete all cached OAuth tokens'
           command :list,
-            description: 'List all cached OAuth tokens',
-            handler: :handle_tokens_list
+            description: 'List all cached OAuth tokens'
           command :show,
             description: 'Show details of a cached OAuth token',
-            arguments: [ArgumentSpec.new(name: :token_id, type: :identifier)],
-            handler: :handle_tokens_show
+            arguments: [ArgumentSpec.new(name: :token_id, type: :identifier)]
         end
 
         # plugins sub-commands
         commands_under(:plugins) do
           command :list,
-            description: 'List all available plugins',
-            handler: :handle_plugins_list
+            description: 'List all available plugins'
           command :create,
             description: 'Create a new plugin skeleton file',
             arguments: [
               ArgumentSpec.new(name: :name,   type: String),
               ArgumentSpec.new(name: :folder, type: String, mandatory: false)
-            ],
-            handler: :handle_plugins_create
+            ]
         end
 
         # sync sub-commands
         commands_under(:sync) do
           command :spec,
-            description: 'Display the sync configuration schema',
-            handler: :handle_sync_spec
+            description: 'Display the sync configuration schema'
           command :admin,
-            description: 'Run sync admin operations',
-            handler: :handle_sync_admin
+            description: 'Run sync admin operations'
           command :translate,
             description: 'Translate async-style arguments to sync config format',
-            arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)],
-            handler: :handle_sync_translate
+            arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)]
         end
 
         # gem sub-commands
         commands_under(:gem) do
-          command :path,    description: 'Display the gem source root path',    handler: :handle_gem_path
-          command :version, description: 'Display the gem version',             handler: :handle_gem_version
-          command :name,    description: 'Display the gem name',                handler: :handle_gem_name
+          command :path,    description: 'Display the gem source root path'
+          command :version, description: 'Display the gem version'
+          command :name,    description: 'Display the gem name'
         end
 
         # test sub-commands
@@ -383,19 +349,16 @@ module Aspera
             arguments: [
               ArgumentSpec.new(name: :exception_class_name, type: String),
               ArgumentSpec.new(name: :exception_text,       type: String)
-            ],
-            handler: :handle_test_throw
+            ]
           command :web,
-            description: 'Test web browser interaction',
-            handler: :handle_test_web
+            description: 'Test web browser interaction'
         end
 
         # completion sub-commands
         commands_under(:completion) do
           command :bash,
             description: 'Generate bash completion script',
-            arguments: [ArgumentSpec.new(name: :words, type: String, multiple: true, mandatory: false)],
-            handler: :handle_completion_bash
+            arguments: [ArgumentSpec.new(name: :words, type: String, multiple: true, mandatory: false)]
         end
 
         attr_accessor :option_cache_tokens

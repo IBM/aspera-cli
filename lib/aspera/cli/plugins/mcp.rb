@@ -68,8 +68,7 @@ module Aspera
 
         command :server,
           description: 'Start the MCP (Model Context Protocol) server',
-          arguments:   [ArgumentSpec.new(name: :mcp_options, type: [Hash], mandatory: false)],
-          handler:     :handle_server
+          arguments:   [ArgumentSpec.new(name: :mcp_options, type: [Hash], mandatory: false)]
 
         def handle_server(mcp_options = nil)
           require 'aspera/cli/mcp_tool'

@@ -102,30 +102,30 @@ module Aspera
 
         # --- DSL ---
 
-        command(:health,   description: 'Check Shares health')
-        command(:info,     description: 'Show server information')
-        command(:files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node)
-        command(:admin,    description: 'Administer Shares', setup: :setup_admin)
+        command :health,   description: 'Check Shares health'
+        command :info,     description: 'Show server information'
+        command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node
+        command :admin,    description: 'Administer Shares', setup: :setup_admin
 
         commands_under(:admin) do
-          command(:node,              description: 'Manage nodes')
-          command(:share,             description: 'Manage shares')
-          command(:transfer_settings, description: 'Manage transfer settings')
-          command(:user,              description: 'Manage users')
-          command(:group,             description: 'Manage groups')
+          command :node,              description: 'Manage nodes'
+          command :share,             description: 'Manage shares'
+          command :transfer_settings, description: 'Manage transfer settings'
+          command :user,              description: 'Manage users'
+          command :group,             description: 'Manage groups'
         end
 
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
             command(op, description: "#{op.capitalize} share(s)")
           end
-          command(:user_permissions,  description: 'Manage user permissions on a share')
-          command(:group_permissions, description: 'Manage group permissions on a share')
+          command :user_permissions,  description: 'Manage user permissions on a share'
+          command :group_permissions, description: 'Manage group permissions on a share'
         end
 
         commands_under(%i[admin transfer_settings]) do
-          command(:show,   description: 'Show transfer settings')
-          command(:modify, description: 'Modify transfer settings')
+          command :show,   description: 'Show transfer settings'
+          command :modify, description: 'Modify transfer settings'
         end
 
         # --- setup ---

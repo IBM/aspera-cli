@@ -275,26 +275,26 @@ module Aspera
 
         # --- DSL ---
 
-        command(:health,       description: 'Check Faspex 4 API health')
-        command(:package,      description: 'Manage packages')
-        command(:source,       description: 'Manage sources')
-        command(:me,           description: 'Show current user information')
-        command(:dropbox,      description: 'Manage dropboxes')
-        command(:v4,           description: 'Faspex v4 admin commands')
-        command(:address_book, description: 'Show address book')
-        command(:login_methods, description: 'Show login methods')
+        command :health,       description: 'Check Faspex 4 API health'
+        command :package,      description: 'Manage packages'
+        command :source,       description: 'Manage sources'
+        command :me,           description: 'Show current user information'
+        command :dropbox,      description: 'Manage dropboxes'
+        command :v4,           description: 'Faspex v4 admin commands'
+        command :address_book, description: 'Show address book'
+        command :login_methods, description: 'Show login methods'
 
         commands_under(:package) do
-          command(:send,    description: 'Send a package')
-          command(:receive, description: 'Receive a package', aliases: {recv: :receive})
-          command(:list,    description: 'List packages')
-          command(:show,    description: 'Show a package')
+          command :send,    description: 'Send a package'
+          command :receive, description: 'Receive a package', aliases: {recv: :receive}
+          command :list,    description: 'List packages'
+          command :show,    description: 'Show a package'
         end
 
         commands_under(:source) do
-          command(:list, description: 'List sources')
-          command(:info, description: 'Show source info', setup: :setup_source_selected)
-          command(:node, description: 'Execute node commands on source', setup: :setup_source_selected)
+          command :list, description: 'List sources'
+          command :info, description: 'Show source info', setup: :setup_source_selected
+          command :node, description: 'Execute node commands on source', setup: :setup_source_selected
         end
 
         commands_under(%i[source node]) do
@@ -304,21 +304,21 @@ module Aspera
         end
 
         commands_under(:dropbox) do
-          command(:list, description: 'List dropboxes')
+          command :list, description: 'List dropboxes'
         end
 
         commands_under(:v4) do
-          command(:dropbox,      description: 'Manage v4 dropboxes')
-          command(:dmembership,  description: 'Manage dropbox memberships')
-          command(:workgroup,    description: 'Manage workgroups')
-          command(:wmembership,  description: 'Manage workgroup memberships')
-          command(:user,         description: 'Manage users')
-          command(:metadata_profile, description: 'Manage metadata profiles')
-          command(:package,      description: 'List packages for a box')
+          command :dropbox,      description: 'Manage v4 dropboxes'
+          command :dmembership,  description: 'Manage dropbox memberships'
+          command :workgroup,    description: 'Manage workgroups'
+          command :wmembership,  description: 'Manage workgroup memberships'
+          command :user,         description: 'Manage users'
+          command :metadata_profile, description: 'Manage metadata profiles'
+          command :package, description: 'List packages for a box'
         end
 
         commands_under(%i[v4 package]) do
-          command(:users, description: 'List packages for users')
+          command :users, description: 'List packages for users'
         end
 
         # --- handlers ---

@@ -1004,115 +1004,115 @@ module Aspera
         # --- DSL command declarations ---
 
         # Root-level commands
-        command(:reminder,          description: 'Send reminder email with list of orgs')
-        command(:servers,           description: 'List AoC servers (no auth)')
-        command(:bearer_token,      description: 'Display bearer token')
-        command(:organization,      description: 'Show organization info')
-        command(:tier_restrictions, description: 'Show tier restrictions')
-        command(:user,              description: 'User commands')
-        command(:packages,          description: 'Package commands', setup: :setup_workspace_display)
-        command(:files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display)
-        command(:admin,             description: 'Administration commands')
-        command(:automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api)
-        command(:gateway,           description: 'Start AoC Faspex4 gateway')
+        command :reminder,          description: 'Send reminder email with list of orgs'
+        command :servers,           description: 'List AoC servers (no auth)'
+        command :bearer_token,      description: 'Display bearer token'
+        command :organization,      description: 'Show organization info'
+        command :tier_restrictions, description: 'Show tier restrictions'
+        command :user,              description: 'User commands'
+        command :packages,          description: 'Package commands', setup: :setup_workspace_display
+        command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
+        command :admin,             description: 'Administration commands'
+        command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
+        command :gateway,           description: 'Start AoC Faspex4 gateway'
 
         # user sub-commands
         commands_under(:user) do
-          command(:workspaces,   description: 'Workspace commands')
-          command(:profile,      description: 'User profile commands')
-          command(:preferences,  description: 'User interaction preferences')
-          command(:notifications, description: 'Notification preferences')
-          command(:contacts,     description: 'Manage contacts',           handler: :handle_user_contacts)
-          command(:settings,     description: 'Manage client settings',    handler: :handle_user_settings)
+          command :workspaces,   description: 'Workspace commands'
+          command :profile,      description: 'User profile commands'
+          command :preferences,  description: 'User interaction preferences'
+          command :notifications, description: 'Notification preferences'
+          command :contacts,     description: 'Manage contacts'
+          command :settings,     description: 'Manage client settings'
         end
 
-        commands_under([:user, :workspaces]) do
-          command(:list,    description: 'List workspaces')
-          command(:current, description: 'Show current workspace')
+        commands_under(%i[user workspaces]) do
+          command :list,    description: 'List workspaces'
+          command :current, description: 'Show current workspace'
         end
 
-        commands_under([:user, :profile]) do
-          command(:show,   description: 'Show user profile')
-          command(:modify, description: 'Modify user profile')
+        commands_under(%i[user profile]) do
+          command :show,   description: 'Show user profile'
+          command :modify, description: 'Modify user profile'
         end
 
-        commands_under([:user, :preferences]) do
-          command(:show,   description: 'Show user preferences')
-          command(:modify, description: 'Modify user preferences')
+        commands_under(%i[user preferences]) do
+          command :show,   description: 'Show user preferences'
+          command :modify, description: 'Modify user preferences'
         end
 
-        commands_under([:user, :notifications]) do
-          command(:show,   description: 'Show notification preferences')
-          command(:modify, description: 'Modify notification preferences')
+        commands_under(%i[user notifications]) do
+          command :show,   description: 'Show notification preferences'
+          command :modify, description: 'Modify notification preferences'
         end
 
         # packages sub-commands
         commands_under(:packages) do
-          command(:shared_inboxes, description: 'Shared inbox commands')
-          command(:send,           description: 'Send a package')
-          command(:receive,        description: 'Receive package(s)', aliases: [:recv])
-          command(:list,           description: 'List packages')
-          command(:show,           description: 'Show a package')
-          command(:delete,         description: 'Delete package(s)')
-          command(:modify,         description: 'Modify a package')
+          command :shared_inboxes, description: 'Shared inbox commands'
+          command :send,           description: 'Send a package'
+          command :receive,        description: 'Receive package(s)', aliases: [:recv]
+          command :list,           description: 'List packages'
+          command :show,           description: 'Show a package'
+          command :delete,         description: 'Delete package(s)'
+          command :modify,         description: 'Modify a package'
           # Node Gen4 read-only actions on packages
-          command(:bearer_token_node, description: 'Show bearer token for package node')
-          command(:node_info,         description: 'Show node info for package')
-          command(:browse,            description: 'Browse package contents')
-          command(:find,              description: 'Find files in package')
+          command :bearer_token_node, description: 'Show bearer token for package node'
+          command :node_info,         description: 'Show node info for package'
+          command :browse,            description: 'Browse package contents'
+          command :find,              description: 'Find files in package'
         end
 
-        commands_under([:packages, :shared_inboxes]) do
-          command(:list,       description: 'List shared inboxes')
-          command(:show,       description: 'Show a shared inbox')
-          command(:short_link, description: 'Manage shared inbox short links')
+        commands_under(%i[packages shared_inboxes]) do
+          command :list,       description: 'List shared inboxes'
+          command :show,       description: 'Show a shared inbox'
+          command :short_link, description: 'Manage shared inbox short links'
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
         # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
         commands_under(:files) do
-          command(:short_link,       description: 'Manage file short link')
-          command(:transfer,         description: 'Transfer files (node-to-node)')
-          command(:mkdir,            description: 'Create folder')
-          command(:mklink,           description: 'Create symbolic link')
-          command(:mkfile,           description: 'Create file')
-          command(:rename,           description: 'Rename entry')
-          command(:delete,           description: 'Delete entry')
-          command(:upload,           description: 'Upload files')
-          command(:download,         description: 'Download files')
-          command(:sync,             description: 'Synchronize folders')
-          command(:cat,              description: 'Show file contents')
-          command(:show,             description: 'Show file info')
-          command(:modify,           description: 'Modify file')
-          command(:permission,       description: 'Manage permissions')
-          command(:thumbnail,        description: 'Show file thumbnail')
-          command(:v3,               description: 'Legacy v3 commands on files')
-          command(:bearer_token_node, description: 'Show bearer token for file node')
-          command(:node_info,         description: 'Show node info for file')
-          command(:browse,            description: 'Browse files')
-          command(:find,              description: 'Find files')
+          command :short_link,       description: 'Manage file short link'
+          command :transfer,         description: 'Transfer files (node-to-node)'
+          command :mkdir,            description: 'Create folder'
+          command :mklink,           description: 'Create symbolic link'
+          command :mkfile,           description: 'Create file'
+          command :rename,           description: 'Rename entry'
+          command :delete,           description: 'Delete entry'
+          command :upload,           description: 'Upload files'
+          command :download,         description: 'Download files'
+          command :sync,             description: 'Synchronize folders'
+          command :cat,              description: 'Show file contents'
+          command :show,             description: 'Show file info'
+          command :modify,           description: 'Modify file'
+          command :permission,       description: 'Manage permissions'
+          command :thumbnail,        description: 'Show file thumbnail'
+          command :v3,               description: 'Legacy v3 commands on files'
+          command :bearer_token_node, description: 'Show bearer token for file node'
+          command :node_info,         description: 'Show node info for file'
+          command :browse,            description: 'Browse files'
+          command :find,              description: 'Find files'
         end
 
         # automation sub-commands
         commands_under(:automation) do
-          command(:instances, description: 'Manage workflow instances')
-          command(:workflows,  description: 'Manage workflows')
+          command :instances, description: 'Manage workflow instances'
+          command :workflows, description: 'Manage workflows'
         end
 
-        commands_under([:automation, :workflows]) do
-          command(:create,  description: 'Create a workflow')
-          command(:list,    description: 'List workflows')
-          command(:show,    description: 'Show a workflow')
-          command(:modify,  description: 'Modify a workflow')
-          command(:delete,  description: 'Delete a workflow')
-          command(:launch,  description: 'Launch a workflow')
-          command(:action,  description: 'Add action to workflow (TODO)')
+        commands_under(%i[automation workflows]) do
+          command :create,  description: 'Create a workflow'
+          command :list,    description: 'List workflows'
+          command :show,    description: 'Show a workflow'
+          command :modify,  description: 'Modify a workflow'
+          command :delete,  description: 'Delete a workflow'
+          command :launch,  description: 'Launch a workflow'
+          command :action,  description: 'Add action to workflow (TODO)'
         end
 
-        commands_under([:automation, :workflows, :action]) do
-          command(:list,   description: 'List actions (TODO)')
-          command(:create, description: 'Create an action (TODO)')
-          command(:show,   description: 'Show an action (TODO)')
+        commands_under(%i[automation workflows action]) do
+          command :list,   description: 'List actions (TODO)'
+          command :create, description: 'Create an action (TODO)'
+          command :show,   description: 'Show an action (TODO)'
         end
 
         # --- setup methods ---

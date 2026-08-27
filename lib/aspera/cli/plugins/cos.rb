@@ -9,7 +9,7 @@ module Aspera
   module Cli
     module Plugins
       class Cos < Base
-        command(:node, description: 'Execute COS node commands', setup: :setup_cos_node)
+        command :node, description: 'Execute COS node commands', setup: :setup_cos_node
 
         commands_under(:node) do
           Node::COMMANDS_COS.each do |cmd|
