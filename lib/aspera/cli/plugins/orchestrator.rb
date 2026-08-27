@@ -112,16 +112,16 @@ module Aspera
         command :workstep,   description: 'Manage work steps',                           setup: :setup_api
 
         commands_under(:workflows) do
-          command :list, description: 'List all workflows', handler: lambda {
+          command(:list, description: 'List all workflows', handler: lambda do
             Result::ObjectList.new(
               call_ao('workflows_list')['workflows']['workflow'],
               fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
             )
-          }
-          command :status, description: 'Check running status of workflow(s)', handler: lambda {
+          end)
+          command(:status, description: 'Check running status of workflow(s)', handler: lambda do
             wf_id = options.instance_identifier
             Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])
-          }
+          end)
           command :inputs,     description: 'Fetch input specification for a workflow',          handler: lambda{Result::SingleObject.new(call_ao("workflow_inputs_spec/#{options.instance_identifier}")['workflow_inputs_spec'])}
           command :details,    description: 'Check detailed running status of a workflow',       handler: lambda{Result::ObjectList.new(call_ao("workflow_details/#{options.instance_identifier}")['workflows']['workflow']['statuses'])}
           command :start,      description: 'Initiate a work order (sync or async)'
