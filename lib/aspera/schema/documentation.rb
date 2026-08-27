@@ -33,9 +33,7 @@ module Aspera
       end
 
       # @return [Array<String>]
-      def columns
-        @columns
-      end
+      attr_reader :columns
 
       # First row is the titles (for Markdown table generation)
       # @return [Array<Array<String>>]
@@ -53,7 +51,7 @@ module Aspera
       def build(schema = nil)
         code = @code_highlight ? ->(c){"`#{c}`"} : ->(c){c}
         schema ||= @schema
-        render_title = ->(title) { title.gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)} }
+        render_title = ->(title){title.gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)}}
         on_variant = ->(variant_reader, discriminant_property, discriminant_value) do
           title = variant_reader.current['title'] || variant_reader.current['description']
           header =

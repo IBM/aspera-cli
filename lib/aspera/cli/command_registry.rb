@@ -83,10 +83,11 @@ module Aspera
 
           # Rule: delegates_to must point to a known path when present (non-empty array or symbol)
           if spec.delegates_to
-            dt_path = case spec.delegates_to
-                      when Symbol then [spec.delegates_to]
-                      when Array  then spec.delegates_to
-                      end
+            dt_path =
+              case spec.delegates_to
+              when Symbol then [spec.delegates_to]
+              when Array  then spec.delegates_to
+              end
             # An empty array [] means re-enter the root — always valid
             unless dt_path.empty? || @specs.key?(dt_path)
               raise ArgumentError,

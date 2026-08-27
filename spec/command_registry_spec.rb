@@ -4,7 +4,7 @@ require 'aspera/cli/command_registry'
 require 'aspera/cli/command_spec'
 
 RSpec.describe(Aspera::Cli::CommandRegistry) do
-  subject(:registry) { described_class.send(:new) }
+  subject(:registry){described_class.send(:new)}
 
   # Helper: build a minimal CommandSpec
   def spec(id:, parent: nil, **kwargs)
@@ -42,7 +42,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
 
     it 'raises on duplicate full path' do
       registry.register(spec(id: :foo))
-      expect { registry.register(spec(id: :foo)) }.to(raise_error(ArgumentError, /Duplicate command path/))
+      expect{registry.register(spec(id: :foo))}.to(raise_error(ArgumentError, /Duplicate command path/))
     end
 
     it 'returns nil for an unknown path' do
@@ -119,48 +119,48 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
   # -----------------------------------------------------------------------
   describe '#validate!' do
     it 'passes when the registry is empty' do
-      expect { registry.validate! }.not_to(raise_error)
+      expect{registry.validate!}.not_to(raise_error)
     end
 
     it 'passes for a well-formed registry' do
       registry.register(spec(id: :parent_cmd))
       registry.register(spec(id: :child_cmd, parent: :parent_cmd))
-      expect { registry.validate! }.not_to(raise_error)
+      expect{registry.validate!}.not_to(raise_error)
     end
 
     context 'delegates_to unknown path' do
       it 'raises when delegates_to points to an unregistered path (Symbol)' do
         registry.register(spec(id: :foo, delegates_to: :nonexistent))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
+        expect{registry.validate!}.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
       end
 
       it 'raises when delegates_to points to an unregistered path (Array)' do
         registry.register(spec(id: :foo, delegates_to: %i[does not exist]))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
+        expect{registry.validate!}.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
       end
 
       it 'does not raise when delegates_to is an empty array (re-enter root)' do
         registry.register(spec(id: :foo, delegates_to: []))
-        expect { registry.validate! }.not_to(raise_error)
+        expect{registry.validate!}.not_to(raise_error)
       end
 
       it 'does not raise when delegates_to points to a known path' do
         registry.register(spec(id: :target))
         registry.register(spec(id: :foo, delegates_to: :target))
-        expect { registry.validate! }.not_to(raise_error)
+        expect{registry.validate!}.not_to(raise_error)
       end
     end
 
     context 'delegate_instance without delegates_to' do
       it 'raises when delegate_instance is set but delegates_to is nil' do
         registry.register(spec(id: :foo, delegate_instance: :build_node))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegate_instance requires delegates_to/))
+        expect{registry.validate!}.to(raise_error(ArgumentError, /delegate_instance requires delegates_to/))
       end
 
       it 'does not raise when both delegate_instance and delegates_to are set' do
         registry.register(spec(id: :target))
         registry.register(spec(id: :foo, delegate_instance: :build_node, delegates_to: :target))
-        expect { registry.validate! }.not_to(raise_error)
+        expect{registry.validate!}.not_to(raise_error)
       end
     end
 
@@ -168,18 +168,18 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       it 'raises when both transfer_paths and arguments are present' do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
         registry.register(spec(id: :upload, transfer_paths: :send, arguments: args))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /transfer_paths and arguments are mutually exclusive/))
+        expect{registry.validate!}.to(raise_error(ArgumentError, /transfer_paths and arguments are mutually exclusive/))
       end
 
       it 'does not raise when only transfer_paths is set' do
         registry.register(spec(id: :upload, transfer_paths: :send))
-        expect { registry.validate! }.not_to(raise_error)
+        expect{registry.validate!}.not_to(raise_error)
       end
 
       it 'does not raise when only arguments are set' do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
         registry.register(spec(id: :cmd, arguments: args))
-        expect { registry.validate! }.not_to(raise_error)
+        expect{registry.validate!}.not_to(raise_error)
       end
     end
   end

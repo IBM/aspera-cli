@@ -131,7 +131,7 @@ module Aspera
               row = {'parameter' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
               row['required'] = (Schema::Registry.instance.reader(schema_key).current['required'] || []).include?(pname) ? 'yes' : 'no'
               row['default']  = pdef.key?('default') ? pdef['default'].inspect : ''
-              row['enum']     = pdef.key?('enum')    ? pdef['enum'].join(', ')  : ''
+              row['enum']     = pdef.key?('enum')    ? pdef['enum'].join(', ') : ''
               row
             end
             return Result::ObjectList.new(rows, fields: %w[parameter required type default enum description])

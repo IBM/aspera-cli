@@ -25,15 +25,15 @@ module Aspera
 
       class AppInfo
         # @return [Aspera::Api::AoC] Rest Api object
-        attr_reader  :api
+        attr_reader :api
         # @return [Hash, nil] Package information, `"files"` or `"packages"`
-        attr_reader  :package
+        attr_reader :package
         # @return [Hash] Result of GET /nodes/:id
-        attr_reader  :node_info
+        attr_reader :node_info
         # @return [String] Workspace id
-        attr_reader  :workspace_id
+        attr_reader :workspace_id
         # @return [String] Workspace name
-        attr_reader  :workspace_name
+        attr_reader :workspace_name
         # @return [String, nil] "Share as" link name
         attr_accessor :opt_link_name
 

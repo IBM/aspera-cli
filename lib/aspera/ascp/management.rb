@@ -12,7 +12,7 @@ module Aspera
       # https://www.ibm.com/support/pages/error-code-reference-tables
       # mgmtmess.c : as_mgmt_err_is_retryable
       # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
-      # rubocop:disable Layout/FirstHashElementLineBreak
+      # rubocop:disable-next Layout/FirstHashElementLineBreak
       ERRORS = {
         # id   retry-able    mnemo/code                        message                                              additional info
         0  => {r: false, c: 'UNKNOWN',                     m: 'unknown',                                        a: 'unknown'},
@@ -93,7 +93,6 @@ module Aspera
         66 => {r: false, c: 'PEER_REQUIRES_FIPS',          m: 'Peer rejects cipher due to FIPS mode enabled on peer',
                                                                 a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
       }.freeze
-      # rubocop:enable Layout/FirstHashElementLineBreak
       # cspell: disable
       OPERATIONS = %w[
         NOP

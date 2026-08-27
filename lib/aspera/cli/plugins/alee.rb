@@ -8,8 +8,8 @@ module Aspera
   module Cli
     module Plugins
       class Alee < BasicAuth
-        command(:health,     description: 'Check health of ALEE metering server', handler: :handle_health)
-        command(:entitlement, description: 'Show entitlement information',         handler: :handle_entitlement)
+        command(:health, description: 'Check health of ALEE metering server', handler: :handle_health)
+        command(:entitlement, description: 'Show entitlement information', handler: :handle_entitlement)
 
         def handle_health
           nagios = Nagios.new
