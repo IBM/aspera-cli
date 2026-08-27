@@ -91,129 +91,212 @@ module Aspera
 
         def initialize(**_)
           super
+          @api_shares_admin = nil
         end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
         SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
-        ACTIONS = %i[health info files admin].freeze
         # common to users and groups
         USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze
 
-        def execute_action
-          command = options.get_next_command(ACTIONS, aliases: {repository: :files})
-          case command
-          when :health
-            nagios = Nagios.new
-            shares_url = options.get_option(:url, mandatory: true)
-            health = self.class.health_check(shares_url)
-            nagios.add_ok('version', health[:version]) if health[:version].is_a?(String)
-            if health[:ping].is_a?(String)
-              nagios.add_ok('ping', health[:ping])
-            else
-              nagios.add_critical('ping', health[:ping].to_s)
+        # --- DSL ---
+
+        command(:health,   description: 'Check Shares health')
+        command(:info,     description: 'Show server information')
+        command(:files,    description: 'Browse and transfer files on Shares', aliases: [:repository])
+        command(:admin,    description: 'Administer Shares', setup: :setup_admin)
+
+        commands_under(:admin) do
+          command(:node,              description: 'Manage nodes')
+          command(:share,             description: 'Manage shares')
+          command(:transfer_settings, description: 'Manage transfer settings')
+          command(:user,              description: 'Manage users')
+          command(:group,             description: 'Manage groups')
+        end
+
+        commands_under(%i[admin share]) do
+          Operations::ALL.each do |op|
+            command(op, description: "#{op.capitalize} share(s)")
+          end
+          command(:user_permissions,  description: 'Manage user permissions on a share')
+          command(:group_permissions, description: 'Manage group permissions on a share')
+        end
+
+        commands_under(%i[admin transfer_settings]) do
+          command(:show,   description: 'Show transfer settings')
+          command(:modify, description: 'Modify transfer settings')
+        end
+
+        # --- setup ---
+
+        # Build the admin REST API and store in ivar.
+        # @return [Hash] empty ctx (state stored in @api_shares_admin)
+        def setup_admin
+          @api_shares_admin = basic_auth_api(ADMIN_API_PATH)
+          {}
+        end
+
+        # Lookup a share id by field/value using the admin API.
+        def lookup_share_id(field, value)
+          RestList.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
+        end
+
+        # --- health ---
+
+        def handle_health
+          nagios = Nagios.new
+          shares_url = options.get_option(:url, mandatory: true)
+          health = self.class.health_check(shares_url)
+          nagios.add_ok('version', health[:version]) if health[:version].is_a?(String)
+          if health[:ping].is_a?(String)
+            nagios.add_ok('ping', health[:ping])
+          else
+            nagios.add_critical('ping', health[:ping].to_s)
+          end
+          if health[:api].is_a?(String)
+            nagios.add_ok('API', health[:api])
+          else
+            nagios.add_critical('API', health[:api].to_s)
+          end
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        # --- info ---
+
+        def handle_info
+          Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
+        end
+
+        # --- files (delegate to Node plugin) ---
+
+        def handle_files
+          api_shares_node = basic_auth_api(NODE_API_PATH)
+          repo_command = options.get_next_command(Node::COMMANDS_SHARES)
+          Node.new(context: context, api: api_shares_node).execute_action(repo_command)
+        end
+
+        # --- admin node (entity_execute shorthand via DSL) ---
+        # The `entity_execute:` hash on the :node command provides `entity:`;
+        # the api: is injected from ctx by run_entity_execute (setup_admin stored @api_shares_admin
+        # and the DSL setup: key returns {} — so api must be in the entity_execute hash itself).
+        # Override: entity_execute is declared directly in the command, api comes from ivar.
+        def handle_admin_node
+          entity_execute(api: @api_shares_admin, entity: 'data/nodes')
+        end
+
+        # --- admin share ---
+
+        def handle_admin_share_create
+          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :create,
+                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+        end
+
+        def handle_admin_share_list
+          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :list,
+                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+        end
+
+        def handle_admin_share_show
+          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :show,
+                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+        end
+
+        def handle_admin_share_modify
+          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :modify,
+                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+        end
+
+        def handle_admin_share_delete
+          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :delete,
+                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+        end
+
+        def handle_admin_share_user_permissions
+          share_id = options.instance_identifier(&method(:lookup_share_id))
+          entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/user_permissions")
+        end
+
+        def handle_admin_share_group_permissions
+          share_id = options.instance_identifier(&method(:lookup_share_id))
+          entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/group_permissions")
+        end
+
+        # --- admin transfer_settings ---
+
+        def handle_admin_transfer_settings_show
+          entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :show, is_singleton: true)
+        end
+
+        def handle_admin_transfer_settings_modify
+          entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :modify, is_singleton: true)
+        end
+
+        # --- admin user / group (too dynamic for static DSL sub-tree) ---
+
+        def handle_admin_user
+          execute_admin_entity_type(:user)
+        end
+
+        def handle_admin_group
+          execute_admin_entity_type(:group)
+        end
+
+        private
+
+        # Shared implementation for `admin user` and `admin group` commands.
+        # @param entity_type [:user, :group]
+        def execute_admin_entity_type(entity_type)
+          entities_location = options.get_next_command(%i[all local ldap saml])
+          entities_prefix = entities_location.eql?(:all) ? '' : "#{entities_location}_"
+          entities_path = "data/#{entities_prefix}#{entity_type}s"
+          entity_commands =
+            case entities_location
+            when :all
+              cmds = %i[list show delete].concat(USR_GRP_SETTINGS)
+              cmds.push(:users) if entity_type.eql?(:group)
+              cmds.freeze
+            when :local
+              cmds = %i[list show delete create modify]
+              cmds.push(:users) if entity_type.eql?(:group)
+              cmds.freeze
+            when :ldap  then %i[add].freeze
+            when :saml  then %i[import].freeze
             end
-            if health[:api].is_a?(String)
-              nagios.add_ok('API', health[:api])
-            else
-              nagios.add_critical('API', health[:api].to_s)
+          entity_verb = options.get_next_command(entity_commands)
+          lookup_block = ->(field, value) { RestList.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(entities_path) }['id'] }
+          case entity_verb
+          when *Operations::ALL
+            display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
+            display_fields.push('directory_user') if entity_type.eql?(:user) && entities_location.eql?(:all)
+            return entity_execute(
+              api:            @api_shares_admin,
+              entity:         entities_path,
+              command:        entity_verb,
+              display_fields: display_fields,
+              &lookup_block
+            )
+          when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
+            group_id = options.instance_identifier(&lookup_block)
+            sub_path = "#{entities_path}/#{group_id}/#{entity_verb}"
+            return entity_execute(api: @api_shares_admin, entity: sub_path, is_singleton: !entity_verb.eql?(:share_permissions), &method(:lookup_share_id))
+          when :import # saml
+            return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
+              entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
+              Aspera.assert_type(entity_parameters, Hash)
+              SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
+              entity_parameters.each_key do |p|
+                raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
+              end
+              @api_shares_admin.create("#{entities_path}/import", entity_parameters)
             end
-            Result::ObjectList.new(nagios.status_list)
-          when :info
-            return Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
-          when :files
-            api_shares_node = basic_auth_api(NODE_API_PATH)
-            repo_command = options.get_next_command(Node::COMMANDS_SHARES)
-            return Node
-                .new(context: context, api: api_shares_node)
-                .execute_action(repo_command)
-          when :admin
-            api_shares_admin = basic_auth_api(ADMIN_API_PATH)
-            admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
-            lookup_share = ->(field, value){RestList.lookup_entity_generic(entity: 'share', field: field, value: value){api_shares_admin.read('data/shares')}['id']}
-            case admin_command
-            when :node
-              return entity_execute(api: api_shares_admin, entity: 'data/nodes')
-            when :share
-              share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Operations::ALL))
-              case share_command
-              when *Operations::ALL
-                return entity_execute(
-                  api:            api_shares_admin,
-                  entity:         'data/shares',
-                  command:        share_command,
-                  display_fields: %w[id name node_id directory percent_free],
-                  &lookup_share
-                )
-              when :user_permissions, :group_permissions
-                share_id = options.instance_identifier(&lookup_share)
-                return entity_execute(api: api_shares_admin, entity: "data/shares/#{share_id}/#{share_command}")
-              end
-            when :transfer_settings
-              xfer_settings_command = options.get_next_command(%i[show modify])
-              return entity_execute(
-                api: api_shares_admin,
-                entity: 'data/transfer_settings',
-                command: xfer_settings_command,
-                is_singleton: true
-              )
-            when :user, :group
-              entity_type = admin_command
-              entities_location = options.get_next_command(%i[all local ldap saml])
-              entities_prefix = entities_location.eql?(:all) ? '' : "#{entities_location}_"
-              entities_path = "data/#{entities_prefix}#{entity_type}s"
-              entity_commands = nil
-              case entities_location
-              when :all
-                entity_commands = %i[list show delete]
-                entity_commands.concat(USR_GRP_SETTINGS)
-                entity_commands.push(:users) if entity_type.eql?(:group)
-                entity_commands.freeze
-              when :local
-                entity_commands = %i[list show delete create modify]
-                entity_commands.push(:users) if entity_type.eql?(:group)
-                entity_commands.freeze
-              when :ldap
-                entity_commands = %i[add].freeze
-              when :saml
-                entity_commands = %i[import].freeze
-              end
-              entity_verb = options.get_next_command(entity_commands)
-              lookup_block = ->(field, value){RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){api_shares_admin.read(entities_path)}['id']}
-              case entity_verb
-              when *Operations::ALL
-                display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
-                display_fields.push('directory_user') if entity_type.eql?(:user) && entities_location.eql?(:all)
-                return entity_execute(
-                  api:            api_shares_admin,
-                  entity:         entities_path,
-                  command:        entity_verb,
-                  display_fields: display_fields,
-                  &lookup_block
-                )
-              when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
-                group_id = options.instance_identifier(&lookup_block)
-                entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-                return entity_execute(api: api_shares_admin, entity: entities_path, is_singleton: !entity_verb.eql?(:share_permissions), &lookup_share)
-              when :import # saml
-                return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
-                  entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
-                  Aspera.assert_type(entity_parameters, Hash)
-                  SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
-                  entity_parameters.each_key do |p|
-                    raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
-                  end
-                  api_shares_admin.create("#{entities_path}/import", entity_parameters)
-                end
-              when :add # ldap
-                return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
-                  api_shares_admin.create(entities_path, {entity_type=>entity_name})
-                end
-              when :users # group
-                return entity_execute(api: api_shares_admin, entity: "#{entities_path}/#{options.instance_identifier(&lookup_block)}/#{entities_prefix}users")
-              else Aspera.error_unexpected_value(entity_verb)
-              end
+          when :add # ldap
+            return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
+              @api_shares_admin.create(entities_path, {entity_type=>entity_name})
             end
+          when :users # group
+            return entity_execute(api: @api_shares_admin, entity: "#{entities_path}/#{options.instance_identifier(&lookup_block)}/#{entities_prefix}users")
+          else Aspera.error_unexpected_value(entity_verb)
           end
         end
       end
