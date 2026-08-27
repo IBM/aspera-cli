@@ -95,7 +95,7 @@ module Aspera
         return result_usage(all: false) if @option_help
         if @option_show_config
           result = Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys)
-          @context.config.save_config_file_if_needed
+          @context.presets.save_if_needed
           @context.transfer.shutdown
           TempFileManager.instance.cleanup
           return result
@@ -120,7 +120,7 @@ module Aspera
         begin
           result = command_plugin.execute_action if execute_command
         ensure
-          @context.config.save_config_file_if_needed
+          @context.presets.save_if_needed
           @context.transfer.shutdown
           TempFileManager.instance.cleanup
         end
@@ -357,8 +357,10 @@ module Aspera
       # @return [Plugins::Base] the plugin instance
       def get_plugin_instance_with_options(plugin_name_sym)
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
-        # Load default params only if no param already loaded before plugin instantiation
-        @context.config.add_plugin_default_preset(plugin_name_sym)
+        # Load default preset options for this plugin from config file
+        default_config_name = @context.presets.plugin_default_name(plugin_name_sym)
+        Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
+        @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
         command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
       end

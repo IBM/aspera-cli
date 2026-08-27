@@ -160,7 +160,7 @@ module Aspera
         # Init defaults if necessary
         option_override = options.get_option(:override, mandatory: true)
         option_default = options.get_option(:default, mandatory: true)
-        config.defaults_set(identification[:product], wiz_preset_name, wizard_result[:preset_value].stringify_keys, option_default, option_override)
+        @parent.context.presets.defaults_set(identification[:product], wiz_preset_name, wizard_result[:preset_value].stringify_keys, option_default, option_override)
         test_args = wizard_result[:test_args]
         test_args = "-P#{wiz_preset_name} #{test_args}" unless option_default
         # TODO: actually test the command

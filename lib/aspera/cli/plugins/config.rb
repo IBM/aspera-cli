@@ -373,42 +373,6 @@ module Aspera
         def trusted_cert_locations; context.http_config.trusted_cert_locations; end
         def trusted_cert_locations=(value); context.http_config.trusted_cert_locations = value; end
 
-        # Delegation to PresetManager: loads default preset options for a plugin
-        def add_plugin_default_preset(plugin_name_sym)
-          default_config_name = presets.plugin_default_name(plugin_name_sym)
-          Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
-          options.add_option_preset(presets.by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
-        end
-
-        # Delegations to PresetManager kept for backward compatibility
-        def defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
-          presets.defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
-        end
-
-        def set_preset_key(preset, param_name, param_value)
-          presets.set_key(preset, param_name, param_value)
-        end
-
-        def set_global_default(key, value)
-          presets.set_global_default(key, value)
-        end
-
-        def preset_by_name(config_name, include_path = [])
-          presets.by_name(config_name, include_path)
-        end
-
-        def get_plugin_default_config_name(plugin_name_sym)
-          presets.plugin_default_name(plugin_name_sym)
-        end
-
-        def save_config_file_if_needed
-          presets.save_if_needed
-        end
-
-        def lookup_preset(url:, username:)
-          presets.lookup_preset(url: url, username: username)
-        end
-
         attr_reader :gem_url
         attr_accessor :option_config_file
 

@@ -58,7 +58,7 @@ module Aspera
           param_name = options.get_next_argument('parameter name')
           param_name = Options.option_line_to_name(param_name)
           param_value = options.get_next_argument('parameter value', validation: nil)
-          set_preset_key(name, param_name, param_value)
+          presets.set_key(name, param_name, param_value)
           return Result::Nothing.new
         when :initialize
           config_value = options.get_next_argument('extended value', validation: Hash)
@@ -83,7 +83,7 @@ module Aspera
           Plugins::BasicAuth.declare_options(options)
           url = options.get_option(:url, mandatory: true)
           user = options.get_option(:username, mandatory: true)
-          result = lookup_preset(url: url, username: user)
+          result = presets.lookup_preset(url: url, username: user)
           raise Error, 'no such config found' if result.nil?
           return Result::SingleObject.new(result)
         when :secure
