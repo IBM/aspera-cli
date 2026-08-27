@@ -35,10 +35,6 @@ module Aspera
         @parent.formatter
       end
 
-      def config
-        @parent.config
-      end
-
       def check_email(email)
         Aspera.assert(email =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i, type: ParameterError){"Username shall be an email: #{email}"}
       end

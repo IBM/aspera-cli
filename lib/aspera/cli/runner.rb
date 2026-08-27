@@ -4,6 +4,7 @@ require 'aspera/cli/context'
 require 'aspera/cli/options'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
+require 'aspera/cli/bootstrapper'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/mailer_service'
 require 'aspera/cli/secret_finder'
@@ -259,16 +260,25 @@ module Aspera
         Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn){"Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"}
         # Declare and parse global options
         declare_global_options
+        # Bootstrap: populate context services (main_folder, persistency, presets, http_config,
+        # progress_bar) and configure global singletons before any plugin is instantiated.
+        # The vault callback is lazy: @vault extended-values are only resolved after Config.new,
+        # so @context.config is always set by the time it is called.
+        @bootstrapper = Bootstrapper.new(@context)
+        @bootstrapper.run(
+          gem_plugins_folder: Plugins::Config.gem_plugins_folder,
+          vault_value_cb:     ->(v){ @context.config.vault_value(v)}
+        )
         # Do not display config commands if help is asked
         @context.man_header = false
-        # The Config plugin adds the @preset parser, so declare before TransferAgent which may use it
+        # Config declares remaining plugin options on top of what Bootstrapper already parsed
         @context.config = Plugins::Config.new(context: @context)
         @context.man_header = true
-        # Data persistency is set in config
-        Aspera.assert(@context.persistency, 'missing persistency object')
-        # Email service: depends on options (smtp/notify_to/notify_template) declared by Config
+        # Sync cache_tokens from Config into the OAuth persist_mgr (now that option is parsed)
+        OAuth::Factory.instance.persist_mgr = @context.persistency if @context.config.option_cache_tokens
+        # Email service: depends on options declared by Config
         @context.mailer = MailerService.new(@context.options, @context.main_folder)
-        # Secret finder: depends on options (:secret) and presets, both set by Config
+        # Secret finder: depends on options (:secret) and presets, both set by Bootstrapper
         @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
         # The TransferAgent plugin may use the @preset parser
         @context.transfer = TransferAgent.new(@context)

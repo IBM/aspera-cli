@@ -40,7 +40,7 @@ module Aspera
         read_config_file
       end
 
-      attr_reader :config_presets, :use_plugin_defaults
+      attr_reader :config_file, :config_presets, :use_plugin_defaults
       attr_writer :use_plugin_defaults
 
       # ------------------------------------------------------------------

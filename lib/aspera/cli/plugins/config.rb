@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore initdemo genkey pubkey asperasoft filelists
+require 'aspera/cli/bootstrapper'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/extended_value'
@@ -8,35 +9,26 @@ require 'aspera/cli/special_values'
 require 'aspera/cli/version'
 require 'aspera/cli/formatter'
 require 'aspera/cli/info'
-require 'aspera/cli/transfer_progress'
 require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/ascp_actions'
 require 'aspera/cli/preset_actions'
-require 'aspera/cli/preset_manager'
-require 'aspera/cli/http'
 require 'aspera/cli/vault_manager'
 require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
 require 'aspera/products/transferd'
-require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
 require 'aspera/schema/documentation'
 require 'aspera/keychain/macos_security'
-require 'aspera/proxy_auto_config'
 require 'aspera/environment'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
-require 'aspera/persistency_folder'
 require 'aspera/data_repository'
-require 'aspera/line_logger'
 require 'aspera/rest'
 require 'aspera/oauth/jwt'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/oauth'
-require 'aspera/ssl'
 require 'openssl'
 require 'digest'
 require 'open3'
@@ -87,40 +79,12 @@ module Aspera
         end
 
         def initialize(**_)
-          # We need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super
           @vault_instance = nil
           @pac_exec = nil
           @sdk_default_location = false
           @option_cache_tokens = true
-          @option_config_file = nil
-          # Option to set main folder — written directly into context
-          options.declare(
-            :home, 'Home folder for tool',
-            handler: {o: context, m: :main_folder},
-            default: self.class.default_app_main_folder(app_name: Info::CMD_NAME)
-          )
-          options.parse_options!
-          Log.log.debug{"#{Info::CMD_NAME} folder: #{context.main_folder}"}
-          setup_persistency_and_plugin_folders
-          # Option to set config file
-          options.declare(
-            :config_file, 'Path to YAML file with preset configuration',
-            handler: {o: self, m: :option_config_file},
-            default: File.join(context.main_folder, DEFAULT_CONFIG_FILENAME)
-          )
-          options.parse_options!
-          # Instantiate PresetManager (reads config file) and inject into context
-          context.presets = PresetManager.new(config_file: @option_config_file)
-          # Instantiate Http and inject into context
-          context.http_config = Http.new
-          setup_extended_value_handlers
-          # Vault options
-          options.declare(:secret, 'Secret for access keys')
-          options.declare(:vault, 'Vault for secrets', allowed: Hash)
-          options.declare(:vault_password, 'Vault password')
-          options.parse_options!
-          # Declare generic plugin options only after handlers are declared
+          # Declare generic plugin options (only after bootstrap has registered handlers)
           Base.declare_options(options)
           # Configuration options
           options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
@@ -135,7 +99,6 @@ module Aspera
           set_sdk_dir
           options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
           options.declare(:sdk_folder, 'Ascp: Path to folder with ascp (or product with "product:")', handler: {o: Products::Transferd, m: :sdk_directory})
-          options.declare(:progress_bar, 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
           # Email options
           options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash)
           options.declare(:notify_to, 'Email: Recipient for notification of transfers')
@@ -143,69 +106,7 @@ module Aspera
           # HTTP options — declared by HttpConfig itself
           context.http_config.declare_options(options)
           options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_cache_tokens})
-          options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
           options.parse_options!
-          context.progress_bar = TransferProgress.new if options.get_option(:progress_bar)
-          setup_pac_executor
-          setup_rest_and_transfer_runtime
-        end
-
-        private
-
-        def setup_persistency_and_plugin_folders
-          context.persistency = PersistencyFolder.new(File.join(context.main_folder, PERSISTENCY_FOLDER))
-          Plugins::Factory.instance.add_lookup_folder(self.class.gem_plugins_folder)
-          Plugins::Factory.instance.add_lookup_folder(File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME))
-        end
-
-        def setup_extended_value_handlers
-          ExtendedValue.instance.on(EXTEND_PRESET){ |v| presets.by_name(v)}
-          ExtendedValue.instance.on(EXTEND_VAULT){ |v| vault_value(v)}
-          add_plugin_default_preset(CONF_GLOBAL_SYM)
-        end
-
-        def setup_pac_executor
-          pac_script = options.get_option(:fpac)
-          return unless pac_script
-
-          @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
-          proxy_user_pass = options.get_option(:proxy_credentials)
-          if proxy_user_pass
-            Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
-            @pac_exec.proxy_user = proxy_user_pass[0]
-            @pac_exec.proxy_pass = proxy_user_pass[1]
-          end
-        end
-
-        def setup_rest_and_transfer_runtime
-          RestParameters.instance.user_agent = Info::CMD_NAME
-          RestParameters.instance.progress_bar = context.progress_bar
-          RestParameters.instance.session_cb = ->(http_session){context.http_config.update_session(http_session)}
-          RestParameters.instance.spinner_cb = ->(title = nil, action: :spin){formatter.long_operation(title, action: action)}
-          # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
-          http_opts = context.http_config.http_options
-          keys_to_delete = []
-          http_opts.each do |k, v|
-            method = "#{k}=".to_sym
-            if RestParameters.instance.respond_to?(method)
-              keys_to_delete.push(k)
-              RestParameters.instance.send(method, v)
-            elsif k.eql?('ssl_options')
-              keys_to_delete.push(k)
-              Aspera::SSL.option_list = v
-            elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
-              keys_to_delete.push(k)
-              OAuth::Factory.instance.parameters[k.to_sym] = v
-            end
-          end
-          keys_to_delete.each{ |k| http_opts.delete(k)}
-          OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-          Transfer::Parameters.file_list_folder = File.join(context.main_folder, FILE_LIST_FOLDER_NAME)
-          RestErrorAnalyzer.instance.log_file = File.join(context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
-          # Register aspera REST call error handlers
-          RestErrorsAspera.register_handlers
         end
 
         public
@@ -362,7 +263,6 @@ module Aspera
         attr_accessor :option_cache_tokens
 
         attr_reader :gem_url
-        attr_accessor :option_config_file
 
         def option_plugin_folder=(value)
           value = [value] unless value.is_a?(Array)
@@ -381,7 +281,7 @@ module Aspera
           when Hash
             options.add_option_preset(value, 'set')
           when String
-            options.add_option_preset(preset_by_name(value), 'set_by_name')
+            options.add_option_preset(presets.by_name(value), 'set_by_name')
           else
             raise BadArgument, 'Preset definition must be a String for preset name, or Hash for set of values'
           end
@@ -390,7 +290,7 @@ module Aspera
         # DSL handlers — one method per leaf command
 
         def handle_open
-          Environment.instance.open_editor(@option_config_file.to_s)
+          Environment.instance.open_editor(context.presets.config_file.to_s)
           Result::Nothing.new
         end
 
@@ -562,7 +462,7 @@ module Aspera
         end
 
         def handle_file
-          Result::Text.new(@option_config_file)
+          Result::Text.new(context.presets.config_file)
         end
 
         def handle_email_test
