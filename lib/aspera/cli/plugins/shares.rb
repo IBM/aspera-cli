@@ -120,21 +120,21 @@ module Aspera
 
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
-            command(op, description: "#{op.capitalize} share(s)", handler: lambda do
+            command(op, description: "#{op.capitalize} share(s)", handler: lambda {
               entity_execute(
                 api: @api_shares_admin, entity: 'data/shares', command: op,
                 display_fields: SHARE_DISPLAY_FIELDS
               ){ |f, v| lookup_share_id(f, v)}
-            end)
+            })
           end
-          command :user_permissions, description: 'Manage user permissions on a share', handler: lambda do
+          command :user_permissions, description: 'Manage user permissions on a share', handler: lambda {
             share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
             entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/user_permissions")
-          end
-          command :group_permissions, description: 'Manage group permissions on a share', handler: lambda do
+          }
+          command :group_permissions, description: 'Manage group permissions on a share', handler: lambda {
             share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
             entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/group_permissions")
-          end
+          }
         end
 
         commands_under(%i[admin transfer_settings]) do

@@ -653,10 +653,10 @@ module Aspera
 
         commands_under(:invitations) do
           command :create, description: 'Create an invitation'
-          command :resend, description: 'Resend an invitation', handler: lambda do
+          command :resend, description: 'Resend an invitation', handler: lambda {
             @api_v5.create("invitations/#{options.instance_identifier}/resend", nil)
             Result::Status.new('Invitation resent')
-          end
+          }
           Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
           end
@@ -669,10 +669,10 @@ module Aspera
 
         commands_under(%i[user profile]) do
           command :show,   description: 'Show user profile',   handler: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
-          command :modify, description: 'Modify user profile', handler: lambda do
+          command :modify, description: 'Modify user profile', handler: lambda {
             @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
             Result::Status.new('modified')
-          end
+          }
         end
 
         commands_under(:shared_folders) do
