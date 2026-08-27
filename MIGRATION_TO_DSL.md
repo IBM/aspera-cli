@@ -407,6 +407,15 @@ exercise the real option/argument pipeline end-to-end.
 | `define_method` for sibling commands sharing the same REST pattern | `console.rb` transfer actions (start/pause/…) and `server.rb` ascmd groups all have identical bodies except for one symbol. Generating handlers with `define_method` avoids the need for a `command_id:` injection in the dispatcher while staying DRY. |
 | `setup_api`/`setup_server` store state in instance variables, return `{}` | For plugins where the API object is used by all handlers (orchestrator, server), storing it in an ivar is cleaner than threading it through the context hash for every leaf handler. |
 
+**Design decisions and additions from Phase 4**:
+
+| Decision | Rationale |
+|---|---|
+| Lambda context variables converted to `private` instance methods | `shares.rb` used lambdas (`lookup_share`, `lookup_block`) that captured local vars. DSL handlers can't receive lambdas through ctx; converting to methods using `@api_shares_admin` ivar is cleaner and avoids closures crossing nesting levels. |
+| `setup:` on individual root commands instead of `root_setup` for selective API init | `faspex5.rb` has `:health` and `:postprocessing` that work without OAuth. Setting `setup: :setup_api_v5` on each command that needs it (instead of `root_setup`) avoids unauthenticated commands triggering OAuth flows. |
+| Complex dynamic sub-trees preserved as private helper methods | `shares.rb admin user/group` and `faspex5.rb invitations/admin` have argument-dependent command lists that can't be statically declared. These are kept as `execute_admin_entity_type` / `execute_admin` / `execute_resource` private methods called from DSL handlers. |
+| `ensure` blocks moved from `execute_action` into each handler | `preview.rb` cleanup (`FileUtils.rm_rf(@tmp_folder)`) was in `execute_action`'s `ensure`. Each handler now has its own `ensure cleanup_tmp_folder` so cleanup is guaranteed per-handler without re-introducing a monolithic `execute_action`. |
+
 ---
 
 ### Phase 0a — Data classes and registry
@@ -579,7 +588,7 @@ levels where a context variable flows from parent to children.
 ---
 
 ### Phase 4 — Migrate complex plugins (`shares`, `faspex`, `faspex5`, `preview`)
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Validate deeper nesting (3–4 levels) and the lambda/closure context pattern.
 

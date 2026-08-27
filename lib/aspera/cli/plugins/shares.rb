@@ -139,7 +139,7 @@ module Aspera
 
         # Lookup a share id by field/value using the admin API.
         def lookup_share_id(field, value)
-          RestList.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
+          RestList.lookup_entity_generic(entity: 'share', field: field, value: value){@api_shares_admin.read('data/shares')}['id']
         end
 
         # --- health ---
@@ -187,38 +187,51 @@ module Aspera
 
         # --- admin share ---
 
+        # Share display fields reused across CRUD handlers
+        SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
+
         def handle_admin_share_create
-          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :create,
-                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+          entity_execute(
+            api: @api_shares_admin, entity: 'data/shares', command: :create,
+            display_fields: SHARE_DISPLAY_FIELDS
+          ){ |f, v| lookup_share_id(f, v)}
         end
 
         def handle_admin_share_list
-          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :list,
-                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+          entity_execute(
+            api: @api_shares_admin, entity: 'data/shares', command: :list,
+            display_fields: SHARE_DISPLAY_FIELDS
+          ){ |f, v| lookup_share_id(f, v)}
         end
 
         def handle_admin_share_show
-          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :show,
-                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+          entity_execute(
+            api: @api_shares_admin, entity: 'data/shares', command: :show,
+            display_fields: SHARE_DISPLAY_FIELDS
+          ){ |f, v| lookup_share_id(f, v)}
         end
 
         def handle_admin_share_modify
-          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :modify,
-                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+          entity_execute(
+            api: @api_shares_admin, entity: 'data/shares', command: :modify,
+            display_fields: SHARE_DISPLAY_FIELDS
+          ){ |f, v| lookup_share_id(f, v)}
         end
 
         def handle_admin_share_delete
-          entity_execute(api: @api_shares_admin, entity: 'data/shares', command: :delete,
-                         display_fields: %w[id name node_id directory percent_free], &method(:lookup_share_id))
+          entity_execute(
+            api: @api_shares_admin, entity: 'data/shares', command: :delete,
+            display_fields: SHARE_DISPLAY_FIELDS
+          ){ |f, v| lookup_share_id(f, v)}
         end
 
         def handle_admin_share_user_permissions
-          share_id = options.instance_identifier(&method(:lookup_share_id))
+          share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
           entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/user_permissions")
         end
 
         def handle_admin_share_group_permissions
-          share_id = options.instance_identifier(&method(:lookup_share_id))
+          share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
           entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/group_permissions")
         end
 
@@ -260,11 +273,11 @@ module Aspera
               cmds = %i[list show delete create modify]
               cmds.push(:users) if entity_type.eql?(:group)
               cmds.freeze
-            when :ldap  then %i[add].freeze
-            when :saml  then %i[import].freeze
+            when :ldap then %i[add].freeze
+            when :saml then %i[import].freeze
             end
           entity_verb = options.get_next_command(entity_commands)
-          lookup_block = ->(field, value) { RestList.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(entities_path) }['id'] }
+          lookup_block = ->(field, value){RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){@api_shares_admin.read(entities_path)}['id']}
           case entity_verb
           when *Operations::ALL
             display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
@@ -279,7 +292,7 @@ module Aspera
           when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
             group_id = options.instance_identifier(&lookup_block)
             sub_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-            return entity_execute(api: @api_shares_admin, entity: sub_path, is_singleton: !entity_verb.eql?(:share_permissions), &method(:lookup_share_id))
+            return entity_execute(api: @api_shares_admin, entity: sub_path, is_singleton: !entity_verb.eql?(:share_permissions)){ |f, v| lookup_share_id(f, v)}
           when :import # saml
             return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}

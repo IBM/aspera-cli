@@ -406,112 +406,165 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[scan events trevents check test show].freeze
+        # --- DSL ---
 
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          unless %i[check test show].include?(command)
-            # This will use node api
-            @api_node = Api::Node.new(**basic_auth_params)
-            @transfer_server_address = URI.parse(@api_node.base_url).host
-            # Get current access key information
-            @access_key_self = @api_node.read('access_keys/self')
-            # TODO: check events is activated here:
-            # note that docroot is good to look at as well
-            node_info = @api_node.read('info')
-            Log.log.debug{"root: #{node_info['docroot']}"}
-            # Default storage url to local file if not provided
-            option_root_url = options.get_option(:root_url, mandatory: true)
-            option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.empty? && @access_key_self['storage']['type'].eql?('local')
-            @access_remote = !UriReader.file?(option_root_url)
-            Log.log.debug{"remote: #{@access_remote}"}
-            # TODO: can the `previews` folder parameter be read from Node API ?
-            @option_skip_folders.push("/#{@option_previews_folder}")
-            if @access_remote
-              # NOTE: the filter "name", it's why we take the first one
-              @previews_folder_entry = @api_node.read_folder_content(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
-              raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
-                'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
+        # Commands that connect to the Node API share a common setup.
+        # :check, :test and :show work without Node API authentication.
+        command(:scan,     description: 'Scan all files and generate previews', setup: :setup_node_api)
+        command(:events,   description: 'Process file events and generate previews', setup: :setup_node_api)
+        command(:trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api)
+        command(:check,    description: 'Check required tools are installed')
+        command(:test,     description: 'Test preview generation for a source file')
+        command(:show,     description: 'Generate and display preview of a source file')
+
+        # --- setup ---
+
+        # Build the Node API and set up storage references for scan/events/trevents.
+        # @return [Hash] empty ctx (state stored in instance variables)
+        def setup_node_api
+          @api_node = Api::Node.new(**basic_auth_params)
+          @transfer_server_address = URI.parse(@api_node.base_url).host
+          # Get current access key information
+          @access_key_self = @api_node.read('access_keys/self')
+          # TODO: check events is activated here:
+          # note that docroot is good to look at as well
+          node_info = @api_node.read('info')
+          Log.log.debug{"root: #{node_info['docroot']}"}
+          # Default storage url to local file if not provided
+          option_root_url = options.get_option(:root_url, mandatory: true)
+          option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.empty? && @access_key_self['storage']['type'].eql?('local')
+          @access_remote = !UriReader.file?(option_root_url)
+          Log.log.debug{"remote: #{@access_remote}"}
+          # TODO: can the `previews` folder parameter be read from Node API ?
+          @option_skip_folders.push("/#{@option_previews_folder}")
+          if @access_remote
+            # NOTE: the filter "name", it's why we take the first one
+            @previews_folder_entry = @api_node.read_folder_content(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
+            raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
+              'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
+          else
+            @local_storage_root = UriReader.file_path(option_root_url)
+            # TODO: Windows could have "C:" ?
+            Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
+            Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
+            @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
+            Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error){"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name."}
+            # Protection to avoid clash of file id for two different access keys
+            marker_file = File.join(@local_preview_folder, AK_MARKER_FILE)
+            Log.log.debug{"marker file: #{marker_file}"}
+            if File.exist?(marker_file)
+              ak = File.read(marker_file).chomp
+              Aspera.assert(@access_key_self['id'].eql?(ak)){"mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}"}
             else
-              @local_storage_root = UriReader.file_path(option_root_url)
-              # TODO: Windows could have "C:" ?
-              Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
-              Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
-              @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
-              Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error){"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name."}
-              # Protection to avoid clash of file id for two different access keys
-              marker_file = File.join(@local_preview_folder, AK_MARKER_FILE)
-              Log.log.debug{"marker file: #{marker_file}"}
-              if File.exist?(marker_file)
-                ak = File.read(marker_file).chomp
-                Aspera.assert(@access_key_self['id'].eql?(ak)){"mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}"}
-              else
-                File.write(marker_file, @access_key_self['id'])
-              end
+              File.write(marker_file, @access_key_self['id'])
             end
           end
-          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, mandatory: true)
-          # check tools that are anyway required for all cases
-          Aspera::Preview::Utils.check_tools(@option_skip_types)
-          case command
-          when :scan
-            scan_path = options.get_option(:scan_path)
-            scan_id = options.get_option(:scan_id)
-            # by default start at root
-            folder_info =
-              if scan_id.nil?
-                {
-                  'id'   => @access_key_self['root_file_id'],
-                  'name' => '/',
-                  'type' => 'folder',
-                  'path' => '/'
-                }
-              else
-                @api_node.read("files/#{scan_id}")
-              end
-            @filter_block = Api::Node.file_matcher_from_argument(options)
-            scan_folder_files(folder_info, scan_path)
-            return Result::Status.new('scan finished')
-          when :events, :trevents
-            @filter_block = Api::Node.file_matcher_from_argument(options)
-            iteration_persistency = nil
-            if options.get_option(:once_only, mandatory: true)
-              iteration_persistency = PersistencyActionOnce.new(
-                manager: persistency,
-                data:    [],
-                id:      IdGenerator.from_list(
-                  'preview_iteration',
-                  command.to_s,
-                  options.get_option(:url, mandatory: true),
-                  options.get_option(:username, mandatory: true)
-                )
-              )
+          {}
+        end
+
+        # --- handlers ---
+
+        def handle_scan
+          check_tools_and_mimemagic
+          scan_path = options.get_option(:scan_path)
+          scan_id = options.get_option(:scan_id)
+          folder_info =
+            if scan_id.nil?
+              {
+                'id'   => @access_key_self['root_file_id'],
+                'name' => '/',
+                'type' => 'folder',
+                'path' => '/'
+              }
+            else
+              @api_node.read("files/#{scan_id}")
             end
-            # call processing method specified by command line command
-            send(:"process_#{command}", iteration_persistency)
-            return Result::Status.new("#{command} finished")
-          when :check
-            return Result::Status.new('Tools validated')
-          when :test
-            source = options.get_next_argument('source file')
-            format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
-            generated_file_path = preview_filename(format, options.get_option(:base))
-            Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
-            return Result::Status.new("generated: #{generated_file_path}")
-          when :show
-            source = options.get_next_argument('source file')
-            # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
-            generated_file_path = preview_filename(:png, options.get_option(:base))
-            Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
-            formatter.display_status("generated: #{generated_file_path}")
-            # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
-            # return Result::Status.new("generated: #{generated_file_path}")
-            return Result::Image.new(UriReader.file_url(generated_file_path))
-          else Aspera.error_unexpected_value(command)
-          end
+          @filter_block = Api::Node.file_matcher_from_argument(options)
+          scan_folder_files(folder_info, scan_path)
+          Result::Status.new('scan finished')
         ensure
+          cleanup_tmp_folder
+        end
+
+        def handle_events
+          check_tools_and_mimemagic
+          run_event_loop(:events)
+        ensure
+          cleanup_tmp_folder
+        end
+
+        def handle_trevents
+          check_tools_and_mimemagic
+          run_event_loop(:trevents)
+        ensure
+          cleanup_tmp_folder
+        end
+
+        def handle_check
+          check_tools_and_mimemagic
+          Result::Status.new('Tools validated')
+        ensure
+          cleanup_tmp_folder
+        end
+
+        def handle_test
+          check_tools_and_mimemagic
+          source = options.get_next_argument('source file')
+          format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
+          generated_file_path = preview_filename(format, options.get_option(:base))
+          Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
+          Result::Status.new("generated: #{generated_file_path}")
+        ensure
+          cleanup_tmp_folder
+        end
+
+        def handle_show
+          check_tools_and_mimemagic
+          source = options.get_next_argument('source file')
+          # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
+          generated_file_path = preview_filename(:png, options.get_option(:base))
+          Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
+          formatter.display_status("generated: #{generated_file_path}")
+          # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
+          # Result::Status.new("generated: #{generated_file_path}")
+          Result::Image.new(UriReader.file_url(generated_file_path))
+        ensure
+          cleanup_tmp_folder
+        end
+
+        private
+
+        # Check tools and set mimemagic flag (required for all commands).
+        def check_tools_and_mimemagic
+          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, mandatory: true)
+          Aspera::Preview::Utils.check_tools(@option_skip_types)
+        end
+
+        # Clean up the temporary folder after each command.
+        def cleanup_tmp_folder
           Log.log.debug{"cleaning up temp folder #{@tmp_folder}"}
           FileUtils.rm_rf(@tmp_folder)
+        end
+
+        # Shared event-loop body for :events and :trevents.
+        # @param command [:events, :trevents]
+        def run_event_loop(command)
+          @filter_block = Api::Node.file_matcher_from_argument(options)
+          iteration_persistency = nil
+          if options.get_option(:once_only, mandatory: true)
+            iteration_persistency = PersistencyActionOnce.new(
+              manager: persistency,
+              data:    [],
+              id:      IdGenerator.from_list(
+                'preview_iteration',
+                command.to_s,
+                options.get_option(:url, mandatory: true),
+                options.get_option(:username, mandatory: true)
+              )
+            )
+          end
+          send(:"process_#{command}", iteration_persistency)
+          Result::Status.new("#{command} finished")
         end
       end
     end

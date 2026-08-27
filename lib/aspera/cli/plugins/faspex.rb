@@ -273,265 +273,285 @@ module Aspera
           return package_creation_data.first
         end
 
-        ACTIONS = %i[health package source me dropbox v4 address_book login_methods].freeze
+        # --- DSL ---
 
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :health
-            nagios = Nagios.new
-            begin
-              api_v3.read('me')
-              nagios.add_ok('faspex api', 'accessible')
-            rescue StandardError => e
-              nagios.add_critical('faspex api', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :package
-            command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
-            case command_pkg
-            when :show
-              delivery_id = options.instance_identifier
-              return Result::SingleObject.new(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
-            when :list
-              return Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
-            when :send
-              delivery_info = options.get_option(:delivery_info, mandatory: true)
-              Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
-              # actual parameter to faspex API
-              package_create_params = {'delivery' => delivery_info}
-              public_link_url = options.get_option(:link)
-              if public_link_url.nil?
-                # authenticated user
-                delivery_info['sources'] ||= [{'paths' => []}]
-                first_source = delivery_info['sources'].first
-                first_source['paths'].concat(transfer.source_list)
-                source_id = options.get_option(:remote_source)
-                if source_id && (m = Options.percent_selector(source_id))
-                  Aspera.assert_values(m[:field], ['name'], type: Cli::BadArgument){'selector field'}
-                  source_list = api_v3.read('source_shares')['items']
-                  source_id = self.class.get_source_id_by_name(m[:value], source_list)
-                end
-                first_source['id'] = source_id.to_i unless source_id.nil?
-                pkg_created = api_v3.create('send', package_create_params)
-                if first_source.key?('id')
-                  # no transfer spec if remote source: handled by faspex
-                  return Result::ValueList.new([pkg_created['links']['status']], name: 'link')
-                end
-                raise Cli::BadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
-                transfer_spec = pkg_created['xfer_sessions'].first
-                # use source from cmd line, this one only contains destination (already in dest root)
-                transfer_spec.delete('paths')
-              else # public link
-                transfer_spec = send_public_link_to_ts(public_link_url, package_create_params)
-              end
-              # Log.dump(:transfer_spec,transfer_spec)
-              return Runner.result_transfer(transfer.start(transfer_spec))
-            when :receive
-              link_url = options.get_option(:link)
-              # list of faspex ID/URI to download
-              pkg_id_uri = nil
-              skip_ids_data = []
-              skip_ids_persistency = nil
-              case link_url
-              when nil # usual case: no link
-                if options.get_option(:once_only, mandatory: true)
-                  skip_ids_persistency = PersistencyActionOnce.new(
-                    manager: persistency,
-                    data:    skip_ids_data,
-                    id:      IdGenerator.from_list(
-                      'faspex_recv',
-                      options.get_option(:url, mandatory: true),
-                      options.get_option(:username, mandatory: true),
-                      options.get_option(:box, mandatory: true).to_s
-                    )
-                  )
-                end
-                # get command line parameters
-                delivery_id = options.instance_identifier
-                Aspera.assert(!delivery_id.empty?, 'empty id')
-                recipient = options.get_option(:recipient)
-                if delivery_id.eql?(SpecialValues::ALL)
-                  pkg_id_uri = mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
-                elsif delivery_id.eql?(SpecialValues::INIT)
-                  Aspera.assert(skip_ids_persistency, 'Only with option once_only')
-                  skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD]}})
-                  skip_ids_persistency.save
-                  return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-                elsif !recipient.nil? && recipient.start_with?('*')
-                  found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
-                  raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Transfer::Uri::SCHEME}" if found_package_link.nil?
-                  pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
-                else
-                  # TODO: delivery id is the right one if package was receive by workgroup
-                  endpoint =
-                    case options.get_option(:box, mandatory: true)
-                    when :inbox, :archive then'received'
-                    when :sent then 'sent'
-                    end
-                  entry_xml = api_v3.call(operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'}, ret: :resp).body
-                  package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
-                  pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
-                end
-              when /^#{Transfer::Uri::SCHEME}:/o
-                pkg_id_uri = [{id: 'package', uri: link_url}]
-              else
-                link_data = self.class.get_link_data(link_url)
-                raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}" if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
-                # NOTE: unauthenticated API (authorization is in url params)
-                api_public_link = Rest.new(base_url: link_data[:base_url])
-                pkg_xml = api_public_link.call(
-                  operation: 'GET',
-                  subpath:   link_data[:subpath],
-                  headers:   {'Accept' => 'application/xml'},
-                  query:     {passcode: link_data[:query]['passcode']},
-                  ret:       :resp
-                ).body
-                if !pkg_xml.start_with?('<?xml ')
-                  Environment.instance.open_uri(link_url)
-                  raise Cli::Error, 'Unexpected response: package not found ?'
-                end
-                package_entry = XmlSimple.xml_in(pkg_xml, {'ForceArray' => false})
-                Log.dump(:package_entry, package_entry)
-                transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
-                pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]
-              end
-              # prune packages already downloaded
-              # TODO : remove ids from skip not present in inbox to avoid growing too big
-              # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-              pkg_id_uri.reject!{ |i| skip_ids_data.include?(i[:id])}
-              Log.dump(:pkg_id_uri, pkg_id_uri)
-              return Result::Status.new('no new package') if pkg_id_uri.empty?
-              result_transfer = []
-              pkg_id_uri.each do |id_uri|
-                if id_uri[:uri].nil?
-                  # skip package with no link: empty or content deleted
-                  statuses = [:success]
-                else
-                  transfer_spec = Transfer::Uri.new(id_uri[:uri]).transfer_spec
-                  # NOTE: only external users have token in Transfer::Uri::SCHEME link !
-                  if !transfer_spec.key?('token')
-                    sanitized = id_uri[:uri].gsub('&', '&amp;')
-                    xml_payload =
-                      %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
-                    transfer_spec['token'] = api_v3.call(
-                      operation:    'POST',
-                      subpath:      'issue-token',
-                      query:        {'direction' => 'down'},
-                      content_type: Mime::TEXT,
-                      body:         xml_payload,
-                      headers:      {'Accept' => Mime::TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
-                      ret:          :resp
-                    ).body
-                  end
-                  transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
-                  statuses = transfer.start(transfer_spec)
-                end
-                result_transfer.push({'package' => id_uri[:id], Runner::STATUS_FIELD => statuses})
-                # skip only if all sessions completed
-                skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
-              end
-              skip_ids_persistency&.save
-              return Runner.result_transfer_multiple(result_transfer)
-            end
-          when :source
-            command_source = options.get_next_command(%i[list info node])
-            source_list = api_v3.read('source_shares')['items']
-            case command_source
-            when :list
-              return Result::ObjectList.new(source_list)
-            else # :info :node
-              source_id = options.instance_identifier do |field, value|
-                Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'selector field'}
-                self.class.get_source_id_by_name(value, source_list)
-              end.to_i
-              selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
-              raise BadArgument, 'No such source' if selected_source.nil?
-              source_name = selected_source['name']
-              source_hash = options.get_option(:storage, mandatory: true)
-              # check value of option
-              Aspera.assert_type(source_hash, Hash, type: Cli::Error){'storage option'}
-              source_hash.each do |name, storage|
-                Aspera.assert_type(storage, Hash, type: Cli::Error){"storage '#{name}'"}
-                [KEY_NODE, KEY_PATH].each do |key|
-                  Aspera.assert(storage.key?(key), type: Cli::Error){"storage '#{name}' must have a '#{key}'"}
-                end
-              end
-              raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]" if !source_hash.key?(source_name)
-              source_info = source_hash[source_name]
-              Log.dump(:source_info, source_info)
-              case command_source
-              when :info
-                return Result::SingleObject.new(source_info)
-              when :node
-                node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
-                Log.log.debug{"node=#{node_config}"}
-                Aspera.assert_type(node_config, Hash, type: Cli::Error){source_info[KEY_NODE]}
-                api_node = Rest.new(
-                  base_url: node_config['url'],
-                  auth:     {
-                    type:     :basic,
-                    username: node_config['username'],
-                    password: node_config['password']
-                  }
-                )
-                command = options.get_next_command(Node::COMMANDS_FASPEX)
-                return Node.new(context: context, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
-              end
-            end
-          when :me
-            my_info = api_v3.read('me')
-            return Result::SingleObject.new(my_info)
-          when :dropbox
-            command_pkg = options.get_next_command([:list])
-            case command_pkg
-            when :list
-              dropbox_list = api_v3.read('dropboxes')
-              return Result::ObjectList.new(dropbox_list['items'], fields: %w[name id description can_read can_write])
-            end
-          when :v4
-            command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
-            case command
-            when :dropbox
-              return entity_execute(api: api_v4, entity: 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at])
-            when :dmembership
-              return entity_execute(api: api_v4, entity: 'dropbox_memberships')
-            when :workgroup
-              return entity_execute(api: api_v4, entity: 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at])
-            when :wmembership
-              return entity_execute(api: api_v4, entity: 'workgroup_memberships')
-            when :user
-              return entity_execute(api: api_v4, entity: 'users', display_fields: %w[id name first_name last_name])
-            when :metadata_profile
-              return entity_execute(api: api_v4, entity: 'metadata_profiles')
-            when :package
-              pkg_box_type = options.get_next_command([:users])
-              pkg_box_id = options.instance_identifier
-              return entity_execute(api: api_v4, entity: "#{pkg_box_type}/#{pkg_box_id}/packages")
-            end
-          when :address_book
-            result = api_v3.read('address-book', {'format' => 'json', 'count' => 100_000})
-            formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
-            users = result['entry']
-            # add missing entries
-            users.each do |u|
-              unless u['emails'].nil?
-                email = u['emails'].find{ |i| i['primary'].eql?('true')}
-                u['email'] = email['value'] unless email.nil?
-              end
-              if u['email'].nil?
-                Log.log.warn{"Skip user without email: #{u}"}
-                next
-              end
-              u['first_name'], u['last_name'] = u['displayName'].split(' ', 2)
-              u['x'] = true
-            end
-            return Result::ObjectList.new(users)
-          when :login_methods
-            login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}, ret: :resp).body
-            login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
-            return Result::ObjectList.new(login_methods['XRD']['Service'])
+        command(:health,       description: 'Check Faspex 4 API health')
+        command(:package,      description: 'Manage packages')
+        command(:source,       description: 'Manage sources')
+        command(:me,           description: 'Show current user information')
+        command(:dropbox,      description: 'Manage dropboxes')
+        command(:v4,           description: 'Faspex v4 admin commands')
+        command(:address_book, description: 'Show address book')
+        command(:login_methods, description: 'Show login methods')
+
+        # --- handlers ---
+
+        def handle_health
+          nagios = Nagios.new
+          begin
+            api_v3.read('me')
+            nagios.add_ok('faspex api', 'accessible')
+          rescue StandardError => e
+            nagios.add_critical('faspex api', e.to_s)
           end
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        def handle_package
+          command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
+          case command_pkg
+          when :show
+            delivery_id = options.instance_identifier
+            return Result::SingleObject.new(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
+          when :list
+            return Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
+          when :send
+            delivery_info = options.get_option(:delivery_info, mandatory: true)
+            Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
+            # actual parameter to faspex API
+            package_create_params = {'delivery' => delivery_info}
+            public_link_url = options.get_option(:link)
+            if public_link_url.nil?
+              # authenticated user
+              delivery_info['sources'] ||= [{'paths' => []}]
+              first_source = delivery_info['sources'].first
+              first_source['paths'].concat(transfer.source_list)
+              source_id = options.get_option(:remote_source)
+              if source_id && (m = Options.percent_selector(source_id))
+                Aspera.assert_values(m[:field], ['name'], type: Cli::BadArgument){'selector field'}
+                source_list = api_v3.read('source_shares')['items']
+                source_id = self.class.get_source_id_by_name(m[:value], source_list)
+              end
+              first_source['id'] = source_id.to_i unless source_id.nil?
+              pkg_created = api_v3.create('send', package_create_params)
+              if first_source.key?('id')
+                # no transfer spec if remote source: handled by faspex
+                return Result::ValueList.new([pkg_created['links']['status']], name: 'link')
+              end
+              raise Cli::BadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
+              transfer_spec = pkg_created['xfer_sessions'].first
+              # use source from cmd line, this one only contains destination (already in dest root)
+              transfer_spec.delete('paths')
+            else # public link
+              transfer_spec = send_public_link_to_ts(public_link_url, package_create_params)
+            end
+            # Log.dump(:transfer_spec,transfer_spec)
+            return Runner.result_transfer(transfer.start(transfer_spec))
+          when :receive
+            link_url = options.get_option(:link)
+            # list of faspex ID/URI to download
+            pkg_id_uri = nil
+            skip_ids_data = []
+            skip_ids_persistency = nil
+            case link_url
+            when nil # usual case: no link
+              if options.get_option(:once_only, mandatory: true)
+                skip_ids_persistency = PersistencyActionOnce.new(
+                  manager: persistency,
+                  data:    skip_ids_data,
+                  id:      IdGenerator.from_list(
+                    'faspex_recv',
+                    options.get_option(:url, mandatory: true),
+                    options.get_option(:username, mandatory: true),
+                    options.get_option(:box, mandatory: true).to_s
+                  )
+                )
+              end
+              # get command line parameters
+              delivery_id = options.instance_identifier
+              Aspera.assert(!delivery_id.empty?, 'empty id')
+              recipient = options.get_option(:recipient)
+              if delivery_id.eql?(SpecialValues::ALL)
+                pkg_id_uri = mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
+              elsif delivery_id.eql?(SpecialValues::INIT)
+                Aspera.assert(skip_ids_persistency, 'Only with option once_only')
+                skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD]}})
+                skip_ids_persistency.save
+                return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+              elsif !recipient.nil? && recipient.start_with?('*')
+                found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
+                raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Transfer::Uri::SCHEME}" if found_package_link.nil?
+                pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
+              else
+                # TODO: delivery id is the right one if package was receive by workgroup
+                endpoint =
+                  case options.get_option(:box, mandatory: true)
+                  when :inbox, :archive then 'received'
+                  when :sent then 'sent'
+                  end
+                entry_xml = api_v3.call(operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'}, ret: :resp).body
+                package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
+                pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
+              end
+            when /^#{Transfer::Uri::SCHEME}:/o
+              pkg_id_uri = [{id: 'package', uri: link_url}]
+            else
+              link_data = self.class.get_link_data(link_url)
+              raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}" if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
+              # NOTE: unauthenticated API (authorization is in url params)
+              api_public_link = Rest.new(base_url: link_data[:base_url])
+              pkg_xml = api_public_link.call(
+                operation: 'GET',
+                subpath:   link_data[:subpath],
+                headers:   {'Accept' => 'application/xml'},
+                query:     {passcode: link_data[:query]['passcode']},
+                ret:       :resp
+              ).body
+              if !pkg_xml.start_with?('<?xml ')
+                Environment.instance.open_uri(link_url)
+                raise Cli::Error, 'Unexpected response: package not found ?'
+              end
+              package_entry = XmlSimple.xml_in(pkg_xml, {'ForceArray' => false})
+              Log.dump(:package_entry, package_entry)
+              transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
+              pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]
+            end
+            # prune packages already downloaded
+            # TODO : remove ids from skip not present in inbox to avoid growing too big
+            # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+            pkg_id_uri.reject!{ |i| skip_ids_data.include?(i[:id])}
+            Log.dump(:pkg_id_uri, pkg_id_uri)
+            return Result::Status.new('no new package') if pkg_id_uri.empty?
+            result_transfer = []
+            pkg_id_uri.each do |id_uri|
+              if id_uri[:uri].nil?
+                # skip package with no link: empty or content deleted
+                statuses = [:success]
+              else
+                transfer_spec = Transfer::Uri.new(id_uri[:uri]).transfer_spec
+                # NOTE: only external users have token in Transfer::Uri::SCHEME link !
+                if !transfer_spec.key?('token')
+                  sanitized = id_uri[:uri].gsub('&', '&amp;')
+                  xml_payload =
+                    %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                  transfer_spec['token'] = api_v3.call(
+                    operation:    'POST',
+                    subpath:      'issue-token',
+                    query:        {'direction' => 'down'},
+                    content_type: Mime::TEXT,
+                    body:         xml_payload,
+                    headers:      {'Accept' => Mime::TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
+                    ret:          :resp
+                  ).body
+                end
+                transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
+                statuses = transfer.start(transfer_spec)
+              end
+              result_transfer.push({'package' => id_uri[:id], Runner::STATUS_FIELD => statuses})
+              # skip only if all sessions completed
+              skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
+            end
+            skip_ids_persistency&.save
+            return Runner.result_transfer_multiple(result_transfer)
+          end
+        end
+
+        def handle_source
+          command_source = options.get_next_command(%i[list info node])
+          source_list = api_v3.read('source_shares')['items']
+          case command_source
+          when :list
+            return Result::ObjectList.new(source_list)
+          else # :info :node
+            source_id = options.instance_identifier do |field, value|
+              Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'selector field'}
+              self.class.get_source_id_by_name(value, source_list)
+            end.to_i
+            selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
+            raise BadArgument, 'No such source' if selected_source.nil?
+            source_name = selected_source['name']
+            source_hash = options.get_option(:storage, mandatory: true)
+            # check value of option
+            Aspera.assert_type(source_hash, Hash, type: Cli::Error){'storage option'}
+            source_hash.each do |name, storage|
+              Aspera.assert_type(storage, Hash, type: Cli::Error){"storage '#{name}'"}
+              [KEY_NODE, KEY_PATH].each do |key|
+                Aspera.assert(storage.key?(key), type: Cli::Error){"storage '#{name}' must have a '#{key}'"}
+              end
+            end
+            raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]" if !source_hash.key?(source_name)
+            source_info = source_hash[source_name]
+            Log.dump(:source_info, source_info)
+            case command_source
+            when :info
+              return Result::SingleObject.new(source_info)
+            when :node
+              node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
+              Log.log.debug{"node=#{node_config}"}
+              Aspera.assert_type(node_config, Hash, type: Cli::Error){source_info[KEY_NODE]}
+              api_node = Rest.new(
+                base_url: node_config['url'],
+                auth:     {
+                  type:     :basic,
+                  username: node_config['username'],
+                  password: node_config['password']
+                }
+              )
+              command = options.get_next_command(Node::COMMANDS_FASPEX)
+              return Node.new(context: context, api: api_node, prefix_path: source_info[KEY_PATH]).execute_action(command)
+            end
+          end
+        end
+
+        def handle_me
+          Result::SingleObject.new(api_v3.read('me'))
+        end
+
+        def handle_dropbox
+          command_pkg = options.get_next_command([:list])
+          case command_pkg
+          when :list
+            dropbox_list = api_v3.read('dropboxes')
+            return Result::ObjectList.new(dropbox_list['items'], fields: %w[name id description can_read can_write])
+          end
+        end
+
+        def handle_v4
+          command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
+          case command
+          when :dropbox
+            return entity_execute(api: api_v4, entity: 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at])
+          when :dmembership
+            return entity_execute(api: api_v4, entity: 'dropbox_memberships')
+          when :workgroup
+            return entity_execute(api: api_v4, entity: 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at])
+          when :wmembership
+            return entity_execute(api: api_v4, entity: 'workgroup_memberships')
+          when :user
+            return entity_execute(api: api_v4, entity: 'users', display_fields: %w[id name first_name last_name])
+          when :metadata_profile
+            return entity_execute(api: api_v4, entity: 'metadata_profiles')
+          when :package
+            pkg_box_type = options.get_next_command([:users])
+            pkg_box_id = options.instance_identifier
+            return entity_execute(api: api_v4, entity: "#{pkg_box_type}/#{pkg_box_id}/packages")
+          end
+        end
+
+        def handle_address_book
+          result = api_v3.read('address-book', {'format' => 'json', 'count' => 100_000})
+          formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
+          users = result['entry']
+          # add missing entries
+          users.each do |u|
+            unless u['emails'].nil?
+              email = u['emails'].find{ |i| i['primary'].eql?('true')}
+              u['email'] = email['value'] unless email.nil?
+            end
+            if u['email'].nil?
+              Log.log.warn{"Skip user without email: #{u}"}
+              next
+            end
+            u['first_name'], u['last_name'] = u['displayName'].split(' ', 2)
+            u['x'] = true
+          end
+          return Result::ObjectList.new(users)
+        end
+
+        def handle_login_methods
+          login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}, ret: :resp).body
+          login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
+          return Result::ObjectList.new(login_methods['XRD']['Service'])
         end
       end
     end

@@ -636,109 +636,156 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing invitations].freeze
+        # --- DSL ---
 
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          unless %i{postprocessing health}.include?(command)
-            # create an API object with the same options, but with a different subpath
-            @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
-            # in case user wants to use HTTPGW tell transfer agent how to get address
-            transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
+        # Commands that need @api_v5 carry setup: :setup_api_v5.
+        # :health and :postprocessing work without authentication, so they have no setup.
+        command(:health,         description: 'Check Faspex 5 health')
+        command(:version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5)
+        command(:user,           description: 'Manage current user',               setup: :setup_api_v5)
+        command(:bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5)
+        command(:packages,       description: 'Manage packages',                   setup: :setup_api_v5)
+        command(:shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5)
+        command(:admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5)
+        command(:gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5)
+        command(:postprocessing, description: 'Start Faspex 4 post-processing server')
+        command(:invitations,    description: 'Manage invitations', setup: :setup_api_v5)
+
+        commands_under(:user) do
+          command(:account, description: 'Show account information')
+          command(:profile, description: 'Manage user profile')
+        end
+
+        commands_under(%i[user profile]) do
+          command(:show,   description: 'Show user profile')
+          command(:modify, description: 'Modify user profile')
+        end
+
+        commands_under(:shared_folders) do
+          command(:list,   description: 'List shared folders')
+          command(:browse, description: 'Browse a shared folder')
+        end
+
+        # --- root setup ---
+
+        # Build @api_v5 for all commands that need it (all except :health and :postprocessing).
+        # @return [Hash] empty ctx (state stored in @api_v5)
+        def setup_api_v5
+          return {} if @api_v5
+          @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
+          # in case user wants to use HTTPGW tell transfer agent how to get address
+          transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
+          {}
+        end
+
+        # --- handlers ---
+
+        def handle_health
+          nagios = Nagios.new
+          begin
+            data, http = Rest.new(base_url: options.get_option(:url, mandatory: true))
+              .read('health', ret: :both)
+            data.each do |k, v|
+              nagios.add_ok(k, v.to_s)
+            end
+            nagios.add_ok('version', http['X-IBM-Aspera']) if http['X-IBM-Aspera']
+          rescue StandardError => e
+            nagios.add_critical('core', e.to_s)
           end
-          case command
-          when :version
-            return Result::SingleObject.new(@api_v5.read('version'))
-          when :health
-            nagios = Nagios.new
-            begin
-              data, http = Rest.new(base_url: options.get_option(:url, mandatory: true))
-                .read('health', ret: :both)
-              data.each do |k, v|
-                nagios.add_ok(k, v.to_s)
-              end
-              nagios.add_ok('version', http['X-IBM-Aspera']) if http['X-IBM-Aspera']
-            rescue StandardError => e
-              nagios.add_critical('core', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :user
-            case options.get_next_command(%i[account profile])
-            when :account
-              return Result::SingleObject.new(@api_v5.read('account', query_read_delete))
-            when :profile
-              case options.get_next_command(%i[show modify])
-              when :show
-                return Result::SingleObject.new(@api_v5.read('account/preferences'))
-              when :modify
-                @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
-                return Result::Status.new('modified')
-              end
-            end
-          when :bearer_token
-            return Result::Text.new(@api_v5.oauth.authorization)
-          when :packages
-            return package_action
-          when :shared_folders
-            all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
-            case options.get_next_command(%i[list browse])
-            when :list
-              return Result::ObjectList.new(all_shared_folders)
-            when :browse
-              shared_folder_id = options.instance_identifier do |field, value|
-                matches = all_shared_folders.select{ |i| i[field].eql?(value)}
-                raise "no match for #{field} = #{value}" if matches.empty?
-                raise "multiple matches for #{field} = #{value}" if matches.length > 1
-                matches.first['id']
-              end
-              node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-              raise "No such shared folder id #{shared_folder_id}" if node.nil?
-              return browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
-            end
-          when :admin
-            return execute_admin
-          when :invitations
-            invitation_endpoint = 'invitations'
-            invitation_command = options.get_next_command(%i[resend].concat(Operations::ALL))
-            case invitation_command
-            when :create
-              return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
-                invitation_endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
-                @api_v5.create(invitation_endpoint, params)
-              end
-            when :resend
-              @api_v5.create("#{invitation_endpoint}/#{options.instance_identifier}/resend", nil)
-              return Result::Status.new('Invitation resent')
-            else
-              return entity_execute(
-                api: @api_v5,
-                entity: invitation_endpoint,
-                command: invitation_command,
-                items_key: invitation_endpoint,
-                display_fields: %w[id public recipient_type recipient_name email_address]
-              ) do |field, value|
-                @api_v5.lookup_entity_by_field(entity: invitation_endpoint, field: field, value: value, query: {})['id']
-              end
-            end
-          when :gateway
-            require 'aspera/faspex_gw'
-            parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
-            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
-            server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
-            server.start
-            return Result::Status.new('Gateway terminated')
-          when :postprocessing
-            require 'aspera/faspex_postproc' # cspell:disable-line
-            parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
-            parameters[:root] = uri.path
-            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            server.mount(uri.path, Faspex4PostProcServlet, parameters.except(*WebServerSimple::PARAMS))
-            server.start
-            return Result::Status.new('Gateway terminated')
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        def handle_version
+          Result::SingleObject.new(@api_v5.read('version'))
+        end
+
+        def handle_user_account
+          Result::SingleObject.new(@api_v5.read('account', query_read_delete))
+        end
+
+        def handle_user_profile_show
+          Result::SingleObject.new(@api_v5.read('account/preferences'))
+        end
+
+        def handle_user_profile_modify
+          @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
+          Result::Status.new('modified')
+        end
+
+        def handle_bearer_token
+          Result::Text.new(@api_v5.oauth.authorization)
+        end
+
+        def handle_packages
+          package_action
+        end
+
+        def handle_shared_folders_list
+          Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])
+        end
+
+        def handle_shared_folders_browse
+          all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
+          shared_folder_id = options.instance_identifier do |field, value|
+            matches = all_shared_folders.select{ |i| i[field].eql?(value)}
+            raise "no match for #{field} = #{value}" if matches.empty?
+            raise "multiple matches for #{field} = #{value}" if matches.length > 1
+            matches.first['id']
           end
+          node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+          raise "No such shared folder id #{shared_folder_id}" if node.nil?
+          browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
+        end
+
+        def handle_admin
+          execute_admin
+        end
+
+        def handle_invitations
+          invitation_endpoint = 'invitations'
+          invitation_command = options.get_next_command(%i[resend].concat(Operations::ALL))
+          case invitation_command
+          when :create
+            return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
+              invitation_endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
+              @api_v5.create(invitation_endpoint, params)
+            end
+          when :resend
+            @api_v5.create("#{invitation_endpoint}/#{options.instance_identifier}/resend", nil)
+            return Result::Status.new('Invitation resent')
+          else
+            return entity_execute(
+              api: @api_v5,
+              entity: invitation_endpoint,
+              command: invitation_command,
+              items_key: invitation_endpoint,
+              display_fields: %w[id public recipient_type recipient_name email_address]
+            ) do |field, value|
+              @api_v5.lookup_entity_by_field(entity: invitation_endpoint, field: field, value: value, query: {})['id']
+            end
+          end
+        end
+
+        def handle_gateway
+          require 'aspera/faspex_gw'
+          parameters = value_create_modify(command: :gateway, default: {}).symbolize_keys
+          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
+          server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
+          server.start
+          Result::Status.new('Gateway terminated')
+        end
+
+        def handle_postprocessing
+          require 'aspera/faspex_postproc' # cspell:disable-line
+          parameters = value_create_modify(command: :postprocessing, default: {}).symbolize_keys
+          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          parameters[:root] = uri.path
+          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+          server.mount(uri.path, Faspex4PostProcServlet, parameters.except(*WebServerSimple::PARAMS))
+          server.start
+          Result::Status.new('Gateway terminated')
         end
         SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
