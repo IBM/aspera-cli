@@ -207,7 +207,7 @@ module Aspera
             auth:     {
               type:     :basic,
               username: access_key_id,
-              password: config.lookup_secret(url: node_url, username: access_key_id)
+              password: context.secret_finder.lookup(url: node_url, username: access_key_id)
             }
           )
           {
@@ -231,7 +231,7 @@ module Aspera
             auth:     {
               type:     :basic,
               username: access_key_id,
-              password: config.lookup_secret(url: ats_url, username: access_key_id)
+              password: context.secret_finder.lookup(url: ats_url, username: access_key_id)
             }
           )
           return Result::SingleObject.new(api_ak_auth.read('servers'))

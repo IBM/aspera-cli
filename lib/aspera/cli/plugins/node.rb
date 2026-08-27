@@ -412,7 +412,7 @@ module Aspera
               root_file_id = options.get_option(:root_id)
               if root_file_id.nil?
                 ak_info = @api_node.read("access_keys/#{access_key_id}")
-                ak_secret = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'])
+                ak_secret = context.secret_finder.lookup(url: @api_node.base_url, username: ak_info['id'])
                 # change API credentials if different access key
                 if !access_key_id.eql?('self')
                   Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
@@ -928,7 +928,7 @@ module Aspera
           root_file_id = options.get_option(:root_id)
           if root_file_id.nil?
             ak_info = @api_node.read("access_keys/#{access_key_id}")
-            ak_secret = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'])
+            ak_secret = context.secret_finder.lookup(url: @api_node.base_url, username: ak_info['id'])
             if !access_key_id.eql?('self')
               Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
               @api_node.auth_params[:username] = ak_info['id']

@@ -6,6 +6,7 @@ require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/mailer_service'
+require 'aspera/cli/secret_finder'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
@@ -267,6 +268,8 @@ module Aspera
         Aspera.assert(@context.persistency, 'missing persistency object')
         # Email service: depends on options (smtp/notify_to/notify_template) declared by Config
         @context.mailer = MailerService.new(@context.options, @context.main_folder)
+        # Secret finder: depends on options (:secret) and presets, both set by Config
+        @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
         # The TransferAgent plugin may use the @preset parser
         @context.transfer = TransferAgent.new(@context)
         # Add commands for config plugin after all options have been added

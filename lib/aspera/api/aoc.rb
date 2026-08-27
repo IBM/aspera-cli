@@ -486,7 +486,7 @@ module Aspera
         workspace_name = read("workspaces/#{workspace_id}")['name'] if workspace_name.nil? && !workspace_id.nil?
         app_info = AppInfo.new(self, package_info, node_info, workspace_id, workspace_name)
         node_params = {base_url: node_info['url']}
-        ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'])
+        ak_secret = @secret_finder&.lookup(url: node_info['url'], username: node_info['access_key'])
         # If secret is available, or no scope, use basic auth
         if scope.nil? || ak_secret
           Aspera.assert(ak_secret, type: Error){"Secret not found for access key #{node_info['access_key']}@#{node_info['url']}"}

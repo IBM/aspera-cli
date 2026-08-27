@@ -682,21 +682,6 @@ module Aspera
           Process.exit(0)
         end
 
-        # Lookup the corresponding secret for the given URL and usernames
-        # @param url      [String] Server URL
-        # @param username [String] Username
-        # @return [String, nil] Secret if found
-        def lookup_secret(url:, username:)
-          secret = options.get_option(:secret)
-          if secret.eql?('PRESET')
-            conf = presets.lookup_preset(url: url, username: username)
-            if conf.is_a?(Hash)
-              Log.log.debug{"Found preset #{conf} with URL and username"}
-              secret = conf['password']
-            end
-          end
-          return secret
-        end
         # Folder in $HOME for application files (~/.aspera)
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # Default config file name

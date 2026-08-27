@@ -2,6 +2,7 @@
 
 require 'aspera/assert'
 require 'aspera/cli/mailer_service'
+require 'aspera/cli/secret_finder'
 
 module Aspera
   module Cli
@@ -9,7 +10,7 @@ module Aspera
     class Context
       # @type [Array<Symbol>]
       # Members that must be non-nil after bootstrap (validated in #validate)
-      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder mailer].freeze
+      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder mailer secret_finder].freeze
       # @!attribute [rw] options
       #   @return [Options] the command line options manager
       # @!attribute [rw] transfer
@@ -28,6 +29,8 @@ module Aspera
       #   @return [Http] manages HTTP/S and TLS runtime options
       # @!attribute [rw] mailer
       #   @return [MailerService] sends emails (SMTP) via ERB templates
+      # @!attribute [rw] secret_finder
+      #   @return [SecretFinder] resolves secrets for url+username pairs
       attr_accessor(*MEMBERS)
       # Optional: nil when progress bar is disabled
       attr_accessor :progress_bar

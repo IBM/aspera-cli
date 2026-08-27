@@ -232,7 +232,7 @@ module Aspera
           api = Api::AoC.new(
             scope:         @scope,
             subpath:       base_path,
-            secret_finder: config,
+            secret_finder: context.secret_finder,
             **Oauth.kwargs_from_options(options)
           )
           # User set a workspace ?
