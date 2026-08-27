@@ -39,8 +39,8 @@ module Aspera
           }
         end
 
-        command(:health,  description: 'Check health of faspio Gateway', handler: :handle_health)
-        command(:bridges, description: 'Manage bridges', handler: :handle_bridges)
+        command(:health,  description: 'Check health of faspio Gateway')
+        command(:bridges, description: 'Manage bridges')
 
         def initialize(**_)
           super

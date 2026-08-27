@@ -70,6 +70,109 @@ module Aspera
           super
         end
 
+        # --- DSL ---
+
+        command(:health,   description: 'Check Console API health', setup: :setup_api)
+        command(:transfer, description: 'Manage transfers',         setup: :setup_api)
+
+        commands_under(:transfer) do
+          command(:current, description: 'Manage current transfers')
+          command(:smart,   description: 'Manage smart transfers')
+        end
+
+        commands_under(%i[transfer current]) do
+          command(:list)
+          command(:show)
+          command(:files)
+          command(:start)
+          command(:pause)
+          command(:cancel)
+          command(:resume)
+          command(:rerun)
+          command(:change_rate)
+          command(:change_policy)
+          command(:move_forwards)
+          command(:move_back)
+        end
+
+        # Generate one handler per transfer/current action.
+        # Convention: handle_transfer_current_<verb>
+        # All share the same REST pattern: PATCH transfers/<id>/<verb>.
+        %i[start pause cancel resume rerun change_rate change_policy move_forwards move_back].each do |verb|
+          define_method(:"handle_transfer_current_#{verb}") do |api_console:|
+            transfer_id = options.instance_identifier(description: 'transfer ID')
+            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
+          end
+        end
+
+        commands_under(%i[transfer smart]) do
+          command(:list)
+          command(:submit)
+        end
+
+        # --- setup ---
+
+        # Build the Console REST API.
+        # @return [Hash] ctx with :api_console
+        def setup_api
+          {api_console: basic_auth_api('api')}
+        end
+
+        # --- health ---
+
+        def handle_health(api_console:)
+          nagios = Nagios.new
+          begin
+            api_console.read('ssh_keys')
+            nagios.add_ok('console api', 'accessible')
+          rescue StandardError => e
+            nagios.add_critical('console api', e.to_s)
+          end
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        # --- transfer current ---
+
+        def handle_transfer_current_list(api_console:)
+          query = query_read_delete(default: {})
+          if query['from'].nil? && query['to'].nil?
+            time_now = Time.now
+            query['from'] = self.class.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
+            query['to'] = self.class.time_to_string(time_now)
+          end
+          parse_extended_filter(query.delete('filter'), query) if query['filter']
+          Result::ObjectList.new(
+            api_console.read('transfers', query),
+            fields: %w[id contact name status]
+          )
+        end
+
+        def handle_transfer_current_show(api_console:)
+          transfer_id = options.instance_identifier(description: 'transfer ID')
+          Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
+        end
+
+        def handle_transfer_current_files(api_console:)
+          transfer_id = options.instance_identifier(description: 'transfer ID')
+          query = query_read_delete(default: {})
+          query['limit'] ||= 100
+          Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
+        end
+
+        # --- transfer smart ---
+
+        def handle_transfer_smart_list(api_console:)
+          Result::ObjectList.new(api_console.read('smart_transfers'))
+        end
+
+        def handle_transfer_smart_submit(api_console:)
+          smart_id = options.get_next_argument('smart_id')
+          params = options.get_next_argument('transfer parameters', validation: Hash)
+          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", params))
+        end
+
+        private
+
         def parse_extended_filter(filter, query)
           raise BadArgument, "Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..." unless filter.start_with?('(') && filter.end_with?(')')
           filter[1..-2].split(')and(').each_with_index do |expr, i|
@@ -80,68 +183,6 @@ module Aspera
             query["filter#{i}"] = t[0]
             query["comp#{i}"]   = t[1]
             query["val#{i}"]    = t[2]
-          end
-        end
-
-        ACTIONS = %i[transfer health].freeze
-
-        def execute_action
-          api_console = basic_auth_api('api')
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :health
-            nagios = Nagios.new
-            begin
-              api_console.read('ssh_keys')
-              nagios.add_ok('console api', 'accessible')
-            rescue StandardError => e
-              nagios.add_critical('console api', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :transfer
-            command = options.get_next_command(%i[current smart])
-            case command
-            when :smart
-              command = options.get_next_command(%i[list submit])
-              case command
-              when :list
-                return Result::ObjectList.new(api_console.read('smart_transfers'))
-              when :submit
-                smart_id = options.get_next_argument('smart_id')
-                params = options.get_next_argument('transfer parameters', validation: Hash)
-                return Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", params))
-              end
-            when :current
-              command = options.get_next_command(%i[list show files start pause cancel resume rerun change_rate change_policy move_forwards move_back])
-              case command
-              when :list
-                # https://developer.ibm.com/apis/catalog/aspera--aspera-console-rest-api/Developer+Guides#transfer-list
-                query = query_read_delete(default: {})
-                if query['from'].nil? && query['to'].nil?
-                  time_now = Time.now
-                  query['from'] = self.class.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
-                  query['to'] = self.class.time_to_string(time_now)
-                end
-                if (filter = query.delete('filter'))
-                  parse_extended_filter(filter, query)
-                end
-                return Result::ObjectList.new(
-                  api_console.read('transfers', query),
-                  fields: %w[id contact name status]
-                )
-              when :show
-                transfer_id = options.instance_identifier(description: 'transfer ID')
-                return Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
-              when :files
-                transfer_id = options.instance_identifier(description: 'transfer ID')
-                query = query_read_delete(default: {})
-                query['limit'] ||= 100
-                return Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
-              when :start, :pause, :cancel, :resume, :rerun, :change_rate, :change_policy, :move_forwards, :move_back
-                transfer_id = options.instance_identifier(description: 'transfer ID')
-                return Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{command}", query_read_delete))
-              end
-            end
           end
         end
       end

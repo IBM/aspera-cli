@@ -9,7 +9,7 @@ module Aspera
   module Cli
     module Plugins
       class Cos < Base
-        command(:node, description: 'Execute COS node commands', setup: :setup_cos_node, handler: :handle_cos_node)
+        command(:node, description: 'Execute COS node commands', setup: :setup_cos_node)
 
         def initialize(**_)
           super
@@ -48,7 +48,7 @@ module Aspera
 
         # Dispatch the chosen COS node sub-command to the Node plugin.
         # @param node_plugin [Node] the Node plugin instance built in setup_cos_node
-        def handle_cos_node(node_plugin:)
+        def handle_node(node_plugin:)
           command = options.get_next_command(Node::COMMANDS_COS)
           node_plugin.execute_action(command)
         end

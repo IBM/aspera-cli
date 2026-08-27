@@ -277,7 +277,7 @@ module Aspera
         describe '#dispatch_from_registry with aliases:' do
           it 'forwards aliases to get_next_command' do
             klass = Class.new(Base)
-            klass.command(:files, description: 'Files', handler: :handle_files, aliases: {repository: :files})
+            klass.command(:files, description: 'Files', handler: :handle_files, aliases: [:repository])
             klass.define_method(:handle_files){Result::Status.new('files')}
             allow(options).to(receive(:get_next_command).with([:files], aliases: {repository: :files}).and_return(:files))
             inst = klass.new(context: context)

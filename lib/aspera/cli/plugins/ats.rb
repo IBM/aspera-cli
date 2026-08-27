@@ -18,6 +18,7 @@ module Aspera
         # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE
+
         def initialize(api: nil, **base_args)
           super(**base_args)
           @ats_api_open = Api::Ats.new
@@ -31,6 +32,47 @@ module Aspera
           options.parse_options!
           Node.declare_options(options)
         end
+
+        # --- DSL ---
+
+        command(:cluster,          description: 'Display general ATS cluster information (public API, no auth)')
+        command(:access_key,       description: 'Manage ATS access keys')
+        command(:api_key,          description: 'Manage credential to access ATS API', condition: :api_key_available?)
+        command(:aws_trust_policy, description: 'Show AWS trust policy')
+
+        commands_under(:cluster) do
+          command(:clouds, description: 'List cloud providers')
+          command(:list,   description: 'List ATS servers')
+          command(:show,   description: 'Show a specific server')
+        end
+
+        commands_under(:access_key) do
+          command(:create,      description: 'Create an access key')
+          command(:list,        description: 'List access keys')
+          command(:show,        description: 'Show an access key')
+          command(:modify,      description: 'Modify an access key')
+          command(:delete,      description: 'Delete an access key')
+          command(:node,        description: 'Execute node commands via ATS access key')
+          command(:cluster,     description: 'Show cluster info for an access key')
+          command(:entitlement, description: 'Show ATS entitlement for an access key')
+        end
+
+        commands_under(:api_key) do
+          command(:instances, description: 'List ATS instances in IBM Cloud')
+          command(:create,    description: 'Create an ATS API key')
+          command(:list,      description: 'List ATS API keys')
+          command(:show,      description: 'Show an ATS API key')
+          command(:delete,    description: 'Delete an ATS API key')
+        end
+
+        # --- conditions ---
+
+        # api_key sub-tree is only available when authenticated via ATS key (not injected API)
+        def api_key_available?
+          @ats_api_auth.nil?
+        end
+
+        # --- helpers ---
 
         def server_by_cloud_region
           # TODO: provide list ?
@@ -52,113 +94,6 @@ module Aspera
           )
         end
 
-        def execute_action_access_key
-          commands = %i[create list show modify delete node cluster entitlement]
-          command = options.get_next_command(commands)
-          # those do not require access key id
-          access_key_id = options.instance_identifier unless %i[create list].include?(command)
-          case command
-          when :create
-            params = value_create_modify(command: command, default: {})
-            server_data = nil
-            # if transfer_server_id not provided, get it from command line options
-            if !params.key?('transfer_server_id')
-              server_data = server_by_cloud_region
-              params['transfer_server_id'] = server_data['id']
-            end
-            Log.log.debug{"using params: #{params}".bg_red.gray}
-            if params.key?('storage')
-              case params['storage']['type']
-              # here we need somehow to map storage type to field to get for auth end point
-              when 'ibm-s3'
-                server_data2 = nil
-                if server_data.nil?
-                  server_data2 = @ats_api_open.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
-                  raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
-                else
-                  server_data2 = @ats_api_open.all_servers.find do |s|
-                    s['cloud'].eql?(server_data['cloud']) &&
-                      s['region'].eql?(server_data['region']) &&
-                      s.key?('s3_authentication_endpoint')
-                  end
-                  raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
-                  # specific one do not have s3 end point in id
-                  params['transfer_server_id'] = server_data2['id']
-                end
-                params['storage']['endpoint'] = server_data2['s3_authentication_endpoint'] if !params['storage'].key?('authentication_endpoint')
-              end
-            end
-            res = ats_api.create('access_keys', params)
-            return Result::SingleObject.new(res)
-            # TODO : action : modify, with "PUT"
-          when :list
-            params = query_read_delete(default: {'offset' => 0, 'max_results' => 1000})
-            res = ats_api.read('access_keys', params)
-            return Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
-          when :show
-            res = ats_api.read("access_keys/#{access_key_id}")
-            return Result::SingleObject.new(res)
-          when :modify
-            params = value_create_modify(command: command)
-            params['id'] = access_key_id
-            ats_api.update("access_keys/#{access_key_id}", params)
-            return Result::Status.new('modified')
-          when :entitlement
-            ak = ats_api.read("access_keys/#{access_key_id}")
-            api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
-            return Result::SingleObject.new(api_bss.read('entitlement'))
-          when :delete
-            ats_api.delete("access_keys/#{access_key_id}")
-            return Result::Status.new("deleted #{access_key_id}")
-          when :node
-            ak_data = ats_api.read("access_keys/#{access_key_id}")
-            server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
-            raise Cli::Error, 'no such server found' if server_data.nil?
-            node_url = server_data['transfer_setup_url']
-            api_node = Api::Node.new(
-              base_url: node_url,
-              auth:     {
-                type:     :basic,
-                username: access_key_id,
-                password: config.lookup_secret(url: node_url, username: access_key_id)
-              }
-            )
-            command = options.get_next_command(Node::COMMANDS_GEN4)
-            return Node.new(context: context, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
-          when :cluster
-            ats_url = ats_api.base_url
-            api_ak_auth = Rest.new(
-              base_url: ats_url,
-              auth:     {
-                type:     :basic,
-                username: access_key_id,
-                password: config.lookup_secret(url: ats_url, username: access_key_id)
-              }
-            )
-            return Result::SingleObject.new(api_ak_auth.read('servers'))
-          else Aspera.error_unexpected_value(command)
-          end
-        end
-
-        def execute_action_cluster_open
-          command = options.get_next_command(%i[clouds list show])
-          case command
-          when :clouds
-            return Result::ObjectList.new(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
-          when :list
-            return Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region])
-          when :show
-            if options.get_option(:cloud) || options.get_option(:region)
-              server_data = server_by_cloud_region
-            else
-              server_id = options.instance_identifier
-              server_data = @ats_api_open.all_servers.find{ |i| i['id'].eql?(server_id)}
-              raise BadIdentifier.new('server', server_id) if server_data.nil?
-            end
-            return Result::SingleObject.new(server_data)
-          end
-        end
-
         def ats_api_v2_auth_ibm(rest_add_headers = {})
           return Rest.new(
             base_url: "#{Api::Ats::SERVICE_BASE_URL}/v2",
@@ -177,60 +112,182 @@ module Aspera
           )
         end
 
-        def execute_action_api_key
-          command = options.get_next_command(%i[instances create list show delete])
-          concerned_id = options.instance_identifier if %i[show delete].include?(command)
-          rest_add_header = {}
-          if !command.eql?(:instances)
-            instance = options.get_option(:instance)
-            if instance.nil?
-              # Take the first Aspera on Cloud transfer service instance ID if not provided by user
-              instance = ats_api_v2_auth_ibm.read('instances')['data'].first
-              formatter.display_status("using first instance: #{instance}")
-            end
-            rest_add_header = {'X-ATS-Service-Instance-Id' => instance}
-          end
-          ats_ibm_api = ats_api_v2_auth_ibm(rest_add_header)
-          case command
-          when :instances
-            instances = ats_ibm_api.read('instances')
-            Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
-            return Result::ValueList.new(instances['data'], name: 'instance')
-          when :create
-            created_key = ats_ibm_api.create('api_keys', value_create_modify(command: command, default: {}))
-            return Result::SingleObject.new(created_key)
-          when :list # list known api keys in ATS (this require an api_key ...)
-            res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})
-            return Result::ValueList.new(res['data'], name: 'ats_id')
-          when :show # show one of api_key in ATS
-            res = ats_ibm_api.read("api_keys/#{concerned_id}")
-            return Result::SingleObject.new(res)
-          when :delete
-            ats_ibm_api.delete("api_keys/#{concerned_id}")
-            return Result::Status.new("deleted #{concerned_id}")
-          else Aspera.error_unexpected_value(command)
-          end
+        # --- cluster handlers ---
+
+        def handle_cluster_clouds
+          Result::ObjectList.new(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
         end
 
-        ACTIONS = %i[cluster access_key api_key aws_trust_policy].freeze
+        def handle_cluster_list
+          Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region])
+        end
 
-        # called for legacy and AoC
-        def execute_action
-          actions = ACTIONS.dup
-          actions.delete(:api_key) unless @ats_api_auth.nil?
-          command = options.get_next_command(actions)
-          case command
-          when :cluster # display general ATS cluster information, this uses public API, no auth
-            return execute_action_cluster_open
-          when :access_key
-            return execute_action_access_key
-          when :api_key # manage credential to access ATS API
-            return execute_action_api_key
-          when :aws_trust_policy
-            res = ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
-            return Result::SingleObject.new(res)
-          else Aspera.error_unexpected_value(command)
+        def handle_cluster_show
+          if options.get_option(:cloud) || options.get_option(:region)
+            server_data = server_by_cloud_region
+          else
+            server_id = options.instance_identifier
+            server_data = @ats_api_open.all_servers.find{ |i| i['id'].eql?(server_id)}
+            raise BadIdentifier.new('server', server_id) if server_data.nil?
           end
+          Result::SingleObject.new(server_data)
+        end
+
+        # --- access_key handlers ---
+
+        def handle_access_key_create
+          params = value_create_modify(command: :create, default: {})
+          server_data = nil
+          # if transfer_server_id not provided, get it from command line options
+          if !params.key?('transfer_server_id')
+            server_data = server_by_cloud_region
+            params['transfer_server_id'] = server_data['id']
+          end
+          Log.log.debug{"using params: #{params}".bg_red.gray}
+          if params.key?('storage')
+            case params['storage']['type']
+            # here we need somehow to map storage type to field to get for auth end point
+            when 'ibm-s3'
+              server_data2 = nil
+              if server_data.nil?
+                server_data2 = @ats_api_open.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
+                raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
+              else
+                server_data2 = @ats_api_open.all_servers.find do |s|
+                  s['cloud'].eql?(server_data['cloud']) &&
+                    s['region'].eql?(server_data['region']) &&
+                    s.key?('s3_authentication_endpoint')
+                end
+                raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
+                # specific one do not have s3 end point in id
+                params['transfer_server_id'] = server_data2['id']
+              end
+              params['storage']['endpoint'] = server_data2['s3_authentication_endpoint'] if !params['storage'].key?('authentication_endpoint')
+            end
+          end
+          res = ats_api.create('access_keys', params)
+          return Result::SingleObject.new(res)
+          # TODO : action : modify, with "PUT"
+        end
+
+        def handle_access_key_list
+          params = query_read_delete(default: {'offset' => 0, 'max_results' => 1000})
+          res = ats_api.read('access_keys', params)
+          return Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
+        end
+
+        def handle_access_key_show
+          access_key_id = options.instance_identifier
+          res = ats_api.read("access_keys/#{access_key_id}")
+          return Result::SingleObject.new(res)
+        end
+
+        def handle_access_key_modify
+          access_key_id = options.instance_identifier
+          params = value_create_modify(command: :modify)
+          params['id'] = access_key_id
+          ats_api.update("access_keys/#{access_key_id}", params)
+          return Result::Status.new('modified')
+        end
+
+        def handle_access_key_delete
+          access_key_id = options.instance_identifier
+          ats_api.delete("access_keys/#{access_key_id}")
+          return Result::Status.new("deleted #{access_key_id}")
+        end
+
+        def handle_access_key_entitlement
+          access_key_id = options.instance_identifier
+          ak = ats_api.read("access_keys/#{access_key_id}")
+          api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
+          return Result::SingleObject.new(api_bss.read('entitlement'))
+        end
+
+        def handle_access_key_node
+          access_key_id = options.instance_identifier
+          ak_data = ats_api.read("access_keys/#{access_key_id}")
+          server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
+          raise Cli::Error, 'no such server found' if server_data.nil?
+          node_url = server_data['transfer_setup_url']
+          api_node = Api::Node.new(
+            base_url: node_url,
+            auth:     {
+              type:     :basic,
+              username: access_key_id,
+              password: config.lookup_secret(url: node_url, username: access_key_id)
+            }
+          )
+          command = options.get_next_command(Node::COMMANDS_GEN4)
+          return Node.new(context: context, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
+        end
+
+        def handle_access_key_cluster
+          access_key_id = options.instance_identifier
+          ats_url = ats_api.base_url
+          api_ak_auth = Rest.new(
+            base_url: ats_url,
+            auth:     {
+              type:     :basic,
+              username: access_key_id,
+              password: config.lookup_secret(url: ats_url, username: access_key_id)
+            }
+          )
+          return Result::SingleObject.new(api_ak_auth.read('servers'))
+        end
+
+        # --- api_key handlers ---
+
+        def handle_api_key_instances
+          ats_ibm_api = ats_api_v2_auth_ibm
+          instances = ats_ibm_api.read('instances')
+          Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
+          return Result::ValueList.new(instances['data'], name: 'instance')
+        end
+
+        def handle_api_key_create
+          ats_ibm_api = build_ats_ibm_api_with_instance
+          created_key = ats_ibm_api.create('api_keys', value_create_modify(command: :create, default: {}))
+          return Result::SingleObject.new(created_key)
+        end
+
+        def handle_api_key_list
+          ats_ibm_api = build_ats_ibm_api_with_instance
+          res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})
+          return Result::ValueList.new(res['data'], name: 'ats_id')
+        end
+
+        def handle_api_key_show
+          concerned_id = options.instance_identifier
+          ats_ibm_api = build_ats_ibm_api_with_instance
+          res = ats_ibm_api.read("api_keys/#{concerned_id}")
+          return Result::SingleObject.new(res)
+        end
+
+        def handle_api_key_delete
+          concerned_id = options.instance_identifier
+          ats_ibm_api = build_ats_ibm_api_with_instance
+          ats_ibm_api.delete("api_keys/#{concerned_id}")
+          return Result::Status.new("deleted #{concerned_id}")
+        end
+
+        # --- aws_trust_policy ---
+
+        def handle_aws_trust_policy
+          res = ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
+          return Result::SingleObject.new(res)
+        end
+
+        private
+
+        # Build the IBM Cloud ATS v2 API with an instance header.
+        # Reads instance from options; falls back to first available instance.
+        def build_ats_ibm_api_with_instance
+          instance = options.get_option(:instance)
+          if instance.nil?
+            instance = ats_api_v2_auth_ibm.read('instances')['data'].first
+            formatter.display_status("using first instance: #{instance}")
+          end
+          ats_api_v2_auth_ibm({'X-ATS-Service-Instance-Id' => instance})
         end
       end
     end

@@ -37,8 +37,8 @@ module Aspera
             test_args:    'info'
           }
         end
-        command(:health, description: 'Check health of HTTP Gateway', handler: :handle_health)
-        command(:info,   description: 'Show HTTP Gateway information', handler: :handle_info)
+        command(:health, description: 'Check health of HTTP Gateway')
+        command(:info,   description: 'Show HTTP Gateway information')
 
         def initialize(**_)
           super

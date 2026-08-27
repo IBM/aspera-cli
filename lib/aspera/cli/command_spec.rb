@@ -59,7 +59,7 @@ module Aspera
     # @!attribute setup            [Symbol, nil]                 Instance method called before dispatching to children; returns Hash merged into ctx
     # @!attribute delegates_to     [Symbol, Array<Symbol>, nil]  Re-enter the command tree at this path
     # @!attribute delegate_instance [Symbol, nil]                Instance method returning a different plugin object
-    # @!attribute aliases          [Hash{Symbol => Symbol}, nil] Shortcuts that resolve to declared sibling command names
+    # @!attribute aliases          [Array<Symbol>, nil] Alternative names accepted for this command (each resolves to this command's id)
     # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch

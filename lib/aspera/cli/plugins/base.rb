@@ -34,10 +34,24 @@ module Aspera
           end
 
           # DSL class method: register a command in this plugin's registry.
+          # Inherits parent from the enclosing commands_under block when parent: is omitted.
           # @param id [Symbol]
           # @param kwargs [Hash] forwarded to CommandSpec
           def command(id, **kwargs)
+            kwargs[:parent] = @current_parent if kwargs[:parent].nil? && @current_parent
             command_registry.register(CommandSpec.new(id: id, **kwargs))
+          end
+
+          # DSL class method: scope block that sets a default parent for nested command() calls.
+          # Fully re-entrant: blocks may be nested for multi-level parent paths.
+          # @param parent [Symbol, Array<Symbol>] parent path applied to every command() inside
+          # @yieldreturn [void]
+          def commands_under(parent)
+            previous = @current_parent
+            @current_parent = parent
+            yield
+          ensure
+            @current_parent = previous
           end
 
           # DSL class method: register an option spec in this plugin's registry.
@@ -46,6 +60,18 @@ module Aspera
           def option(name, **kwargs)
             command_registry.register_option(OptionSpec.new(name: name, **kwargs))
           end
+
+          # DSL class method: declare a setup method to run once before root dispatch.
+          # The method is called before any command is consumed, and its return value
+          # (a Hash) is merged into the initial ctx. This is useful when conditions
+          # on root commands depend on state built during setup (e.g. @connection_type).
+          # @param method_name [Symbol]
+          def root_setup(method_name)
+            @root_setup_method = method_name
+          end
+
+          # @return [Symbol, nil]
+          attr_reader :root_setup_method
         end
 
         def initialize(context:)
@@ -98,7 +124,14 @@ module Aspera
         # Legacy plugins override this method; DSL plugins leave it and rely on the registry.
         def execute_action
           raise InternalError, "#{self.class} has no registered DSL commands" if self.class.command_registry.none?
-          dispatch_from_registry([])
+          # Run the root setup (if declared) before consuming any argument.
+          # This ensures condition methods on root commands can read instance variables
+          # populated by the setup (e.g. @connection_type in server.rb).
+          init_ctx = {}
+          if (rsm = self.class.root_setup_method)
+            init_ctx = send(rsm) || {}
+          end
+          dispatch_from_registry([], init_ctx)
         end
 
         # Two-phase dispatcher implementing the algorithm from MIGRATION_TO_DSL.md.
@@ -119,12 +152,13 @@ module Aspera
           # Fast-path: if current_path already points to a leaf node (has a handler,
           # no children), execute it directly without consuming a further argument.
           # This handles the case where delegates_to points to a leaf command.
-          if spec&.handler && registry.children_of(current_path).empty?
+          if spec && registry.children_of(current_path).empty?
+            h = handler_for(spec)
             if spec.transfer_paths
-              return send(spec.handler, **ctx)
+              return send(h, **ctx)
             else
               args = (spec.arguments || []).map{ |a| resolve_argument(a)}
-              return send(spec.handler, *args, **ctx)
+              return send(h, *args, **ctx)
             end
           end
 
@@ -132,7 +166,7 @@ module Aspera
           children  = registry.children_of(current_path)
           available = children.reject{ |_, c| c.condition && !send(c.condition)}
           aliases   = children.values.each_with_object({}) do |c, h|
-            h.merge!(c.aliases) if c.aliases
+            Array(c.aliases).each{ |a| h[a] = c.id} if c.aliases
           end
           command   = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
           child     = available[command]
@@ -154,15 +188,25 @@ module Aspera
           else
             # Leaf: run child setup (if any), then execute handler or transfer
             ctx = ctx.merge(send(child.setup)) if child.setup
+            h = handler_for(child)
             if child.transfer_paths
               # File list delegated to TransferAgent; no positional args consumed here
-              send(child.handler, **ctx)
+              send(h, **ctx)
             else
               # Leaf: resolve arguments, then call handler
               args = (child.arguments || []).map{ |a| resolve_argument(a)}
-              send(child.handler, *args, **ctx)
+              send(h, *args, **ctx)
             end
           end
+        end
+
+        # Resolve the handler method name for a leaf CommandSpec.
+        # Returns spec.handler if explicitly set; otherwise derives it from the full path
+        # as :handle_<path_segment_1>_<path_segment_2>_... (e.g. [:access_key, :list] → :handle_access_key_list).
+        # @param spec [CommandSpec]
+        # @return [Symbol]
+        def handler_for(spec)
+          spec.handler || :"handle_#{spec.full_path.join('_')}"
         end
 
         # Expand an entity_execute shorthand from a CommandSpec.

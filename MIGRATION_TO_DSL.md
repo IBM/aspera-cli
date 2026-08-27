@@ -399,6 +399,14 @@ exercise the real option/argument pipeline end-to-end.
 | `CommandRegistry#none?` not defined; `execute_action` guard used `none?` introduced by rubocop auto-correction | Added `none?` as the explicit inverse of `any?` in `CommandRegistry` |
 | `setup:` on a leaf command (one with `handler:` and no DSL children) was not executed in Phase B dispatch | Leaf branch of `dispatch_from_registry` now calls `send(child.setup)` before the handler |
 
+**Design decisions and additions from Phase 3**:
+
+| Decision | Rationale |
+|---|---|
+| `root_setup` DSL class method added to `Base` | `server.rb` needs `@connection_type` / `@ascmd_executor` available before root command conditions are evaluated; a per-command `setup:` runs too late (after the command is selected). `root_setup :method` runs once in `execute_action` before `dispatch_from_registry([])`. |
+| `define_method` for sibling commands sharing the same REST pattern | `console.rb` transfer actions (start/pause/…) and `server.rb` ascmd groups all have identical bodies except for one symbol. Generating handlers with `define_method` avoids the need for a `command_id:` injection in the dispatcher while staying DRY. |
+| `setup_api`/`setup_server` store state in instance variables, return `{}` | For plugins where the API object is used by all handlers (orchestrator, server), storing it in an ivar is cleaner than threading it through the context hash for every leaf handler. |
+
 ---
 
 ### Phase 0a — Data classes and registry
@@ -543,7 +551,7 @@ fully delegates to a REST macro.
 ---
 
 ### Phase 3 — Migrate medium-complexity plugins (2 levels, limited context variables)
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Validate the `setup:` + context-passing mechanism on plugins with two nesting
 levels where a context variable flows from parent to children.
