@@ -66,7 +66,7 @@ Each step is self-contained so that an automated agent can apply them independen
 
 - Add the command logic in the relevant plugin file under `lib/aspera/cli/plugins/`.
 - If the command belongs to a mixin (e.g. `AscpActions`, `PresetActions`), add the method in the corresponding file under `lib/aspera/cli/`.
-- Register the new action symbol in the plugin's `ACTIONS` constant and add a `when :my_action` branch in `execute_action`.
+- Declare the new command with `command(...)` at class level and implement the corresponding `handle_<path>` method.
 - For agent-related schemas, declare parameters in `lib/aspera/cli/options.schema.yaml` under `components/schemas/`.
 
 #### 2 — Add tests in `tests/tests.yml`

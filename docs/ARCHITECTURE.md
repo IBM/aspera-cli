@@ -114,6 +114,100 @@ The plugin architecture enables modular command implementation for different Asp
 - [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - OAuth authentication
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
+#### Command DSL
+
+All plugins declare their command tree using a class-level DSL defined in `Base`. This
+replaced the former `ACTIONS` + `execute_action` `case/when` pattern, making the full
+command tree statically introspectable, self-documenting, and testable without execution.
+
+**Key files**:
+
+- [`lib/aspera/cli/command_spec.rb`](../lib/aspera/cli/command_spec.rb) — data classes: `CommandSpec`, `ArgumentSpec`, `OptionSpec`
+- [`lib/aspera/cli/command_registry.rb`](../lib/aspera/cli/command_registry.rb) — flat registry keyed by full path (`Array<Symbol>`)
+
+**Command declaration** (`Base.command`):
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `Symbol` | Unique identifier within its parent's namespace |
+| `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands |
+| `description` | `String` | User-facing help text |
+| `options` | `Array<Symbol>` | Option names consumed by this command |
+| `arguments` | `Array<ArgumentSpec>` | Positional arguments in parse order |
+| `handler` | `Symbol \| nil` | Instance method called at leaf; defaults to `handle_<full_path_joined_with_underscores>` |
+| `setup` | `Symbol \| nil` | Instance method called before dispatching to children; returns a `Hash` merged into the context (`ctx`) passed down |
+| `root_setup` | `Symbol \| nil` | Instance method called once before the root dispatch (class-level DSL method); used when state must exist before root command conditions are evaluated |
+| `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for delegation loops) |
+| `delegate_instance` | `Symbol \| nil` | Instance method returning a different plugin object; dispatcher calls `dispatch_from_registry` on that object |
+| `aliases` | `Hash{Symbol => Symbol}` | Accepted shortcuts resolving to declared sibling command names |
+| `entity_execute` | `Hash \| nil` | Shorthand that expands to `Base#entity_execute` (five standard CRUD verbs) |
+| `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent`; mutually exclusive with `arguments:` |
+| `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is hidden from dispatch but shown in help with an annotation |
+
+**Argument declaration** (`ArgumentSpec`):
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `Symbol` | Name used in help and error messages |
+| `description` | `String` | User-facing description |
+| `type` | `Class \| Array<Class> \| :identifier` | Validated type; `:identifier` triggers `instance_identifier` |
+| `mandatory` | `Boolean` | Default `true`; optional arguments must come after all mandatory ones |
+| `multiple` | `Boolean` | If `true`, consume all remaining positional arguments |
+| `default` | `Object \| nil` | Default value when `mandatory: false` and no argument provided |
+| `schema` | `String \| nil` | JSON schema name for validation and help introspection |
+
+**Dispatcher algorithm** (`Base#dispatch_from_registry`):
+
+The dispatcher operates in two phases for each node:
+
+1. **Setup** — if the current node declares a `setup:` method, it is called first; its return value is merged into the context hash `ctx` and passed to all descendants.
+2. **Dispatch** — the next positional argument is consumed and matched against the node's children. `condition:` commands are excluded from runtime dispatch but included in help output.
+
+```
+dispatch_from_registry(current_path, ctx = {})
+  # Phase A: setup on the current node
+  ctx = ctx.merge(send(spec.setup)) if spec&.setup
+
+  # Phase B: select child command
+  command = options.get_next_command(available_children, aliases: ...)
+  child   = available[command]
+
+  # Delegation to another plugin instance
+  return target.dispatch_from_registry(child.delegates_to, {}) if child.delegate_instance
+
+  # Path delegation (loops)
+  return dispatch_from_registry(child.delegates_to, ctx) if child.delegates_to
+
+  # CRUD shorthand
+  return run_entity_execute(child.entity_execute, ctx) if child.entity_execute
+
+  if grandchildren.any?
+    dispatch_from_registry(current_path + [command], ctx)   # intermediate node
+  else
+    send(handler_for(child), **ctx)                          # leaf: call handler
+  end
+end
+```
+
+Key properties of the `ctx` hash:
+
+- **Additive**: each `setup:` call enriches the accumulated context; descendants can rely on all ancestor setups.
+- **Setup runs before child selection**: matches the imperative pattern where local variables are created before `get_next_command`.
+- `transfer_paths:` bypasses argument resolution entirely; `TransferAgent#ts_source_paths` handles the argument stream conditionally based on `--sources`.
+
+**Notable design decisions**:
+
+| Decision | Rationale |
+|---|---|
+| Flat registry keyed by full path `Array<Symbol>` | Avoids recursive data structures; path lookup is O(1) |
+| `setup:` runs on the current node before dispatching | Matches the imperative pattern; no virtual/synthetic nodes needed |
+| `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
+| `entity_execute:` shorthand | Keeps CRUD declarations DRY while preserving introspectability |
+| `delegate_instance:` separate from `delegates_to:` | The `node access_keys do v3` case needs a different API object, not just a different path |
+| `transfer_paths: :send\|:receive` instead of positional args | The `--sources` mechanism in `TransferAgent` is incompatible with static argument declaration |
+| Opaque private helpers for highly dynamic sub-trees | `execute_resource_action` (aoc), `execute_admin_entity_type` (shares), etc. contain runtime-dynamic dispatch that cannot be statically declared |
+| `define_method` for homogeneous command groups | Avoids repetitive handler definitions for commands sharing the same one-line body |
+
 #### Transfer Agent Abstraction
 
 **File**: [`lib/aspera/cli/transfer_agent.rb`](../lib/aspera/cli/transfer_agent.rb)
@@ -348,20 +442,22 @@ Transfer agents implement a common interface with different strategies:
 - API-based via Node
 - Gateway-based via HTTPGW
 
-### Template Method Pattern
+### Command DSL Pattern
 
-Base plugin defines the operation flow, subclasses implement specifics:
+Each plugin declares its command tree at class level using the `command(...)` DSL method.
+The base class dispatcher (`dispatch_from_registry`) traverses the registry and calls the
+appropriate `handle_<path>` method on the plugin instance:
 
 ```ruby
-class Base
-  def execute_action
-    # Template method
-  end
-end
-
 class Faspex < Base
-  def execute_action
-    # Faspex-specific implementation
+  command :package, description: 'Manage packages'
+
+  command :send, parent: :package,
+    description: 'Send a package',
+    handler:     :handle_package_send
+
+  def handle_package_send
+    # implementation
   end
 end
 ```
@@ -477,8 +573,8 @@ GitHub Actions workflows:
 
 1. Create plugin file in `lib/aspera/cli/plugins/`
 2. Inherit from `Plugins::Base`
-3. Define `ACTIONS` constant
-4. Implement `execute_action` method
+3. Declare commands with the `command(...)` DSL at class level
+4. Implement `handle_<path>` methods for each leaf command
 5. Register in plugin factory
 
 ### Adding a New Transfer Agent

@@ -4969,6 +4969,7 @@ conf_plugins_run:
     - conf_plugins_create
   args:
     - my_command
+    - example
     - --plugin-folder=$(TMP)
 conf_genkey_default:
   pre: |
