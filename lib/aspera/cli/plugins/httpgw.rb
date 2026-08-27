@@ -37,7 +37,8 @@ module Aspera
             test_args:    'info'
           }
         end
-        ACTIONS = %i[health info].freeze
+        command(:health, description: 'Check health of HTTP Gateway', handler: :handle_health)
+        command(:info,   description: 'Show HTTP Gateway information', handler: :handle_info)
 
         def initialize(**_)
           super
@@ -45,23 +46,20 @@ module Aspera
           options.parse_options!
         end
 
-        def execute_action
-          base_url = options.get_option(:url, mandatory: true)
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :health
-            nagios = Nagios.new
-            begin
-              Api::Httpgw.new(url: base_url)
-              nagios.add_ok('api', 'answered ok')
-            rescue StandardError => e
-              nagios.add_critical('api', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :info
-            api_v1 = Api::Httpgw.new(url: base_url)
-            return Result::SingleObject.new(api_v1.info)
+        def handle_health
+          nagios = Nagios.new
+          begin
+            Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
+            nagios.add_ok('api', 'answered ok')
+          rescue StandardError => e
+            nagios.add_critical('api', e.to_s)
           end
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        def handle_info
+          api = Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
+          Result::SingleObject.new(api.info)
         end
       end
     end

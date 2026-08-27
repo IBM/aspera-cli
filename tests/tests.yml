@@ -390,6 +390,8 @@ serv_detect:
     - detect
     - "@preset:server_user.url"
 serv_wizard:
+  tags:
+    - server
   args:
     - config
     - wizard
@@ -399,6 +401,7 @@ serv_wizard:
     - --password=@preset:server_user.password
 serv_wizard_password:
   tags:
+    - server
     - nodoc
   args:
     - config
@@ -939,6 +942,8 @@ cons_detect:
     - detect
     - "@preset:console_admin.url"
 cons_wizard:
+  tags:
+    - console
   args:
     - config
     - wizard
@@ -1043,6 +1048,8 @@ nd_detect:
     - detect
     - "@preset:node_user.url"
 nd_wizard:
+  tags:
+    - node
   args:
     - config
     - wizard
@@ -1888,6 +1895,8 @@ nd_ak_bearer_delete:
     - "@preset:ak_creds.username"
 # AoC ------------------------------------------------------
 aoc_detect:
+  tags:
+    - aoc
   args:
     - config
     - detect
@@ -1904,6 +1913,8 @@ aoc_config_tokens_list:
     - tokens
     - list
 aoc_wizard_generic_client:
+  tags:
+    - aoc
   args:
     - config
     - wizard
@@ -1933,6 +1944,8 @@ aoc_config_tokens_show:
 aoc_wizard_preset:
   depends_on:
     - aoc_config_tokens_flush
+  tags:
+    - aoc
   args:
     - config
     - wizard
@@ -3745,6 +3758,8 @@ orch_detect:
     - detect
     - "@preset:orch_user.url"
 orch_wizard:
+  tags:
+    - orchestrator
   args:
     - config
     - wizard
@@ -5715,12 +5730,16 @@ f5_health_nagios:
     - --url=https://www.ibm.com
     - --format=nagios
 f5_detect:
+  tags:
+    - faspex5
   args:
     - config
     - detect
     - "@preset:faspex5_user.url"
     - faspex5
 f5_wizard:
+  tags:
+    - faspex5
   args:
     - config
     - wizard
@@ -5730,6 +5749,7 @@ f5_wizard:
     - --preset=faspex5_user
 f5_wizard_show_secrets:
   tags:
+    - faspex5
     - nodoc
   args:
     - config
@@ -5741,6 +5761,7 @@ f5_wizard_show_secrets:
     - --username=a@b.c
 f5_wizard_no_key:
   tags:
+    - faspex5
     - nodoc
   args:
     - config
@@ -5754,6 +5775,7 @@ f5_wizard_no_key:
     - --client-secret=abc
 f5_detect_fail:
   tags:
+    - faspex5
     - must_fail
     - nodoc
   expect: No known application found
@@ -6573,9 +6595,19 @@ httpgw_info:
     - httpgw
     - info
 httpgw_detect:
+  tags:
+    - httpgw
   args:
     - config
     - detect
+    - "@preset:tst_httpgw.url"
+    - httpgw
+httpgw_wizard:
+  tags:
+    - httpgw
+  args:
+    - config
+    - wizard
     - "@preset:tst_httpgw.url"
     - httpgw
 faspio_health:
@@ -6583,12 +6615,16 @@ faspio_health:
     - faspio
     - health
 faspio_detect:
+  tags:
+    - faspio
   args:
     - config
     - detect
     - "@preset:tst_faspio.url"
     - faspio
 faspio_wizard:
+  tags:
+    - faspio
   args:
     - config
     - wizard
@@ -6607,6 +6643,14 @@ faspio_bcreate:
     - bridges
     - create
     - '@json:{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
+faspio_bshow:
+  depends_on:
+    - faspio_bcreate
+  args:
+    - faspio
+    - bridges
+    - show
+    - "1"
 faspio_bclean_list:
   depends_on:
     - faspio_bcreate

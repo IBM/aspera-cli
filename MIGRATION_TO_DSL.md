@@ -456,7 +456,7 @@ while keeping all non-migrated plugins working exactly as before.
 ---
 
 ### Phase 1 — Migrate trivial plugins (1 level, no context variables)
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Validate the DSL on the simplest real-world cases before tackling complex ones.
 These plugins have a single dispatch level and no context variables passed between levels.

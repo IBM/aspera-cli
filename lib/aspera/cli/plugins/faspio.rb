@@ -39,7 +39,8 @@ module Aspera
           }
         end
 
-        ACTIONS = %i[health bridges].freeze
+        command(:health,  description: 'Check health of faspio Gateway', handler: :handle_health)
+        command(:bridges, description: 'Manage bridges',                  handler: :handle_bridges)
 
         def initialize(**_)
           super
@@ -50,51 +51,53 @@ module Aspera
           options.parse_options!
         end
 
-        def execute_action
+        # Build the REST API object based on the configured auth type.
+        # @return [Rest]
+        def build_api
           base_url = options.get_option(:url, mandatory: true)
-          api =
-            case options.get_option(:auth, mandatory: true)
-            when :basic
-              basic_auth_api
-            when :jwt
-              app_client_id = options.get_option(:client_id, mandatory: true)
-              Rest.new(
-                base_url: base_url,
-                auth:     {
-                  type:            :oauth2,
-                  grant_method:    :jwt,
-                  base_url:        "#{base_url}/auth",
-                  params:          {
-                    client_id: app_client_id
-                  },
-                  use_query:       true,
-                  payload:         {
-                    iss: app_client_id, # issuer
-                    sub: app_client_id  # subject
-                  },
-                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
-                  headers:         {typ: 'JWT'}
-                }
-              )
-            end
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :health
-            nagios = Nagios.new
-            begin
-              result = api.read('ping')
-              if result.is_a?(Hash) && result.empty?
-                nagios.add_ok('api', 'answered ok')
-              else
-                nagios.add_critical('api', 'not expected answer')
-              end
-            rescue StandardError => e
-              nagios.add_critical('api', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :bridges
-            return entity_execute(api: api, entity: 'bridges')
+          case options.get_option(:auth, mandatory: true)
+          when :basic
+            basic_auth_api
+          when :jwt
+            app_client_id = options.get_option(:client_id, mandatory: true)
+            Rest.new(
+              base_url: base_url,
+              auth:     {
+                type:            :oauth2,
+                grant_method:    :jwt,
+                base_url:        "#{base_url}/auth",
+                params:          {
+                  client_id: app_client_id
+                },
+                use_query:       true,
+                payload:         {
+                  iss: app_client_id, # issuer
+                  sub: app_client_id  # subject
+                },
+                private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
+                headers:         {typ: 'JWT'}
+              }
+            )
           end
+        end
+
+        def handle_health
+          nagios = Nagios.new
+          begin
+            result = build_api.read('ping')
+            if result.is_a?(Hash) && result.empty?
+              nagios.add_ok('api', 'answered ok')
+            else
+              nagios.add_critical('api', 'not expected answer')
+            end
+          rescue StandardError => e
+            nagios.add_critical('api', e.to_s)
+          end
+          Result::ObjectList.new(nagios.status_list)
+        end
+
+        def handle_bridges
+          entity_execute(api: build_api, entity: 'bridges')
         end
       end
     end
