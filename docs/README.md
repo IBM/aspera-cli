@@ -2565,6 +2565,12 @@ ascli config preset set GLOBAL version_check_days 0
 > Add `ascli config` in front of the following commands:
 
 ```shell
+agents list
+agents parameters connect
+agents parameters direct
+agents parameters node
+agents show connect
+agents show direct
 ascp errors
 ascp info --sdk-folder=sdk_test_dir
 ascp install
@@ -3457,6 +3463,31 @@ The following agents are supported and selected with option `transfer`:
 | [`desktop`](#agent-desktop-client) | local    | Aspera for Desktop            |
 | [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
 | [`httpgw`](#agent-http-gateway)    | remote   | Aspera HTTP Gateway           |
+
+The list of agents and their short identifier can be displayed with:
+
+```shell
+ascli config agents list
+```
+
+To display all configurable parameters for a specific agent:
+
+```shell
+ascli config agents parameters <agent name>
+```
+
+For example:
+
+```shell
+ascli config agents parameters direct
+ascli config agents parameters node
+```
+
+To display the full detail of an agent (description, required fields, default values, enumerated values):
+
+```shell
+ascli config agents show <agent name>
+```
 
 > [!NOTE]
 > All transfer operations are seen from the point of view of the agent.
@@ -4819,7 +4850,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash) (deprecated: use --transfer instead)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
+SUBCOMMANDS: agents ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
 
 
 
@@ -9783,6 +9814,39 @@ Start with custom instructions and a specific protocol version:
 ```shell
 ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2024-11-05
 ```
+
+### MCP client configuration
+
+To register `ascli` as an MCP server in an AI client (e.g. Claude Desktop, VS Code, Bob), add the following to the client's MCP configuration file:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "command": "/path/to/bin/ascli",
+      "args": ["mcp", "server"]
+    }
+  }
+}
+```
+
+> [!NOTE]
+> **Development mode** — if the `ascli` gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
+> Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the project:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "ascli": {
+>       "command": "/path/to/aspera-cli/bin/ascli",
+>       "args": ["mcp", "server"],
+>       "env": {
+>         "RUBYLIB": "/path/to/aspera-cli/lib"
+>       }
+>     }
+>   }
+> }
+> ```
 
 ### Tested commands for `mcp`
 

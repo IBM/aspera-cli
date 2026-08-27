@@ -305,6 +305,7 @@ module Aspera
           coffee
           image
           ascp
+          agents
           sync
           transferd
           email_test
@@ -425,6 +426,8 @@ module Aspera
             return Result::Image.new(options.get_next_argument('image URI or blob'))
           when :ascp
             execute_action_ascp
+          when :agents
+            return execute_action_agents
           when :sync
             SyncActions.declare_options(options)
             case options.get_next_command(%i[spec admin translate])

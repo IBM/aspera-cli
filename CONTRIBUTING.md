@@ -50,17 +50,109 @@ To submit a contribution, follow these steps:
 1. **Create a feature branch** specifically for your changes.
 
 1. **Implement** your feature or bug fix.
-
-1. **Write tests** to ensure your changes are robust and prevent regressions.
-
-1. **Run** `rubocop` to ensure your code adheres to the Ruby style guide.
-
-1. **Update** `CHANGELOG.md` with a concise summary of your changes.
+   See [Development Cycle for a New CLI Command](#development-cycle-for-a-new-cli-command) for the complete checklist.
 
 1. **Submit a pull request** with a detailed description of your work.
 
 > [!TIP]
 > Keep pull requests focused; include only changes relevant to the specific feature or fix.
+
+### Development Cycle for a New CLI Command
+
+When adding or modifying a CLI command, complete **every step** in the following order.
+Each step is self-contained so that an automated agent can apply them independently.
+
+#### 1 — Implement
+
+- Add the command logic in the relevant plugin file under `lib/aspera/cli/plugins/`.
+- If the command belongs to a mixin (e.g. `AscpActions`, `PresetActions`), add the method in the corresponding file under `lib/aspera/cli/`.
+- Register the new action symbol in the plugin's `ACTIONS` constant and add a `when :my_action` branch in `execute_action`.
+- For agent-related schemas, declare parameters in `lib/aspera/cli/options.schema.yaml` under `components/schemas/`.
+
+#### 2 — Add tests in `tests/tests.yml`
+
+Every new command needs at least one entry in `tests/tests.yml`.
+Follow the naming convention `<plugin>_<sub>_<action>` (e.g. `conf_agents_list`).
+
+- Add a **happy-path** test (no extra tags).
+- Add a **failure test** for invalid input with tags `must_fail` and `nodoc`, and set `expect:` to a substring of the expected error message.
+- Tests that should not appear in generated documentation get the `nodoc` tag.
+- Insert the new entries near related tests (same plugin/sub-command group).
+
+Minimal example:
+
+```yaml
+conf_agents_list:
+  args:
+    - config
+    - agents
+    - list
+conf_agents_show_bad:
+  tags:
+    - must_fail
+    - nodoc
+  expect: "unknown value"
+  args:
+    - config
+    - agents
+    - show
+    - badagent
+```
+
+Run only the new tests to validate quickly:
+
+```shell
+bundle exec rake test:run'[conf_agents_list conf_agents_show_bad]'
+```
+
+#### 3 — Update `docs/README.erb.md`
+
+`docs/README.erb.md` is the source for the generated documentation (`docs/README.md` and the PDF manual).
+**Never edit `docs/README.md` directly.**
+
+- Find the section closest to the new command (search for the parent command or a sibling).
+- Add a short prose paragraph and one or more fenced `shell` blocks showing usage.
+- Use ERB variables: `<%=cmd%>` for the tool name, `<%=tool%>` for the display name, `<%=ph :name%>` for placeholders.
+- For parameter tables generated from JSON schema, use `<%=schema_to_table(Aspera::Schema::Registry::MY_SCHEMA_KEY)%>`.
+
+Regenerate and verify:
+
+```shell
+bundle exec rake doc:prep
+```
+
+#### 4 — Update `CHANGELOG.md`
+
+Add one bullet under `### New Features` (or `### Issues Fixed` / `### Breaking Changes`) in the current `.pre` section at the top of `CHANGELOG.md`.
+
+Style rules:
+- Plugin name in backticks: `` `config` ``, `` `aoc` ``, or `**global**` for cross-cutting changes.
+- Command path and argument names in backticks.
+- One sentence per bullet; end without a period.
+
+Example:
+
+```markdown
+* `config`: New commands `agents list`, `agents show <name>` and `agents parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters
+```
+
+#### 5 — Static analysis
+
+```shell
+bundle exec rake tools:rubocop   # Ruby style guide
+bundle exec rake tools:reek      # code smell detection
+```
+
+Fix any new offence introduced by your changes before committing.
+Pre-existing offences listed in `.rubocop_todo.yml` can be left as-is.
+
+#### 6 — Full test suite
+
+```shell
+bundle exec rake test:run
+```
+
+All tests must pass (status `passed`) before opening a pull request.
 
 ## Architecture
 

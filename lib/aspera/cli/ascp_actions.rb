@@ -1,10 +1,24 @@
 # frozen_string_literal: true
 
+require 'aspera/agent/factory'
+require 'aspera/schema/registry'
+require 'aspera/schema/reader'
+
 module Aspera
   module Cli
     # Mixin for Config plugin: ASCP / Transferd related actions
     module AscpActions
       TRANSFERD_APP_NAME = 'sdk'
+
+      # Mapping from agent symbol to schema key in options.schema.yaml
+      # Agents without dedicated schema (connect, desktop) are omitted.
+      AGENT_SCHEMA_KEY = {
+        direct:    Schema::Registry::DIRECT_AGENT_OPTIONS,
+        node:      Schema::Registry::NODE_AGENT_OPTIONS,
+        httpgw:    Schema::Registry::HTTPGW_AGENT_OPTIONS,
+        transferd: Schema::Registry::TRANSFERD_AGENT_OPTIONS
+      }.freeze
+      private_constant :AGENT_SCHEMA_KEY
 
       # Set the SDK directory, checking default and former locations
       def set_sdk_dir
@@ -75,6 +89,63 @@ module Aspera
             error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
           end
           return Result::ObjectList.new(error_data)
+        else Aspera.error_unexpected_value(command)
+        end
+        Aspera.error_unreachable_line
+      end
+
+      # Dispatch CLI sub-commands for the `agents` action group
+      # @return [Result] command result
+      def execute_action_agents
+        command = options.get_next_command(%i[list show parameters])
+        case command
+        when :list
+          rows = Agent::Factory::ALL.map do |sym, names|
+            schema_key = AGENT_SCHEMA_KEY[sym]
+            param_names =
+              if schema_key
+                Schema::Registry.instance.reader(schema_key).current['properties']&.keys&.sort&.join(', ') || ''
+              else
+                ''
+              end
+            {
+              'name'       => sym.to_s,
+              'short'      => names[:short].to_s,
+              'parameters' => param_names
+            }
+          end.sort_by{ |r| r['name']}
+          return Result::ObjectList.new(rows, fields: %w[name short parameters])
+        when :show
+          agent_name = options.get_next_argument('agent name', accept_list: Agent::Factory::ALL.keys)
+          Aspera.assert(Agent::Factory::ALL.key?(agent_name)){"Unknown agent: #{agent_name}. Use: #{Agent::Factory::ALL.keys.join(', ')}"}
+          names = Agent::Factory::ALL[agent_name]
+          schema_key = AGENT_SCHEMA_KEY[agent_name]
+          agent_info = {
+            'name'        => agent_name.to_s,
+            'short'       => names[:short].to_s,
+            'description' => schema_key ? Schema::Registry.instance.reader(schema_key).current['description'].to_s : '(no configurable parameters)'
+          }
+          if schema_key
+            properties = Schema::Registry.instance.reader(schema_key).current['properties'] || {}
+            rows = properties.map do |pname, pdef|
+              row = {'parameter' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
+              row['required'] = (Schema::Registry.instance.reader(schema_key).current['required'] || []).include?(pname) ? 'yes' : 'no'
+              row['default']  = pdef.key?('default') ? pdef['default'].inspect : ''
+              row['enum']     = pdef.key?('enum')    ? pdef['enum'].join(', ')  : ''
+              row
+            end
+            return Result::ObjectList.new(rows, fields: %w[parameter required type default enum description])
+          end
+          return Result::SingleObject.new(agent_info)
+        when :parameters
+          agent_name = options.get_next_argument('agent name', accept_list: Agent::Factory::ALL.keys)
+          schema_key = AGENT_SCHEMA_KEY[agent_name]
+          return Result::Nothing.new if schema_key.nil?
+          properties = Schema::Registry.instance.reader(schema_key).current['properties'] || {}
+          rows = properties.map do |pname, pdef|
+            {'name' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
+          end
+          return Result::ObjectList.new(rows, fields: %w[name type description])
         else Aspera.error_unexpected_value(command)
         end
         Aspera.error_unreachable_line

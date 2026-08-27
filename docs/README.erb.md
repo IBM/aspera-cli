@@ -3293,6 +3293,31 @@ The following agents are supported and selected with option `transfer`:
 | [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
 | [`httpgw`](#agent-http-gateway)    | remote   | Aspera HTTP Gateway           |
 
+The list of agents and their short identifier can be displayed with:
+
+```shell
+<%=cmd%> config agents list
+```
+
+To display all configurable parameters for a specific agent:
+
+```shell
+<%=cmd%> config agents parameters <agent name>
+```
+
+For example:
+
+```shell
+<%=cmd%> config agents parameters direct
+<%=cmd%> config agents parameters node
+```
+
+To display the full detail of an agent (description, required fields, default values, enumerated values):
+
+```shell
+<%=cmd%> config agents show <agent name>
+```
+
 > [!NOTE]
 > All transfer operations are seen from the point of view of the agent.
 > For example, an agent executing an **upload**, or **package send** operation will effectively push files to the related server from the system where the agent runs.

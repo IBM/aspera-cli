@@ -7,6 +7,7 @@ Released: [Place date of release here]
 ### New Features
 
 * `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` to install the latest available version.
+* `config`: New commands `agents list`, `agents show <name>` and `agents parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters.
 * `mcp`: New plugin - starts a [Model Context Protocol](https://modelcontextprotocol.io/) server exposing `execute_ascli_command`. Supports `stdio` (default) and `http` (Streamable HTTP) transports.
 * **global**: Documentation for growing files using the `file` PVCL adapter (`file:///path?grow=<seconds>`).
 * **global**: New composite option `log` with sub-properties `level`, `type`, `format` (aliases for `--log-level`, `--logger`, `--log-format`). Individual options preserved for backward compatibility.

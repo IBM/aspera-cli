@@ -4446,6 +4446,54 @@ conf_transferd_url:
     - list
     - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
     - --fields=url
+conf_agents_list:
+  args:
+    - config
+    - agents
+    - list
+conf_agents_show_direct:
+  args:
+    - config
+    - agents
+    - show
+    - direct
+conf_agents_show_connect:
+  description: Agent with no configurable parameters.
+  args:
+    - config
+    - agents
+    - show
+    - connect
+conf_agents_parameters_direct:
+  args:
+    - config
+    - agents
+    - parameters
+    - direct
+conf_agents_parameters_node:
+  args:
+    - config
+    - agents
+    - parameters
+    - node
+conf_agents_parameters_connect:
+  description: Agent with no configurable parameters returns empty result.
+  args:
+    - config
+    - agents
+    - parameters
+    - connect
+conf_agents_show_bad:
+  description: Unknown agent name returns an error.
+  tags:
+    - must_fail
+    - nodoc
+  expect: "unknown value"
+  args:
+    - config
+    - agents
+    - show
+    - badagent
 conf_ascp_installg:
   tags:
     - nodoc
