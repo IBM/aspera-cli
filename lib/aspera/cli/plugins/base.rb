@@ -3,6 +3,7 @@
 require 'aspera/cli/extended_value'
 require 'aspera/assert'
 require 'aspera/cli/result'
+require 'aspera/cli/command_registry'
 
 module Aspera
   module Cli
@@ -25,14 +26,37 @@ module Aspera
             options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
             options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
           end
+
+          # Per-class DSL registry (not inherited: each subclass gets its own instance).
+          # @return [CommandRegistry]
+          def command_registry
+            @command_registry ||= CommandRegistry.new
+          end
+
+          # DSL class method: register a command in this plugin's registry.
+          # @param id [Symbol]
+          # @param kwargs [Hash] forwarded to CommandSpec
+          def command(id, **kwargs)
+            command_registry.register(CommandSpec.new(id: id, **kwargs))
+          end
+
+          # DSL class method: register an option spec in this plugin's registry.
+          # @param name [Symbol]
+          # @param kwargs [Hash] forwarded to OptionSpec
+          def option(name, **kwargs)
+            command_registry.register_option(OptionSpec.new(name: name, **kwargs))
+          end
         end
 
         def initialize(context:)
           Aspera.assert_type(context, Context){'context'}
           Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
-          # Check presence in descendant of mandatory method and constant
-          Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
-          Aspera.assert(self.class.const_defined?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
+          uses_dsl = self.class.command_registry.any?
+          unless uses_dsl
+            # Legacy plugins: require ACTIONS constant and execute_action method
+            Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
+            Aspera.assert(self.class.const_defined?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
+          end
           @context = context
           add_manual_header if @context.man_header
         end
@@ -61,8 +85,140 @@ module Aspera
           # Manual header for all plugins
           options.parser.separator('')
           options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-          options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
+          if self.class.command_registry.any?
+            cmds = self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
+          else
+            cmds = self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')
+          end
+          options.parser.separator("SUBCOMMANDS: #{cmds}")
           options.parser.separator('OPTIONS:') if has_options
+        end
+
+        # Default execute_action for DSL-based plugins.
+        # Legacy plugins override this method; DSL plugins leave it and rely on the registry.
+        def execute_action
+          raise InternalError, "#{self.class} has no registered DSL commands" unless self.class.command_registry.any?
+          dispatch_from_registry([])
+        end
+
+        # Two-phase dispatcher implementing the algorithm from MIGRATION_TO_DSL.md.
+        #
+        # Phase A: run setup: method on the current node (before consuming next argument).
+        # Phase B: consume next argument, match against children, recurse or call handler.
+        #
+        # @param current_path [Array<Symbol>] path of the node currently being dispatched
+        # @param ctx [Hash] accumulated context passed down from parent nodes
+        # @return [Object] result suitable for CLI output
+        def dispatch_from_registry(current_path, ctx = {})
+          registry = self.class.command_registry
+          spec     = registry[current_path]
+
+          # Phase A — setup on current node
+          if spec&.setup
+            ctx = ctx.merge(send(spec.setup))
+          end
+
+          # Fast-path: if current_path already points to a leaf node (has a handler,
+          # no children), execute it directly without consuming a further argument.
+          # This handles the case where delegates_to points to a leaf command.
+          if spec&.handler && registry.children_of(current_path).empty?
+            if spec.transfer_paths
+              return send(spec.handler, **ctx)
+            else
+              args = (spec.arguments || []).map { |a| resolve_argument(a) }
+              return send(spec.handler, *args, **ctx)
+            end
+          end
+
+          # Phase B — dispatch to a child
+          children  = registry.children_of(current_path)
+          available = children.reject { |_, c| c.condition && !send(c.condition) }
+          aliases   = children.values.each_with_object({}) do |c, h|
+            h.merge!(c.aliases) if c.aliases
+          end
+          command   = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
+          child     = available[command]
+
+          # Loop / instance delegation
+          if child.delegate_instance
+            target = send(child.delegate_instance)
+            return target.dispatch_from_registry(Array(child.delegates_to), {})
+          end
+          if child.delegates_to
+            return dispatch_from_registry(Array(child.delegates_to), ctx)
+          end
+
+          # entity_execute shorthand
+          if child.entity_execute
+            return run_entity_execute(child, ctx)
+          end
+
+          grandchildren = registry.children_of(current_path + [command])
+          if grandchildren.any?
+            # Intermediate node: recurse (child setup will run at the top of next call)
+            dispatch_from_registry(current_path + [command], ctx)
+          elsif child.transfer_paths
+            # File list delegated to TransferAgent; no positional args consumed here
+            send(child.handler, **ctx)
+          else
+            # Leaf: resolve arguments, then call handler
+            args = (child.arguments || []).map { |a| resolve_argument(a) }
+            send(child.handler, *args, **ctx)
+          end
+        end
+
+        # Expand an entity_execute shorthand from a CommandSpec.
+        # Calls Base#entity_execute with the parameters from spec.entity_execute merged
+        # with the context hash (context entries are low-priority: spec params win).
+        # @param spec [CommandSpec] the command spec carrying entity_execute: Hash
+        # @param ctx [Hash] accumulated context (e.g. api:, lookup block)
+        # @return [Object]
+        def run_entity_execute(spec, ctx)
+          ee_params = spec.entity_execute.dup
+          # Merge context into params (spec wins on key collision)
+          merged = ctx.merge(ee_params)
+          # If a lookup block was threaded through ctx, pass it as a block
+          block = ctx[:lookup_block]
+          if block
+            entity_execute(**merged, &block)
+          else
+            entity_execute(**merged)
+          end
+        end
+
+        # Resolve a single positional argument from the CLI argument stream.
+        # @param arg_spec [ArgumentSpec]
+        # @return [Object] the resolved value
+        def resolve_argument(arg_spec)
+          case arg_spec.type
+          when :identifier
+            options.instance_identifier
+          else
+            # Class or Array<Class> → pass as validation type
+            options.get_next_argument(
+              arg_spec.name.to_s,
+              mandatory: arg_spec.mandatory,
+              multiple:  arg_spec.multiple || false,
+              validation: arg_spec.type,
+              default:   arg_spec.default,
+              schema:    arg_spec.schema
+            )
+          end
+        end
+
+        # Build a nested Hash tree of the registered command tree for help display.
+        # Conditional commands are included with a '[condition_name]' annotation.
+        # @param path [Array<Symbol>] starting path ([] for the full tree)
+        # @return [Hash] { command_id => { description:, condition:, children: } }
+        def generate_help(path = [])
+          self.class.command_registry.children_of(path).transform_values do |child_spec|
+            annotation = child_spec.condition ? " [#{child_spec.condition}]" : ''
+            {
+              description: "#{child_spec.description}#{annotation}",
+              condition:   child_spec.condition,
+              children:    generate_help(child_spec.full_path)
+            }
+          end
         end
 
         # For create and delete operations: execute one action or multiple if bulk is yes

@@ -417,7 +417,7 @@ no changes to `Base` or any plugin. Can be reviewed and tested in complete isola
 ---
 
 ### Phase 0b — Dispatcher and DSL methods in `Base`
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Integrate the registry into `Base` and make it callable by migrated plugins,
 while keeping all non-migrated plugins working exactly as before.

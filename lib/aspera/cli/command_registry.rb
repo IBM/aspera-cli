@@ -9,6 +9,8 @@ module Aspera
     #
     # Public API:
     #   register(spec)          — store a CommandSpec; raises on duplicate full_path
+    #   register_option(spec)   — store an OptionSpec by name
+    #   option_specs            — Hash{Symbol => OptionSpec} of all registered options
     #   [](path)                — retrieve a CommandSpec by full path
     #   children_of(path)       — Hash{Symbol => CommandSpec} of direct children
     #   all_paths               — Array of all registered full paths
@@ -51,6 +53,20 @@ module Aspera
       # @return [Array<Array<Symbol>>] all registered full paths
       def all_paths
         @specs.keys
+      end
+
+      # Register an OptionSpec. Raises if the option name is already registered.
+      # @param spec [OptionSpec]
+      # @raise [ArgumentError] on duplicate option name
+      # @return [OptionSpec] the registered spec
+      def register_option(spec)
+        raise ArgumentError, "Duplicate option: #{spec.name.inspect}" if @option_specs.key?(spec.name)
+        @option_specs[spec.name] = spec
+      end
+
+      # @return [Hash{Symbol => OptionSpec}] all registered option specs
+      def option_specs
+        @option_specs.dup
       end
 
       # @return [Boolean] true if at least one spec is registered
@@ -98,6 +114,8 @@ module Aspera
       def initialize
         # Keyed by Array<Symbol> full path
         @specs = {}
+        # Keyed by Symbol option name
+        @option_specs = {}
       end
     end
   end
