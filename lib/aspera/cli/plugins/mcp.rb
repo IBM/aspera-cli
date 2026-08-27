@@ -16,6 +16,7 @@ module Aspera
       #
       # Supported keys in the options Hash:
       #   transport:              "stdio" (default) or "http"
+      #   max_items:              Integer — max items in text content of list results (default 100)
       #   # stdio transport:
       #   max_line_bytes:         Integer — max JSON frame size (default 4 MiB)
       #   # http transport:
@@ -39,6 +40,22 @@ module Aspera
       class Mcp < Base
         ACTIONS = %i[server].freeze
 
+        # Default instructions shown to the AI client when none are provided by the user.
+        DEFAULT_INSTRUCTIONS = <<~INST.strip
+          This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
+          It exposes a single tool, execute_ascli_command, which runs any ascli command in-process.
+
+          Key plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API),
+          server (FASP/SSH server), config (local configuration), console, orchestrator,
+          ats (Aspera Transfer Service), preview, shares, cos, httpgw, faspio, alee.
+
+          Workflow tips:
+          - Call ["config", "plugins", "list"] to enumerate available plugins.
+          - Call ["<plugin>", "--help"] to list all actions of a plugin.
+          - Credentials can be stored in named presets and referenced with --preset=name.
+          - Call ["config", "preset", "list"] to list saved presets.
+        INST
+
         # Keys forwarded to MCP::Server constructor (symbolized)
         SERVER_KEYS = %i[instructions].freeze
         # Keys forwarded to MCP::Configuration
@@ -47,7 +64,9 @@ module Aspera
         STDIO_KEYS  = %i[max_line_bytes].freeze
         # Keys forwarded to StreamableHTTPTransport
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
-        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS
+        # Keys consumed locally (not forwarded to MCP gem)
+        TOOL_KEYS   = %i[max_items].freeze
+        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
         def initialize(**_)
           super
@@ -61,8 +80,9 @@ module Aspera
             # Optional Hash argument — all keys optional, unknown keys raise an error
             mcp_options = options.get_next_argument('mcp options', mandatory: false, validation: [Hash]) || {}
             mcp_options = mcp_options.transform_keys(&:to_sym)
-            unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - %i[transport port bind]
+            unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
             raise Cli::BadArgument, "Unknown MCP option(s): #{unknown.join(', ')}" unless unknown.empty?
+            Cli::McpTool.max_items = mcp_options.delete(:max_items)
             transport = mcp_options.delete(:transport) || 'stdio'
             raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
               unless %w[stdio http].include?(transport.to_s)
@@ -81,6 +101,7 @@ module Aspera
           tool = Cli::McpTool
           config_opts = mcp_options.slice(*CONFIG_KEYS)
           server_opts = mcp_options.slice(*SERVER_KEYS)
+          server_opts[:instructions] ||= DEFAULT_INSTRUCTIONS
           configuration = config_opts.empty? ? nil : MCP::Configuration.new(**config_opts)
           MCP::Server.new(
             name:          Info::GEM_NAME,

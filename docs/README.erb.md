@@ -8615,6 +8615,39 @@ Start with custom instructions and a specific protocol version:
 <%=cmd%> mcp server @: instructions="Aspera transfer automation" protocol_version=2024-11-05
 ```
 
+### MCP client configuration
+
+To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS Code, Bob), add the following to the client's MCP configuration file:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "command": "/path/to/bin/<%=cmd%>",
+      "args": ["mcp", "server"]
+    }
+  }
+}
+```
+
+> [!NOTE]
+> **Development mode** — if the <%=tool%> gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
+> Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the project:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "ascli": {
+>       "command": "/path/to/aspera-cli/bin/<%=cmd%>",
+>       "args": ["mcp", "server"],
+>       "env": {
+>         "RUBYLIB": "/path/to/aspera-cli/lib"
+>       }
+>     }
+>   }
+> }
+> ```
+
 <%=include_commands_for_plugin(:mcp)%>
 
 ## Operational Utilities
