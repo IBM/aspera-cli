@@ -104,7 +104,7 @@ module Aspera
 
         command(:health,   description: 'Check Shares health')
         command(:info,     description: 'Show server information')
-        command(:files,    description: 'Browse and transfer files on Shares', aliases: [:repository])
+        command(:files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node)
         command(:admin,    description: 'Administer Shares', setup: :setup_admin)
 
         commands_under(:admin) do
@@ -129,6 +129,13 @@ module Aspera
         end
 
         # --- setup ---
+
+        # Build the Shares node API plugin and inject into ctx.
+        # @return [Hash] context hash containing :shares_node_plugin
+        def setup_shares_node
+          api_shares_node = basic_auth_api(NODE_API_PATH)
+          {shares_node_plugin: Node.new(context: context, api: api_shares_node)}
+        end
 
         # Build the admin REST API and store in ivar.
         # @return [Hash] empty ctx (state stored in @api_shares_admin)
@@ -168,12 +175,19 @@ module Aspera
           Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
         end
 
-        # --- files (delegate to Node plugin) ---
+        # --- files sub-commands (restricted to COMMANDS_SHARES, delegated to Node) ---
 
-        def handle_files
-          api_shares_node = basic_auth_api(NODE_API_PATH)
-          repo_command = options.get_next_command(Node::COMMANDS_SHARES)
-          Node.new(context: context, api: api_shares_node).execute_action(repo_command)
+        commands_under(:files) do
+          Node::COMMANDS_SHARES.each do |cmd|
+            command(cmd, description: "Node #{cmd} command")
+          end
+        end
+
+        # One handler per COMMANDS_SHARES command.
+        Node::COMMANDS_SHARES.each do |cmd|
+          define_method(:"handle_files_#{cmd}") do |shares_node_plugin:|
+            shares_node_plugin.dispatch_v3_command(cmd)
+          end
         end
 
         # --- admin node (entity_execute shorthand via DSL) ---

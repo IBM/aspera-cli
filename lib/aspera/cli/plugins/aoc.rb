@@ -1001,287 +1001,451 @@ module Aspera
           all_packages.reject!{ |pkg| skip_package[pkg['id']]}
         end
 
-        # must be public
-        ACTIONS = %i[reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway].freeze
+        # --- DSL command declarations ---
 
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          if %i[files packages].include?(command)
-            formatter.display_status("Workspace: #{aoc_api.workspace_info[:name].to_s.red}#{' (default)' if aoc_api.default_workspace?}")
-            if !aoc_api.private_link.nil?
-              folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']
-              formatter.display_status("Private Folder: #{folder_name}")
+        # Root-level commands
+        command(:reminder,          description: 'Send reminder email with list of orgs')
+        command(:servers,           description: 'List AoC servers (no auth)')
+        command(:bearer_token,      description: 'Display bearer token')
+        command(:organization,      description: 'Show organization info')
+        command(:tier_restrictions, description: 'Show tier restrictions')
+        command(:user,              description: 'User commands')
+        command(:packages,          description: 'Package commands', setup: :setup_workspace_display)
+        command(:files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display)
+        command(:admin,             description: 'Administration commands')
+        command(:automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api)
+        command(:gateway,           description: 'Start AoC Faspex4 gateway')
+
+        # user sub-commands
+        commands_under(:user) do
+          command(:workspaces,   description: 'Workspace commands')
+          command(:profile,      description: 'User profile commands')
+          command(:preferences,  description: 'User interaction preferences')
+          command(:notifications, description: 'Notification preferences')
+          command(:contacts,     description: 'Manage contacts',           handler: :handle_user_contacts)
+          command(:settings,     description: 'Manage client settings',    handler: :handle_user_settings)
+        end
+
+        commands_under([:user, :workspaces]) do
+          command(:list,    description: 'List workspaces')
+          command(:current, description: 'Show current workspace')
+        end
+
+        commands_under([:user, :profile]) do
+          command(:show,   description: 'Show user profile')
+          command(:modify, description: 'Modify user profile')
+        end
+
+        commands_under([:user, :preferences]) do
+          command(:show,   description: 'Show user preferences')
+          command(:modify, description: 'Modify user preferences')
+        end
+
+        commands_under([:user, :notifications]) do
+          command(:show,   description: 'Show notification preferences')
+          command(:modify, description: 'Modify notification preferences')
+        end
+
+        # packages sub-commands
+        commands_under(:packages) do
+          command(:shared_inboxes, description: 'Shared inbox commands')
+          command(:send,           description: 'Send a package')
+          command(:receive,        description: 'Receive package(s)', aliases: [:recv])
+          command(:list,           description: 'List packages')
+          command(:show,           description: 'Show a package')
+          command(:delete,         description: 'Delete package(s)')
+          command(:modify,         description: 'Modify a package')
+          # Node Gen4 read-only actions on packages
+          command(:bearer_token_node, description: 'Show bearer token for package node')
+          command(:node_info,         description: 'Show node info for package')
+          command(:browse,            description: 'Browse package contents')
+          command(:find,              description: 'Find files in package')
+        end
+
+        commands_under([:packages, :shared_inboxes]) do
+          command(:list,       description: 'List shared inboxes')
+          command(:show,       description: 'Show a shared inbox')
+          command(:short_link, description: 'Manage shared inbox short links')
+        end
+
+        # files sub-commands: all FILES_COMMANDS + :short_link
+        # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
+        commands_under(:files) do
+          command(:short_link,       description: 'Manage file short link')
+          command(:transfer,         description: 'Transfer files (node-to-node)')
+          command(:mkdir,            description: 'Create folder')
+          command(:mklink,           description: 'Create symbolic link')
+          command(:mkfile,           description: 'Create file')
+          command(:rename,           description: 'Rename entry')
+          command(:delete,           description: 'Delete entry')
+          command(:upload,           description: 'Upload files')
+          command(:download,         description: 'Download files')
+          command(:sync,             description: 'Synchronize folders')
+          command(:cat,              description: 'Show file contents')
+          command(:show,             description: 'Show file info')
+          command(:modify,           description: 'Modify file')
+          command(:permission,       description: 'Manage permissions')
+          command(:thumbnail,        description: 'Show file thumbnail')
+          command(:v3,               description: 'Legacy v3 commands on files')
+          command(:bearer_token_node, description: 'Show bearer token for file node')
+          command(:node_info,         description: 'Show node info for file')
+          command(:browse,            description: 'Browse files')
+          command(:find,              description: 'Find files')
+        end
+
+        # automation sub-commands
+        commands_under(:automation) do
+          command(:instances, description: 'Manage workflow instances')
+          command(:workflows,  description: 'Manage workflows')
+        end
+
+        commands_under([:automation, :workflows]) do
+          command(:create,  description: 'Create a workflow')
+          command(:list,    description: 'List workflows')
+          command(:show,    description: 'Show a workflow')
+          command(:modify,  description: 'Modify a workflow')
+          command(:delete,  description: 'Delete a workflow')
+          command(:launch,  description: 'Launch a workflow')
+          command(:action,  description: 'Add action to workflow (TODO)')
+        end
+
+        commands_under([:automation, :workflows, :action]) do
+          command(:list,   description: 'List actions (TODO)')
+          command(:create, description: 'Create an action (TODO)')
+          command(:show,   description: 'Show an action (TODO)')
+        end
+
+        # --- setup methods ---
+
+        # Display workspace info before dispatching files/packages sub-commands.
+        # Returns {} so it does not inject anything into ctx.
+        def setup_workspace_display
+          formatter.display_status("Workspace: #{aoc_api.workspace_info[:name].to_s.red}#{' (default)' if aoc_api.default_workspace?}")
+          if !aoc_api.private_link.nil?
+            folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']
+            formatter.display_status("Private Folder: #{folder_name}")
+          end
+          {}
+        end
+
+        # Build automation API and store in @automation_api ivar.
+        def setup_automation_api
+          change_api_scope(Api::AoC::Scope::ADMIN_USER)
+          Log.log.warn('BETA: work under progress')
+          @automation_api = Rest.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
+          {}
+        end
+
+        # --- handler methods ---
+
+        def handle_reminder
+          user_email = options.get_option(:username, mandatory: true)
+          no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
+          no_auth_api.create('organization_reminders', {email: user_email})
+          return Result::Status.new("List of organizations user is member of, has been sent by e-mail to #{user_email}")
+        end
+
+        def handle_servers
+          no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
+          return Result::ObjectList.new(no_auth_api.read('servers'))
+        end
+
+        def handle_bearer_token
+          return Result::Text.new(aoc_api.oauth.authorization)
+        end
+
+        def handle_organization
+          return Result::SingleObject.new(aoc_api.read('organization'))
+        end
+
+        def handle_tier_restrictions
+          return Result::SingleObject.new(aoc_api.read('tier_restrictions'))
+        end
+
+        # user > contacts
+        def handle_user_contacts
+          execute_resource_action(:contact)
+        end
+
+        # user > settings
+        def handle_user_settings
+          entity_execute(api: aoc_api, entity: 'client_settings')
+        end
+
+        # user > workspaces > list
+        def handle_user_workspaces_list
+          result_list('workspaces', fields: %w[id name])
+        end
+
+        # user > workspaces > current
+        def handle_user_workspaces_current
+          Result::SingleObject.new(aoc_api.workspace_info)
+        end
+
+        # user > profile > show
+        def handle_user_profile_show
+          Result::SingleObject.new(aoc_api.current_user_info(exception: true))
+        end
+
+        # user > profile > modify
+        def handle_user_profile_modify
+          aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
+          Result::Status.new('modified')
+        end
+
+        # user > preferences > show
+        def handle_user_preferences_show
+          user_id = aoc_api.current_user_info(exception: true)['id']
+          Result::SingleObject.new(aoc_api.read("users/#{user_id}/user_interaction_preferences"))
+        end
+
+        # user > preferences > modify
+        def handle_user_preferences_modify
+          user_id = aoc_api.current_user_info(exception: true)['id']
+          aoc_api.update("users/#{user_id}/user_interaction_preferences", options.get_next_argument('properties', validation: Hash))
+          Result::Status.new('modified')
+        end
+
+        # user > notifications > show
+        def handle_user_notifications_show
+          user_id = aoc_api.current_user_info(exception: true)['id']
+          Result::SingleObject.new(aoc_api.read("users/#{user_id}/notification_preferences"))
+        end
+
+        # user > notifications > modify
+        def handle_user_notifications_modify
+          user_id = aoc_api.current_user_info(exception: true)['id']
+          aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
+          Result::Status.new('modified')
+        end
+
+        # packages > shared_inboxes > list
+        def handle_packages_shared_inboxes_list
+          default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
+          workspace_id_hash(default_query, string: true)
+          result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
+        end
+
+        # packages > shared_inboxes > show
+        def handle_packages_shared_inboxes_show
+          Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))
+        end
+
+        # packages > shared_inboxes > short_link
+        def handle_packages_shared_inboxes_short_link
+          # TODO: check name
+          short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
+        end
+
+        # packages > send
+        def handle_packages_send
+          package_data = value_create_modify(command: :send, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post'))
+          new_user_option = options.get_option(:new_user_option)
+          option_validate = options.get_option(:validate_metadata)
+          workspace_id_hash(package_data, string: true) unless package_data.key?('workspace_id')
+          if !aoc_api.public_link.nil?
+            aoc_api.assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
+            box_type = aoc_api.public_link['purpose'].split('_').last
+            package_data['recipients'] = [{'id' => aoc_api.public_link['data']["#{box_type}_id"], 'type' => box_type}]
+            package_data['workspace_id'] = aoc_api.public_link['data']['workspace_id']
+          end
+          package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
+          created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
+          Runner.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
+          return Result::SingleObject.new(created_package[:info])
+        end
+
+        # packages > receive
+        def handle_packages_receive
+          ids_to_download = nil
+          if !aoc_api.public_link.nil?
+            aoc_api.assert_public_link_types(['view_received_package'])
+            ids_to_download = aoc_api.public_link['data']['package_id']
+          end
+          ids_to_download ||= options.instance_identifier
+          skip_ids_persistency = package_persistency
+          case ids_to_download
+          when SpecialValues::INIT
+            all_packages = list_all_packages_with_query[:items]
+            Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
+            skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
+            skip_ids_persistency.save
+            return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+          when SpecialValues::ALL
+            all_packages = list_all_packages_with_query[:items]
+            reject_packages_from_persistency(all_packages, skip_ids_persistency)
+            ids_to_download = all_packages.map{ |e| e['id']}
+            formatter.display_status("Found #{ids_to_download.length} package(s).")
+          else
+            ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
+          end
+          ts_paths = transfer.ts_source_paths(default: ['.'])
+          per_package_def = options.get_option(:package_folder).symbolize_keys
+          save_metadata = per_package_def.delete(:inf)
+          destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
+          result_transfer = []
+          ids_to_download.each do |package_id|
+            package_info = aoc_api.read("packages/#{package_id}")
+            package_node_api = aoc_api.node_api_from(
+              node_id: package_info['node_id'],
+              package_info: package_info,
+              **workspace_id_hash(name: true)
+            )
+            transfer_spec = package_node_api.transfer_spec_gen4(
+              package_info['contents_file_id'],
+              Transfer::Spec::DIRECTION_RECEIVE,
+              {'paths'=> ts_paths}
+            )
+            transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def) unless per_package_def.empty?
+            dest_folder = transfer.user_transfer_spec['destination_root'] || destination_folder
+            formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
+            statuses = transfer.start(transfer_spec, rest_token: package_node_api)
+            File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
+            result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
+            if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
+              skip_ids_persistency.data.push(package_id)
+              skip_ids_persistency.save
             end
           end
-          case command
-          when :reminder
-            # send an email reminder with list of orgs
-            user_email = options.get_option(:username, mandatory: true)
-            no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
-            no_auth_api.create('organization_reminders', {email: user_email})
-            return Result::Status.new("List of organizations user is member of, has been sent by e-mail to #{user_email}")
-          when :servers
-            no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
-            return Result::ObjectList.new(no_auth_api.read('servers'))
-          when :bearer_token
-            return Result::Text.new(aoc_api.oauth.authorization)
-          when :organization
-            return Result::SingleObject.new(aoc_api.read('organization'))
-          when :tier_restrictions
-            return Result::SingleObject.new(aoc_api.read('tier_restrictions'))
-          when :user
-            user_cmd = options.get_next_command(%i[workspaces profile preferences notifications contacts settings])
-            case user_cmd
-            when :contacts
-              return execute_resource_action(:contact)
-            when :settings
-              return entity_execute(api: aoc_api, entity: 'client_settings')
-            when :workspaces
-              case options.get_next_command(%i[list current])
-              when :list
-                return result_list('workspaces', fields: %w[id name])
-              when :current
-                return Result::SingleObject.new(aoc_api.workspace_info)
-              end
-            when :profile
-              case options.get_next_command(%i[show modify])
-              when :show
-                return Result::SingleObject.new(aoc_api.current_user_info(exception: true))
-              when :modify
-                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
-                return Result::Status.new('modified')
-              end
-            when :preferences, :notifications
-              user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/#{user_cmd.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
-              case options.get_next_command(%i[show modify])
-              when :show
-                return Result::SingleObject.new(aoc_api.read(user_preferences_res))
-              when :modify
-                aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
-                return Result::Status.new('modified')
-              end
-            end
-          when :packages
-            package_command = options.get_next_command(%i[shared_inboxes send receive list show delete modify].concat(Node::NODE4_READ_ACTIONS), aliases: {recv: :receive})
-            case package_command
-            when :shared_inboxes
-              case options.get_next_command(%i[list show short_link])
-              when :list
-                default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
-                workspace_id_hash(default_query, string: true)
-                return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
-              when :show
-                return Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))
-              when :short_link
-                # TODO: check name
-                return short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
-              end
-            when :send
-              package_data = value_create_modify(command: package_command, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post'))
-              new_user_option = options.get_option(:new_user_option)
-              option_validate = options.get_option(:validate_metadata)
-              # Works for both normal user auth and link auth.
-              workspace_id_hash(package_data, string: true) unless package_data.key?('workspace_id')
-              if !aoc_api.public_link.nil?
-                aoc_api.assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
-                box_type = aoc_api.public_link['purpose'].split('_').last
-                package_data['recipients'] = [{'id' => aoc_api.public_link['data']["#{box_type}_id"], 'type' => box_type}]
-                # enforce workspace id from link (should be already ok, but in case user wanted to override)
-                package_data['workspace_id'] = aoc_api.public_link['data']['workspace_id']
-              end
-              package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
-              # transfer may raise an error
-              created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-              Runner.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
-              # return all info on package (especially package id)
-              return Result::SingleObject.new(created_package[:info])
-            when :receive
-              ids_to_download = nil
-              if !aoc_api.public_link.nil?
-                aoc_api.assert_public_link_types(['view_received_package'])
-                # Set the package id from link
-                ids_to_download = aoc_api.public_link['data']['package_id']
-              end
-              # Get from command line unless it was a public link
-              ids_to_download ||= options.instance_identifier
-              skip_ids_persistency = package_persistency
-              case ids_to_download
-              when SpecialValues::INIT
-                all_packages = list_all_packages_with_query[:items]
-                Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
-                skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
-                skip_ids_persistency.save
-                return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-              when SpecialValues::ALL
-                all_packages = list_all_packages_with_query[:items]
-                # remove from list the ones already downloaded
-                reject_packages_from_persistency(all_packages, skip_ids_persistency)
-                ids_to_download = all_packages.map{ |e| e['id']}
-                formatter.display_status("Found #{ids_to_download.length} package(s).")
-              else
-                # single id to array
-                ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
-              end
-              # download all files, or specified list only
-              ts_paths = transfer.ts_source_paths(default: ['.'])
-              per_package_def = options.get_option(:package_folder).symbolize_keys
-              save_metadata = per_package_def.delete(:inf)
-              # get value outside of loop
-              destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
-              result_transfer = []
-              ids_to_download.each do |package_id|
-                package_info = aoc_api.read("packages/#{package_id}")
-                package_node_api = aoc_api.node_api_from(
-                  node_id: package_info['node_id'],
-                  package_info: package_info,
-                  **workspace_id_hash(name: true)
-                )
-                transfer_spec = package_node_api.transfer_spec_gen4(
-                  package_info['contents_file_id'],
-                  Transfer::Spec::DIRECTION_RECEIVE,
-                  {'paths'=> ts_paths}
-                )
-                transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def) unless per_package_def.empty?
-                dest_folder = transfer.user_transfer_spec['destination_root'] || destination_folder
-                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
-                statuses = transfer.start(
-                  transfer_spec,
-                  rest_token: package_node_api
-                )
-                File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
-                result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
-                # update skip list only if all transfer sessions completed
-                if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
-                  skip_ids_persistency.data.push(package_id)
-                  skip_ids_persistency.save
-                end
-              end
-              return Runner.result_transfer_multiple(result_transfer)
-            when :show
-              package_id = options.instance_identifier
-              package_info = aoc_api.read("packages/#{package_id}")
-              return Result::SingleObject.new(package_info)
-            when :list
-              result = list_all_packages_with_query
-              skip_ids_persistency = package_persistency
-              reject_packages_from_persistency(result[:items], skip_ids_persistency)
-              display_fields = PACKAGE_LIST_DEFAULT_FIELDS
-              display_fields += ['workspace_id'] if aoc_api.workspace_info[:id].nil?
-              return Result::ObjectList.new(result[:items], fields: display_fields, total: result[:total])
+          return Runner.result_transfer_multiple(result_transfer)
+        end
+
+        # packages > list
+        def handle_packages_list
+          result = list_all_packages_with_query
+          skip_ids_persistency = package_persistency
+          reject_packages_from_persistency(result[:items], skip_ids_persistency)
+          display_fields = PACKAGE_LIST_DEFAULT_FIELDS
+          display_fields += ['workspace_id'] if aoc_api.workspace_info[:id].nil?
+          Result::ObjectList.new(result[:items], fields: display_fields, total: result[:total])
+        end
+
+        # packages > show
+        def handle_packages_show
+          package_id = options.instance_identifier
+          Result::SingleObject.new(aoc_api.read("packages/#{package_id}"))
+        end
+
+        # packages > delete
+        def handle_packages_delete
+          do_bulk_operation(command: :delete, values: options.instance_identifier) do |package_id|
+            Aspera.assert_type(package_id, String, Integer){'identifier'}
+            aoc_api.delete("packages/#{package_id}")
+          end
+        end
+
+        # packages > modify
+        def handle_packages_modify
+          package_id = options.instance_identifier
+          aoc_api.update("packages/#{package_id}", value_create_modify(command: :modify))
+          Result::Status.new('modified')
+        end
+
+        # packages > bearer_token_node / node_info / browse / find
+        # (NODE4_READ_ACTIONS dispatched by full path: handle_packages_bearer_token_node, etc.)
+        Node::NODE4_READ_ACTIONS.each do |action|
+          define_method(:"handle_packages_#{action}") do
+            package_id = options.instance_identifier
+            package_info = aoc_api.read("packages/#{package_id}")
+            execute_nodegen4_command(action, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
+          end
+        end
+
+        # files > short_link
+        def handle_files_short_link
+          folder_dest = options.get_next_argument('path', validation: String)
+          home_node_api = aoc_api.node_api_from(
+            node_id: aoc_api.home[:node_id],
+            **workspace_id_hash(name: true)
+          )
+          shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
+          short_link_command(
+            node_id: shared_apifid.node_api.app_info.node_info['id'],
+            file_id: shared_apifid.file_id
+          ) do |op, id, access_levels|
+            case op
+            when :create
+              perm_data = {
+                'file_id'       => shared_apifid.file_id,
+                'access_id'     => id,
+                'access_type'   => 'user',
+                'access_levels' => Api::AoC.expand_access_levels(access_levels),
+                'tags'          => {
+                  'url_token'        => true,
+                  'folder_name'      => File.basename(folder_dest),
+                  'created_by_name'  => aoc_api.current_user_info['name'],
+                  'created_by_email' => aoc_api.current_user_info['email'],
+                  'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
+                  'node'             => shared_apifid.node_api.app_info.node_info['name'],
+                  **workspace_id_hash(string: true, name: true)
+                }
+              }
+              created_data = shared_apifid.node_api.create('permissions', perm_data)
+              aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
+            when :update
+              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
+              raise Error, "Short link not found: #{id}" if found.nil?
+              shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
             when :delete
-              return do_bulk_operation(command: package_command, values: options.instance_identifier) do |package_id|
-                Aspera.assert_type(package_id, String, Integer){'identifier'}
-                aoc_api.delete("packages/#{package_id}")
-              end
-            when :modify
-              package_id = options.instance_identifier
-              package_data = value_create_modify(command: package_command)
-              aoc_api.update("packages/#{package_id}", package_data)
-              return Result::Status.new('modified')
-            when *Node::NODE4_READ_ACTIONS
-              package_id = options.instance_identifier
-              package_info = aoc_api.read("packages/#{package_id}")
-              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
+              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
+              raise Error, "Short link not found: #{id}" if found.nil?
+              shared_apifid.node_api.delete("permissions/#{found['id']}")
+            else Aspera.error_unexpected_value(op)
             end
-          when :files
-            command_repo = options.get_next_command([:short_link].concat(FILES_COMMANDS))
-            case command_repo
-            when *FILES_COMMANDS
-              return execute_nodegen4_command(command_repo, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
-            when :short_link
-              folder_dest = options.get_next_argument('path', validation: String)
-              home_node_api = aoc_api.node_api_from(
-                node_id: aoc_api.home[:node_id],
-                **workspace_id_hash(name: true)
-              )
-              shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
-              return short_link_command(
-                node_id:        shared_apifid.node_api.app_info.node_info['id'],
-                file_id:        shared_apifid.file_id
-              ) do |op, id, access_levels|
-                case op
-                when :create
-                  # `id` is the resource id
-                  perm_data = {
-                    'file_id'       => shared_apifid.file_id,
-                    'access_id'     => id,
-                    'access_type'   => 'user',
-                    'access_levels' => Api::AoC.expand_access_levels(access_levels),
-                    'tags'          => {
-                      'url_token'        => true,
-                      'folder_name'      => File.basename(folder_dest),
-                      'created_by_name'  => aoc_api.current_user_info['name'],
-                      'created_by_email' => aoc_api.current_user_info['email'],
-                      'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
-                      'node'             => shared_apifid.node_api.app_info.node_info['name'],
-                      **workspace_id_hash(string: true, name: true)
-                    }
-                  }
-                  created_data = shared_apifid.node_api.create('permissions', perm_data)
-                  aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
-                when :update
-                  # `id` is the permission_id
-                  found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
-                  raise Error, "Short link not found: #{id}" if found.nil?
-                  shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
-                when :delete
-                  # `id` is the resource id, i.e. `access_id`
-                  found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
-                  raise Error, "Short link not found: #{id}" if found.nil?
-                  shared_apifid.node_api.delete("permissions/#{found['id']}")
-                else Aspera.error_unexpected_value(op)
-                end
-              end
-            end
-          when :automation
-            change_api_scope(Api::AoC::Scope::ADMIN_USER)
-            Log.log.warn('BETA: work under progress')
-            # automation api is not in the same place
-            automation_api = Rest.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
-            command_automation = options.get_next_command(%i[workflows instances])
-            case command_automation
-            when :instances
-              return entity_execute(api: aoc_api, entity: 'workflow_instances')
-            when :workflows
-              wf_command = options.get_next_command(%i[action launch].concat(Operations::ALL))
-              case wf_command
-              when *Operations::ALL
-                return entity_execute(
-                  api: automation_api,
-                  entity: 'workflows',
-                  command: wf_command
-                )
-              when :launch
-                wf_id = options.instance_identifier
-                data = automation_api.create("workflows/#{wf_id}/launch", {})
-                return Result::SingleObject.new(data)
-              when :action
-                # TODO: not complete
-                wf_id = options.instance_identifier
-                wf_action_cmd = options.get_next_command(%i[list create show])
-                Log.log.warn{"Not implemented: #{wf_action_cmd}"}
-                step = automation_api.create('steps', {'workflow_id' => wf_id})
-                automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
-                action = automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
-                automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
-                wf = automation_api.read("workflows/#{wf_id}")
-                return Result::SingleObject.new(wf)
-              end
-            end
-          when :admin
-            return execute_admin_action
-          when :gateway
-            require 'aspera/faspex_gw'
-            parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
-            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
-            server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
-            server.start
-            return Result::Status.new('Gateway terminated')
-          else Aspera.error_unreachable_line
           end
-          Aspera.error_unreachable_line
+        end
+
+        # files > FILES_COMMANDS (all Gen4 node commands + :transfer)
+        FILES_COMMANDS.each do |action|
+          define_method(:"handle_files_#{action}") do
+            execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
+          end
+        end
+
+        def handle_admin
+          execute_admin_action
+        end
+
+        # automation > instances
+        def handle_automation_instances
+          entity_execute(api: aoc_api, entity: 'workflow_instances')
+        end
+
+        # automation > workflows > CRUD operations
+        Operations::ALL.each do |op|
+          define_method(:"handle_automation_workflows_#{op}") do
+            entity_execute(api: @automation_api, entity: 'workflows', command: op)
+          end
+        end
+
+        # automation > workflows > launch
+        def handle_automation_workflows_launch
+          wf_id = options.instance_identifier
+          Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))
+        end
+
+        # automation > workflows > action > * (TODO: not fully implemented)
+        %i[list create show].each do |cmd|
+          define_method(:"handle_automation_workflows_action_#{cmd}") do
+            wf_id = options.instance_identifier
+            Log.log.warn{"Not implemented: #{cmd}"}
+            step = @automation_api.create('steps', {'workflow_id' => wf_id})
+            @automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
+            action = @automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
+            @automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
+            Result::SingleObject.new(@automation_api.read("workflows/#{wf_id}"))
+          end
+        end
+
+        def handle_gateway
+          require 'aspera/faspex_gw'
+          parameters = value_create_modify(command: :gateway, default: {}).symbolize_keys
+          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
+          server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
+          server.start
+          return Result::Status.new('Gateway terminated')
         end
 
         private :execute_admin_action

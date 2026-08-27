@@ -651,6 +651,14 @@ module Aspera
         command(:postprocessing, description: 'Start Faspex 4 post-processing server')
         command(:invitations,    description: 'Manage invitations', setup: :setup_api_v5)
 
+        commands_under(:invitations) do
+          command(:create, description: 'Create an invitation')
+          command(:resend, description: 'Resend an invitation')
+          Operations::ALL.reject{ |op| op == :create }.each do |op|
+            command(op, description: "#{op.capitalize} invitation(s)")
+          end
+        end
+
         commands_under(:user) do
           command(:account, description: 'Show account information')
           command(:profile, description: 'Manage user profile')
@@ -741,27 +749,31 @@ module Aspera
           execute_admin
         end
 
-        def handle_invitations
-          invitation_endpoint = 'invitations'
-          invitation_command = options.get_next_command(%i[resend].concat(Operations::ALL))
-          case invitation_command
-          when :create
-            return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
-              invitation_endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
-              @api_v5.create(invitation_endpoint, params)
-            end
-          when :resend
-            @api_v5.create("#{invitation_endpoint}/#{options.instance_identifier}/resend", nil)
-            return Result::Status.new('Invitation resent')
-          else
-            return entity_execute(
+        # invitations sub-handlers
+
+        def handle_invitations_create
+          do_bulk_operation(command: :create, descr: 'data') do |params|
+            endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
+            @api_v5.create(endpoint, params)
+          end
+        end
+
+        def handle_invitations_resend
+          @api_v5.create("invitations/#{options.instance_identifier}/resend", nil)
+          Result::Status.new('Invitation resent')
+        end
+
+        # CRUD handlers for invitations (list, show, modify, delete)
+        Operations::ALL.reject{ |op| op == :create }.each do |op|
+          define_method(:"handle_invitations_#{op}") do
+            entity_execute(
               api: @api_v5,
-              entity: invitation_endpoint,
-              command: invitation_command,
-              items_key: invitation_endpoint,
+              entity: 'invitations',
+              command: op,
+              items_key: 'invitations',
               display_fields: %w[id public recipient_type recipient_name email_address]
             ) do |field, value|
-              @api_v5.lookup_entity_by_field(entity: invitation_endpoint, field: field, value: value, query: {})['id']
+              @api_v5.lookup_entity_by_field(entity: 'invitations', field: field, value: value, query: {})['id']
             end
           end
         end

@@ -416,6 +416,34 @@ exercise the real option/argument pipeline end-to-end.
 | Complex dynamic sub-trees preserved as private helper methods | `shares.rb admin user/group` and `faspex5.rb invitations/admin` have argument-dependent command lists that can't be statically declared. These are kept as `execute_admin_entity_type` / `execute_admin` / `execute_resource` private methods called from DSL handlers. |
 | `ensure` blocks moved from `execute_action` into each handler | `preview.rb` cleanup (`FileUtils.rm_rf(@tmp_folder)`) was in `execute_action`'s `ensure`. Each handler now has its own `ensure cleanup_tmp_folder` so cleanup is guaranteed per-handler without re-introducing a monolithic `execute_action`. |
 
+**Design decisions and additions from Phase 5**:
+
+| Decision | Rationale |
+|---|---|
+| Full multi-level DSL for all sub-trees in `node.rb` and `aoc.rb` | Every sub-tree (`access_keys`, `async`, `ssync`, `stream`, `transfer`, `service`, `central`, `user`, `packages`, `files`, `automation`) is now declared with `commands_under(...)` and leaf handlers named after the full path (`handle_<level1>_<level2>_...`). |
+| `dispatch_v3_command(command)` public method on `Node` | The `:v3` case in `execute_command_gen4` and callers in `shares.rb`, `cos.rb`, `faspex.rb` all read a command symbol from the stream before creating a new `Node` instance. For Gen3 leaf commands, `execute_command_gen3` is called directly. For sub-trees (`:access_keys`, `:transfer`), `dispatch_from_registry([command], {})` re-enters the DSL dispatcher normally so the next argument is consumed by the registry. |
+| `execute_simple_common` and sub-dispatch methods retained as non-private | `execute_simple_common`, `execute_command_gen3`, `execute_command_gen4` are still called from `aoc.rb`, `ats.rb`, `faspex.rb`, `shares.rb`, `cos.rb`. Keeping them as public instance methods preserves the existing cross-plugin call interface without code duplication. |
+| `define_method` for homogeneous groups in `node.rb` and `aoc.rb` | `COMMANDS_GEN3.each`, `Operations::ALL.each`, `FILES_COMMANDS.each`, and the ssync/async action groups all generate handlers with the same one-line body; `define_method` is DRY and avoids repetitive method definitions. |
+| `setup_workspace_display` and `setup_automation_api` as `setup:` on intermediate nodes | `packages` and `files` need workspace info displayed before any sub-command runs; `automation` needs its own API built. Using `setup:` on the intermediate node runs once before descending to children — the method returns `{}` so no ctx injection is needed. |
+| `execute_admin_action`, `execute_resource_action`, `execute_application_action` kept as private helpers | These methods contain highly dynamic dispatch that depends on runtime data (resource type, supported operations). They are not DSL-migratable at this time and are kept as opaque private helpers called from `handle_admin`. |
+| `Ats.new(...).execute_action` (no argument) valid for DSL plugins | `aoc.rb` delegates to `Ats` via `execute_action` with no argument, which is correct: DSL plugins inherit `Base#execute_action` that calls `dispatch_from_registry([])`. No change needed. |
+
+**Corrections applied after Phase 5 status was marked done** (remaining `get_next_command` in DSL handlers):
+
+| File | Fix |
+|---|---|
+| `cos.rb` `handle_node` | Added `commands_under(:node)` with `Node::COMMANDS_COS` entries; one `define_method` handler per command calls `node_plugin.dispatch_v3_command(cmd)`. `handle_node` removed. |
+| `ats.rb` `handle_access_key_node` | Replaced with `setup_ak_node` (returns `{ak_node_plugin:, ak_root_file_id:}`); added `commands_under(%i[access_key node])` with `Node::COMMANDS_GEN4`; one `define_method` handler per command calls `ak_node_plugin.execute_command_gen4(cmd, ak_root_file_id)`. |
+| `shares.rb` `handle_files` | Added `setup_shares_node` (returns `{shares_node_plugin:}`) as `setup:` on `:files`; added `commands_under(:files)` with `Node::COMMANDS_SHARES`; one `define_method` handler per command calls `shares_node_plugin.dispatch_v3_command(cmd)`. |
+| `node.rb` `handle_access_keys_do` | Replaced with `setup_access_key_do` (returns `{do_root_file_id:}`); added `commands_under(%i[access_keys do])` with `COMMANDS_GEN4`; one `define_method` handler per command calls `execute_command_gen4(cmd, do_root_file_id)`. |
+| `faspex.rb` `handle_package` | Split into `handle_package_send`, `handle_package_receive`, `handle_package_list`, `handle_package_show` with `commands_under(:package)`. |
+| `faspex.rb` `handle_source` | Split into `handle_source_list`, `handle_source_info`, and per-command `handle_source_node_*` using `setup_source_selected` + `setup_source_node`. |
+| `faspex.rb` `handle_dropbox` | Replaced by `handle_dropbox_list` with `commands_under(:dropbox)`. |
+| `faspex.rb` `handle_v4` | Split into individual `handle_v4_*` handlers with `commands_under(:v4)`. |
+| `faspex5.rb` `handle_invitations` | Split into `handle_invitations_create`, `handle_invitations_resend`, and CRUD handlers via `define_method` with `commands_under(:invitations)`. |
+
+Note: `get_next_command` calls remaining in **private helper methods** (`execute_simple_common`, `execute_command_gen4`, `execute_async`, `watch_folder_action` in `node.rb`; `execute_admin_entity_type` in `shares.rb`; `execute_resource_action`, `execute_application_action`, `execute_admin_action`, `short_link_command` in `aoc.rb`; `package_action`, `execute_resource`, `execute_admin` in `faspex5.rb`) are **intentional** — these methods contain runtime-dynamic dispatch that cannot be statically declared in the DSL (see Phase 4/5 design decisions above).
+
 ---
 
 ### Phase 0a — Data classes and registry
@@ -636,7 +664,7 @@ The context hash accumulates as it flows down:
 ---
 
 ### Phase 5 — Migrate the two most complex plugins (`node`, `aoc`)
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Complete the migration with the largest, most nested plugins.
 

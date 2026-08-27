@@ -496,7 +496,11 @@ module Aspera
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
-            return Node.new(context: context, api: apifid.node_api).execute_action(command_legacy)
+            # Delegate to a new Node instance pointing at the resolved node API.
+            # Since command_legacy was already consumed from the argument stream,
+            # we dispatch it directly on the target instance.
+            v3_node = Node.new(context: context, api: apifid.node_api)
+            return v3_node.dispatch_v3_command(command_legacy)
           when :node_info, :bearer_token_node
             apifid = apifid_from_next_arg(top_file_id)
             result = {
@@ -790,314 +794,542 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[
-          async
-          ssync
-          stream
-          transfer
-          service
-          watch_folder
-          central
-          asperabrowser
-          basic_token
-          bearer_token
-          simulator
-          telemetry
-        ].concat(COMMON_ACTIONS).freeze
+        # --- DSL command declarations ---
 
-        def execute_action(command = nil)
-          command ||= options.get_next_command(ACTIONS)
-          case command
-          when *COMMON_ACTIONS then return execute_simple_common(command)
-          when :async then return execute_async # former API
-          when :ssync
-            # Node API: /asyncs (newer)
-            sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary] + Operations::ALL - %i[modify])
-            case sync_command
-            when *Operations::ALL
-              return entity_execute(
-                api: @api_node,
-                entity: :asyncs,
-                command: sync_command,
-                items_key: 'ids'
-              ){ |field, value| ssync_lookup(field, value)}
-            else
-              asyncs_id = options.instance_identifier{ |field, value| ssync_lookup(field, value)}
-              if %i[start stop].include?(sync_command)
-                @api_node.call(
-                  operation:    'POST',
-                  subpath:      "asyncs/#{asyncs_id}/#{sync_command}",
-                  content_type: Mime::TEXT,
-                  body:         '',
-                  ret:          :resp
-                ).body
-                return Result::Status.new('Done')
-              end
-              parameters = options.get_option(:query) || {} if %i[bandwidth counters files].include?(sync_command)
-              return Result::SingleObject.new(@api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters))
+        # Gen3 leaf commands
+        command(:search,      description: 'Search for files')
+        command(:space,       description: 'Show space information')
+        command(:mkdir,       description: 'Create a folder (Gen3)')
+        command(:mklink,      description: 'Create a symbolic link (Gen3)')
+        command(:mkfile,      description: 'Create a file (Gen3)')
+        command(:rename,      description: 'Rename a file or folder (Gen3)')
+        command(:delete,      description: 'Delete files or folders (Gen3)')
+        command(:browse,      description: 'Browse files (Gen3)')
+        command(:upload,      description: 'Upload files (Gen3)')
+        command(:download,    description: 'Download files (Gen3)')
+        command(:cat,         description: 'Show file contents (Gen3)')
+        command(:sync,        description: 'Synchronize folders (Gen3)')
+        command(:transport,   description: 'Show transport parameters')
+        command(:spec,        description: 'Show transfer spec base')
+        # Other common leaf commands
+        command(:api_details, description: 'Show API details')
+        command(:health,      description: 'Check node health')
+        command(:events,      description: 'List events')
+        command(:info,        description: 'Show node info')
+        command(:slash,       description: 'Show root info')
+        command(:license,     description: 'Show license')
+        # access_keys sub-tree
+        command(:access_keys, description: 'Manage access keys')
+        commands_under(:access_keys) do
+          command(:do,           description: 'Execute Gen4 command via access key', setup: :setup_access_key_do)
+          command(:set_bearer_key, description: 'Set bearer key on access key')
+          Operations::ALL.each{ |op| command(op, description: "#{op.capitalize} access key(s)") }
+        end
+
+        commands_under(%i[access_keys do]) do
+          COMMANDS_GEN4.each do |cmd|
+            command(cmd, description: "Gen4 #{cmd} command")
+          end
+        end
+        # async (legacy /async)
+        command(:async, description: 'Manage async operations (legacy /async)')
+        commands_under(:async) do
+          command(:list,      description: 'List async sync IDs')
+          command(:show,      description: 'Show async summary')
+          command(:delete,    description: 'Delete async')
+          command(:bandwidth, description: 'Show async bandwidth')
+          command(:files,     description: 'List async files')
+          command(:counters,  description: 'Show async counters')
+        end
+        # ssync (/asyncs)
+        command(:ssync, description: 'Manage sync operations (/asyncs)')
+        commands_under(:ssync) do
+          command(:start,     description: 'Start a sync')
+          command(:stop,      description: 'Stop a sync')
+          command(:bandwidth, description: 'Show sync bandwidth')
+          command(:counters,  description: 'Show sync counters')
+          command(:files,     description: 'List sync files')
+          command(:state,     description: 'Show sync state')
+          command(:summary,   description: 'Show sync summary')
+          Operations::ALL.reject{ |op| op == :modify }.each{ |op| command(op, description: "#{op.capitalize} ssync") }
+        end
+        # stream
+        command(:stream, description: 'Manage stream operations')
+        commands_under(:stream) do
+          command(:list,   description: 'List streams')
+          command(:create, description: 'Create a stream')
+          command(:show,   description: 'Show a stream')
+          command(:modify, description: 'Modify a stream')
+          command(:cancel, description: 'Cancel a stream')
+        end
+        # transfer
+        command(:transfer, description: 'Manage transfer operations')
+        commands_under(:transfer) do
+          command(:list,              description: 'List transfers')
+          command(:cancel,            description: 'Cancel a transfer')
+          command(:show,              description: 'Show a transfer')
+          command(:modify,            description: 'Modify a transfer')
+          command(:bandwidth_average, description: 'Show average bandwidth per period')
+          command(:sessions,          description: 'List transfer sessions')
+        end
+        # service
+        command(:service, description: 'Manage services')
+        commands_under(:service) do
+          command(:list,   description: 'List services')
+          command(:create, description: 'Create a service')
+          command(:delete, description: 'Delete a service')
+        end
+        # watch_folder
+        command(:watch_folder, description: 'Manage watch folders')
+        # central
+        command(:central, description: 'Query Central service')
+        commands_under(:central) do
+          command(:session, description: 'Query sessions')
+          command(:file,    description: 'Query files')
+        end
+        commands_under([:central, :session]) { command(:list, description: 'List sessions') }
+        commands_under([:central, :file]) do
+          command(:list,   description: 'List file transfers')
+          command(:modify, description: 'Modify file transfer validation')
+        end
+        # Standalone leaf commands
+        command(:asperabrowser, description: 'Open Aspera browser')
+        command(:basic_token,   description: 'Generate basic auth token')
+        command(:bearer_token,  description: 'Generate bearer token')
+        command(:simulator,     description: 'Start node simulator')
+        command(:telemetry,     description: 'Report telemetry to external system')
+
+        # --- Handler methods ---
+
+        # Gen3 leaf commands: dispatch to execute_command_gen3
+        COMMANDS_GEN3.each{ |cmd| define_method(:"handle_#{cmd}"){ execute_command_gen3(cmd) } }
+        def handle_api_details; Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params)); end
+        def handle_health;      execute_simple_common(:health); end
+        def handle_events;      execute_simple_common(:events); end
+        def handle_info;        execute_simple_common(:info); end
+        def handle_slash;       execute_simple_common(:slash); end
+        def handle_license;     execute_simple_common(:license); end
+        def handle_watch_folder; watch_folder_action; end
+
+        # access_keys > CRUD
+        Operations::ALL.each do |op|
+          define_method(:"handle_access_keys_#{op}") do
+            entity_execute(api: @api_node, entity: 'access_keys', command: op) do |field, value|
+              raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
+              @api_node.read('access_keys/self')['id']
             end
-          when :stream
-            command = options.get_next_command(%i[list create show modify cancel])
-            case command
-            when :list
-              resp = @api_node.read('ops/transfers', query_read_delete)
-              return Result::ObjectList.new(resp, fields: %w[id status]) # TODO: useful?
-            when :create
-              resp = @api_node.create('streams', value_create_modify(command: command))
-              return Result::SingleObject.new(resp)
-            when :show
-              resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
-              return Result::SingleObject.new(resp)
-            when :modify
-              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command))
-              return Result::SingleObject.new(resp)
-            when :cancel
-              resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
-              return Result::SingleObject.new(resp)
-            else Aspera.error_unexpected_value(command)
+          end
+        end
+
+        # access_keys > do — setup: resolve access key and root file id
+        # @return [Hash] context hash containing :do_root_file_id
+        def setup_access_key_do
+          access_key_id = options.get_next_argument('access key id')
+          root_file_id = options.get_option(:root_id)
+          if root_file_id.nil?
+            ak_info = @api_node.read("access_keys/#{access_key_id}")
+            ak_secret = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'])
+            if !access_key_id.eql?('self')
+              Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
+              @api_node.auth_params[:username] = ak_info['id']
+              @api_node.auth_params[:password] = ak_secret
             end
-          when :transfer
-            command = options.get_next_command(%i[list cancel show modify bandwidth_average sessions])
-            case command
-            when :list
-              transfer_filter = query_read_delete(default: {})
-              iteration_persistency = nil
-              if options.get_option(:once_only, mandatory: true)
-                iteration_persistency = PersistencyActionOnce.new(
-                  manager: persistency,
-                  data:    [],
-                  id:      IdGenerator.from_list(
-                    'node_transfers',
-                    options.get_option(:url, mandatory: true),
-                    options.get_option(:username, mandatory: true)
-                  )
-                )
-                if transfer_filter.delete('reset')
-                  iteration_persistency.data.clear
-                  iteration_persistency.save
-                  return Result::Status.new('Persistency reset')
-                end
-              else
-                Aspera.assert(!transfer_filter.key?('reset'), 'reset only with once_only', type: Cli::BadArgument)
-              end
-              transfers_data = @api_node.read_with_paging('ops/transfers', transfer_filter, iteration: iteration_persistency&.data)
-              iteration_persistency&.save
-              return Result::ObjectList.new(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
-            when :sessions
-              transfers_data = @api_node.read('ops/transfers', query_read_delete)
-              sessions = transfers_data.flat_map{ |t| t['sessions']}
-              start_end = %i[start end].freeze
-              sessions.each do |session|
-                start_end.each do |what|
-                  session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
-                end
-              end
-              return Result::ObjectList.new(sessions, fields: %w[id status start_time end_time target_rate_kbps])
-            when :cancel
-              @api_node.cancel("ops/transfers/#{options.instance_identifier}")
-              return Result::Status.new('Cancelled')
-            when :show
-              resp = @api_node.read("ops/transfers/#{options.instance_identifier}")
-              return Result::SingleObject.new(resp)
-            when :modify
-              @api_node.update("ops/transfers/#{options.instance_identifier}", options.get_next_argument('update value', validation: Hash))
-              return Result::Status.new('Modified')
-            when :bandwidth_average
-              transfers_data = @api_node.read('ops/transfers', query_read_delete)
-              # collect all key dates
-              bandwidth_period = {}
-              dir_info = %i[avg_kbps sessions].freeze
-              transfers_data.each do |transfer|
-                session = transfer
-                # transfer['sessions'].each do |session|
-                next if session['avg_rate_kbps'].zero?
-                bandwidth_period[session['start_time_usec']] = 0
-                bandwidth_period[session['end_time_usec']] = 0
-                # end
-              end
-              result = []
-              # all dates sorted numerically
-              all_dates = bandwidth_period.keys.sort
-              all_dates.each_with_index do |start_date, index|
-                end_date = all_dates[index + 1]
-                # do not process last one
-                break if end_date.nil?
-                # init data for this period
-                period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).to_h do |direction|
-                  [direction, dir_info.to_h{ |k2| [k2, 0]}]
-                end
-                # find all transfers that were active at this time
-                transfers_data.each do |transfer|
-                  session = transfer
-                  # transfer['sessions'].each do |session|
-                  # skip if not information for this period
-                  next if session['avg_rate_kbps'].zero?
-                  # skip if not in this period
-                  next if session['start_time_usec'] >= end_date || session['end_time_usec'] <= start_date
-                  info = period_bandwidth[transfer['start_spec']['direction'].to_sym]
-                  info[:avg_kbps] += session['avg_rate_kbps']
-                  info[:sessions] += 1
-                  # end
-                end
-                next if Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).all? do |dir|
-                  period_bandwidth[dir][:sessions].zero?
-                end
-                result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
-              end
-              return Result::ObjectList.new(result)
-            else Aspera.error_unexpected_value(command)
-            end
-          when :service
-            command = options.get_next_command(%i[list create delete])
-            service_id = options.instance_identifier if [:delete].include?(command)
-            case command
-            when :list
-              resp = @api_node.read('rund/services')
-              return Result::ObjectList.new(resp['services'])
-            when :create
-              # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-              params = options.get_next_argument('creation data', validation: Hash)
-              resp = @api_node.create('rund/services', params)
-              return Result::Status.new("#{resp['id']} created")
-            when :delete
-              @api_node.delete("rund/services/#{service_id}")
-              return Result::Status.new("#{service_id} deleted")
-            end
-          when :watch_folder
-            return watch_folder_action
-          when :central
-            command = options.get_next_command(%i[session file])
-            validator_id = options.get_option(:validator)
-            validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = options.get_option(:query) || {}
-            case command
-            when :session
-              command = options.get_next_command([:list])
-              case command
-              when :list
-                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
-                request_data.deep_merge!({'validation' => validation}) unless validation.nil?
-                resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
-                return Result::ObjectList.new(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
-              end
-            when :file
-              command = options.get_next_command(%i[list modify])
-              case command
-              when :list
-                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
-                request_data.deep_merge!({'validation' => validation}) unless validation.nil?
-                resp = @api_node.create('services/rest/transfers/v1/files', request_data)
-                resp = JSON.parse(resp) if resp.is_a?(String)
-                Log.dump(:resp, resp)
-                return Result::ObjectList.new(resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path])
-              when :modify
-                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
-                request_data.deep_merge!(validation) unless validation.nil?
-                @api_node.update('services/rest/transfers/v1/files', request_data)
-                return Result::Status.new('updated')
-              end
-            end
-          when :asperabrowser
-            browse_params = {
-              'nodeUser' => options.get_option(:username, mandatory: true),
-              'nodePW'   => options.get_option(:password, mandatory: true),
-              'nodeURL'  => options.get_option(:url, mandatory: true)
-            }
-            # encode parameters so that it looks good in url
-            encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
-            Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
-            return Result::Status.new('done')
-          when :basic_token
-            return Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
-          when :bearer_token
-            private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
-            token_info = options.get_next_argument('user and group identification', validation: Hash)
-            access_key = options.get_option(:username, mandatory: true)
-            return Result::Text.new(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
-          when :simulator
-            require 'aspera/node_simulator'
-            parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
-            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-            server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
-            server.start
-            return Result::Status.new('Simulator terminated')
-          when :telemetry
-            parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            %i[url key].each do |psym|
-              raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
-            end
-            require 'socket'
-            parameters[:interval] = 10 unless parameters.key?(:interval)
-            parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
-            interval = parameters[:interval].to_f
-            raise Cli::BadArgument, 'Interval must be a positive number in seconds' if interval <= 0
-            otel_api = Rest.new(
-              base_url: "#{parameters[:url]}/v1",
-              headers: {
-                # 'Authorization'  => "apiToken #{parameters[:key]}",
-                'x-instana-key'  => parameters[:key],
-                'x-instana-host' => parameters[:hostname]
-              }
+            root_file_id = ak_info['root_file_id']
+          end
+          {do_root_file_id: root_file_id}
+        end
+
+        # access_keys > do > <gen4_cmd> — one handler per COMMANDS_GEN4
+        COMMANDS_GEN4.each do |cmd|
+          define_method(:"handle_access_keys_do_#{cmd}") do |do_root_file_id:|
+            execute_command_gen4(cmd, do_root_file_id)
+          end
+        end
+
+        # access_keys > set_bearer_key
+        def handle_access_keys_set_bearer_key
+          access_key_id = options.get_next_argument('access key id')
+          access_key_id = @api_node.read('access_keys/self')['id'] if access_key_id.eql?('self')
+          bearer_key_pem = options.get_next_argument('public or private RSA key PEM value', validation: String)
+          key = OpenSSL::PKey.read(bearer_key_pem)
+          key = key.public_key if key.private?
+          @api_node.update("access_keys/#{access_key_id}", {token_verification_key: key.to_pem})
+          Result::Status.new('public key updated')
+        end
+        # async sub-commands: individual handlers
+        def handle_async_list
+          Result::ValueList.new(@api_node.read('async/list')['sync_ids'])
+        end
+
+        def handle_async_show
+          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+          async_ids = @api_node.read('async/list')['sync_ids']
+          if async_id.eql?(SpecialValues::ALL)
+            resp = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
+            return Result::Empty.new if resp.empty?
+            return Result::ObjectList.new(resp, fields: %w[snid name local_dir remote_dir])
+          end
+          Integer(async_id)
+          resp = @api_node.create('async/summary', {'syncs' => [async_id]})['sync_summaries']
+          return Result::Empty.new if resp.empty?
+          Result::SingleObject.new(resp.first)
+        end
+
+        def handle_async_delete
+          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+          async_ids = async_id.eql?(SpecialValues::ALL) ? @api_node.read('async/list')['sync_ids'] : [async_id]
+          Result::SingleObject.new(@api_node.create('async/delete', {'syncs' => async_ids}))
+        end
+
+        def handle_async_bandwidth
+          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+          Integer(async_id)
+          post_data = {'syncs' => [async_id], 'seconds' => 100}
+          resp = @api_node.create('async/bandwidth', post_data)
+          data = resp['bandwidth_data']
+          return Result::Empty.new if data.empty?
+          Result::ObjectList.new(data.first[async_id]['data'])
+        end
+
+        def handle_async_files
+          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+          Integer(async_id)
+          post_data = {'syncs' => [async_id]}
+          filter = options.get_option(:query)
+          post_data.merge!(filter) unless filter.nil?
+          resp = @api_node.create('async/files', post_data)
+          data = resp['sync_files']
+          data = data.first[async_id] unless data.empty?
+          iteration_data = []
+          skip_ids_persistency = nil
+          if options.get_option(:once_only, mandatory: true)
+            skip_ids_persistency = PersistencyActionOnce.new(
+              manager: persistency,
+              data:    iteration_data,
+              id:      IdGenerator.from_list('sync_files', options.get_option(:url, mandatory: true), options.get_option(:username, mandatory: true), async_id)
             )
-            datapoint = {
-              attributes:   [
-                {
-                  key:   'server.name',
-                  value: {
-                    stringValue: 'HSTS1'
-                  }
-                }
-              ],
-              asInt:        nil,
-              timeUnixNano: nil
+            data.select!{ |l| l['fnid'].to_i > iteration_data.first} unless iteration_data.first.nil?
+            iteration_data[0] = data.last['fnid'].to_i unless data.empty?
+          end
+          return Result::Empty.new if data.empty?
+          skip_ids_persistency&.save
+          Result::ObjectList.new(data)
+        end
+
+        def handle_async_counters
+          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+          Integer(async_id)
+          resp = @api_node.create('async/counters', {'syncs' => [async_id]})['sync_counters'].first[async_id].last
+          return Result::Empty.new if resp.nil?
+          Result::SingleObject.new(resp)
+        end
+
+        # ssync CRUD
+        Operations::ALL.reject{ |op| op == :modify }.each do |op|
+          define_method(:"handle_ssync_#{op}") do
+            entity_execute(api: @api_node, entity: :asyncs, command: op, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}
+          end
+        end
+
+        # ssync start/stop
+        %i[start stop].each do |action|
+          define_method(:"handle_ssync_#{action}") do
+            asyncs_id = options.instance_identifier{ |f, v| ssync_lookup(f, v)}
+            @api_node.call(operation: 'POST', subpath: "asyncs/#{asyncs_id}/#{action}", content_type: Mime::TEXT, body: '', ret: :resp).body
+            Result::Status.new('Done')
+          end
+        end
+
+        # ssync info sub-commands
+        %i[bandwidth counters files state summary].each do |action|
+          define_method(:"handle_ssync_#{action}") do
+            asyncs_id = options.instance_identifier{ |f, v| ssync_lookup(f, v)}
+            parameters = %i[bandwidth counters files].include?(action) ? (options.get_option(:query) || {}) : nil
+            Result::SingleObject.new(@api_node.read("asyncs/#{asyncs_id}/#{action}", parameters))
+          end
+        end
+
+        # stream sub-commands
+        def handle_stream_list
+          Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])
+        end
+
+        def handle_stream_create
+          Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))
+        end
+
+        def handle_stream_show
+          Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))
+        end
+
+        def handle_stream_modify
+          Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))
+        end
+
+        def handle_stream_cancel
+          Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))
+        end
+
+        # transfer sub-commands
+        def handle_transfer_list
+          transfer_filter = query_read_delete(default: {})
+          iteration_persistency = nil
+          if options.get_option(:once_only, mandatory: true)
+            iteration_persistency = PersistencyActionOnce.new(
+              manager: persistency,
+              data:    [],
+              id:      IdGenerator.from_list('node_transfers', options.get_option(:url, mandatory: true), options.get_option(:username, mandatory: true))
+            )
+            if transfer_filter.delete('reset')
+              iteration_persistency.data.clear
+              iteration_persistency.save
+              return Result::Status.new('Persistency reset')
+            end
+          else
+            Aspera.assert(!transfer_filter.key?('reset'), 'reset only with once_only', type: Cli::BadArgument)
+          end
+          transfers_data = @api_node.read_with_paging('ops/transfers', transfer_filter, iteration: iteration_persistency&.data)
+          iteration_persistency&.save
+          Result::ObjectList.new(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
+        end
+
+        def handle_transfer_sessions
+          transfers_data = @api_node.read('ops/transfers', query_read_delete)
+          sessions = transfers_data.flat_map{ |t| t['sessions']}
+          sessions.each do |session|
+            %i[start end].each do |what|
+              session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
+            end
+          end
+          Result::ObjectList.new(sessions, fields: %w[id status start_time end_time target_rate_kbps])
+        end
+
+        def handle_transfer_cancel
+          @api_node.cancel("ops/transfers/#{options.instance_identifier}")
+          Result::Status.new('Cancelled')
+        end
+
+        def handle_transfer_show
+          Result::SingleObject.new(@api_node.read("ops/transfers/#{options.instance_identifier}"))
+        end
+
+        def handle_transfer_modify
+          @api_node.update("ops/transfers/#{options.instance_identifier}", options.get_next_argument('update value', validation: Hash))
+          Result::Status.new('Modified')
+        end
+
+        def handle_transfer_bandwidth_average
+          transfers_data = @api_node.read('ops/transfers', query_read_delete)
+          bandwidth_period = {}
+          dir_info = %i[avg_kbps sessions].freeze
+          transfers_data.each do |t|
+            next if t['avg_rate_kbps'].zero?
+            bandwidth_period[t['start_time_usec']] = 0
+            bandwidth_period[t['end_time_usec']] = 0
+          end
+          result = []
+          all_dates = bandwidth_period.keys.sort
+          all_dates.each_with_index do |start_date, index|
+            end_date = all_dates[index + 1]
+            break if end_date.nil?
+            period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).to_h do |dir|
+              [dir, dir_info.to_h{ |k2| [k2, 0]}]
+            end
+            transfers_data.each do |t|
+              next if t['avg_rate_kbps'].zero?
+              next if t['start_time_usec'] >= end_date || t['end_time_usec'] <= start_date
+              info = period_bandwidth[t['start_spec']['direction'].to_sym]
+              info[:avg_kbps] += t['avg_rate_kbps']
+              info[:sessions] += 1
+            end
+            next if Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).all?{ |dir| period_bandwidth[dir][:sessions].zero?}
+            result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
+          end
+          Result::ObjectList.new(result)
+        end
+
+        # service sub-commands
+        def handle_service_list
+          Result::ObjectList.new(@api_node.read('rund/services')['services'])
+        end
+
+        def handle_service_create
+          resp = @api_node.create('rund/services', options.get_next_argument('creation data', validation: Hash))
+          Result::Status.new("#{resp['id']} created")
+        end
+
+        def handle_service_delete
+          service_id = options.instance_identifier
+          @api_node.delete("rund/services/#{service_id}")
+          Result::Status.new("#{service_id} deleted")
+        end
+
+        # central: shared helper
+        def central_validation
+          validator_id = options.get_option(:validator)
+          validator_id ? {'validator_id' => validator_id} : nil
+        end
+
+        # central > session > list
+        def handle_central_session_list
+          validation = central_validation
+          request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
+          request_data.deep_merge!({'validation' => validation}) unless validation.nil?
+          resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
+          Result::ObjectList.new(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
+        end
+
+        # central > file > list
+        def handle_central_file_list
+          validation = central_validation
+          request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
+          request_data.deep_merge!({'validation' => validation}) unless validation.nil?
+          resp = @api_node.create('services/rest/transfers/v1/files', request_data)
+          resp = JSON.parse(resp) if resp.is_a?(String)
+          Log.dump(:resp, resp)
+          Result::ObjectList.new(resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path])
+        end
+
+        # central > file > modify
+        def handle_central_file_modify
+          validation = central_validation
+          request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
+          request_data.deep_merge!(validation) unless validation.nil?
+          @api_node.update('services/rest/transfers/v1/files', request_data)
+          Result::Status.new('updated')
+        end
+
+
+        def handle_asperabrowser
+          browse_params = {
+            'nodeUser' => options.get_option(:username, mandatory: true),
+            'nodePW'   => options.get_option(:password, mandatory: true),
+            'nodeURL'  => options.get_option(:url, mandatory: true)
+          }
+          # encode parameters so that it looks good in url
+          encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
+          Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
+          return Result::Status.new('done')
+        end
+
+        def handle_basic_token
+          return Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+        end
+
+        def handle_bearer_token
+          private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
+          token_info = options.get_next_argument('user and group identification', validation: Hash)
+          access_key = options.get_option(:username, mandatory: true)
+          return Result::Text.new(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
+        end
+
+        def handle_simulator
+          require 'aspera/node_simulator'
+          parameters = value_create_modify(command: :simulator, default: {}).symbolize_keys
+          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+          server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
+          server.start
+          return Result::Status.new('Simulator terminated')
+        end
+
+        def handle_telemetry
+          parameters = value_create_modify(command: :telemetry, default: {}).symbolize_keys
+          %i[url key].each do |psym|
+            raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
+          end
+          require 'socket'
+          parameters[:interval] = 10 unless parameters.key?(:interval)
+          parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
+          interval = parameters[:interval].to_f
+          raise Cli::BadArgument, 'Interval must be a positive number in seconds' if interval <= 0
+          otel_api = Rest.new(
+            base_url: "#{parameters[:url]}/v1",
+            headers: {
+              # 'Authorization'  => "apiToken #{parameters[:key]}",
+              'x-instana-key'  => parameters[:key],
+              'x-instana-host' => parameters[:hostname]
             }
-            # https://opentelemetry.io/docs/specs/otel/metrics/data-model/#gauge
-            metrics = {
-              resourceMetrics: [
-                {
-                  resource:     {
-                    attributes: [
+          )
+          datapoint = {
+            attributes:   [
+              {
+                key:   'server.name',
+                value: {
+                  stringValue: 'HSTS1'
+                }
+              }
+            ],
+            asInt:        nil,
+            timeUnixNano: nil
+          }
+          # https://opentelemetry.io/docs/specs/otel/metrics/data-model/#gauge
+          metrics = {
+            resourceMetrics: [
+              {
+                resource:     {
+                  attributes: [
+                    {
+                      key:   'service.name',
+                      value: {
+                        stringValue: 'IBMAspera'
+                      }
+                    }
+                  ]
+                },
+                scopeMetrics: [
+                  {
+                    metrics: [
                       {
-                        key:   'service.name',
-                        value: {
-                          stringValue: 'IBMAspera'
+                        name:        'active.transfers',
+                        description: 'Number of active transfers',
+                        unit:        '1',
+                        gauge:       {
+                          dataPoints: [
+                            datapoint
+                          ]
                         }
                       }
                     ]
-                  },
-                  scopeMetrics: [
-                    {
-                      metrics: [
-                        {
-                          name:        'active.transfers',
-                          description: 'Number of active transfers',
-                          unit:        '1',
-                          gauge:       {
-                            dataPoints: [
-                              datapoint
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-            loop do
-              timestamp = Time.now
-              transfers_data = @api_node.read_with_paging('ops/transfers', {active_only: true})
-              datapoint[:asInt] = transfers_data.length
-              datapoint[:timeUnixNano] = timestamp.to_i * 1_000_000_000 + timestamp.nsec
-              Log.log.info("#{datapoint[:asInt]} active transfers")
-              # https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend
-              otel_api.create('metrics', metrics)
-              break if interval.eql?(0.0)
-              sleep([0.0, interval - (Time.now - timestamp)].max)
-            end
+                  }
+                ]
+              }
+            ]
+          }
+          loop do
+            timestamp = Time.now
+            transfers_data = @api_node.read_with_paging('ops/transfers', {active_only: true})
+            datapoint[:asInt] = transfers_data.length
+            datapoint[:timeUnixNano] = timestamp.to_i * 1_000_000_000 + timestamp.nsec
+            Log.log.info("#{datapoint[:asInt]} active transfers")
+            # https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend
+            otel_api.create('metrics', metrics)
+            break if interval.eql?(0.0)
+            sleep([0.0, interval - (Time.now - timestamp)].max)
           end
-          Aspera.error_unreachable_line
+        end
+
+        # Dispatch a command that has already been read from the argument stream.
+        # Used when a new Node instance is created and the command was already consumed
+        # (e.g., :v3 delegation, shares, cos, faspex).
+        # Re-enters the DSL registry for sub-trees, or calls directly for leaf commands.
+        # @param command [Symbol] command already consumed from the argument stream
+        # @return [Object] CLI result
+        def dispatch_v3_command(command)
+          case command
+          when *COMMANDS_GEN3
+            # Gen3 leaf: execute directly
+            execute_command_gen3(command)
+          when :health, :events, :info, :slash, :license, :api_details
+            # Common leaf commands
+            execute_simple_common(command)
+          when :access_keys, :transfer
+            # Sub-trees: re-enter DSL registry at the matching path so the
+            # next argument is consumed normally by the dispatcher.
+            dispatch_from_registry([command], {})
+          else
+            Aspera.error_unexpected_value(command){'v3 command'}
+          end
         end
 
         private

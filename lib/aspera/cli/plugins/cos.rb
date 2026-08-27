@@ -11,6 +11,12 @@ module Aspera
       class Cos < Base
         command(:node, description: 'Execute COS node commands', setup: :setup_cos_node)
 
+        commands_under(:node) do
+          Node::COMMANDS_COS.each do |cmd|
+            command(cmd, description: "Node #{cmd} command")
+          end
+        end
+
         def initialize(**_)
           super
           options.declare(:bucket, 'Bucket name')
@@ -46,11 +52,11 @@ module Aspera
           {node_plugin: Node.new(context: context, api: api_node)}
         end
 
-        # Dispatch the chosen COS node sub-command to the Node plugin.
-        # @param node_plugin [Node] the Node plugin instance built in setup_cos_node
-        def handle_node(node_plugin:)
-          command = options.get_next_command(Node::COMMANDS_COS)
-          node_plugin.execute_action(command)
+        # One handler per COMMANDS_COS command — delegates to the Node plugin's dispatch_v3_command.
+        Node::COMMANDS_COS.each do |cmd|
+          define_method(:"handle_node_#{cmd}") do |node_plugin:|
+            node_plugin.dispatch_v3_command(cmd)
+          end
         end
       end
     end

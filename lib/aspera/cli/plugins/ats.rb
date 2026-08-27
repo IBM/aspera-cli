@@ -52,9 +52,15 @@ module Aspera
           command(:show,        description: 'Show an access key')
           command(:modify,      description: 'Modify an access key')
           command(:delete,      description: 'Delete an access key')
-          command(:node,        description: 'Execute node commands via ATS access key')
+          command(:node,        description: 'Execute node commands via ATS access key', setup: :setup_ak_node)
           command(:cluster,     description: 'Show cluster info for an access key')
           command(:entitlement, description: 'Show ATS entitlement for an access key')
+        end
+
+        commands_under(%i[access_key node]) do
+          Node::COMMANDS_GEN4.each do |cmd|
+            command(cmd, description: "Node Gen4 #{cmd} command")
+          end
         end
 
         commands_under(:api_key) do
@@ -203,7 +209,9 @@ module Aspera
           return Result::SingleObject.new(api_bss.read('entitlement'))
         end
 
-        def handle_access_key_node
+        # Build the Node plugin for an ATS access key and store it in an ivar.
+        # @return [Hash] context hash containing :ak_node_plugin and :ak_root_file_id
+        def setup_ak_node
           access_key_id = options.instance_identifier
           ak_data = ats_api.read("access_keys/#{access_key_id}")
           server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
@@ -217,8 +225,17 @@ module Aspera
               password: config.lookup_secret(url: node_url, username: access_key_id)
             }
           )
-          command = options.get_next_command(Node::COMMANDS_GEN4)
-          return Node.new(context: context, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
+          {
+            ak_node_plugin:  Node.new(context: context, api: api_node),
+            ak_root_file_id: ak_data['root_file_id']
+          }
+        end
+
+        # One handler per COMMANDS_GEN4 — delegates to the Node plugin's execute_command_gen4.
+        Node::COMMANDS_GEN4.each do |cmd|
+          define_method(:"handle_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:|
+            ak_node_plugin.execute_command_gen4(cmd, ak_root_file_id)
+          end
         end
 
         def handle_access_key_cluster
