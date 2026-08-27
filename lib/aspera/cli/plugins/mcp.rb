@@ -57,7 +57,7 @@ module Aspera
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)
-        SERVER_KEYS = %i[instructions].freeze
+        SERVER_KEYS = %i[instructions description].freeze
         # Keys forwarded to MCP::Configuration
         CONFIG_KEYS = %i[protocol_version validate_tool_call_arguments].freeze
         # Keys forwarded to StdioTransport
@@ -102,6 +102,7 @@ module Aspera
           config_opts = mcp_options.slice(*CONFIG_KEYS)
           server_opts = mcp_options.slice(*SERVER_KEYS)
           server_opts[:instructions] ||= DEFAULT_INSTRUCTIONS
+          server_opts[:description]  ||= "#{Info::GEM_NAME} MCP server (IBM Aspera file transfer and management)"
           configuration = config_opts.empty? ? nil : MCP::Configuration.new(**config_opts)
           MCP::Server.new(
             name:          Info::GEM_NAME,
@@ -136,12 +137,22 @@ module Aspera
           bind      = mcp_options.fetch(:bind, '127.0.0.1')
           app       = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-            define_method(:initialize) do |srv, rack_app|
+            define_method(:initialize) do |srv, rack_app, server_info|
               @app = rack_app
+              @server_info = server_info
               super(srv)
             end
             %w[GET POST DELETE].each do |http_method|
               define_method(:"do_#{http_method}") do |req, res|
+                # Serve a discovery endpoint on GET / (used by Bob and other MCP clients
+                # to display server metadata without initiating a full MCP session).
+                if http_method == 'GET' && req.path == '/'
+                  body = JSON.generate(@server_info)
+                  res.status = 200
+                  res['Content-Type'] = 'application/json'
+                  res.body = body
+                  next
+                end
                 env = rack_env_from_webrick(req)
                 status, headers, rack_body = @app.call(env)
                 res.status = status
@@ -208,7 +219,12 @@ module Aspera
             Logger:      quiet_logger,
             AccessLog:   []
           )
-          webrick.mount('/', rack_servlet, app)
+          server_info = {
+            name:        server.name,
+            version:     server.version,
+            description: server.description
+          }
+          webrick.mount('/', rack_servlet, app, server_info)
           Log.log.info{"MCP HTTP server listening on http://#{bind}:#{port}/"}
           trap('INT'){webrick.shutdown}
           trap('TERM'){webrick.shutdown}

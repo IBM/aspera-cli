@@ -8598,7 +8598,8 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
-| `instructions` | `string` | - | Hint shown to the AI client describing what the server does |
+| `description` | `string` | - | Short description of the server shown in the AI client UI |
+| `instructions` | `string` | - | Longer hint shown to the AI client describing what the server does and how to use it |
 | `protocol_version` | `string` | - | MCP protocol version to advertise, for example, `2024-11-05` |
 | `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
 
@@ -8607,6 +8608,11 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `max_line_bytes` | `integer` | 4194304 (4 MiB) | Maximum JSON frame size in bytes |
+
+> [!NOTE]
+> **`stdio` transport and server description** — The MCP protocol does not carry a `description` field in the `initialize` handshake.
+> For `stdio` servers, AI clients (Claude Desktop, VS Code, Bob, …) cannot retrieve the description automatically.
+> Add a `"description"` field directly in the client's `mcpServers` configuration to display it in the UI.
 
 #### `http` transport (Streamable HTTP)
 
@@ -8619,6 +8625,10 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `allowed_hosts` | `Array<string>` | - | List of allowed hostnames |
 | `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
+
+> [!NOTE]
+> **HTTP transport discovery endpoint** — When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
+> AI clients that support this convention (such as Bob) automatically read the description from this endpoint and display it in their MCP server list without any manual configuration.
 
 ### Examples
 
@@ -8649,7 +8659,8 @@ To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS 
   "mcpServers": {
     "ascli": {
       "command": "/path/to/bin/<%=cmd%>",
-      "args": ["mcp", "server"]
+      "args": ["mcp", "server"],
+      "description": "Aspera CLI MCP server"
     }
   }
 }
