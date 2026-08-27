@@ -212,6 +212,192 @@ module Aspera
 
         public
 
+        # DSL command declarations — replaces ACTIONS + execute_action
+        # :preset is an opaque handler: execute_preset handles all sub-dispatch internally
+        command :preset,
+          description: 'Manage presets of options',
+          handler: :handle_preset
+        command :open,
+          description: 'Open the configuration file in the default editor',
+          handler: :handle_open
+        command :documentation,
+          description: 'Open the documentation in the default browser',
+          arguments: [ArgumentSpec.new(name: :section, type: String, mandatory: false)],
+          handler: :handle_documentation
+        command :genkey,
+          description: 'Generate a new RSA private key',
+          arguments: [
+            ArgumentSpec.new(name: :private_key_path, type: String),
+            ArgumentSpec.new(name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
+          ],
+          handler: :handle_genkey
+        command :pubkey,
+          description: 'Display the public key of an RSA private key',
+          arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)],
+          handler: :handle_pubkey
+        command :remote_certificate,
+          description: 'Retrieve the certificate chain of a remote HTTPS server'
+        command :echo,
+          description: 'Display the value of a given argument',
+          arguments: [ArgumentSpec.new(name: :value, type: nil)],
+          handler: :handle_echo
+        command :download,
+          description: 'Download a file from a URL',
+          arguments: [
+            ArgumentSpec.new(name: :file_url,  type: String),
+            ArgumentSpec.new(name: :file_dest, type: String, mandatory: false)
+          ],
+          handler: :handle_download
+        command :tokens,
+          description: 'Manage OAuth tokens'
+        command :plugins,
+          description: 'Manage CLI plugins'
+        command :detect,
+          description: 'Detect the Aspera product from a URL (interactive)',
+          handler: :handle_detect
+        command :wizard,
+          description: 'Run the setup wizard for an Aspera product (interactive)',
+          handler: :handle_wizard
+        command :coffee,
+          description: 'Display a coffee image',
+          handler: :handle_coffee
+        command :image,
+          description: 'Display an image',
+          arguments: [ArgumentSpec.new(name: :image_uri, type: nil)],
+          handler: :handle_image
+        command :ascp,
+          description: 'Manage the transfer SDK (ascp/transferd)',
+          handler: :handle_ascp
+        command :agents,
+          description: 'Display transfer agent information',
+          handler: :handle_agents
+        command :sync,
+          description: 'Manage Aspera Sync operations'
+        command :transferd,
+          description: 'Manage the transfer daemon (transferd)',
+          handler: :handle_transferd
+        command :gem,
+          description: 'Display gem information'
+        command :folder,
+          description: 'Display the configuration folder path',
+          handler: :handle_folder
+        command :file,
+          description: 'Display the configuration file path',
+          handler: :handle_file
+        command :email_test,
+          description: 'Send a test email',
+          handler: :handle_email_test
+        command :smtp_settings,
+          description: 'Display the current SMTP settings',
+          handler: :handle_smtp_settings
+        command :proxy_check,
+          description: 'Check the proxy returned by the PAC script for a given URL',
+          arguments: [ArgumentSpec.new(name: :server_url, type: String)],
+          handler: :handle_proxy_check
+        command :check_update,
+          description: 'Check if a newer version of the gem is available',
+          handler: :handle_check_update
+        command :initdemo,
+          description: 'Initialize the demo server preset',
+          handler: :handle_initdemo
+        command :vault,
+          description: 'Manage the secrets vault',
+          handler: :handle_vault
+        command :test,
+          description: 'Internal test commands'
+        command :platform,
+          description: 'Display the current platform/architecture',
+          handler: :handle_platform
+        command :completion,
+          description: 'Generate shell completion scripts'
+
+        # remote_certificate sub-commands
+        commands_under(:remote_certificate) do
+          command :chain,
+            description: 'Display the full certificate chain as PEM',
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
+            handler: :handle_remote_certificate_chain
+          command :only,
+            description: 'Display only the server certificate as PEM',
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
+            handler: :handle_remote_certificate_only
+          command :name,
+            description: 'Display the CN of the server certificate',
+            arguments: [ArgumentSpec.new(name: :remote_url, type: String)],
+            handler: :handle_remote_certificate_name
+        end
+
+        # tokens sub-commands
+        commands_under(:tokens) do
+          command :flush,
+            description: 'Delete all cached OAuth tokens',
+            handler: :handle_tokens_flush
+          command :list,
+            description: 'List all cached OAuth tokens',
+            handler: :handle_tokens_list
+          command :show,
+            description: 'Show details of a cached OAuth token',
+            arguments: [ArgumentSpec.new(name: :token_id, type: :identifier)],
+            handler: :handle_tokens_show
+        end
+
+        # plugins sub-commands
+        commands_under(:plugins) do
+          command :list,
+            description: 'List all available plugins',
+            handler: :handle_plugins_list
+          command :create,
+            description: 'Create a new plugin skeleton file',
+            arguments: [
+              ArgumentSpec.new(name: :name,   type: String),
+              ArgumentSpec.new(name: :folder, type: String, mandatory: false)
+            ],
+            handler: :handle_plugins_create
+        end
+
+        # sync sub-commands
+        commands_under(:sync) do
+          command :spec,
+            description: 'Display the sync configuration schema',
+            handler: :handle_sync_spec
+          command :admin,
+            description: 'Run sync admin operations',
+            handler: :handle_sync_admin
+          command :translate,
+            description: 'Translate async-style arguments to sync config format',
+            arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)],
+            handler: :handle_sync_translate
+        end
+
+        # gem sub-commands
+        commands_under(:gem) do
+          command :path,    description: 'Display the gem source root path',    handler: :handle_gem_path
+          command :version, description: 'Display the gem version',             handler: :handle_gem_version
+          command :name,    description: 'Display the gem name',                handler: :handle_gem_name
+        end
+
+        # test sub-commands
+        commands_under(:test) do
+          command :throw,
+            description: 'Raise an exception (for testing)',
+            arguments: [
+              ArgumentSpec.new(name: :exception_class_name, type: String),
+              ArgumentSpec.new(name: :exception_text,       type: String)
+            ],
+            handler: :handle_test_throw
+          command :web,
+            description: 'Test web browser interaction',
+            handler: :handle_test_web
+        end
+
+        # completion sub-commands
+        commands_under(:completion) do
+          command :bash,
+            description: 'Generate bash completion script',
+            arguments: [ArgumentSpec.new(name: :words, type: String, multiple: true, mandatory: false)],
+            handler: :handle_completion_bash
+        end
+
         attr_accessor :option_cache_tokens
 
         # Delegations to http_config kept for backward compatibility with transfer_agent and plugins
@@ -288,244 +474,251 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[
-          preset
-          open
-          documentation
-          genkey
-          pubkey
-          remote_certificate
-          gem
-          plugins
-          tokens
-          echo
-          download
-          wizard
-          detect
-          coffee
-          image
-          ascp
-          agents
-          sync
-          transferd
-          email_test
-          smtp_settings
-          proxy_check
-          folder
-          file
-          check_update
-          initdemo
-          vault
-          test
-          platform
-          completion
-        ].freeze
+        # DSL handlers — one method per leaf command
 
-        # Main action procedure for plugin
-        def execute_action
-          action = options.get_next_command(ACTIONS)
-          case action
-          when :preset # Newer syntax
-            return execute_preset
-          when :open
-            Environment.instance.open_editor(@option_config_file.to_s)
-            return Result::Nothing.new
-          when :documentation
-            section = options.get_next_argument('private key file path', mandatory: false)
-            section = "##{section}" unless section.nil?
-            Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
-            return Result::Nothing.new
-          when :genkey # Generate new rsa key
-            private_key_path = options.get_next_argument('private key file path')
-            private_key_length = options.get_next_argument('size in bits', mandatory: false, validation: Integer, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
-            OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
-            return Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
-          when :pubkey # Get pub key
-            private_key_pem = options.get_next_argument('private key PEM value')
-            return Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
-          when :remote_certificate
-            cert_action = options.get_next_command(%i[chain only name])
-            remote_url = options.get_next_argument('remote URL')
-            remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-            raise "No certificate found for #{remote_url}" unless remote_chain&.first
-            case cert_action
-            when :chain
-              return Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
-            when :only
-              return Result::Text.new(remote_chain.first.to_pem)
-            when :name
-              return Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
-            end
-          when :echo # Display the content of a value given on command line
-            return Result.auto(options.get_next_argument('value', validation: nil))
-          when :download
-            file_url = options.get_next_argument('source URL').chomp
-            file_dest = options.get_next_argument('file path', mandatory: false)
-            file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
-            Log.log.info("Downloading: #{file_url}")
-            Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
-            return Result::Status.new("Saved to: #{file_dest}")
-          when :tokens
-            require 'aspera/api/node'
-            case options.get_next_command(%i{flush list show})
-            when :flush
-              return Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
-            when :list
-              return Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
-            when :show
-              data = OAuth::Factory.instance.get_token_info(options.instance_identifier)
-              raise Cli::Error, 'Unknown identifier' if data.nil?
-              return Result::SingleObject.new(data)
-            end
-          when :plugins
-            case options.get_next_command(%i[list create])
-            when :list
-              result = []
-              Plugins::Factory.instance.plugin_list.each do |name|
-                plugin_class = Plugins::Factory.instance.plugin_class(name)
-                result.push({
-                  plugin: name,
-                  detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
-                  wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
-                  path:   Plugins::Factory.instance.plugin_source(name)
-                })
-              end
-              return Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
-            when :create
-              plugin_name = options.get_next_argument('name').downcase
-              destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
-              plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
-              content = <<~END_OF_PLUGIN_CODE
-                require 'aspera/cli/plugins/base'
-                module Aspera
-                  module Cli
-                    module Plugins
-                      class #{plugin_name.snake_to_capital} < Base
-                        ACTIONS=[]
-                        def execute_action
-                          return Result::Status.new('You called plugin #{plugin_name}')
-                        end
-                      end
+        def handle_open
+          Environment.instance.open_editor(@option_config_file.to_s)
+          Result::Nothing.new
+        end
+
+        def handle_documentation(section = nil)
+          section = "##{section}" unless section.nil?
+          Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
+          Result::Nothing.new
+        end
+
+        def handle_genkey(private_key_path, private_key_length = OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
+          OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
+          Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
+        end
+
+        def handle_pubkey(private_key_pem)
+          Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
+        end
+
+        def handle_remote_certificate_chain(remote_url)
+          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
+        end
+
+        def handle_remote_certificate_only(remote_url)
+          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Result::Text.new(remote_chain.first.to_pem)
+        end
+
+        def handle_remote_certificate_name(remote_url)
+          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
+        end
+
+        def handle_echo(value)
+          Result.auto(value)
+        end
+
+        def handle_download(file_url, file_dest = nil)
+          file_url = file_url.chomp
+          file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
+          Log.log.info("Downloading: #{file_url}")
+          Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
+          Result::Status.new("Saved to: #{file_dest}")
+        end
+
+        # preset — all sub-actions delegate to execute_preset (which consumes the sub-command itself)
+        def handle_preset
+          execute_preset
+        end
+
+        def handle_tokens_flush
+          require 'aspera/api/node'
+          Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
+        end
+
+        def handle_tokens_list
+          require 'aspera/api/node'
+          Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
+        end
+
+        def handle_tokens_show(token_id)
+          require 'aspera/api/node'
+          data = OAuth::Factory.instance.get_token_info(token_id)
+          raise Cli::Error, 'Unknown identifier' if data.nil?
+          Result::SingleObject.new(data)
+        end
+
+        def handle_plugins_list
+          result = []
+          Plugins::Factory.instance.plugin_list.each do |name|
+            plugin_class = Plugins::Factory.instance.plugin_class(name)
+            result.push({
+              plugin: name,
+              detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
+              wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
+              path:   Plugins::Factory.instance.plugin_source(name)
+            })
+          end
+          Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
+        end
+
+        def handle_plugins_create(plugin_name, destination_folder = nil)
+          plugin_name = plugin_name.downcase
+          destination_folder ||= File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
+          plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
+          content = <<~END_OF_PLUGIN_CODE
+            require 'aspera/cli/plugins/base'
+            module Aspera
+              module Cli
+                module Plugins
+                  class #{plugin_name.snake_to_capital} < Base
+                    command :example, description: 'example command', handler: :handle_example
+                    def handle_example
+                      Result::Status.new('You called plugin #{plugin_name}')
                     end
                   end
                 end
-              END_OF_PLUGIN_CODE
-              File.write(plugin_file, content)
-              return Result::Status.new("Created #{plugin_file}")
+              end
             end
-          when :detect, :wizard
-            # Interactive mode
-            options.ask_missing_mandatory = true
-            # Detect plugins by url and optional query
-            apps = @wizard.identify_plugins_for_url.freeze
-            return Result::ObjectList.new(apps) if action.eql?(:detect)
-            return @wizard.find(apps)
-          when :coffee
-            return Result::Image.new(COFFEE_IMAGE_URL)
-          when :image
-            return Result::Image.new(options.get_next_argument('image URI or blob'))
-          when :ascp
-            execute_action_ascp
-          when :agents
-            return execute_action_agents
-          when :sync
-            SyncActions.declare_options(options)
-            case options.get_next_command(%i[spec admin translate])
-            when :spec
-              builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
-              return Result::ObjectList.new(builder.rows, fields: builder.columns)
-            when :admin
-              return execute_sync_admin
-            when :translate
-              return Result::SingleObject.new(Sync::Operations.args_to_conf(options.get_next_argument('async arguments', multiple: true)))
-            else Aspera.error_unreachable_line
-            end
-          when :transferd
-            execute_action_transferd
-          when :gem
-            case options.get_next_command(%i[path version name])
-            when :path then return Result::Text.new(self.class.gem_src_root)
-            when :version then return Result::Text.new(Cli::VERSION)
-            when :name then return Result::Text.new(Info::GEM_NAME)
-            else Aspera.error_unreachable_line
-            end
-          when :folder
-            return Result::Text.new(context.main_folder)
-          when :file
-            return Result::Text.new(@option_config_file)
-          when :email_test
-            send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
-            return Result::Nothing.new
-          when :smtp_settings
-            return Result::SingleObject.new(email_settings)
-          when :proxy_check
-            # Ensure fpac was provided
-            options.get_option(:fpac, mandatory: true)
-            server_url = options.get_next_argument('server url')
-            return Result::ValueList.new(@pac_exec.get_proxies(server_url), name: 'proxy')
-          when :check_update
-            return Result::SingleObject.new(check_gem_version)
-          when :initdemo
-            cp = presets.config_presets
-            if cp.key?(DEMO_PRESET)
-              Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
-            else
-              Log.log.info{"Creating Demo server preset: #{DEMO_PRESET}"}
-              cp[DEMO_PRESET] = {
-                'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
-                'username'                               => ASPERA,
-                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
-              }
-            end
-            cp[PresetManager::Key::DEFAULTS] ||= {}
-            if cp[PresetManager::Key::DEFAULTS].key?(SERVER_COMMAND)
-              Log.log.warn{"Server default preset already set to: #{cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND]}"}
-              Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
-                DEMO_PRESET.eql?(cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND])
-            else
-              cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
-              Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
-            end
-            return Result::Status.new('Done')
-          when :vault then execute_vault
-          when :test then return execute_test
-          when :platform
-            return Result::Text.new(Environment.instance.architecture)
-          when :completion
-            return execute_completion
-          else Aspera.error_unreachable_line
-          end
+          END_OF_PLUGIN_CODE
+          File.write(plugin_file, content)
+          Result::Status.new("Created #{plugin_file}")
         end
 
-        # Generate shell completion
-        # @return [Result] completion result
-        def execute_completion
-          shell_type = options.get_next_command(%i[bash])
-          case shell_type
-          when :bash
-            if options.get_next_argument('', multiple: true, mandatory: false).nil?
-              Plugins::Factory.instance.plugin_list.each{ |p| puts p}
-            else
-              Log.log.warn('only first level completion so far')
-            end
-            Process.exit(0)
-          else Aspera.error_unreachable_line
-          end
+        def handle_detect
+          options.ask_missing_mandatory = true
+          apps = @wizard.identify_plugins_for_url.freeze
+          Result::ObjectList.new(apps)
         end
 
-        # Artificially raise an exception for tests
-        def execute_test
-          case options.get_next_command(%i[throw web])
-          when :throw
-            # :type [String]
-            # Options
-            exception_class_name = options.get_next_argument('exception class name', mandatory: true)
-            exception_text = options.get_next_argument('exception text', mandatory: true)
-            type = Object.const_get(exception_class_name)
-            Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
-            raise type, exception_text
-          when :web
+        def handle_wizard
+          options.ask_missing_mandatory = true
+          apps = @wizard.identify_plugins_for_url.freeze
+          @wizard.find(apps)
+        end
+
+        def handle_coffee
+          Result::Image.new(COFFEE_IMAGE_URL)
+        end
+
+        def handle_image(image_uri)
+          Result::Image.new(image_uri)
+        end
+
+        def handle_ascp
+          execute_action_ascp
+        end
+
+        def handle_agents
+          execute_action_agents
+        end
+
+        def handle_sync_spec
+          SyncActions.declare_options(options)
+          builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
+          Result::ObjectList.new(builder.rows, fields: builder.columns)
+        end
+
+        def handle_sync_admin
+          SyncActions.declare_options(options)
+          execute_sync_admin
+        end
+
+        def handle_sync_translate(async_arguments)
+          Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))
+        end
+
+        def handle_transferd
+          execute_action_transferd
+        end
+
+        def handle_gem_path
+          Result::Text.new(self.class.gem_src_root)
+        end
+
+        def handle_gem_version
+          Result::Text.new(Cli::VERSION)
+        end
+
+        def handle_gem_name
+          Result::Text.new(Info::GEM_NAME)
+        end
+
+        def handle_folder
+          Result::Text.new(context.main_folder)
+        end
+
+        def handle_file
+          Result::Text.new(@option_config_file)
+        end
+
+        def handle_email_test
+          send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
+          Result::Nothing.new
+        end
+
+        def handle_smtp_settings
+          Result::SingleObject.new(email_settings)
+        end
+
+        def handle_proxy_check(server_url)
+          options.get_option(:fpac, mandatory: true)
+          Result::ValueList.new(@pac_exec.get_proxies(server_url), name: 'proxy')
+        end
+
+        def handle_check_update
+          Result::SingleObject.new(check_gem_version)
+        end
+
+        def handle_initdemo
+          cp = presets.config_presets
+          if cp.key?(DEMO_PRESET)
+            Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
+          else
+            Log.log.info{"Creating Demo server preset: #{DEMO_PRESET}"}
+            cp[DEMO_PRESET] = {
+              'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
+              'username'                               => ASPERA,
+              'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
+            }
           end
+          cp[PresetManager::Key::DEFAULTS] ||= {}
+          if cp[PresetManager::Key::DEFAULTS].key?(SERVER_COMMAND)
+            Log.log.warn{"Server default preset already set to: #{cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND]}"}
+            Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
+              DEMO_PRESET.eql?(cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND])
+          else
+            cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
+            Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
+          end
+          Result::Status.new('Done')
+        end
+
+        def handle_vault
+          execute_vault
+        end
+
+        def handle_test_throw(exception_class_name, exception_text)
+          type = Object.const_get(exception_class_name)
+          Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
+          raise type, exception_text
+        end
+
+        def handle_test_web
+          # placeholder for web test
+        end
+
+        def handle_platform
+          Result::Text.new(Environment.instance.architecture)
+        end
+
+        def handle_completion_bash(words = nil)
+          if words.nil?
+            Plugins::Factory.instance.plugin_list.each{ |p| puts p}
+          else
+            Log.log.warn('only first level completion so far')
+          end
+          Process.exit(0)
         end
 
         # Lookup the corresponding secret for the given URL and usernames

@@ -259,7 +259,7 @@ Loops are expressed via `delegates_to:`.
 | `description` | `String` | User-facing help text |
 | `options` | `Array<Symbol>` | Option names (declared separately) consumed by this command |
 | `arguments` | `Array<ArgumentSpec>` | Positional arguments, in order |
-| `handler` | `Symbol \| nil` | Instance method name called when this is a leaf command |
+| `handler` | `Symbol \| nil` | Instance method name called when this is a leaf command; **optional** — if omitted, the dispatcher derives the name automatically as `handle_<path_segment_1>_<path_segment_2>_…` (e.g. path `[:access_key, :list]` → `:handle_access_key_list`) |
 | `setup` | `Symbol \| nil` | Instance method called on the **parent** node just before dispatching to its children; returns a Hash merged into `ctx` and passed down |
 | `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for loops) |
 | `delegate_instance` | `Symbol \| nil` | Instance method returning a different plugin object; dispatcher calls `dispatch_from_registry` on that object |
@@ -353,12 +353,13 @@ dispatch_from_registry(current_path, ctx = {})
     dispatch_from_registry(current_path + [command], ctx)
   else
     # Leaf: resolve arguments, handle transfer_paths, call handler
+    h = handler_for(child)   # child.handler || :"handle_#{child.full_path.join('_')}"
     if child.transfer_paths
       # File list is delegated to TransferAgent; no positional args consumed here
-      return send(child.handler, **ctx)
+      return send(h, **ctx)
     end
     args = (child.arguments || []).map { |a| resolve_argument(a) }
-    send(child.handler, *args, **ctx)
+    send(h, *args, **ctx)
   end
 end
 ```
@@ -372,6 +373,7 @@ Key properties:
   accumulated context passed to all descendants.
 - `transfer_paths:` bypasses argument resolution entirely; `TransferAgent#ts_source_paths`
   handles the argument stream conditionally based on `--sources`.
+- `handler:` is **optional** — if omitted, the dispatcher calls `handle_<full_path_joined_with_underscores>` automatically. Explicit `handler:` is only needed when the method name must differ from the derived convention (e.g. handlers shared across multiple commands via `define_method`).
 
 ---
 
@@ -710,25 +712,35 @@ instance) separates it cleanly from the simpler `delegates_to:`.
 ---
 
 ### Phase 6 — Remove the old infrastructure
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Once every plugin is migrated, remove the legacy scaffolding.
 
-**Expected outcomes**:
-- `ACTIONS` constant is gone from all plugins.
-- `execute_action` override is gone from all plugins.
-- `Base#add_manual_header` is replaced by `Base#generate_help`.
-- `Base#execute_action` raises `NotImplementedError` only as a safety net (or is removed entirely).
-- Help output is richer: all nesting levels, arguments, and options are shown per command.
+**Achieved outcomes**:
+- `mcp.rb` migrated to DSL: `ACTIONS` constant and `execute_action` override removed.
+- `config.rb` migrated to DSL: `ACTIONS` constant and `execute_action` override removed; all 30 root
+  commands declared with `command(...)` / `commands_under(...)` and individual `handle_*` methods;
+  opaque helpers (`execute_preset`, `execute_vault`, `execute_action_ascp`, `execute_action_agents`,
+  `execute_action_transferd`) preserved as private methods called from DSL leaf handlers.
+- `Base#initialize` legacy guard (assertions on `ACTIONS` and `execute_action`) removed.
+- `Base#add_manual_header` legacy branch (fallback to `ACTIONS` constant) removed; now always uses
+  `command_registry.children_of([])`.
+- `Base#execute_action` guard `raise InternalError, "no registered DSL commands"` removed; method is
+  now the unconditional DSL entry point.
+- `spec/base_dsl_spec.rb` updated: removed two obsolete legacy-mode tests.
+- All 105 unit specs pass.
 
-**Todo**:
-1. Delete `ACTIONS` from all plugin files (grep for `ACTIONS =`).
-2. Delete all `execute_action` overrides.
-3. Replace `add_manual_header` call in `Base#initialize` with `generate_help`.
-4. Update `Runner` to call `dispatch_from_registry` instead of `execute_action`.
-5. Delete the `NotImplementedError` fallback from `Base`.
-6. Run full test suite and update any test that was checking `ACTIONS` contents directly.
-7. Update **Status** in `MIGRATION_TO_DSL.md` to `[x] done` once all items above pass.
+**Design decisions from Phase 6**:
+
+| Decision | Rationale |
+|---|---|
+| `config.rb :preset` declared as an opaque DSL leaf (no sub-commands in registry) | `execute_preset` contains its own `get_next_command` and complex branching; preserving it as a private helper avoids duplicating ~100 lines of CRUD logic into individual handlers. Same pattern as `execute_vault`, `execute_action_ascp` etc. in Phases 4/5. |
+| `add_manual_header` retained (not replaced by `generate_help`) | `generate_help` returns a data structure; replacing the OptionParser separator integration requires a separate richer help rendering subsystem. Deferred to Phase 7 (optional). |
+| `plugins create` template updated to DSL skeleton | The generated plugin scaffold now uses `command :example, handler: :handle_example` instead of the old `ACTIONS=[] / execute_action` pattern. |
+| Legacy guard assertions removed from `Base#initialize` | All plugins are now DSL — the guard is dead code. Removing it simplifies `initialize` and eliminates the last reference to the `ACTIONS` constant contract. |
+
+**Note**: `Base#add_manual_header` full replacement by `generate_help` (richer multi-level help output)
+is tracked as **Phase 7** (optional enhancement) and was not completed here.
 
 ---
 
@@ -747,8 +759,8 @@ instance) separates it cleanly from the simpler `delegates_to:`.
 | 9 | `delegate_instance:` as a separate concept from `delegates_to:` | The `v3` case in `node` requires a different API object, not just a different path; conflating the two would complicate the dispatcher |
 | 10 | `transfer_paths: :send\|:receive` instead of positional args for upload/download | The `--sources` mechanism in `TransferAgent` is incompatible with static argument declaration; the special attribute makes the contract explicit |
 | 11 | Options referenced by name, not inlined | A single `option(...)` declaration drives both `options.declare` registration and DSL metadata |
-| 12 | Coexistence via override of `execute_action` in non-migrated plugins | Zero changes required in non-migrated plugins; the base class fallback is the safety net |
-| 13 | `Node::COMMANDS_*` constants become named groups in the `Node` registry | Other plugins (`cos.rb`, `shares.rb`, `aoc.rb`) reference these constants; named groups remain accessible as `Node.command_registry.group(:commands_cos)` |
+| 12 | ~~Coexistence via override of `execute_action` in non-migrated plugins~~ | Resolved in Phase 6: all plugins are now DSL; the coexistence scaffolding has been removed. |
+| 13 | `Node::COMMANDS_*` constants retained alongside the DSL | Other plugins (`cos.rb`, `shares.rb`, `aoc.rb`) reference these constants in helper methods; the constants remain as internal implementation details, not part of the public DSL contract. |
 
 ---
 

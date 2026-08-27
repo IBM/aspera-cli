@@ -121,15 +121,6 @@ module Aspera
           end
         end
 
-        describe '#initialize (legacy mode)' do
-          it 'raises InternalError when ACTIONS is missing and no DSL commands registered' do
-            klass = Class.new(Base)
-            # Define execute_action but no ACTIONS, no DSL
-            klass.define_method(:execute_action){nil}
-            expect{klass.new(context: context)}.to(raise_error(InternalError, /ACTIONS/))
-          end
-        end
-
         # ------------------------------------------------------------------
         # execute_action (DSL default)
         # ------------------------------------------------------------------
@@ -138,17 +129,6 @@ module Aspera
           it 'calls dispatch_from_registry([]) when DSL commands are registered' do
             allow(options).to(receive(:get_next_command).with(%i[health info], aliases: nil).and_return(:health))
             expect(plugin.execute_action).to(be_a(Result::Status).and(have_attributes(data: 'ok')))
-          end
-
-          it 'raises InternalError when no DSL commands are registered (prevents bare Base use)' do
-            klass = Class.new(Base)
-            klass.command(:ping, description: 'Ping')
-            # Remove all commands by creating a fresh-but-empty class
-            empty_klass = Class.new(Base)
-            # Bypass initialize check by calling send
-            instance = empty_klass.allocate
-            instance.instance_variable_set(:@context, context)
-            expect{instance.execute_action}.to(raise_error(InternalError, /no registered DSL commands/))
           end
         end
 

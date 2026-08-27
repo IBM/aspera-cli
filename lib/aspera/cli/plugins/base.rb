@@ -77,12 +77,6 @@ module Aspera
         def initialize(context:)
           Aspera.assert_type(context, Context){'context'}
           Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
-          uses_dsl = self.class.command_registry.any?
-          unless uses_dsl
-            # Legacy plugins: require ACTIONS constant and execute_action method
-            Aspera.assert(respond_to?(:execute_action), type: InternalError){"Missing method 'execute_action' in #{self.class}"}
-            Aspera.assert(self.class.const_defined?(:ACTIONS), type: InternalError){"Missing constant 'ACTIONS' in #{self.class}"}
-          end
           @context = context
           add_manual_header if @context.man_header
         end
@@ -111,19 +105,13 @@ module Aspera
           # Manual header for all plugins
           options.parser.separator('')
           options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-          cmds = if self.class.command_registry.any?
-            self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
-          else
-            self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')
-          end
+          cmds = self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
           options.parser.separator("SUBCOMMANDS: #{cmds}")
           options.parser.separator('OPTIONS:') if has_options
         end
 
-        # Default execute_action for DSL-based plugins.
-        # Legacy plugins override this method; DSL plugins leave it and rely on the registry.
+        # Entry point for all DSL-based plugins.
         def execute_action
-          raise InternalError, "#{self.class} has no registered DSL commands" if self.class.command_registry.none?
           # Run the root setup (if declared) before consuming any argument.
           # This ensures condition methods on root commands can read instance variables
           # populated by the setup (e.g. @connection_type in server.rb).

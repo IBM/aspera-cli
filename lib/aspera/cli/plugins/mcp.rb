@@ -38,8 +38,6 @@ module Aspera
       #   ascli mcp server @json:{"transport":"http","port":3000}
       #   ascli mcp server @json:{"protocol_version":"2024-11-05","max_line_bytes":1048576}
       class Mcp < Base
-        ACTIONS = %i[server].freeze
-
         # Default instructions shown to the AI client when none are provided by the user.
         DEFAULT_INSTRUCTIONS = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
@@ -68,28 +66,23 @@ module Aspera
         TOOL_KEYS   = %i[max_items].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
-        def initialize(**_)
-          super
-        end
+        command :server,
+          description: 'Start the MCP (Model Context Protocol) server',
+          arguments:   [ArgumentSpec.new(name: :mcp_options, type: [Hash], mandatory: false)],
+          handler:     :handle_server
 
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :server
-            require 'aspera/cli/mcp_tool'
-            # Optional Hash argument — all keys optional, unknown keys raise an error
-            mcp_options = options.get_next_argument('mcp options', mandatory: false, validation: [Hash]) || {}
-            mcp_options = mcp_options.transform_keys(&:to_sym)
-            unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
-            raise Cli::BadArgument, "Unknown MCP option(s): #{unknown.join(', ')}" unless unknown.empty?
-            Cli::McpTool.max_items = mcp_options.delete(:max_items)
-            transport = mcp_options.delete(:transport) || 'stdio'
-            raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
-              unless %w[stdio http].include?(transport.to_s)
-            Log.log.info{"Starting MCP server (transport=#{transport})..."}
-            start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
-            return Result::Nothing.new
-          end
+        def handle_server(mcp_options = nil)
+          require 'aspera/cli/mcp_tool'
+          mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
+          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
+          raise Cli::BadArgument, "Unknown MCP option(s): #{unknown.join(', ')}" unless unknown.empty?
+          Cli::McpTool.max_items = mcp_options.delete(:max_items)
+          transport = mcp_options.delete(:transport) || 'stdio'
+          raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
+            unless %w[stdio http].include?(transport.to_s)
+          Log.log.info{"Starting MCP server (transport=#{transport})..."}
+          start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
+          Result::Nothing.new
         end
 
         private
