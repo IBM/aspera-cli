@@ -74,6 +74,11 @@ module Aspera
         !@specs.empty?
       end
 
+      # @return [Boolean] true if no specs have been registered
+      def none?
+        @specs.empty?
+      end
+
       # Cross-spec consistency checks.
       # @raise [ArgumentError] on any violation
       # @return [self]

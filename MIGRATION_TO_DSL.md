@@ -377,6 +377,30 @@ Key properties:
 
 ## Migration Phases
 
+### General rule: verify each migrated plugin with its integration tag
+
+After migrating any plugin, always run its integration tests using the tag selector:
+
+```
+bundle exec rake test:run'[tag <plugin_name>]'
+```
+
+where `<plugin_name>` is the first non-option argument in the test args (the plugin's tag is
+derived automatically by the test harness from the first command word, e.g. `cos`, `faspio`,
+`httpgw`, `alee`, `node`, etc.). The integration test run is the **only** gate that validates
+that the DSL dispatcher produces identical runtime behaviour to the old `execute_action` code.
+Unit specs alone are insufficient because they mock the argument stream; integration tests
+exercise the real option/argument pipeline end-to-end.
+
+**Bugs discovered during Phase 2 integration testing** that are now fixed:
+
+| Bug | Fix |
+|---|---|
+| `CommandRegistry#none?` not defined; `execute_action` guard used `none?` introduced by rubocop auto-correction | Added `none?` as the explicit inverse of `any?` in `CommandRegistry` |
+| `setup:` on a leaf command (one with `handler:` and no DSL children) was not executed in Phase B dispatch | Leaf branch of `dispatch_from_registry` now calls `send(child.setup)` before the handler |
+
+---
+
 ### Phase 0a — Data classes and registry
 **Status: [x] done**
 
@@ -489,7 +513,7 @@ These plugins have a single dispatch level and no context variables passed betwe
 ---
 
 ### Phase 2 — Migrate single-level plugins with `entity_execute` expansion
-**Status: [ ] pending**
+**Status: [x] done**
 
 **Intent**: Validate the `entity_execute:` shorthand and the pattern where a command
 fully delegates to a REST macro.
@@ -692,9 +716,10 @@ instance) separates it cleanly from the simpler `delegates_to:`.
    in `initialize`) but complicates the dispatcher. Eager is simpler but may declare options
    for plugins not in use.
 
-2. **Test strategy during coexistence**: should migrated plugins have their own unit tests
-   for handler methods (now pure instance methods with no argument-stream side-effects),
-   or is the existing integration test suite sufficient for validating each migration step?
+2. **Test strategy during coexistence**: ~~open~~ **resolved**: both levels are needed.
+   Unit specs in `spec/base_dsl_spec.rb` validate the dispatcher logic in isolation (mocked
+   argument stream). Integration tests via `rake test:run[tag <plugin>]` validate end-to-end
+   behaviour and are the mandatory gate before marking a phase as done.
 
 3. **`Node` command group sharing**: `Node::COMMANDS_COS`, `Node::COMMANDS_SHARES` etc. are
    referenced by other plugins. How should the DSL expose named subsets of a plugin's

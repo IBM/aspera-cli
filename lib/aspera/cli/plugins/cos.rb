@@ -9,6 +9,8 @@ module Aspera
   module Cli
     module Plugins
       class Cos < Base
+        command(:node, description: 'Execute COS node commands', setup: :setup_cos_node, handler: :handle_cos_node)
+
         def initialize(**_)
           super
           options.declare(:bucket, 'Bucket name')
@@ -22,32 +24,33 @@ module Aspera
           Node.declare_options(options)
         end
 
-        ACTIONS = %i[node].freeze
-
-        def execute_action
-          command = options.get_next_command(ACTIONS)
-          case command
-          when :node
-            # get service credentials, Hash, e.g. @json:@file:...
-            service_credentials = options.get_option(:service_credentials)
-            cos_node_params = {
-              auth_url: options.get_option(:identity, mandatory: true),
-              bucket:   options.get_option(:bucket, mandatory: true),
-              endpoint: options.get_option(:endpoint)
-            }
-            if service_credentials.nil?
-              Aspera.assert(!cos_node_params[:endpoint].nil?, 'endpoint required when service credentials not provided', type: Cli::BadArgument)
-              cos_node_params[:api_key] = options.get_option(:apikey, mandatory: true)
-              cos_node_params[:instance_id] = options.get_option(:crn, mandatory: true)
-            else
-              Aspera.assert(cos_node_params[:endpoint].nil?, 'endpoint not allowed when service credentials provided', type: Cli::BadArgument)
-              cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
-            end
-            api_node = Api::CosNode.new(**cos_node_params)
-            node_plugin = Node.new(context: context, api: api_node)
-            command = options.get_next_command(Node::COMMANDS_COS)
-            return node_plugin.execute_action(command)
+        # Build the COS Node API and plugin from CLI options.
+        # @return [Hash] context hash containing :node_plugin
+        def setup_cos_node
+          # get service credentials, Hash, e.g. @json:@file:...
+          service_credentials = options.get_option(:service_credentials)
+          cos_node_params = {
+            auth_url: options.get_option(:identity, mandatory: true),
+            bucket:   options.get_option(:bucket, mandatory: true),
+            endpoint: options.get_option(:endpoint)
+          }
+          if service_credentials.nil?
+            Aspera.assert(!cos_node_params[:endpoint].nil?, 'endpoint required when service credentials not provided', type: Cli::BadArgument)
+            cos_node_params[:api_key] = options.get_option(:apikey, mandatory: true)
+            cos_node_params[:instance_id] = options.get_option(:crn, mandatory: true)
+          else
+            Aspera.assert(cos_node_params[:endpoint].nil?, 'endpoint not allowed when service credentials provided', type: Cli::BadArgument)
+            cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
           end
+          api_node = Api::CosNode.new(**cos_node_params)
+          {node_plugin: Node.new(context: context, api: api_node)}
+        end
+
+        # Dispatch the chosen COS node sub-command to the Node plugin.
+        # @param node_plugin [Node] the Node plugin instance built in setup_cos_node
+        def handle_cos_node(node_plugin:)
+          command = options.get_next_command(Node::COMMANDS_COS)
+          node_plugin.execute_action(command)
         end
       end
     end

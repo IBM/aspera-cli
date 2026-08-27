@@ -85,10 +85,10 @@ module Aspera
           # Manual header for all plugins
           options.parser.separator('')
           options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-          if self.class.command_registry.any?
-            cmds = self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
+          cmds = if self.class.command_registry.any?
+            self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
           else
-            cmds = self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')
+            self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')
           end
           options.parser.separator("SUBCOMMANDS: #{cmds}")
           options.parser.separator('OPTIONS:') if has_options
@@ -97,7 +97,7 @@ module Aspera
         # Default execute_action for DSL-based plugins.
         # Legacy plugins override this method; DSL plugins leave it and rely on the registry.
         def execute_action
-          raise InternalError, "#{self.class} has no registered DSL commands" unless self.class.command_registry.any?
+          raise InternalError, "#{self.class} has no registered DSL commands" if self.class.command_registry.none?
           dispatch_from_registry([])
         end
 
@@ -114,9 +114,7 @@ module Aspera
           spec     = registry[current_path]
 
           # Phase A — setup on current node
-          if spec&.setup
-            ctx = ctx.merge(send(spec.setup))
-          end
+          ctx = ctx.merge(send(spec.setup)) if spec&.setup
 
           # Fast-path: if current_path already points to a leaf node (has a handler,
           # no children), execute it directly without consuming a further argument.
@@ -125,14 +123,14 @@ module Aspera
             if spec.transfer_paths
               return send(spec.handler, **ctx)
             else
-              args = (spec.arguments || []).map { |a| resolve_argument(a) }
+              args = (spec.arguments || []).map{ |a| resolve_argument(a)}
               return send(spec.handler, *args, **ctx)
             end
           end
 
           # Phase B — dispatch to a child
           children  = registry.children_of(current_path)
-          available = children.reject { |_, c| c.condition && !send(c.condition) }
+          available = children.reject{ |_, c| c.condition && !send(c.condition)}
           aliases   = children.values.each_with_object({}) do |c, h|
             h.merge!(c.aliases) if c.aliases
           end
@@ -144,26 +142,26 @@ module Aspera
             target = send(child.delegate_instance)
             return target.dispatch_from_registry(Array(child.delegates_to), {})
           end
-          if child.delegates_to
-            return dispatch_from_registry(Array(child.delegates_to), ctx)
-          end
+          return dispatch_from_registry(Array(child.delegates_to), ctx) if child.delegates_to
 
           # entity_execute shorthand
-          if child.entity_execute
-            return run_entity_execute(child, ctx)
-          end
+          return run_entity_execute(child, ctx) if child.entity_execute
 
           grandchildren = registry.children_of(current_path + [command])
           if grandchildren.any?
             # Intermediate node: recurse (child setup will run at the top of next call)
             dispatch_from_registry(current_path + [command], ctx)
-          elsif child.transfer_paths
-            # File list delegated to TransferAgent; no positional args consumed here
-            send(child.handler, **ctx)
           else
-            # Leaf: resolve arguments, then call handler
-            args = (child.arguments || []).map { |a| resolve_argument(a) }
-            send(child.handler, *args, **ctx)
+            # Leaf: run child setup (if any), then execute handler or transfer
+            ctx = ctx.merge(send(child.setup)) if child.setup
+            if child.transfer_paths
+              # File list delegated to TransferAgent; no positional args consumed here
+              send(child.handler, **ctx)
+            else
+              # Leaf: resolve arguments, then call handler
+              args = (child.arguments || []).map{ |a| resolve_argument(a)}
+              send(child.handler, *args, **ctx)
+            end
           end
         end
 
@@ -177,8 +175,8 @@ module Aspera
           ee_params = spec.entity_execute.dup
           # Merge context into params (spec wins on key collision)
           merged = ctx.merge(ee_params)
-          # If a lookup block was threaded through ctx, pass it as a block
-          block = ctx[:lookup_block]
+          # Extract lookup_block before passing to entity_execute (it is not a kwarg of entity_execute)
+          block = merged.delete(:lookup_block)
           if block
             entity_execute(**merged, &block)
           else

@@ -114,6 +114,23 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     end
   end
 
+  describe '#none?' do
+    it 'is true when empty' do
+      expect(registry.none?).to(be(true))
+    end
+
+    it 'is false after registration' do
+      registry.register(spec(id: :foo))
+      expect(registry.none?).to(be(false))
+    end
+
+    it 'is the inverse of any?' do
+      expect(registry.none?).to(eq(!registry.any?))
+      registry.register(spec(id: :foo))
+      expect(registry.none?).to(eq(!registry.any?))
+    end
+  end
+
   # -----------------------------------------------------------------------
   # validate! — delegates_to unknown path
   # -----------------------------------------------------------------------
