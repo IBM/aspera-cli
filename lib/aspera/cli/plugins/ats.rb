@@ -35,23 +35,30 @@ module Aspera
 
         # --- DSL ---
 
-        command :cluster,          description: 'Display general ATS cluster information (public API, no auth)'
-        command :access_key,       description: 'Manage ATS access keys'
-        command :api_key,          description: 'Manage credential to access ATS API', condition: :api_key_available?
-        command :aws_trust_policy, description: 'Show AWS trust policy'
+        command :cluster,    description: 'Display general ATS cluster information (public API, no auth)'
+        command :access_key, description: 'Manage ATS access keys'
+        command :api_key,    description: 'Manage credential to access ATS API', condition: :api_key_available?
+        command :aws_trust_policy, description: 'Show AWS trust policy', handler: lambda{Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)}))}
 
         commands_under(:cluster) do
-          command :clouds, description: 'List cloud providers'
-          command :list,   description: 'List ATS servers'
+          command :clouds, description: 'List cloud providers', handler: lambda{Result::ObjectList.new(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})}
+          command :list,   description: 'List ATS servers',     handler: lambda{Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region])}
           command :show,   description: 'Show a specific server'
         end
 
         commands_under(:access_key) do
           command :create,      description: 'Create an access key'
-          command :list,        description: 'List access keys'
-          command :show,        description: 'Show an access key'
+          command :list,        description: 'List access keys', handler: lambda do
+            res = ats_api.read('access_keys', query_read_delete(default: {'offset' => 0, 'max_results' => 1000}))
+            Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
+          end
+          command :show,        description: 'Show an access key', handler: lambda{Result::SingleObject.new(ats_api.read("access_keys/#{options.instance_identifier}"))}
           command :modify,      description: 'Modify an access key'
-          command :delete,      description: 'Delete an access key'
+          command :delete,      description: 'Delete an access key', handler: lambda do
+            access_key_id = options.instance_identifier
+            ats_api.delete("access_keys/#{access_key_id}")
+            Result::Status.new("deleted #{access_key_id}")
+          end
           command :node,        description: 'Execute node commands via ATS access key', setup: :setup_ak_node
           command :cluster,     description: 'Show cluster info for an access key'
           command :entitlement, description: 'Show ATS entitlement for an access key'
@@ -64,11 +71,19 @@ module Aspera
         end
 
         commands_under(:api_key) do
-          command :instances, description: 'List ATS instances in IBM Cloud'
-          command :create,    description: 'Create an ATS API key'
-          command :list,      description: 'List ATS API keys'
-          command :show,      description: 'Show an ATS API key'
-          command :delete,    description: 'Delete an ATS API key'
+          command :instances, description: 'List ATS instances in IBM Cloud', handler: lambda do
+            instances = ats_api_v2_auth_ibm.read('instances')
+            Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
+            Result::ValueList.new(instances['data'], name: 'instance')
+          end
+          command :create, description: 'Create an ATS API key', handler: lambda{Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', value_create_modify(command: :create, default: {})))}
+          command :list,   description: 'List ATS API keys',     handler: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
+          command :show,   description: 'Show an ATS API key',   handler: lambda{Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{options.instance_identifier}"))}
+          command :delete, description: 'Delete an ATS API key', handler: lambda do
+            concerned_id = options.instance_identifier
+            build_ats_ibm_api_with_instance.delete("api_keys/#{concerned_id}")
+            Result::Status.new("deleted #{concerned_id}")
+          end
         end
 
         # --- conditions ---
@@ -118,16 +133,6 @@ module Aspera
           )
         end
 
-        # --- cluster handlers ---
-
-        def handle_cluster_clouds
-          Result::ObjectList.new(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
-        end
-
-        def handle_cluster_list
-          Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region])
-        end
-
         def handle_cluster_show
           if options.get_option(:cloud) || options.get_option(:region)
             server_data = server_by_cloud_region
@@ -138,8 +143,6 @@ module Aspera
           end
           Result::SingleObject.new(server_data)
         end
-
-        # --- access_key handlers ---
 
         def handle_access_key_create
           params = value_create_modify(command: :create, default: {})
@@ -176,30 +179,12 @@ module Aspera
           # TODO : action : modify, with "PUT"
         end
 
-        def handle_access_key_list
-          params = query_read_delete(default: {'offset' => 0, 'max_results' => 1000})
-          res = ats_api.read('access_keys', params)
-          return Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
-        end
-
-        def handle_access_key_show
-          access_key_id = options.instance_identifier
-          res = ats_api.read("access_keys/#{access_key_id}")
-          return Result::SingleObject.new(res)
-        end
-
         def handle_access_key_modify
           access_key_id = options.instance_identifier
           params = value_create_modify(command: :modify)
           params['id'] = access_key_id
           ats_api.update("access_keys/#{access_key_id}", params)
           return Result::Status.new('modified')
-        end
-
-        def handle_access_key_delete
-          access_key_id = options.instance_identifier
-          ats_api.delete("access_keys/#{access_key_id}")
-          return Result::Status.new("deleted #{access_key_id}")
         end
 
         def handle_access_key_entitlement
@@ -250,48 +235,6 @@ module Aspera
             }
           )
           return Result::SingleObject.new(api_ak_auth.read('servers'))
-        end
-
-        # --- api_key handlers ---
-
-        def handle_api_key_instances
-          ats_ibm_api = ats_api_v2_auth_ibm
-          instances = ats_ibm_api.read('instances')
-          Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
-          return Result::ValueList.new(instances['data'], name: 'instance')
-        end
-
-        def handle_api_key_create
-          ats_ibm_api = build_ats_ibm_api_with_instance
-          created_key = ats_ibm_api.create('api_keys', value_create_modify(command: :create, default: {}))
-          return Result::SingleObject.new(created_key)
-        end
-
-        def handle_api_key_list
-          ats_ibm_api = build_ats_ibm_api_with_instance
-          res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})
-          return Result::ValueList.new(res['data'], name: 'ats_id')
-        end
-
-        def handle_api_key_show
-          concerned_id = options.instance_identifier
-          ats_ibm_api = build_ats_ibm_api_with_instance
-          res = ats_ibm_api.read("api_keys/#{concerned_id}")
-          return Result::SingleObject.new(res)
-        end
-
-        def handle_api_key_delete
-          concerned_id = options.instance_identifier
-          ats_ibm_api = build_ats_ibm_api_with_instance
-          ats_ibm_api.delete("api_keys/#{concerned_id}")
-          return Result::Status.new("deleted #{concerned_id}")
-        end
-
-        # --- aws_trust_policy ---
-
-        def handle_aws_trust_policy
-          res = ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
-          return Result::SingleObject.new(res)
         end
 
         private

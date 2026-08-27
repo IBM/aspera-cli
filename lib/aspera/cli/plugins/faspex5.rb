@@ -641,36 +641,42 @@ module Aspera
         # Commands that need @api_v5 carry setup: :setup_api_v5.
         # :health and :postprocessing work without authentication, so they have no setup.
         command :health,         description: 'Check Faspex 5 health'
-        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5
+        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, handler: ->{Result::SingleObject.new(@api_v5.read('version'))}
+        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, handler: ->{Result::Text.new(@api_v5.oauth.authorization)}
+        command :packages,       description: 'Manage packages',                   setup: :setup_api_v5, handler: ->{package_action}
+        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5, handler: ->{execute_admin}
         command :user,           description: 'Manage current user',               setup: :setup_api_v5
-        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5
-        command :packages,       description: 'Manage packages',                   setup: :setup_api_v5
         command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
-        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
         command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5
         command :postprocessing, description: 'Start Faspex 4 post-processing server'
         command :invitations,    description: 'Manage invitations', setup: :setup_api_v5
 
         commands_under(:invitations) do
           command :create, description: 'Create an invitation'
-          command :resend, description: 'Resend an invitation'
+          command :resend, description: 'Resend an invitation', handler: lambda do
+            @api_v5.create("invitations/#{options.instance_identifier}/resend", nil)
+            Result::Status.new('Invitation resent')
+          end
           Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
           end
         end
 
         commands_under(:user) do
-          command :account, description: 'Show account information'
+          command :account, description: 'Show account information', handler: ->{Result::SingleObject.new(@api_v5.read('account', query_read_delete))}
           command :profile, description: 'Manage user profile'
         end
 
         commands_under(%i[user profile]) do
-          command :show,   description: 'Show user profile'
-          command :modify, description: 'Modify user profile'
+          command :show,   description: 'Show user profile',   handler: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
+          command :modify, description: 'Modify user profile', handler: lambda do
+            @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
+            Result::Status.new('modified')
+          end
         end
 
         commands_under(:shared_folders) do
-          command :list,   description: 'List shared folders'
+          command :list,   description: 'List shared folders', handler: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
           command :browse, description: 'Browse a shared folder'
         end
 
@@ -703,35 +709,6 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        def handle_version
-          Result::SingleObject.new(@api_v5.read('version'))
-        end
-
-        def handle_user_account
-          Result::SingleObject.new(@api_v5.read('account', query_read_delete))
-        end
-
-        def handle_user_profile_show
-          Result::SingleObject.new(@api_v5.read('account/preferences'))
-        end
-
-        def handle_user_profile_modify
-          @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
-          Result::Status.new('modified')
-        end
-
-        def handle_bearer_token
-          Result::Text.new(@api_v5.oauth.authorization)
-        end
-
-        def handle_packages
-          package_action
-        end
-
-        def handle_shared_folders_list
-          Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])
-        end
-
         def handle_shared_folders_browse
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
           shared_folder_id = options.instance_identifier do |field, value|
@@ -745,10 +722,6 @@ module Aspera
           browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
         end
 
-        def handle_admin
-          execute_admin
-        end
-
         # invitations sub-handlers
 
         def handle_invitations_create
@@ -756,11 +729,6 @@ module Aspera
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
             @api_v5.create(endpoint, params)
           end
-        end
-
-        def handle_invitations_resend
-          @api_v5.create("invitations/#{options.instance_identifier}/resend", nil)
-          Result::Status.new('Invitation resent')
         end
 
         # CRUD handlers for invitations (list, show, modify, delete)

@@ -115,17 +115,31 @@ module Aspera
           command :group,             description: 'Manage groups'
         end
 
+        SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
+        private_constant :SHARE_DISPLAY_FIELDS
+
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
-            command(op, description: "#{op.capitalize} share(s)")
+            command(op, description: "#{op.capitalize} share(s)", handler: lambda do
+              entity_execute(
+                api: @api_shares_admin, entity: 'data/shares', command: op,
+                display_fields: SHARE_DISPLAY_FIELDS
+              ){ |f, v| lookup_share_id(f, v)}
+            end)
           end
-          command :user_permissions,  description: 'Manage user permissions on a share'
-          command :group_permissions, description: 'Manage group permissions on a share'
+          command :user_permissions, description: 'Manage user permissions on a share', handler: lambda do
+            share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
+            entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/user_permissions")
+          end
+          command :group_permissions, description: 'Manage group permissions on a share', handler: lambda do
+            share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
+            entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/group_permissions")
+          end
         end
 
         commands_under(%i[admin transfer_settings]) do
-          command :show,   description: 'Show transfer settings'
-          command :modify, description: 'Modify transfer settings'
+          command :show,   description: 'Show transfer settings',   handler: ->{entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :show,   is_singleton: true)}
+          command :modify, description: 'Modify transfer settings', handler: ->{entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :modify, is_singleton: true)}
         end
 
         # --- setup ---
@@ -197,66 +211,6 @@ module Aspera
         # Override: entity_execute is declared directly in the command, api comes from ivar.
         def handle_admin_node
           entity_execute(api: @api_shares_admin, entity: 'data/nodes')
-        end
-
-        # --- admin share ---
-
-        # Share display fields reused across CRUD handlers
-        SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
-
-        def handle_admin_share_create
-          entity_execute(
-            api: @api_shares_admin, entity: 'data/shares', command: :create,
-            display_fields: SHARE_DISPLAY_FIELDS
-          ){ |f, v| lookup_share_id(f, v)}
-        end
-
-        def handle_admin_share_list
-          entity_execute(
-            api: @api_shares_admin, entity: 'data/shares', command: :list,
-            display_fields: SHARE_DISPLAY_FIELDS
-          ){ |f, v| lookup_share_id(f, v)}
-        end
-
-        def handle_admin_share_show
-          entity_execute(
-            api: @api_shares_admin, entity: 'data/shares', command: :show,
-            display_fields: SHARE_DISPLAY_FIELDS
-          ){ |f, v| lookup_share_id(f, v)}
-        end
-
-        def handle_admin_share_modify
-          entity_execute(
-            api: @api_shares_admin, entity: 'data/shares', command: :modify,
-            display_fields: SHARE_DISPLAY_FIELDS
-          ){ |f, v| lookup_share_id(f, v)}
-        end
-
-        def handle_admin_share_delete
-          entity_execute(
-            api: @api_shares_admin, entity: 'data/shares', command: :delete,
-            display_fields: SHARE_DISPLAY_FIELDS
-          ){ |f, v| lookup_share_id(f, v)}
-        end
-
-        def handle_admin_share_user_permissions
-          share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
-          entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/user_permissions")
-        end
-
-        def handle_admin_share_group_permissions
-          share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
-          entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/group_permissions")
-        end
-
-        # --- admin transfer_settings ---
-
-        def handle_admin_transfer_settings_show
-          entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :show, is_singleton: true)
-        end
-
-        def handle_admin_transfer_settings_modify
-          entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :modify, is_singleton: true)
         end
 
         # --- admin user / group (too dynamic for static DSL sub-tree) ---

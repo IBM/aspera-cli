@@ -37,16 +37,8 @@ module Aspera
             test_args:    'info'
           }
         end
-        command :health, description: 'Check health of HTTP Gateway'
-        command :info,   description: 'Show HTTP Gateway information'
 
-        def initialize(**_)
-          super
-          options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
-          options.parse_options!
-        end
-
-        def handle_health
+        command :health, description: 'Check health of HTTP Gateway', handler: lambda do
           nagios = Nagios.new
           begin
             Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
@@ -57,9 +49,14 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        def handle_info
-          api = Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
-          Result::SingleObject.new(api.info)
+        command :info, description: 'Show HTTP Gateway information', handler: lambda do
+          Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)
+        end
+
+        def initialize(**_)
+          super
+          options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
+          options.parse_options!
         end
       end
     end

@@ -103,35 +103,43 @@ module Aspera
         # --- DSL ---
 
         command :health,     description: 'Check Orchestrator API health',               setup: :setup_api
-        command :info,       description: 'Ping the remote Orchestrator instance',       setup: :setup_api
-        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api
-        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api
-        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api
+        command :info,       description: 'Ping the remote Orchestrator instance',       setup: :setup_api, handler: ->{Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false))}
+        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api, handler: ->{Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process'])}
+        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, handler: ->{Result::SingleObject.new(call_ao('monitor_snapshot')['monitor'])}
+        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, handler: ->{Result::ObjectList.new(call_ao('plugin_version')['Plugin'])}
         command :workflows,  description: 'Manage workflows',                            setup: :setup_api
         command :workorders, description: 'Manage work orders',                          setup: :setup_api
         command :workstep,   description: 'Manage work steps',                           setup: :setup_api
 
         commands_under(:workflows) do
-          command :list,       description: 'List all workflows'
-          command :status,     description: 'Check running status of workflow(s)'
-          command :inputs,     description: 'Fetch input specification for a workflow'
-          command :details,    description: 'Check detailed running status of a workflow'
+          command :list, description: 'List all workflows', handler: lambda do
+            Result::ObjectList.new(
+              call_ao('workflows_list')['workflows']['workflow'],
+              fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
+            )
+          end
+          command :status, description: 'Check running status of workflow(s)', handler: lambda do
+            wf_id = options.instance_identifier
+            Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])
+          end
+          command :inputs,     description: 'Fetch input specification for a workflow',          handler: lambda{Result::SingleObject.new(call_ao("workflow_inputs_spec/#{options.instance_identifier}")['workflow_inputs_spec'])}
+          command :details,    description: 'Check detailed running status of a workflow',       handler: lambda{Result::ObjectList.new(call_ao("workflow_details/#{options.instance_identifier}")['workflows']['workflow']['statuses'])}
           command :start,      description: 'Initiate a work order (sync or async)'
-          command :export,     description: 'Export a workflow'
-          command :workorders, description: 'Fetch all work orders from a workflow'
-          command :outputs,    description: 'Fetch output specification for a workflow'
+          command :export,     description: 'Export a workflow',                                 handler: lambda{Result::Text.new(call_ao("export_workflow/#{options.instance_identifier}", format: nil, http: true).body)}
+          command :workorders, description: 'Fetch all work orders from a workflow',             handler: lambda{Result::ObjectList.new(call_ao("work_orders_list/#{options.instance_identifier}")['work_orders'])}
+          command :outputs,    description: 'Fetch output specification for a workflow',         handler: lambda{Result::ObjectList.new(call_ao("workflow_outputs_spec/#{options.instance_identifier}")['workflow_outputs_spec']['output'])}
         end
 
         commands_under(:workorders) do
-          command :status, description: 'Check the status of a work order'
-          command :cancel, description: 'Cancel a work order'
-          command :reset,  description: 'Reset a work order'
-          command :output, description: 'Fetch output of a work order'
+          command :status, description: 'Check the status of a work order', handler: lambda{Result::SingleObject.new(call_ao("work_order_status/#{options.instance_identifier}")['work_order'])}
+          command :cancel, description: 'Cancel a work order',              handler: lambda{Result::SingleObject.new(call_ao("work_order_cancel/#{options.instance_identifier}")['work_order'])}
+          command :reset,  description: 'Reset a work order',               handler: lambda{Result::SingleObject.new(call_ao("work_order_reset/#{options.instance_identifier}")['work_order'])}
+          command :output, description: 'Fetch output of a work order',     handler: lambda{Result::ObjectList.new(call_ao("work_order_output/#{options.instance_identifier}", format: 'xml')['variable'])}
         end
 
         commands_under(:workstep) do
-          command :status, description: 'Check the status of a work step'
-          command :cancel, description: 'Cancel a work step'
+          command :status, description: 'Check the status of a work step', handler: lambda{Result::SingleObject.new(call_ao("work_step_status/#{options.instance_identifier}"))}
+          command :cancel, description: 'Cancel a work step',              handler: lambda{Result::SingleObject.new(call_ao("work_step_cancel/#{options.instance_identifier}"))}
         end
 
         # --- setup ---
@@ -165,8 +173,6 @@ module Aspera
           {}
         end
 
-        # --- top-level leaf handlers ---
-
         def handle_health
           nagios = Nagios.new
           begin
@@ -177,39 +183,6 @@ module Aspera
             nagios.add_critical('node api', e.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
-        end
-
-        # 14. Ping the remote Instance
-        def handle_info
-          result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
-          Result::SingleObject.new(result)
-        end
-
-        # 12. Orchestrator Background Process status
-        def handle_processes
-          # TODO: Bug ? API has only XML format
-          result = call_ao('processes_status', format: 'xml')
-          Result::ObjectList.new(result['process'])
-        end
-
-        # 13. Orchestrator Monitor
-        def handle_monitors
-          result = call_ao('monitor_snapshot')
-          Result::SingleObject.new(result['monitor'])
-        end
-
-        def handle_plugins
-          # TODO: Bug ? only json format on url
-          result = call_ao('plugin_version')
-          Result::ObjectList.new(result['Plugin'])
-        end
-
-        # --- workflows handlers ---
-
-        # 1. List all available workflows on the system
-        def handle_workflows_list
-          result = call_ao('workflows_list')
-          Result::ObjectList.new(result['workflows']['workflow'], fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification])
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)
@@ -234,88 +207,6 @@ module Aspera
           end
           result_data = call_ao("initiate/#{wf_id}", args: call_params)
           call_params['synchronous'] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
-        end
-
-        # 3. Fetch input specification for a workflow
-        def handle_workflows_inputs
-          result = call_ao("workflow_inputs_spec/#{options.instance_identifier}")
-          Result::SingleObject.new(result['workflow_inputs_spec'])
-        end
-
-        # 4/5. Check the running status for all or a particular workflow
-        def handle_workflows_status
-          wf_id = options.instance_identifier
-          result = call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")
-          Result::ObjectList.new(result['workflows']['workflow'])
-        end
-
-        # 6. Check the detailed running status for a particular workflow
-        def handle_workflows_details
-          result = call_ao("workflow_details/#{options.instance_identifier}")
-          Result::ObjectList.new(result['workflows']['workflow']['statuses'])
-        end
-
-        # 15. Fetch output specification for a particular workflow
-        def handle_workflows_outputs
-          result = call_ao("workflow_outputs_spec/#{options.instance_identifier}")
-          Result::ObjectList.new(result['workflow_outputs_spec']['output'])
-        end
-
-        # 19. Fetch all work orders from a workflow
-        def handle_workflows_workorders
-          result = call_ao("work_orders_list/#{options.instance_identifier}")
-          Result::ObjectList.new(result['work_orders'])
-        end
-
-        def handle_workflows_export
-          result = call_ao("export_workflow/#{options.instance_identifier}", format: nil, http: true)
-          Result::Text.new(result.body)
-        end
-
-        # --- workorders handlers ---
-
-        # 7. Check the status for a particular work order
-        def handle_workorders_status
-          wo_id = options.instance_identifier
-          result = call_ao("work_order_status/#{wo_id}")
-          Result::SingleObject.new(result['work_order'])
-        end
-
-        # 9. Cancel a Work Order
-        def handle_workorders_cancel
-          wo_id = options.instance_identifier
-          result = call_ao("work_order_cancel/#{wo_id}")
-          Result::SingleObject.new(result['work_order'])
-        end
-
-        # 11. Reset a Work order
-        def handle_workorders_reset
-          wo_id = options.instance_identifier
-          result = call_ao("work_order_reset/#{wo_id}")
-          Result::SingleObject.new(result['work_order'])
-        end
-
-        # 16. Fetch output of a work order
-        def handle_workorders_output
-          wo_id = options.instance_identifier
-          result = call_ao("work_order_output/#{wo_id}", format: 'xml')
-          Result::ObjectList.new(result['variable'])
-        end
-
-        # --- workstep handlers ---
-
-        # 8. Check the status of a Step
-        def handle_workstep_status
-          ws_id = options.instance_identifier
-          result = call_ao("work_step_status/#{ws_id}")
-          Result::SingleObject.new(result)
-        end
-
-        # 10. Cancel a Work Step
-        def handle_workstep_cancel
-          ws_id = options.instance_identifier
-          result = call_ao("work_step_cancel/#{ws_id}")
-          Result::SingleObject.new(result)
         end
       end
     end

@@ -8,10 +8,7 @@ module Aspera
   module Cli
     module Plugins
       class Alee < BasicAuth
-        command :health,      description: 'Check health of ALEE metering server'
-        command :entitlement, description: 'Show entitlement information'
-
-        def handle_health
+        command :health, description: 'Check health of ALEE metering server', handler: lambda do
           nagios = Nagios.new
           begin
             api = Api::Alee.new(nil, nil, version: 'ping')
@@ -24,11 +21,11 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        def handle_entitlement
-          entitlement_id = options.get_option(:username, mandatory: true)
-          customer_id = options.get_option(:password, mandatory: true)
-          api_metering = Api::Alee.new(entitlement_id, customer_id)
-          Result::SingleObject.new(api_metering.read('entitlement'))
+        command :entitlement, description: 'Show entitlement information', handler: lambda do
+          Result::SingleObject.new(Api::Alee.new(
+            options.get_option(:username, mandatory: true),
+            options.get_option(:password, mandatory: true)
+          ).read('entitlement'))
         end
       end
     end

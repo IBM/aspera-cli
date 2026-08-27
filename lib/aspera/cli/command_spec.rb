@@ -55,7 +55,7 @@ module Aspera
     # @!attribute description      [String]                      User-facing help text
     # @!attribute options          [Array<Symbol>]               Option names consumed by this command
     # @!attribute arguments        [Array<ArgumentSpec>]         Positional arguments, in order
-    # @!attribute handler          [Symbol, nil]                 Instance method called when this is a leaf command
+    # @!attribute handler          [Symbol, Proc, nil]           Instance method (Symbol) or inline block (Proc) called when this is a leaf command
     # @!attribute setup            [Symbol, nil]                 Instance method called before dispatching to children; returns Hash merged into ctx
     # @!attribute delegates_to     [Symbol, Array<Symbol>, nil]  Re-enter the command tree at this path
     # @!attribute delegate_instance [Symbol, nil]                Instance method returning a different plugin object

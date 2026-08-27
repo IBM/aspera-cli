@@ -143,10 +143,10 @@ module Aspera
           if spec && registry.children_of(current_path).empty?
             h = handler_for(spec)
             if spec.transfer_paths
-              return send(h, **ctx)
+              return invoke_handler(h, [], ctx)
             else
               args = (spec.arguments || []).map{ |a| resolve_argument(a)}
-              return send(h, *args, **ctx)
+              return invoke_handler(h, args, ctx)
             end
           end
 
@@ -179,22 +179,38 @@ module Aspera
             h = handler_for(child)
             if child.transfer_paths
               # File list delegated to TransferAgent; no positional args consumed here
-              send(h, **ctx)
+              invoke_handler(h, [], ctx)
             else
               # Leaf: resolve arguments, then call handler
               args = (child.arguments || []).map{ |a| resolve_argument(a)}
-              send(h, *args, **ctx)
+              invoke_handler(h, args, ctx)
             end
           end
         end
 
-        # Resolve the handler method name for a leaf CommandSpec.
-        # Returns spec.handler if explicitly set; otherwise derives it from the full path
-        # as :handle_<path_segment_1>_<path_segment_2>_... (e.g. [:access_key, :list] → :handle_access_key_list).
+        # Resolve the handler for a leaf CommandSpec.
+        # Returns spec.handler (Symbol or Proc) if explicitly set; otherwise derives a Symbol
+        # from the full path as :handle_<path_segment_1>_<path_segment_2>_...
+        # (e.g. [:access_key, :list] → :handle_access_key_list).
         # @param spec [CommandSpec]
-        # @return [Symbol]
+        # @return [Symbol, Proc]
         def handler_for(spec)
           spec.handler || :"handle_#{spec.full_path.join('_')}"
+        end
+
+        # Invoke a handler (Symbol method or Proc block) with the given positional
+        # arguments and keyword context.
+        # Procs are executed via instance_exec so they share the plugin's `self`.
+        # @param handler [Symbol, Proc]
+        # @param args    [Array]  positional arguments
+        # @param ctx     [Hash]   keyword context
+        # @return [Object]
+        def invoke_handler(handler, args, ctx)
+          if handler.is_a?(Proc)
+            instance_exec(*args, **ctx, &handler)
+          else
+            send(handler, *args, **ctx)
+          end
         end
 
         # Expand an entity_execute shorthand from a CommandSpec.
