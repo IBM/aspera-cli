@@ -5,6 +5,7 @@ require 'aspera/cli/options'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
+require 'aspera/cli/mailer_service'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
@@ -264,6 +265,8 @@ module Aspera
         @context.man_header = true
         # Data persistency is set in config
         Aspera.assert(@context.persistency, 'missing persistency object')
+        # Email service: depends on options (smtp/notify_to/notify_template) declared by Config
+        @context.mailer = MailerService.new(@context.options, @context.main_folder)
         # The TransferAgent plugin may use the @preset parser
         @context.transfer = TransferAgent.new(@context)
         # Add commands for config plugin after all options have been added

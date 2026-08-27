@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/cli/mailer_service'
 
 module Aspera
   module Cli
@@ -8,7 +9,7 @@ module Aspera
     class Context
       # @type [Array<Symbol>]
       # Members that must be non-nil after bootstrap (validated in #validate)
-      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder].freeze
+      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder mailer].freeze
       # @!attribute [rw] options
       #   @return [Options] the command line options manager
       # @!attribute [rw] transfer
@@ -25,6 +26,8 @@ module Aspera
       #   @return [PresetManager] manages the YAML config file and preset resolution
       # @!attribute [rw] http_config
       #   @return [Http] manages HTTP/S and TLS runtime options
+      # @!attribute [rw] mailer
+      #   @return [MailerService] sends emails (SMTP) via ERB templates
       attr_accessor(*MEMBERS)
       # Optional: nil when progress bar is disabled
       attr_accessor :progress_bar

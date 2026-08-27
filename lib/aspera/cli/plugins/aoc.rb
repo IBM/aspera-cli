@@ -821,7 +821,7 @@ module Aspera
               start_date_persistency&.save
               if !options.get_option(:notify_to).nil?
                 events.each do |tr_event|
-                  config.send_email_template(values: {ev: tr_event})
+                  context.mailer.send_email_template(values: {ev: tr_event})
                 end
               end
               return Result::ObjectList.new(events)

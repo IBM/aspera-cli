@@ -50,7 +50,6 @@ module Aspera
       def initialize(context)
         Aspera.assert_type(context, Context){'context'}
         Aspera.assert_type(context.options, Options){'context.options'}
-        Aspera.assert_type(context.config, Plugins::Config){'context.config'}
         @context = context
         # Command line can override transfer spec
         @user_transfer_spec = {
@@ -77,7 +76,7 @@ module Aspera
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?
           @notification_cb = ->(transfer_spec, global_status) do
-            @context.config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
+            @context.mailer.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
               subject: "#{Info::CMD_NAME} transfer: #{global_status}",
               status:  global_status,
               ts:      transfer_spec

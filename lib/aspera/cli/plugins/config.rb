@@ -15,7 +15,6 @@ require 'aspera/cli/ascp_actions'
 require 'aspera/cli/preset_actions'
 require 'aspera/cli/preset_manager'
 require 'aspera/cli/http'
-require 'aspera/cli/mailer'
 require 'aspera/cli/vault_manager'
 require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
@@ -49,7 +48,6 @@ module Aspera
       # Manage the CLI config file
       class Config < Base
         include SyncActions
-        include Mailer
         include VaultManager
         include GemChecker
         include AscpActions
@@ -616,12 +614,12 @@ module Aspera
         end
 
         def handle_email_test
-          send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
+          context.mailer.send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
           Result::Nothing.new
         end
 
         def handle_smtp_settings
-          Result::SingleObject.new(email_settings)
+          Result::SingleObject.new(context.mailer.email_settings)
         end
 
         def handle_proxy_check(server_url)
