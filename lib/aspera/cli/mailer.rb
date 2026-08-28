@@ -11,6 +11,9 @@ module Aspera
     # Depends on `options` (from Plugin::Base) being available in the including class.
     module Mailer
       SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
+      SMTP_BOOL_PARAMS = %i[tls ssl].freeze
+      SMTP_INT_PARAMS  = %i[port].freeze
+      SMTP_STR_PARAMS  = %i[server domain username password from_email from_name].freeze
 
       # @return [Hash] email server settings with defaults applied
       def email_settings
@@ -19,6 +22,16 @@ module Aspera
         smtp = smtp.symbolize_keys
         unsupported = smtp.keys - SMTP_CONF_PARAMS
         raise Cli::Error, "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" unless unsupported.empty?
+        # Boolean fields must be actual booleans, not strings like "false"
+        SMTP_BOOL_PARAMS.each do |k|
+          Aspera.assert_values(smtp[k], [true, false], type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+        end
+        SMTP_INT_PARAMS.each do |k|
+          Aspera.assert_type(smtp[k], Integer, type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+        end
+        SMTP_STR_PARAMS.each do |k|
+          Aspera.assert_type(smtp[k], String, type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+        end
         # smtp[:ssl] = nil (false)
         smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
         smtp[:port] ||= if smtp[:tls]

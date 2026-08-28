@@ -191,3 +191,50 @@ components:
           node: "#/components/schemas/NodeAgentOptions"
           httpgw: "#/components/schemas/HttpgwAgentOptions"
           transferd: "#/components/schemas/TransferdAgentOptions"
+    SmtpOptions:
+      type: object
+      description: SMTP email server configuration.
+      required:
+        - server
+      properties:
+        server:
+          type: string
+          description: SMTP server address.
+          example: smtp.gmail.com
+        tls:
+          type: boolean
+          description: Enable `STARTTLS` (port 587).
+          default: true
+        ssl:
+          type: boolean
+          description: Enable `TLS/SSL` (port 465).
+          default: false
+        port:
+          type: integer
+          description: >-
+            Port for the SMTP service.
+
+            Defaults: `587` (TLS), `465` (SSL), `25` (plain).
+          example: 587
+        domain:
+          type: string
+          description: Email domain of the user. Defaults to the domain part of `server`.
+          example: gmail.com
+        username:
+          type: string
+          description: >-
+            User to authenticate on the SMTP server.
+            Leave empty for open (unauthenticated) relay.
+          example: john@example.com
+        password:
+          type: string
+          description: Password for the above `username`.
+          example: my_password
+        from_email:
+          type: string
+          description: Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.
+          example: johnny@example.com
+        from_name:
+          type: string
+          description: Display name of the sender. Defaults to the local-part of `from_email`.
+          example: John Wayne

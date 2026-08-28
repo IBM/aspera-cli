@@ -101,6 +101,7 @@ module Aspera
           next if agents.empty?
           item['description'].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
           item['description'].push("Default: #{@formatter.markdown_text("`#{node['default']}`")}.") if node.key?('default')
+          item['description'].push("Example: #{@formatter.markdown_text("`#{node['example']}`")}.") if node.key?('example')
           if @include_option
             envvar_prefix = ''
             cli_option =

@@ -100,7 +100,7 @@ module Aspera
           options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
           options.declare(:sdk_folder, 'Ascp: Path to folder with ascp (or product with "product:")', handler: {o: Products::Transferd, m: :sdk_directory})
           # Email options
-          options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash)
+          options.declare(:smtp, 'Email: SMTP configuration', allowed: Hash, schema: Schema::Registry::SMTP_OPTIONS)
           options.declare(:notify_to, 'Email: Recipient for notification of transfers')
           options.declare(:notify_template, 'Email: ERB template for notification of transfers')
           # HTTP options — declared by HttpConfig itself

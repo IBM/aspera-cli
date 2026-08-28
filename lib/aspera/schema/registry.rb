@@ -48,6 +48,7 @@ module Aspera
       HTTPGW_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.HttpgwAgentOptions"
       TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions"
       TRANSFER_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferAgentOptions"
+      SMTP_OPTIONS = "#{OPTIONS}:components.schemas.SmtpOptions"
 
       REQ_BODY = '.requestBody.content.application/json.schema'
 

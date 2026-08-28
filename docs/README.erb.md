@@ -9031,19 +9031,7 @@ This is done with option `smtp`.
 
 The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with the following fields:
 
-<!-- markdownlint-disable MD034 -->
-| Field        | Default            | Example          | Description                      |
-|--------------|--------------------|------------------|----------------------------------|
-| `server`     | -                  | `smtp.gmail.com` | SMTP server address              |
-| `tls`        | `true`             | `true`           | Enable `STARTTLS` (port 587)     |
-| `ssl`        | `false`            | `false`          | Enable `TLS` (port 465)          |
-| `port`       | `587`<%=br%>`465`<%=br%>`25` | `587`  | Port for service                 |
-| `domain`     | _domain of_ `server` | gmail.com      | Email domain of user             |
-| `username`   | -                  | john@example.com | User to authenticate on SMTP server<%=br%>Leave empty for open auth. |
-| `password`   | -                  | <%=ph :password%> | Password for above username      |
-| `from_email` | username if defined|johnny@example.com| Address used if receiver replies |
-| `from_name`  | same as email      | John Wayne       | Display name of sender           |
-<!-- markdownlint-enable MD034 -->
+<%=schema_to_table(Aspera::Schema::Registry::SMTP_OPTIONS)%>
 
 #### Example of configuration
 

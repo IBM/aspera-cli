@@ -2671,6 +2671,7 @@ wizard https://orch.example.com/path orchestrator --username=test --password=tes
 wizard https://server.example.com/path server --username=my_username --password=my_password
 wizard https://shares.example.com/path shares --username=test --password=test
 wizard https://tst.example.com/path faspio --username=my_username --password=my_password
+wizard https://tst.example.com/path httpgw
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
 ```
@@ -4816,6 +4817,9 @@ OPTIONS: global
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
+        --progress-bar=ENUM          Display progress bar: [no], yes
+        --fpac=VALUE                 Proxy auto configuration script
+        --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash, Array)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
@@ -4829,7 +4833,6 @@ OPTIONS: global
         --sdk-url=VALUE              Ascp: URL to get Aspera Transfer Executables
         --locations-url=VALUE        Ascp: URL to get download locations of Aspera Transfer Daemon
         --sdk-folder=VALUE           Ascp: Path to folder with ascp (or product with "product:")
-        --progress-bar=ENUM          Display progress bar: [no], yes
         --smtp=VALUE                 Email: SMTP configuration (Hash)
         --notify-to=VALUE            Email: Recipient for notification of transfers
         --notify-template=VALUE      Email: ERB template for notification of transfers
@@ -4840,8 +4843,6 @@ OPTIONS: global
         --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
         --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
-        --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -5059,7 +5060,7 @@ OPTIONS:
 
 
 COMMAND: server
-SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
+SUBCOMMANDS: cp df download du health info ls md5sum mkdir mv rm sync upload
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
         --username=VALUE             User's identifier
@@ -9377,6 +9378,7 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
 bridges delete --bulk=yes @json:<faspio_bclean_list>
 bridges list
+bridges show 1
 health
 ```
 
@@ -10453,19 +10455,17 @@ This is done with option `smtp`.
 
 The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with the following fields:
 
-<!-- markdownlint-disable MD034 -->
-| Field        | Default            | Example          | Description                      |
-|--------------|--------------------|------------------|----------------------------------|
-| `server`     | -                  | `smtp.gmail.com` | SMTP server address              |
-| `tls`        | `true`             | `true`           | Enable `STARTTLS` (port 587)     |
-| `ssl`        | `false`            | `false`          | Enable `TLS` (port 465)          |
-| `port`       | `587`<br/>`465`<br/>`25` | `587`  | Port for service                 |
-| `domain`     | _domain of_ `server` | gmail.com      | Email domain of user             |
-| `username`   | -                  | john@example.com | User to authenticate on SMTP server<br/>Leave empty for open auth. |
-| `password`   | -                  | <PASSWORD> | Password for above username      |
-| `from_email` | username if defined|johnny@example.com| Address used if receiver replies |
-| `from_name`  | same as email      | John Wayne       | Display name of sender           |
-<!-- markdownlint-enable MD034 -->
+| Field | Type | Description |
+|------------|---------|----------------------------------------------------------------------------------|
+| `domain` | `string` | Email domain of the user. Defaults to the domain part of `server`.<br/>Example: `gmail.com`. |
+| `from_email` | `string` | Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.<br/>Example: `johnny@example.com`. |
+| `from_name` | `string` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
+| `password` | `string` | Password for the above `username`.<br/>Example: `my_password`. |
+| `port` | `integer` | Port for the SMTP service.<br/>Defaults: `587` (TLS), `465` (SSL), `25` (plain).<br/>Example: `587`. |
+| `server` | `string` | SMTP server address.<br/>Example: `smtp.gmail.com`. |
+| `ssl` | `boolean` | Enable `TLS/SSL` (port 465).<br/>Default: `false`. |
+| `tls` | `boolean` | Enable `STARTTLS` (port 587).<br/>Default: `true`. |
+| `username` | `string` | User to authenticate on the SMTP server. Leave empty for open (unauthenticated) relay.<br/>Example: `john@example.com`. |
 
 #### Example of configuration
 
