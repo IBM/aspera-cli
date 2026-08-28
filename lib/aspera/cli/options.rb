@@ -8,6 +8,7 @@ require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/dot_container'
+require 'aspera/schema/registry'
 require 'io/console'
 require 'optparse'
 
@@ -84,7 +85,7 @@ module Aspera
       attr_accessor :values
 
       # @param option [Symbol] Name of option
-      # @param description [String] Description for help
+      # @param description [String, nil] Description for help; if nil, derived from schema
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
       # @param handler [Hash] Accessor: keys: :o(object) and :m(method)
       # @param deprecation [String] Deprecation message
@@ -94,7 +95,7 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description:, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil, schema: nil)
+      def initialize(option:, description: nil, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil, schema: nil)
         Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
         @option = option
         @description = description
@@ -137,6 +138,15 @@ module Aspera
           end
         end
         Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
+      end
+
+      # @return [String] description of the option: explicit one, or first line of schema description
+      def description
+        return @description unless @description.nil?
+        return nil if @schema.nil?
+        schema_node = Schema::Registry.instance.reader(@schema).current
+        first_line = (schema_node['title'] || schema_node['description'].to_s).lines.first.to_s.strip
+        first_line.end_with?('.') ? first_line[0..-2] : first_line
       end
 
       def clear
@@ -321,7 +331,7 @@ module Aspera
 
       # Declare an option
       # @param option_symbol [Symbol] option name
-      # @param description   [String] description for help
+      # @param description   [String, nil] description for help; if nil, derived from schema
       # @param short         [String] short option name
       # @param allowed       [Object] Allowed values, see `OptionValue`
       # @param default       [Object] default value
@@ -329,12 +339,9 @@ module Aspera
       # @param deprecation   [String] deprecation
       # @param schema        [String] Definition of schema for Hash parameters
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
+      def declare(option_symbol, description = nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
-        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
-        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
-        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
         Aspera.assert_type(handler, Hash) if handler
         Aspera.assert(handler.keys.sort.eql?(%i[m o]), 'handler must have keys :m and :o') if handler
         option_attrs = @declared_options[option_symbol] = OptionValue.new(
@@ -345,6 +352,11 @@ module Aspera
           deprecation: deprecation,
           schema:      schema
         )
+        description = option_attrs.description
+        Aspera.assert(!description.nil?){"#{option_symbol}: no description and no schema to derive one from"}
+        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
+        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
+        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
         real_types = option_attrs.types&.reject{ |i| [NilClass, String, Symbol].include?(i)}
         description += add_types_info(real_types)
         description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation

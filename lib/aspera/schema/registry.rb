@@ -42,13 +42,17 @@ module Aspera
       AOC = 'aoc'
       FASPEX = 'faspex'
       ASYNC_TABLES = 'async_tables'
-      LOG_OPTIONS = "#{OPTIONS}:components.schemas.LogOptions"
-      DIRECT_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.DirectAgentOptions"
-      NODE_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.NodeAgentOptions"
-      HTTPGW_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.HttpgwAgentOptions"
+      LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
+      DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"
+      NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions"
+      HTTPGW_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.HttpgwAgentOptions"
       TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions"
-      TRANSFER_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferAgentOptions"
-      SMTP_OPTIONS = "#{OPTIONS}:components.schemas.SmtpOptions"
+      TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions"
+      SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions"
+      HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions"
+      VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
+      IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
+      PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions"
 
       REQ_BODY = '.requestBody.content.application/json.schema'
 

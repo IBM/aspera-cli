@@ -238,3 +238,186 @@ components:
           type: string
           description: Display name of the sender. Defaults to the local-part of `from_email`.
           example: John Wayne
+    HttpOptions:
+      type: object
+      description: >-
+        HTTP/S connection parameters for REST calls (not `ascp` WSS).
+
+        Keys are dispatched at startup to three targets:
+        `RestParameters` (`user_agent`, `download_partial_suffix`, `retry_*`),
+        `SSL` (`ssl_options`), and `OAuth` (`token_cache_max_age`, `token_refresh_threshold`).
+        Any remaining key is forwarded as a setter to the `Net::HTTP` session
+        (e.g. `ca_file`, `verify_mode`) — the list below covers the common ones.
+      additionalProperties: true
+      properties:
+        read_timeout:
+          type: number
+          description: Maximum time in seconds to wait for data to be read from the server. (Net::HTTP)
+          default: 60
+        write_timeout:
+          type: number
+          description: Maximum time in seconds to wait for data to be written to the server. (Net::HTTP)
+          default: 60
+        open_timeout:
+          type: number
+          description: Maximum time in seconds to wait for a connection to be established. (Net::HTTP)
+          default: 60
+        keep_alive_timeout:
+          type: number
+          description: Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP)
+          default: 2
+        ssl_options:
+          type: array
+          description: List of OpenSSL option flags to set on the HTTP session (e.g. `IGNORE_UNEXPECTED_EOF`). (SSL)
+          items:
+            type: string
+        user_agent:
+          type: string
+          description: Value sent in the `User-Agent` HTTP request header. (Rest)
+        download_partial_suffix:
+          type: string
+          description: File suffix appended to the target filename while a download is in progress. (Rest)
+          default: .http_partial
+        retry_on_error:
+          type: boolean
+          description: Retry the request on any HTTP error response. (Rest)
+          default: false
+        retry_on_timeout:
+          type: boolean
+          description: Retry the request on connection timeout. (Rest)
+          default: true
+        retry_on_unavailable:
+          type: boolean
+          description: Retry the request on HTTP 503 Service Unavailable. (Rest)
+          default: true
+        retry_max:
+          type: integer
+          description: Maximum number of retry attempts. (Rest)
+          default: 1
+        retry_sleep:
+          type: integer
+          description: Delay in seconds between retry attempts. (Rest)
+          default: 4
+        token_cache_max_age:
+          type: integer
+          description: Maximum age in seconds of a cached OAuth token before it is discarded. (OAuth)
+          default: 1800
+        token_refresh_threshold:
+          type: integer
+          description: Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth)
+          default: 120
+    VaultHashicorpOptions:
+      type: object
+      description: IBM HashiCorp Vault secret store.
+      required:
+        - type
+        - url
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [vault]
+        url:
+          type: string
+          description: URL of the HashiCorp Vault server.
+          example: "http://127.0.0.1:8200"
+        token:
+          type: string
+          description: Authentication token. Defaults to the value of `vault_password`.
+          example: dev-only-token
+    VaultSystemOptions:
+      type: object
+      description: macOS system keychain secret store.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [system]
+        name:
+          type: string
+          description: Name of the keychain to use.
+    VaultFileOptions:
+      type: object
+      description: Encrypted file secret store.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [file]
+        name:
+          type: string
+          description: >-
+            Path to the encrypted vault file.
+            Relative paths are resolved from the configuration folder.
+          default: vault.bin
+    VaultOptions:
+      title: Secret vault configuration
+      description: Secret vault configuration. Set `type` to select the vault backend.
+      oneOf:
+        - $ref: "#/components/schemas/VaultHashicorpOptions"
+        - $ref: "#/components/schemas/VaultSystemOptions"
+        - $ref: "#/components/schemas/VaultFileOptions"
+      discriminator:
+        propertyName: type
+        mapping:
+          vault:  "#/components/schemas/VaultHashicorpOptions"
+          system: "#/components/schemas/VaultSystemOptions"
+          file:   "#/components/schemas/VaultFileOptions"
+    ImageOptions:
+      type: object
+      description: Options for displaying images and thumbnails in the terminal.
+      properties:
+        reserve:
+          type: integer
+          description: Number of terminal lines reserved for non-image output.
+          default: 3
+        text:
+          type: boolean
+          description: Display the image as colorized text instead of using the iTerm2 inline protocol.
+          default: false
+        double:
+          type: boolean
+          description: Use double vertical resolution via half-block characters.
+          default: true
+        font_ratio:
+          type: number
+          format: float
+          description: Terminal font aspect ratio (height divided by width).
+          default: 2.3
+    PackageFolderOptions:
+      type: object
+      title: Package download folder organization
+      description: >-
+        Controls how downloaded packages are organized into subfolders under `to_folder`.
+        If not specified or empty, packages are downloaded directly into `to_folder`.
+      properties:
+        fld:
+          type: array
+          description: >-
+            List of package fields (up to 2) used to build the subfolder name.
+            Field values are joined with `.`.
+          items:
+            type: string
+          maxItems: 2
+          example: ["name", "id"]
+        seq:
+          type: boolean
+          description: >-
+            If `true`, appends an incrementing number to the folder name when a conflict occurs.
+          default: false
+        opt:
+          type: boolean
+          description: >-
+            If `false` (default), all fields in `fld` are always used.
+            If `true`, the first field is used unless the folder already exists.
+          default: false
+        inf:
+          type: boolean
+          description: >-
+            If `true`, creates a `<ID>.info.json` sidecar file inside the folder
+            containing package metadata.
+          default: false

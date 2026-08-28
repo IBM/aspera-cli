@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore jsonpp
+require 'aspera/schema/registry'
 require 'aspera/cli/special_values'
 require 'aspera/cli/terminal_formatter'
 require 'aspera/preview/terminal'
@@ -125,7 +126,7 @@ module Aspera
           handler: {o: self, m: :option_handler}, default: :no
         )
         options.declare(:show_secrets, 'Show secrets on command output', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_handler}, default: false)
-        options.declare(:image, 'Options for image display', allowed: Hash, handler: {o: self, m: :option_handler}, default: {})
+        options.declare(:image, allowed: Hash, handler: {o: self, m: :option_handler}, default: {}, schema: Schema::Registry::IMAGE_OPTIONS)
       end
 
       # method accessed by option manager

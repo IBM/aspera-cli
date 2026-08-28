@@ -4,6 +4,7 @@ require 'aspera/cli/special_values'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/line_logger'
+require 'aspera/schema/registry'
 require 'openssl'
 
 module Aspera
@@ -41,7 +42,7 @@ module Aspera
         options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :ignore_cert_host_port})
         options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :warn_insecure}, default: true)
         options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: Allowed::TYPES_STRING_ARRAY, handler: {o: self, m: :trusted_cert_locations})
-        options.declare(:http_options, 'HTTP/S: Options for HTTP/S socket', allowed: Hash, handler: {o: self, m: :http_options}, default: {})
+        options.declare(:http_options, allowed: Hash, handler: {o: self, m: :http_options}, default: {}, schema: Schema::Registry::HTTP_OPTIONS)
         options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', handler: {o: self, m: :http_proxy})
       end
 

@@ -2697,11 +2697,7 @@ brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=dev-only-token
 ```
 
-| Parameter | Example                 | Description                                                         |
-|-----------|-------------------------|---------------------------------------------------------------------|
-| `type`    | `vault`                 | The type of the vault |
-| `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
-| `token`   | `dev-only-token`        | The token for the vault.<%=br%>By default uses parameter `vault_password` |
+<%=schema_to_table(Aspera::Schema::Registry::VAULT_OPTIONS)%>
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
@@ -2714,10 +2710,6 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
-| Parameter | Example     | Description                        |
-|-----------|-------------|------------------------------------|
-| `type`    | `system`    | The type of the vault.             |
-| `name`    | `<%=tool%>` | The name of the keychain to use.   |
 
 ```shell
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
@@ -2730,11 +2722,6 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 ```json
 {"type":"file","name":"vault.bin"}
 ```
-
-| Parameter | Example      | Description                                                        |
-|-----------|--------------|--------------------------------------------------------------------|
-| `type`    | `file`       | The type of the vault.                                             |
-| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env :home%>`. |
 
 #### Vault: Operations
 
@@ -2908,12 +2895,7 @@ This feature can be used:
 
 The following options can be specified in the `image` option:
 
-| Option     | Type      | Description                                                             |
-|------------|-----------|---------------------------------------------------|
-| reserve    | `Integer` | Lines reserved to display a status.<%=br%>Default: `3`                  |
-| text       | `Bool`    | Display text instead of image (iTerm).<%=br%>Default: `false`           |
-| double     | `Bool`    | Display double text resolution (half characters).<%=br%>Default: `true` |
-| font_ratio | `Float`   | Font height/width ratio in terminal.<%=br%>Default: `2.3`               |
+<%=schema_to_table(Aspera::Schema::Registry::IMAGE_OPTIONS)%>
 
 Examples:
 
@@ -3033,25 +3015,10 @@ To disable this warning, set the option `warn_insecure` to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type      | Default         | Handler       |
-|-------------------------|---------|---------------|---------------|
-| `read_timeout`            | `Integer` | `60`            | Ruby          |
-| `write_timeout`           | `Integer` | `60`            | Ruby          |
-| `open_timeout`            | `Integer` | `60`            | Ruby          |
-| `keep_alive_timeout`      | `Integer` | `2`             | Ruby          |
-| `ssl_options`             | `Array`   | See below       | Ruby          |
-| `user_agent`              | `Integer` | <%=tool%>       | `Rest` class  |
-| `download_partial_suffix` | `Integer` | `.http_partial` | `Rest` class  |
-| `retry_on_error`          | `Bool`    | `false`         | `Rest` class  |
-| `retry_on_timeout`        | `Bool`    | `true`          | `Rest` class  |
-| `retry_on_unavailable`    | `Bool`    | `true`          | `Rest` class  |
-| `retry_max`               | `Integer` | `1`             | `Rest` class  |
-| `retry_sleep`             | `Integer` | `4`             | `Rest` class  |
-| `token_cache_max_age`     | `Integer` | `1800`          | `OAuth` class |
-| `token_refresh_threshold` | `Integer` | `120`           | `OAuth` class |
+<%=schema_to_table(Aspera::Schema::Registry::HTTP_OPTIONS)%>
 
 Time values are set in **seconds** and can be of type either `Integer` or `Float`.
-Default values are the ones of Ruby:
+Any additional key is forwarded as a setter to the `Net::HTTP` session.
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://github.com/ruby/net-http/blob/master/lib/net/http.rb).
 
 Like any other option, those can be set either on command line, or in configuration file, either in a global preset or server-specific one.
@@ -6013,13 +5980,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
 
 **Supported Fields**:
 
-| Field | Type    | Description                                                               |
-|-------|---------|---------------------------------------------------------------------------|
-| none  | -       | (Default) No subfolder. Packages are downloaded directly into `to_folder`.|
-| `fld` | `Array` | List of package fields used to build the subfolder name.<%=br%>Field values are joined with `.`.<%=br%>Maximum size: 2. |
-| `seq` | `Bool`  | If `true`, appends an incrementing number (starting at `1`) to the folder name when needed. |
-| `opt` | `Bool`  | If `false` (default), all fields in `fld` are always used.<%=br%>If `true`, the first field is used unless the folder already exists. |
-| `inf` | `Bool`  | If `true`, creates a file named `<%=ph :ID%>.info.json` inside the folder containing package metadata (same content as the sidecar file). |
+<%=schema_to_table(Aspera::Schema::Registry::PACKAGE_FOLDER_OPTIONS)%>
 
 **Examples**:
 

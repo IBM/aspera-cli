@@ -7,6 +7,15 @@ module Aspera
   module Schema
     # Generate documentation from Schema, for Transfer Spec, or async Conf spec
     class Documentation
+      # Map JSON Schema type names to user-friendly display names
+      JSON_TYPE_TO_DOC = {
+        'string'  => 'String',
+        'integer' => 'Integer',
+        'number'  => 'Number',
+        'boolean' => 'Bool',
+        'array'   => 'Array',
+        'object'  => 'Hash'
+      }.freeze
       # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick, check_row
       # @param schema [Reader]
       # @param include_option [Boolean] `true`: include CLI options (switches, env vars) in descriptions
@@ -60,7 +69,7 @@ module Aspera
               desc += ": #{render_title.call(title)}" if title
               @formatter.check_row({
                 'name'        => render_title.call("**#{discriminant_property}**"),
-                'type'        => code.call('string'),
+                'type'        => code.call(JSON_TYPE_TO_DOC['string']),
                 'description' => desc
               })
             elsif title
@@ -71,8 +80,8 @@ module Aspera
         schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
-          item_type = node['type']
-          item_type = "#{item_type}[#{node.dig('items', 'type')}]" if item_type.eql?('array') && node.dig('items', 'type').is_a?(String)
+          item_type = JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])
+          item_type = "#{item_type}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]" if node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
           item = {
             'name'        => code.call(property_full_name),
             'type'        => code.call(item_type),

@@ -18,6 +18,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
 require 'aspera/ssl'
+require 'aspera/schema/registry'
 
 module Aspera
   module Cli
@@ -125,7 +126,7 @@ module Aspera
       # Register @preset and @vault extended-value handlers + global config default preset
       def setup_extended_value_handlers(vault_value_cb)
         @context.options.declare(:secret, 'Secret for access keys')
-        @context.options.declare(:vault, 'Vault for secrets', allowed: Hash)
+        @context.options.declare(:vault, allowed: Hash, schema: Schema::Registry::VAULT_OPTIONS)
         @context.options.declare(:vault_password, 'Vault password')
         @context.options.parse_options!
         ExtendedValue.instance.on(EXTEND_PRESET){ |v| @context.presets.by_name(v)}

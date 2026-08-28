@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/schema/registry'
 require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
@@ -209,7 +210,7 @@ module Aspera
           options.declare(:workspace, 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', allowed: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:package_folder, 'Handling of reception of packages in folders', allowed: Hash, default: {})
+          options.declare(:package_folder, allowed: Hash, default: {}, schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS)
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)
