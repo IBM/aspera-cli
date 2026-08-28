@@ -123,16 +123,17 @@ module Aspera
           }
         end
 
+        option :link,          'Public link for specific operation'
+        option :delivery_info, 'Package delivery information', allowed: Hash
+        option :remote_source, 'Remote source for package send (id or %name:)'
+        option :storage,       'Faspex local storage definition (for browsing source)'
+        option :recipient,     'Use if recipient is a dropbox (with *)'
+        option :box,           'Package box', allowed: ATOM_MAILBOXES, default: :inbox
+
         def initialize(**_)
           super
           @api_v3 = nil
           @api_v4 = nil
-          options.declare(:link, 'Public link for specific operation')
-          options.declare(:delivery_info, 'Package delivery information', allowed: Hash)
-          options.declare(:remote_source, 'Remote source for package send (id or %name:)')
-          options.declare(:storage, 'Faspex local storage definition (for browsing source)')
-          options.declare(:recipient, 'Use if recipient is a dropbox (with *)')
-          options.declare(:box, 'Package box', allowed: ATOM_MAILBOXES, default: :inbox)
           options.parse_options!
         end
 

@@ -18,11 +18,9 @@ module Aspera
   module Cli
     module Plugins
       class Faspex5 < Oauth
-        class << self
-          def application_name
-            'Faspex'
-          end
+        application_name 'Faspex'
 
+        class << self
           # @return [Hash,NilClass]
           def detect(address_or_url)
             # add scheme if missing
@@ -92,11 +90,12 @@ module Aspera
           }
         end
 
+        option :box,           "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox_all'
+        option :shared_folder, 'Send package with files from shared folder'
+        option :group_type,    'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes
+
         def initialize(**_)
           super
-          options.declare(:box, "Package inbox, either shared inbox name or one of: #{Api::Faspex::API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox_all')
-          options.declare(:shared_folder, 'Send package with files from shared folder')
-          options.declare(:group_type, 'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
           # [Aspera::Api::Faspex]
           @api_v5 = nil

@@ -44,6 +44,17 @@ module Aspera
           return :success if error_statuses.empty?
           return error_statuses.first
         end
+
+        # Declare all transfer CLI options (metadata only — no handler binding yet).
+        # @param options [Aspera::Cli::Options]
+        def declare_options(options)
+          options.declare(:ts,            'Override transfer spec values', allowed: Hash, schema: Schema::Registry::TRANSFER_SPEC)
+          options.declare(:to_folder,     'Destination folder for transferred files')
+          options.declare(:sources,       "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",                            default: FILE_LIST_FROM_ARGS)
+          options.declare(:src_type,      'Type of file list',                                                                                     allowed: %i[list pair], default: :list)
+          options.declare(:transfer,      'Transfer agent type, or agent parameters with optional agent key',                                      allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
+          options.declare(:transfer_info, 'Parameters for transfer agent',                                                                         allowed: Hash, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
+        end
       end
 
       # @param context [Context] Application context
@@ -64,14 +75,10 @@ module Aspera
         @transfer_paths = nil
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
-        @context.options.declare(:ts, 'Override transfer spec values', allowed: Hash, handler: {o: self, m: :user_transfer_spec}, schema: Schema::Registry::TRANSFER_SPEC)
-        @context.options.declare(:to_folder, 'Destination folder for transferred files')
-        @context.options.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})", default: FILE_LIST_FROM_ARGS)
-        @context.options.declare(:src_type, 'Type of file list', allowed: %i[list pair], default: :list)
-        # String value: agent type shorthand (e.g. --transfer=node); Hash value: full agent params incl. optional 'agent' key
-        @context.options.declare(:transfer, 'Transfer agent type, or agent parameters with optional agent key', allowed: [Hash, String], handler: {o: self, m: :option_transfer}, schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
-        # Deprecated: use --transfer instead
-        @context.options.declare(:transfer_info, 'Parameters for transfer agent', allowed: Hash, handler: {o: self, m: :transfer_options}, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
+        self.class.declare_options(@context.options)
+        @context.options.set_handler(:ts,            object: self, method: :user_transfer_spec)
+        @context.options.set_handler(:transfer,      object: self, method: :option_transfer)
+        @context.options.set_handler(:transfer_info, object: self, method: :transfer_options)
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?

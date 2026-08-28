@@ -57,11 +57,9 @@ module Aspera
         PACKAGE_LIST_DEFAULT_FIELDS = %w[id name created_at files_completed bytes_transferred].freeze
 
         private_constant :REDIRECT_LOCALHOST, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :PACKAGE_LIST_DEFAULT_FIELDS
-        class << self
-          def application_name
-            'Aspera on Cloud'
-          end
+        application_name 'Aspera on Cloud'
 
+        class << self
           # @return [Hash,NilClass]
           def detect(base_url)
             # no protocol ?
@@ -201,16 +199,17 @@ module Aspera
           }
         end
 
+        option :workspace,        'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE
+        option :new_user_option,  'New user creation option for unknown package recipients', allowed: Hash
+        option :validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true
+        option :package_folder, nil, allowed: Hash, default: {}, schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
+
         def initialize(**_)
           super
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
           @scope = Api::AoC::Scope::USER
-          options.declare(:workspace, 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
-          options.declare(:new_user_option, 'New user creation option for unknown package recipients', allowed: Hash)
-          options.declare(:validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:package_folder, allowed: Hash, default: {}, schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS)
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)

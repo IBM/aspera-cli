@@ -66,8 +66,7 @@ module Aspera
         TOOL_KEYS   = %i[max_items].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
-        command :server,
-          description: 'Start the MCP (Model Context Protocol) server',
+        command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [ArgumentSpec.new(name: :mcp_options, type: [Hash], mandatory: false)]
 
         def handle_server(mcp_options = nil)

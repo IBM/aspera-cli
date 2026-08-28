@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/extended_value'
+require 'aspera/cli/options'
 require 'aspera/assert'
 require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
@@ -21,12 +22,6 @@ module Aspera
           ALL = (GLOBAL + INSTANCE).freeze
         end
         class << self
-          def declare_options(options)
-            options.declare(:query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass])
-            options.declare(:bulk, 'Bulk operation (only some)', allowed: Allowed::TYPES_BOOLEAN, default: false)
-            options.declare(:bfail, 'Bulk operation error handling', allowed: Allowed::TYPES_BOOLEAN, default: true)
-          end
-
           # Per-class DSL registry (not inherited: each subclass gets its own instance).
           # @return [CommandRegistry]
           def command_registry
@@ -54,11 +49,37 @@ module Aspera
             @current_parent = previous
           end
 
-          # DSL class method: register an option spec in this plugin's registry.
-          # @param name [Symbol]
-          # @param kwargs [Hash] forwarded to OptionSpec
-          def option(name, **kwargs)
-            command_registry.register_option(OptionSpec.new(name: name, **kwargs))
+          # DSL class method: declare an option in this plugin's registry.
+          # Metadata is stored as an OptionSpec at class-load time; the actual
+          # options.declare call happens in Base#initialize once the instance exists.
+          #
+          # handler: accepts two forms:
+          #   Symbol      — resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+          #   Hash        — {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
+          #
+          # @param name        [Symbol]
+          # @param description [String, nil]
+          # @param short       [String, nil]   single-char short form (without leading '-')
+          # @param allowed     [Array, nil]
+          # @param default     [Object, nil]
+          # @param handler     [Symbol, Hash, nil]
+          # @param deprecation [String, nil]
+          # @param schema      [String, nil]
+          def option(name, description = nil,
+            short: nil, allowed: nil, default: nil,
+            handler: nil, deprecation: nil, schema: nil)
+            command_registry.register_option(
+              OptionSpec.new(
+                name:        name,
+                description: description,
+                short:       short,
+                allowed:     allowed,
+                default:     default,
+                handler:     handler,
+                deprecation: deprecation,
+                schema:      schema
+              )
+            )
           end
 
           # DSL class method: declare a setup method to run once before root dispatch.
@@ -72,12 +93,56 @@ module Aspera
 
           # @return [Symbol, nil]
           attr_reader :root_setup_method
+
+          # DSL class method: declare the human-readable application name shown in wizards.
+          # When called with an argument, sets the name. When called with no argument, returns it.
+          # Falls back to the last component of the class name if never set.
+          # @param name [String, nil]
+          # @return [String]
+          def application_name(name = nil)
+            @application_name = name unless name.nil?
+            @application_name || self.name.split('::').last
+          end
         end
+
+        option :query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
+        option :bulk,  'Bulk operation (only some)',                            allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :bfail, 'Bulk operation error handling',                         allowed: Allowed::TYPES_BOOLEAN, default: true
 
         def initialize(context:)
           Aspera.assert_type(context, Context){'context'}
           Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
           @context = context
+          # Auto-declare all options registered via the DSL `option` class method.
+          # Walk the ancestor chain so that options declared on parent plugin classes
+          # (e.g. Oauth, BasicAuth) are also registered for sub-classes (e.g. Aoc).
+          # Traversal is most-specific-first; the option_declared? guard ensures that
+          # a sub-class that redeclares an option always wins.
+          # Each OptionSpec is translated to an options.declare call, resolving the
+          # handler: shorthand:
+          #   Symbol handler → {o: self, m: <symbol>}  (Category B — plugin instance methods)
+          #   Hash handler   → used as-is              (Category A — singletons / class constants)
+          self.class.ancestors.each do |klass|
+            next unless klass.is_a?(Class) && klass <= Base && klass.instance_variable_defined?(:@command_registry)
+            klass.command_registry.option_specs.each_value do |spec|
+              next if options.option_declared?(spec.name)
+              resolved_handler =
+                case spec.handler
+                when Symbol then {o: self, m: spec.handler}
+                when Hash   then spec.handler
+                end
+              options.declare(
+                spec.name,
+                spec.description,
+                short:       spec.short,
+                allowed:     spec.allowed,
+                default:     spec.default,
+                handler:     resolved_handler,
+                deprecation: spec.deprecation,
+                schema:      spec.schema
+              )
+            end
+          end
           add_manual_header if @context.man_header
         end
 

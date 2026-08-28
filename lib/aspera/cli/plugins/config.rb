@@ -78,145 +78,105 @@ module Aspera
           end
         end
 
+        DEFAULT_CHECK_NEW_VERSION_DAYS = 7
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
+
+        option :preset,             'Load the named option preset from current config file',             short: 'P', handler: :option_preset
+        option :version_check_days, 'Period in days to check new version (zero to disable)',             allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
+        option :plugin_folder,      'Folder where to find additional plugins',                                          handler: :option_plugin_folder
+        option :sdk_url,            'Ascp: URL to get Aspera Transfer Executables',                                     default: SpecialValues::DEF
+        option :locations_url,      'Ascp: URL to get download locations of Aspera Transfer Daemon',                   handler: {o: Ascp::Installation.instance, m: :transferd_urls}
+        option :sdk_folder,         'Ascp: Path to folder with ascp (or product with "product:")',                     handler: {o: Products::Transferd, m: :sdk_directory}
+        option :smtp,               nil, allowed: Hash, schema: Schema::Registry::SMTP_OPTIONS
+        option :notify_to,          'Email: Recipient for notification of transfers'
+        option :notify_template,    'Email: ERB template for notification of transfers'
+        option :cache_tokens,       'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, default: true, handler: :option_cache_tokens
+
         def initialize(**_)
           super
           @vault_instance = nil
-          @pac_exec = nil
           @sdk_default_location = false
           @option_cache_tokens = true
-          # Declare generic plugin options (only after bootstrap has registered handlers)
-          Base.declare_options(options)
-          # Configuration options
+          # :no_default uses a &block callback — must stay imperative
           options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
-          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
-          options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
-          options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
-          # Declare wizard options
+          # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
-          # Transfer SDK options
-          options.declare(:sdk_url, 'Ascp: URL to get Aspera Transfer Executables', default: SpecialValues::DEF)
           options.parse_options!
           set_sdk_dir
-          options.declare(:locations_url, 'Ascp: URL to get download locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
-          options.declare(:sdk_folder, 'Ascp: Path to folder with ascp (or product with "product:")', handler: {o: Products::Transferd, m: :sdk_directory})
-          # Email options
-          options.declare(:smtp, allowed: Hash, schema: Schema::Registry::SMTP_OPTIONS)
-          options.declare(:notify_to, 'Email: Recipient for notification of transfers')
-          options.declare(:notify_template, 'Email: ERB template for notification of transfers')
-          # HTTP options — declared by HttpConfig itself
-          context.http_config.declare_options(options)
-          options.declare(:cache_tokens, 'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_cache_tokens})
+          # HTTP options: declare metadata (class method), then bind to the instance
+          Http.declare_options(options)
+          context.http_config.bind_options(options)
           options.parse_options!
         end
 
-        public
-
         # DSL command declarations — replaces ACTIONS + execute_action
         # :preset is an opaque handler: execute_preset handles all sub-dispatch internally
-        command :preset,
-          description: 'Manage presets of options'
-        command :open,
-          description: 'Open the configuration file in the default editor'
-        command :documentation,
-          description: 'Open the documentation in the default browser',
+        command :preset, description: 'Manage presets of options'
+        command :open, description: 'Open the configuration file in the default editor'
+        command :documentation, description: 'Open the documentation in the default browser',
           arguments: [ArgumentSpec.new(name: :section, type: String, mandatory: false)]
-        command :genkey,
-          description: 'Generate a new RSA private key',
+        command :genkey, description: 'Generate a new RSA private key',
           arguments: [
             ArgumentSpec.new(name: :private_key_path, type: String),
             ArgumentSpec.new(name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
           ]
-        command :pubkey,
-          description: 'Display the public key of an RSA private key',
+        command :pubkey, description: 'Display the public key of an RSA private key',
           arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)]
-        command :remote_certificate,
-          description: 'Retrieve the certificate chain of a remote HTTPS server'
-        command :echo,
-          description: 'Display the value of a given argument',
+        command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
+        command :echo, description: 'Display the value of a given argument',
           arguments: [ArgumentSpec.new(name: :value, type: nil)]
-        command :download,
-          description: 'Download a file from a URL',
+        command :download, description: 'Download a file from a URL',
           arguments: [
             ArgumentSpec.new(name: :file_url,  type: String),
             ArgumentSpec.new(name: :file_dest, type: String, mandatory: false)
           ]
-        command :tokens,
-          description: 'Manage OAuth tokens'
-        command :plugins,
-          description: 'Manage CLI plugins'
-        command :detect,
-          description: 'Detect the Aspera product from a URL (interactive)'
-        command :wizard,
-          description: 'Run the setup wizard for an Aspera product (interactive)'
-        command :coffee,
-          description: 'Display a coffee image'
-        command :image,
-          description: 'Display an image',
+        command :tokens, description: 'Manage OAuth tokens'
+        command :plugins, description: 'Manage CLI plugins'
+        command :detect, description: 'Detect the Aspera product from a URL (interactive)'
+        command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)'
+        command :coffee, description: 'Display a coffee image'
+        command :image, description: 'Display an image',
           arguments: [ArgumentSpec.new(name: :image_uri, type: nil)]
-        command :ascp,
-          description: 'Manage the transfer SDK (ascp/transferd)'
-        command :agents,
-          description: 'Display transfer agent information'
-        command :sync,
-          description: 'Manage Aspera Sync operations'
-        command :transferd,
-          description: 'Manage the transfer daemon (transferd)'
-        command :gem,
-          description: 'Display gem information'
-        command :folder,
-          description: 'Display the configuration folder path'
-        command :file,
-          description: 'Display the configuration file path'
-        command :email_test,
-          description: 'Send a test email'
-        command :smtp_settings,
-          description: 'Display the current SMTP settings'
-        command :proxy_check,
-          description: 'Check the proxy returned by the PAC script for a given URL',
+        command :ascp, description: 'Manage the transfer SDK (ascp/transferd)'
+        command :agents, description: 'Display transfer agent information'
+        command :sync, description: 'Manage Aspera Sync operations'
+        command :transferd, description: 'Manage the transfer daemon (transferd)'
+        command :gem, description: 'Display gem information'
+        command :folder, description: 'Display the configuration folder path'
+        command :file, description: 'Display the configuration file path'
+        command :email_test, description: 'Send a test email'
+        command :smtp_settings, description: 'Display the current SMTP settings'
+        command :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [ArgumentSpec.new(name: :server_url, type: String)]
-        command :check_update,
-          description: 'Check if a newer version of the gem is available'
-        command :initdemo,
-          description: 'Initialize the demo server preset'
-        command :vault,
-          description: 'Manage the secrets vault'
-        command :test,
-          description: 'Internal test commands'
-        command :platform,
-          description: 'Display the current platform/architecture'
-        command :completion,
-          description: 'Generate shell completion scripts'
+        command :check_update, description: 'Check if a newer version of the gem is available'
+        command :initdemo, description: 'Initialize the demo server preset'
+        command :vault, description: 'Manage the secrets vault'
+        command :test, description: 'Internal test commands'
+        command :platform, description: 'Display the current platform/architecture'
+        command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
         commands_under(:remote_certificate) do
-          command :chain,
-            description: 'Display the full certificate chain as PEM',
+          command :chain, description: 'Display the full certificate chain as PEM',
             arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
-          command :only,
-            description: 'Display only the server certificate as PEM',
+          command :only, description: 'Display only the server certificate as PEM',
             arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
-          command :name,
-            description: 'Display the CN of the server certificate',
+          command :name, description: 'Display the CN of the server certificate',
             arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
         end
 
         # tokens sub-commands
         commands_under(:tokens) do
-          command :flush,
-            description: 'Delete all cached OAuth tokens'
-          command :list,
-            description: 'List all cached OAuth tokens'
-          command :show,
-            description: 'Show details of a cached OAuth token',
+          command :flush, description: 'Delete all cached OAuth tokens'
+          command :list, description: 'List all cached OAuth tokens'
+          command :show, description: 'Show details of a cached OAuth token',
             arguments: [ArgumentSpec.new(name: :token_id, type: :identifier)]
         end
 
         # plugins sub-commands
         commands_under(:plugins) do
-          command :list,
-            description: 'List all available plugins'
-          command :create,
-            description: 'Create a new plugin skeleton file',
+          command :list, description: 'List all available plugins'
+          command :create, description: 'Create a new plugin skeleton file',
             arguments: [
               ArgumentSpec.new(name: :name,   type: String),
               ArgumentSpec.new(name: :folder, type: String, mandatory: false)
@@ -225,12 +185,9 @@ module Aspera
 
         # sync sub-commands
         commands_under(:sync) do
-          command :spec,
-            description: 'Display the sync configuration schema'
-          command :admin,
-            description: 'Run sync admin operations'
-          command :translate,
-            description: 'Translate async-style arguments to sync config format',
+          command :spec, description: 'Display the sync configuration schema'
+          command :admin, description: 'Run sync admin operations'
+          command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)]
         end
 
@@ -243,20 +200,17 @@ module Aspera
 
         # test sub-commands
         commands_under(:test) do
-          command :throw,
-            description: 'Raise an exception (for testing)',
+          command :throw, description: 'Raise an exception (for testing)',
             arguments: [
               ArgumentSpec.new(name: :exception_class_name, type: String),
               ArgumentSpec.new(name: :exception_text,       type: String)
             ]
-          command :web,
-            description: 'Test web browser interaction'
+          command :web, description: 'Test web browser interaction'
         end
 
         # completion sub-commands
         commands_under(:completion) do
-          command :bash,
-            description: 'Generate bash completion script',
+          command :bash, description: 'Generate bash completion script',
             arguments: [ArgumentSpec.new(name: :words, type: String, multiple: true, mandatory: false)]
         end
 
@@ -362,15 +316,14 @@ module Aspera
         end
 
         def handle_plugins_list
-          result = []
-          Plugins::Factory.instance.plugin_list.each do |name|
+          result = Plugins::Factory.instance.plugin_list.map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
-            result.push({
+            {
               plugin: name,
               detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
               wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
               path:   Plugins::Factory.instance.plugin_source(name)
-            })
+            }
           end
           Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
         end
@@ -427,13 +380,11 @@ module Aspera
         end
 
         def handle_sync_spec
-          SyncActions.declare_options(options)
           builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
           Result::ObjectList.new(builder.rows, fields: builder.columns)
         end
 
         def handle_sync_admin
-          SyncActions.declare_options(options)
           execute_sync_admin
         end
 
@@ -475,8 +426,8 @@ module Aspera
         end
 
         def handle_proxy_check(server_url)
-          options.get_option(:fpac, mandatory: true)
-          Result::ValueList.new(@pac_exec.get_proxies(server_url), name: 'proxy')
+          raise Cli::BadArgument, 'No PAC script configured, use --fpac' if context.pac_executor.nil?
+          Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
         end
 
         def handle_check_update
@@ -558,7 +509,6 @@ module Aspera
         # Special extended values
         EXTEND_PRESET = :preset
         EXTEND_VAULT = :vault
-        DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         COFFEE_IMAGE_URL = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         private_constant :ASPERA_HOME_FOLDER_NAME,
           :DEFAULT_CONFIG_FILENAME,
@@ -574,7 +524,6 @@ module Aspera
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
           :EXTEND_VAULT,
-          :DEFAULT_CHECK_NEW_VERSION_DAYS,
           :COFFEE_IMAGE_URL
       end
     end

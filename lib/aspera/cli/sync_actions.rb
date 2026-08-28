@@ -14,9 +14,11 @@ module Aspera
         (1..18).map{ |i| "P(#{i})"} +
         %w[Syncd Error Confl Pconf] +
         (23..24).map{ |i| "P(#{i})"}).freeze
+      # When a plugin class includes SyncActions, register the :sql option
+      # in that class's DSL registry so Base#initialize auto-declares it.
       class << self
-        def declare_options(options)
-          options.declare(:sql, 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
+        def included(base)
+          base.option(:sql, 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
         end
       end
 

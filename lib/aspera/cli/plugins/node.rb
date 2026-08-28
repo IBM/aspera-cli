@@ -46,14 +46,12 @@ module Aspera
           end
         end
 
+        application_name 'HSTS Node API'
+
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze
           private_constant :FOLDER_TYPES
-
-          def application_name
-            'HSTS Node API'
-          end
 
           # @return [Hash,NilClass]
           def detect(address_or_url)
@@ -87,19 +85,22 @@ module Aspera
             return
           end
 
+          # Called by non-Node plugins (Ats, Cos, Aoc) to declare Node options on their
+          # own options object. The DSL registry is walked so descriptions stay in one place.
           def declare_options(options)
             return if options.option_declared?(:root_id)
-            @dynamic_key = nil
-            options.declare(:validator, 'Identifier of validator (optional for central)')
-            options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
-            options.declare(
-              :node_api, 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
-              allowed: Hash,
-              handler: {o: Api::Node, m: :api_options}
-            )
-            options.declare(:root_id, 'Gen4: File id of top folder when using access key (override AK root id)')
-            options.declare(:dynamic_key, 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key})
-            SyncActions.declare_options(options)
+            command_registry.option_specs.each_value do |spec|
+              next if options.option_declared?(spec.name)
+              options.declare(
+                spec.name,
+                spec.description,
+                short:    spec.short,
+                allowed:  spec.allowed,
+                default:  spec.default,
+                handler:  spec.handler,
+                schema:   spec.schema
+              )
+            end
             options.parse_options!
           end
 
@@ -108,6 +109,15 @@ module Aspera
             FOLDER_TYPES.include?(entry['type'])
           end
         end
+
+        # DSL option declarations — at class level, picked up by Base#initialize via ancestor chain.
+        # Also exposed via Node.declare_options for non-Node plugins (Ats, Cos, Aoc).
+        option :validator, 'Identifier of validator (optional for central)'
+        option :asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
+        option :node_api,        'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
+          allowed: Hash, handler: {o: Api::Node, m: :api_options}
+        option :root_id,         'Gen4: File id of top folder when using access key (override AK root id)'
+        option :dynamic_key,     'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key}
 
         # @param wizard  [Wizard] The wizard object
         # @param app_url [String] Tested URL

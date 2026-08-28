@@ -33,17 +33,33 @@ module Aspera
       attr_accessor :insecure, :warn_insecure, :http_options
       attr_reader   :ignore_cert_host_port
 
-      # Declare all HTTP/S CLI options, with handlers pointing to self.
-      # Called once from Config#initialize after this object is instantiated.
-      # @param options [Aspera::Cli::Options] CLI options manager to declare options into
+      class << self
+        # Declare all HTTP/S CLI options (metadata only — no handler binding yet).
+        # Called once from Config#initialize before this instance is available as a target.
+        # Handlers are bound in a second pass via bind_options once the instance exists.
+        # @param options [Aspera::Cli::Options] CLI options manager to declare options into
+        # @return [void]
+        def declare_options(options)
+          options.declare(:insecure,           'HTTP/S: Do not validate any certificate',                    allowed: Allowed::TYPES_BOOLEAN, default: false)
+          options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs',         allowed: [Array, NilClass])
+          options.declare(:warn_insecure,      'HTTP/S: Issue a warning if certificate is ignored',          allowed: Allowed::TYPES_BOOLEAN, default: true)
+          options.declare(:cert_stores,        'HTTP/S: List of folder with trusted certificates',           allowed: Allowed::TYPES_STRING_ARRAY)
+          options.declare(:http_options,       nil,                                                          allowed: Hash, default: {}, schema: Schema::Registry::HTTP_OPTIONS)
+          options.declare(:http_proxy,         'HTTP/S: URL for proxy with optional credentials')
+        end
+      end
+
+      # Bind all HTTP options to this instance using set_handler.
+      # Called from Config#initialize immediately after Http.new.
+      # @param options [Aspera::Cli::Options]
       # @return [void]
-      def declare_options(options)
-        options.declare(:insecure, 'HTTP/S: Do not validate any certificate', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :insecure}, default: false)
-        options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs', allowed: [Array, NilClass], handler: {o: self, m: :ignore_cert_host_port})
-        options.declare(:warn_insecure, 'HTTP/S: Issue a warning if certificate is ignored', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :warn_insecure}, default: true)
-        options.declare(:cert_stores, 'HTTP/S: List of folder with trusted certificates', allowed: Allowed::TYPES_STRING_ARRAY, handler: {o: self, m: :trusted_cert_locations})
-        options.declare(:http_options, allowed: Hash, handler: {o: self, m: :http_options}, default: {}, schema: Schema::Registry::HTTP_OPTIONS)
-        options.declare(:http_proxy, 'HTTP/S: URL for proxy with optional credentials', handler: {o: self, m: :http_proxy})
+      def bind_options(options)
+        options.set_handler(:insecure,           object: self, method: :insecure)
+        options.set_handler(:ignore_certificate, object: self, method: :ignore_cert_host_port)
+        options.set_handler(:warn_insecure,      object: self, method: :warn_insecure)
+        options.set_handler(:cert_stores,        object: self, method: :trusted_cert_locations)
+        options.set_handler(:http_options,       object: self, method: :http_options)
+        options.set_handler(:http_proxy,         object: self, method: :http_proxy)
       end
 
       # ------------------------------------------------------------------

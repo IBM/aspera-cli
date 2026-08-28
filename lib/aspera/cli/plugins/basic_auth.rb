@@ -8,18 +8,28 @@ module Aspera
     module Plugins
       # base class for applications supporting basic authentication
       class BasicAuth < Base
+        option :url,      'URL of application, e.g. https://app.example.com/aspera/app'
+        option :username, "User's identifier"
+        option :password, "User's password"
+
+        # Declare url/username/password on an arbitrary Options object.
+        # Still needed for ad-hoc callers that are not plugin instances
+        # (e.g. PresetActions#handle_config_lookup).
         class << self
           def declare_options(options)
-            options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
-            options.declare(:username, "User's identifier")
-            options.declare(:password, "User's password")
+            options.declare(:url,      'URL of application, e.g. https://app.example.com/aspera/app') unless options.option_declared?(:url)
+            options.declare(:username, "User's identifier") unless options.option_declared?(:username)
+            options.declare(:password, "User's password") unless options.option_declared?(:password)
             options.parse_options!
           end
         end
 
         def initialize(context:, basic_options: true)
           super(context: context)
-          BasicAuth.declare_options(options) if basic_options
+          # DSL options (url, username, password) are auto-declared by Base#initialize
+          # via the ancestor chain. parse_options! is still needed here when basic_options
+          # is true so callers that rely on parsing at construction time keep working.
+          options.parse_options! if basic_options
         end
 
         # returns a Rest object with basic auth

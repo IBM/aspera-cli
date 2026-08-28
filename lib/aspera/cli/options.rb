@@ -87,7 +87,7 @@ module Aspera
       # @param option [Symbol] Name of option
       # @param description [String, nil] Description for help; if nil, derived from schema
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
-      # @param handler [Hash] Accessor: keys: :o(object) and :m(method)
+      # @param handler [Hash, nil] Accessor: keys: :o(object) and :m(method); nil for local storage
       # @param deprecation [String] Deprecation message
       # @param schema [String] Declaration of schema
       # `allowed`:
@@ -101,20 +101,14 @@ module Aspera
         @description = description
         # by default passwords and secrets are sensitive, else specify when declaring the option
         @sensitive = SecretHider.instance.secret?(@option, '')
-        # either the value, or object giving value
-        @object = handler&.[](:o)
-        @read_method = handler&.[](:m)
-        @write_method = @read_method ? "#{@read_method}=".to_sym : nil
         @deprecation = deprecation
         @schema = schema
-        @access = if @object.nil?
-          :local
-        elsif @object.respond_to?(@write_method)
-          :write
-        else
-          :setter
-        end
-        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{@read_method}"} unless @access.eql?(:local)
+        # Start with local storage; bind_handler wires the delegation if a handler is given.
+        @object = nil
+        @read_method = nil
+        @write_method = nil
+        @access = :local
+        bind_handler(handler) unless handler.nil?
         @types = nil
         @values = nil
         if !allowed.nil?
@@ -127,9 +121,12 @@ module Aspera
           elsif allowed.all?(Class)
             @types = allowed
             @values = BoolValue::ALL if allowed.eql?(Allowed::TYPES_BOOLEAN)
-            # Default value for array
-            @object ||= [] if @types.first.eql?(Array) && !@types.include?(NilClass)
-            @object ||= {} if @types.first.eql?(Hash) && !@types.include?(NilClass)
+            # Default value for array/hash when no value has been set yet
+            if @types.first.eql?(Array) && !@types.include?(NilClass) && value(log: false).nil?
+              assign_value([], where: 'array default', warn_deprecation: false)
+            elsif @types.first.eql?(Hash) && !@types.include?(NilClass) && value(log: false).nil?
+              assign_value({}, where: 'hash default', warn_deprecation: false)
+            end
           elsif allowed.all?(Symbol)
             @types = Allowed::TYPES_ENUM
             @values = allowed
@@ -140,10 +137,34 @@ module Aspera
         Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
       end
 
+      # Wire (or re-wire) the getter/setter delegation for this option.
+      # Safe to call after construction — used by Options#set_handler to bind a composed
+      # instance variable that did not exist at class-load time (Category C handlers).
+      # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
+      # @return [void]
+      def bind_handler(handler)
+        Aspera.assert_type(handler, Hash){'handler'}
+        # Capture any value already stored locally before switching to delegated storage.
+        # This transfers defaults (and any preset values already applied) to the new target.
+        pending_value = @access.eql?(:local) ? @object : nil
+        @object       = handler[:o]
+        @read_method  = handler[:m]
+        @write_method = "#{@read_method}=".to_sym
+        @access = if @object.respond_to?(@write_method)
+          :write
+        else
+          :setter
+        end
+        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{@read_method}"}
+        Log.log.trace1{"bind_handler: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
+        # Push the pending local value to the new target if one was stored
+        assign_value(pending_value, where: 'bind_handler', warn_deprecation: false) unless pending_value.nil?
+      end
+
       # @return [String] description of the option: explicit one, or first line of schema description
       def description
         return @description unless @description.nil?
-        return nil if @schema.nil?
+        return if @schema.nil?
         schema_node = Schema::Registry.instance.reader(@schema).current
         first_line = (schema_node['title'] || schema_node['description'].to_s).lines.first.to_s.strip
         first_line.end_with?('.') ? first_line[0..-2] : first_line
@@ -168,9 +189,10 @@ module Aspera
       # Value can be a `String`, then evaluated with `ExtendedValue`, or directly a value.
       # @param value [String, Object] Value to assign to option
       # @param where [String] Where the value is assigned from
+      # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
       # @return [nil]
-      def assign_value(value, where:)
-        Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"}
+      def assign_value(value, where:, warn_deprecation: true)
+        Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"} if warn_deprecation
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
         Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
         new_value = BoolValue.true?(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
@@ -536,6 +558,18 @@ module Aspera
       def clear_option(option_symbol)
         Aspera.assert_type(option_symbol, Symbol)
         option_def(option_symbol).clear
+      end
+
+      # Bind (or re-bind) a runtime handler to an already-declared option.
+      # Called from plugin initialize() for Category C handlers whose target object
+      # (e.g. @gen_options) is created after class-load time.
+      # @param option_symbol [Symbol] name of the already-declared option
+      # @param object [Object] the target object for get/set delegation
+      # @param method [Symbol] accessor method name on object
+      # @return [void]
+      def set_handler(option_symbol, object:, method:)
+        Aspera.assert_type(option_symbol, Symbol)
+        option_def(option_symbol).bind_handler(o: object, m: method)
       end
 
       # Adds each of the keys of specified hash as an option

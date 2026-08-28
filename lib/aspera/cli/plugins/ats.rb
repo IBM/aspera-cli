@@ -19,16 +19,17 @@ module Aspera
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE
 
+        option :ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys'
+        option :instance,    'ATS instance in ibm cloud'
+        option :ats_key,     'ATS key identifier (ats_xxx)'
+        option :ats_secret,  'ATS key secret'
+        option :cloud,       'Cloud provider'
+        option :region,      'Cloud region'
+
         def initialize(api: nil, **base_args)
           super(**base_args)
           @ats_api_open = Api::Ats.new
           @ats_api_auth = api
-          options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
-          options.declare(:instance, 'ATS instance in ibm cloud')
-          options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
-          options.declare(:ats_secret, 'ATS key secret')
-          options.declare(:cloud, 'Cloud provider')
-          options.declare(:region, 'Cloud region')
           options.parse_options!
           Node.declare_options(options)
         end

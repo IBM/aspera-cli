@@ -48,13 +48,31 @@ module Aspera
 
         attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite
 
+        # DSL option declarations (Pattern 1 and Pattern 2 — handler: Symbol resolved to self)
+        option :skip_format,        'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
+        # TODO: use the same option as in `node` plugin
+        option :folder_reset_cache, 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
+        option :skip_types,         'Skip generation for those types of files',                                                                                      allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
+        option :previews_folder,    'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
+        option :skip_folders,       'List of folder to skip',                                                                                                        allowed: Allowed::TYPES_STRING_ARRAY, handler: :option_skip_folders
+        option :base,               'Basename of output for for test'
+        option :scan_path,          'Subpath in folder id to start scan in (default=/)'
+        option :scan_id,            'Folder id in storage to start scan in, default is access key main folder id'
+        option :mimemagic,          'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :overwrite,          'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
+        option :root_url,           "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})",                      allowed: Allowed::TYPES_STRING, default: ''
+        # Generator-specific options (Category C — bound to @gen_options via set_handler in initialize)
+        Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
+          values = if opt.key?(:values)
+            opt[:values]
+          elsif BoolValue.symbol?(opt[:default])
+            BoolValue::TYPES
+          end
+          option(opt[:name], opt[:description].capitalize, allowed: values, default: opt[:default])
+        end
+
         def initialize(**_)
           super
-          @option_skip_types = []
-          @option_skip_folders = []
-          @option_previews_folder = nil
-          @option_overwrite = nil
-          @option_folder_reset_cache = nil
           # Generator configuration populated from CLI options.
           @gen_options = Aspera::Preview::Options.new
           # Used to rate-limit periodic progress logging and checkpoint persistence.
@@ -62,40 +80,9 @@ module Aspera
           # Optional callback used to filter entries before generation.
           @filter_block = nil
           @access_remote = true
-          # Bind CLI options directly to generator option attributes.
-          options.declare(
-            :skip_format, 'Skip this preview format',
-            allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
-          )
-          # TODO: use the same option as in `node` plugin
-          options.declare(
-            :folder_reset_cache, 'Force detection of generated preview by refresh cache',
-            allowed: %i[no header read],
-            handler: {o: self, m: :option_folder_reset_cache},
-            default: :no
-          )
-          options.declare(:skip_types, 'Skip generation for those types of files', handler: {o: self, m: :option_skip_types}, allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES)
-          options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
-          options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, allowed: Allowed::TYPES_STRING_ARRAY)
-          options.declare(:base, 'Basename of output for for test')
-          options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
-          options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
-          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:overwrite, 'When to overwrite result file', handler: {o: self, m: :option_overwrite}, allowed: %i[always never mtime], default: :mtime)
-          options.declare(
-            :root_url,
-            "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})",
-            allowed: Allowed::TYPES_STRING,
-            default: ''
-          )
-          # Declare generator-specific options and apply their default values.
+          # Bind generator-specific options to @gen_options (Category C: set_handler after object creation)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            values = if opt.key?(:values)
-              opt[:values]
-            elsif BoolValue.symbol?(opt[:default])
-              BoolValue::TYPES
-            end
-            options.declare(opt[:name], opt[:description].capitalize, allowed: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
+            options.set_handler(opt[:name], object: @gen_options, method: opt[:name])
           end
 
           options.parse_options!

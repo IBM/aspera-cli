@@ -29,12 +29,9 @@ module Aspera
             Environment.secure_execute(ascmd_path, mode: :capture, stdin_data: input, binmode: true, exception: false).first
           end
         end
+        application_name 'HSTS Fasp/SSH'
 
         class << self
-          def application_name
-            'HSTS Fasp/SSH'
-          end
-
           # @return [Hash,NilClass]
           def detect(address_or_url)
             urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -83,10 +80,6 @@ module Aspera
           @connection_type = :ssh
           @ascmd_executor = nil
           @server_transfer_spec = nil
-          options.declare(:ssh_keys, 'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY)
-          options.declare(:passphrase, 'SSH private key passphrase')
-          options.declare(:ssh_options, 'SSH options', allowed: Hash, default: {})
-          SyncActions.declare_options(options)
           options.parse_options!
           @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end
@@ -177,6 +170,10 @@ module Aspera
         end
 
         # --- DSL ---
+
+        option :ssh_keys,   'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY
+        option :passphrase, 'SSH private key passphrase'
+        option :ssh_options, 'SSH options', allowed: Hash, default: {}
 
         # root_setup runs once before any command argument is consumed, populating
         # @server_transfer_spec and @ascmd_executor so that condition methods work.

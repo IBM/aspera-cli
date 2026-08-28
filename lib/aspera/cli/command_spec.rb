@@ -34,17 +34,26 @@ module Aspera
     # Mirrors the existing `options.declare` call but associates the option with
     # the command(s) that use it.
     #
-    # @!attribute name        [Symbol]        Option name (same symbol used in options.declare)
-    # @!attribute description [String]        User-facing description
-    # @!attribute allowed     [Array, nil]    Allowed values (forwarded to options.declare)
-    # @!attribute default     [Object, nil]   Default value
-    # @!attribute short       [String, nil]   Single-character short form (e.g. '-q')
+    # @!attribute name        [Symbol]               Option name (same symbol used in options.declare)
+    # @!attribute description [String, nil]          User-facing description; nil derives it from schema:
+    # @!attribute allowed     [Array, nil]           Allowed values (forwarded to options.declare)
+    # @!attribute default     [Object, nil]          Default value
+    # @!attribute short       [String, nil]          Single-character short form (e.g. 'x')
+    # @!attribute handler     [Symbol, Hash, nil]
+    #   - Symbol  → resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+    #   - Hash    → {o: <object>, m: <method>} used as-is (Category A: singletons / class constants)
+    #   - nil     → option stores its value locally (no delegation)
+    # @!attribute deprecation [String, nil]          Forwarded to options.declare as deprecation:
+    # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
     OptionSpec = Struct.new(
       :name,
       :description,
       :allowed,
       :default,
       :short,
+      :handler,
+      :deprecation,
+      :schema,
       keyword_init: true
     )
 

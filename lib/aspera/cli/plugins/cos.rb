@@ -17,15 +17,16 @@ module Aspera
           end
         end
 
+        option :bucket,              'Bucket name'
+        option :endpoint,            'Storage endpoint (URL)'
+        option :apikey,              'Storage API key'
+        option :crn,                 'Resource instance id (CRN)'
+        option :service_credentials, 'IBM Cloud service credentials', allowed: [Hash, NilClass]
+        option :region,              'Storage region'
+        option :identity,            "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL
+
         def initialize(**_)
           super
-          options.declare(:bucket, 'Bucket name')
-          options.declare(:endpoint, 'Storage endpoint (URL)')
-          options.declare(:apikey, 'Storage API key')
-          options.declare(:crn, 'Resource instance id (CRN)')
-          options.declare(:service_credentials, 'IBM Cloud service credentials', allowed: [Hash, NilClass])
-          options.declare(:region, 'Storage region')
-          options.declare(:identity, "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!
           Node.declare_options(options)
         end

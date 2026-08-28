@@ -253,8 +253,9 @@ module Aspera
         # Create command line manager with arguments
         @context.options = Options.new(Info::CMD_NAME, @argv)
         ExtendedValue.instance.on(EXTEND_ARGS){ |v| @context.options.args_as_extended(v)}
-        # Formatter adds options
-        @context.formatter.declare_options(@context.options)
+        # Formatter: declare metadata (class method), then bind to the instance
+        Formatter.declare_options(@context.options)
+        @context.formatter.bind_options(@context.options)
         # Compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
         Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn){"Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"}
@@ -267,7 +268,7 @@ module Aspera
         @bootstrapper = Bootstrapper.new(@context)
         @bootstrapper.run(
           gem_plugins_folder: Plugins::Config.gem_plugins_folder,
-          vault_value_cb:     ->(v){ @context.config.vault_value(v)}
+          vault_value_cb:     ->(v){@context.config.vault_value(v)}
         )
         # Do not display config commands if help is asked
         @context.man_header = false

@@ -9,11 +9,9 @@ module Aspera
   module Cli
     module Plugins
       class Httpgw < Base
-        class << self
-          def application_name
-            'HTTP Gateway'
-          end
+        application_name 'HTTP Gateway'
 
+        class << self
           # @return [Hash,NilClass]
           def detect(base_url)
             api = Api::Httpgw.new(url: base_url)
@@ -53,9 +51,10 @@ module Aspera
           Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)
         end)
 
+        option :url, 'URL of application, e.g. https://app.example.com/aspera/app'
+
         def initialize(**_)
           super
-          options.declare(:url, 'URL of application, e.g. https://app.example.com/aspera/app')
           options.parse_options!
         end
       end

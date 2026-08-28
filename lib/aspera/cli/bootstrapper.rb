@@ -119,7 +119,7 @@ module Aspera
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
         @context.options.parse_options!
-        @context.presets    = PresetManager.new(config_file: @config_file_option)
+        @context.presets = PresetManager.new(config_file: @config_file_option)
         @context.http_config = Http.new
       end
 
@@ -128,9 +128,11 @@ module Aspera
         @context.options.declare(:secret, 'Secret for access keys')
         @context.options.declare(:vault, allowed: Hash, schema: Schema::Registry::VAULT_OPTIONS)
         @context.options.declare(:vault_password, 'Vault password')
-        @context.options.parse_options!
+        # Register @preset and @vault handlers BEFORE parse_options! so that
+        # values like --secret=@preset:name are correctly evaluated at parse time.
         ExtendedValue.instance.on(EXTEND_PRESET){ |v| @context.presets.by_name(v)}
-        ExtendedValue.instance.on(EXTEND_VAULT,  &vault_value_cb)
+        ExtendedValue.instance.on(EXTEND_VAULT, &vault_value_cb)
+        @context.options.parse_options!
         # Load global config default preset (equivalent of add_plugin_default_preset(:config))
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)
         unless default_config_name.nil?
@@ -154,12 +156,12 @@ module Aspera
         pac_script = @context.options.get_option(:fpac)
         return unless pac_script
 
-        @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
+        @context.pac_executor = ProxyAutoConfig.new(pac_script).register_uri_generic
         proxy_user_pass = @context.options.get_option(:proxy_credentials)
         if proxy_user_pass
           Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
-          @pac_exec.proxy_user = proxy_user_pass[0]
-          @pac_exec.proxy_pass = proxy_user_pass[1]
+          @context.pac_executor.proxy_user = proxy_user_pass[0]
+          @context.pac_executor.proxy_pass = proxy_user_pass[1]
         end
       end
 
@@ -169,8 +171,8 @@ module Aspera
       def setup_rest_and_transfer_runtime
         RestParameters.instance.user_agent    = Info::CMD_NAME
         RestParameters.instance.progress_bar  = @context.progress_bar
-        RestParameters.instance.session_cb    = ->(http_session){ @context.http_config.update_session(http_session)}
-        RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin){ @context.formatter.long_operation(title, action: action)}
+        RestParameters.instance.session_cb    = ->(http_session){@context.http_config.update_session(http_session)}
+        RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin){@context.formatter.long_operation(title, action: action)}
         # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
         http_opts = @context.http_config.http_options
         keys_to_delete = []

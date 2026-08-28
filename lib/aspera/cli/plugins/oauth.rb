@@ -28,15 +28,12 @@ module Aspera
         AUTH_TYPES = %i[web jwt boot].freeze
         # Options used for authentication (url, auth, client_id, etc...)
         AUTH_OPTIONS = %i[url auth client_id client_secret redirect_uri private_key passphrase username password].freeze
-        def initialize(**_)
-          super
-          options.declare(:auth, 'OAuth type of authentication', allowed: AUTH_TYPES, default: :jwt)
-          options.declare(:client_id, 'OAuth client identifier')
-          options.declare(:client_secret, 'OAuth client secret')
-          options.declare(:redirect_uri, 'OAuth (Web) redirect URI for web authentication')
-          options.declare(:private_key, 'OAuth (JWT) RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'OAuth (JWT) RSA private key passphrase')
-        end
+        option :auth,         'OAuth type of authentication', allowed: AUTH_TYPES, default: :jwt
+        option :client_id,    'OAuth client identifier'
+        option :client_secret, 'OAuth client secret'
+        option :redirect_uri, 'OAuth (Web) redirect URI for web authentication'
+        option :private_key,  'OAuth (JWT) RSA private key PEM value (prefix file path with @file:)'
+        option :passphrase,   'OAuth (JWT) RSA private key passphrase'
       end
     end
   end

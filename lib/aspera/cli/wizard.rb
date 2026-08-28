@@ -10,16 +10,22 @@ module Aspera
     class Wizard
       WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
-      private_constant :WIZARD_RESULT_KEYS,
-        :DEFAULT_PRIV_KEY_FILENAME
+      private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
+
+      class << self
+        # Declare all wizard CLI options (metadata only — no handler binding yet).
+        # @param options [Aspera::Cli::Options]
+        def declare_options(options)
+          options.declare(:override,  'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)
+          options.declare(:default,   'Wizard: set as default configuration for specified plugin (also: update)',           allowed: Allowed::TYPES_BOOLEAN, default: true)
+          options.declare(:key_path,  'Wizard: path to private key for JWT')
+        end
+      end
 
       def initialize(parent, main_folder)
         @parent = parent
         @main_folder = main_folder
-        # Wizard options
-        options.declare(:override, 'Wizard: override existing value', allowed: Allowed::TYPES_BOOLEAN, default: false)
-        options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', allowed: Allowed::TYPES_BOOLEAN, default: true)
-        options.declare(:key_path, 'Wizard: path to private key for JWT')
+        self.class.declare_options(options)
       end
 
       # @return [Boolean] false if in test mode to avoid interactive input
@@ -70,7 +76,7 @@ module Aspera
           next if detection_info.nil?
           Aspera.assert_type(detection_info, Hash)
           Aspera.assert_type(detection_info[:url], String) if detection_info.key?(:url)
-          app_name = plugin_klass.respond_to?(:application_name) ? plugin_klass.application_name : plugin_klass.name.split('::').last
+          app_name = plugin_klass.application_name
           # If there is a redirect, then the detector can override the url.
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end

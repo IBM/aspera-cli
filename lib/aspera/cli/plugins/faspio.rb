@@ -8,11 +8,9 @@ module Aspera
   module Cli
     module Plugins
       class Faspio < BasicAuth
-        class << self
-          def application_name
-            'faspio Gateway'
-          end
+        application_name 'faspio Gateway'
 
+        class << self
           # @return [Hash,NilClass]
           def detect(base_url)
             api = Rest.new(base_url: base_url)
@@ -42,12 +40,13 @@ module Aspera
         command :health,  description: 'Check health of faspio Gateway'
         command :bridges, description: 'Manage bridges'
 
+        option :auth,       'OAuth type of authentication', allowed: %i[jwt basic]
+        option :client_id,  'OAuth client identifier'
+        option :private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)'
+        option :passphrase, 'OAuth JWT RSA private key passphrase'
+
         def initialize(**_)
           super
-          options.declare(:auth, 'OAuth type of authentication', allowed: %i[jwt basic])
-          options.declare(:client_id, 'OAuth client identifier')
-          options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
           options.parse_options!
         end
 

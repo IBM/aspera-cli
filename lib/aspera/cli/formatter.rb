@@ -109,24 +109,32 @@ module Aspera
         end
       end
 
-      def declare_options(options)
-        options.declare(:display, 'Output only some information', allowed: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :data)
-        options.declare(:format, 'Output format', allowed: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
-        options.declare(:output, 'Destination for results', handler: {o: self, m: :option_handler})
-        options.declare(
-          :fields, "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", handler: {o: self, m: :option_handler},
-          allowed: [String, Array, Regexp, Proc],
-          default: SpecialValues::DEF
-        )
-        options.declare(:select, 'Select only some items in lists: column, value', allowed: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, '(Table) Display style', allowed: [Hash], handler: {o: self, m: :option_handler}, default: {})
-        options.declare(:flat_hash, '(Table) Display deep values as additional keys', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_handler}, default: true)
-        options.declare(
-          :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', allowed: %i[no yes single],
-          handler: {o: self, m: :option_handler}, default: :no
-        )
-        options.declare(:show_secrets, 'Show secrets on command output', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :option_handler}, default: false)
-        options.declare(:image, allowed: Hash, handler: {o: self, m: :option_handler}, default: {}, schema: Schema::Registry::IMAGE_OPTIONS)
+      class << self
+        # Declare all formatter CLI options (metadata only — no handler binding yet).
+        # @param options [Aspera::Cli::Options]
+        # @return [void]
+        def declare_options(options)
+          options.declare(:display,      'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
+          options.declare(:format,       'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table)
+          options.declare(:output,       'Destination for results')
+          options.declare(:fields,       "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}",               allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF)
+          options.declare(:select,       'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc])
+          options.declare(:table_style,  '(Table) Display style',                                                                             allowed: [Hash],                     default: {})
+          options.declare(:flat_hash,    '(Table) Display deep values as additional keys',                                                    allowed: Allowed::TYPES_BOOLEAN,     default: true)
+          options.declare(:multi_single, '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single],          default: :no)
+          options.declare(:show_secrets, 'Show secrets on command output',                                                                    allowed: Allowed::TYPES_BOOLEAN,     default: false)
+          options.declare(:image,        nil,                                                                                                 allowed: Hash, default: {}, schema: Schema::Registry::IMAGE_OPTIONS)
+        end
+      end
+
+      # Bind all formatter options to this instance using set_handler.
+      # Called from Runner after Formatter.new.
+      # @param options [Aspera::Cli::Options]
+      # @return [void]
+      def bind_options(options)
+        %i[display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
+          options.set_handler(opt, object: self, method: :option_handler)
+        end
       end
 
       # method accessed by option manager

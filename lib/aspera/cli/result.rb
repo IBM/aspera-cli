@@ -273,6 +273,16 @@ module Aspera
           case formatter.format_type
           when :table, :csv
             formatter.display_table(@data.map{ |i| {@name => i}}, [@name])
+          when :text
+            formatter.display_message(:data, @data.join("\n"))
+          when :ruby
+            formatter.display_message(:data, PP.pp(@data, +''))
+          when :json
+            formatter.display_message(:data, JSON.generate(@data))
+          when :jsonpp
+            formatter.display_message(:data, JSON.pretty_generate(@data))
+          when :yaml
+            formatter.display_message(:data, YAML.dump(@data))
           else
             super
           end

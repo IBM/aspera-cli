@@ -24,6 +24,10 @@ module Aspera
             allow(o).to(receive(:get_next_command)){raise 'get_next_command not stubbed'}
             allow(o).to(receive(:get_next_argument)){raise 'get_next_argument not stubbed'}
             allow(o).to(receive(:instance_identifier)){raise 'instance_identifier not stubbed'}
+            # DSL auto-declare stubs: Base#initialize calls these for every OptionSpec
+            # found in the ancestor chain (query, bulk, bfail on Base itself).
+            allow(o).to(receive(:option_declared?)).and_return(false)
+            allow(o).to(receive(:declare))
           end
         end
 
@@ -98,7 +102,7 @@ module Aspera
         describe '.option' do
           it 'registers an OptionSpec in the registry' do
             klass = Class.new(Base)
-            klass.option(:verbose, description: 'Enable verbose output')
+            klass.option(:verbose, 'Enable verbose output')
             expect(klass.command_registry.option_specs[:verbose]).to(be_a(OptionSpec))
           end
         end
@@ -476,9 +480,9 @@ module Aspera
 
           it 'raises on duplicate option name' do
             registry.register_option(OptionSpec.new(name: :verbose, description: 'v1'))
-            expect {
+            expect do
               registry.register_option(OptionSpec.new(name: :verbose, description: 'v2'))
-            }.to(raise_error(ArgumentError, /Duplicate option/))
+            end.to(raise_error(ArgumentError, /Duplicate option/))
           end
 
           it 'returns a dup so mutations do not affect the registry' do
