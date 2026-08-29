@@ -421,58 +421,77 @@ module Aspera
           end
         end
 
-        def execute_resource(res_sym)
-          # Arguments for Plugin::Base::entity_execute
+        # Per-resource configuration for admin CRUD sub-trees.
+        # Keys mirror entity_execute kwargs; extra_commands lists additional leaf commands.
+        # @return [Hash{Symbol => Hash}]
+        RESOURCE_CONFIG = {
+          accounts:            {display_fields: ->{Formatter.all_but('user_profile_data_attributes')}, extra_commands: [:reset_password]},
+          alternate_addresses: {entity: 'configuration/alternate_addresses'},
+          distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids'},
+          email_notifications: {id_as_arg: 'type'},
+          file_processing:     {
+            commands:     %i[next modify],
+            schema:       ->{Schema::Registry.req_body(Schema::Registry::FASPEX, 'file_processing.put')},
+            is_singleton: true
+          },
+          jobs:                {display_fields: %w[id job_name job_type status]},
+          metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles'},
+          nodes:               {extra_commands: %i[shared_folders browse]},
+          oauth_clients:       {
+            display_fields: ->{Formatter.all_but('public_key')},
+            api:            ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
+            list_query:     {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
+          },
+          shared_inboxes:      {extra_commands: %i[members saml_groups invite_external_collaborator], res_id_query: {'all': true}},
+          workgroups:          {extra_commands: %i[members saml_groups invite_external_collaborator], res_id_query: {'all': true}}
+        }.freeze
+        private_constant :RESOURCE_CONFIG
+
+        # Resolve a RESOURCE_CONFIG value that may be a Proc (evaluated in instance context).
+        def resource_config_value(cfg, key)
+          v = cfg[key]
+          v.is_a?(Proc) ? instance_exec(&v) : v
+        end
+
+        # Shared handler for all admin CRUD resources registered via the DSL.
+        # `res_sym` is the resource symbol (e.g. :accounts, :nodes).
+        # Dispatches the next argument against the resource's available commands.
+        def dispatch_resource(res_sym)
+          cfg             = RESOURCE_CONFIG.fetch(res_sym, {})
+          entity          = resource_config_value(cfg, :entity) || res_sym.to_s
+          items_key       = resource_config_value(cfg, :items_key)
+          delete_style    = resource_config_value(cfg, :delete_style)
+          id_as_arg       = resource_config_value(cfg, :id_as_arg) || false
+          display_fields  = resource_config_value(cfg, :display_fields)
+          list_query      = resource_config_value(cfg, :list_query)
+          is_singleton    = resource_config_value(cfg, :is_singleton) || false
+          schema          = resource_config_value(cfg, :schema)
+          res_id_query    = resource_config_value(cfg, :res_id_query) || :default
+          api             = resource_config_value(cfg, :api) || @api_v5
+          extra_commands  = cfg[:extra_commands]                      || []
+          commands        = cfg[:commands]                            || (Operations::ALL + extra_commands)
+
           exec_args = {
-            api:    @api_v5,
-            entity: res_sym.to_s
-          }
-          res_id_query = :default
-          available_commands = Operations::ALL
-          case res_sym
-          when :metadata_profiles
-            exec_args[:entity] = 'configuration/metadata_profiles'
-            exec_args[:items_key] = 'profiles'
-          when :alternate_addresses
-            exec_args[:entity] = 'configuration/alternate_addresses'
-          when :distribution_lists
-            exec_args[:entity] = 'account/distribution_lists'
-            exec_args[:delete_style] = 'ids'
-          when :email_notifications
-            exec_args.delete(:items_key)
-            exec_args[:id_as_arg] = 'type'
-          when :accounts
-            exec_args[:display_fields] = Formatter.all_but('user_profile_data_attributes')
-            available_commands += [:reset_password]
-          when :oauth_clients
-            exec_args[:display_fields] = Formatter.all_but('public_key')
-            exec_args[:api] = Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))
-            exec_args[:list_query] = {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
-          when :shared_inboxes, :workgroups
-            available_commands += %i[members saml_groups invite_external_collaborator]
-            res_id_query = {'all': true}
-          when :nodes
-            available_commands += %i[shared_folders browse]
-          when :jobs
-            exec_args[:display_fields] = %w[id job_name job_type status]
-          when :file_processing
-            available_commands = %i[next modify]
-            # schema for modify
-            exec_args[:schema] = Schema::Registry.req_body(Schema::Registry::FASPEX, 'file_processing.put')
-            exec_args[:is_singleton] = true
-          end
-          res_command = options.get_next_command(available_commands)
+            api: api, entity: entity, items_key: items_key, delete_style: delete_style,
+                       id_as_arg: id_as_arg, display_fields: display_fields, list_query: list_query,
+                       is_singleton: is_singleton, schema: schema
+          }.compact
+
+          res_command = options.get_next_command(commands)
+
+          # Special case: :email_notifications list returns a fixed value list
           return Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
+
           case res_command
           when :create, :modify, :delete, :show
             return entity_execute(command: res_command, **exec_args) do |field, value|
-                     @api_v5.lookup_entity_by_field(entity: exec_args[:entity], value: value, field: field, items_key: exec_args[:items_key], query: res_id_query)['id']
+                     @api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
                    end
           when :list
-            data, total = exec_args[:api].list_entities_limit_offset_total_count(entity: exec_args[:entity], items_key: exec_args[:items_key], query: query_read_delete(default: exec_args[:list_query]))
-            return Result::ObjectList.new(data, total: total, fields: exec_args[:display_fields])
+            data, total = api.list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query_read_delete(default: list_query))
+            return Result::ObjectList.new(data, total: total, fields: display_fields)
           when :shared_folders
-            # nodes
+            # nodes: manage shared folders under a node
             node_id = options.instance_identifier do |field, value|
               @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
             end
@@ -480,11 +499,7 @@ module Aspera
             sh_command = options.get_next_command(Operations::ALL + [:user])
             case sh_command
             when *Operations::ALL
-              return entity_execute(
-                api: @api_v5,
-                entity: shared_folder_entity,
-                command: sh_command
-              ) do |field, value|
+              return entity_execute(api: @api_v5, entity: shared_folder_entity, command: sh_command) do |field, value|
                        @api_v5.lookup_entity_by_field(entity: shared_folder_entity, field: field, value: value)['id']
                      end
             when :user
@@ -495,16 +510,15 @@ module Aspera
               return entity_execute(api: @api_v5, entity: user_path, items_key: 'users') do |field, value|
                        @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
                      end
-
             end
           when :browse
-            # nodes
+            # nodes: browse files under a node
             node_id = options.instance_identifier do |field, value|
               @api_v5.lookup_entity_by_field(entity: 'nodes', value: value, field: field)['id']
             end
             return browse_folder("nodes/#{node_id}/browse")
           when :invite_external_collaborator
-            # :shared_inboxes, :workgroups
+            # shared_inboxes / workgroups
             shared_inbox_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command)
             result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
@@ -517,14 +531,12 @@ module Aspera
             )
             return Result::SingleObject.new(result)
           when :members, :saml_groups
-            # res_command := :shared_inboxes, :workgroups
+            # shared_inboxes / workgroups: manage members or saml groups
             res_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
             res_path = "#{res_sym}/#{res_id}/#{res_command}"
-            list_key = res_command.to_s
-            list_key = 'groups' if res_command.eql?(:saml_groups)
+            list_key = res_command.eql?(:saml_groups) ? 'groups' : res_command.to_s
             sub_command = options.get_next_command(%i[create list modify delete])
             if sub_command.eql?(:create) && res_command.eql?(:members)
-              # first arg is one user name or list of users
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
               users = users.map do |user|
@@ -536,20 +548,13 @@ module Aspera
                     query: Rest.php_style({type: ACCOUNT_TYPES})
                   )['id']
                 else
-                  # it's the user id (not member id...)
                   user
                 end
               end
               access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
               options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
-            # TODO: test SAML group
-            return entity_execute(
-              api: @api_v5,
-              entity: res_path,
-              command: sub_command,
-              items_key: list_key
-            ) do |field, value|
+            return entity_execute(api: @api_v5, entity: res_path, command: sub_command, items_key: list_key) do |field, value|
                      @api_v5.lookup_entity_by_field(
                        entity: res_path,
                        field: field,
@@ -558,81 +563,20 @@ module Aspera
                      )['user_id']
                    end
           when :reset_password
-            # :accounts
+            # accounts: reset password for one account
             contact_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
             @api_v5.create("accounts/#{contact_id}/reset_password", {})
             return Result::Status.new('password reset, user shall check email')
           when :next
+            # file_processing: fetch next file to process (POST-based list)
             result, count = @api_v5.list_entities_limit_offset_total_count(
-              entity: exec_args[:entity],
+              entity: entity,
               operation: 'POST',
               items_key: 'files'
             )
             return Result::ObjectList.new(result, total: count)
           end
           Aspera.error_unreachable_line
-        end
-
-        def execute_admin
-          command = options.get_next_command(%i[configuration smtp events clean_deleted].concat(Api::Faspex::ADMIN_RESOURCES).freeze)
-          case command
-          when *Api::Faspex::ADMIN_RESOURCES
-            return execute_resource(command)
-          when :clean_deleted
-            delete_data = value_create_modify(command: command, default: {})
-            delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
-            res = @api_v5.create('internal/packages/clean_deleted', delete_data)
-            return Result::SingleObject.new(res)
-          when :events
-            event_type = options.get_next_command(%i[application webhook])
-            case event_type
-            when :application
-              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
-              return Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
-            when :webhook
-              list, total = @api_v5.list_entities_limit_offset_total_count(
-                entity: 'all_webhooks_events',
-                query: query_read_delete,
-                items_key: 'events'
-              )
-              return Result::ObjectList.new(list, total: total)
-            end
-          when :configuration
-            conf_path = 'configuration'
-            conf_cmd = options.get_next_command(%i[show modify])
-            case conf_cmd
-            when :show
-              return Result::SingleObject.new(@api_v5.read(conf_path))
-            when :modify
-              return Result::SingleObject.new(@api_v5.update(conf_path, value_create_modify(command: conf_cmd)))
-            end
-          when :smtp
-            # only one SMTP config
-            smtp_path = 'configuration/smtp'
-            smtp_cmd = options.get_next_command(%i[show create modify delete test])
-            case smtp_cmd
-            when :show
-              return Result::SingleObject.new(@api_v5.read(smtp_path))
-            when :create
-              return Result::SingleObject.new(@api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)))
-            when :modify
-              return Result::SingleObject.new(@api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)))
-            when :delete
-              @api_v5.delete(smtp_path)
-              return Result::Status.new('SMTP configuration deleted')
-            when :test
-              test_data = options.get_next_argument('Email or test data, see API')
-              test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
-              creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
-              result = wait_for_job(creation['job_id'])
-              begin
-                result['serialized_args'] = JSON.parse(result['serialized_args'])
-              rescue JSON::ParserError
-                # keep as string if not valid JSON
-              end
-              return Result::SingleObject.new(result)
-            end
-          end
         end
 
         # --- DSL ---
@@ -643,7 +587,7 @@ module Aspera
         command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, handler: ->{Result::SingleObject.new(@api_v5.read('version'))}
         command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, handler: ->{Result::Text.new(@api_v5.oauth.authorization)}
         command :packages,       description: 'Manage packages',                   setup: :setup_api_v5, handler: ->{package_action}
-        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5, handler: ->{execute_admin}
+        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
         command :user,           description: 'Manage current user',               setup: :setup_api_v5
         command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
         command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5
@@ -677,6 +621,75 @@ module Aspera
         commands_under(:shared_folders) do
           command :list,   description: 'List shared folders', handler: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
           command :browse, description: 'Browse a shared folder'
+        end
+
+        # admin sub-tree: fixed commands + all ADMIN_RESOURCES (each dispatched via dispatch_resource)
+        commands_under(:admin) do
+          command :configuration, description: 'Manage Faspex 5 configuration'
+          command :smtp,          description: 'Manage SMTP configuration'
+          command :events,        description: 'List events'
+          command :clean_deleted, description: 'Clean deleted packages'
+          Api::Faspex::ADMIN_RESOURCES.each do |res|
+            command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+          end
+        end
+
+        commands_under(%i[admin configuration]) do
+          command :show,   description: 'Show configuration',   handler: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
+          command(:modify, description: 'Modify configuration', handler: lambda do
+            Result::SingleObject.new(@api_v5.update('configuration', value_create_modify(command: :modify)))
+          end)
+        end
+
+        commands_under(%i[admin smtp]) do
+          command :show,   description: 'Show SMTP configuration',   handler: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
+          command(:create, description: 'Create SMTP configuration', handler: lambda do
+            Result::SingleObject.new(@api_v5.create('configuration/smtp', value_create_modify(command: :create)))
+          end)
+          command(:modify, description: 'Modify SMTP configuration', handler: lambda do
+            Result::SingleObject.new(@api_v5.update('configuration/smtp', value_create_modify(command: :modify)))
+          end)
+          command(:delete, description: 'Delete SMTP configuration', handler: lambda do
+            @api_v5.delete('configuration/smtp')
+            Result::Status.new('SMTP configuration deleted')
+          end)
+          command(:test, description: 'Test SMTP configuration', handler: lambda do
+            test_data = options.get_next_argument('Email or test data, see API')
+            test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
+            creation = @api_v5.create('configuration/smtp/test', test_data)
+            result = wait_for_job(creation['job_id'])
+            begin
+              result['serialized_args'] = JSON.parse(result['serialized_args'])
+            rescue JSON::ParserError
+              # keep as string if not valid JSON
+            end
+            Result::SingleObject.new(result)
+          end)
+        end
+
+        commands_under(%i[admin events]) do
+          command(:application, description: 'List application events', handler: lambda do
+            list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
+            Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
+          end)
+          command(:webhook, description: 'List webhook events', handler: lambda do
+            list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete, items_key: 'events')
+            Result::ObjectList.new(list, total: total)
+          end)
+        end
+
+        # admin > clean_deleted handler (leaf, no sub-commands)
+        define_method(:handle_admin_clean_deleted) do
+          delete_data = value_create_modify(command: :clean_deleted, default: {})
+          delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
+          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
+        end
+
+        # admin > <resource> handlers — one per ADMIN_RESOURCES entry, each calls dispatch_resource
+        Api::Faspex::ADMIN_RESOURCES.each do |res|
+          define_method(:"handle_admin_#{res}") do
+            dispatch_resource(res)
+          end
         end
 
         # --- root setup ---
