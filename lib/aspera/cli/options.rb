@@ -249,6 +249,14 @@ module Aspera
           matching.first
         end
 
+        # Find a key in a list by exact match or unique prefix match
+        # @return [Object, nil] the matching key, or nil if none or ambiguous
+        def match_prefix(short_value, allowed_values)
+          return short_value if allowed_values.include?(short_value)
+          matches = allowed_values.select{ |k| k.to_s.start_with?(short_value.to_s)}
+          matches.length == 1 ? matches.first : nil
+        end
+
         # Generates error message with list of allowed values
         # @param error_msg [String] Error message
         # @param accept_list [Array<Symbol>] List of allowed values
@@ -654,8 +662,9 @@ module Aspera
             # Long option: --name or --name=value
             name_raw, raw_value = opt.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
             option_sym = self.class.option_line_to_name(name_raw).to_sym
-            if @declared_options.key?(option_sym)
-              dispatch_option(option_sym, raw_value)
+            resolved_sym = self.class.match_prefix(option_sym, @declared_options.keys)
+            if resolved_sym
+              dispatch_option(resolved_sym, raw_value)
               @args_before_option[opt]&.shift # consumed: advance to next occurrence
             else
               # Dotted notation: --a.b.c=d does: a={"b":{"c":ext_val(d)}}
