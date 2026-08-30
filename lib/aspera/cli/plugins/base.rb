@@ -53,6 +53,9 @@ module Aspera
           # Metadata is stored as an OptionSpec at class-load time; the actual
           # options.declare call happens in Base#initialize once the instance exists.
           #
+          # Raises ArgumentError at class-load time if the same option name is already
+          # declared by any ancestor class, preventing silent shadowing.
+          #
           # handler: accepts two forms:
           #   Symbol      — resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
           #   Hash        — {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
@@ -68,6 +71,12 @@ module Aspera
           def option(name, description = nil,
             short: nil, allowed: nil, default: nil,
             handler: nil, deprecation: nil, schema: nil)
+            ancestor_owner = ancestors.drop(1).find do |klass|
+              klass.is_a?(Class) && klass <= Base &&
+                klass.instance_variable_defined?(:@command_registry) &&
+                klass.command_registry.option_specs.key?(name)
+            end
+            raise ArgumentError, "#{self}: option :#{name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
             command_registry.register_option(
               OptionSpec.new(
                 name:        name,
@@ -116,8 +125,8 @@ module Aspera
           # Auto-declare all options registered via the DSL `option` class method.
           # Walk the ancestor chain so that options declared on parent plugin classes
           # (e.g. Oauth, BasicAuth) are also registered for sub-classes (e.g. Aoc).
-          # Traversal is most-specific-first; the option_declared? guard ensures that
-          # a sub-class that redeclares an option always wins.
+          # The options object is shared across all plugins in a run; skip options already
+          # declared by an earlier plugin (Base.option prevents duplicates within one hierarchy).
           # Each OptionSpec is translated to an options.declare call, resolving the
           # handler: shorthand:
           #   Symbol handler → {o: self, m: <symbol>}  (Category B — plugin instance methods)
