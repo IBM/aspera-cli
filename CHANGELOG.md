@@ -14,7 +14,7 @@ Released: [Place date of release here]
 * **global**: Option `transfer` is now composite (`Hash`). Option `--transfer-info` is deprecated in favor of `--transfer`. `transfer` also accepts a `String` (`agent` shorthand) for backward compatibility.
 * `direct`: New `transfer` parameter `file_list` (default: `true`). Setting to `false` will pass source paths directly on the `ascp` command line instead of a temp file list.
 * **global**: New pseudo transfer-spec parameter `target_rate` (bps). It translates to `target_rate_kbps` with optional unit suffix (`k`/`K`, `m`/`M`, `g`/`G`). Example: `--ts.target_rate=100m`.
-* **codebase**: Major internal refactoring. Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` class methods on `Plugins::Base`) backed by `CommandRegistry` / `CommandSpec`, replacing per-plugin `case`/`when` dispatch.
+* **codebase**: Major internal refactoring. Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` class methods on `Plugins::Base`) backed by `CommandRegistry` / `CommandSpec`, replacing per-plugin `case`/`when` dispatch. Help is directly generated, not using OptParse anymore, for multi-level help.
 
 ### Issues Fixed
 
