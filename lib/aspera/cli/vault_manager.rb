@@ -46,7 +46,7 @@ module Aspera
       # @return [Keychain::Base] vault instance, lazily created from options
       def vault
         return @vault_instance unless @vault_instance.nil?
-        info = options.get_option(:vault).symbolize_keys
+        info = options.get_option(:vault, mandatory: true).symbolize_keys
         info[:type] ||= 'file'
         require 'aspera/keychain/factory'
         @vault_instance = Keychain::Factory.create(

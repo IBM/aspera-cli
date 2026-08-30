@@ -200,7 +200,7 @@ module Aspera
         end
 
         option :workspace,         description: 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE
-        option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: Hash
+        option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: [Hash, NilClass]
         option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true
         option :package_folder,    schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
 
