@@ -112,7 +112,7 @@ namespace :appimage do
       log.info('Build complete!')
       log.info("Output: #{output_file}")
       size_mb = output_file.size / (1024.0 * 1024.0)
-      log.info('Size: %.1f MB' % size_mb)
+      log.info(format('Size: %.1f MB', size_mb))
     end
   end
 

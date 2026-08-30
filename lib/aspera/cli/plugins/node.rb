@@ -53,6 +53,12 @@ module Aspera
           FOLDER_TYPES = %w[directory container].freeze
           private_constant :FOLDER_TYPES
 
+          SSYNC_WITH_PARAMS_ACTIONS = %i[bandwidth counters files].freeze
+          private_constant :SSYNC_WITH_PARAMS_ACTIONS
+
+          SESSION_TIME_FIELDS = %i[start end].freeze
+          private_constant :SESSION_TIME_FIELDS
+
           # @return [Hash,NilClass]
           def detect(address_or_url)
             urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -1055,7 +1061,7 @@ module Aspera
         %i[bandwidth counters files state summary].each do |action|
           define_method(:"handle_ssync_#{action}") do
             asyncs_id = options.instance_identifier{ |f, v| ssync_lookup(f, v)}
-            parameters = %i[bandwidth counters files].include?(action) ? (options.get_option(:query) || {}) : nil
+            parameters = SSYNC_WITH_PARAMS_ACTIONS.include?(action) ? (options.get_option(:query) || {}) : nil
             Result::SingleObject.new(@api_node.read("asyncs/#{asyncs_id}/#{action}", parameters))
           end
         end
@@ -1108,7 +1114,7 @@ module Aspera
           transfers_data = @api_node.read('ops/transfers', query_read_delete)
           sessions = transfers_data.flat_map{ |t| t['sessions']}
           sessions.each do |session|
-            %i[start end].each do |what|
+            SESSION_TIME_FIELDS.each do |what|
               session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
             end
           end
