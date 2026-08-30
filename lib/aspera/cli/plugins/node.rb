@@ -407,90 +407,6 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
-        # common API to node and Shares
-        def execute_simple_common(command)
-          case command
-          when *COMMANDS_GEN3
-            execute_command_gen3(command)
-          when :access_keys
-            ak_command = options.get_next_command(%i[do set_bearer_key].concat(Operations::ALL))
-            case ak_command
-            when *Operations::ALL
-              return entity_execute(
-                api: @api_node,
-                entity: 'access_keys',
-                command: ak_command
-              ) do |field, value|
-                       raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
-                       @api_node.read('access_keys/self')['id']
-                     end
-            when :do
-              access_key_id = options.get_next_argument('access key id')
-              root_file_id = options.get_option(:root_id)
-              if root_file_id.nil?
-                ak_info = @api_node.read("access_keys/#{access_key_id}")
-                ak_secret = context.secret_finder.lookup(url: @api_node.base_url, username: ak_info['id'])
-                # change API credentials if different access key
-                if !access_key_id.eql?('self')
-                  Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
-                  @api_node.auth_params[:username] = ak_info['id']
-                  @api_node.auth_params[:password] = ak_secret
-                end
-                root_file_id = ak_info['root_file_id']
-              end
-              command_repo = options.get_next_command(COMMANDS_GEN4)
-              return execute_command_gen4(command_repo, root_file_id)
-            when :set_bearer_key
-              access_key_id = options.get_next_argument('access key id')
-              access_key_id = @api_node.read('access_keys/self')['id'] if access_key_id.eql?('self')
-              bearer_key_pem = options.get_next_argument('public or private RSA key PEM value', validation: String)
-              key = OpenSSL::PKey.read(bearer_key_pem)
-              key = key.public_key if key.private?
-              bearer_key_pem = key.to_pem
-              @api_node.update("access_keys/#{access_key_id}", {token_verification_key: bearer_key_pem})
-              return Result::Status.new('public key updated')
-            end
-          when :health
-            nagios = Nagios.new
-            begin
-              info = @api_node.read('info')
-              nagios.add_ok('node api', 'accessible')
-              nagios.check_time_offset(info['current_time'], 'node api')
-              nagios.check_product_version('node api', 'entsrv', info['version'])
-            rescue StandardError => e
-              nagios.add_critical('node api', e.to_s)
-            end
-            begin
-              @api_node.call(
-                operation:    'POST',
-                subpath:      'services/soap/Transfer-201210',
-                content_type: Mime::TEXT,
-                body:         CENTRAL_SOAP_API_TEST,
-                headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
-                ret:          :resp
-              ).body
-              nagios.add_ok('central', 'accessible by node')
-            rescue StandardError => e
-              nagios.add_critical('central', e.to_s)
-            end
-            Result::ObjectList.new(nagios.status_list)
-          when :events
-            events = @api_node.read('events', query_read_delete)
-            return Result::ObjectList.new(events, fields: ->(f){!f.start_with?('data')})
-          when :info
-            nd_info = @api_node.read('info')
-            return Result::SingleObject.new(nd_info)
-          when :slash
-            nd_info = @api_node.read('')
-            return Result::SingleObject.new(nd_info)
-          when :license
-            # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
-            return Result::SingleObject.new(@api_node.read('license'))
-          when :api_details
-            return Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))
-          end
-        end
-
         # Allows to specify a file by its path or by its id on the node in command line
         # @return [NodeFileId] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
@@ -726,12 +642,17 @@ module Aspera
         command :transport,   description: 'Show transport parameters'
         command :spec,        description: 'Show transfer spec base'
         # Other common leaf commands
-        command :api_details, description: 'Show API details'
+        command :api_details, description: 'Show API details',
+          handler: ->{Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))}
         command :health,      description: 'Check node health'
-        command :events,      description: 'List events'
-        command :info,        description: 'Show node info'
-        command :slash,       description: 'Show root info'
-        command :license,     description: 'Show license'
+        command :events,      description: 'List events',
+          handler: ->{Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})}
+        command :info,        description: 'Show node info',
+          handler: ->{Result::SingleObject.new(@api_node.read('info'))}
+        command :slash,       description: 'Show root info',
+          handler: ->{Result::SingleObject.new(@api_node.read(''))}
+        command :license,     description: 'Show license',
+          handler: ->{Result::SingleObject.new(@api_node.read('license'))}
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
         commands_under(:access_keys) do
@@ -829,12 +750,31 @@ module Aspera
 
         # Gen3 leaf commands: dispatch to execute_command_gen3
         COMMANDS_GEN3.each{ |cmd| define_method(:"handle_#{cmd}"){execute_command_gen3(cmd)}}
-        def handle_api_details; Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params)); end
-        def handle_health; execute_simple_common(:health); end
-        def handle_events; execute_simple_common(:events); end
-        def handle_info; execute_simple_common(:info); end
-        def handle_slash; execute_simple_common(:slash); end
-        def handle_license; execute_simple_common(:license); end
+        def handle_health
+          nagios = Nagios.new
+          begin
+            info = @api_node.read('info')
+            nagios.add_ok('node api', 'accessible')
+            nagios.check_time_offset(info['current_time'], 'node api')
+            nagios.check_product_version('node api', 'entsrv', info['version'])
+          rescue StandardError => e
+            nagios.add_critical('node api', e.to_s)
+          end
+          begin
+            @api_node.call(
+              operation:    'POST',
+              subpath:      'services/soap/Transfer-201210',
+              content_type: Mime::TEXT,
+              body:         CENTRAL_SOAP_API_TEST,
+              headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
+              ret:          :resp
+            ).body
+            nagios.add_ok('central', 'accessible by node')
+          rescue StandardError => e
+            nagios.add_critical('central', e.to_s)
+          end
+          Result::ObjectList.new(nagios.status_list)
+        end
 
         # watch_folder setup: inject required API header (avoids "Unable to convert 2016_09_14 configuration")
         def setup_watch_folder
@@ -1265,8 +1205,8 @@ module Aspera
             # Gen3 leaf: execute directly
             execute_command_gen3(command)
           when :health, :events, :info, :slash, :license, :api_details
-            # Common leaf commands
-            execute_simple_common(command)
+            # Common leaf commands — delegate to the named handler directly
+            send(:"handle_#{command}")
           when :access_keys, :transfer
             # Sub-trees: re-enter DSL registry at the matching path so the
             # next argument is consumed normally by the dispatcher.
