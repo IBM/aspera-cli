@@ -4,9 +4,25 @@ module Aspera
   module Cli
     # CLI base exception
     class Error < StandardError; end
+
+    # Raised by dispatch_from_registry when --help is encountered mid-dispatch.
+    # Carries the plugin instance (with #help_path set) so the runner can display
+    # context-sensitive help without unwinding through a full rescue chain.
+    class HelpRequest < StandardError
+      # @return [Plugins::Base]
+      attr_reader :plugin
+
+      def initialize(plugin)
+        super('help requested')
+        @plugin = plugin
+      end
+    end
+
     # Raised when an unexpected argument is provided.
     class BadArgument < Error; end
+
     class MissingArgument < Error; end
+
     class NoSuchElement < Error; end
 
     # Raised when a lookup for a specific entity fails to return exactly one result.

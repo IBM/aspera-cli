@@ -74,8 +74,8 @@ module Aspera
       def run_with_result
         init_agents_and_options
         Plugins::Factory.instance.add_plugins_from_lookup_folders
-        # Help requested without command? Show full usage immediately
-        return result_usage(all: true) if @option_help && @context.options.command_or_arg_empty?
+        # Help requested without command? Show global options + plugin list
+        return result_usage if @option_help && @context.options.command_or_arg_empty?
         @context.config.periodic_check_newer_gem_version
         command_sym =
           if @option_show_config && @context.options.command_or_arg_empty?
@@ -86,14 +86,17 @@ module Aspera
         @context.options.fail_on_missing_mandatory = false if @option_help || @option_show_config
         case command_sym
         when COMMAND_HELP
-          return result_usage(all: true)
+          return result_usage
         when COMMAND_CONFIG
           command_plugin = @context.config
         else
           command_plugin = get_plugin_instance_with_options(command_sym)
           @context.options.parse_options!
         end
-        return result_usage(all: false) if @option_help
+        # --help after a plugin name: if no positional args remain, show plugin-level help now.
+        # If args remain (e.g. `ascli aoc files -h`), let the dispatch consume them and
+        # intercept --help at the right depth via Cli::HelpRequest.
+        return result_usage(plugin: command_plugin) if @option_help && @context.options.command_or_arg_empty?
         if @option_show_config
           result = Result::SingleObject.new(@context.options.known_options(only_defined: true).stringify_keys)
           @context.presets.save_if_needed
@@ -120,6 +123,8 @@ module Aspera
         end
         begin
           result = command_plugin.execute_action if execute_command
+        rescue Cli::HelpRequest => e
+          return result_usage(plugin: e.plugin)
         ensure
           @context.presets.save_if_needed
           @context.transfer.shutdown
@@ -183,18 +188,18 @@ module Aspera
       end
 
       # Display usage information and exit (used by the interactive CLI).
-      # @param all [Boolean] if true, show help for all plugins; if false, show only current plugin
+      # @param plugin [Plugins::Base, nil] plugin instance to show subcommands for
       # @return [nil]
-      def show_usage(all: true)
-        @context.formatter.display_message(:error, usage_text(all: all))
+      def show_usage(plugin: nil)
+        @context.formatter.display_message(:error, usage_text(plugin: plugin))
         Process.exit(0)
       end
 
       # Return usage as a Result::Text (used by run_with_result, no display, no exit).
-      # @param all [Boolean] if true, include all plugins; if false, only the current plugin
+      # @param plugin [Plugins::Base, nil] plugin instance to show subcommands for
       # @return [Result::Text]
-      def result_usage(all: true)
-        Result::Text.new(usage_text(all: all))
+      def result_usage(plugin: nil)
+        Result::Text.new(usage_text(plugin: plugin))
       end
 
       # Composite option handler for the `log` option (dot-notation sub-properties).
@@ -224,19 +229,48 @@ module Aspera
 
       private
 
-      # Collect usage/help text for all or just the current plugin.
-      # @param all [Boolean] if true, include all plugins
+      # Build the usage/help text.
+      #
+      # - No plugin  → global options + list of top-level plugins
+      # - With plugin → global options + plugin options + subcommands at the path
+      #                 that was reached before --help was encountered
+      #
+      # @param plugin [Plugins::Base, nil] plugin instance (carries the current dispatch path)
       # @return [String] the full help text
-      def usage_text(all: true)
-        lines = [@context.options.parser.to_s]
-        if all
-          @context.only_manual!
-          Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
-            next if plugin_name_sym.eql?(COMMAND_CONFIG)
-            @context.options = Options.new(Info::CMD_NAME)
-            @context.options.parser.banner = ''
-            get_plugin_instance_with_options(plugin_name_sym)
-            lines << @context.options.parser.help
+      def usage_text(plugin: nil)
+        lines = [@context.options.help_text(banner: app_banner)]
+        if plugin.nil?
+          # Top-level: list all available plugins
+          plugin_names = Plugins::Factory.instance.plugin_list.reject{ |s| s.eql?(COMMAND_CONFIG)}.sort
+          lines << "\nPLUGINS"
+          plugin_names.each{ |name| lines << "    #{name}"}
+        else
+          path     = plugin.help_path || []
+          registry = plugin.class.command_registry
+          cmds     = registry.children_of(path)
+          label    = plugin.class.name.split('::').last.downcase
+          label   += " #{path.join(' ')}" unless path.empty?
+          if cmds.any?
+            # Intermediate node: list subcommands
+            lines << "\nCOMMANDS: #{label}"
+            col_w = cmds.keys.map{ |k| k.to_s.length}.max + 2
+            cmds.each do |id, spec|
+              lines << "    #{id.to_s.ljust(col_w)}  #{spec.description}"
+            end
+          else
+            # Leaf node: show description + arguments
+            spec = registry[path]
+            lines << "\nCOMMAND: #{label}"
+            lines << "    #{spec.description}" if spec&.description
+            if spec&.arguments&.any?
+              lines << "\nARGUMENTS:"
+              col_w = spec.arguments.map{ |a| a.name.to_s.length}.max + 2
+              spec.arguments.each do |arg|
+                flag  = arg.mandatory ? arg.name.to_s : "[#{arg.name}]"
+                types = arg.type.is_a?(Array) ? arg.type.map(&:name).join(', ') : arg.type.to_s
+                lines << "    #{flag.ljust(col_w)}  #{arg.description || types}"
+              end
+            end
           end
         end
         lines.join("\n")
@@ -287,7 +321,6 @@ module Aspera
         @context.config.add_manual_header(false)
         @context.validate
         # Set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
-        @context.options.parser.banner = app_banner
       end
 
       # Generate the application banner for help display
@@ -330,7 +363,10 @@ module Aspera
       # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h'){@option_help = true}
+        @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h') do
+          @option_help = true
+          @context.options.help_requested = true
+        end
         @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
         @context.options.declare(:version, 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(

@@ -10,7 +10,7 @@ require 'aspera/assert'
 require 'aspera/dot_container'
 require 'aspera/schema/registry'
 require 'io/console'
-require 'optparse'
+require 'terminal-table'
 
 module Aspera
   module Cli
@@ -83,6 +83,10 @@ module Aspera
       attr_reader :types, :sensitive, :schema, :option
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
+      # [String] Help section group name (set by Options#group)
+      attr_accessor :group
+      # [Proc, nil] Block to call for flag options (TYPES_NONE)
+      attr_accessor :block
 
       # @param option [Symbol] Name of option
       # @param description [String, nil] Description for help; if nil, derived from schema
@@ -99,6 +103,8 @@ module Aspera
         Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
         @option = option
         @description = description
+        @group = nil
+        @block = nil
         # by default passwords and secrets are sensitive, else specify when declaring the option
         @sensitive = SecretHider.instance.secret?(@option, '')
         @deprecation = deprecation
@@ -271,8 +277,7 @@ module Aspera
         end
       end
 
-      attr_reader :parser
-      attr_accessor :ask_missing_mandatory, :ask_missing_optional
+      attr_accessor :ask_missing_mandatory, :ask_missing_optional, :help_requested
       attr_writer :fail_on_missing_mandatory
 
       # @param program_name [String] Name of the program
@@ -293,14 +298,17 @@ module Aspera
         @ask_missing_optional = false
         # get_option fails if a mandatory parameter is asked
         @fail_on_missing_mandatory = true
+        # set to true when --help / -h is parsed
+        @help_requested = false
         # Array of [key(sym), value]
         # those must be set before parse
         # parse consumes those defined only
         @option_pairs_batch = {}
         @option_pairs_env = {}
-        # NOTE: was initially inherited but it is preferred to have specific methods
-        @parser = OptionParser.new
-        @parser.program_name = program_name
+        # Short option char -> option symbol, e.g. {'h' => :help, 'v' => :version}
+        @short_options = {}
+        # Current help section group name, set by #group
+        @current_group = 'global'
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
         ENV.each do |k, v|
@@ -338,8 +346,6 @@ module Aspera
         @current_option_args_offset = nil
         @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
         Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
-        @parser.separator('')
-        @parser.separator('OPTIONS: global')
         declare(:interactive, 'Use interactive input of missing params', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
         declare(:ask_options, 'Ask even optional options', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_optional})
         # do not parse options yet, let's wait for option `-h` to be overridden
@@ -376,48 +382,38 @@ module Aspera
           deprecation: deprecation,
           schema:      schema
         )
+        option_attrs.group = @current_group
         description = option_attrs.description
         Aspera.assert(!description.nil?){"#{option_symbol}: no description and no schema to derive one from"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
-        real_types = option_attrs.types&.reject{ |i| [NilClass, String, Symbol].include?(i)}
-        description += add_types_info(real_types)
-        description = "#{description} (#{'deprecated'.blue}: #{deprecation})" if deprecation
         set_option(option_symbol, default, where: 'default') unless default.nil?
-        on_args = [description]
         case option_attrs.types
         when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN
           # This option value must be a symbol (or array of symbols)
           set_option(option_symbol, BoolValue.true?(default), where: 'default') if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
-          value = get_option(option_symbol)
-          help_values =
-            if option_attrs.types.eql?(Allowed::TYPES_BOOLEAN)
-              highlight_current_in_list(BoolValue::SYMBOLS, BoolValue.to_sym(value))
-            else
-              highlight_current_in_list(option_attrs.values, value)
-            end
-          on_args[0] = "#{description}: #{help_values}"
-          on_args.push(symbol_to_option(option_symbol, 'ENUM'))
-          # on_args.push(option_attrs.values)
-          @parser.on(*on_args) do |v|
-            set_option(option_symbol, self.class.get_from_list(v.to_s, description, option_attrs.values), where: SOURCE_USER)
-          end
         when Allowed::TYPES_NONE
           Aspera.assert_type(block, Proc){"missing execution block for #{option_symbol}"}
-          on_args.push(symbol_to_option(option_symbol))
-          on_args.push("-#{short}") if short.is_a?(String)
-          @parser.on(*on_args, &block)
-        else
-          on_args.push(symbol_to_option(option_symbol, 'VALUE'))
-          on_args.push("-#{short}VALUE") unless short.nil?
-          # coerce integer
-          on_args.push(Integer) if option_attrs.types.eql?(Allowed::TYPES_INTEGER)
-          @parser.on(*on_args) do |v|
-            set_option(option_symbol, v, where: SOURCE_USER)
-          end
+          option_attrs.block = block
         end
-        Log.log.trace1{"on_args=#{on_args}"}
+        @short_options[short] = option_symbol unless short.nil?
+        Log.log.trace1{"declare: #{option_symbol}, group: #{@current_group}, short: #{short}"}
+      end
+
+      # Set the current help section group name for subsequent declarations
+      # @param name [String] group name, shown as section header in help text
+      def group(name)
+        @current_group = name
+      end
+
+      # Rename all options currently tagged with @current_group to a new name,
+      # then update @current_group. Used by add_manual_header when a plugin
+      # declares its options before its group name is known (e.g. Plugins::Config).
+      # @param name [String] new group name
+      def rename_current_group(name)
+        @declared_options.each_value{ |opt| opt.group = name if opt.group.eql?(@current_group)}
+        @current_group = name
       end
 
       # @param descr       [String] description for help
@@ -654,27 +650,34 @@ module Aspera
           # Expose args_before for this option so `args_as_extended` can skip args preceding it.
           # Peek (first) without consuming — consumed only if this option is processed (not deferred).
           @current_option_args_offset = @args_before_option[opt]&.first
-          begin
-            @parser.parse!([opt])
-            @args_before_option[opt]&.shift # consumed: advance to next occurrence
-          rescue OptionParser::InvalidOption => e
-            Log.log.trace1{"InvalidOption #{e}".red}
-            # An option like --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-            if e.args.first.start_with?(OPTION_PREFIX)
-              name, value = e.args.first.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
-              if !value.nil?
-                path = name.split(DotContainer::SEPARATOR)
-                option_sym = self.class.option_line_to_name(path.shift).to_sym
-                if @declared_options.key?(option_sym)
-                  # it's a known option, so let's process it
-                  set_option(option_sym, DotContainer.dotted_to_container(path, smart_convert(value), get_option(option_sym)), where: 'dotted')
+          if opt.start_with?(OPTION_PREFIX)
+            # Long option: --name or --name=value
+            name_raw, raw_value = opt.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
+            option_sym = self.class.option_line_to_name(name_raw).to_sym
+            if @declared_options.key?(option_sym)
+              dispatch_option(option_sym, raw_value)
+              @args_before_option[opt]&.shift # consumed: advance to next occurrence
+            else
+              # Dotted notation: --a.b.c=d does: a={"b":{"c":ext_val(d)}}
+              Log.log.trace1{"Unknown long option: #{opt}".red}
+              if !raw_value.nil?
+                path = name_raw.split(DotContainer::SEPARATOR)
+                root_sym = self.class.option_line_to_name(path.shift).to_sym
+                if @declared_options.key?(root_sym)
+                  set_option(root_sym, DotContainer.dotted_to_container(path, smart_convert(raw_value), get_option(root_sym)), where: 'dotted')
                   @args_before_option[opt]&.shift # consumed: advance to next occurrence
                   next
                 end
               end
+              # Unknown option: defer to next parse_options! round, do not consume the recorded offset
+              unknown_options.push(opt)
             end
-            # Unknown option: defer to next parse_options! round, do not consume the recorded offset
-            unknown_options.push(e.args.first)
+          elsif opt.start_with?('-') && (option_sym = @short_options[opt[1]])
+            # Short option: -h, -v
+            dispatch_option(option_sym, nil)
+            @args_before_option[opt]&.shift # consumed: advance to next occurrence
+          else
+            unknown_options.push(opt)
           end
         end
         @current_option_args_offset = nil
@@ -767,8 +770,64 @@ module Aspera
         result
       end
 
+      # Generate help text for all declared options, grouped by section.
+      # @param banner [String, nil] Optional banner text to prepend
+      # @return [String] Formatted help text
+      def help_text(banner: nil)
+        rows = []
+        current_group = nil
+        @declared_options.each do |sym, opt|
+          if opt.group != current_group
+            current_group = opt.group
+            rows << [{value: "OPTIONS: #{current_group}", colspan: 2}]
+          end
+          short_char = @short_options.key(sym)
+          short_part = short_char ? "-#{short_char}, " : '    '
+          flag = "#{short_part}#{symbol_to_option(sym, option_display_value(opt))}"
+          rows << [flag, opt.description]
+        end
+        table = Terminal::Table.new(rows: rows, style: {border: HELP_BORDER, padding_left: 0, padding_right: 2})
+        banner.nil? ? table.to_s : "#{banner}\n#{table}"
+      end
+
       # ======================================================
       private
+
+      # AsciiBorder with all visible characters removed — used by help_text
+      HELP_BORDER = Terminal::Table::AsciiBorder.new.tap do |b|
+        b.top = false
+        b.bottom = false
+        b.left = false
+        b.right = false
+        b.remove_verticals
+        b.remove_horizontals
+      end.freeze
+
+      # @param opt [OptionValue] option descriptor
+      # @return [String, nil] placeholder shown in flag column: 'ENUM', 'VALUE', or nil for flag switches
+      def option_display_value(opt)
+        case opt.types
+        when Allowed::TYPES_NONE then nil
+        when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN then 'ENUM'
+        else 'VALUE'
+        end
+      end
+
+      # Dispatch a parsed CLI option to its handler.
+      # @param sym       [Symbol] option symbol
+      # @param raw_value [String, nil] raw string value from command line, or nil for flag switches
+      def dispatch_option(sym, raw_value)
+        opt = @declared_options[sym]
+        case opt.types
+        when Allowed::TYPES_NONE
+          opt.block.call
+        when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN
+          set_option(sym, self.class.get_from_list(raw_value.to_s, opt.description, opt.values), where: SOURCE_USER)
+        else
+          raw_value = Integer(raw_value) if opt.types.eql?(Allowed::TYPES_INTEGER)
+          set_option(sym, raw_value, where: SOURCE_USER)
+        end
+      end
 
       # Using dotted hash notation, convert value to bool, int, float or extended value
       # @param value [String] The value to convert to appropriate type
@@ -844,7 +903,7 @@ module Aspera
       # Ask for schema of Extended value
       HELP = 'help'
 
-      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD
+      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD, :HELP_BORDER
     end
   end
 end

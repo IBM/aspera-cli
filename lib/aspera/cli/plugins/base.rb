@@ -148,6 +148,9 @@ module Aspera
 
         # Global objects
         attr_reader :context
+        # Path reached in the command tree at the moment --help was intercepted.
+        # Nil until set by dispatch_from_registry.
+        attr_reader :help_path
 
         # @return [Aspera::Cli::Options]
         def options; @context.options; end
@@ -166,17 +169,13 @@ module Aspera
         # @return [Aspera::Cli::TransferProgress, nil]
         def progress_bar; @context.progress_bar; end
 
-        def add_manual_header(has_options = true)
-          # Manual header for all plugins
-          options.parser.separator('')
-          options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-          cmds = self.class.command_registry.children_of([]).keys.map(&:to_s).sort.join(' ')
-          options.parser.separator("SUBCOMMANDS: #{cmds}")
-          options.parser.separator('OPTIONS:') if has_options
+        def add_manual_header(_has_options = true)
+          options.rename_current_group(self.class.name.split('::').last.downcase)
         end
 
         # Entry point for all DSL-based plugins.
         def execute_action
+          @help_path = nil
           # Run the root setup (if declared) before consuming any argument.
           # This ensures condition methods on root commands can read instance variables
           # populated by the setup (e.g. @connection_type in server.rb).
@@ -199,13 +198,18 @@ module Aspera
           registry = self.class.command_registry
           spec     = registry[current_path]
 
-          # Phase A — setup on current node
-          ctx = ctx.merge(send(spec.setup)) if spec&.setup
+          # Phase A — setup on current node (skip if --help requested to avoid auth/network calls)
+          ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested
 
           # Fast-path: if current_path already points to a leaf node (has a handler,
           # no children), execute it directly without consuming a further argument.
           # This handles the case where delegates_to points to a leaf command.
           if spec && registry.children_of(current_path).empty?
+            # If --help was requested at this leaf, show its info now.
+            if options.help_requested
+              @help_path = current_path
+              raise Cli::HelpRequest, self
+            end
             h = handler_for(spec)
             if spec.transfer_paths
               return invoke_handler(h, [], ctx)
@@ -218,11 +222,19 @@ module Aspera
           # Phase B — dispatch to a child
           children  = registry.children_of(current_path)
           available = children.reject{ |_, c| c.condition && !send(c.condition)}
-          aliases   = children.values.each_with_object({}) do |c, h|
+          aliases = children.values.each_with_object({}) do |c, h|
             Array(c.aliases).each{ |a| h[a] = c.id} if c.aliases
           end
-          command   = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
-          child     = available[command]
+          command = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
+          child   = available[command]
+
+          # After consuming this command: intercept --help only when no positional args remain,
+          # meaning the user typed exactly up to this level (e.g. `aoc files -h` or `aoc files find -h`).
+          # If more args are still pending, keep recursing to the right depth.
+          if options.help_requested && options.command_or_arg_empty?
+            @help_path = current_path + [command]
+            raise Cli::HelpRequest, self
+          end
 
           # Loop / instance delegation
           if child.delegate_instance
