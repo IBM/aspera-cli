@@ -40,10 +40,10 @@ module Aspera
         command :health,  description: 'Check health of faspio Gateway'
         command :bridges, description: 'Manage bridges'
 
-        option :auth,       'OAuth type of authentication', allowed: %i[jwt basic]
-        option :client_id,  'OAuth client identifier'
-        option :private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)'
-        option :passphrase, 'OAuth JWT RSA private key passphrase'
+        option :auth,        description: 'OAuth type of authentication', allowed: %i[jwt basic]
+        option :client_id,   description: 'OAuth client identifier'
+        option :private_key, description: 'OAuth JWT RSA private key PEM value (prefix file path with @file:)'
+        option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
 
         def initialize(**_)
           super

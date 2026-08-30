@@ -121,6 +121,16 @@ module Aspera
         bind_handler(handler) unless handler.nil?
         @types = nil
         @values = nil
+        # Derive allowed type from schema when not explicitly provided
+        if (allowed.nil? || allowed.eql?(Allowed::TYPES_STRING)) && schema
+          schema_node = Schema::Registry.instance.reader(schema).current rescue nil
+          if schema_node
+            case schema_node['type']
+            when 'object' then allowed = Hash
+            when 'array'  then allowed = Array
+            end
+          end
+        end
         if !allowed.nil?
           allowed = [allowed] if allowed.is_a?(Class)
           Aspera.assert_type(allowed, Array)
@@ -362,8 +372,8 @@ module Aspera
         @current_option_args_offset = nil
         @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
         Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
-        declare(:interactive, 'Use interactive input of missing params', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
-        declare(:ask_options, 'Ask even optional options', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_optional})
+        declare(:interactive, description: 'Use interactive input of missing params', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
+        declare(:ask_options, description: 'Ask even optional options', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_optional})
         # do not parse options yet, let's wait for option `-h` to be overridden
       end
 
@@ -385,7 +395,7 @@ module Aspera
       # @param deprecation   [String] deprecation
       # @param schema        [String] Definition of schema for Hash parameters
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description = nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
+      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert_type(handler, Hash) if handler

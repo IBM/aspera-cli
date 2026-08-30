@@ -131,7 +131,7 @@ module Aspera
               test_args:    'organization'
             }
           end
-          options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', allowed: Allowed::TYPES_BOOLEAN, default: Api::AoC.saas_url?(app_url))
+          options.declare(:use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id', allowed: Allowed::TYPES_BOOLEAN, default: Api::AoC.saas_url?(app_url))
           options.parse_options!
           # make username mandatory for jwt, this triggers interactive input
           wiz_username = options.get_option(:username, mandatory: true)
@@ -199,10 +199,10 @@ module Aspera
           }
         end
 
-        option :workspace,        'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE
-        option :new_user_option,  'New user creation option for unknown package recipients', allowed: Hash
-        option :validate_metadata, 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true
-        option :package_folder, nil, allowed: Hash, default: {}, schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
+        option :workspace,         description: 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE
+        option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: Hash
+        option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true
+        option :package_folder,    schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
 
         def initialize(**_)
           super

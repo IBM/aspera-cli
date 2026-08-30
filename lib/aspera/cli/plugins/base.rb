@@ -68,7 +68,7 @@ module Aspera
           # @param deprecation [String, nil]     Deprecation message forwarded to options.declare
           # @param schema      [String, nil]     Schema reference (e.g. "opts:components.schemas.Foo");
           #                                      when description: is nil, the schema title or first description line is used
-          def option(name, description = nil,
+          def option(name, description: nil,
             short: nil, allowed: nil, default: nil,
             handler: nil, deprecation: nil, schema: nil)
             ancestor_owner = ancestors.drop(1).find do |klass|
@@ -114,9 +114,9 @@ module Aspera
           end
         end
 
-        option :query, 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
-        option :bulk,  'Bulk operation (only some)',                            allowed: Allowed::TYPES_BOOLEAN, default: false
-        option :bfail, 'Bulk operation error handling',                         allowed: Allowed::TYPES_BOOLEAN, default: true
+        option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
+        option :bulk,  description: 'Bulk operation (only some)',                            allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :bfail, description: 'Bulk operation error handling',                         allowed: Allowed::TYPES_BOOLEAN, default: true
 
         def initialize(context:)
           Aspera.assert_type(context, Context){'context'}
@@ -142,7 +142,7 @@ module Aspera
                 end
               options.declare(
                 spec.name,
-                spec.description,
+                description: spec.description,
                 short:       spec.short,
                 allowed:     spec.allowed,
                 default:     spec.default,

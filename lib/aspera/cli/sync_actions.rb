@@ -18,7 +18,7 @@ module Aspera
       # in that class's DSL registry so Base#initialize auto-declares it.
       class << self
         def included(base)
-          base.option(:sql, 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
+          base.option(:sql, description: 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
         end
       end
 

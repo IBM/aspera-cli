@@ -100,12 +100,12 @@ module Aspera
               next if options.option_declared?(spec.name)
               options.declare(
                 spec.name,
-                spec.description,
-                short:    spec.short,
-                allowed:  spec.allowed,
-                default:  spec.default,
-                handler:  spec.handler,
-                schema:   spec.schema
+                description: spec.description,
+                short:       spec.short,
+                allowed:     spec.allowed,
+                default:     spec.default,
+                handler:     spec.handler,
+                schema:      spec.schema
               )
             end
             options.parse_options!
@@ -119,12 +119,12 @@ module Aspera
 
         # DSL option declarations — at class level, picked up by Base#initialize via ancestor chain.
         # Also exposed via Node.declare_options for non-Node plugins (Ats, Cos, Aoc).
-        option :validator, 'Identifier of validator (optional for central)'
-        option :asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
-        option :node_api,        'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
+        option :validator,        description: 'Identifier of validator (optional for central)'
+        option :asperabrowserurl, description: 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
+        option :node_api,         description: 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
           allowed: Hash, handler: {o: Api::Node, m: :api_options}
-        option :root_id,         'Gen4: File id of top folder when using access key (override AK root id)'
-        option :dynamic_key,     'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key}
+        option :root_id,          description: 'Gen4: File id of top folder when using access key (override AK root id)'
+        option :dynamic_key,      description: 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key}
 
         # @param wizard  [Wizard] The wizard object
         # @param app_url [String] Tested URL

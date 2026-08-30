@@ -96,7 +96,7 @@ module Aspera
       # Declare + parse :home option → context.main_folder
       def setup_main_folder
         @context.options.declare(
-          :home, 'Home folder for tool',
+          :home, description: 'Home folder for tool',
           handler: {o: @context, m: :main_folder},
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
@@ -114,7 +114,7 @@ module Aspera
       # Declare + parse :config_file option → context.presets + context.http_config
       def setup_config_file
         @context.options.declare(
-          :config_file, 'Path to YAML file with preset configuration',
+          :config_file, description: 'Path to YAML file with preset configuration',
           handler: {o: self, m: :config_file_option},
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
@@ -125,9 +125,9 @@ module Aspera
 
       # Register @preset and @vault extended-value handlers + global config default preset
       def setup_extended_value_handlers(vault_value_cb)
-        @context.options.declare(:secret, 'Secret for access keys')
-        @context.options.declare(:vault, allowed: Hash, schema: Schema::Registry::VAULT_OPTIONS)
-        @context.options.declare(:vault_password, 'Vault password')
+        @context.options.declare(:secret, description: 'Secret for access keys')
+        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS)
+        @context.options.declare(:vault_password, description: 'Vault password')
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
         ExtendedValue.instance.on(EXTEND_PRESET){ |v| @context.presets.by_name(v)}
@@ -143,15 +143,15 @@ module Aspera
 
       # Declare + parse :progress_bar → context.progress_bar
       def setup_progress_bar
-        @context.options.declare(:progress_bar, 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
+        @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
         @context.options.parse_options!
         @context.progress_bar = TransferProgress.new if @context.options.get_option(:progress_bar)
       end
 
       # Declare + parse :fpac / :proxy_credentials → sets up PAC executor
       def setup_pac_executor
-        @context.options.declare(:fpac, 'Proxy auto configuration script')
-        @context.options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
+        @context.options.declare(:fpac, description: 'Proxy auto configuration script')
+        @context.options.declare(:proxy_credentials, description: 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
         @context.options.parse_options!
         pac_script = @context.options.get_option(:fpac)
         return unless pac_script

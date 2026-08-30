@@ -171,9 +171,9 @@ module Aspera
 
         # --- DSL ---
 
-        option :ssh_keys,   'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY
-        option :passphrase, 'SSH private key passphrase'
-        option :ssh_options, 'SSH options', allowed: Hash, default: {}
+        option :ssh_keys,    description: 'SSH key path list', allowed: Allowed::TYPES_STRING_ARRAY
+        option :passphrase,  description: 'SSH private key passphrase'
+        option :ssh_options, description: 'SSH options', allowed: Hash
 
         # root_setup runs once before any command argument is consumed, populating
         # @server_transfer_spec and @ascmd_executor so that condition methods work.

@@ -8,18 +8,18 @@ module Aspera
     module Plugins
       # base class for applications supporting basic authentication
       class BasicAuth < Base
-        option :url,      'URL of application, e.g. https://app.example.com/aspera/app'
-        option :username, "User's identifier"
-        option :password, "User's password"
+        option :url,      description: 'URL of application, e.g. https://app.example.com/aspera/app'
+        option :username, description: "User's identifier"
+        option :password, description: "User's password"
 
         # Declare url/username/password on an arbitrary Options object.
         # Still needed for ad-hoc callers that are not plugin instances
         # (e.g. PresetActions#handle_config_lookup).
         class << self
           def declare_options(options)
-            options.declare(:url,      'URL of application, e.g. https://app.example.com/aspera/app') unless options.option_declared?(:url)
-            options.declare(:username, "User's identifier") unless options.option_declared?(:username)
-            options.declare(:password, "User's password") unless options.option_declared?(:password)
+            options.declare(:url,      description: 'URL of application, e.g. https://app.example.com/aspera/app') unless options.option_declared?(:url)
+            options.declare(:username, description: "User's identifier") unless options.option_declared?(:username)
+            options.declare(:password, description: "User's password") unless options.option_declared?(:password)
             options.parse_options!
           end
         end

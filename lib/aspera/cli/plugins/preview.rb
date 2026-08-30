@@ -49,18 +49,18 @@ module Aspera
         attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite
 
         # DSL option declarations (Pattern 1 and Pattern 2 — handler: Symbol resolved to self)
-        option :skip_format,        'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
+        option :skip_format,        description: 'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
         # TODO: use the same option as in `node` plugin
-        option :folder_reset_cache, 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
-        option :skip_types,         'Skip generation for those types of files',                                                                                      allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
-        option :previews_folder,    'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
-        option :skip_folders,       'List of folder to skip',                                                                                                        allowed: Allowed::TYPES_STRING_ARRAY, handler: :option_skip_folders
-        option :base,               'Basename of output for for test'
-        option :scan_path,          'Subpath in folder id to start scan in (default=/)'
-        option :scan_id,            'Folder id in storage to start scan in, default is access key main folder id'
-        option :mimemagic,          'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
-        option :overwrite,          'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
-        option :root_url,           "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
+        option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
+        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
+        option :previews_folder,    description: 'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
+        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Allowed::TYPES_STRING_ARRAY, handler: :option_skip_folders
+        option :base,               description: 'Basename of output for for test'
+        option :scan_path,          description: 'Subpath in folder id to start scan in (default=/)'
+        option :scan_id,            description: 'Folder id in storage to start scan in, default is access key main folder id'
+        option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :overwrite,          description: 'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
+        option :root_url,           description: "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
         # Generator-specific options (Category C — bound to @gen_options via set_handler in initialize)
         Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
           values = if opt.key?(:values)
@@ -68,7 +68,7 @@ module Aspera
           elsif BoolValue.symbol?(opt[:default])
             BoolValue::TYPES
           end
-          option(opt[:name], opt[:description].capitalize, allowed: values, default: opt[:default])
+          option(opt[:name], description: opt[:description].capitalize, allowed: values, default: opt[:default])
         end
 
         def initialize(**_)

@@ -43,12 +43,12 @@ module Aspera
         # @param options [Aspera::Cli::Options] CLI options manager to declare options into
         # @return [void]
         def declare_options(options)
-          options.declare(:insecure,           'HTTP/S: Do not validate any certificate',                    allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:ignore_certificate, 'HTTP/S: Do not validate certificate for these URLs',         allowed: [Array, NilClass])
-          options.declare(:warn_insecure,      'HTTP/S: Issue a warning if certificate is ignored',          allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:cert_stores,        'HTTP/S: List of folder with trusted certificates',           allowed: Allowed::TYPES_STRING_ARRAY)
-          options.declare(:http_options,       nil,                                                          allowed: Hash, default: {}, schema: Schema::Registry::HTTP_OPTIONS)
-          options.declare(:http_proxy,         'HTTP/S: URL for proxy with optional credentials')
+          options.declare(:insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Allowed::TYPES_BOOLEAN, default: false)
+          options.declare(:ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass])
+          options.declare(:warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Allowed::TYPES_BOOLEAN, default: true)
+          options.declare(:cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Allowed::TYPES_STRING_ARRAY)
+          options.declare(:http_options,       schema: Schema::Registry::HTTP_OPTIONS)
+          options.declare(:http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials')
         end
       end
 

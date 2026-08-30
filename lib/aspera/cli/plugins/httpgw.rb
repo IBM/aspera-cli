@@ -51,7 +51,7 @@ module Aspera
           Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)
         end)
 
-        option :url, 'URL of application, e.g. https://app.example.com/aspera/app'
+        option :url, description: 'URL of application, e.g. https://app.example.com/aspera/app'
 
         def initialize(**_)
           super

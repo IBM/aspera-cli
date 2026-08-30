@@ -81,16 +81,16 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
-        option :preset,             'Load the named option preset from current config file',             short: 'P', handler: :option_preset
-        option :version_check_days, 'Period in days to check new version (zero to disable)',             allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      'Folder where to find additional plugins',                                          handler: :option_plugin_folder
-        option :sdk_url,            'Ascp: URL to get Aspera Transfer Executables',                                     default: SpecialValues::DEF
-        option :locations_url,      'Ascp: URL to get download locations of Aspera Transfer Daemon',                   handler: {o: Ascp::Installation.instance, m: :transferd_urls}
-        option :sdk_folder,         'Ascp: Path to folder with ascp (or product with "product:")',                     handler: {o: Products::Transferd, m: :sdk_directory}
-        option :smtp,               nil, allowed: Hash, schema: Schema::Registry::SMTP_OPTIONS
-        option :notify_to,          'Email: Recipient for notification of transfers'
-        option :notify_template,    'Email: ERB template for notification of transfers'
-        option :cache_tokens,       'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, default: true, handler: :option_cache_tokens
+        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', handler: :option_preset
+        option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Allowed::TYPES_INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
+        option :plugin_folder,      description: 'Folder where to find additional plugins',                           handler: :option_plugin_folder
+        option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF
+        option :locations_url,      description: 'Ascp: URL to get download locations of Aspera Transfer Daemon',    handler: {o: Ascp::Installation.instance, m: :transferd_urls}
+        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      handler: {o: Products::Transferd, m: :sdk_directory}
+        option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
+        option :notify_to,          description: 'Email: Recipient for notification of transfers'
+        option :notify_template,    description: 'Email: ERB template for notification of transfers'
+        option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Allowed::TYPES_BOOLEAN, default: true, handler: :option_cache_tokens
 
         def initialize(**_)
           super
@@ -98,7 +98,7 @@ module Aspera
           @sdk_default_location = false
           @option_cache_tokens = true
           # :no_default uses a &block callback — must stay imperative
-          options.declare(:no_default, 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
+          options.declare(:no_default, description: 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
           # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
           options.parse_options!

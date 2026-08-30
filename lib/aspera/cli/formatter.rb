@@ -114,16 +114,16 @@ module Aspera
         # @param options [Aspera::Cli::Options]
         # @return [void]
         def declare_options(options)
-          options.declare(:display,      'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
-          options.declare(:format,       'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table)
-          options.declare(:output,       'Destination for results')
-          options.declare(:fields,       "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}",               allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF)
-          options.declare(:select,       'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc])
-          options.declare(:table_style,  '(Table) Display style',                                                                             allowed: [Hash],                     default: {})
-          options.declare(:flat_hash,    '(Table) Display deep values as additional keys',                                                    allowed: Allowed::TYPES_BOOLEAN,     default: true)
-          options.declare(:multi_single, '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single],          default: :no)
-          options.declare(:show_secrets, 'Show secrets on command output',                                                                    allowed: Allowed::TYPES_BOOLEAN,     default: false)
-          options.declare(:image,        nil,                                                                                                 allowed: Hash, default: {}, schema: Schema::Registry::IMAGE_OPTIONS)
+          options.declare(:display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
+          options.declare(:format,       description: 'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table)
+          options.declare(:output,       description: 'Destination for results')
+          options.declare(:fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF)
+          options.declare(:select,       description: 'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc])
+          options.declare(:table_style,  description: '(Table) Display style',                                                                             allowed: [Hash])
+          options.declare(:flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Allowed::TYPES_BOOLEAN,     default: true)
+          options.declare(:multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single],          default: :no)
+          options.declare(:show_secrets, description: 'Show secrets on command output',                                                                    allowed: Allowed::TYPES_BOOLEAN,     default: false)
+          options.declare(:image,        schema: Schema::Registry::IMAGE_OPTIONS)
         end
       end
 

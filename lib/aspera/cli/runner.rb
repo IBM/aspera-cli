@@ -367,33 +367,33 @@ module Aspera
       # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h') do
+        @context.options.declare(:help, description: 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h') do
           @option_help = true
           @context.options.help_requested = true
         end
-        @context.options.declare(:show_config, 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
-        @context.options.declare(:version, 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
+        @context.options.declare(:version, description: 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(
-          :ui, 'Method to start browser',
+          :ui, description: 'Method to start browser',
           allowed: USER_INTERFACES,
           handler: {o: Environment.instance, m: :url_method}
         )
         @context.options.declare(
-          :invalid_characters, 'Replacement character and invalid filename characters',
+          :invalid_characters, description: 'Replacement character and invalid filename characters',
           handler: {o: Environment.instance, m: :file_illegal_characters}
         )
-        @context.options.declare(:log_level, 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
-        @context.options.declare(:log_format, 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
-        @context.options.declare(:logger, 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @context.options.declare(:log, 'Logging options (dot-notation: level, type, format, secrets)', allowed: Hash, handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
-        @context.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
-        @context.options.declare(:once_only, 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
-        @context.options.declare(:clean_temp, 'Cleanup temporary files on exit', allowed: Allowed::TYPES_BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
-        @context.options.declare(:temp_folder, 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
-        @context.options.declare(:pid_file, 'Write process identifier to file, delete on exit')
+        @context.options.declare(:log_level, description: 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
+        @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
+        @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
+        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
+        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Allowed::TYPES_BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:temp_folder, description: 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
+        @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit')
         @context.options.declare(
-          :parser, 'Default parser for structured parameters and options',
+          :parser, description: 'Default parser for structured parameters and options',
           handler: {o: ExtendedValue.instance, m: :default_decoder},
           allowed: ExtendedValue::DEFAULT_DECODERS,
           default: ExtendedValue::DEFAULT_DECODERS.first

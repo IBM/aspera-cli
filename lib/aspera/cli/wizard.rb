@@ -16,9 +16,9 @@ module Aspera
         # Declare all wizard CLI options (metadata only — no handler binding yet).
         # @param options [Aspera::Cli::Options]
         def declare_options(options)
-          options.declare(:override,  'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:default,   'Wizard: set as default configuration for specified plugin (also: update)',           allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:key_path,  'Wizard: path to private key for JWT')
+          options.declare(:override,  description: 'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)
+          options.declare(:default,   description: 'Wizard: set as default configuration for specified plugin (also: update)',           allowed: Allowed::TYPES_BOOLEAN, default: true)
+          options.declare(:key_path,  description: 'Wizard: path to private key for JWT')
         end
       end
 

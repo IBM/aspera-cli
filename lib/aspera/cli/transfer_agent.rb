@@ -48,12 +48,12 @@ module Aspera
         # Declare all transfer CLI options (metadata only — no handler binding yet).
         # @param options [Aspera::Cli::Options]
         def declare_options(options)
-          options.declare(:ts,            'Override transfer spec values', allowed: Hash, schema: Schema::Registry::TRANSFER_SPEC)
-          options.declare(:to_folder,     'Destination folder for transferred files')
-          options.declare(:sources,       "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",                            default: FILE_LIST_FROM_ARGS)
-          options.declare(:src_type,      'Type of file list',                                                                                     allowed: %i[list pair], default: :list)
-          options.declare(:transfer,      'Transfer agent type, or agent parameters with optional agent key',                                      allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
-          options.declare(:transfer_info, 'Parameters for transfer agent',                                                                         allowed: Hash, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
+          options.declare(:ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC)
+          options.declare(:to_folder,     description: 'Destination folder for transferred files')
+          options.declare(:sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS)
+          options.declare(:src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list)
+          options.declare(:transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
+          options.declare(:transfer_info, description: 'Parameters for transfer agent',                                                            allowed: Hash, deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
         end
       end
 
