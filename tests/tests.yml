@@ -4664,6 +4664,10 @@ conf_initdemo:
   args:
     - config
     - initdemo
+conf_commands:
+  args:
+    - config
+    - commands
 conf_gem_path_proxy:
   description: Test of `http_proxy` and `http_options.user_agent`
   tags:

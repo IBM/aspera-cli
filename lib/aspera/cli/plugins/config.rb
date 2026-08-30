@@ -151,6 +151,7 @@ module Aspera
         command :check_update, description: 'Check if a newer version of the gem is available'
         command :initdemo, description: 'Initialize the demo server preset'
         command :vault, description: 'Manage the secrets vault'
+        command :commands, description: 'List all available commands across all plugins'
         command :test, description: 'Internal test commands'
         command :platform, description: 'Display the current platform/architecture'
         command :completion, description: 'Generate shell completion scripts'
@@ -460,6 +461,17 @@ module Aspera
 
         def handle_vault
           execute_vault
+        end
+
+        def handle_commands
+          commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
+            plugin_class = Plugins::Factory.instance.plugin_class(name)
+            reg = plugin_class.command_registry
+            reg.all_paths.reject{ |path| reg.children_of(path).any?}.map do |path|
+              "#{name} #{path.join(' ')}"
+            end
+          end
+          Result::ValueList.new(commands, name: 'command')
         end
 
         def handle_test_throw(exception_class_name, exception_text)
