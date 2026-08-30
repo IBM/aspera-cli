@@ -777,40 +777,6 @@ module Aspera
           raise Cli::BadIdentifier.new('ssync', value, field: field)
         end
 
-        WATCH_FOLDER_MUL = %i[create list].freeze
-        WATCH_FOLDER_SING = %i[show modify delete state].freeze
-        private_constant :WATCH_FOLDER_MUL, :WATCH_FOLDER_SING
-
-        def watch_folder_action
-          res_class_path = 'v3/watchfolders'
-          command = options.get_next_command(WATCH_FOLDER_MUL + WATCH_FOLDER_SING)
-          if WATCH_FOLDER_SING.include?(command)
-            one_res_id = options.instance_identifier
-            one_res_path = "#{res_class_path}/#{one_res_id}"
-          end
-          # hum, to avoid: Unable to convert 2016_09_14 configuration
-          @api_node.params[:headers] ||= {}
-          @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
-          case command
-          when :create
-            resp = @api_node.create(res_class_path, value_create_modify(command: command))
-            return Result::Status.new("#{resp['id']} created")
-          when :list
-            resp = @api_node.read(res_class_path, query_read_delete)
-            return Result::ValueList.new(resp['ids'])
-          when :show
-            return Result::SingleObject.new(@api_node.read(one_res_path))
-          when :modify
-            @api_node.update(one_res_path, value_create_modify(command: 'watch_folder'))
-            return Result::Status.new("#{one_res_id} updated")
-          when :delete
-            @api_node.delete(one_res_path)
-            return Result::Status.new("#{one_res_id} deleted")
-          when :state
-            return Result::SingleObject.new(@api_node.read("#{one_res_path}/state"))
-          end
-        end
-
         # --- DSL command declarations ---
 
         # Gen3 leaf commands
@@ -897,7 +863,19 @@ module Aspera
           command :delete, description: 'Delete a service'
         end
         # watch_folder
-        command :watch_folder, description: 'Manage watch folders'
+        command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
+        commands_under(:watch_folder) do
+          command :create, description: 'Create a watch folder',
+            handler: ->{Result::Status.new("#{@api_node.create('v3/watchfolders', value_create_modify(command: :create))['id']} created")}
+          command :list,   description: 'List watch folders',
+            handler: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
+          command :show,   description: 'Show a watch folder',
+            handler: ->{Result::SingleObject.new(@api_node.read("v3/watchfolders/#{options.instance_identifier}"))}
+          command :modify, description: 'Modify a watch folder'
+          command :delete, description: 'Delete a watch folder'
+          command :state,  description: 'Show watch folder state',
+            handler: ->{Result::SingleObject.new(@api_node.read("v3/watchfolders/#{options.instance_identifier}/state"))}
+        end
         # central
         command :central, description: 'Query Central service'
         commands_under(:central) do
@@ -926,7 +904,25 @@ module Aspera
         def handle_info; execute_simple_common(:info); end
         def handle_slash; execute_simple_common(:slash); end
         def handle_license; execute_simple_common(:license); end
-        def handle_watch_folder; watch_folder_action; end
+
+        # watch_folder setup: inject required API header (avoids "Unable to convert 2016_09_14 configuration")
+        def setup_watch_folder
+          @api_node.params[:headers] ||= {}
+          @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
+          {}
+        end
+
+        def handle_watch_folder_modify
+          one_res_id = options.instance_identifier
+          @api_node.update("v3/watchfolders/#{one_res_id}", value_create_modify(command: :watch_folder))
+          Result::Status.new("#{one_res_id} updated")
+        end
+
+        def handle_watch_folder_delete
+          one_res_id = options.instance_identifier
+          @api_node.delete("v3/watchfolders/#{one_res_id}")
+          Result::Status.new("#{one_res_id} deleted")
+        end
 
         # access_keys > CRUD
         Operations::ALL.each do |op|
