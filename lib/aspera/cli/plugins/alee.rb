@@ -8,6 +8,7 @@ module Aspera
   module Cli
     module Plugins
       class Alee < BasicAuth
+        application_name 'Aspera License Entitlement Engine'
         command(:health, description: 'Check health of ALEE metering server', handler: lambda do
           nagios = Nagios.new
           begin

@@ -38,6 +38,7 @@ module Aspera
       #   ascli mcp server @json:{"transport":"http","port":3000}
       #   ascli mcp server @json:{"protocol_version":"2024-11-05","max_line_bytes":1048576}
       class Mcp < Base
+        application_name 'Model Context Protocol Server'
         # Default instructions shown to the AI client when none are provided by the user.
         DEFAULT_INSTRUCTIONS = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).

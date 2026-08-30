@@ -205,13 +205,14 @@ module Aspera
         # execute a leaf directly or consume the next argument and recurse (Phase B).
         # @param current_path [Array<Symbol>] path of the node currently being dispatched
         # @param ctx [Hash] accumulated context passed down from parent nodes
+        # @param skip_setup [Boolean] when true, skip Phase A (setup already done by caller)
         # @return [Object] result suitable for CLI output
-        def dispatch_from_registry(current_path, ctx = {})
+        def dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
           registry = self.class.command_registry
           spec     = registry[current_path]
 
           # Phase A — run setup on current node (skip when --help to avoid auth/network calls)
-          ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested
+          ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested && !skip_setup
 
           # Phase B — leaf fast-path or child dispatch
           if spec && registry.children_of(current_path).empty?

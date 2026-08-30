@@ -243,7 +243,11 @@ module Aspera
           # Top-level: list all available plugins
           plugin_names = Plugins::Factory.instance.plugin_list.reject{ |s| s.eql?(COMMAND_CONFIG)}.sort
           lines << "\nPLUGINS"
-          plugin_names.each{ |name| lines << "    #{name}"}
+          col_w = plugin_names.map{ |n| n.to_s.length}.max + 2
+          plugin_names.each do |name|
+            app = Plugins::Factory.instance.plugin_class(name).application_name
+            lines << "    #{name.to_s.ljust(col_w)}  #{app}"
+          end
         else
           path     = plugin.help_path || []
           registry = plugin.class.command_registry

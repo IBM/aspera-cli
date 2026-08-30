@@ -9,6 +9,8 @@ module Aspera
   module Cli
     module Plugins
       class Cos < Base
+        application_name 'IBM Cloud Object Storage'
+
         command :node, description: 'Execute COS node commands', setup: :setup_cos_node
 
         commands_under(:node) do

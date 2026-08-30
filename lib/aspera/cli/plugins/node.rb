@@ -553,9 +553,9 @@ module Aspera
             return Result::Image.new(http.body)
           when :permission
             # :permission is now a DSL sub-tree; re-enter the registry at [:access_keys, :do, :permission]
-            # passing apifid resolved from the next argument via setup_permission.
+            # apifid is already resolved here, so skip_setup avoids re-consuming a CLI argument.
             apifid = apifid_from_next_arg(top_file_id)
-            dispatch_from_registry(%i[access_keys do permission], {apifid: apifid})
+            return dispatch_from_registry(%i[access_keys do permission], {apifid: apifid}, skip_setup: true)
           else Aspera.error_unreachable_line
           end
           Aspera.error_unreachable_line
@@ -629,7 +629,9 @@ module Aspera
 
         commands_under(%i[access_keys do]) do
           COMMANDS_GEN4.each do |cmd|
-            command(cmd, description: "Gen4 #{cmd} command")
+            kwargs = {description: "Gen4 #{cmd} command"}
+            kwargs[:setup] = :setup_access_key_do_permission if cmd.eql?(:permission)
+            command(cmd, **kwargs)
           end
         end
         commands_under(%i[access_keys do permission]) do
@@ -786,8 +788,8 @@ module Aspera
         # @return [Hash] context hash containing :do_root_file_id
         def setup_access_key_do
           access_key_id = options.get_next_argument('access key id')
-          root_file_id = options.get_option(:root_id)
-          if root_file_id.nil?
+          @do_root_file_id = options.get_option(:root_id)
+          if @do_root_file_id.nil?
             ak_info = @api_node.read("access_keys/#{access_key_id}")
             ak_secret = context.secret_finder.lookup(url: @api_node.base_url, username: ak_info['id'])
             if !access_key_id.eql?('self')
@@ -795,13 +797,19 @@ module Aspera
               @api_node.auth_params[:username] = ak_info['id']
               @api_node.auth_params[:password] = ak_secret
             end
-            root_file_id = ak_info['root_file_id']
+            @do_root_file_id = ak_info['root_file_id']
           end
-          {do_root_file_id: root_file_id}
+          {do_root_file_id: @do_root_file_id}
         end
 
-        # access_keys > do > <gen4_cmd> — one handler per COMMANDS_GEN4
-        COMMANDS_GEN4.each do |cmd|
+        # access_keys > do > permission — setup: resolve apifid from next arg
+        # @return [Hash] context hash containing :apifid
+        def setup_access_key_do_permission
+          {apifid: apifid_from_next_arg(@do_root_file_id)}
+        end
+
+        # access_keys > do > <gen4_cmd> — one handler per COMMANDS_GEN4 (except :permission which is intermediate)
+        COMMANDS_GEN4.reject{ |cmd| cmd.eql?(:permission)}.each do |cmd|
           define_method(:"handle_access_keys_do_#{cmd}") do |do_root_file_id:|
             execute_command_gen4(cmd, do_root_file_id)
           end
@@ -1211,12 +1219,8 @@ module Aspera
           when *COMMANDS_GEN3
             # Gen3 leaf: execute directly
             execute_command_gen3(command)
-          when :health, :events, :info, :slash, :license, :api_details
-            # Common leaf commands — delegate to the named handler directly
-            send(:"handle_#{command}")
-          when :access_keys, :transfer
-            # Sub-trees: re-enter DSL registry at the matching path so the
-            # next argument is consumed normally by the dispatcher.
+          when :health, :events, :info, :slash, :license, :api_details, :access_keys, :transfer
+            # Re-enter DSL registry so Proc handlers and sub-trees are resolved normally.
             dispatch_from_registry([command], {})
           else
             Aspera.error_unexpected_value(command){'v3 command'}

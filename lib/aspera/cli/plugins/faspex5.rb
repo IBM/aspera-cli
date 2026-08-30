@@ -18,7 +18,7 @@ module Aspera
   module Cli
     module Plugins
       class Faspex5 < Oauth
-        application_name 'Faspex'
+        application_name 'Faspex v5'
 
         class << self
           # @return [Hash,NilClass]

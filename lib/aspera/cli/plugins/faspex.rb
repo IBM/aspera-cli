@@ -22,6 +22,7 @@ module Aspera
   module Cli
     module Plugins
       class Faspex < BasicAuth
+        application_name 'Faspex v4'
         # required hash key for source in config
         KEY_NODE = 'node' # value must be hash with url, username, password
         KEY_PATH = 'path' # value must be same sub-path as in Faspex's node

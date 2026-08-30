@@ -15,6 +15,7 @@ module Aspera
       # Access Aspera Transfer Service
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Base
+        application_name 'Aspera Transfer Service'
         # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
         private_constant :CLOUD_TABLE

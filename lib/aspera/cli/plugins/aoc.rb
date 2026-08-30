@@ -638,213 +638,12 @@ module Aspera
 
         ADMIN_ACTIONS = %i[bearer_token application ats usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
-        def execute_admin_action
-          # change scope to admin
-          change_api_scope(Api::AoC::Scope::ADMIN)
-          command_admin = options.get_next_command(ADMIN_ACTIONS)
-          case command_admin
-          when :bearer_token
-            return Result::Text.new(aoc_api.oauth.authorization)
-          when *ADMIN_OBJECTS
-            return execute_resource_action(command_admin)
-          when :application
-            return execute_application_action
-          when :auth_providers
-            command_auth_prov = options.get_next_command(%i[list update])
-            case command_auth_prov
-            when :list
-              return result_list('admin/auth_providers')
-            when :update
-              Aspera.error_not_implemented
-            end
-          when :subscription
-            org = aoc_api.read('organization')
-            bss_graphql = api_from_options('bss/platform/graphql')
-            command_subscription = options.get_next_command(%i[account usage])
-            case command_subscription
-            when :account
-              # cspell:disable
-              graphql_query = <<-GRAPHQL
-              query ($organization_id: ID!) {
-                aoc (organization_id: $organization_id) {
-                  bssSubscription {
-                    aocVersion
-                    endDate
-                    startDate
-                    termMonths
-                    plan
-                    trial
-                    termType
-                    aocOrganizations {
-                      id
-                    }
-                    additionalStorageVolumeGb
-                    additionalEgressVolumeGb
-                    term {
-                      startDate
-                      endDate
-                      transferVolumeGb
-                      egressVolumeGb
-                      storageVolumeGb
-                      transferVolumeOffsetGb
-                    }
-                    paygoRate {
-                      transferRate
-                      storageRate
-                      currency
-                    }
-                    aocPlanData {
-                      tier
-                      trial
-                      workspaces { max }
-                      users {
-                        planAmount
-                        max
-                      }
-                      samlIntegration
-                      activity
-                      sharedInboxes
-                      uniqueUrls
-                      support
-                      watermarking
-                      byok
-                      automation { planAmount, max }
-                    }
-                  }
-                }
-              }
-              GRAPHQL
-              # cspell:enable
-              result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
-              return Result::SingleObject.new(result['aoc']['bssSubscription'])
-            when :usage
-              # cspell:disable
-              graphql_query = <<-GRAPHQL
-              query ($organization_id: ID!, $startDate: Date!, $endDate: Date!, $aggregate: TransferUsageAggregateOption!) {
-                aoc (organization_id: $organization_id) {
-                  bssSubscription {
-                    aocOrganizations { id }
-                    additionalStorageVolumeGb
-                    additionalEgressVolumeGb
-                    aocPlanData {
-                      tier
-                      trial
-                    }
-                    term {
-                      transferVolumeGb
-                      egressVolumeGb
-                      storageVolumeGb
-                      startDate
-                      endDate
-                      transferVolumeOffsetGb
-                    }
-                    termMonths
-                    transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
-                    egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
-                  }
-                  subscriptionEntitlements {
-                    id
-                    transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
-                    egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
-                  }
-                }
-              }
-              GRAPHQL
-              aggregate = options.get_next_argument('aggregation', accept_list: %i[ALL MONTHLY], default: :ALL)
-              today = Date.today
-              start_date = options.get_next_argument('start date', mandatory: false, default: today.prev_year.strftime('%Y-%m-%d'))
-              end_date = options.get_next_argument('end date', mandatory: false, default: today.strftime('%Y-%m-%d'))
-              # cspell:enable
-              result = bss_graphql.create(
-                nil,
-                {
-                  query:     graphql_query,
-                  variables: {
-                    organization_id: org['id'],
-                    aggregate:       aggregate,
-                    startDate:       start_date,
-                    endDate:         end_date
-                  }
-                }
-              )['data']
-              return Result::SingleObject.new(result['aoc'])
-            end
-          when :ats
-            ats_api = Rest.new(**aoc_api.params.deep_merge({
-              base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
-              auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
-            }))
-            return Ats.new(context: context, api: ats_api).execute_action
-          when :analytics
-            analytics_api = Rest.new(**aoc_api.params.deep_merge({
-              base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
-              auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
-            }))
-            command_analytics = options.get_next_command(%i[application_events transfers files])
-            case command_analytics
-            when :application_events
-              event_type = command_analytics.to_s
-              events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/#{event_type}")[event_type]
-              return Result::ObjectList.new(events)
-            when :transfers
-              event_type = command_analytics.to_s
-              event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-              event_resource_id = options.get_next_argument("#{event_resource_type} identifier", mandatory: false) ||
-                case event_resource_type
-                when :organizations then aoc_api.current_user_info['organization_id']
-                when :users then aoc_api.current_user_info['id']
-                when :nodes then aoc_api.current_user_info['read_only_home_node_id']
-                else Aspera.error_unreachable_line
-                end
-              filter = query_read_delete(default: {})
-              filter['limit'] ||= 100
-              if options.get_option(:once_only, mandatory: true)
-                saved_date = []
-                start_date_persistency = PersistencyActionOnce.new(
-                  manager: persistency,
-                  data: saved_date,
-                  id: IdGenerator.from_list(
-                    'aoc_ana_date',
-                    options.get_option(:url, mandatory: true),
-                    aoc_api.workspace_info[:name],
-                    event_resource_type.to_s,
-                    event_resource_id
-                  )
-                )
-                start_date_time = saved_date.first
-                stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
-                saved_date[0] = stop_date_time
-                filter['start_time'] = start_date_time unless start_date_time.nil?
-                filter['stop_time'] = stop_date_time
-              end
-              events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/#{event_type}", filter)[event_type]
-              start_date_persistency&.save
-              if !options.get_option(:notify_to).nil?
-                events.each do |tr_event|
-                  context.mailer.send_email_template(values: {ev: tr_event})
-                end
-              end
-              return Result::ObjectList.new(events)
-            when :files
-              event_type = command_analytics.to_s
-              event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-              event_resource_id = options.instance_identifier(description: "#{event_resource_type} identifier")
-              event_resource_id =
-                case event_resource_type
-                when :organizations then aoc_api.current_user_info['organization_id']
-                when :users then aoc_api.current_user_info['id']
-                when :nodes then aoc_api.current_user_info['read_only_home_node_id']
-                else Aspera.error_unreachable_line
-                end if event_resource_id.empty?
-              event_uuid = options.instance_identifier(description: 'event uuid')
-              filter = query_read_delete(default: {})
-              filter['limit'] ||= 100
-              events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/#{event_type}", filter)[event_type]
-              return Result::ObjectList.new(events)
-            end
-          when :usage_reports
-            return result_list('usage_reports', base_query: workspace_id_hash)
-          end
+        # Build analytics REST API (shared by handle_admin_analytics_*)
+        def build_analytics_api
+          Rest.new(**aoc_api.params.deep_merge({
+            base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
+            auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
+          }))
         end
 
         # Create a short link for the given entity: Shared folder or Shared Inbox
@@ -1012,7 +811,44 @@ module Aspera
         command :user,              description: 'User commands'
         command :packages,          description: 'Package commands', setup: :setup_workspace_display
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
-        command :admin,             description: 'Administration commands'
+        command :admin, description: 'Administration commands', setup: :setup_admin_scope
+        commands_under(:admin) do
+          command :bearer_token,   description: 'Show admin bearer token',
+            handler: ->{Result::Text.new(aoc_api.oauth.authorization)}
+          command :application,    description: 'Manage applications',
+            handler: ->{execute_application_action}
+          command :ats,            description: 'Manage ATS (Aspera Transfer Service)',
+            handler: lambda {
+              ats_api = Rest.new(**aoc_api.params.deep_merge({
+                base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
+                auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
+              }))
+              Ats.new(context: context, api: ats_api).execute_action
+            }
+          command :usage_reports,  description: 'List usage reports',
+            handler: ->{result_list('usage_reports', base_query: workspace_id_hash)}
+          command :auth_providers, description: 'Manage auth providers'
+          command :subscription,   description: 'Show subscription info'
+          command :analytics,      description: 'Query analytics'
+          ADMIN_OBJECTS.each do |res|
+            command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+          end
+        end
+        commands_under(%i[admin auth_providers]) do
+          command :list,   description: 'List auth providers',
+            handler: ->{result_list('admin/auth_providers')}
+          command(:update, description: 'Update auth provider',
+            handler: ->{Aspera.error_not_implemented})
+        end
+        commands_under(%i[admin subscription]) do
+          command :account, description: 'Show subscription account'
+          command :usage,   description: 'Show subscription usage'
+        end
+        commands_under(%i[admin analytics]) do
+          command :application_events, description: 'List application events'
+          command :transfers,          description: 'List transfer events'
+          command :files,              description: 'List file events'
+        end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway'
 
@@ -1393,8 +1229,141 @@ module Aspera
           end
         end
 
-        def handle_admin
-          execute_admin_action
+        # admin — setup: change API scope to admin once
+        def setup_admin_scope
+          change_api_scope(Api::AoC::Scope::ADMIN)
+          {}
+        end
+
+        # admin > subscription > account
+        def handle_admin_subscription_account
+          org = aoc_api.read('organization')
+          bss_graphql = api_from_options('bss/platform/graphql')
+          # cspell:disable
+          graphql_query = <<-GRAPHQL
+          query ($organization_id: ID!) {
+            aoc (organization_id: $organization_id) {
+              bssSubscription {
+                aocVersion endDate startDate termMonths plan trial termType
+                aocOrganizations { id }
+                additionalStorageVolumeGb additionalEgressVolumeGb
+                term { startDate endDate transferVolumeGb egressVolumeGb storageVolumeGb transferVolumeOffsetGb }
+                paygoRate { transferRate storageRate currency }
+                aocPlanData {
+                  tier trial
+                  workspaces { max }
+                  users { planAmount max }
+                  samlIntegration activity sharedInboxes uniqueUrls support watermarking byok
+                  automation { planAmount, max }
+                }
+              }
+            }
+          }
+          GRAPHQL
+          # cspell:enable
+          result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
+          Result::SingleObject.new(result['aoc']['bssSubscription'])
+        end
+
+        # admin > subscription > usage
+        def handle_admin_subscription_usage
+          org = aoc_api.read('organization')
+          bss_graphql = api_from_options('bss/platform/graphql')
+          # cspell:disable
+          graphql_query = <<-GRAPHQL
+          query ($organization_id: ID!, $startDate: Date!, $endDate: Date!, $aggregate: TransferUsageAggregateOption!) {
+            aoc (organization_id: $organization_id) {
+              bssSubscription {
+                aocOrganizations { id }
+                additionalStorageVolumeGb additionalEgressVolumeGb
+                aocPlanData { tier trial }
+                term { transferVolumeGb egressVolumeGb storageVolumeGb startDate endDate transferVolumeOffsetGb }
+                termMonths
+                transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+                egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+              }
+              subscriptionEntitlements {
+                id
+                transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+                egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+              }
+            }
+          }
+          GRAPHQL
+          # cspell:enable
+          aggregate = options.get_next_argument('aggregation', accept_list: %i[ALL MONTHLY], default: :ALL)
+          today = Date.today
+          start_date = options.get_next_argument('start date', mandatory: false, default: today.prev_year.strftime('%Y-%m-%d'))
+          end_date   = options.get_next_argument('end date',   mandatory: false, default: today.strftime('%Y-%m-%d'))
+          result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id'], aggregate: aggregate, startDate: start_date, endDate: end_date}})['data']
+          Result::SingleObject.new(result['aoc'])
+        end
+
+        # admin > analytics > application_events
+        def handle_admin_analytics_application_events
+          analytics_api = build_analytics_api
+          events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/application_events")['application_events']
+          Result::ObjectList.new(events)
+        end
+
+        # admin > analytics > transfers
+        def handle_admin_analytics_transfers
+          analytics_api = build_analytics_api
+          event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
+          event_resource_id = options.get_next_argument("#{event_resource_type} identifier", mandatory: false) ||
+            case event_resource_type
+            when :organizations then aoc_api.current_user_info['organization_id']
+            when :users         then aoc_api.current_user_info['id']
+            when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
+            else Aspera.error_unreachable_line
+            end
+          filter = query_read_delete(default: {})
+          filter['limit'] ||= 100
+          if options.get_option(:once_only, mandatory: true)
+            saved_date = []
+            start_date_persistency = PersistencyActionOnce.new(
+              manager: persistency,
+              data:    saved_date,
+              id:      IdGenerator.from_list('aoc_ana_date', options.get_option(:url, mandatory: true), aoc_api.workspace_info[:name], event_resource_type.to_s, event_resource_id)
+            )
+            start_date_time = saved_date.first
+            stop_date_time  = Time.now.utc.strftime('%FT%T.%LZ')
+            saved_date[0]   = stop_date_time
+            filter['start_time'] = start_date_time unless start_date_time.nil?
+            filter['stop_time']  = stop_date_time
+          end
+          events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers", filter)['transfers']
+          start_date_persistency&.save
+          if !options.get_option(:notify_to).nil?
+            events.each{ |tr_event| context.mailer.send_email_template(values: {ev: tr_event})}
+          end
+          Result::ObjectList.new(events)
+        end
+
+        # admin > analytics > files
+        def handle_admin_analytics_files
+          analytics_api = build_analytics_api
+          event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
+          event_resource_id = options.instance_identifier(description: "#{event_resource_type} identifier")
+          event_resource_id =
+            case event_resource_type
+            when :organizations then aoc_api.current_user_info['organization_id']
+            when :users         then aoc_api.current_user_info['id']
+            when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
+            else Aspera.error_unreachable_line
+            end if event_resource_id.empty?
+          event_uuid = options.instance_identifier(description: 'event uuid')
+          filter = query_read_delete(default: {})
+          filter['limit'] ||= 100
+          events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/files", filter)['files']
+          Result::ObjectList.new(events)
+        end
+
+        # admin > <ADMIN_OBJECT> — one handler per object, each calls execute_resource_action
+        ADMIN_OBJECTS.each do |res|
+          define_method(:"handle_admin_#{res}") do
+            execute_resource_action(res)
+          end
         end
 
         # automation > instances
@@ -1438,8 +1407,6 @@ module Aspera
           server.start
           return Result::Status.new('Gateway terminated')
         end
-
-        private :execute_admin_action
       end
     end
   end
