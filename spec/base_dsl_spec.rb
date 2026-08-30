@@ -28,6 +28,8 @@ module Aspera
             # found in the ancestor chain (query, bulk, bfail on Base itself).
             allow(o).to(receive(:option_declared?)).and_return(false)
             allow(o).to(receive(:declare))
+            allow(o).to(receive(:help_requested)).and_return(false)
+            allow(o).to(receive(:command_or_arg_empty?)).and_return(false)
           end
         end
 
