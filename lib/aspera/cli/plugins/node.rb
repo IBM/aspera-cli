@@ -552,44 +552,10 @@ module Aspera
             http = apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
             return Result::Image.new(http.body)
           when :permission
+            # :permission is now a DSL sub-tree; re-enter the registry at [:access_keys, :do, :permission]
+            # passing apifid resolved from the next argument via setup_permission.
             apifid = apifid_from_next_arg(top_file_id)
-            command_perm = options.get_next_command(%i[list show create delete modify])
-            case command_perm
-            when :modify
-              apifid.node_api.update("permissions/#{options.instance_identifier}", value_create_modify(command: 'permission modify'))
-              return Result::Status.new('Updated')
-            when :list
-              list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
-              # Specify file to get permissions for unless not specified (then, get all permissions)
-              list_query['file_id'] = apifid.file_id unless apifid.file_id.to_s.empty?
-              list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
-              items = apifid.node_api.read_with_pages('permissions', list_query)
-              return Result::ObjectList.new(items)
-            when :show
-              return Result::SingleObject.new(apifid.node_api.read("permissions/#{options.instance_identifier}"))
-            when :delete
-              return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
-                apifid.node_api.delete("permissions/#{one_id}")
-                # notify application of deletion
-                the_app = apifid.node_api.app_info
-                the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
-                {'id' => one_id}
-              end
-            when :create
-              create_param = options.get_next_argument('creation data', validation: Hash)
-              raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
-              create_param['file_id'] = apifid.file_id
-              create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
-              # add application specific tags (AoC)
-              the_app = apifid.node_api.app_info
-              the_app&.api&.permissions_set_create_params(perm_data: create_param, app_info: the_app)
-              # create permission
-              created_data = apifid.node_api.create('permissions', create_param)
-              # notify application of creation
-              the_app&.api&.permissions_send_event(event_data: created_data, app_info: the_app)
-              return Result::SingleObject.new(created_data)
-            else Aspera.error_unreachable_line
-            end
+            dispatch_from_registry(%i[access_keys do permission], {apifid: apifid})
           else Aspera.error_unreachable_line
           end
           Aspera.error_unreachable_line
@@ -665,6 +631,17 @@ module Aspera
           COMMANDS_GEN4.each do |cmd|
             command(cmd, description: "Gen4 #{cmd} command")
           end
+        end
+        commands_under(%i[access_keys do permission]) do
+          command :list,   description: 'List permissions on a file'
+          command :show,   description: 'Show a permission',
+            handler: ->(apifid:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{options.instance_identifier}"))}
+          command :create, description: 'Create a permission'
+          command(:modify, description: 'Modify a permission', handler: lambda do |apifid:, **|
+            apifid.node_api.update("permissions/#{options.instance_identifier}", value_create_modify(command: 'permission modify'))
+            Result::Status.new('Updated')
+          end)
+          command :delete, description: 'Delete permission(s)'
         end
         # async (legacy /async)
         command :async, description: 'Manage async operations (legacy /async)'
@@ -828,6 +805,36 @@ module Aspera
           define_method(:"handle_access_keys_do_#{cmd}") do |do_root_file_id:|
             execute_command_gen4(cmd, do_root_file_id)
           end
+        end
+
+        # access_keys > do > permission > list/show/create/modify/delete
+        def handle_access_keys_do_permission_list(apifid:, **)
+          list_query = query_read_delete(default: Rest.php_style({'include' => %w[access_level permission_count]}))
+          # Specify file to get permissions for unless not specified (then, get all permissions)
+          list_query['file_id'] = apifid.file_id unless apifid.file_id.to_s.empty?
+          list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
+          Result::ObjectList.new(apifid.node_api.read_with_pages('permissions', list_query))
+        end
+
+        def handle_access_keys_do_permission_delete(apifid:, **)
+          do_bulk_operation(command: :delete, values: :identifier) do |one_id|
+            apifid.node_api.delete("permissions/#{one_id}")
+            the_app = apifid.node_api.app_info
+            the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
+            {'id' => one_id}
+          end
+        end
+
+        def handle_access_keys_do_permission_create(apifid:, **)
+          create_param = options.get_next_argument('creation data', validation: Hash)
+          raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
+          create_param['file_id'] = apifid.file_id
+          create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
+          the_app = apifid.node_api.app_info
+          the_app&.api&.permissions_set_create_params(perm_data: create_param, app_info: the_app)
+          created_data = apifid.node_api.create('permissions', create_param)
+          the_app&.api&.permissions_send_event(event_data: created_data, app_info: the_app)
+          Result::SingleObject.new(created_data)
         end
 
         # access_keys > set_bearer_key
