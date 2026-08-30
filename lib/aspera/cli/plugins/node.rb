@@ -48,6 +48,9 @@ module Aspera
 
         application_name 'HSTS Node API'
 
+        SESSION_TIME_FIELDS = %i[start end].freeze
+        private_constant :SESSION_TIME_FIELDS
+
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze
@@ -55,9 +58,6 @@ module Aspera
 
           SSYNC_WITH_PARAMS_ACTIONS = %i[bandwidth counters files].freeze
           private_constant :SSYNC_WITH_PARAMS_ACTIONS
-
-          SESSION_TIME_FIELDS = %i[start end].freeze
-          private_constant :SESSION_TIME_FIELDS
 
           # @return [Hash,NilClass]
           def detect(address_or_url)
