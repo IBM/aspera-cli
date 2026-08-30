@@ -51,13 +51,14 @@ module Aspera
         SESSION_TIME_FIELDS = %i[start end].freeze
         private_constant :SESSION_TIME_FIELDS
 
+        # ssync sub-commands that accept query parameters
+        SSYNC_WITH_PARAMS_ACTIONS = %i[bandwidth counters files].freeze
+        private_constant :SSYNC_WITH_PARAMS_ACTIONS
+
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze
           private_constant :FOLDER_TYPES
-
-          SSYNC_WITH_PARAMS_ACTIONS = %i[bandwidth counters files].freeze
-          private_constant :SSYNC_WITH_PARAMS_ACTIONS
 
           # @return [Hash,NilClass]
           def detect(address_or_url)
