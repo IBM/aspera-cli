@@ -6,7 +6,7 @@ require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/bootstrapper'
 require 'aspera/cli/plugins/config'
-require 'aspera/cli/mailer_service'
+require 'aspera/cli/mailer'
 require 'aspera/cli/secret_finder'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
@@ -278,7 +278,7 @@ module Aspera
         # Sync cache_tokens from Config into the OAuth persist_mgr (now that option is parsed)
         OAuth::Factory.instance.persist_mgr = @context.persistency if @context.config.option_cache_tokens
         # Email service: depends on options declared by Config
-        @context.mailer = MailerService.new(@context.options, @context.main_folder)
+        @context.mailer = Mailer.new(@context.options, @context.main_folder)
         # Secret finder: depends on options (:secret) and presets, both set by Bootstrapper
         @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
         # The TransferAgent plugin may use the @preset parser

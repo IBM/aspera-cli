@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/cli/mailer_service'
+require 'aspera/cli/mailer'
 require 'aspera/cli/secret_finder'
 
 module Aspera
@@ -28,7 +28,7 @@ module Aspera
       # @!attribute [rw] http_config
       #   @return [Http] manages HTTP/S and TLS runtime options
       # @!attribute [rw] mailer
-      #   @return [MailerService] sends emails (SMTP) via ERB templates
+      #   @return [Mailer] sends emails (SMTP) via ERB templates
       # @!attribute [rw] secret_finder
       #   @return [SecretFinder] resolves secrets for url+username pairs
       attr_accessor(*MEMBERS)

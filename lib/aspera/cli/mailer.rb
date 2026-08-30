@@ -7,13 +7,24 @@ require 'erb'
 
 module Aspera
   module Cli
-    # Mixin providing SMTP email functionality to Plugin::Config.
-    # Depends on `options` (from Plugin::Base) being available in the including class.
-    module Mailer
+    # Email service injected into Context as :mailer so that any component
+    # (TransferAgent, plugins, …) can send emails via SMTP and ERB templates.
+    # Provides :smtp, :notify_to, :notify_template options via the Options manager.
+    class Mailer
       SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
       SMTP_BOOL_PARAMS = %i[tls ssl].freeze
       SMTP_INT_PARAMS  = %i[port].freeze
       SMTP_STR_PARAMS  = %i[server domain username password from_email from_name].freeze
+
+      # @param options     [Options]  CLI options manager (provides :smtp, :notify_to, :notify_template)
+      # @param main_folder [String]   application main folder (unused directly but kept for symmetry)
+      def initialize(options, main_folder)
+        @options     = options
+        @main_folder = main_folder
+      end
+
+      # @return [Options]
+      attr_reader :options
 
       # @return [Hash] email server settings with defaults applied
       def email_settings
