@@ -118,6 +118,8 @@ module Aspera
             # Special case: array of defined symbol values
             @types = Allowed::TYPES_SYMBOL_ARRAY
             @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..]
+            # Default value for symbol array when no value has been set yet
+            assign_value([], where: 'array default', warn_deprecation: false) if value(log: false).nil?
           elsif allowed.all?(Class)
             @types = allowed
             @values = BoolValue::ALL if allowed.eql?(Allowed::TYPES_BOOLEAN)
