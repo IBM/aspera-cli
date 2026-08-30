@@ -288,7 +288,7 @@ module Aspera
 
         commands_under(:package) do
           command :send,    description: 'Send a package'
-          command :receive, description: 'Receive a package', aliases: {recv: :receive}
+          command :receive, description: 'Receive a package', aliases: [:recv]
           command :list,    description: 'List packages'
           command :show,    description: 'Show a package'
         end
