@@ -577,64 +577,8 @@ module Aspera
           end
         end
 
-        def execute_application_action
-          apps_info = aoc_api.read('admin/apps')
-          # List of allowed symbols for app type
-          all_app_syms = apps_info.map{ |i| i['app_type'].to_sym}
-          command_apps = options.get_next_command(%i[types settings instance membership])
-          case command_apps
-          when :types
-            return Result::ObjectList.new(apps_info)
-          when :settings
-            app_type = options.get_next_command(all_app_syms)
-            cmd_path = "/apps/#{app_type}/settings"
-            command_app_settings = options.get_next_command(Operations::SINGLETON)
-            case command_app_settings
-            when :show
-              return Result::SingleObject.new(aoc_api.read(cmd_path))
-            when :modify
-              aoc_api.update(cmd_path, options.get_next_argument('properties', validation: Hash))
-              return Result::Status.new('modified')
-            end
-          when :instance
-            list_default_query = {workspace_id: aoc_api.workspace_info[:id]}
-            list_default_fields = %w[id app_type available workspace_id]
-            command_app_instances = options.get_next_command(%i[list] + Operations::SINGLETON)
-            resource_path = 'admin/apps_new'
-            if Operations::SINGLETON.include?(command_app_instances)
-              app_type = options.get_next_command(all_app_syms)
-              resource_path = "#{resource_path}/#{app_type}/#{options.instance_identifier(description: "#{app_type} identifier")}"
-            end
-            case command_app_instances
-            when :list
-              return result_list(resource_path, fields: list_default_fields, default_query: list_default_query)
-            when :show
-              return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
-            when :modify
-              aoc_api.update(resource_path, options.get_next_argument('properties', validation: Hash))
-              return Result::Status.new('modified')
-            end
-          when :membership
-            resource_path = 'apps/app_memberships'
-            command_app_member = options.get_next_command(%i[create list show delete])
-            resource_path = "#{resource_path}/#{options.instance_identifier(description: 'membership id')}" unless Operations::GLOBAL.include?(command_app_member)
-            case command_app_member
-            when :list
-              return result_list(resource_path)
-            when :delete
-              aoc_api.delete(resource_path)
-              return Result::Status.new('deleted')
-            when :show
-              return Result::SingleObject.new(aoc_api.read(resource_path, query_read_delete))
-            when :create
-              data = options.get_next_argument('membership properties', validation: Hash)
-              app_type = data.delete('app_type')
-              Aspera.assert_type(app_type, String){'app_type'}
-              Aspera.assert_values(app_type.to_sym, all_app_syms){'app_type'}
-              return Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
-            end
-          end
-        end
+        # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
+        APP_TYPES = %i[activity automation files packages].freeze
 
         ADMIN_ACTIONS = %i[bearer_token application ats usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
@@ -804,10 +748,17 @@ module Aspera
 
         # Root-level commands
         command :reminder,          description: 'Send reminder email with list of orgs'
-        command :servers,           description: 'List AoC servers (no auth)'
-        command :bearer_token,      description: 'Display bearer token'
-        command :organization,      description: 'Show organization info'
-        command :tier_restrictions, description: 'Show tier restrictions'
+        command :servers,           description: 'List AoC servers (no auth)',
+          handler: lambda {
+            no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
+            Result::ObjectList.new(no_auth_api.read('servers'))
+          }
+        command :bearer_token,      description: 'Display bearer token',
+          handler: ->{Result::Text.new(aoc_api.oauth.authorization)}
+        command :organization,      description: 'Show organization info',
+          handler: ->{Result::SingleObject.new(aoc_api.read('organization'))}
+        command :tier_restrictions, description: 'Show tier restrictions',
+          handler: ->{Result::SingleObject.new(aoc_api.read('tier_restrictions'))}
         command :user,              description: 'User commands'
         command :packages,          description: 'Package commands', setup: :setup_workspace_display
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
@@ -815,8 +766,7 @@ module Aspera
         commands_under(:admin) do
           command :bearer_token,   description: 'Show admin bearer token',
             handler: ->{Result::Text.new(aoc_api.oauth.authorization)}
-          command :application,    description: 'Manage applications',
-            handler: ->{execute_application_action}
+          command :application,    description: 'Manage applications'
           command :ats,            description: 'Manage ATS (Aspera Transfer Service)',
             handler: lambda {
               ats_api = Rest.new(**aoc_api.params.deep_merge({
@@ -837,8 +787,10 @@ module Aspera
         commands_under(%i[admin auth_providers]) do
           command :list,   description: 'List auth providers',
             handler: ->{result_list('admin/auth_providers')}
-          command(:update, description: 'Update auth provider',
-            handler: ->{Aspera.error_not_implemented})
+          command(
+:update, description: 'Update auth provider',
+            handler: ->{Aspera.error_not_implemented}
+)
         end
         commands_under(%i[admin subscription]) do
           command :account, description: 'Show subscription account'
@@ -849,6 +801,76 @@ module Aspera
           command :transfers,          description: 'List transfer events'
           command :files,              description: 'List file events'
         end
+        # application sub-commands
+        commands_under(%i[admin application]) do
+          command :types,      description: 'List application types',
+            handler: ->{Result::ObjectList.new(aoc_api.read('admin/apps'))}
+          command :settings,   description: 'Manage per-app-type settings'
+          command :instance,   description: 'Manage app instances'
+          command :membership, description: 'Manage app memberships'
+        end
+        APP_SETTINGS_PATH = %i[admin application settings].freeze
+        APP_INSTANCE_PATH = %i[admin application instance].freeze
+        private_constant :APP_SETTINGS_PATH, :APP_INSTANCE_PATH
+        commands_under(APP_SETTINGS_PATH) do
+          APP_TYPES.each do |app_type|
+            command(app_type, description: "Settings for #{app_type} app")
+            commands_under(APP_SETTINGS_PATH + [app_type]) do
+              command :show,   description: "Show #{app_type} settings",
+                handler: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
+              command(:modify, description: "Modify #{app_type} settings", handler: lambda do
+                aoc_api.update("/apps/#{app_type}/settings", options.get_next_argument('properties', validation: Hash))
+                Result::Status.new('modified')
+              end)
+            end
+          end
+        end
+        commands_under(APP_INSTANCE_PATH) do
+          command(:list, description: 'List app instances', handler: lambda do
+            result_list(
+              'admin/apps_new',
+              fields:        %w[id app_type available workspace_id],
+              default_query: {workspace_id: aoc_api.workspace_info[:id]}
+            )
+          end)
+          APP_TYPES.each do |app_type|
+            command(app_type, description: "Show or modify a #{app_type} instance")
+            commands_under(APP_INSTANCE_PATH + [app_type]) do
+              command(:show, description: "Show a #{app_type} instance", handler: lambda do
+                res_id = options.instance_identifier(description: "#{app_type} identifier")
+                Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{res_id}", query_read_delete))
+              end)
+              command(:modify, description: "Modify a #{app_type} instance", handler: lambda do
+                res_id = options.instance_identifier(description: "#{app_type} identifier")
+                aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", options.get_next_argument('properties', validation: Hash))
+                Result::Status.new('modified')
+              end)
+            end
+          end
+        end
+        commands_under(%i[admin application membership]) do
+          command :list, description: 'List app memberships',
+            handler: ->{result_list('apps/app_memberships')}
+          command(:show, description: 'Show an app membership', handler: lambda do
+            res_id = options.instance_identifier(description: 'membership id')
+            Result::SingleObject.new(aoc_api.read("apps/app_memberships/#{res_id}", query_read_delete))
+          end)
+          command(:delete, description: 'Delete an app membership', handler: lambda do
+            res_id = options.instance_identifier(description: 'membership id')
+            aoc_api.delete("apps/app_memberships/#{res_id}")
+            Result::Status.new('deleted')
+          end)
+          command(
+            :create, description: 'Create an app membership',
+            handler: lambda do
+              data = options.get_next_argument('membership properties', validation: Hash)
+              app_type = data.delete('app_type')
+              Aspera.assert_type(app_type, String){'app_type'}
+              Aspera.assert_values(app_type.to_sym, APP_TYPES){'app_type'}
+              Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
+            end
+          )
+        end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway'
 
@@ -858,28 +880,55 @@ module Aspera
           command :profile,      description: 'User profile commands'
           command :preferences,  description: 'User interaction preferences'
           command :notifications, description: 'Notification preferences'
-          command :contacts,     description: 'Manage contacts'
-          command :settings,     description: 'Manage client settings'
+          command :contacts,     description: 'Manage contacts',
+            handler: ->{execute_resource_action(:contact)}
+          command :settings,     description: 'Manage client settings',
+            handler: ->{entity_execute(api: aoc_api, entity: 'client_settings')}
         end
 
         commands_under(%i[user workspaces]) do
-          command :list,    description: 'List workspaces'
-          command :current, description: 'Show current workspace'
+          command :list,    description: 'List workspaces',
+            handler: ->{result_list('workspaces', fields: %w[id name])}
+          command :current, description: 'Show current workspace',
+            handler: ->{Result::SingleObject.new(aoc_api.workspace_info)}
         end
 
         commands_under(%i[user profile]) do
-          command :show,   description: 'Show user profile'
-          command :modify, description: 'Modify user profile'
+          command :show,   description: 'Show user profile',
+            handler: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
+          command :modify, description: 'Modify user profile',
+            handler: lambda {
+              aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
+              Result::Status.new('modified')
+            }
         end
 
         commands_under(%i[user preferences]) do
-          command :show,   description: 'Show user preferences'
-          command :modify, description: 'Modify user preferences'
+          command :show,   description: 'Show user preferences',
+            handler: lambda {
+              user_id = aoc_api.current_user_info(exception: true)['id']
+              Result::SingleObject.new(aoc_api.read("users/#{user_id}/user_interaction_preferences"))
+            }
+          command :modify, description: 'Modify user preferences',
+            handler: lambda {
+              user_id = aoc_api.current_user_info(exception: true)['id']
+              aoc_api.update("users/#{user_id}/user_interaction_preferences", options.get_next_argument('properties', validation: Hash))
+              Result::Status.new('modified')
+            }
         end
 
         commands_under(%i[user notifications]) do
-          command :show,   description: 'Show notification preferences'
-          command :modify, description: 'Modify notification preferences'
+          command :show,   description: 'Show notification preferences',
+            handler: lambda {
+              user_id = aoc_api.current_user_info(exception: true)['id']
+              Result::SingleObject.new(aoc_api.read("users/#{user_id}/notification_preferences"))
+            }
+          command :modify, description: 'Modify notification preferences',
+            handler: lambda {
+              user_id = aoc_api.current_user_info(exception: true)['id']
+              aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
+              Result::Status.new('modified')
+            }
         end
 
         # packages sub-commands
@@ -940,7 +989,8 @@ module Aspera
 
         # automation sub-commands
         commands_under(:automation) do
-          command :instances, description: 'Manage workflow instances'
+          command :instances, description: 'Manage workflow instances',
+            handler: ->{entity_execute(api: aoc_api, entity: 'workflow_instances')}
           command :workflows, description: 'Manage workflows'
         end
 
@@ -950,7 +1000,11 @@ module Aspera
           command :show,    description: 'Show a workflow'
           command :modify,  description: 'Modify a workflow'
           command :delete,  description: 'Delete a workflow'
-          command :launch,  description: 'Launch a workflow'
+          command :launch,  description: 'Launch a workflow',
+            handler: lambda {
+              wf_id = options.instance_identifier
+              Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))
+            }
           command :action,  description: 'Add action to workflow (TODO)'
         end
 
@@ -988,80 +1042,6 @@ module Aspera
           no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
           no_auth_api.create('organization_reminders', {email: user_email})
           return Result::Status.new("List of organizations user is member of, has been sent by e-mail to #{user_email}")
-        end
-
-        def handle_servers
-          no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
-          return Result::ObjectList.new(no_auth_api.read('servers'))
-        end
-
-        def handle_bearer_token
-          return Result::Text.new(aoc_api.oauth.authorization)
-        end
-
-        def handle_organization
-          return Result::SingleObject.new(aoc_api.read('organization'))
-        end
-
-        def handle_tier_restrictions
-          return Result::SingleObject.new(aoc_api.read('tier_restrictions'))
-        end
-
-        # user > contacts
-        def handle_user_contacts
-          execute_resource_action(:contact)
-        end
-
-        # user > settings
-        def handle_user_settings
-          entity_execute(api: aoc_api, entity: 'client_settings')
-        end
-
-        # user > workspaces > list
-        def handle_user_workspaces_list
-          result_list('workspaces', fields: %w[id name])
-        end
-
-        # user > workspaces > current
-        def handle_user_workspaces_current
-          Result::SingleObject.new(aoc_api.workspace_info)
-        end
-
-        # user > profile > show
-        def handle_user_profile_show
-          Result::SingleObject.new(aoc_api.current_user_info(exception: true))
-        end
-
-        # user > profile > modify
-        def handle_user_profile_modify
-          aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
-          Result::Status.new('modified')
-        end
-
-        # user > preferences > show
-        def handle_user_preferences_show
-          user_id = aoc_api.current_user_info(exception: true)['id']
-          Result::SingleObject.new(aoc_api.read("users/#{user_id}/user_interaction_preferences"))
-        end
-
-        # user > preferences > modify
-        def handle_user_preferences_modify
-          user_id = aoc_api.current_user_info(exception: true)['id']
-          aoc_api.update("users/#{user_id}/user_interaction_preferences", options.get_next_argument('properties', validation: Hash))
-          Result::Status.new('modified')
-        end
-
-        # user > notifications > show
-        def handle_user_notifications_show
-          user_id = aoc_api.current_user_info(exception: true)['id']
-          Result::SingleObject.new(aoc_api.read("users/#{user_id}/notification_preferences"))
-        end
-
-        # user > notifications > modify
-        def handle_user_notifications_modify
-          user_id = aoc_api.current_user_info(exception: true)['id']
-          aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
-          Result::Status.new('modified')
         end
 
         # packages > send
@@ -1366,22 +1346,11 @@ module Aspera
           end
         end
 
-        # automation > instances
-        def handle_automation_instances
-          entity_execute(api: aoc_api, entity: 'workflow_instances')
-        end
-
         # automation > workflows > CRUD operations
         Operations::ALL.each do |op|
           define_method(:"handle_automation_workflows_#{op}") do
             entity_execute(api: @automation_api, entity: 'workflows', command: op)
           end
-        end
-
-        # automation > workflows > launch
-        def handle_automation_workflows_launch
-          wf_id = options.instance_identifier
-          Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))
         end
 
         # automation > workflows > action > * (TODO: not fully implemented)
