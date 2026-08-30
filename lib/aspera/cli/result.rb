@@ -72,14 +72,16 @@ module Aspera
             rescue URI::InvalidURIError
               @data
             end
-          # try base64
-          data = begin
-            Base64.strict_decode64(data)
-          rescue ArgumentError
-            data
+          unless data.eql?(:done)
+            # try base64
+            data = begin
+              Base64.strict_decode64(data)
+            rescue ArgumentError
+              data
+            end
+            # here, data is the image blob
+            formatter.display_message(:data, Preview::Terminal.build(data, **formatter.image_options))
           end
-          # here, data is the image blob
-          formatter.display_message(:data, Preview::Terminal.build(data, **formatter.image_options)) unless data.eql?(:done)
         else
           Aspera.error_unexpected_value(formatter.format_type){'format'}
         end
