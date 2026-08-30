@@ -373,54 +373,6 @@ module Aspera
           return Result::ObjectList.new(all_items, total: total_count)
         end
 
-        def package_action
-          command = options.get_next_command(%i[show browse status delete receive send list file_processing])
-          package_id =
-            unless %i[send list].include?(command)
-              @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
-            end
-          package_instance = "packages/#{package_id}"
-          case command
-          when :show
-            return Result::SingleObject.new(@api_v5.read(package_instance))
-          when :browse
-            return browse_folder("#{package_instance}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
-          when :status
-            status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
-            status = wait_package_status(package_id, status_list: status_list)
-            return Result::SingleObject.new(status)
-          when :delete
-            ids = package_id
-            ids = [ids] unless ids.is_a?(Array)
-            Aspera.assert_array_all(ids, String){'Package id(s)'}
-            # API returns 204, empty on success
-            @api_v5.call(
-              operation:    'DELETE',
-              subpath:      'packages',
-              content_type: Mime::JSON,
-              body:         {ids: ids},
-              headers:      {'Accept' => Mime::JSON}
-            )
-            return Result::Status.new('Package(s) deleted')
-          when :receive
-            return package_receive(package_id)
-          when :send
-            return package_send
-          when :list
-            list, total = list_packages_with_filter
-            fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
-            fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
-            fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
-            return Result::ObjectList.new(list, total: total, fields: fields)
-          when :file_processing
-            result, count = @api_v5.list_entities_limit_offset_total_count(
-              entity: "#{package_instance}/file_statuses",
-              items_key: 'files'
-            )
-            return Result::ObjectList.new(result, total: count)
-          end
-        end
-
         # Per-resource configuration for admin CRUD sub-trees.
         # Keys mirror entity_execute kwargs; extra_commands lists additional leaf commands.
         # @return [Hash{Symbol => Hash}]
@@ -586,7 +538,17 @@ module Aspera
         command :health,         description: 'Check Faspex 5 health'
         command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, handler: ->{Result::SingleObject.new(@api_v5.read('version'))}
         command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, handler: ->{Result::Text.new(@api_v5.oauth.authorization)}
-        command :packages,       description: 'Manage packages',                   setup: :setup_api_v5, handler: ->{package_action}
+        command :packages, description: 'Manage packages', setup: :setup_api_v5
+        commands_under(:packages) do
+          command :list,            description: 'List packages'
+          command :send,            description: 'Send a package',           handler: ->{package_send}
+          command :show,            description: 'Show a package',           setup: :setup_package_id
+          command :browse,          description: 'Browse package files',     setup: :setup_package_id
+          command :status,          description: 'Wait for package status',  setup: :setup_package_id
+          command :delete,          description: 'Delete package(s)',        setup: :setup_package_id
+          command :receive,         description: 'Receive a package',        setup: :setup_package_id
+          command :file_processing, description: 'Show file processing status', setup: :setup_package_id
+        end
         command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
         command :user,           description: 'Manage current user',               setup: :setup_api_v5
         command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
@@ -702,6 +664,60 @@ module Aspera
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
           {}
+        end
+
+        # Setup for package sub-commands that need an id: resolves package_id from pub_link or argument.
+        # @return [Hash] ctx key: package_id
+        def setup_package_id
+          package_id = @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
+          {package_id: package_id}
+        end
+
+        def handle_packages_list
+          list, total = list_packages_with_filter
+          fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
+          fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
+          fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
+          Result::ObjectList.new(list, total: total, fields: fields)
+        end
+
+        def handle_packages_show(package_id:, **)
+          Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))
+        end
+
+        def handle_packages_browse(package_id:, **)
+          browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))
+        end
+
+        def handle_packages_status(package_id:, **)
+          status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
+          Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))
+        end
+
+        def handle_packages_delete(package_id:, **)
+          ids = package_id.is_a?(Array) ? package_id : [package_id]
+          Aspera.assert_array_all(ids, String){'Package id(s)'}
+          # API returns 204, empty on success
+          @api_v5.call(
+            operation:    'DELETE',
+            subpath:      'packages',
+            content_type: Mime::JSON,
+            body:         {ids: ids},
+            headers:      {'Accept' => Mime::JSON}
+          )
+          Result::Status.new('Package(s) deleted')
+        end
+
+        def handle_packages_receive(package_id:, **)
+          package_receive(package_id)
+        end
+
+        def handle_packages_file_processing(package_id:, **)
+          result, count = @api_v5.list_entities_limit_offset_total_count(
+            entity: "packages/#{package_id}/file_statuses",
+            items_key: 'files'
+          )
+          Result::ObjectList.new(result, total: count)
         end
 
         # --- handlers ---
