@@ -12,7 +12,7 @@ module Aspera
     #   register_option(spec)   — store an OptionSpec by name
     #   option_specs            — Hash{Symbol => OptionSpec} of all registered options
     #   [](path)                — retrieve a CommandSpec by full path
-    #   children_of(path)       — Hash{Symbol => CommandSpec} of direct children
+    #   children_of(path)       — Hash{Symbol => CommandSpec} of direct children (O(1))
     #   all_paths               — Array of all registered full paths
     #   any?                    — true if at least one spec has been registered
     #   validate!               — cross-spec consistency checks; raises on violation
@@ -24,6 +24,7 @@ module Aspera
       end
 
       # Register a CommandSpec. Raises if the full_path is already registered.
+      # Also updates the children index so children_of remains O(1).
       # @param spec [CommandSpec]
       # @raise [ArgumentError] on duplicate full path
       # @return [CommandSpec] the registered spec
@@ -31,23 +32,19 @@ module Aspera
         path = spec.full_path
         raise ArgumentError, "Duplicate command path: #{path.inspect}" if @specs.key?(path)
         @specs[path] = spec
+        # Index: parent_path → { child_id → spec }
+        parent = path[0..-2] # [] for root-level commands
+        (@children_index[parent] ||= {})[spec.id] = spec
+        spec
       end
 
       # Returns a Hash mapping each child id to its CommandSpec for all direct
       # children of `path`. Empty hash if no children are registered.
+      # O(1) lookup via the children index built in register().
       # @param path [Array<Symbol>] parent path ([] for root-level commands)
       # @return [Hash{Symbol => CommandSpec}]
       def children_of(path)
-        parent_path = Array(path)
-        result = {}
-        @specs.each_value do |spec|
-          fp = spec.full_path
-          # A direct child has exactly one more element and the same prefix
-          next unless fp.length == parent_path.length + 1
-          next unless fp.first(parent_path.length) == parent_path
-          result[spec.id] = spec
-        end
-        result
+        @children_index[Array(path)] || {}
       end
 
       # @return [Array<Array<Symbol>>] all registered full paths
@@ -80,9 +77,10 @@ module Aspera
       end
 
       # Cross-spec consistency checks.
+      # @param plugin_class [Class, nil] when given, also verify that implicit handler methods exist
       # @raise [ArgumentError] on any violation
       # @return [self]
-      def validate!
+      def validate!(plugin_class: nil)
         @specs.each_value do |spec|
           path = spec.full_path
 
@@ -111,6 +109,17 @@ module Aspera
             raise ArgumentError,
               "#{path.inspect}: transfer_paths and arguments are mutually exclusive"
           end
+
+          # Rule: leaf commands with no explicit handler must have a matching instance method
+          next if spec.handler # explicit handler: skip
+          next if @children_index[path]&.any? # intermediate node: skip
+          next if spec.delegates_to || spec.entity_execute # delegated: skip
+          next unless plugin_class
+          implicit_method = :"handle_#{path.join('_')}"
+          unless plugin_class.method_defined?(implicit_method)
+            raise ArgumentError,
+              "#{path.inspect}: no handler: and no method #{implicit_method} on #{plugin_class}"
+          end
         end
         self
       end
@@ -122,6 +131,9 @@ module Aspera
         @specs = {}
         # Keyed by Symbol option name
         @option_specs = {}
+        # Children index: parent Array<Symbol> → Hash{child_id Symbol => CommandSpec}
+        # Built incrementally in register(); enables O(1) children_of lookups.
+        @children_index = {}
       end
     end
   end

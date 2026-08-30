@@ -645,9 +645,9 @@ module Aspera
       def parse_options!
         Log.log.trace1('parse_options!'.red)
         # First options from conf file
-        consume_option_pairs(@option_pairs_batch, 'set')
+        @option_pairs_batch = consume_option_pairs(@option_pairs_batch, 'set')
         # Then, env var (to override)
-        consume_option_pairs(@option_pairs_env, 'env')
+        @option_pairs_env = consume_option_pairs(@option_pairs_env, 'env')
         # Then, command line override: process one option at a time so that @current_option_args_offset
         # can be set before each option is evaluated (used by `@:` extended value in option values).
         unknown_options = []
@@ -877,23 +877,25 @@ module Aspera
       # Try to evaluate options set in batch
       # @param unprocessed_options [Array] list of options to apply (key_sym,value)
       # @param where [String] where the options come from
-      def consume_option_pairs(unprocessed_options, where)
+      # Apply all known options from the given pairs hash and return the remaining (unknown) pairs.
+      # Pure: does not mutate the argument; the caller is responsible for storing the returned value.
+      # @param option_pairs [Hash{Symbol => Object}] candidate key/value pairs
+      # @param where [String] label used in log messages and error context
+      # @return [Hash{Symbol => Object}] pairs whose keys were not yet declared (deferred to next round)
+      def consume_option_pairs(option_pairs, where)
         Log.log.trace1{"consume_option_pairs: #{where}"}
-        options_to_set = {}
-        unprocessed_options.each do |k, v|
+        remaining = {}
+        option_pairs.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
             v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k].values) if @declared_options[k].values && v.is_a?(String)
-            options_to_set[k] = v
+            set_option(k, v, where: where)
           else
             Log.log.trace1{"unprocessed: #{k}: #{v}"}
+            remaining[k] = v
           end
         end
-        options_to_set.each do |k, v|
-          set_option(k, v, where: where)
-          # keep only unprocessed values for next parse
-          unprocessed_options.delete(k)
-        end
+        remaining
       end
 
       # Option name separator on command line, e.g. in --option-blah, third "-"

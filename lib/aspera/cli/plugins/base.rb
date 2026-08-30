@@ -176,6 +176,12 @@ module Aspera
         # Entry point for all DSL-based plugins.
         def execute_action
           @help_path = nil
+          # Validate the registry once per class (memoised by the ivar check).
+          # Passes the plugin class so implicit handler methods can be verified.
+          unless self.class.instance_variable_defined?(:@registry_validated)
+            self.class.command_registry.validate!(plugin_class: self.class)
+            self.class.instance_variable_set(:@registry_validated, true)
+          end
           # Run the root setup (if declared) before consuming any argument.
           # This ensures condition methods on root commands can read instance variables
           # populated by the setup (e.g. @connection_type in server.rb).
@@ -210,13 +216,7 @@ module Aspera
               @help_path = current_path
               raise Cli::HelpRequest, self
             end
-            h = handler_for(spec)
-            if spec.transfer_paths
-              return invoke_handler(h, [], ctx)
-            else
-              args = (spec.arguments || []).map{ |a| resolve_argument(a)}
-              return invoke_handler(h, args, ctx)
-            end
+            return execute_leaf(spec, ctx)
           end
 
           # Phase B — dispatch to a child
@@ -246,22 +246,13 @@ module Aspera
           # entity_execute shorthand
           return run_entity_execute(child, ctx) if child.entity_execute
 
-          grandchildren = registry.children_of(current_path + [command])
-          if grandchildren.any?
+          if registry.children_of(current_path + [command]).any?
             # Intermediate node: recurse (child setup will run at the top of next call)
             dispatch_from_registry(current_path + [command], ctx)
           else
-            # Leaf: run child setup (if any), then execute handler or transfer
+            # Leaf: run child setup (if any), then execute handler
             ctx = ctx.merge(send(child.setup)) if child.setup
-            h = handler_for(child)
-            if child.transfer_paths
-              # File list delegated to TransferAgent; no positional args consumed here
-              invoke_handler(h, [], ctx)
-            else
-              # Leaf: resolve arguments, then call handler
-              args = (child.arguments || []).map{ |a| resolve_argument(a)}
-              invoke_handler(h, args, ctx)
-            end
+            execute_leaf(child, ctx)
           end
         end
 
@@ -287,6 +278,20 @@ module Aspera
             instance_exec(*args, **ctx, &handler)
           else
             send(handler, *args, **ctx)
+          end
+        end
+
+        # Execute a leaf CommandSpec: resolve arguments (or skip for transfer_paths) and call handler.
+        # @param spec [CommandSpec] a leaf node (no children)
+        # @param ctx  [Hash]        accumulated context
+        # @return [Object]
+        def execute_leaf(spec, ctx)
+          h = handler_for(spec)
+          if spec.transfer_paths
+            invoke_handler(h, [], ctx)
+          else
+            args = (spec.arguments || []).map{ |a| resolve_argument(a)}
+            invoke_handler(h, args, ctx)
           end
         end
 
