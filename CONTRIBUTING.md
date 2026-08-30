@@ -410,5 +410,4 @@ This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
 - Evaluate replacing custom REST and OAuth implementations with standard gems:
   - [rest-client](https://github.com/rest-client/rest-client)
   - [oauth2](https://github.com/oauth-xx/oauth2)
-- Integrate `thor` <http://whatisthor.com/> or another standard Ruby CLI framework.
 - Explore [Traveling Ruby](https://github.com/phusion/traveling-ruby) for distribution, or [truby Traveling Ruby](https://github.com/trubygems/traveling-ruby).

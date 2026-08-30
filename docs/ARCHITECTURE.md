@@ -44,6 +44,9 @@ The main executable script that:
 
 ```ruby
 #!/usr/bin/env ruby
+# Pre-parses --log-level, --log-format, --logger before full initialization
+ARGV.each { |arg| ... }
+require 'aspera/environment'
 require 'aspera/cli/runner'
 Aspera::Environment.instance.fix_home
 Aspera::Cli::Runner.new(ARGV).run
@@ -66,7 +69,7 @@ All shared objects (options manager, transfer agent, config plugin, formatter, p
 
 The `Cli::Options` class handles:
 
-- **Option Parsing**: Command-line argument processing using `OptionParser`
+- **Option Parsing**: Custom command-line argument processing
 - **Extended Value Syntax**: Support for complex parameter types (JSON, YAML, Ruby expressions, `@preset:`, `@vault:`, `@args:`)
 - **Option Validation**: Type checking and value constraints
 - **Configuration Management**: Integration with persistent configuration
@@ -91,9 +94,9 @@ The plugin architecture enables modular command implementation for different Asp
 - Implements resource identifier resolution (including percent-selector syntax)
 - Manages plugin context (options, transfer agent, config, formatter)
 
-**Product Plugins**:
+**Product Plugins** (registered and exposed as top-level commands):
 
-- [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud / ATS
+- [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud
 - [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
 - [`faspex.rb`](../lib/aspera/cli/plugins/faspex.rb) - Faspex 4
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
@@ -107,12 +110,18 @@ The plugin architecture enables modular command implementation for different Asp
 - [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
 - [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
 
-**Utility Plugins**:
+**Utility Plugins** (registered commands but not product-specific):
 
-- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `AscpActions`, `PresetActions`, `GemChecker`, `Mailer`, `VaultManager`, `SyncActions` mixins)
+- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `AscpActions`, `PresetActions`, `GemChecker`, `VaultManager`, `SyncActions` mixins)
 - [`preview.rb`](../lib/aspera/cli/plugins/preview.rb) - File preview generation
-- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - OAuth authentication
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
+
+**Internal Base Classes** (excluded from factory registration via `IGNORE_PLUGINS`):
+
+- [`base.rb`](../lib/aspera/cli/plugins/base.rb) - Abstract base class for all plugins
+- [`basic_auth.rb`](../lib/aspera/cli/plugins/basic_auth.rb) - Abstract base class for plugins using basic authentication (url/username/password)
+- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - OAuth token utility (not a product plugin)
+- [`factory.rb`](../lib/aspera/cli/plugins/factory.rb) - Plugin factory (singleton)
 
 #### Command DSL
 
@@ -128,7 +137,7 @@ command tree statically introspectable, self-documenting, and testable without e
 **Command declaration** (`Base.command`):
 
 | Parameter | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `id` | `Symbol` | Unique identifier within its parent's namespace |
 | `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands |
 | `description` | `String` | User-facing help text |
@@ -147,7 +156,7 @@ command tree statically introspectable, self-documenting, and testable without e
 **Argument declaration** (`ArgumentSpec`):
 
 | Parameter | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `name` | `Symbol` | Name used in help and error messages |
 | `description` | `String` | User-facing description |
 | `type` | `Class \| Array<Class> \| :identifier` | Validated type; `:identifier` triggers `instance_identifier` |
@@ -198,7 +207,7 @@ Key properties of the `ctx` hash:
 **Notable design decisions**:
 
 | Decision | Rationale |
-|---|---|
+| --- | --- |
 | Flat registry keyed by full path `Array<Symbol>` | Avoids recursive data structures; path lookup is O(1) |
 | `setup:` runs on the current node before dispatching | Matches the imperative pattern; no virtual/synthetic nodes needed |
 | `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
@@ -513,8 +522,9 @@ StandardError
 │   ├── MissingArgument
 │   ├── NoSuchElement
 │   └── BadIdentifier
-├── RestCallError (HTTP errors)
-└── Transfer::Error (transfer failures)
+├── Aspera::RestCallError (HTTP call errors — lib/aspera/rest_call_error.rb)
+├── Aspera::Rest::EntityNotFound (resource not found — lib/aspera/rest.rb)
+└── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
 
 ### Error Analysis
@@ -650,11 +660,10 @@ GitHub Actions workflows:
 
 ## Future Architecture Considerations
 
-From [`CONTRIBUTING.md`](../CONTRIBUTING.md#L319-L325):
+From [`CONTRIBUTING.md`](../CONTRIBUTING.md#future-improvements):
 
 - Replace custom REST implementation with standard gems (`rest-client`)
 - Replace custom OAuth with standard gem (`oauth2`)
-- Integrate standard CLI framework (`thor`)
 - Explore Traveling Ruby for distribution
 
 ## References
