@@ -5,6 +5,9 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/line_logger'
 require 'aspera/schema/registry'
+require 'aspera/rest'
+require 'aspera/oauth'
+require 'aspera/ssl'
 require 'openssl'
 
 module Aspera
@@ -30,8 +33,8 @@ module Aspera
         @certificate_paths     = nil
       end
 
-      attr_accessor :insecure, :warn_insecure, :http_options
-      attr_reader   :ignore_cert_host_port
+      attr_accessor :insecure, :warn_insecure
+      attr_reader   :ignore_cert_host_port, :http_options
 
       class << self
         # Declare all HTTP/S CLI options (metadata only — no handler binding yet).
@@ -60,6 +63,32 @@ module Aspera
         options.set_handler(:cert_stores,        object: self, method: :trusted_cert_locations)
         options.set_handler(:http_options,       object: self, method: :http_options)
         options.set_handler(:http_proxy,         object: self, method: :http_proxy)
+      end
+
+      # Setter for http_options: dispatch each key to its target singleton immediately.
+      # Keys matching RestParameters setters go to RestParameters, 'ssl_options' goes to SSL,
+      # keys matching OAuth::Factory.instance.parameters go to OAuth, and the rest are kept
+      # in @http_options for Net::HTTP session configuration in update_session.
+      # This runs on every assignment (JSON hash, dotted notation, preset merge) so timing
+      # of option parsing never matters.
+      # @param new_options [Hash] merged http_options hash
+      # @return [void]
+      def http_options=(new_options)
+        Aspera.assert_type(new_options, Hash)
+        kept = {}
+        new_options.each do |k, v|
+          method = "#{k}=".to_sym
+          if RestParameters.instance.respond_to?(method)
+            RestParameters.instance.send(method, v)
+          elsif k.to_s.eql?('ssl_options')
+            Aspera::SSL.option_list = v
+          elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
+            OAuth::Factory.instance.parameters[k.to_sym] = v
+          else
+            kept[k] = v
+          end
+        end
+        @http_options = kept
       end
 
       # ------------------------------------------------------------------

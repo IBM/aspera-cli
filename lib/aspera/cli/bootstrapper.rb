@@ -173,23 +173,6 @@ module Aspera
         RestParameters.instance.progress_bar  = @context.progress_bar
         RestParameters.instance.session_cb    = ->(http_session){@context.http_config.update_session(http_session)}
         RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin){@context.formatter.long_operation(title, action: action)}
-        # Promote http_options keys that target global singletons (RestParameters, SSL, OAuth)
-        http_opts = @context.http_config.http_options
-        keys_to_delete = []
-        http_opts.each do |k, v|
-          method = "#{k}=".to_sym
-          if RestParameters.instance.respond_to?(method)
-            keys_to_delete.push(k)
-            RestParameters.instance.send(method, v)
-          elsif k.eql?('ssl_options')
-            keys_to_delete.push(k)
-            Aspera::SSL.option_list = v
-          elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
-            keys_to_delete.push(k)
-            OAuth::Factory.instance.parameters[k.to_sym] = v
-          end
-        end
-        keys_to_delete.each{ |k| http_opts.delete(k)}
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
         Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         RestErrorAnalyzer.instance.log_file   = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
