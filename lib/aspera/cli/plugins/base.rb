@@ -201,11 +201,8 @@ module Aspera
           dispatch_from_registry([], init_ctx)
         end
 
-        # Two-phase dispatcher implementing the algorithm from MIGRATION_TO_DSL.md.
-        #
-        # Phase A: run setup: method on the current node (before consuming next argument).
-        # Phase B: consume next argument, match against children, recurse or call handler.
-        #
+        # Two-phase dispatcher: run setup on the current node (Phase A), then either
+        # execute a leaf directly or consume the next argument and recurse (Phase B).
         # @param current_path [Array<Symbol>] path of the node currently being dispatched
         # @param ctx [Hash] accumulated context passed down from parent nodes
         # @return [Object] result suitable for CLI output
@@ -213,39 +210,54 @@ module Aspera
           registry = self.class.command_registry
           spec     = registry[current_path]
 
-          # Phase A — setup on current node (skip if --help requested to avoid auth/network calls)
+          # Phase A — run setup on current node (skip when --help to avoid auth/network calls)
           ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested
 
-          # Fast-path: if current_path already points to a leaf node (has a handler,
-          # no children), execute it directly without consuming a further argument.
-          # This handles the case where delegates_to points to a leaf command.
+          # Phase B — leaf fast-path or child dispatch
           if spec && registry.children_of(current_path).empty?
-            # If --help was requested at this leaf, show its info now.
-            if options.help_requested
-              @help_path = current_path
-              raise Cli::HelpRequest, self
-            end
-            return execute_leaf(spec, ctx)
+            dispatch_leaf(current_path, spec, ctx)
+          else
+            dispatch_child(current_path, registry, ctx)
           end
+        end
 
-          # Phase B — dispatch to a child
+        # Phase B, leaf branch: execute a spec that is already a leaf (no children).
+        # Intercepts --help before calling execute_leaf.
+        # @param current_path [Array<Symbol>]
+        # @param spec [CommandSpec]
+        # @param ctx [Hash]
+        # @return [Object]
+        def dispatch_leaf(current_path, spec, ctx)
+          if options.help_requested
+            @help_path = current_path
+            raise Cli::HelpRequest, self
+          end
+          execute_leaf(spec, ctx)
+        end
+
+        # Phase B, child branch: consume the next command argument, resolve the matching
+        # child spec, handle delegation / entity_execute shorthands, and recurse or execute.
+        # @param current_path [Array<Symbol>]
+        # @param registry [CommandRegistry]
+        # @param ctx [Hash]
+        # @return [Object]
+        def dispatch_child(current_path, registry, ctx)
           children  = registry.children_of(current_path)
           available = children.reject{ |_, c| c.condition && !send(c.condition)}
-          aliases = children.values.each_with_object({}) do |c, h|
+          aliases   = children.values.each_with_object({}) do |c, h|
             Array(c.aliases).each{ |a| h[a] = c.id} if c.aliases
           end
           command = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
           child   = available[command]
 
-          # After consuming this command: intercept --help only when no positional args remain,
-          # meaning the user typed exactly up to this level (e.g. `aoc files -h` or `aoc files find -h`).
-          # If more args are still pending, keep recursing to the right depth.
+          # Intercept --help when no more positional args remain after consuming this command.
+          # (e.g. `aoc files -h` or `aoc files find -h`). When args remain, keep recursing.
           if options.help_requested && options.command_or_arg_empty?
             @help_path = current_path + [command]
             raise Cli::HelpRequest, self
           end
 
-          # Loop / instance delegation
+          # Instance delegation: hand off to a different plugin object
           if child.delegate_instance
             target = send(child.delegate_instance)
             return target.dispatch_from_registry(Array(child.delegates_to), {})
@@ -256,7 +268,7 @@ module Aspera
           return run_entity_execute(child, ctx) if child.entity_execute
 
           if registry.children_of(current_path + [command]).any?
-            # Intermediate node: recurse (child setup will run at the top of next call)
+            # Intermediate node: recurse (child setup runs at the top of the next call)
             dispatch_from_registry(current_path + [command], ctx)
           else
             # Leaf: run child setup (if any), then execute handler

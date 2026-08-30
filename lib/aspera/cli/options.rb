@@ -207,23 +207,26 @@ module Aspera
         Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"} if warn_deprecation
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
         Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
-        # Boolean/Enum coercion: String input is resolved to the matching Symbol via allowed-values list.
-        # Centralized here so both CLI dispatch and preset/env loading go through the same path.
-        if new_value.is_a?(String)
-          new_value = Options.get_from_list(new_value, @option, @values) if @types.eql?(Allowed::TYPES_ENUM)
-          new_value = Options.get_from_list(new_value, @option, BoolValue::ALL) if @types.eql?(Allowed::TYPES_BOOLEAN)
-        end
-        new_value = BoolValue.true?(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
-        new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
-        new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
-        # Setting a Hash to null set an empty hash
-        new_value = {} if new_value.eql?(nil) && @types&.first.eql?(Hash)
-        # Setting a Array to null set an empty array
-        new_value = [] if new_value.eql?(nil) && @types&.first.eql?(Array)
-        if @types.eql?(Aspera::Cli::Allowed::TYPES_SYMBOL_ARRAY)
+        # Per-type coercion: String input from CLI/env/preset is normalized to the expected type.
+        # Centralized here so all sources (CLI dispatch, preset, env) go through the same path.
+        case @types
+        when Allowed::TYPES_ENUM
+          new_value = Options.get_from_list(new_value, @option, @values) if new_value.is_a?(String)
+        when Allowed::TYPES_BOOLEAN
+          new_value = Options.get_from_list(new_value, @option, BoolValue::ALL) if new_value.is_a?(String)
+          new_value = BoolValue.true?(new_value)
+        when Allowed::TYPES_INTEGER
+          new_value = Integer(new_value)
+        when Allowed::TYPES_STRING_ARRAY
+          new_value = [new_value] if new_value.is_a?(String)
+        when Allowed::TYPES_SYMBOL_ARRAY
           new_value = [new_value] if new_value.is_a?(String)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
           new_value = new_value.map{ |v| Options.get_from_list(v, @option, @values)}
+        else
+          # nil (setting nil on a Hash/Array option resets to empty container)
+          new_value = {} if new_value.nil? && @types&.first.eql?(Hash)
+          new_value = [] if new_value.nil? && @types&.first.eql?(Array)
         end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
         if new_value.is_a?(Hash) || new_value.is_a?(Array)

@@ -1063,9 +1063,18 @@ module Aspera
         end
 
         commands_under(%i[packages shared_inboxes]) do
-          command :list,       description: 'List shared inboxes'
-          command :show,       description: 'Show a shared inbox'
-          command :short_link, description: 'Manage shared inbox short links'
+          command :list,       description: 'List shared inboxes',
+            handler: (lambda do
+              result_list(
+                'dropbox_memberships',
+                fields: %w[dropbox_id dropbox.name],
+                default_query: workspace_id_hash({'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}, string: true)
+              )
+            end)
+          command :show,       description: 'Show a shared inbox',
+            handler: ->{Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))}
+          command :short_link, description: 'Manage shared inbox short links',
+            handler: ->{short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')} # TODO: check name
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
@@ -1217,24 +1226,6 @@ module Aspera
           user_id = aoc_api.current_user_info(exception: true)['id']
           aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
           Result::Status.new('modified')
-        end
-
-        # packages > shared_inboxes > list
-        def handle_packages_shared_inboxes_list
-          default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
-          workspace_id_hash(default_query, string: true)
-          result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
-        end
-
-        # packages > shared_inboxes > show
-        def handle_packages_shared_inboxes_show
-          Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))
-        end
-
-        # packages > shared_inboxes > short_link
-        def handle_packages_shared_inboxes_short_link
-          # TODO: check name
-          short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')
         end
 
         # packages > send
