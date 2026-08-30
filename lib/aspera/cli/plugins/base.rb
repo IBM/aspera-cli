@@ -56,18 +56,18 @@ module Aspera
           # Raises ArgumentError at class-load time if the same option name is already
           # declared by any ancestor class, preventing silent shadowing.
           #
-          # handler: accepts two forms:
-          #   Symbol      — resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
-          #   Hash        — {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
-          #
-          # @param name        [Symbol]
-          # @param description [String, nil]
-          # @param short       [String, nil]   single-char short form (without leading '-')
-          # @param allowed     [Array, nil]
-          # @param default     [Object, nil]
+          # @param name        [Symbol]          Option name
+          # @param description [String, nil]     User-facing description; if nil, derived from schema: title/description
+          # @param short       [String, nil]     Single-character short form (without leading '-')
+          # @param allowed     [Object, nil]     Allowed values (see OptionValue)
+          # @param default     [Object, nil]     Default value
           # @param handler     [Symbol, Hash, nil]
-          # @param deprecation [String, nil]
-          # @param schema      [String, nil]
+          #   - Symbol  → resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+          #   - Hash    → {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
+          #   - nil     → option stores its value locally (no delegation)
+          # @param deprecation [String, nil]     Deprecation message forwarded to options.declare
+          # @param schema      [String, nil]     Schema reference (e.g. "opts:components.schemas.Foo");
+          #                                      when description: is nil, the schema title or first description line is used
           def option(name, description = nil,
             short: nil, allowed: nil, default: nil,
             handler: nil, deprecation: nil, schema: nil)
