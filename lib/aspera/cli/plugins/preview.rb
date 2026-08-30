@@ -60,7 +60,7 @@ module Aspera
         option :scan_id,            'Folder id in storage to start scan in, default is access key main folder id'
         option :mimemagic,          'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
         option :overwrite,          'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
-        option :root_url,           "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})",                      allowed: Allowed::TYPES_STRING, default: ''
+        option :root_url,           "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
         # Generator-specific options (Category C — bound to @gen_options via set_handler in initialize)
         Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
           values = if opt.key?(:values)

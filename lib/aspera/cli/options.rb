@@ -60,20 +60,24 @@ module Aspera
       module_function :true?, :to_sym, :symbol?
     end
 
-    # Constants to be used as parameter `allowed:` for `OptionValue`
+    # Constants to be used as parameter `allowed:` for `OptionValue`.
+    # Public API: TYPES_STRING_ARRAY, TYPES_SYMBOL_ARRAY, TYPES_INTEGER, TYPES_BOOLEAN, TYPES_NONE.
+    # Internal (do not pass as `allowed:`):
+    #   TYPES_ENUM   — derived internally when `allowed:` is an Array<Symbol> (enum list)
+    #   TYPES_STRING — the implicit default; equivalent to omitting `allowed:` entirely
     module Allowed
       # This option can be set to a single string or array, multiple times, and gives Array of String
       TYPES_STRING_ARRAY = [Array, String].freeze
-      # A list of symbols with constrained values
+      # A list of symbols with constrained values; use as prefix: TYPES_SYMBOL_ARRAY + [:val1, :val2]
       TYPES_SYMBOL_ARRAY = [Array, Symbol].freeze
       # Value will be coerced to int
       TYPES_INTEGER = [Integer].freeze
       TYPES_BOOLEAN = BoolValue::TYPES
       # No value at all for the option, it's a switch, like `-N`
       TYPES_NONE = [].freeze
-      # Symbol
-      TYPES_ENUM = [Symbol].freeze
-      # String
+      # Internal: derived when allowed: is an Array<Symbol>; do not pass directly
+      TYPES_ENUM   = [Symbol].freeze
+      # Internal: implicit default (String); equivalent to omitting allowed: entirely
       TYPES_STRING = [String].freeze
     end
 
@@ -203,6 +207,12 @@ module Aspera
         Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"} if warn_deprecation
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
         Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
+        # Boolean/Enum coercion: String input is resolved to the matching Symbol via allowed-values list.
+        # Centralized here so both CLI dispatch and preset/env loading go through the same path.
+        if new_value.is_a?(String)
+          new_value = Options.get_from_list(new_value, @option, @values) if @types.eql?(Allowed::TYPES_ENUM)
+          new_value = Options.get_from_list(new_value, @option, BoolValue::ALL) if @types.eql?(Allowed::TYPES_BOOLEAN)
+        end
         new_value = BoolValue.true?(new_value) if @types.eql?(Allowed::TYPES_BOOLEAN)
         new_value = Integer(new_value) if @types.eql?(Allowed::TYPES_INTEGER)
         new_value = [new_value] if @types.eql?(Allowed::TYPES_STRING_ARRAY) && new_value.is_a?(String)
@@ -291,12 +301,6 @@ module Aspera
       # @param program_name [String] Name of the program
       # @param argv [Array<String>, nil] Command line arguments to parse
       def initialize(program_name, argv = nil)
-        # command line values *not* starting with '-'
-        @unprocessed_cmd_line_arguments = []
-        # command line values starting with at least one '-'
-        @unprocessed_cmd_line_options = []
-        # a copy of all initial options
-        @initial_cli_options = []
         # Option descriptions: maps option symbol to its OptionValue descriptor
         # @type [Hash{Symbol => OptionValue}]
         @declared_options = {}
@@ -308,23 +312,24 @@ module Aspera
         @fail_on_missing_mandatory = true
         # set to true when --help / -h is parsed
         @help_requested = false
-        # Array of [key(sym), value]
-        # those must be set before parse
-        # parse consumes those defined only
+        # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         @option_pairs_batch = {}
         @option_pairs_env = {}
         # Short option char -> option symbol, e.g. {'h' => :help, 'v' => :version}
         @short_options = {}
         # Current help section group name, set by #group
         @current_group = 'global'
-        # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
         ENV.each do |k, v|
           @option_pairs_env[k.delete_prefix(env_prefix).downcase.to_sym] = v if k.start_with?(env_prefix)
         end
         Log.log.debug{"env=#{@option_pairs_env}".red}
+        # command line values starting with at least one '-'
         @unprocessed_cmd_line_options = []
+        # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
+        # a copy of all initial options
+        @initial_cli_options = []
         # For each option string: list (one entry per occurrence) of the number of positional args
         # that appear before it in original argv. Used by `@:` in option values to skip preceding args.
         # @type [Hash{String => Array<Integer>}]
@@ -827,13 +832,9 @@ module Aspera
       # @param raw_value [String, nil] raw string value from command line, or nil for flag switches
       def dispatch_option(sym, raw_value)
         opt = @declared_options[sym]
-        case opt.types
-        when Allowed::TYPES_NONE
+        if opt.types.eql?(Allowed::TYPES_NONE)
           opt.block.call
-        when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN
-          set_option(sym, self.class.get_from_list(raw_value.to_s, opt.description, opt.values), where: SOURCE_USER)
         else
-          raw_value = Integer(raw_value) if opt.types.eql?(Allowed::TYPES_INTEGER)
           set_option(sym, raw_value, where: SOURCE_USER)
         end
       end
@@ -887,8 +888,6 @@ module Aspera
         remaining = {}
         option_pairs.each do |k, v|
           if @declared_options.key?(k)
-            # constrained parameters as string are revert to symbol
-            v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k].values) if @declared_options[k].values && v.is_a?(String)
             set_option(k, v, where: where)
           else
             Log.log.trace1{"unprocessed: #{k}: #{v}"}

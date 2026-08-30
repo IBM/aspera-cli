@@ -91,14 +91,7 @@ module Aspera
       # Compute the full path as Array<Symbol> from parent + id.
       # @return [Array<Symbol>]
       def full_path
-        case parent
-        when nil
-          [id]
-        when Symbol
-          [parent, id]
-        when Array
-          parent + [id]
-        end
+        Array(parent) + [id]
       end
     end
   end
