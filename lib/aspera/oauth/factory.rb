@@ -108,10 +108,9 @@ module Aspera
       end
 
       # Delete all existing tokens in cache
-      # @return [nil]
+      # @return [Array<String>] List of deleted file paths
       def flush_tokens
         persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN)
-        nil
       end
 
       # Retrieve all persisted tokens with their decoded information
