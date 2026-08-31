@@ -225,8 +225,20 @@ module Aspera
           registry = self.class.command_registry
           spec     = registry[current_path]
 
-          # Phase A - run setup on current node (skip when --help to avoid auth/network calls)
-          ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup && !options.help_requested && !skip_setup
+          unless options.help_requested || skip_setup
+            # Phase A.1 - consume instance identifier declared on this node
+            if spec&.instance_arg
+              lookup_method = spec.lookup
+              res_id = if lookup_method
+                options.instance_identifier(description: spec.instance_arg.to_s){ |f, v| send(lookup_method, f, v)}
+              else
+                options.instance_identifier(description: spec.instance_arg.to_s)
+              end
+              ctx = ctx.merge(spec.instance_arg => res_id)
+            end
+            # Phase A.2 - run setup method on current node
+            ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
+          end
 
           # Phase B - leaf fast-path or child dispatch
           if spec && registry.children_of(current_path).empty?

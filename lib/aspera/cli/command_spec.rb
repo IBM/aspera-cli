@@ -72,6 +72,12 @@ module Aspera
     # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
+    # @!attribute instance_arg     [Symbol, nil]                 When set, consume one instance identifier from the CLI before dispatching to
+    #                                                            children (or executing the leaf) and inject it into ctx under this key.
+    #                                                            Replaces the boilerplate setup_<foo>_instance pattern.
+    # @!attribute lookup           [Symbol, nil]                 Instance method name used as the %selector resolution block for instance_arg.
+    #                                                            The method must accept (field, value) and return the resolved identifier.
+    #                                                            Ignored when instance_arg: is nil.
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -86,6 +92,8 @@ module Aspera
       :entity_execute,
       :transfer_paths,
       :condition,
+      :instance_arg,
+      :lookup,
       keyword_init: true
     ) do
       # Compute the full path as Array<Symbol> from parent + id.

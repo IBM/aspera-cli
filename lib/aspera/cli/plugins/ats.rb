@@ -54,16 +54,13 @@ module Aspera
             res = ats_api.read('access_keys', query_read_delete(default: {'offset' => 0, 'max_results' => 1000}))
             Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
           end)
-          command :show,        description: 'Show an access key', handler: lambda{Result::SingleObject.new(ats_api.read("access_keys/#{options.instance_identifier}"))}
-          command :modify,      description: 'Modify an access key'
-          command(:delete,      description: 'Delete an access key', handler: lambda do
-            access_key_id = options.instance_identifier
-            ats_api.delete("access_keys/#{access_key_id}")
-            Result::Status.new("deleted #{access_key_id}")
-          end)
-          command :node,        description: 'Execute node commands via ATS access key', setup: :setup_ak_node
-          command :cluster,     description: 'Show cluster info for an access key'
-          command :entitlement, description: 'Show ATS entitlement for an access key'
+          command :show,        description: 'Show an access key',        instance_arg: :access_key_id,
+            handler: ->(access_key_id:, **){Result::SingleObject.new(ats_api.read("access_keys/#{access_key_id}"))}
+          command :modify,      description: 'Modify an access key',      instance_arg: :access_key_id
+          command :delete,      description: 'Delete an access key',      instance_arg: :access_key_id
+          command :node,        description: 'Execute node commands via ATS access key', instance_arg: :access_key_id, setup: :setup_ak_node
+          command :cluster,     description: 'Show cluster info for an access key', instance_arg: :access_key_id
+          command :entitlement, description: 'Show ATS entitlement for an access key', instance_arg: :access_key_id
         end
 
         commands_under(%i[access_key node]) do
@@ -80,12 +77,9 @@ module Aspera
           end)
           command :create, description: 'Create an ATS API key', handler: lambda{Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', value_create_modify(command: :create, default: {})))}
           command :list,   description: 'List ATS API keys',     handler: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
-          command :show,   description: 'Show an ATS API key',   handler: lambda{Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{options.instance_identifier}"))}
-          command(:delete, description: 'Delete an ATS API key', handler: lambda do
-            concerned_id = options.instance_identifier
-            build_ats_ibm_api_with_instance.delete("api_keys/#{concerned_id}")
-            Result::Status.new("deleted #{concerned_id}")
-          end)
+          command :show,   description: 'Show an ATS API key',   instance_arg: :api_key_id,
+            handler: ->(api_key_id:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}"))}
+          command :delete, description: 'Delete an ATS API key', instance_arg: :api_key_id
         end
 
         # --- conditions ---
@@ -181,25 +175,28 @@ module Aspera
           # TODO : action : modify, with "PUT"
         end
 
-        def handle_access_key_modify
-          access_key_id = options.instance_identifier
+        def handle_access_key_modify(access_key_id:, **)
           params = value_create_modify(command: :modify)
           params['id'] = access_key_id
           ats_api.update("access_keys/#{access_key_id}", params)
           return Result::Status.new('modified')
         end
 
-        def handle_access_key_entitlement
-          access_key_id = options.instance_identifier
+        def handle_access_key_delete(access_key_id:, **)
+          ats_api.delete("access_keys/#{access_key_id}")
+          Result::Status.new("deleted #{access_key_id}")
+        end
+
+        def handle_access_key_entitlement(access_key_id:, **)
           ak = ats_api.read("access_keys/#{access_key_id}")
           api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
           return Result::SingleObject.new(api_bss.read('entitlement'))
         end
 
-        # Build the Node plugin for an ATS access key and store it in an ivar.
+        # Build the Node plugin for an ATS access key.
+        # access_key_id: is already in ctx via instance_arg: on the :node command.
         # @return [Hash] context hash containing :ak_node_plugin and :ak_root_file_id
-        def setup_ak_node(**)
-          access_key_id = options.instance_identifier
+        def setup_ak_node(access_key_id:, **)
           ak_data = ats_api.read("access_keys/#{access_key_id}")
           server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
           raise Cli::Error, 'no such server found' if server_data.nil?
@@ -228,8 +225,7 @@ module Aspera
           end
         end
 
-        def handle_access_key_cluster
-          access_key_id = options.instance_identifier
+        def handle_access_key_cluster(access_key_id:, **)
           ats_url = ats_api.base_url
           api_ak_auth = Rest.new(
             base_url: ats_url,

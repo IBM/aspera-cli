@@ -388,17 +388,14 @@ module Aspera
         end
         commands_under(%i[access_keys do permission]) do
           command :list,   description: 'List permissions on a file'
-          command :show,   description: 'Show a permission',
-            handler: ->(apifid:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{options.instance_identifier}"))}
+          command :show,   description: 'Show a permission',   instance_arg: :perm_id,
+            handler: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
           command :create, description: 'Create a permission'
-          command(:modify, description: 'Modify a permission', handler: lambda do |apifid:, **|
-            apifid.node_api.update("permissions/#{options.instance_identifier}", value_create_modify(command: 'permission modify'))
-            Result::Status.new('Updated')
-          end)
+          command :modify, description: 'Modify a permission', instance_arg: :perm_id
           command :delete, description: 'Delete permission(s)'
         end
         # async (legacy /async)
-        command :async, description: 'Manage async operations (legacy /async)'
+        command :async, description: 'Manage async operations (legacy /async)', instance_arg: :async_id, lookup: :async_lookup
         commands_under(:async) do
           command :list,      description: 'List async sync IDs', handler: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
           command :show,      description: 'Show async summary'
@@ -408,7 +405,7 @@ module Aspera
           command :counters,  description: 'Show async counters'
         end
         # ssync (/asyncs)
-        command :ssync, description: 'Manage sync operations (/asyncs)'
+        command :ssync, description: 'Manage sync operations (/asyncs)', instance_arg: :ssync_id, lookup: :ssync_lookup
         commands_under(:ssync) do
           command :start,     description: 'Start a sync'
           command :stop,      description: 'Stop a sync'
@@ -433,7 +430,8 @@ module Aspera
         commands_under(:transfer) do
           command :list,              description: 'List transfers'
           command :cancel,            description: 'Cancel a transfer'
-          command :show,              description: 'Show a transfer', handler: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.instance_identifier}"))}
+          command :show,              description: 'Show a transfer', instance_arg: :transfer_id,
+            handler: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify,            description: 'Modify a transfer'
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
@@ -452,12 +450,12 @@ module Aspera
             handler: ->{Result::Status.new("#{@api_node.create('v3/watchfolders', value_create_modify(command: :create))['id']} created")}
           command :list,   description: 'List watch folders',
             handler: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
-          command :show,   description: 'Show a watch folder',
-            handler: ->{Result::SingleObject.new(@api_node.read("v3/watchfolders/#{options.instance_identifier}"))}
-          command :modify, description: 'Modify a watch folder'
-          command :delete, description: 'Delete a watch folder'
-          command :state,  description: 'Show watch folder state',
-            handler: ->{Result::SingleObject.new(@api_node.read("v3/watchfolders/#{options.instance_identifier}/state"))}
+          command :show,   description: 'Show a watch folder',   instance_arg: :res_id,
+            handler: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
+          command :modify, description: 'Modify a watch folder', instance_arg: :res_id
+          command :delete, description: 'Delete a watch folder', instance_arg: :res_id
+          command :state,  description: 'Show watch folder state', instance_arg: :res_id,
+            handler: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
         end
         # central
         command :central, description: 'Query Central service'
@@ -631,16 +629,19 @@ module Aspera
           {}
         end
 
-        def handle_watch_folder_modify
-          one_res_id = options.instance_identifier
-          @api_node.update("v3/watchfolders/#{one_res_id}", value_create_modify(command: :watch_folder))
-          Result::Status.new("#{one_res_id} updated")
+        def handle_access_keys_do_permission_modify(apifid:, perm_id:, **)
+          apifid.node_api.update("permissions/#{perm_id}", value_create_modify(command: 'permission modify'))
+          Result::Status.new('Updated')
         end
 
-        def handle_watch_folder_delete
-          one_res_id = options.instance_identifier
-          @api_node.delete("v3/watchfolders/#{one_res_id}")
-          Result::Status.new("#{one_res_id} deleted")
+        def handle_watch_folder_modify(res_id:, **)
+          @api_node.update("v3/watchfolders/#{res_id}", value_create_modify(command: :watch_folder))
+          Result::Status.new("#{res_id} updated")
+        end
+
+        def handle_watch_folder_delete(res_id:, **)
+          @api_node.delete("v3/watchfolders/#{res_id}")
+          Result::Status.new("#{res_id} deleted")
         end
 
         # access_keys > CRUD
@@ -900,8 +901,7 @@ module Aspera
         end
 
         # async sub-commands: individual handlers
-        def handle_async_show
-          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+        def handle_async_show(async_id:, **)
           async_ids = @api_node.read('async/list')['sync_ids']
           if async_id.eql?(SpecialValues::ALL)
             resp = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
@@ -914,14 +914,12 @@ module Aspera
           Result::SingleObject.new(resp.first)
         end
 
-        def handle_async_delete
-          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+        def handle_async_delete(async_id:, **)
           async_ids = async_id.eql?(SpecialValues::ALL) ? @api_node.read('async/list')['sync_ids'] : [async_id]
           Result::SingleObject.new(@api_node.create('async/delete', {'syncs' => async_ids}))
         end
 
-        def handle_async_bandwidth
-          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+        def handle_async_bandwidth(async_id:, **)
           Integer(async_id)
           post_data = {'syncs' => [async_id], 'seconds' => 100}
           resp = @api_node.create('async/bandwidth', post_data)
@@ -930,8 +928,7 @@ module Aspera
           Result::ObjectList.new(data.first[async_id]['data'])
         end
 
-        def handle_async_files
-          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+        def handle_async_files(async_id:, **)
           Integer(async_id)
           post_data = {'syncs' => [async_id]}
           filter = options.get_option(:query)
@@ -955,8 +952,7 @@ module Aspera
           Result::ObjectList.new(data)
         end
 
-        def handle_async_counters
-          async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
+        def handle_async_counters(async_id:, **)
           Integer(async_id)
           resp = @api_node.create('async/counters', {'syncs' => [async_id]})['sync_counters'].first[async_id].last
           return Result::Empty.new if resp.nil?
@@ -972,19 +968,17 @@ module Aspera
 
         # ssync start/stop
         %i[start stop].each do |action|
-          define_method(:"handle_ssync_#{action}") do
-            asyncs_id = options.instance_identifier{ |f, v| ssync_lookup(f, v)}
-            @api_node.call(operation: 'POST', subpath: "asyncs/#{asyncs_id}/#{action}", content_type: Mime::TEXT, body: '', ret: :resp).body
+          define_method(:"handle_ssync_#{action}") do |ssync_id:, **|
+            @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/#{action}", content_type: Mime::TEXT, body: '', ret: :resp).body
             Result::Status.new('Done')
           end
         end
 
         # ssync info sub-commands
         %i[bandwidth counters files state summary].each do |action|
-          define_method(:"handle_ssync_#{action}") do
-            asyncs_id = options.instance_identifier{ |f, v| ssync_lookup(f, v)}
+          define_method(:"handle_ssync_#{action}") do |ssync_id:, **|
             parameters = SSYNC_WITH_PARAMS_ACTIONS.include?(action) ? (options.get_option(:query) || {}) : nil
-            Result::SingleObject.new(@api_node.read("asyncs/#{asyncs_id}/#{action}", parameters))
+            Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/#{action}", parameters))
           end
         end
 

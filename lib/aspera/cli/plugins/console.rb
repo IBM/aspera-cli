@@ -81,31 +81,26 @@ module Aspera
         end
 
         commands_under(%i[transfer current]) do
-          command :list
-          command(
-            :show, handler: lambda do |api_console:|
-              transfer_id = options.instance_identifier(description: 'transfer ID')
-              Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
-            end
-          )
-          command :files
-          command :start
-          command :pause
-          command :cancel
-          command :resume
-          command :rerun
-          command :change_rate
-          command :change_policy
-          command :move_forwards
-          command :move_back
+          command :list,          description: 'List current transfers'
+          command :show,          description: 'Show a transfer',          instance_arg: :transfer_id,
+            handler: ->(api_console:, transfer_id:, **){Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))}
+          command :files,         description: 'List files in a transfer', instance_arg: :transfer_id
+          command :start,         description: 'Start a transfer',         instance_arg: :transfer_id
+          command :pause,         description: 'Pause a transfer',         instance_arg: :transfer_id
+          command :cancel,        description: 'Cancel a transfer',        instance_arg: :transfer_id
+          command :resume,        description: 'Resume a transfer',        instance_arg: :transfer_id
+          command :rerun,         description: 'Rerun a transfer',         instance_arg: :transfer_id
+          command :change_rate,   description: 'Change transfer rate',     instance_arg: :transfer_id
+          command :change_policy, description: 'Change transfer policy',   instance_arg: :transfer_id
+          command :move_forwards, description: 'Move transfer forwards',   instance_arg: :transfer_id
+          command :move_back,     description: 'Move transfer backwards',  instance_arg: :transfer_id
         end
 
         # Generate one handler per transfer/current action.
         # Convention: handle_transfer_current_<verb>
         # All share the same REST pattern: PATCH transfers/<id>/<verb>.
         %i[start pause cancel resume rerun change_rate change_policy move_forwards move_back].each do |verb|
-          define_method(:"handle_transfer_current_#{verb}") do |api_console:|
-            transfer_id = options.instance_identifier(description: 'transfer ID')
+          define_method(:"handle_transfer_current_#{verb}") do |api_console:, transfer_id:, **|
             Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
           end
         end
@@ -152,8 +147,7 @@ module Aspera
           )
         end
 
-        def handle_transfer_current_files(api_console:)
-          transfer_id = options.instance_identifier(description: 'transfer ID')
+        def handle_transfer_current_files(api_console:, transfer_id:, **)
           query = query_read_delete(default: {})
           query['limit'] ||= 100
           Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))

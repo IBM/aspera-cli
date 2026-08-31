@@ -377,7 +377,11 @@ module Aspera
         # Keys mirror entity_execute kwargs; extra_commands lists additional leaf commands.
         # @return [Hash{Symbol => Hash}]
         RESOURCE_CONFIG = {
-          accounts:            {display_fields: ->{Formatter.all_but('user_profile_data_attributes')}, extra_commands: [:reset_password]},
+          accounts:            {
+            display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
+            extra_commands:        [:reset_password],
+            instance_arg_commands: {reset_password: {instance_arg: :contact_id, lookup: :lookup_accounts_id}}
+          },
           alternate_addresses: {entity: 'configuration/alternate_addresses'},
           distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids'},
           email_notifications: {id_as_arg: 'type'},
@@ -388,7 +392,10 @@ module Aspera
           },
           jobs:                {display_fields: %w[id job_name job_type status]},
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles'},
-          nodes:               {extra_commands: %i[browse]},
+          nodes:               {
+            extra_commands:        %i[browse],
+            instance_arg_commands: {browse: {instance_arg: :node_id, lookup: :lookup_node_id}}
+          },
           oauth_clients:       {
             display_fields: ->{Formatter.all_but('public_key')},
             api:            ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
@@ -419,6 +426,28 @@ module Aspera
             is_singleton:   resource_config_value(cfg, :is_singleton) || false,
             schema:         resource_config_value(cfg, :schema)
           }.compact
+        end
+
+        # Lookup methods for instance_arg: + lookup: on specific nodes
+
+        # admin > nodes — lookup node id by field/value
+        def lookup_node_id(field, value)
+          @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
+        end
+
+        # admin > shared_inboxes — lookup id by field/value
+        def lookup_shared_inboxes_id(field, value)
+          @api_v5.lookup_entity_by_field(entity: 'shared_inboxes', field: field, value: value, query: {'all': true})['id']
+        end
+
+        # admin > workgroups — lookup id by field/value
+        def lookup_workgroups_id(field, value)
+          @api_v5.lookup_entity_by_field(entity: 'workgroups', field: field, value: value, query: {'all': true})['id']
+        end
+
+        # admin > accounts — lookup id by field/value (used for reset_password instance_arg:)
+        def lookup_accounts_id(field, value)
+          res_lookup_id(:accounts, field, value)
         end
 
         # Lookup id for a RESOURCE_CONFIG resource by field/value.
@@ -468,10 +497,7 @@ module Aspera
 
         commands_under(:invitations) do
           command :create, description: 'Create an invitation'
-          command(:resend, description: 'Resend an invitation', handler: lambda do
-            @api_v5.create("invitations/#{options.instance_identifier}/resend", nil)
-            Result::Status.new('Invitation resent')
-          end)
+          command :resend, description: 'Resend an invitation', instance_arg: :invitation_id
           Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
           end
@@ -502,26 +528,32 @@ module Aspera
           command :events,        description: 'List events'
           command :clean_deleted, description: 'Clean deleted packages'
           Api::Faspex::ADMIN_RESOURCES.each do |res|
-            cfg           = RESOURCE_CONFIG.fetch(res, {})
-            extra         = cfg[:extra_commands] || []
-            cmds          = cfg[:commands] || (Operations::ALL + extra)
+            cfg          = RESOURCE_CONFIG.fetch(res, {})
+            extra        = cfg[:extra_commands] || []
+            cmds         = cfg[:commands] || (Operations::ALL + extra)
+            ia_cmds      = cfg[:instance_arg_commands] || {}
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
             commands_under([:admin, res]) do
-              cmds.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+              cmds.each do |c|
+                ia = ia_cmds[c] || {}
+                command(c, description: c.to_s.tr('_', ' ').capitalize, **ia)
+              end
             end
           end
         end
 
-        # admin > nodes > shared_folders: setup consumes node_id before sub-command routing
+        # admin > nodes > shared_folders: instance_arg: :node_id consumed before sub-command routing
         commands_under(%i[admin nodes]) do
-          command :shared_folders, description: 'Manage shared folders', setup: :setup_admin_nodes_shared_folders
+          command :shared_folders, description: 'Manage shared folders',
+            instance_arg: :node_id, lookup: :lookup_node_id, setup: :setup_admin_nodes_shared_folders
         end
 
         # admin > nodes > shared_folders sub-tree
         commands_under(%i[admin nodes shared_folders]) do
           Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
-          # user: setup consumes shared_folder id before sub-command routing
-          command :user, description: 'Custom access users', setup: :setup_admin_nodes_shared_folders_user
+          # user: instance_arg: :sf_id consumed before sub-command routing
+          command :user, description: 'Custom access users',
+            instance_arg: :sf_id, setup: :setup_admin_nodes_shared_folders_user
         end
 
         # admin > nodes > shared_folders > user sub-tree (custom access users)
@@ -530,19 +562,21 @@ module Aspera
         end
 
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
-        # setup consumes res_id before sub-command routing
+        # instance_arg: :res_id consumed before sub-command routing
         %i[shared_inboxes workgroups].each do |res|
-          setup_method = :"setup_admin_#{res}_instance"
+          lookup_method = :"lookup_#{res}_id"
           %i[members saml_groups].each do |sub|
             commands_under([:admin, res]) do
-              command sub, description: sub.to_s.tr('_', ' ').capitalize, setup: setup_method
+              command sub, description: sub.to_s.tr('_', ' ').capitalize,
+                instance_arg: :res_id, lookup: lookup_method, setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
               %i[create list modify delete].each{ |c| command(c, description: c.to_s.capitalize)}
             end
           end
           commands_under([:admin, res]) do
-            command :invite_external_collaborator, description: 'Invite external collaborator', setup: setup_method
+            command :invite_external_collaborator, description: 'Invite external collaborator',
+              instance_arg: :res_id, lookup: lookup_method, setup: :"setup_admin_#{res}_instance"
           end
         end
 
@@ -621,8 +655,7 @@ module Aspera
         end
 
         # admin > accounts > reset_password
-        def handle_admin_accounts_reset_password
-          contact_id = options.instance_identifier{ |f, v| res_lookup_id(:accounts, f, v)}
+        def handle_admin_accounts_reset_password(contact_id:, **)
           @api_v5.create("accounts/#{contact_id}/reset_password", {})
           Result::Status.new('password reset, user shall check email')
         end
@@ -635,14 +668,12 @@ module Aspera
         end
 
         # admin > nodes > browse
-        def handle_admin_nodes_browse
-          node_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: 'nodes', field: f, value: v)['id']}
+        def handle_admin_nodes_browse(node_id:, **)
           browse_folder("nodes/#{node_id}/browse")
         end
 
-        # admin > nodes > shared_folders — setup: consume node_id and pass sf_entity in ctx
-        def setup_admin_nodes_shared_folders(**)
-          node_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: 'nodes', field: f, value: v)['id']}
+        # admin > nodes > shared_folders — node_id: already in ctx via instance_arg:
+        def setup_admin_nodes_shared_folders(node_id:, **)
           {sf_entity: "nodes/#{node_id}/shared_folders"}
         end
 
@@ -653,10 +684,9 @@ module Aspera
           end
         end
 
-        # admin > nodes > shared_folders > user — setup: consume shared_folder id and pass user_path in ctx
-        def setup_admin_nodes_shared_folders_user(sf_entity:, **)
-          sh_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
-          {user_path: "#{sf_entity}/#{sh_id}/custom_access_users"}
+        # admin > nodes > shared_folders > user — sf_id: already in ctx via instance_arg:
+        def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
+          {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
         end
 
         # admin > nodes > shared_folders > user > create/modify/delete/show/list (custom access users)
@@ -666,10 +696,9 @@ module Aspera
           end
         end
 
-        # admin > shared_inboxes|workgroups — setup: consume res_id before sub-command routing
+        # admin > shared_inboxes|workgroups — res_id: already in ctx via instance_arg:
         %i[shared_inboxes workgroups].each do |res|
-          define_method(:"setup_admin_#{res}_instance") do |**|
-            res_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: res.to_s, field: f, value: v, query: {'all': true})['id']}
+          define_method(:"setup_admin_#{res}_instance") do |res_id:, **|
             {res_instance_path: "#{res}/#{res_id}"}
           end
         end
@@ -784,6 +813,11 @@ module Aspera
         end
 
         # invitations sub-handlers
+
+        def handle_invitations_resend(invitation_id:, **)
+          @api_v5.create("invitations/#{invitation_id}/resend", nil)
+          Result::Status.new('Invitation resent')
+        end
 
         def handle_invitations_create
           do_bulk_operation(command: :create, descr: 'data') do |params|
