@@ -51,10 +51,6 @@ module Aspera
         SESSION_TIME_FIELDS = %i[start end].freeze
         private_constant :SESSION_TIME_FIELDS
 
-        # ssync sub-commands that accept query parameters
-        SSYNC_WITH_PARAMS_ACTIONS = %i[bandwidth counters files].freeze
-        private_constant :SSYNC_WITH_PARAMS_ACTIONS
-
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze
@@ -407,15 +403,23 @@ module Aspera
         # ssync (/asyncs)
         command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under(:ssync) do
-          command :start,     description: 'Start a sync',         instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :stop,      description: 'Stop a sync',          instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :bandwidth, description: 'Show sync bandwidth',  instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :counters,  description: 'Show sync counters',   instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :files,     description: 'List sync files',      instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :state,     description: 'Show sync state',      instance_arg: :ssync_id, lookup: :ssync_lookup
-          command :summary,   description: 'Show sync summary',    instance_arg: :ssync_id, lookup: :ssync_lookup
-          Operations::GLOBAL.each{ |op| command(op, description: "#{op.capitalize} ssync")}
-          Operations::INSTANCE.reject{ |op| op == :modify}.each{ |op| command(op, description: "#{op.capitalize} ssync", instance_arg: :ssync_id, lookup: :ssync_lookup)}
+          command :create,    description: 'Create ssync',         action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :create, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
+          command :list,      description: 'List ssync',           action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :list,   items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
+          command :show,      description: 'Show ssync',           instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}"))}
+          command :delete,    description: 'Delete ssync',         instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_delete
+          command :start,     description: 'Start a sync',         instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_start
+          command :stop,      description: 'Stop a sync',          instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_stop
+          command :bandwidth, description: 'Show sync bandwidth',   instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {}))}
+          command :counters,  description: 'Show sync counters',    instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {}))}
+          command :files,     description: 'List sync files',       instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {}))}
+          command :state,     description: 'Show sync state',       instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state"))}
+          command :summary,   description: 'Show sync summary',     instance_arg: :ssync_id, lookup: :ssync_lookup,
+            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/summary"))}
         end
         # stream
         command :stream, description: 'Manage stream operations'
@@ -960,27 +964,21 @@ module Aspera
           Result::SingleObject.new(resp)
         end
 
-        # ssync CRUD
-        Operations::ALL.reject{ |op| op == :modify}.each do |op|
-          define_action_method([:ssync, op]) do
-            entity_execute(api: @api_node, entity: :asyncs, command: op, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}
+        def action_ssync_delete(ssync_id:, **)
+          do_bulk_operation(command: :delete, values: ssync_id) do |one_id|
+            @api_node.delete("asyncs/#{one_id}", query_read_delete)
+            {'id' => one_id}
           end
         end
 
-        # ssync start/stop
-        %i[start stop].each do |action|
-          define_action_method([:ssync, action]) do |ssync_id:, **|
-            @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/#{action}", content_type: Mime::TEXT, body: '', ret: :resp).body
-            Result::Status.new('Done')
-          end
+        def action_ssync_start(ssync_id:, **)
+          @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/start", content_type: Mime::TEXT, body: '', ret: :resp).body
+          Result::Status.new('Done')
         end
 
-        # ssync info sub-commands
-        %i[bandwidth counters files state summary].each do |action|
-          define_action_method([:ssync, action]) do |ssync_id:, **|
-            parameters = SSYNC_WITH_PARAMS_ACTIONS.include?(action) ? (options.get_option(:query) || {}) : nil
-            Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/#{action}", parameters))
-          end
+        def action_ssync_stop(ssync_id:, **)
+          @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/stop", content_type: Mime::TEXT, body: '', ret: :resp).body
+          Result::Status.new('Done')
         end
 
         # transfer sub-commands
