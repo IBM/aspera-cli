@@ -540,17 +540,18 @@ module Aspera
         end
 
         # admin > nodes > shared_folders: instance_arg: :node_id consumed before sub-command routing
+        # admin > nodes > shared_folders: setup consumes node_id positionally, builds sf_entity for all children
         commands_under(%i[admin nodes]) do
           command :shared_folders, description: 'Manage shared folders',
-            instance_arg: :node_id, lookup: :lookup_node_id, setup: :setup_admin_nodes_shared_folders
+            setup: :setup_admin_nodes_shared_folders
         end
 
         # admin > nodes > shared_folders sub-tree
         commands_under(%i[admin nodes shared_folders]) do
           Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
-          # user: instance_arg: :sf_id consumed before sub-command routing
+          # setup consumes sf_id positionally, builds user_path for all children
           command :user, description: 'Custom access users',
-            instance_arg: :sf_id, setup: :setup_admin_nodes_shared_folders_user
+            setup: :setup_admin_nodes_shared_folders_user
         end
 
         # admin > nodes > shared_folders > user sub-tree (custom access users)
@@ -563,13 +564,12 @@ module Aspera
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
-        # instance_arg: :res_id consumed before sub-command routing
+        # setup consumes res_id positionally, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          lookup_method = :"lookup_#{res}_id"
           MEMBER_SUBS.each do |sub|
             commands_under([:admin, res]) do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
-                instance_arg: :res_id, lookup: lookup_method, setup: :"setup_admin_#{res}_instance"
+                setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
               CRUD_NO_SHOW.each{ |c| command(c, description: c.to_s.capitalize)}
@@ -577,7 +577,7 @@ module Aspera
           end
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
-              instance_arg: :res_id, lookup: lookup_method, setup: :"setup_admin_#{res}_instance"
+              setup: :"setup_admin_#{res}_instance"
           end
         end
 
@@ -675,8 +675,9 @@ module Aspera
           browse_folder("nodes/#{node_id}/browse")
         end
 
-        # admin > nodes > shared_folders — node_id: already in ctx via instance_arg:
-        def setup_admin_nodes_shared_folders(node_id:, **)
+        # admin > nodes > shared_folders — consumes node_id positionally, builds sf_entity for all children
+        def setup_admin_nodes_shared_folders(**)
+          node_id = options.instance_identifier(description: 'node_id'){ |f, v| lookup_node_id(f, v)}
           {sf_entity: "nodes/#{node_id}/shared_folders"}
         end
 
@@ -687,8 +688,9 @@ module Aspera
           end
         end
 
-        # admin > nodes > shared_folders > user — sf_id: already in ctx via instance_arg:
-        def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
+        # admin > nodes > shared_folders > user — consumes sf_id positionally, builds user_path for all children
+        def setup_admin_nodes_shared_folders_user(sf_entity:, **)
+          sf_id = options.instance_identifier(description: 'sf_id')
           {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
         end
 
@@ -699,9 +701,11 @@ module Aspera
           end
         end
 
-        # admin > shared_inboxes|workgroups — res_id: already in ctx via instance_arg:
+        # admin > shared_inboxes|workgroups — consumes res_id positionally, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          define_method(:"setup_admin_#{res}_instance") do |res_id:, **|
+          lookup_method = :"lookup_#{res}_id"
+          define_method(:"setup_admin_#{res}_instance") do |**|
+            res_id = options.instance_identifier(description: 'res_id'){ |f, v| send(lookup_method, f, v)}
             {res_instance_path: "#{res}/#{res_id}"}
           end
         end

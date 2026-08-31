@@ -234,17 +234,7 @@ module Aspera
           spec     = registry[current_path]
 
           unless options.help_requested || skip_setup
-            # Phase A.1 - consume instance identifier declared on this node
-            if spec&.instance_arg
-              lookup_method = spec.lookup
-              res_id = if lookup_method
-                options.instance_identifier(description: spec.instance_arg.to_s){ |f, v| send(lookup_method, f, v)}
-              else
-                options.instance_identifier(description: spec.instance_arg.to_s)
-              end
-              ctx = ctx.merge(spec.instance_arg => res_id)
-            end
-            # Phase A.2 - run setup method on current node
+            # Phase A - run setup method on current node
             ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
           end
 
@@ -306,7 +296,8 @@ module Aspera
             # Intermediate node: recurse (child setup runs at the top of the next call)
             dispatch_from_registry(current_path + [command], ctx)
           else
-            # Leaf: consume instance identifier (if any), run child setup (if any), then execute action
+            # Leaf: consume instance identifier declared directly on the leaf (if any),
+            # run child setup (if any), then execute action
             if child.instance_arg && !options.help_requested
               lookup_method = child.lookup
               res_id = if lookup_method

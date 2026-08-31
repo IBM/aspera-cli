@@ -395,26 +395,27 @@ module Aspera
           command :delete, description: 'Delete permission(s)'
         end
         # async (legacy /async)
-        command :async, description: 'Manage async operations (legacy /async)', instance_arg: :async_id, lookup: :async_lookup
+        command :async, description: 'Manage async operations (legacy /async)'
         commands_under(:async) do
           command :list,      description: 'List async sync IDs', action: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
-          command :show,      description: 'Show async summary'
-          command :delete,    description: 'Delete async'
-          command :bandwidth, description: 'Show async bandwidth'
-          command :files,     description: 'List async files'
-          command :counters,  description: 'Show async counters'
+          command :show,      description: 'Show async summary',   instance_arg: :async_id, lookup: :async_lookup
+          command :delete,    description: 'Delete async',         instance_arg: :async_id, lookup: :async_lookup
+          command :bandwidth, description: 'Show async bandwidth', instance_arg: :async_id, lookup: :async_lookup
+          command :files,     description: 'List async files',     instance_arg: :async_id, lookup: :async_lookup
+          command :counters,  description: 'Show async counters',  instance_arg: :async_id, lookup: :async_lookup
         end
         # ssync (/asyncs)
-        command :ssync, description: 'Manage sync operations (/asyncs)', instance_arg: :ssync_id, lookup: :ssync_lookup
+        command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under(:ssync) do
-          command :start,     description: 'Start a sync'
-          command :stop,      description: 'Stop a sync'
-          command :bandwidth, description: 'Show sync bandwidth'
-          command :counters,  description: 'Show sync counters'
-          command :files,     description: 'List sync files'
-          command :state,     description: 'Show sync state'
-          command :summary,   description: 'Show sync summary'
-          Operations::ALL.reject{ |op| op == :modify}.each{ |op| command(op, description: "#{op.capitalize} ssync")}
+          command :start,     description: 'Start a sync',         instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :stop,      description: 'Stop a sync',          instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :bandwidth, description: 'Show sync bandwidth',  instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :counters,  description: 'Show sync counters',   instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :files,     description: 'List sync files',      instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :state,     description: 'Show sync state',      instance_arg: :ssync_id, lookup: :ssync_lookup
+          command :summary,   description: 'Show sync summary',    instance_arg: :ssync_id, lookup: :ssync_lookup
+          Operations::GLOBAL.each{ |op| command(op, description: "#{op.capitalize} ssync")}
+          Operations::INSTANCE.reject{ |op| op == :modify}.each{ |op| command(op, description: "#{op.capitalize} ssync", instance_arg: :ssync_id, lookup: :ssync_lookup)}
         end
         # stream
         command :stream, description: 'Manage stream operations'

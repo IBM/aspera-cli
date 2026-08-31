@@ -72,9 +72,9 @@ module Aspera
     # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
-    # @!attribute instance_arg     [Symbol, nil]                 When set, consume one instance identifier from the CLI before dispatching to
-    #                                                            children (or executing the leaf) and inject it into ctx under this key.
-    #                                                            Replaces the boilerplate setup_<foo>_instance pattern.
+    # @!attribute instance_arg     [Symbol, nil]                 When set, consume one instance identifier from the CLI before executing
+    #                                                            this command and inject it into ctx under this key.
+    #                                                            Declared on leaf commands (or on commands that are both leaf and intermediate).
     # @!attribute lookup           [Symbol, nil]                 Instance method name used as the %selector resolution block for instance_arg.
     #                                                            The method must accept (field, value) and return the resolved identifier.
     #                                                            Ignored when instance_arg: is nil.
