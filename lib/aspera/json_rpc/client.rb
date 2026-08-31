@@ -16,7 +16,7 @@ module Aspera
     # Example:
     #   client = JsonRpc::Client.new(Rest.new(base_url: 'http://127.0.0.1:33024'))
     #   client.get_info
-    #   client.start_transfer(app_id: '…', transfer_spec: {…})
+    #   client.start_transfer(app_id: '...', transfer_spec: {...})
     class Client < BlankSlate
       reveal :instance_variable_get
       reveal :inspect

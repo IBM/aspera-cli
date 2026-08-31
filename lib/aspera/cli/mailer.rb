@@ -8,7 +8,7 @@ require 'erb'
 module Aspera
   module Cli
     # Email service injected into Context as :mailer so that any component
-    # (TransferAgent, plugins, …) can send emails via SMTP and ERB templates.
+    # (TransferAgent, plugins, ...) can send emails via SMTP and ERB templates.
     # Provides :smtp, :notify_to, :notify_template options via the Options manager.
     class Mailer
       SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze

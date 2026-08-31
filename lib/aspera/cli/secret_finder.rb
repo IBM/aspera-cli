@@ -6,7 +6,7 @@ module Aspera
   module Cli
     # Resolves the secret (password) for a given URL + username pair.
     # Injected into Context as :secret_finder so that any component
-    # (plugins, Api::AoC, …) can look up secrets without going through Plugins::Config.
+    # (plugins, Api::AoC, ...) can look up secrets without going through Plugins::Config.
     class SecretFinder
       # Special value for the :secret option that triggers a preset lookup
       PRESET_MAGIC = 'PRESET'

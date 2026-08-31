@@ -658,7 +658,7 @@ module Aspera
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
         end
 
-        # admin > <resource> handlers — one per ADMIN_RESOURCES entry, each calls dispatch_resource
+        # admin > <resource> handlers - one per ADMIN_RESOURCES entry, each calls dispatch_resource
         Api::Faspex::ADMIN_RESOURCES.each do |res|
           define_method(:"handle_admin_#{res}") do
             dispatch_resource(res)

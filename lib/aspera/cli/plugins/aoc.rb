@@ -1223,7 +1223,7 @@ module Aspera
           end
         end
 
-        # admin — setup: change API scope to admin once
+        # admin - setup: change API scope to admin once
         def setup_admin_scope
           change_api_scope(Api::AoC::Scope::ADMIN)
           {}
@@ -1351,7 +1351,7 @@ module Aspera
           Result::ObjectList.new(events)
         end
 
-        # admin > <ADMIN_OBJECT> — one handler per object, each calls execute_resource_action
+        # admin > <ADMIN_OBJECT> - one handler per object, each calls execute_resource_action
         ADMIN_OBJECTS.each do |res|
           define_method(:"handle_admin_#{res}") do
             execute_resource_action(res)

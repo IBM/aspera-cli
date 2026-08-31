@@ -45,7 +45,7 @@ module Aspera
           return error_statuses.first
         end
 
-        # Declare all transfer CLI options (metadata only — no handler binding yet).
+        # Declare all transfer CLI options (metadata only - no handler binding yet).
         # @param options [Aspera::Cli::Options]
         def declare_options(options)
           options.declare(:ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC)
@@ -95,8 +95,8 @@ module Aspera
       attr_accessor :user_transfer_spec, :transfer_options
 
       # Composite option handler for :transfer
-      # String value  -> shorthand for agent type, stored as {'agent' => value}
-      # Hash value    -> merged into @transfer_options (may include 'agent' key)
+      # String value: shorthand for agent type, stored as {'agent' => value}
+      # Hash value:   merged into @transfer_options (may include 'agent' key)
       def option_transfer(_option_sym, operation, value = nil)
         Aspera.assert_values(operation, %i[set get])
         case operation

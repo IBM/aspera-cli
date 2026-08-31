@@ -63,8 +63,8 @@ module Aspera
     # Constants to be used as parameter `allowed:` for `OptionValue`.
     # Public API: TYPES_STRING_ARRAY, TYPES_SYMBOL_ARRAY, TYPES_INTEGER, TYPES_BOOLEAN, TYPES_NONE.
     # Internal (do not pass as `allowed:`):
-    #   TYPES_ENUM   — derived internally when `allowed:` is an Array<Symbol> (enum list)
-    #   TYPES_STRING — the implicit default; equivalent to omitting `allowed:` entirely
+    #   TYPES_ENUM   - derived internally when `allowed:` is an Array<Symbol> (enum list)
+    #   TYPES_STRING - the implicit default; equivalent to omitting `allowed:` entirely
     module Allowed
       # This option can be set to a single string or array, multiple times, and gives Array of String
       TYPES_STRING_ARRAY = [Array, String].freeze
@@ -160,7 +160,7 @@ module Aspera
       end
 
       # Wire (or re-wire) the getter/setter delegation for this option.
-      # Safe to call after construction — used by Options#set_handler to bind a composed
+      # Safe to call after construction - used by Options#set_handler to bind a composed
       # instance variable that did not exist at class-load time (Category C handlers).
       # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
       # @return [void]
@@ -366,7 +366,7 @@ module Aspera
             arg_count += 1
           end
         end
-        # Total positional args at parse time — used in args_as_extended to compute how many to skip.
+        # Total positional args at parse time - used in args_as_extended to compute how many to skip.
         @arg_total_count = @unprocessed_cmd_line_arguments.length
         # Number of original positional args before the option currently being parsed (nil = positional context).
         @current_option_args_offset = nil
@@ -674,7 +674,7 @@ module Aspera
         until @unprocessed_cmd_line_options.empty?
           opt = @unprocessed_cmd_line_options.shift
           # Expose args_before for this option so `args_as_extended` can skip args preceding it.
-          # Peek (first) without consuming — consumed only if this option is processed (not deferred).
+          # Peek (first) without consuming - consumed only if this option is processed (not deferred).
           @current_option_args_offset = @args_before_option[opt]&.first
           if opt.start_with?(OPTION_PREFIX)
             # Long option: --name or --name=value
@@ -820,7 +820,7 @@ module Aspera
       # ======================================================
       private
 
-      # AsciiBorder with all visible characters removed — used by help_text
+      # AsciiBorder with all visible characters removed - used by help_text
       HELP_BORDER = Terminal::Table::AsciiBorder.new.tap do |b|
         b.top = false
         b.bottom = false

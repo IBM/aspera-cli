@@ -69,7 +69,7 @@ module Aspera
       end
 
       # Execute the command and return the raw `Result` object.
-      # Pure computation: no display, no Process.exit — raises on any error.
+      # Pure computation: no display, no Process.exit - raises on any error.
       # @return [Result, nil] the result of the command, or nil if nothing to execute
       def run_with_result
         init_agents_and_options
@@ -231,8 +231,8 @@ module Aspera
 
       # Build the usage/help text.
       #
-      # - No plugin  → global options + list of top-level plugins
-      # - With plugin → global options + plugin options + subcommands at the path
+      # - No plugin:   global options + list of top-level plugins
+      # - With plugin: global options + plugin options + subcommands at the path
       #                 that was reached before --help was encountered
       #
       # @param plugin [Plugins::Base, nil] plugin instance (carries the current dispatch path)

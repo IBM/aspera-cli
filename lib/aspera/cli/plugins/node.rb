@@ -117,7 +117,7 @@ module Aspera
           end
         end
 
-        # DSL option declarations — at class level, picked up by Base#initialize via ancestor chain.
+        # DSL option declarations - at class level, picked up by Base#initialize via ancestor chain.
         # Also exposed via Node.declare_options for non-Node plugins (Ats, Cos, Aoc).
         option :validator,        description: 'Identifier of validator (optional for central)'
         option :asperabrowserurl, description: 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
@@ -784,7 +784,7 @@ module Aspera
           end
         end
 
-        # access_keys > do — setup: resolve access key and root file id
+        # access_keys > do - setup: resolve access key and root file id
         # @return [Hash] context hash containing :do_root_file_id
         def setup_access_key_do
           access_key_id = options.get_next_argument('access key id')
@@ -802,13 +802,13 @@ module Aspera
           {do_root_file_id: @do_root_file_id}
         end
 
-        # access_keys > do > permission — setup: resolve apifid from next arg
+        # access_keys > do > permission - setup: resolve apifid from next arg
         # @return [Hash] context hash containing :apifid
         def setup_access_key_do_permission
           {apifid: apifid_from_next_arg(@do_root_file_id)}
         end
 
-        # access_keys > do > <gen4_cmd> — one handler per COMMANDS_GEN4 (except :permission which is intermediate)
+        # access_keys > do > <gen4_cmd> - one handler per COMMANDS_GEN4 (except :permission which is intermediate)
         COMMANDS_GEN4.reject{ |cmd| cmd.eql?(:permission)}.each do |cmd|
           define_method(:"handle_access_keys_do_#{cmd}") do |do_root_file_id:|
             execute_command_gen4(cmd, do_root_file_id)

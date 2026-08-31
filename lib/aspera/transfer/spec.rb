@@ -52,7 +52,7 @@ module Aspera
         end
 
         # Parse a human-readable rate string (as accepted by ascp -l) into an integer kbps value.
-        # Accepted: plain integer (kbps), or integer + suffix k/K (kbps), m/M (×1000 kbps), g/G (×1000000 kbps).
+        # Accepted: plain integer (kbps), or integer + suffix k/K (kbps), m/M (x1000 kbps), g/G (x1000000 kbps).
         # @param value [String] e.g. "100m", "500000", "1g"
         # @return [Integer] value in kbps
         def rate_string_to_kbps(value)

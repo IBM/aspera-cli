@@ -77,7 +77,7 @@ module Aspera
       # context.progress_bar are populated and all global singletons are configured.
       #
       # @param gem_plugins_folder [String]  folder of built-in plugins (from Plugins::Config)
-      # @param vault_value_cb     [Proc]    block(name) → secret value (from VaultManager)
+      # @param vault_value_cb     [Proc]    block(name): secret value (from VaultManager)
       def run(gem_plugins_folder:, vault_value_cb:)
         setup_main_folder
         setup_persistency_and_plugin_folders(gem_plugins_folder)
@@ -93,7 +93,7 @@ module Aspera
 
       private
 
-      # Declare + parse :home option → context.main_folder
+      # Declare + parse :home option: sets context.main_folder
       def setup_main_folder
         @context.options.declare(
           :home, description: 'Home folder for tool',
@@ -111,7 +111,7 @@ module Aspera
         Plugins::Factory.instance.add_lookup_folder(File.join(@context.main_folder, ASPERA_PLUGINS_FOLDERNAME))
       end
 
-      # Declare + parse :config_file option → context.presets + context.http_config
+      # Declare + parse :config_file option: sets context.presets + context.http_config
       def setup_config_file
         @context.options.declare(
           :config_file, description: 'Path to YAML file with preset configuration',
@@ -141,14 +141,14 @@ module Aspera
         end
       end
 
-      # Declare + parse :progress_bar → context.progress_bar
+      # Declare + parse :progress_bar: sets context.progress_bar
       def setup_progress_bar
         @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
         @context.options.parse_options!
         @context.progress_bar = TransferProgress.new if @context.options.get_option(:progress_bar)
       end
 
-      # Declare + parse :fpac / :proxy_credentials → sets up PAC executor
+      # Declare + parse :fpac / :proxy_credentials: sets up PAC executor
       def setup_pac_executor
         @context.options.declare(:fpac, description: 'Proxy auto configuration script')
         @context.options.declare(:proxy_credentials, description: 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])

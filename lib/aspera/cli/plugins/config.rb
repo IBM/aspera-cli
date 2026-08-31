@@ -97,7 +97,7 @@ module Aspera
           @vault_instance = nil
           @sdk_default_location = false
           @option_cache_tokens = true
-          # :no_default uses a &block callback — must stay imperative
+          # :no_default uses a &block callback - must stay imperative
           options.declare(:no_default, description: 'Do not load default configuration for plugin', allowed: Allowed::TYPES_NONE, short: 'N'){presets.use_plugin_defaults = false}
           # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
@@ -109,7 +109,7 @@ module Aspera
           options.parse_options!
         end
 
-        # DSL command declarations — replaces ACTIONS + execute_action
+        # DSL command declarations - replaces ACTIONS + execute_action
         # :preset is an opaque handler: execute_preset handles all sub-dispatch internally
         command :preset, description: 'Manage presets of options', handler: ->{execute_preset}
         command(
@@ -282,7 +282,7 @@ module Aspera
           end
         end
 
-        # DSL handlers — one method per leaf command
+        # DSL handlers - one method per leaf command
 
         def handle_documentation(section = nil)
           section = "##{section}" unless section.nil?

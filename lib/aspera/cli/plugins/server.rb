@@ -188,7 +188,7 @@ module Aspera
           command :transfer, description: 'Check FASP transfer health'
         end
 
-        # AsCmd operations (available only when SSH/local — not WSS)
+        # AsCmd operations (available only when SSH/local - not WSS)
         command :ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse]
         command :rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete]
         command :mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename]
@@ -199,7 +199,7 @@ module Aspera
         command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?
         command :info,   description: 'Show server system information',   condition: :ascmd_available?
 
-        # Generate ascmd handlers — convention: handle_<op>
+        # Generate ascmd handlers - convention: handle_<op>
         %i[rm mv cp mkdir].each do |op|
           define_method(:"handle_#{op}") do
             execute_ascmd(op){Result::Success.new}

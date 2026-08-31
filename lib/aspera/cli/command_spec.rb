@@ -40,9 +40,9 @@ module Aspera
     # @!attribute default     [Object, nil]          Default value
     # @!attribute short       [String, nil]          Single-character short form (e.g. 'x')
     # @!attribute handler     [Symbol, Hash, nil]
-    #   - Symbol  → resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
-    #   - Hash    → {o: <object>, m: <method>} used as-is (Category A: singletons / class constants)
-    #   - nil     → option stores its value locally (no delegation)
+    #   - Symbol: resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+    #   - Hash:   {o: <object>, m: <method>} used as-is (Category A: singletons / class constants)
+    #   - nil:    option stores its value locally (no delegation)
     # @!attribute deprecation [String, nil]          Forwarded to options.declare as deprecation:
     # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
     OptionSpec = Struct.new(

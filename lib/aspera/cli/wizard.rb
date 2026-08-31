@@ -13,7 +13,7 @@ module Aspera
       private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
 
       class << self
-        # Declare all wizard CLI options (metadata only — no handler binding yet).
+        # Declare all wizard CLI options (metadata only - no handler binding yet).
         # @param options [Aspera::Cli::Options]
         def declare_options(options)
           options.declare(:override,  description: 'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)

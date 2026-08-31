@@ -55,7 +55,7 @@ module Aspera
           {node_plugin: Node.new(context: context, api: api_node)}
         end
 
-        # One handler per COMMANDS_COS command — delegates to the Node plugin's dispatch_v3_command.
+        # One handler per COMMANDS_COS command - delegates to the Node plugin's dispatch_v3_command.
         Node::COMMANDS_COS.each do |cmd|
           define_method(:"handle_node_#{cmd}") do |node_plugin:|
             node_plugin.dispatch_v3_command(cmd)

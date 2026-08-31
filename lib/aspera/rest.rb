@@ -323,7 +323,7 @@ module Aspera
     # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
     # @param save_to_file [String, nil] File path to save response body
     # @param exception    [Boolean] Whether to raise an exception on HTTP error
-    # @param ret          [Symbol] One of :data, :resp, :both — controls return value
+    # @param ret          [Symbol] One of :data, :resp, :both - controls return value
     # @return [Array(Hash, Net::HTTPResponse)] When `ret` is :both
     # @return [Net::HTTPResponse] When `ret` is :resp
     # @return [Hash] When `ret` is :data
@@ -454,7 +454,7 @@ module Aspera
           end
         end
         Log.log.debug{"result: code=#{result_http.code} mime=#{result_mime}"}
-        # sometimes there is a UTF8 char (e.g. © )
+        # sometimes there is a UTF8 char (e.g. (c) )
         # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}

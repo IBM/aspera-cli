@@ -110,7 +110,7 @@ module Aspera
       end
 
       class << self
-        # Declare all formatter CLI options (metadata only — no handler binding yet).
+        # Declare all formatter CLI options (metadata only - no handler binding yet).
         # @param options [Aspera::Cli::Options]
         # @return [void]
         def declare_options(options)

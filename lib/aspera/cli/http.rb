@@ -37,7 +37,7 @@ module Aspera
       attr_reader   :ignore_cert_host_port, :http_options
 
       class << self
-        # Declare all HTTP/S CLI options (metadata only — no handler binding yet).
+        # Declare all HTTP/S CLI options (metadata only - no handler binding yet).
         # Called once from Config#initialize before this instance is available as a target.
         # Handlers are bound in a second pass via bind_options once the instance exists.
         # @param options [Aspera::Cli::Options] CLI options manager to declare options into

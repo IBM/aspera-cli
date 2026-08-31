@@ -48,7 +48,7 @@ module Aspera
 
         attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite
 
-        # DSL option declarations (Pattern 1 and Pattern 2 — handler: Symbol resolved to self)
+        # DSL option declarations (Pattern 1 and Pattern 2 - handler: Symbol resolved to self)
         option :skip_format,        description: 'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
         # TODO: use the same option as in `node` plugin
         option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
@@ -61,7 +61,7 @@ module Aspera
         option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
         option :root_url,           description: "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
-        # Generator-specific options (Category C — bound to @gen_options via set_handler in initialize)
+        # Generator-specific options (Category C - bound to @gen_options via set_handler in initialize)
         Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
           values = if opt.key?(:values)
             opt[:values]

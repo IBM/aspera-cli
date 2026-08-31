@@ -72,13 +72,13 @@ module Aspera
           when Hash
             add_elements(path, current)
           when Array
-            # Array has no nested structures -> list of Strings
+            # Array has no nested structures: list of Strings
             if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
               to_insert = current.map(&:to_s)
-            # Array of Hashes with only 'name' keys -> list of Strings
+            # Array of Hashes with only 'name' keys: list of Strings
             elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
               to_insert = current.map{ |i| i['name']}
-            # Array of Hashes with only 'name' and 'value' keys -> Hash of key/values
+            # Array of Hashes with only 'name' and 'value' keys: Hash of key/values
             elsif current.all?{ |i| i.is_a?(Hash) && i.key?('name') && i.key?('value') && i.length <= 3}
               # if there is an extra key, other than 'name' and 'value', insert that key as is
               add_elements(path, current.flat_map{ |h| h.except('name', 'value').to_a})

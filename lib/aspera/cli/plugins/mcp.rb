@@ -16,20 +16,20 @@ module Aspera
       #
       # Supported keys in the options Hash:
       #   transport:              "stdio" (default) or "http"
-      #   max_items:              Integer — max items in text content of list results (default 100)
+      #   max_items:              Integer - max items in text content of list results (default 100)
       #   # stdio transport:
-      #   max_line_bytes:         Integer — max JSON frame size (default 4 MiB)
+      #   max_line_bytes:         Integer - max JSON frame size (default 4 MiB)
       #   # http transport:
-      #   port:                   Integer — TCP port (default 3000)
-      #   bind:                   String  — bind address (default "127.0.0.1")
-      #   stateless:              Boolean — stateless mode (default false)
+      #   port:                   Integer - TCP port (default 3000)
+      #   bind:                   String  - bind address (default "127.0.0.1")
+      #   stateless:              Boolean - stateless mode (default false)
       #   allowed_origins:        Array<String>
       #   allowed_hosts:          Array<String>
       #   session_idle_timeout:   Integer (seconds)
       #   max_sessions:           Integer
       #   # MCP::Server options:
-      #   instructions:           String  — hint shown to the AI client
-      #   protocol_version:       String  — e.g. "2024-11-05"
+      #   instructions:           String  - hint shown to the AI client
+      #   protocol_version:       String  - e.g. "2024-11-05"
       #   validate_tool_call_arguments: Boolean (default true)
       #
       # Examples:
@@ -120,7 +120,7 @@ module Aspera
         end
 
         # Start HTTP transport using WEBrick (already a project dependency).
-        # Rack 3 removed Rack::Handler — we build a native WEBrick servlet that
+        # Rack 3 removed Rack::Handler - we build a native WEBrick servlet that
         # calls the Rack app directly instead of relying on Rack::Handler::WEBrick.
         def start_http_transport(server, mcp_options)
           require 'webrick'

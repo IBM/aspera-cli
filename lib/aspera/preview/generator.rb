@@ -27,10 +27,10 @@ module Aspera
       # Node API MIME types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types.
       # The resulting preview file type is taken from destination file extension.
       # Conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>.
-      #   -> conversion_type is one of FileTypes::CONVERSION_TYPES.
-      #   -> preview_format is one of Generator::PREVIEW_FORMATS.
+      #   conversion_type: one of FileTypes::CONVERSION_TYPES.
+      #   preview_format: one of Generator::PREVIEW_FORMATS.
       # The conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>.
-      #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS.
+      #   conversion method: one of Generator::VIDEO_CONVERSION_METHODS.
       # @param src [String] Source file path.
       # @param dst [String] Destination file path.
       # @param options [Options] All conversion options.

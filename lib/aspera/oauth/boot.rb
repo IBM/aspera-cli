@@ -8,7 +8,7 @@ module Aspera
   module OAuth
     # Token provider bootstrapped from an existing cookie (e.g. AoC browser cookie).
     # Injects the bearer token and optional refresh token directly into the cache.
-    # Never generates a new token from scratch — raises if cache+refresh are both exhausted.
+    # Never generates a new token from scratch - raises if cache+refresh are both exhausted.
     class Boot < Base
       # @param cookie   [String, nil] Raw cookie string (--password), nil to rely on existing cache
       # @param username [String, nil] Expected subject; if provided, must match token's `sub` claim

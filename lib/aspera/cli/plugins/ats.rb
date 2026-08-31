@@ -218,7 +218,7 @@ module Aspera
           }
         end
 
-        # One handler per COMMANDS_GEN4 — delegates to the Node plugin's execute_command_gen4.
+        # One handler per COMMANDS_GEN4 - delegates to the Node plugin's execute_command_gen4.
         Node::COMMANDS_GEN4.each do |cmd|
           define_method(:"handle_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:|
             ak_node_plugin.execute_command_gen4(cmd, ak_root_file_id)

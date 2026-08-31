@@ -32,7 +32,7 @@ module Aspera
     end
 
     # Return the href of the first link whose +rel+ attribute matches +rel+.
-    # Comparison is case-insensitive per RFC 7230 §3.2 and RFC 8288 §3.
+    # Comparison is case-insensitive per RFC 7230 s.3.2 and RFC 8288 s.3.
     # Returns nil if no link with that relation exists.
     # @param rel [String]
     # @return [String, nil]

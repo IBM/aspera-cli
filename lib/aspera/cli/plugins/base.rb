@@ -76,9 +76,9 @@ module Aspera
           # @param allowed     [Object, nil]     Allowed values (see OptionValue)
           # @param default     [Object, nil]     Default value
           # @param handler     [Symbol, Hash, nil]
-          #   - Symbol  → resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
-          #   - Hash    → {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
-          #   - nil     → option stores its value locally (no delegation)
+          #   - Symbol: resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+          #   - Hash:   {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
+          #   - nil:    option stores its value locally (no delegation)
           # @param deprecation [String, nil]     Deprecation message forwarded to options.declare
           # @param schema      [String, nil]     Schema reference (e.g. "opts:components.schemas.Foo");
           #                                      when description: is nil, the schema title or first description line is used
@@ -143,8 +143,8 @@ module Aspera
           # declared by an earlier plugin (Base.option prevents duplicates within one hierarchy).
           # Each OptionSpec is translated to an options.declare call, resolving the
           # handler: shorthand:
-          #   Symbol handler → {o: self, m: <symbol>}  (Category B — plugin instance methods)
-          #   Hash handler   → used as-is              (Category A — singletons / class constants)
+          #   Symbol handler: {o: self, m: <symbol>}  (Category B - plugin instance methods)
+          #   Hash handler:   used as-is              (Category A - singletons / class constants)
           self.class.ancestors.each do |klass|
             next unless klass.is_a?(Class) && klass <= Base && klass.instance_variable_defined?(:@command_registry)
             klass.command_registry.option_specs.each_value do |spec|
@@ -225,10 +225,10 @@ module Aspera
           registry = self.class.command_registry
           spec     = registry[current_path]
 
-          # Phase A — run setup on current node (skip when --help to avoid auth/network calls)
+          # Phase A - run setup on current node (skip when --help to avoid auth/network calls)
           ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested && !skip_setup
 
-          # Phase B — leaf fast-path or child dispatch
+          # Phase B - leaf fast-path or child dispatch
           if spec && registry.children_of(current_path).empty?
             dispatch_leaf(current_path, spec, ctx)
           else
@@ -295,7 +295,7 @@ module Aspera
         # Resolve the handler for a leaf CommandSpec.
         # Returns spec.handler (Symbol or Proc) if explicitly set; otherwise derives a Symbol
         # from the full path as :handle_<path_segment_1>_<path_segment_2>_...
-        # (e.g. [:access_key, :list] → :handle_access_key_list).
+        # (e.g. [:access_key, :list] -> :handle_access_key_list).
         # @param spec [CommandSpec]
         # @return [Symbol, Proc]
         def handler_for(spec)
@@ -339,7 +339,7 @@ module Aspera
         # @return [Object]
         def run_entity_execute(spec, ctx)
           ee_params = spec.entity_execute.dup
-          # Resolve api: Symbol at runtime: :@ivar → instance_variable_get, :method → send
+          # Resolve api: Symbol at runtime: :@ivar -> instance_variable_get, :method -> send
           if (api_ref = ee_params[:api]).is_a?(Symbol)
             ee_params[:api] = if api_ref.to_s.start_with?('@')
               instance_variable_get(api_ref)
@@ -366,7 +366,7 @@ module Aspera
           when :identifier
             options.instance_identifier
           else
-            # Class or Array<Class> → pass as validation type
+            # Class or Array<Class> -> pass as validation type
             options.get_next_argument(
               arg_spec.name.to_s,
               mandatory: arg_spec.mandatory,

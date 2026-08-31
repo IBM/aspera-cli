@@ -8,14 +8,14 @@ module Aspera
     # Each plugin class gets its own instance (not shared across the inheritance chain).
     #
     # Public API:
-    #   register(spec)          — store a CommandSpec; raises on duplicate full_path
-    #   register_option(spec)   — store an OptionSpec by name
-    #   option_specs            — Hash{Symbol => OptionSpec} of all registered options
-    #   [](path)                — retrieve a CommandSpec by full path
-    #   children_of(path)       — Hash{Symbol => CommandSpec} of direct children (O(1))
-    #   all_paths               — Array of all registered full paths
-    #   any?                    — true if at least one spec has been registered
-    #   validate!               — cross-spec consistency checks; raises on violation
+    #   register(spec)          - store a CommandSpec; raises on duplicate full_path
+    #   register_option(spec)   - store an OptionSpec by name
+    #   option_specs            - Hash{Symbol => OptionSpec} of all registered options
+    #   [](path)                - retrieve a CommandSpec by full path
+    #   children_of(path)       - Hash{Symbol => CommandSpec} of direct children (O(1))
+    #   all_paths               - Array of all registered full paths
+    #   any?                    - true if at least one spec has been registered
+    #   validate!               - cross-spec consistency checks; raises on violation
     class CommandRegistry
       # @param path [Array<Symbol>] full path to look up
       # @return [CommandSpec, nil]
@@ -32,7 +32,7 @@ module Aspera
         path = spec.full_path
         raise ArgumentError, "Duplicate command path: #{path.inspect}" if @specs.key?(path)
         @specs[path] = spec
-        # Index: parent_path → { child_id → spec }
+        # Index: parent_path -> { child_id -> spec }
         parent = path[0..-2] # [] for root-level commands
         (@children_index[parent] ||= {})[spec.id] = spec
         spec
@@ -91,7 +91,7 @@ module Aspera
               when Symbol then [spec.delegates_to]
               when Array  then spec.delegates_to
               end
-            # An empty array [] means re-enter the root — always valid
+            # An empty array [] means re-enter the root - always valid
             unless dt_path.empty? || @specs.key?(dt_path)
               raise ArgumentError,
                 "#{path.inspect}: delegates_to #{dt_path.inspect} points to unknown path"
@@ -131,7 +131,7 @@ module Aspera
         @specs = {}
         # Keyed by Symbol option name
         @option_specs = {}
-        # Children index: parent Array<Symbol> → Hash{child_id Symbol => CommandSpec}
+        # Children index: parent Array<Symbol> -> Hash{child_id Symbol => CommandSpec}
         # Built incrementally in register(); enables O(1) children_of lookups.
         @children_index = {}
       end

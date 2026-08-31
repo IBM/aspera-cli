@@ -14,7 +14,7 @@ module Aspera
       HINT = 'HINT:'.bg_green.gray.blink.freeze
       include FormatterInterface
 
-      # Format boolean with colored symbol (✓/✗ or Y/ )
+      # Format boolean with colored symbol (+/- or Y/ )
       def tick(yes)
         result =
           if Environment.terminal_supports_unicode?

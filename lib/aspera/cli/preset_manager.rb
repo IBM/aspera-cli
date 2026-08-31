@@ -63,7 +63,7 @@ module Aspera
         else
           Log.log.warn{"No config file found. New configuration file: #{@config_file}"}
           @config_presets = {Key::CONFIG => {Key::VERSION => 'new file'}}
-          # @checksum_on_disk remains nil → will be saved on first write
+          # @checksum_on_disk remains nil: will be saved on first write
         end
         validate_config_presets!
       rescue Psych::SyntaxError => e
