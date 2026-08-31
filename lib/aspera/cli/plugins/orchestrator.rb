@@ -109,8 +109,8 @@ module Aspera
         command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, action: ->{Result::SingleObject.new(call_ao('monitor_snapshot')['monitor'])}
         command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, action: ->{Result::ObjectList.new(call_ao('plugin_version')['Plugin'])}
         command :workflows,  description: 'Manage workflows',   setup: :setup_api
-        command :workorders, description: 'Manage work orders', setup: :setup_api, instance_arg: :wo_id
-        command :workstep,   description: 'Manage work steps',  setup: :setup_api, instance_arg: :ws_id
+        command :workorders, description: 'Manage work orders', setup: :setup_api
+        command :workstep,   description: 'Manage work steps',  setup: :setup_api
 
         commands_under(:workflows) do
           command(:list, description: 'List all workflows', action: lambda do
@@ -119,61 +119,25 @@ module Aspera
               fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
             )
           end)
-          command(
-            :status, description: 'Check running status of workflow(s)', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])}
-          )
-          command(
-            :inputs, description: 'Fetch input specification for a workflow', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::SingleObject.new(call_ao("workflow_inputs_spec/#{wf_id}")['workflow_inputs_spec'])}
-          )
-          command(
-            :details, description: 'Check detailed running status of a workflow', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_details/#{wf_id}")['workflows']['workflow']['statuses'])}
-          )
-          command :start, description: 'Initiate a work order (sync or async)', instance_arg: :wf_id
-          command(
-            :export, description: 'Export a workflow', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::Text.new(call_ao("export_workflow/#{wf_id}", format: nil, http: true).body)}
-          )
-          command(
-            :workorders, description: 'Fetch all work orders from a workflow', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::ObjectList.new(call_ao("work_orders_list/#{wf_id}")['work_orders'])}
-          )
-          command(
-            :outputs, description: 'Fetch output specification for a workflow', instance_arg: :wf_id,
-            action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_outputs_spec/#{wf_id}")['workflow_outputs_spec']['output'])}
-          )
+          command :status,     description: 'Check running status of workflow(s)',          instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])}
+          command :inputs,     description: 'Fetch input specification for a workflow',     instance_arg: :wf_id, action: ->(wf_id:, **){Result::SingleObject.new(call_ao("workflow_inputs_spec/#{wf_id}")['workflow_inputs_spec'])}
+          command :details,    description: 'Check detailed running status of a workflow',  instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_details/#{wf_id}")['workflows']['workflow']['statuses'])}
+          command :start,      description: 'Initiate a work order (sync or async)',        instance_arg: :wf_id
+          command :export,     description: 'Export a workflow',                            instance_arg: :wf_id, action: ->(wf_id:, **){Result::Text.new(call_ao("export_workflow/#{wf_id}", format: nil, http: true).body)}
+          command :workorders, description: 'Fetch all work orders from a workflow',        instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("work_orders_list/#{wf_id}")['work_orders'])}
+          command :outputs,    description: 'Fetch output specification for a workflow',    instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_outputs_spec/#{wf_id}")['workflow_outputs_spec']['output'])}
         end
 
         commands_under(:workorders) do
-          command(
-            :status, description: 'Check the status of a work order',
-            action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_status/#{wo_id}")['work_order'])}
-          )
-          command(
-            :cancel, description: 'Cancel a work order',
-            action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_cancel/#{wo_id}")['work_order'])}
-          )
-          command(
-            :reset, description: 'Reset a work order',
-            action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_reset/#{wo_id}")['work_order'])}
-          )
-          command(
-            :output, description: 'Fetch output of a work order',
-            action: ->(wo_id:, **){Result::ObjectList.new(call_ao("work_order_output/#{wo_id}", format: 'xml')['variable'])}
-          )
+          command :status, description: 'Check the status of a work order', instance_arg: :wo_id, action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_status/#{wo_id}")['work_order'])}
+          command :cancel, description: 'Cancel a work order',              instance_arg: :wo_id, action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_cancel/#{wo_id}")['work_order'])}
+          command :reset,  description: 'Reset a work order',               instance_arg: :wo_id, action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_reset/#{wo_id}")['work_order'])}
+          command :output, description: 'Fetch output of a work order',     instance_arg: :wo_id, action: ->(wo_id:, **){Result::ObjectList.new(call_ao("work_order_output/#{wo_id}", format: 'xml')['variable'])}
         end
 
         commands_under(:workstep) do
-          command(
-            :status, description: 'Check the status of a work step',
-            action: ->(ws_id:, **){Result::SingleObject.new(call_ao("work_step_status/#{ws_id}"))}
-          )
-          command(
-            :cancel, description: 'Cancel a work step',
-            action: ->(ws_id:, **){Result::SingleObject.new(call_ao("work_step_cancel/#{ws_id}"))}
-          )
+          command :status, description: 'Check the status of a work step', instance_arg: :ws_id, action: ->(ws_id:, **){Result::SingleObject.new(call_ao("work_step_status/#{ws_id}"))}
+          command :cancel, description: 'Cancel a work step',              instance_arg: :ws_id, action: ->(ws_id:, **){Result::SingleObject.new(call_ao("work_step_cancel/#{ws_id}"))}
         end
 
         # --- setup ---

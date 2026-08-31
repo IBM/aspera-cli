@@ -479,10 +479,7 @@ module Aspera
             Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))
           end)
           command :delete, description: 'Delete package(s)', setup: :setup_package_id
-          command(
-            :receive, description: 'Receive a package', setup: :setup_package_id,
-            action: ->(package_id:, **){package_receive(package_id)}
-          )
+          command :receive, description: 'Receive a package', setup: :setup_package_id, action: ->(package_id:, **){package_receive(package_id)}
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)

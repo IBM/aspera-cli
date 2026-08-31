@@ -620,10 +620,7 @@ module Aspera
         commands_under(%i[admin auth_providers]) do
           command :list, description: 'List auth providers',
             action: ->{result_list('admin/auth_providers')}
-          command(
-            :update, description: 'Update auth provider',
-            action: ->{Aspera.error_not_implemented}
-          )
+          command :update, description: 'Update auth provider', action: ->{Aspera.error_not_implemented}
         end
         commands_under(%i[admin subscription]) do
           command :account, description: 'Show subscription account'
