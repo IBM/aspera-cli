@@ -1278,7 +1278,7 @@ module Aspera
         # Lookup methods for instance_arg: + lookup: on admin resources.
         # One method per non-singleton resource; each delegates to get_resource_id_from_args.
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_method(:"lookup_aoc_#{res}_id") do |_field, value|
+          define_method(:"lookup_aoc_#{res}_id") do |_field, value, **|
             aoc_api.lookup_with_q(aoc_res_path(res), value: value)['id']
           end
         end

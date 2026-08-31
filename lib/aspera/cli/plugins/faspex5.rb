@@ -431,22 +431,22 @@ module Aspera
         # Lookup methods for instance_arg: + lookup: on specific nodes
 
         # admin > nodes — lookup node id by field/value
-        def lookup_node_id(field, value)
+        def lookup_node_id(field, value, **)
           @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
         end
 
         # admin > shared_inboxes — lookup id by field/value
-        def lookup_shared_inboxes_id(field, value)
+        def lookup_shared_inboxes_id(field, value, **)
           @api_v5.lookup_entity_by_field(entity: 'shared_inboxes', field: field, value: value, query: {'all': true})['id']
         end
 
         # admin > workgroups — lookup id by field/value
-        def lookup_workgroups_id(field, value)
+        def lookup_workgroups_id(field, value, **)
           @api_v5.lookup_entity_by_field(entity: 'workgroups', field: field, value: value, query: {'all': true})['id']
         end
 
         # admin > accounts — lookup id by field/value (used for reset_password instance_arg:)
-        def lookup_accounts_id(field, value)
+        def lookup_accounts_id(field, value, **)
           res_lookup_id(:accounts, field, value)
         end
 
@@ -539,18 +539,17 @@ module Aspera
           end
         end
 
-        # admin > nodes > shared_folders: instance_arg: :node_id consumed before sub-command routing
-        # admin > nodes > shared_folders: setup consumes node_id positionally, builds sf_entity for all children
         commands_under(%i[admin nodes]) do
           command :shared_folders, description: 'Manage shared folders',
+            instance_arg: :node_id, lookup: :lookup_node_id,
             setup: :setup_admin_nodes_shared_folders
         end
 
         # admin > nodes > shared_folders sub-tree
         commands_under(%i[admin nodes shared_folders]) do
           Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
-          # setup consumes sf_id positionally, builds user_path for all children
           command :user, description: 'Custom access users',
+            instance_arg: :sf_id, lookup: :lookup_sf_id,
             setup: :setup_admin_nodes_shared_folders_user
         end
 
@@ -564,11 +563,12 @@ module Aspera
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
-        # setup consumes res_id positionally, builds res_instance_path for all children
+        # res_id consumed via instance_arg: + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             commands_under([:admin, res]) do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
+                instance_arg: :res_id, lookup: :"lookup_#{res}_id",
                 setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
@@ -577,6 +577,7 @@ module Aspera
           end
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
+              instance_arg: :res_id, lookup: :"lookup_#{res}_id",
               setup: :"setup_admin_#{res}_instance"
           end
         end
@@ -675,10 +676,16 @@ module Aspera
           browse_folder("nodes/#{node_id}/browse")
         end
 
-        # admin > nodes > shared_folders — consumes node_id positionally, builds sf_entity for all children
-        def setup_admin_nodes_shared_folders(**)
-          node_id = options.instance_identifier(description: 'node_id'){ |f, v| lookup_node_id(f, v)}
+        # admin > nodes > shared_folders — node_id: already in ctx via instance_arg:
+        def setup_admin_nodes_shared_folders(node_id:, **)
           {sf_entity: "nodes/#{node_id}/shared_folders"}
+        end
+
+        # Lookup shared folder id by field/value within a node's shared_folders entity.
+        # Used as lookup: on the :user command under admin > nodes > shared_folders.
+        # sf_entity is available in ctx because setup_admin_nodes_shared_folders ran first (Phase A of parent).
+        def lookup_sf_id(field, value, sf_entity:, **)
+          @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: field, value: value)['id']
         end
 
         # admin > nodes > shared_folders > create/modify/delete/show/list
@@ -688,9 +695,8 @@ module Aspera
           end
         end
 
-        # admin > nodes > shared_folders > user — consumes sf_id positionally, builds user_path for all children
-        def setup_admin_nodes_shared_folders_user(sf_entity:, **)
-          sf_id = options.instance_identifier(description: 'sf_id'){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
+        # admin > nodes > shared_folders > user — sf_id: already in ctx via instance_arg:
+        def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
           {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
         end
 
@@ -701,11 +707,9 @@ module Aspera
           end
         end
 
-        # admin > shared_inboxes|workgroups — consumes res_id positionally, builds res_instance_path for all children
+        # admin > shared_inboxes|workgroups — res_id: already in ctx via instance_arg:
         %i[shared_inboxes workgroups].each do |res|
-          lookup_method = :"lookup_#{res}_id"
-          define_method(:"setup_admin_#{res}_instance") do |**|
-            res_id = options.instance_identifier(description: 'res_id'){ |f, v| send(lookup_method, f, v)}
+          define_method(:"setup_admin_#{res}_instance") do |res_id:, **|
             {res_instance_path: "#{res}/#{res_id}"}
           end
         end

@@ -199,7 +199,7 @@ module Aspera
         end
 
         # Lookup a share id by field/value using the admin API.
-        def lookup_share_id(field, value)
+        def lookup_share_id(field, value, **)
           RestList.lookup_entity_generic(entity: 'share', field: field, value: value){@api_shares_admin.read('data/shares')}['id']
         end
 

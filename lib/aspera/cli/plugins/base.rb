@@ -234,7 +234,17 @@ module Aspera
           spec     = registry[current_path]
 
           unless options.help_requested || skip_setup
-            # Phase A - run setup method on current node
+            # Phase A - consume instance_arg (works for both intermediate and leaf nodes),
+            # then run setup method on current node
+            if spec&.instance_arg
+              lookup_method = spec.lookup
+              res_id = if lookup_method
+                options.instance_identifier(description: spec.instance_arg.to_s){ |f, v| send(lookup_method, f, v, **ctx)}
+              else
+                options.instance_identifier(description: spec.instance_arg.to_s)
+              end
+              ctx = ctx.merge(spec.instance_arg => res_id)
+            end
             ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
           end
 
@@ -292,24 +302,8 @@ module Aspera
           # entity_execute shorthand
           return run_entity_execute(child, ctx) if child.entity_execute
 
-          if registry.children_of(current_path + [command]).any?
-            # Intermediate node: recurse (child setup runs at the top of the next call)
-            dispatch_from_registry(current_path + [command], ctx)
-          else
-            # Leaf: consume instance identifier declared directly on the leaf (if any),
-            # run child setup (if any), then execute action
-            if child.instance_arg && !options.help_requested
-              lookup_method = child.lookup
-              res_id = if lookup_method
-                options.instance_identifier(description: child.instance_arg.to_s){ |f, v| send(lookup_method, f, v)}
-              else
-                options.instance_identifier(description: child.instance_arg.to_s)
-              end
-              ctx = ctx.merge(child.instance_arg => res_id)
-            end
-            ctx = ctx.merge(send(child.setup, **ctx)) if child.setup
-            execute_leaf(child, ctx)
-          end
+          # Both intermediate and leaf: instance_arg + setup are handled by Phase A of the next call
+          dispatch_from_registry(current_path + [command], ctx)
         end
 
         # Resolve the action for a leaf CommandSpec.
