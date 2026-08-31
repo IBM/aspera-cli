@@ -104,7 +104,7 @@ module Aspera
         describe '.option' do
           it 'registers an OptionSpec in the registry' do
             klass = Class.new(Base)
-            klass.option(:verbose, 'Enable verbose output')
+            klass.option(:verbose, description: 'Enable verbose output')
             expect(klass.command_registry.option_specs[:verbose]).to(be_a(OptionSpec))
           end
         end
@@ -409,39 +409,45 @@ module Aspera
 
         describe '#dispatch_from_registry with entity_execute:' do
           it 'calls entity_execute with the spec params when command has entity_execute:' do
+            stub_api_obj = Object.new
             klass = Class.new(Base)
             klass.command(
               :bridges, description: 'Manage bridges',
               entity_execute: {api: :stub_api, entity: 'bridges'}
             )
+            klass.define_method(:stub_api){stub_api_obj}
             allow(options).to(receive(:get_next_command).with([:bridges], aliases: nil).and_return(:bridges))
             inst = klass.new(context: context)
-            expect(inst).to(receive(:entity_execute).with(api: :stub_api, entity: 'bridges').and_return(Result::Status.new('ok')))
+            expect(inst).to(receive(:entity_execute).with(api: stub_api_obj, entity: 'bridges').and_return(Result::Status.new('ok')))
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'ok')))
           end
 
           it 'merges ctx into entity_execute params (spec params win on collision)' do
+            spec_api_obj = Object.new
             klass = Class.new(Base)
             klass.command(
               :items, description: 'Manage items',
               entity_execute: {api: :spec_api, entity: 'items'}
             )
+            klass.define_method(:spec_api){spec_api_obj}
             allow(options).to(receive(:get_next_command).with([:items], aliases: nil).and_return(:items))
             inst = klass.new(context: context)
             # ctx carries an api key; spec has its own api — spec should win
-            expect(inst).to(receive(:entity_execute).with(api: :spec_api, entity: 'items').and_return(Result::Status.new('ok')))
+            expect(inst).to(receive(:entity_execute).with(api: spec_api_obj, entity: 'items').and_return(Result::Status.new('ok')))
             inst.dispatch_from_registry([], {api: :ctx_api})
           end
 
           it 'passes lookup_block from ctx as a block to entity_execute (not as a kwarg)' do
+            api_obj = Object.new
             klass = Class.new(Base)
             klass.command(:res, description: 'Resource', entity_execute: {api: :a, entity: 'res'})
+            klass.define_method(:a){api_obj}
             allow(options).to(receive(:get_next_command).with([:res], aliases: nil).and_return(:res))
             inst = klass.new(context: context)
             lookup = proc{'found'}
             # lookup_block must NOT be forwarded as a kwarg — only as a block
             expect(inst).to(
-              receive(:entity_execute).with(api: :a, entity: 'res') do |**kwargs, &blk|
+              receive(:entity_execute).with(api: api_obj, entity: 'res') do |**kwargs, &blk|
                 expect(kwargs).not_to(have_key(:lookup_block))
                 expect(blk).to(be(lookup))
                 Result::Status.new('ok')

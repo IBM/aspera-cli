@@ -143,7 +143,7 @@ command tree statically introspectable, self-documenting, and testable without e
 | `description` | `String` | User-facing help text |
 | `options` | `Array<Symbol>` | Option names consumed by this command |
 | `arguments` | `Array<ArgumentSpec>` | Positional arguments in parse order |
-| `handler` | `Symbol \| nil` | Instance method called at leaf; defaults to `handle_<full_path_joined_with_underscores>` |
+| `handler` | `Symbol \| Proc \| nil` | Handler for the leaf command. Three forms: **(1)** omitted → convention `handle_<full_path_joined_by_underscores>` is called; **(2)** `Symbol` → named instance method (use when body > 3 lines); **(3)** `Proc` / lambda → inline handler (use when body ≤ 3 lines — prefer `->{ ... }` for zero or keyword-only args, `lambda do \|arg\| … end` for multi-line bodies) |
 | `setup` | `Symbol \| nil` | Instance method called before dispatching to children; returns a `Hash` merged into the context (`ctx`) passed down |
 | `root_setup` | `Symbol \| nil` | Instance method called once before the root dispatch (class-level DSL method); used when state must exist before root command conditions are evaluated |
 | `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for delegation loops) |
@@ -152,6 +152,24 @@ command tree statically introspectable, self-documenting, and testable without e
 | `entity_execute` | `Hash \| nil` | Shorthand that expands to `Base#entity_execute` (five standard CRUD verbs) |
 | `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent`; mutually exclusive with `arguments:` |
 | `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is hidden from dispatch but shown in help with an annotation |
+
+**`entity_command` helper** (`Base.entity_command`):
+
+A higher-level DSL shorthand that wraps `command(id, …, entity_execute: {…})`. Use it to declare a CRUD command in a single line:
+
+```ruby
+entity_command :dropboxes, api: :@dropboxes_api, entity: 'admin/dropboxes'
+# equivalent to:
+command(:dropboxes, description: 'Manage dropboxes', entity_execute: {api: :@dropboxes_api, entity: 'admin/dropboxes'})
+```
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `id` | `Symbol` | Command identifier |
+| `api` | `Symbol` | Method name (`:method`) or instance variable (`:@ivar`) resolved at runtime to the REST API object |
+| `entity` | `String` | API sub-path (e.g. `'admin/dropboxes'`) |
+| `description` | `String \| nil` | User-facing help text; defaults to `"Manage <last segment of entity>"` when omitted |
+| `**kwargs` | `Hash` | Any extra `entity_execute` params forwarded verbatim (`display_fields:`, `command:`, `is_singleton:`, …) |
 
 **Argument declaration** (`ArgumentSpec`):
 
@@ -172,7 +190,7 @@ The dispatcher operates in two phases for each node:
 1. **Setup** — if the current node declares a `setup:` method, it is called first; its return value is merged into the context hash `ctx` and passed to all descendants.
 2. **Dispatch** — the next positional argument is consumed and matched against the node's children. `condition:` commands are excluded from runtime dispatch but included in help output.
 
-```
+```text
 dispatch_from_registry(current_path, ctx = {})
   # Phase A: setup on the current node
   ctx = ctx.merge(send(spec.setup)) if spec&.setup
@@ -204,6 +222,21 @@ Key properties of the `ctx` hash:
 - **Setup runs before child selection**: matches the imperative pattern where local variables are created before `get_next_command`.
 - `transfer_paths:` bypasses argument resolution entirely; `TransferAgent#ts_source_paths` handles the argument stream conditionally based on `--sources`.
 
+#### Handler style convention
+
+| Condition | Preferred form |
+| --- | --- |
+| 1 line, no args | `handler: ->{…}` |
+| 1 line, with args | `handler: ->(arg:){…}` |
+| 2–3 lines, inline | `command(:x, …, handler: lambda do … end)` |
+| > 3 lines | named method `def handle_<full_path>` |
+
+The 3-line threshold is deliberately informal. The deciding factor is readability at the call site: if the handler fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer.
+
+**Precedence rule**: `lambda do...end` has low binding priority — if `command` is called without parentheses, Ruby attaches the `do...end` to `command` instead of `lambda`, causing `tried to create Proc object without a block` at class load time. Always use `command(...)` with parentheses when the handler is a `lambda do...end`.
+
+**Do not** use `lambda{ }` (braces with `lambda` keyword): rubocop's `SpaceInsideBlockBraces` forbids inner spaces, making multi-line bodies unreadable. The codebase uses `->{}` for one-liners and `lambda do...end` for multi-line — no other form.
+
 **Notable design decisions**:
 
 | Decision | Rationale |
@@ -212,6 +245,7 @@ Key properties of the `ctx` hash:
 | `setup:` runs on the current node before dispatching | Matches the imperative pattern; no virtual/synthetic nodes needed |
 | `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
 | `entity_execute:` shorthand | Keeps CRUD declarations DRY while preserving introspectability |
+| `entity_command` helper | One-liner alternative to `command(…, entity_execute: {…})` when no extra `command` parameters are needed; `api:` is resolved at runtime so the API object can be created lazily |
 | `delegate_instance:` separate from `delegates_to:` | The `node access_keys do v3` case needs a different API object, not just a different path |
 | `transfer_paths: :send\|:receive` instead of positional args | The `--sources` mechanism in `TransferAgent` is incompatible with static argument declaration |
 | Opaque private helpers for highly dynamic sub-trees | `execute_resource_action` (aoc), `execute_admin_entity_type` (shares), etc. contain runtime-dynamic dispatch that cannot be statically declared |
@@ -455,21 +489,46 @@ Transfer agents implement a common interface with different strategies:
 
 Each plugin declares its command tree at class level using the `command(...)` DSL method.
 The base class dispatcher (`dispatch_from_registry`) traverses the registry and calls the
-appropriate `handle_<path>` method on the plugin instance:
+appropriate handler on the plugin instance.
+
+#### Convention: inline lambda vs. named method
+
+**1 line** — inline `->` directly on the `command` call (no parentheses needed):
 
 ```ruby
-class Faspex < Base
-  command :package, description: 'Manage packages'
+command :info, description: 'Show node info',
+  handler: ->{Result::SingleObject.new(@api_node.read('info'))}
 
-  command :send, parent: :package,
-    description: 'Send a package',
-    handler:     :handle_package_send
+command :show, description: 'Show a package',
+  handler: ->(package_id:, **){Result::SingleObject.new(@api.read("packages/#{package_id}"))}
+```
 
-  def handle_package_send
-    # implementation
+**2–3 lines, inline** — `lambda do...end` with `command(...)` parentheses (mandatory — see precedence rule above):
+
+```ruby
+command(
+  :flush, description: 'Delete all cached OAuth tokens',
+  handler: lambda do
+    require 'aspera/api/node'
+    Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
   end
+)
+```
+
+**> 3 lines** — named method, convention `handle_<full_path_joined_by_underscores>`:
+
+```ruby
+command :package, description: 'Manage packages'
+commands_under(:package) do
+  command :receive, description: 'Receive a package'
+end
+
+def handle_package_receive
+  # many lines of logic...
 end
 ```
+
+All forms receive the `ctx` hash as keyword arguments and behave identically at runtime.
 
 ### Mixin / Module Pattern
 

@@ -37,8 +37,8 @@ module Aspera
           }
         end
 
-        command :health,  description: 'Check health of faspio Gateway'
-        command :bridges, description: 'Manage bridges'
+        command :health, description: 'Check health of faspio Gateway'
+        entity_command :bridges, api: :build_api, entity: 'bridges'
 
         option :auth,        description: 'OAuth type of authentication', allowed: %i[jwt basic]
         option :client_id,   description: 'OAuth client identifier'
@@ -93,10 +93,6 @@ module Aspera
             nagios.add_critical('api', e.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
-        end
-
-        def handle_bridges
-          entity_execute(api: build_api, entity: 'bridges')
         end
       end
     end

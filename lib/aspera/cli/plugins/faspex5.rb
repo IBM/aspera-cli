@@ -541,8 +541,8 @@ module Aspera
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under(:packages) do
           command :list,   description: 'List packages'
-          command :send,   description: 'Send a package',  handler: ->{package_send}
-          command :show,   description: 'Show a package',  setup: :setup_package_id,
+          command :send,   description: 'Send a package', handler: ->{package_send}
+          command :show,   description: 'Show a package', setup: :setup_package_id,
             handler: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             handler: ->(package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))}
@@ -550,9 +550,11 @@ module Aspera
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))
           end)
-          command :delete,          description: 'Delete package(s)',           setup: :setup_package_id
-          command(:receive, description: 'Receive a package', setup: :setup_package_id,
-            handler: ->(package_id:, **){package_receive(package_id)})
+          command :delete, description: 'Delete package(s)', setup: :setup_package_id
+          command(
+            :receive, description: 'Receive a package', setup: :setup_package_id,
+            handler: ->(package_id:, **){package_receive(package_id)}
+          )
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, handler: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)

@@ -180,9 +180,9 @@ module Aspera
         root_setup :setup_server
 
         command :health,   description: 'Check transfer health'
-        command :upload,   description: 'Upload files to server',        transfer_paths: :send
-        command :download, description: 'Download files from server',    transfer_paths: :receive
-        command :sync,     description: 'Synchronize files with server', transfer_paths: :send
+        command :upload,   description: 'Upload files to server',        transfer_paths: :send,    handler: ->{execute_transfer(:upload,   @server_transfer_spec)}
+        command :download, description: 'Download files from server',    transfer_paths: :receive, handler: ->{execute_transfer(:download, @server_transfer_spec)}
+        command :sync,     description: 'Synchronize files with server', transfer_paths: :send,    handler: ->{execute_transfer(:sync,     @server_transfer_spec)}
 
         commands_under(:health) do
           command :transfer, description: 'Check FASP transfer health'
@@ -250,20 +250,6 @@ module Aspera
             nagios.add_critical('transfer', statuses.reject{ |i| i.eql?(:success)}.first.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
-        end
-
-        # --- transfer handlers ---
-
-        def handle_upload
-          execute_transfer(:upload, @server_transfer_spec)
-        end
-
-        def handle_download
-          execute_transfer(:download, @server_transfer_spec)
-        end
-
-        def handle_sync
-          execute_transfer(:sync, @server_transfer_spec)
         end
 
         # --- ascmd handlers ---

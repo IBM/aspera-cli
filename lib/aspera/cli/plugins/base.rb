@@ -37,6 +37,20 @@ module Aspera
             command_registry.register(CommandSpec.new(id: id, **kwargs))
           end
 
+          # DSL class method: shorthand for a command whose sole handler is Base#entity_execute.
+          # The api: value is a Symbol resolved at runtime: if it starts with '@' it is treated
+          # as an instance variable name; otherwise it is sent as a method call.
+          # description: defaults to "Manage <last segment of entity path>" when omitted.
+          # @param id          [Symbol]        Command identifier
+          # @param api         [Symbol]        Method name or :@ivar returning the REST API at runtime
+          # @param entity      [String]        API sub-path (e.g. 'admin/dropboxes')
+          # @param description [String, nil]   User-facing help text; derived from entity when nil
+          # @param kwargs      [Hash]          Any other entity_execute params (display_fields:, command:, is_singleton:, etc.)
+          def entity_command(id, api:, entity:, description: nil, **kwargs)
+            description ||= "Manage #{entity.split('/').last}"
+            command(id, description: description, entity_execute: {api: api, entity: entity, **kwargs})
+          end
+
           # DSL class method: scope block that sets a default parent for nested command() calls.
           # Fully re-entrant: blocks may be nested for multi-level parent paths.
           # @param parent [Symbol, Array<Symbol>] parent path applied to every command() inside
@@ -325,6 +339,14 @@ module Aspera
         # @return [Object]
         def run_entity_execute(spec, ctx)
           ee_params = spec.entity_execute.dup
+          # Resolve api: Symbol at runtime: :@ivar → instance_variable_get, :method → send
+          if (api_ref = ee_params[:api]).is_a?(Symbol)
+            ee_params[:api] = if api_ref.to_s.start_with?('@')
+              instance_variable_get(api_ref)
+            else
+              send(api_ref)
+            end
+          end
           # Merge context into params (spec wins on key collision)
           merged = ctx.merge(ee_params)
           # Extract lookup_block before passing to entity_execute (it is not a kwarg of entity_execute)

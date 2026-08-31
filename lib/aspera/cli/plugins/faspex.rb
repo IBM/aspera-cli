@@ -280,7 +280,7 @@ module Aspera
         command :health,       description: 'Check Faspex 4 API health'
         command :package,      description: 'Manage packages'
         command :source,       description: 'Manage sources'
-        command :me,           description: 'Show current user information'
+        command :me,           description: 'Show current user information', handler: ->{Result::SingleObject.new(api_v3.read('me'))}
         command :dropbox,      description: 'Manage dropboxes'
         command :v4,           description: 'Faspex v4 admin commands'
         command :address_book, description: 'Show address book'
@@ -289,13 +289,13 @@ module Aspera
         commands_under(:package) do
           command :send,    description: 'Send a package'
           command :receive, description: 'Receive a package', aliases: [:recv]
-          command :list,    description: 'List packages'
+          command :list,    description: 'List packages', handler: ->{Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])}
           command :show,    description: 'Show a package'
         end
 
         commands_under(:source) do
-          command :list, description: 'List sources'
-          command :info, description: 'Show source info', setup: :setup_source_selected
+          command :list, description: 'List sources', handler: ->{Result::ObjectList.new(api_v3.read('source_shares')['items'])}
+          command :info, description: 'Show source info', setup: :setup_source_selected, handler: ->(source_info:){Result::SingleObject.new(source_info)}
           command :node, description: 'Execute node commands on source', setup: :setup_source_selected
         end
 
@@ -310,12 +310,12 @@ module Aspera
         end
 
         commands_under(:v4) do
-          command :dropbox,      description: 'Manage v4 dropboxes'
-          command :dmembership,  description: 'Manage dropbox memberships'
-          command :workgroup,    description: 'Manage workgroups'
-          command :wmembership,  description: 'Manage workgroup memberships'
-          command :user,         description: 'Manage users'
-          command :metadata_profile, description: 'Manage metadata profiles'
+          entity_command :dropbox, description: 'Manage v4 dropboxes', api: :api_v4, entity: 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at]
+          entity_command :dmembership, description: 'Manage dropbox memberships', api: :api_v4, entity: 'dropbox_memberships'
+          entity_command :workgroup, api: :api_v4, entity: 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at]
+          entity_command :wmembership, description: 'Manage workgroup memberships', api: :api_v4, entity: 'workgroup_memberships'
+          entity_command :user, api: :api_v4, entity: 'users', display_fields: %w[id name first_name last_name]
+          entity_command :metadata_profile, description: 'Manage metadata profiles', api: :api_v4, entity: 'metadata_profiles'
           command :package, description: 'List packages for a box'
         end
 
@@ -341,10 +341,6 @@ module Aspera
         def handle_package_show
           delivery_id = options.instance_identifier
           Result::SingleObject.new(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
-        end
-
-        def handle_package_list
-          Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])
         end
 
         def handle_package_send
@@ -489,12 +485,6 @@ module Aspera
           return Runner.result_transfer_multiple(result_transfer)
         end
 
-        # source sub-handlers
-
-        def handle_source_list
-          Result::ObjectList.new(api_v3.read('source_shares')['items'])
-        end
-
         # Resolve a source by id/name and validate the storage option.
         # @return [Hash] ctx with :source_info and :source_node_plugin
         def setup_source_selected
@@ -516,10 +506,6 @@ module Aspera
           end
           raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]" unless source_hash.key?(source_name)
           {source_info: source_hash[source_name]}
-        end
-
-        def handle_source_info(source_info:)
-          Result::SingleObject.new(source_info)
         end
 
         # source > node sub-handlers: one per COMMANDS_FASPEX
@@ -546,41 +532,11 @@ module Aspera
           end
         end
 
-        def handle_me
-          Result::SingleObject.new(api_v3.read('me'))
-        end
-
         # dropbox sub-handler
 
         def handle_dropbox_list
           dropbox_list = api_v3.read('dropboxes')
           Result::ObjectList.new(dropbox_list['items'], fields: %w[name id description can_read can_write])
-        end
-
-        # v4 sub-handlers
-
-        def handle_v4_dropbox
-          entity_execute(api: api_v4, entity: 'admin/dropboxes', display_fields: %w[id e_wg_name e_wg_desc created_at])
-        end
-
-        def handle_v4_dmembership
-          entity_execute(api: api_v4, entity: 'dropbox_memberships')
-        end
-
-        def handle_v4_workgroup
-          entity_execute(api: api_v4, entity: 'admin/workgroups', display_fields: %w[id e_wg_name e_wg_desc created_at])
-        end
-
-        def handle_v4_wmembership
-          entity_execute(api: api_v4, entity: 'workgroup_memberships')
-        end
-
-        def handle_v4_user
-          entity_execute(api: api_v4, entity: 'users', display_fields: %w[id name first_name last_name])
-        end
-
-        def handle_v4_metadata_profile
-          entity_execute(api: api_v4, entity: 'metadata_profiles')
         end
 
         def handle_v4_package_users

@@ -648,7 +648,7 @@ module Aspera
         # async (legacy /async)
         command :async, description: 'Manage async operations (legacy /async)'
         commands_under(:async) do
-          command :list,      description: 'List async sync IDs'
+          command :list,      description: 'List async sync IDs', handler: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
           command :show,      description: 'Show async summary'
           command :delete,    description: 'Delete async'
           command :bandwidth, description: 'Show async bandwidth'
@@ -670,18 +670,18 @@ module Aspera
         # stream
         command :stream, description: 'Manage stream operations'
         commands_under(:stream) do
-          command :list,   description: 'List streams'
-          command :create, description: 'Create a stream'
-          command :show,   description: 'Show a stream'
-          command :modify, description: 'Modify a stream'
-          command :cancel, description: 'Cancel a stream'
+          command :list,   description: 'List streams',    handler: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
+          command :create, description: 'Create a stream', handler: ->{Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))}
+          command :show,   description: 'Show a stream',   handler: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))}
+          command :modify, description: 'Modify a stream', handler: ->{Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))}
+          command :cancel, description: 'Cancel a stream', handler: ->{Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))}
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
         commands_under(:transfer) do
           command :list,              description: 'List transfers'
           command :cancel,            description: 'Cancel a transfer'
-          command :show,              description: 'Show a transfer'
+          command :show,              description: 'Show a transfer', handler: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.instance_identifier}"))}
           command :modify,            description: 'Modify a transfer'
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
@@ -689,7 +689,7 @@ module Aspera
         # service
         command :service, description: 'Manage services'
         commands_under(:service) do
-          command :list,   description: 'List services'
+          command :list,   description: 'List services', handler: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
           command :create, description: 'Create a service'
           command :delete, description: 'Delete a service'
         end
@@ -720,7 +720,7 @@ module Aspera
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
-        command :basic_token,   description: 'Generate basic auth token'
+        command :basic_token,   description: 'Generate basic auth token', handler: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
         command :bearer_token,  description: 'Generate bearer token'
         command :simulator,     description: 'Start node simulator'
         command :telemetry,     description: 'Report telemetry to external system'
@@ -857,10 +857,6 @@ module Aspera
         end
 
         # async sub-commands: individual handlers
-        def handle_async_list
-          Result::ValueList.new(@api_node.read('async/list')['sync_ids'])
-        end
-
         def handle_async_show
           async_id = options.instance_identifier{ |field, value| async_lookup(field, value)}
           async_ids = @api_node.read('async/list')['sync_ids']
@@ -949,27 +945,6 @@ module Aspera
           end
         end
 
-        # stream sub-commands
-        def handle_stream_list
-          Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])
-        end
-
-        def handle_stream_create
-          Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))
-        end
-
-        def handle_stream_show
-          Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))
-        end
-
-        def handle_stream_modify
-          Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))
-        end
-
-        def handle_stream_cancel
-          Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))
-        end
-
         # transfer sub-commands
         def handle_transfer_list
           transfer_filter = query_read_delete(default: {})
@@ -1009,10 +984,6 @@ module Aspera
           Result::Status.new('Cancelled')
         end
 
-        def handle_transfer_show
-          Result::SingleObject.new(@api_node.read("ops/transfers/#{options.instance_identifier}"))
-        end
-
         def handle_transfer_modify
           @api_node.update("ops/transfers/#{options.instance_identifier}", options.get_next_argument('update value', validation: Hash))
           Result::Status.new('Modified')
@@ -1049,10 +1020,6 @@ module Aspera
         end
 
         # service sub-commands
-        def handle_service_list
-          Result::ObjectList.new(@api_node.read('rund/services')['services'])
-        end
-
         def handle_service_create
           resp = @api_node.create('rund/services', options.get_next_argument('creation data', validation: Hash))
           Result::Status.new("#{resp['id']} created")
@@ -1109,10 +1076,6 @@ module Aspera
           encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
           Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
           return Result::Status.new('done')
-        end
-
-        def handle_basic_token
-          return Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
         end
 
         def handle_bearer_token

@@ -82,7 +82,12 @@ module Aspera
 
         commands_under(%i[transfer current]) do
           command :list
-          command :show
+          command(
+            :show, handler: lambda do |api_console:|
+              transfer_id = options.instance_identifier(description: 'transfer ID')
+              Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
+            end
+          )
           command :files
           command :start
           command :pause
@@ -145,11 +150,6 @@ module Aspera
             api_console.read('transfers', query),
             fields: %w[id contact name status]
           )
-        end
-
-        def handle_transfer_current_show(api_console:)
-          transfer_id = options.instance_identifier(description: 'transfer ID')
-          Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))
         end
 
         def handle_transfer_current_files(api_console:)

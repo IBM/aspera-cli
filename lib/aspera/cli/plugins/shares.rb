@@ -103,16 +103,16 @@ module Aspera
         # --- DSL ---
 
         command :health,   description: 'Check Shares health'
-        command :info,     description: 'Show server information'
+        command :info,     description: 'Show server information', handler: ->{Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))}
         command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node
         command :admin,    description: 'Administer Shares', setup: :setup_admin
 
         commands_under(:admin) do
-          command :node,              description: 'Manage nodes'
+          entity_command :node, api: :@api_shares_admin, entity: 'data/nodes'
           command :share,             description: 'Manage shares'
           command :transfer_settings, description: 'Manage transfer settings'
-          command :user,              description: 'Manage users'
-          command :group,             description: 'Manage groups'
+          command :user,              description: 'Manage users',  handler: ->{execute_admin_entity_type(:user)}
+          command :group,             description: 'Manage groups', handler: ->{execute_admin_entity_type(:group)}
         end
 
         SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
@@ -138,8 +138,8 @@ module Aspera
         end
 
         commands_under(%i[admin transfer_settings]) do
-          command :show,   description: 'Show transfer settings',   handler: ->{entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :show,   is_singleton: true)}
-          command :modify, description: 'Modify transfer settings', handler: ->{entity_execute(api: @api_shares_admin, entity: 'data/transfer_settings', command: :modify, is_singleton: true)}
+          entity_command :show,   description: 'Show transfer settings',   api: :@api_shares_admin, entity: 'data/transfer_settings', command: :show,   is_singleton: true
+          entity_command :modify, description: 'Modify transfer settings', api: :@api_shares_admin, entity: 'data/transfer_settings', command: :modify, is_singleton: true
         end
 
         # --- setup ---
@@ -183,12 +183,6 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        # --- info ---
-
-        def handle_info
-          Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))
-        end
-
         # --- files sub-commands (restricted to COMMANDS_SHARES, delegated to Node) ---
 
         commands_under(:files) do
@@ -202,25 +196,6 @@ module Aspera
           define_method(:"handle_files_#{cmd}") do |shares_node_plugin:|
             shares_node_plugin.dispatch_v3_command(cmd)
           end
-        end
-
-        # --- admin node (entity_execute shorthand via DSL) ---
-        # The `entity_execute:` hash on the :node command provides `entity:`;
-        # the api: is injected from ctx by run_entity_execute (setup_admin stored @api_shares_admin
-        # and the DSL setup: key returns {} — so api must be in the entity_execute hash itself).
-        # Override: entity_execute is declared directly in the command, api comes from ivar.
-        def handle_admin_node
-          entity_execute(api: @api_shares_admin, entity: 'data/nodes')
-        end
-
-        # --- admin user / group (too dynamic for static DSL sub-tree) ---
-
-        def handle_admin_user
-          execute_admin_entity_type(:user)
-        end
-
-        def handle_admin_group
-          execute_admin_entity_type(:group)
         end
 
         private
