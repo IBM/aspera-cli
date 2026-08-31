@@ -267,9 +267,7 @@ module Aspera
           matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
-          if matching.empty? && short_value.match?(REGEX_LOOKUP_ID_BY_FIELD)
-            raise BadArgument, "Identifier '#{short_value}' used where a #{descr} is expected: place the identifier after the command"
-          end
+          raise BadArgument, "Identifier '#{short_value}' used where a #{descr} is expected: place the identifier after the command" if matching.empty? && short_value.match?(REGEX_LOOKUP_ID_BY_FIELD)
           Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values), type: BadArgument)
           Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching), type: BadArgument)
           return BoolValue.true?(matching.first) if allowed_values.eql?(BoolValue::ALL)
