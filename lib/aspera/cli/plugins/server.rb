@@ -201,13 +201,13 @@ module Aspera
 
         # Generate ascmd handlers - convention: action_<op>
         %i[rm mv cp mkdir].each do |op|
-          define_method(:"action_#{op}") do
+          define_action_method([op]) do
             execute_ascmd(op){Result::Success.new}
           end
         end
 
         %i[du md5sum info].each do |op|
-          define_method(:"action_#{op}") do
+          define_action_method([op]) do
             execute_ascmd(op){ |r| Result::SingleObject.new(r.stringify_keys)}
           end
         end

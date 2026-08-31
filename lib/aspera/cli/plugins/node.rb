@@ -646,7 +646,7 @@ module Aspera
 
         # access_keys > CRUD
         Operations::ALL.each do |op|
-          define_method(:"action_access_keys_#{op}") do
+          define_action_method([:access_keys, op]) do
             entity_execute(api: @api_node, entity: 'access_keys', command: op) do |field, value|
               raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
               @api_node.read('access_keys/self')['id']
@@ -961,14 +961,14 @@ module Aspera
 
         # ssync CRUD
         Operations::ALL.reject{ |op| op == :modify}.each do |op|
-          define_method(:"action_ssync_#{op}") do
+          define_action_method([:ssync, op]) do
             entity_execute(api: @api_node, entity: :asyncs, command: op, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}
           end
         end
 
         # ssync start/stop
         %i[start stop].each do |action|
-          define_method(:"action_ssync_#{action}") do |ssync_id:, **|
+          define_action_method([:ssync, action]) do |ssync_id:, **|
             @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/#{action}", content_type: Mime::TEXT, body: '', ret: :resp).body
             Result::Status.new('Done')
           end
@@ -976,7 +976,7 @@ module Aspera
 
         # ssync info sub-commands
         %i[bandwidth counters files state summary].each do |action|
-          define_method(:"action_ssync_#{action}") do |ssync_id:, **|
+          define_action_method([:ssync, action]) do |ssync_id:, **|
             parameters = SSYNC_WITH_PARAMS_ACTIONS.include?(action) ? (options.get_option(:query) || {}) : nil
             Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/#{action}", parameters))
           end

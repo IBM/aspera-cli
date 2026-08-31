@@ -527,7 +527,7 @@ module Aspera
         end
 
         Node::COMMANDS_FASPEX.each do |cmd|
-          define_method(:"action_source_node_#{cmd}") do |source_node_plugin:, **|
+          define_action_method([:source, :node, cmd]) do |source_node_plugin:, **|
             source_node_plugin.dispatch_v3_command(cmd)
           end
         end

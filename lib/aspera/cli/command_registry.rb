@@ -121,7 +121,7 @@ module Aspera
           next if @children_index[path]&.any? # intermediate node: skip
           next if spec.delegates_to || spec.entity_execute # delegated: skip
           next unless plugin_class
-          implicit_method = :"action_#{path.join('_')}"
+          implicit_method = CommandSpec.action_method(path)
           unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
             raise ArgumentError,
               "#{path.inspect}: no action: and no method #{implicit_method} on #{plugin_class}"

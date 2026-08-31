@@ -96,10 +96,26 @@ module Aspera
       :lookup,
       keyword_init: true
     ) do
+      class << self
+        # Derive the implicit action method name from a path array.
+        # e.g. [:admin, :user, :list] -> :action_admin_user_list
+        # @param path [Array<Symbol>]
+        # @return [Symbol]
+        def action_method(path)
+          :"action_#{path.join('_')}"
+        end
+      end
+
       # Compute the full path as Array<Symbol> from parent + id.
       # @return [Array<Symbol>]
       def full_path
         Array(parent) + [id]
+      end
+
+      # Derive the implicit action method name from the full path.
+      # @return [Symbol]
+      def action_method_name
+        self.class.action_method(full_path)
       end
     end
   end

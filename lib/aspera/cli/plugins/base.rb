@@ -51,6 +51,14 @@ module Aspera
             command(id, description: description, entity_execute: {api: api, entity: entity, **kwargs})
           end
 
+          # DSL class method: define an instance method whose name is derived from a path array.
+          # Equivalent to: define_method(CommandSpec.action_method(path), &block)
+          # @param path [Array<Symbol>] command path segments, e.g. [:admin, :user, :list]
+          # @yieldparam [Hash] keyword context forwarded from dispatch
+          def define_action_method(path, &block)
+            define_method(CommandSpec.action_method(path), &block)
+          end
+
           # DSL class method: scope block that sets a default parent for nested command() calls.
           # Fully re-entrant: blocks may be nested for multi-level parent paths.
           # @param parent [Symbol, Array<Symbol>] parent path applied to every command() inside
@@ -320,7 +328,7 @@ module Aspera
         # @param spec [CommandSpec]
         # @return [Symbol, Proc]
         def action_for(spec)
-          spec.action || :"action_#{spec.full_path.join('_')}"
+          spec.action || spec.action_method_name
         end
 
         # Invoke an action (Symbol method or Proc block) with the given positional

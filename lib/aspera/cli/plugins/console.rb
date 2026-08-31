@@ -100,7 +100,7 @@ module Aspera
         # Convention: action_transfer_current_<verb>
         # All share the same REST pattern: PATCH transfers/<id>/<verb>.
         %i[start pause cancel resume rerun change_rate change_policy move_forwards move_back].each do |verb|
-          define_method(:"action_transfer_current_#{verb}") do |api_console:, transfer_id:, **|
+          define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, **|
             Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
           end
         end

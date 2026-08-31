@@ -975,7 +975,7 @@ module Aspera
         # packages > bearer_token_node / node_info / browse / find
         # (NODE4_READ_ACTIONS dispatched by full path: action_packages_bearer_token_node, etc.)
         Node::NODE4_READ_ACTIONS.each do |action|
-          define_method(:"action_packages_#{action}") do |package_id:, **|
+          define_action_method([:packages, action]) do |package_id:, **|
             package_info = aoc_api.read("packages/#{package_id}")
             execute_nodegen4_command(action, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
           end
@@ -1161,18 +1161,18 @@ module Aspera
 
         # files > FILES_COMMANDS (all Gen4 node commands + :transfer)
         FILES_COMMANDS.each do |action|
-          define_method(:"action_files_#{action}") do
+          define_action_method([:files, action]) do
             execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
           end
         end
 
         # admin > application > instance > <type> > show|modify
         APP_TYPES.each do |app_type|
-          define_method(:"action_admin_application_instance_#{app_type}_show") do |res_id:, **|
+          define_action_method([:admin, :application, :instance, app_type, :show]) do |res_id:, **|
             Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{res_id}", query_read_delete))
           end
 
-          define_method(:"action_admin_application_instance_#{app_type}_modify") do |res_id:, **|
+          define_action_method([:admin, :application, :instance, app_type, :modify]) do |res_id:, **|
             aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", options.get_next_argument('properties', validation: Hash))
             Result::Status.new('modified')
           end
@@ -1288,7 +1288,7 @@ module Aspera
 
         # admin > <res> > list
         ADMIN_OBJECTS.each do |res|
-          define_method(:"action_admin_#{res}_list") do
+          define_action_method([:admin, res, :list]) do
             c = aoc_res_cfg(res)
             result_list(c[:path], fields: c[:list_fields])
           end
@@ -1296,7 +1296,7 @@ module Aspera
 
         # admin > <res> > show
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_method(:"action_admin_#{res}_show") do |res_id:, **|
+          define_action_method([:admin, res, :show]) do |res_id:, **|
             c = aoc_res_cfg(res)
             Result::SingleObject.new(aoc_api.read("#{c[:path]}/#{res_id}", query_read_delete), fields: Formatter.all_but('certificate'))
           end
@@ -1304,14 +1304,14 @@ module Aspera
 
         # admin > organization|self > show (singleton)
         %i[organization self].each do |res|
-          define_method(:"action_admin_#{res}_show") do
+          define_action_method([:admin, res, :show]) do
             Result::SingleObject.new(aoc_api.read(res.to_s, query_read_delete), fields: Formatter.all_but('certificate'))
           end
         end
 
         # admin > <res> > create
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_method(:"action_admin_#{res}_create") do
+          define_action_method([:admin, res, :create]) do
             c = aoc_res_cfg(res)
             path = c[:path]
             # Special case: client_registration_token has a different creation URL
@@ -1326,7 +1326,7 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
-          define_method(:"action_admin_#{res}_modify") do |res_id:, **|
+          define_action_method([:admin, res, :modify]) do |res_id:, **|
             c = aoc_res_cfg(res)
             changes = options.get_next_argument('properties', validation: Hash, schema: c[:schema])
             do_bulk_operation(command: :modify, values: res_id) do |one_id|
@@ -1341,7 +1341,7 @@ module Aspera
           cfg = ADMIN_OBJECT_CONFIG.fetch(r, {})
           cfg[:singleton] || (cfg[:ops] && !cfg[:ops].include?(:delete))
         end.each do |res|
-          define_method(:"action_admin_#{res}_delete") do |res_id:, **|
+          define_action_method([:admin, res, :delete]) do |res_id:, **|
             c = aoc_res_cfg(res)
             do_bulk_operation(command: :delete, values: res_id) do |one_id|
               aoc_api.delete("#{c[:path]}/#{one_id}")
@@ -1352,8 +1352,8 @@ module Aspera
 
         # user > contacts > list|show|create|modify|delete (same API path as admin > contact)
         Operations::ALL.each do |op|
-          define_method(:"action_user_contacts_#{op}") do |**ctx|
-            send(:"action_admin_contact_#{op}", **ctx)
+          define_action_method([:user, :contacts, op]) do |**ctx|
+            send(CommandSpec.action_method([:admin, :contact, op]), **ctx)
           end
         end
 
@@ -1371,7 +1371,7 @@ module Aspera
 
         # admin > node > do > <FILES_COMMAND>
         FILES_COMMANDS.each do |cmd|
-          define_method(:"action_admin_node_do_#{cmd}") do |res_id:, **|
+          define_action_method([:admin, :node, :do, cmd]) do |res_id:, **|
             execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN)
           end
         end
@@ -1450,10 +1450,10 @@ module Aspera
         # (setup_admin_user_instance is auto-generated, providing res_id:)
         %i[preferences notifications].each do |pref|
           pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
-          define_method(:"action_admin_user_#{pref}_show") do |res_id:, **|
+          define_action_method([:admin, :user, pref, :show]) do |res_id:, **|
             Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
           end
-          define_method(:"action_admin_user_#{pref}_modify") do |res_id:, **|
+          define_action_method([:admin, :user, pref, :modify]) do |res_id:, **|
             aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", options.get_next_argument('properties', validation: Hash))
             Result::Status.new('modified')
           end
@@ -1461,14 +1461,14 @@ module Aspera
 
         # automation > workflows > CRUD operations
         Operations::ALL.each do |op|
-          define_method(:"action_automation_workflows_#{op}") do
+          define_action_method([:automation, :workflows, op]) do
             entity_execute(api: @automation_api, entity: 'workflows', command: op)
           end
         end
 
         # automation > workflows > action > * (TODO: not fully implemented)
         %i[list create show].each do |cmd|
-          define_method(:"action_automation_workflows_action_#{cmd}") do
+          define_action_method([:automation, :workflows, :action, cmd]) do
             wf_id = options.instance_identifier
             Log.log.warn{"Not implemented: #{cmd}"}
             step = @automation_api.create('steps', {'workflow_id' => wf_id})

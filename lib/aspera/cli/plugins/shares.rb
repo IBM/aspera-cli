@@ -233,7 +233,7 @@ module Aspera
 
         # One handler per COMMANDS_SHARES command.
         Node::COMMANDS_SHARES.each do |cmd|
-          define_method(:"action_files_#{cmd}") do |shares_node_plugin:|
+          define_action_method([:files, cmd]) do |shares_node_plugin:|
             shares_node_plugin.dispatch_v3_command(cmd)
           end
         end
@@ -289,23 +289,23 @@ module Aspera
           ENTITY_LOCATIONS.each do |location|
             ops = location.eql?(:all) ? (Operations::ALL - [:create]) : Operations::ALL
             ops.each do |op|
-              define_method(:"action_admin_#{entity_type}_#{location}_#{op}") do
+              define_action_method([:admin, entity_type, location, op]) do
                 action_admin_entity_crud(entity_type, location, op)
               end
             end
             USR_GRP_SETTINGS.each do |setting|
-              define_method(:"action_admin_#{entity_type}_#{location}_#{setting}") do
+              define_action_method([:admin, entity_type, location, setting]) do
                 action_admin_entity_setting(entity_type, location, setting)
               end
             end
             next unless entity_type.eql?(:group)
-            define_method(:"action_admin_#{entity_type}_#{location}_users") do
+            define_action_method([:admin, entity_type, location, :users]) do
               action_admin_entity_users(entity_type, location)
             end
           end
 
           # ldap: add
-          define_method(:"action_admin_#{entity_type}_ldap_add") do
+          define_action_method([:admin, entity_type, :ldap, :add]) do
             path = admin_entity_path(entity_type, :ldap)
             do_bulk_operation(command: :add, descr: "#{entity_type} name", values: String) do |entity_name|
               @api_shares_admin.create(path, {entity_type => entity_name})
@@ -313,7 +313,7 @@ module Aspera
           end
 
           # saml: import
-          define_method(:"action_admin_#{entity_type}_saml_import") do
+          define_action_method([:admin, entity_type, :saml, :import]) do
             path = admin_entity_path(entity_type, :saml)
             do_bulk_operation(command: :import, descr: 'user information') do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}

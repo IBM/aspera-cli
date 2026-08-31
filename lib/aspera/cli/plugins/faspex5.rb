@@ -618,7 +618,7 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_method(:action_admin_clean_deleted) do
+        define_action_method([:admin, :clean_deleted]) do
           delete_data = value_create_modify(command: :clean_deleted, default: {})
           delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
@@ -626,7 +626,7 @@ module Aspera
 
         # admin > <resource> > list
         Api::Faspex::ADMIN_RESOURCES.each do |res|
-          define_method(:"action_admin_#{res}_list") do
+          define_action_method([:admin, res, :list]) do
             args = res_exec_args(res)
             # Special case: email_notifications list returns a fixed value list
             next Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res.eql?(:email_notifications)
@@ -640,7 +640,7 @@ module Aspera
         # admin > <resource> > create / modify / delete / show
         Api::Faspex::ADMIN_RESOURCES.each do |res|
           CRUD_NO_LIST.each do |op|
-            define_method(:"action_admin_#{res}_#{op}") do
+            define_action_method([:admin, res, op]) do
               args = res_exec_args(res)
               entity_execute(command: op, **args){ |f, v| res_lookup_id(res, f, v)}
             end
@@ -685,7 +685,7 @@ module Aspera
 
         # admin > nodes > shared_folders > create/modify/delete/show/list
         Operations::ALL.each do |op|
-          define_method(:"action_admin_nodes_shared_folders_#{op}") do |sf_entity:, **|
+          define_action_method([:admin, :nodes, :shared_folders, op]) do |sf_entity:, **|
             entity_execute(api: @api_v5, entity: sf_entity, items_key: 'shared_folders', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
           end
         end
@@ -697,7 +697,7 @@ module Aspera
 
         # admin > nodes > shared_folders > user > create/modify/delete/show/list (custom access users)
         Operations::ALL.each do |op|
-          define_method(:"action_admin_nodes_shared_folders_user_#{op}") do |user_path:, **|
+          define_action_method([:admin, :nodes, :shared_folders, :user, op]) do |user_path:, **|
             entity_execute(api: @api_v5, entity: user_path, items_key: 'users', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: f, value: v)['id']}
           end
         end
@@ -713,7 +713,7 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             CRUD_NO_SHOW.each do |op|
-              define_method(:"action_admin_#{res}_#{sub}_#{op}") do |res_instance_path:, **|
+              define_action_method([:admin, res, sub, op]) do |res_instance_path:, **|
                 res_path = "#{res_instance_path}/#{sub}"
                 list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
                 if op.eql?(:create) && sub.eql?(:members)
@@ -739,7 +739,7 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_method(:"action_admin_#{res}_invite_external_collaborator") do |res_instance_path:, **|
+          define_action_method([:admin, res, :invite_external_collaborator]) do |res_instance_path:, **|
             creation_payload = value_create_modify(command: :invite_external_collaborator)
             result = @api_v5.create("#{res_instance_path}/external_collaborator", creation_payload)
             formatter.display_status(result['message'])
@@ -834,7 +834,7 @@ module Aspera
 
         # CRUD handlers for invitations (list, show, modify, delete)
         Operations::ALL.reject{ |op| op == :create}.each do |op|
-          define_method(:"action_invitations_#{op}") do
+          define_action_method([:invitations, op]) do
             entity_execute(
               api: @api_v5,
               entity: 'invitations',
