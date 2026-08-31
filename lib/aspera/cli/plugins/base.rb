@@ -315,12 +315,12 @@ module Aspera
 
         # Resolve the action for a leaf CommandSpec.
         # Returns spec.action (Symbol or Proc) if explicitly set; otherwise derives a Symbol
-        # from the full path as :handle_<path_segment_1>_<path_segment_2>_...
-        # (e.g. [:access_key, :list] -> :handle_access_key_list).
+        # from the full path as :action_<path_segment_1>_<path_segment_2>_...
+        # (e.g. [:access_key, :list] -> :action_access_key_list).
         # @param spec [CommandSpec]
         # @return [Symbol, Proc]
         def action_for(spec)
-          spec.action || :"handle_#{spec.full_path.join('_')}"
+          spec.action || :"action_#{spec.full_path.join('_')}"
         end
 
         # Invoke an action (Symbol method or Proc block) with the given positional

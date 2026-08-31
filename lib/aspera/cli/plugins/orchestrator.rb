@@ -207,7 +207,7 @@ module Aspera
           {}
         end
 
-        def handle_health
+        def action_health
           nagios = Nagios.new
           begin
             info = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
@@ -220,7 +220,7 @@ module Aspera
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)
-        def handle_workflows_start(wf_id:, **)
+        def action_workflows_start(wf_id:, **)
           call_params = {format: :json}
           # get external parameters if any
           options.get_next_argument('external_parameters', mandatory: false, validation: Hash, default: {}).each do |name, value|

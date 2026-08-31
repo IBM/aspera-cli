@@ -97,10 +97,10 @@ module Aspera
         end
 
         # Generate one handler per transfer/current action.
-        # Convention: handle_transfer_current_<verb>
+        # Convention: action_transfer_current_<verb>
         # All share the same REST pattern: PATCH transfers/<id>/<verb>.
         %i[start pause cancel resume rerun change_rate change_policy move_forwards move_back].each do |verb|
-          define_method(:"handle_transfer_current_#{verb}") do |api_console:, transfer_id:, **|
+          define_method(:"action_transfer_current_#{verb}") do |api_console:, transfer_id:, **|
             Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
           end
         end
@@ -120,7 +120,7 @@ module Aspera
 
         # --- health ---
 
-        def handle_health(api_console:)
+        def action_health(api_console:)
           nagios = Nagios.new
           begin
             api_console.read('ssh_keys')
@@ -133,7 +133,7 @@ module Aspera
 
         # --- transfer current ---
 
-        def handle_transfer_current_list(api_console:)
+        def action_transfer_current_list(api_console:)
           query = query_read_delete(default: {})
           if query['from'].nil? && query['to'].nil?
             time_now = Time.now
@@ -147,7 +147,7 @@ module Aspera
           )
         end
 
-        def handle_transfer_current_files(api_console:, transfer_id:, **)
+        def action_transfer_current_files(api_console:, transfer_id:, **)
           query = query_read_delete(default: {})
           query['limit'] ||= 100
           Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
@@ -155,7 +155,7 @@ module Aspera
 
         # --- transfer smart ---
 
-        def handle_transfer_smart_submit(api_console:)
+        def action_transfer_smart_submit(api_console:)
           smart_id = options.get_next_argument('smart_id')
           params = options.get_next_argument('transfer parameters', validation: Hash)
           Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", params))

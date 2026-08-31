@@ -47,9 +47,8 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end)
 
-        command(:info, description: 'Show HTTP Gateway information', action: lambda do
-          Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)
-        end)
+        command :info, description: 'Show HTTP Gateway information',
+          action: ->{Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)}
 
         option :url, description: 'URL of application, e.g. https://app.example.com/aspera/app'
 

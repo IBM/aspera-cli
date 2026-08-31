@@ -453,7 +453,7 @@ module Aspera
 
         # --- handlers ---
 
-        def handle_scan
+        def action_scan
           check_tools_and_mimemagic
           scan_path = options.get_option(:scan_path)
           scan_id = options.get_option(:scan_id)
@@ -475,28 +475,28 @@ module Aspera
           cleanup_tmp_folder
         end
 
-        def handle_events
+        def action_events
           check_tools_and_mimemagic
           run_event_loop(:events)
         ensure
           cleanup_tmp_folder
         end
 
-        def handle_trevents
+        def action_trevents
           check_tools_and_mimemagic
           run_event_loop(:trevents)
         ensure
           cleanup_tmp_folder
         end
 
-        def handle_check
+        def action_check
           check_tools_and_mimemagic
           Result::Status.new('Tools validated')
         ensure
           cleanup_tmp_folder
         end
 
-        def handle_test
+        def action_test
           check_tools_and_mimemagic
           source = options.get_next_argument('source file')
           format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
@@ -507,7 +507,7 @@ module Aspera
           cleanup_tmp_folder
         end
 
-        def handle_show
+        def action_show
           check_tools_and_mimemagic
           source = options.get_next_argument('source file')
           # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys

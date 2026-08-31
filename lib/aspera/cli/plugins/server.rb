@@ -199,15 +199,15 @@ module Aspera
         command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?
         command :info,   description: 'Show server system information',   condition: :ascmd_available?
 
-        # Generate ascmd handlers - convention: handle_<op>
+        # Generate ascmd handlers - convention: action_<op>
         %i[rm mv cp mkdir].each do |op|
-          define_method(:"handle_#{op}") do
+          define_method(:"action_#{op}") do
             execute_ascmd(op){Result::Success.new}
           end
         end
 
         %i[du md5sum info].each do |op|
-          define_method(:"handle_#{op}") do
+          define_method(:"action_#{op}") do
             execute_ascmd(op){ |r| Result::SingleObject.new(r.stringify_keys)}
           end
         end
@@ -235,7 +235,7 @@ module Aspera
 
         # --- health ---
 
-        def handle_health_transfer
+        def action_health_transfer
           nagios = Nagios.new
           probe_ts = @server_transfer_spec.merge({
             'direction'     => 'send',
@@ -254,13 +254,13 @@ module Aspera
 
         # --- ascmd handlers ---
 
-        def handle_ls
+        def action_ls
           execute_ascmd(:ls) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys), fields: %w[zmode zuid zgid size mtime name])
           end
         end
 
-        def handle_df
+        def action_df
           execute_ascmd(:df) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys))
           end

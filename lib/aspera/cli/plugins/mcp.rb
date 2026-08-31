@@ -70,7 +70,7 @@ module Aspera
         command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [ArgumentSpec.new(name: :mcp_options, type: [Hash], mandatory: false)]
 
-        def handle_server(mcp_options = nil)
+        def action_server(mcp_options = nil)
           require 'aspera/cli/mcp_tool'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]

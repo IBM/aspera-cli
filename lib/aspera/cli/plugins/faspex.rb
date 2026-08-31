@@ -325,7 +325,7 @@ module Aspera
 
         # --- handlers ---
 
-        def handle_health
+        def action_health
           nagios = Nagios.new
           begin
             api_v3.read('me')
@@ -338,12 +338,12 @@ module Aspera
 
         # package sub-handlers
 
-        def handle_package_show
+        def action_package_show
           delivery_id = options.instance_identifier
           Result::SingleObject.new(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
         end
 
-        def handle_package_send
+        def action_package_send
           delivery_info = options.get_option(:delivery_info, mandatory: true)
           Aspera.assert_type(delivery_info, Hash, type: Cli::BadArgument){'delivery_info'}
           # actual parameter to faspex API
@@ -377,7 +377,7 @@ module Aspera
           return Runner.result_transfer(transfer.start(transfer_spec))
         end
 
-        def handle_package_receive
+        def action_package_receive
           link_url = options.get_option(:link)
           # list of faspex ID/URI to download
           pkg_id_uri = nil
@@ -527,24 +527,24 @@ module Aspera
         end
 
         Node::COMMANDS_FASPEX.each do |cmd|
-          define_method(:"handle_source_node_#{cmd}") do |source_node_plugin:, **|
+          define_method(:"action_source_node_#{cmd}") do |source_node_plugin:, **|
             source_node_plugin.dispatch_v3_command(cmd)
           end
         end
 
         # dropbox sub-handler
 
-        def handle_dropbox_list
+        def action_dropbox_list
           dropbox_list = api_v3.read('dropboxes')
           Result::ObjectList.new(dropbox_list['items'], fields: %w[name id description can_read can_write])
         end
 
-        def handle_v4_package_users
+        def action_v4_package_users
           pkg_box_id = options.instance_identifier
           entity_execute(api: api_v4, entity: "users/#{pkg_box_id}/packages")
         end
 
-        def handle_address_book
+        def action_address_book
           result = api_v3.read('address-book', {'format' => 'json', 'count' => 100_000})
           formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
           users = result['entry']
@@ -564,7 +564,7 @@ module Aspera
           return Result::ObjectList.new(users)
         end
 
-        def handle_login_methods
+        def action_login_methods
           login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}, ret: :resp).body
           login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
           return Result::ObjectList.new(login_methods['XRD']['Service'])

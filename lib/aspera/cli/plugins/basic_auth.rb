@@ -14,7 +14,7 @@ module Aspera
 
         # Declare url/username/password on an arbitrary Options object.
         # Still needed for ad-hoc callers that are not plugin instances
-        # (e.g. PresetActions#handle_config_lookup).
+        # (e.g. PresetActions#action_config_lookup).
         class << self
           def declare_options(options)
             options.declare(:url,      description: 'URL of application, e.g. https://app.example.com/aspera/app') unless options.option_declared?(:url)

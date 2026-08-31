@@ -80,7 +80,7 @@ module Aspera
           end
         end
 
-        def handle_health
+        def action_health
           nagios = Nagios.new
           begin
             result = build_api.read('ping')

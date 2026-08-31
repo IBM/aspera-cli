@@ -603,18 +603,7 @@ module Aspera
             @api_v5.delete('configuration/smtp')
             Result::Status.new('SMTP configuration deleted')
           end)
-          command(:test, description: 'Test SMTP configuration', action: lambda do
-            test_data = options.get_next_argument('Email or test data, see API')
-            test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
-            creation = @api_v5.create('configuration/smtp/test', test_data)
-            result = wait_for_job(creation['job_id'])
-            begin
-              result['serialized_args'] = JSON.parse(result['serialized_args'])
-            rescue JSON::ParserError
-              # keep as string if not valid JSON
-            end
-            Result::SingleObject.new(result)
-          end)
+          command :test, description: 'Test SMTP configuration'
         end
 
         commands_under(%i[admin events]) do
@@ -629,7 +618,7 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_method(:handle_admin_clean_deleted) do
+        define_method(:action_admin_clean_deleted) do
           delete_data = value_create_modify(command: :clean_deleted, default: {})
           delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
@@ -637,7 +626,7 @@ module Aspera
 
         # admin > <resource> > list
         Api::Faspex::ADMIN_RESOURCES.each do |res|
-          define_method(:"handle_admin_#{res}_list") do
+          define_method(:"action_admin_#{res}_list") do
             args = res_exec_args(res)
             # Special case: email_notifications list returns a fixed value list
             next Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res.eql?(:email_notifications)
@@ -651,28 +640,41 @@ module Aspera
         # admin > <resource> > create / modify / delete / show
         Api::Faspex::ADMIN_RESOURCES.each do |res|
           CRUD_NO_LIST.each do |op|
-            define_method(:"handle_admin_#{res}_#{op}") do
+            define_method(:"action_admin_#{res}_#{op}") do
               args = res_exec_args(res)
               entity_execute(command: op, **args){ |f, v| res_lookup_id(res, f, v)}
             end
           end
         end
 
+        def action_admin_smtp_test
+          test_data = options.get_next_argument('Email or test data, see API')
+          test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
+          creation = @api_v5.create('configuration/smtp/test', test_data)
+          result = wait_for_job(creation['job_id'])
+          begin
+            result['serialized_args'] = JSON.parse(result['serialized_args'])
+          rescue JSON::ParserError
+            # keep as string if not valid JSON
+          end
+          Result::SingleObject.new(result)
+        end
+
         # admin > accounts > reset_password
-        def handle_admin_accounts_reset_password(contact_id:, **)
+        def action_admin_accounts_reset_password(contact_id:, **)
           @api_v5.create("accounts/#{contact_id}/reset_password", {})
           Result::Status.new('password reset, user shall check email')
         end
 
         # admin > file_processing > next
-        def handle_admin_file_processing_next
+        def action_admin_file_processing_next
           args = res_exec_args(:file_processing)
           result, count = @api_v5.list_entities_limit_offset_total_count(entity: args[:entity], operation: 'POST', items_key: 'files')
           Result::ObjectList.new(result, total: count)
         end
 
         # admin > nodes > browse
-        def handle_admin_nodes_browse(node_id:, **)
+        def action_admin_nodes_browse(node_id:, **)
           browse_folder("nodes/#{node_id}/browse")
         end
 
@@ -683,7 +685,7 @@ module Aspera
 
         # admin > nodes > shared_folders > create/modify/delete/show/list
         Operations::ALL.each do |op|
-          define_method(:"handle_admin_nodes_shared_folders_#{op}") do |sf_entity:, **|
+          define_method(:"action_admin_nodes_shared_folders_#{op}") do |sf_entity:, **|
             entity_execute(api: @api_v5, entity: sf_entity, items_key: 'shared_folders', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
           end
         end
@@ -695,7 +697,7 @@ module Aspera
 
         # admin > nodes > shared_folders > user > create/modify/delete/show/list (custom access users)
         Operations::ALL.each do |op|
-          define_method(:"handle_admin_nodes_shared_folders_user_#{op}") do |user_path:, **|
+          define_method(:"action_admin_nodes_shared_folders_user_#{op}") do |user_path:, **|
             entity_execute(api: @api_v5, entity: user_path, items_key: 'users', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: f, value: v)['id']}
           end
         end
@@ -711,7 +713,7 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             CRUD_NO_SHOW.each do |op|
-              define_method(:"handle_admin_#{res}_#{sub}_#{op}") do |res_instance_path:, **|
+              define_method(:"action_admin_#{res}_#{sub}_#{op}") do |res_instance_path:, **|
                 res_path = "#{res_instance_path}/#{sub}"
                 list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
                 if op.eql?(:create) && sub.eql?(:members)
@@ -737,7 +739,7 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_method(:"handle_admin_#{res}_invite_external_collaborator") do |res_instance_path:, **|
+          define_method(:"action_admin_#{res}_invite_external_collaborator") do |res_instance_path:, **|
             creation_payload = value_create_modify(command: :invite_external_collaborator)
             result = @api_v5.create("#{res_instance_path}/external_collaborator", creation_payload)
             formatter.display_status(result['message'])
@@ -764,7 +766,7 @@ module Aspera
           {package_id: package_id}
         end
 
-        def handle_packages_list
+        def action_packages_list
           list, total = list_packages_with_filter
           fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
           fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
@@ -772,7 +774,7 @@ module Aspera
           Result::ObjectList.new(list, total: total, fields: fields)
         end
 
-        def handle_packages_delete(package_id:, **)
+        def action_packages_delete(package_id:, **)
           ids = package_id.is_a?(Array) ? package_id : [package_id]
           Aspera.assert_array_all(ids, String){'Package id(s)'}
           # API returns 204, empty on success
@@ -788,7 +790,7 @@ module Aspera
 
         # --- handlers ---
 
-        def handle_health
+        def action_health
           nagios = Nagios.new
           begin
             data, http = Rest.new(base_url: options.get_option(:url, mandatory: true))
@@ -803,7 +805,7 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        def handle_shared_folders_browse
+        def action_shared_folders_browse
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
           shared_folder_id = options.instance_identifier do |field, value|
             matches = all_shared_folders.select{ |i| i[field].eql?(value)}
@@ -818,12 +820,12 @@ module Aspera
 
         # invitations sub-handlers
 
-        def handle_invitations_resend(invitation_id:, **)
+        def action_invitations_resend(invitation_id:, **)
           @api_v5.create("invitations/#{invitation_id}/resend", nil)
           Result::Status.new('Invitation resent')
         end
 
-        def handle_invitations_create
+        def action_invitations_create
           do_bulk_operation(command: :create, descr: 'data') do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
             @api_v5.create(endpoint, params)
@@ -832,7 +834,7 @@ module Aspera
 
         # CRUD handlers for invitations (list, show, modify, delete)
         Operations::ALL.reject{ |op| op == :create}.each do |op|
-          define_method(:"handle_invitations_#{op}") do
+          define_method(:"action_invitations_#{op}") do
             entity_execute(
               api: @api_v5,
               entity: 'invitations',
@@ -845,7 +847,7 @@ module Aspera
           end
         end
 
-        def handle_gateway
+        def action_gateway
           require 'aspera/faspex_gw'
           parameters = value_create_modify(command: :gateway, default: {}).symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
@@ -856,7 +858,7 @@ module Aspera
           Result::Status.new('Gateway terminated')
         end
 
-        def handle_postprocessing
+        def action_postprocessing
           require 'aspera/faspex_postproc' # cspell:disable-line
           parameters = value_create_modify(command: :postprocessing, default: {}).symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})

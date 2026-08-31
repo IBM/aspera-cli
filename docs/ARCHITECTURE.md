@@ -143,7 +143,7 @@ command tree statically introspectable, self-documenting, and testable without e
 | `description` | `String` | User-facing help text |
 | `options` | `Array<Symbol>` | Option names consumed by this command |
 | `arguments` | `Array<ArgumentSpec>` | Positional arguments in parse order |
-| `handler` | `Symbol \| Proc \| nil` | Handler for the leaf command. Three forms: **(1)** omitted → convention `handle_<full_path_joined_by_underscores>` is called; **(2)** `Symbol` → named instance method (use when body > 3 lines); **(3)** `Proc` / lambda → inline handler (use when body ≤ 3 lines — prefer `->{ ... }` for zero or keyword-only args, `lambda do \|arg\| … end` for multi-line bodies) |
+| `handler` | `Symbol \| Proc \| nil` | Handler for the leaf command. Three forms: **(1)** omitted → convention `action_<full_path_joined_by_underscores>` is called; **(2)** `Symbol` → named instance method (use when body > 3 statements, or when logic is shared); **(3)** `Proc` / lambda → inline handler (use when body ≤ 3 statements and not shared — prefer `->{ ... }` for zero or keyword-only args, `lambda do \|arg\| … end` for multi-line bodies) |
 | `setup` | `Symbol \| nil` | Instance method called with `**ctx` before dispatching to children **or** before invoking the leaf handler; returns a `Hash` merged into `ctx` and passed to all descendants |
 | `root_setup` | `Symbol \| nil` | Instance method called once before the root dispatch (class-level DSL method); used when state must exist before root command conditions are evaluated |
 | `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for delegation loops) |
@@ -230,12 +230,13 @@ Key properties of the `ctx` hash:
 
 | Condition | Preferred form |
 | --- | --- |
-| 1 line, no args | `handler: ->{…}` |
-| 1 line, with args | `handler: ->(arg:){…}` |
-| 2–3 lines, inline | `command(:x, …, handler: lambda do … end)` |
-| > 3 lines | named method `def handle_<full_path>` |
+| 1 statement, no args | `handler: ->{…}` |
+| 1 statement, with args | `handler: ->(arg:){…}` |
+| 2–3 statements, inline | `command(:x, …, handler: lambda do … end)` |
+| > 3 statements | named method `def action_<full_path>` |
+| shared logic (called from multiple places) | named method regardless of size |
 
-The 3-line threshold is deliberately informal. The deciding factor is readability at the call site: if the handler fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer.
+The 3-statement threshold is deliberately informal. The deciding factor is readability at the call site: if the handler fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer. Logic shared between several commands must always live in a named method, regardless of its size.
 
 **Precedence rule**: `lambda do...end` has low binding priority — if `command` is called without parentheses, Ruby attaches the `do...end` to `command` instead of `lambda`, causing `tried to create Proc object without a block` at class load time. Always use `command(...)` with parentheses when the handler is a `lambda do...end`.
 
@@ -272,7 +273,7 @@ intermediate node — never in the leaf handlers themselves.
 ```ruby
 # BAD: forces the user to write: workspace dropbox list <id>
 # but the convention requires:  workspace dropbox <id> list
-def handle_admin_workspace_dropbox_list
+def action_admin_workspace_dropbox_list
   res_id = get_resource_id_from_args('workspaces')   # ← consumed AFTER command selection
   Result::ObjectList.new(aoc_api.read('dropboxes', {'workspace_id' => res_id}))
 end
@@ -287,7 +288,7 @@ def setup_admin_workspace_dropbox(**)
   {ws_res_id: get_resource_id_from_args('workspaces')}  # ← consumed BEFORE list/show/…
 end
 
-def handle_admin_workspace_dropbox_list(ws_res_id:, **)
+def action_admin_workspace_dropbox_list(ws_res_id:, **)
   Result::ObjectList.new(aoc_api.read('dropboxes', {'workspace_id' => ws_res_id}))
 end
 ```
@@ -338,7 +339,7 @@ calling into the Node plugin. `dispatch_v3_command(command)` handles this case: 
 that the symbol belongs to the node's known command set, then re-enters the DSL dispatcher via
 `dispatch_from_registry([command], {})` exactly as if the argument had been consumed normally.
 
-**Rule**: `dispatch_v3_command` must **never** call handler methods directly (e.g. `send(:"handle_#{command}")`).
+**Rule**: `dispatch_v3_command` must **never** call action methods directly (e.g. `send(:"action_#{command}")`).
 All execution must go through `dispatch_from_registry` so that setup hooks, context propagation,
 inline lambda handlers, and help generation work identically whether a command is reached from
 the top-level argument stream or via a delegated call.
@@ -595,7 +596,7 @@ command :show, description: 'Show a package',
   handler: ->(package_id:, **){Result::SingleObject.new(@api.read("packages/#{package_id}"))}
 ```
 
-**2–3 lines, inline** — `lambda do...end` with `command(...)` parentheses (mandatory — see precedence rule above):
+**2–3 statements, inline** — `lambda do...end` with `command(...)` parentheses (mandatory — see precedence rule above):
 
 ```ruby
 command(
@@ -607,7 +608,7 @@ command(
 )
 ```
 
-**> 3 lines** — named method, convention `handle_<full_path_joined_by_underscores>`:
+**> 3 statements** — named method, convention `action_<full_path_joined_by_underscores>`:
 
 ```ruby
 command :package, description: 'Manage packages'
@@ -615,7 +616,7 @@ commands_under(:package) do
   command :receive, description: 'Receive a package'
 end
 
-def handle_package_receive
+def action_package_receive
   # many lines of logic...
 end
 ```
@@ -717,7 +718,7 @@ Analyzes API errors and provides:
 - `spec/aspera-cli_spec.rb` — integration / smoke tests (require a live server config via `build/lib/test_env.rb`)
 - `spec/base_dsl_spec.rb` — unit tests for the `Base` DSL dispatcher; fully self-contained (no server needed)
 - `spec/command_registry_spec.rb` — unit tests for `CommandRegistry` validation rules
-- `spec/aoc_registry_spec.rb` — validates that `Aoc.command_registry.validate!(plugin_class: Aoc)` is internally consistent (every leaf has a handler or a matching `handle_*` method)
+- `spec/aoc_registry_spec.rb` — validates that `Aoc.command_registry.validate!(plugin_class: Aoc)` is internally consistent (every leaf has a handler or a matching `action_*` method)
 
 ### CI/CD Integration
 
@@ -735,7 +736,7 @@ GitHub Actions workflows:
 1. Create plugin file in `lib/aspera/cli/plugins/`
 2. Inherit from `Plugins::Base`
 3. Declare commands with the `command(...)` DSL at class level
-4. Implement `handle_<path>` methods for each leaf command
+4. Implement `action_<path>` methods for each leaf command
 5. Register in plugin factory
 
 ### Adding a New Transfer Agent

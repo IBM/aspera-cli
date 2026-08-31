@@ -129,7 +129,7 @@ module Aspera
           )
         end
 
-        def handle_cluster_show
+        def action_cluster_show
           if options.get_option(:cloud) || options.get_option(:region)
             server_data = server_by_cloud_region
           else
@@ -140,7 +140,7 @@ module Aspera
           Result::SingleObject.new(server_data)
         end
 
-        def handle_access_key_create
+        def action_access_key_create
           params = value_create_modify(command: :create, default: {})
           server_data = nil
           # if transfer_server_id not provided, get it from command line options
@@ -175,19 +175,19 @@ module Aspera
           # TODO : action : modify, with "PUT"
         end
 
-        def handle_access_key_modify(access_key_id:, **)
+        def action_access_key_modify(access_key_id:, **)
           params = value_create_modify(command: :modify)
           params['id'] = access_key_id
           ats_api.update("access_keys/#{access_key_id}", params)
           return Result::Status.new('modified')
         end
 
-        def handle_access_key_delete(access_key_id:, **)
+        def action_access_key_delete(access_key_id:, **)
           ats_api.delete("access_keys/#{access_key_id}")
           Result::Status.new("deleted #{access_key_id}")
         end
 
-        def handle_access_key_entitlement(access_key_id:, **)
+        def action_access_key_entitlement(access_key_id:, **)
           ak = ats_api.read("access_keys/#{access_key_id}")
           api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
           return Result::SingleObject.new(api_bss.read('entitlement'))
@@ -217,15 +217,26 @@ module Aspera
 
         # One handler per COMMANDS_GEN4 - delegates to the Node plugin's DSL registry.
         Node::COMMANDS_GEN4.each do |cmd|
-          define_method(:"handle_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:|
+          define_method(:"action_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:, **|
             # For permission: the handler consumes the path first then re-dispatches to sub-commands.
             # Calling dispatch_from_registry with skip_setup would bypass path consumption and fail.
-            next ak_node_plugin.send(:"handle_access_keys_do_#{cmd}", do_root_file_id: ak_root_file_id) if cmd.eql?(:permission)
+            next ak_node_plugin.send(:"action_access_keys_do_#{cmd}", do_root_file_id: ak_root_file_id) if cmd.eql?(:permission)
             ak_node_plugin.dispatch_from_registry([:access_keys, :do, cmd], {do_root_file_id: ak_root_file_id}, skip_setup: true)
           end
         end
 
-        def handle_access_key_cluster(access_key_id:, **)
+        def action_api_key_instances
+          instances = ats_api_v2_auth_ibm.read('instances')
+          Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
+          Result::ValueList.new(instances['data'], name: 'instance')
+        end
+
+        def action_api_key_delete(api_key_id:, **)
+          build_ats_ibm_api_with_instance.delete("api_keys/#{api_key_id}")
+          Result::Status.new("deleted #{api_key_id}")
+        end
+
+        def action_access_key_cluster(access_key_id:, **)
           ats_url = ats_api.base_url
           api_ak_auth = Rest.new(
             base_url: ats_url,

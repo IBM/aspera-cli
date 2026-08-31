@@ -205,7 +205,7 @@ module Aspera
 
         # --- health ---
 
-        def handle_health
+        def action_health
           nagios = Nagios.new
           shares_url = options.get_option(:url, mandatory: true)
           health = self.class.health_check(shares_url)
@@ -233,7 +233,7 @@ module Aspera
 
         # One handler per COMMANDS_SHARES command.
         Node::COMMANDS_SHARES.each do |cmd|
-          define_method(:"handle_files_#{cmd}") do |shares_node_plugin:|
+          define_method(:"action_files_#{cmd}") do |shares_node_plugin:|
             shares_node_plugin.dispatch_v3_command(cmd)
           end
         end
@@ -252,7 +252,7 @@ module Aspera
         # @param entity_type [Symbol] :user or :group
         # @param location    [Symbol] :all or :local
         # @param op          [Symbol] CRUD operation
-        def handle_admin_entity_crud(entity_type, location, op)
+        def action_admin_entity_crud(entity_type, location, op)
           path = admin_entity_path(entity_type, location)
           lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
           display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
@@ -264,7 +264,7 @@ module Aspera
         # @param entity_type [Symbol] :user or :group
         # @param location    [Symbol] :all or :local
         # @param setting     [Symbol] one of USR_GRP_SETTINGS
-        def handle_admin_entity_setting(entity_type, location, setting)
+        def action_admin_entity_setting(entity_type, location, setting)
           path = admin_entity_path(entity_type, location)
           lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
           entity_id = options.instance_identifier(&lookup)
@@ -276,36 +276,36 @@ module Aspera
         end
 
         # Shared handler for :users (group only)
-        def handle_admin_entity_users(entity_type, location)
+        def action_admin_entity_users(entity_type, location)
           path = admin_entity_path(entity_type, location)
           prefix = location.eql?(:all) ? '' : "#{location}_"
           lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
           entity_execute(api: @api_shares_admin, entity: "#{path}/#{options.instance_identifier(&lookup)}/#{prefix}users")
         end
 
-        # Generate handle_admin_<user|group>_<location>_<verb> for all combinations
+        # Generate action_admin_<user|group>_<location>_<verb> for all combinations
         %i[user group].each do |entity_type|
           # all + local: CRUD + USR_GRP_SETTINGS [+ users for group]
           ENTITY_LOCATIONS.each do |location|
             ops = location.eql?(:all) ? (Operations::ALL - [:create]) : Operations::ALL
             ops.each do |op|
-              define_method(:"handle_admin_#{entity_type}_#{location}_#{op}") do
-                handle_admin_entity_crud(entity_type, location, op)
+              define_method(:"action_admin_#{entity_type}_#{location}_#{op}") do
+                action_admin_entity_crud(entity_type, location, op)
               end
             end
             USR_GRP_SETTINGS.each do |setting|
-              define_method(:"handle_admin_#{entity_type}_#{location}_#{setting}") do
-                handle_admin_entity_setting(entity_type, location, setting)
+              define_method(:"action_admin_#{entity_type}_#{location}_#{setting}") do
+                action_admin_entity_setting(entity_type, location, setting)
               end
             end
             next unless entity_type.eql?(:group)
-            define_method(:"handle_admin_#{entity_type}_#{location}_users") do
-              handle_admin_entity_users(entity_type, location)
+            define_method(:"action_admin_#{entity_type}_#{location}_users") do
+              action_admin_entity_users(entity_type, location)
             end
           end
 
           # ldap: add
-          define_method(:"handle_admin_#{entity_type}_ldap_add") do
+          define_method(:"action_admin_#{entity_type}_ldap_add") do
             path = admin_entity_path(entity_type, :ldap)
             do_bulk_operation(command: :add, descr: "#{entity_type} name", values: String) do |entity_name|
               @api_shares_admin.create(path, {entity_type => entity_name})
@@ -313,7 +313,7 @@ module Aspera
           end
 
           # saml: import
-          define_method(:"handle_admin_#{entity_type}_saml_import") do
+          define_method(:"action_admin_#{entity_type}_saml_import") do
             path = admin_entity_path(entity_type, :saml)
             do_bulk_operation(command: :import, descr: 'user information') do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}

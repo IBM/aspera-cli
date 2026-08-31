@@ -284,36 +284,36 @@ module Aspera
 
         # DSL handlers - one method per leaf command
 
-        def handle_documentation(section = nil)
+        def action_documentation(section = nil)
           section = "##{section}" unless section.nil?
           Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
           Result::Nothing.new
         end
 
-        def handle_genkey(private_key_path, private_key_length = OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
+        def action_genkey(private_key_path, private_key_length = OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
           OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
           Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
         end
 
-        def handle_remote_certificate_chain(remote_url)
+        def action_remote_certificate_chain(remote_url)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
         end
 
-        def handle_remote_certificate_only(remote_url)
+        def action_remote_certificate_only(remote_url)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.first.to_pem)
         end
 
-        def handle_remote_certificate_name(remote_url)
+        def action_remote_certificate_name(remote_url)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
         end
 
-        def handle_download(file_url, file_dest = nil)
+        def action_download(file_url, file_dest = nil)
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
           Log.log.info("Downloading: #{file_url}")
@@ -321,14 +321,14 @@ module Aspera
           Result::Status.new("Saved to: #{file_dest}")
         end
 
-        def handle_tokens_show(token_id)
+        def action_tokens_show(token_id)
           require 'aspera/api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
           raise Cli::Error, 'Unknown identifier' if data.nil?
           Result::SingleObject.new(data)
         end
 
-        def handle_plugins_list
+        def action_plugins_list
           result = Plugins::Factory.instance.plugin_list.map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             {
@@ -341,7 +341,7 @@ module Aspera
           Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
         end
 
-        def handle_plugins_create(plugin_name, destination_folder = nil)
+        def action_plugins_create(plugin_name, destination_folder = nil)
           plugin_name = plugin_name.downcase
           destination_folder ||= File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
           plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
@@ -351,8 +351,8 @@ module Aspera
               module Cli
                 module Plugins
                   class #{plugin_name.snake_to_capital} < Base
-                    command :example, description: 'example command', action: :handle_example
-                    def handle_example
+                    command :example, description: 'example command', action: :action_example
+                    def action_example
                       Result::Status.new('You called plugin #{plugin_name}')
                     end
                   end
@@ -364,19 +364,19 @@ module Aspera
           Result::Status.new("Created #{plugin_file}")
         end
 
-        def handle_detect
+        def action_detect
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url.freeze
           Result::ObjectList.new(apps)
         end
 
-        def handle_wizard
+        def action_wizard
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url.freeze
           @wizard.find(apps)
         end
 
-        def handle_initdemo
+        def action_initdemo
           cp = presets.config_presets
           if cp.key?(DEMO_PRESET)
             Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
@@ -400,7 +400,7 @@ module Aspera
           Result::Status.new('Done')
         end
 
-        def handle_commands
+        def action_commands
           commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
@@ -411,13 +411,13 @@ module Aspera
           Result::ValueList.new(commands, name: 'command')
         end
 
-        def handle_test_throw(exception_class_name, exception_text)
+        def action_test_throw(exception_class_name, exception_text)
           type = Object.const_get(exception_class_name)
           Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
           raise type, exception_text
         end
 
-        def handle_completion_bash(words = nil)
+        def action_completion_bash(words = nil)
           if words.nil?
             Plugins::Factory.instance.plugin_list.each{ |p| puts p}
           else
