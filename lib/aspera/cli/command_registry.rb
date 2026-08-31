@@ -77,7 +77,7 @@ module Aspera
       end
 
       # Cross-spec consistency checks.
-      # @param plugin_class [Class, nil] when given, also verify that implicit handler methods exist
+      # @param plugin_class [Class, nil] when given, also verify that implicit action methods exist
       # @raise [ArgumentError] on any violation
       # @return [self]
       def validate!(plugin_class: nil)
@@ -116,15 +116,15 @@ module Aspera
               "#{path.inspect}: lookup: requires instance_arg: to be set"
           end
 
-          # Rule: leaf commands with no explicit handler must have a matching instance method
-          next if spec.handler # explicit handler: skip
+          # Rule: leaf commands with no explicit action must have a matching instance method
+          next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip
           next if spec.delegates_to || spec.entity_execute # delegated: skip
           next unless plugin_class
           implicit_method = :"handle_#{path.join('_')}"
           unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
             raise ArgumentError,
-              "#{path.inspect}: no handler: and no method #{implicit_method} on #{plugin_class}"
+              "#{path.inspect}: no action: and no method #{implicit_method} on #{plugin_class}"
           end
         end
         self

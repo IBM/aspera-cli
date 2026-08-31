@@ -180,9 +180,9 @@ module Aspera
         root_setup :setup_server
 
         command :health,   description: 'Check transfer health'
-        command :upload,   description: 'Upload files to server',        transfer_paths: :send,    handler: ->{execute_transfer(:upload,   @server_transfer_spec)}
-        command :download, description: 'Download files from server',    transfer_paths: :receive, handler: ->{execute_transfer(:download, @server_transfer_spec)}
-        command :sync,     description: 'Synchronize files with server', transfer_paths: :send,    handler: ->{execute_transfer(:sync,     @server_transfer_spec)}
+        command :upload,   description: 'Upload files to server',        transfer_paths: :send,    action: ->{execute_transfer(:upload,   @server_transfer_spec)}
+        command :download, description: 'Download files from server',    transfer_paths: :receive, action: ->{execute_transfer(:download, @server_transfer_spec)}
+        command :sync,     description: 'Synchronize files with server', transfer_paths: :send,    action: ->{execute_transfer(:sync,     @server_transfer_spec)}
 
         commands_under(:health) do
           command :transfer, description: 'Check FASP transfer health'

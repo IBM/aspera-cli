@@ -36,7 +36,7 @@ module Aspera
           }
         end
 
-        command(:health, description: 'Check health of HTTP Gateway', handler: lambda do
+        command(:health, description: 'Check health of HTTP Gateway', action: lambda do
           nagios = Nagios.new
           begin
             Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
@@ -47,7 +47,7 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end)
 
-        command(:info, description: 'Show HTTP Gateway information', handler: lambda do
+        command(:info, description: 'Show HTTP Gateway information', action: lambda do
           Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)
         end)
 

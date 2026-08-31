@@ -52,8 +52,8 @@ module Aspera
         let(:plugin_class) do
           klass = Class.new(Base)
           # Register two top-level commands
-          klass.command(:health, description: 'Check health', handler: :handle_health)
-          klass.command(:info,   description: 'Show info', handler: :handle_info)
+          klass.command(:health, description: 'Check health', action: :handle_health)
+          klass.command(:info,   description: 'Show info', action: :handle_info)
           # Define handler stubs
           klass.define_method(:handle_health){Result::Status.new('ok')}
           klass.define_method(:handle_info){Result::Status.new('info')}
@@ -93,11 +93,11 @@ module Aspera
 
           it 'stores the correct id and description' do
             klass = Class.new(Base)
-            klass.command(:ping, description: 'Ping', handler: :do_ping)
+            klass.command(:ping, description: 'Ping', action: :do_ping)
             spec = klass.command_registry[[:ping]]
             expect(spec.id).to(eq(:ping))
             expect(spec.description).to(eq('Ping'))
-            expect(spec.handler).to(eq(:do_ping))
+            expect(spec.action).to(eq(:do_ping))
           end
         end
 
@@ -116,13 +116,13 @@ module Aspera
         describe '#initialize (DSL mode)' do
           it 'does not raise even without ACTIONS constant' do
             klass = Class.new(Base)
-            klass.command(:ping, description: 'Ping', handler: :do_ping)
+            klass.command(:ping, description: 'Ping', action: :do_ping)
             expect{klass.new(context: context)}.not_to(raise_error)
           end
 
           it 'does not raise even without an execute_action override' do
             klass = Class.new(Base)
-            klass.command(:ping, description: 'Ping', handler: :do_ping)
+            klass.command(:ping, description: 'Ping', action: :do_ping)
             expect{klass.new(context: context)}.not_to(raise_error)
           end
         end
@@ -153,7 +153,7 @@ module Aspera
             klass.command(
               :greet,
               description: 'Greet',
-              handler:     :handle_greet,
+              action:     :handle_greet,
               arguments:   [ArgumentSpec.new(name: :name, type: String)]
             )
             klass.define_method(:handle_greet){ |name| Result::Status.new("hello #{name}")}
@@ -165,7 +165,7 @@ module Aspera
 
           it 'passes ctx keyword arguments to the handler' do
             klass = Class.new(Base)
-            klass.command(:show, description: 'Show', handler: :handle_show)
+            klass.command(:show, description: 'Show', action: :handle_show)
             klass.define_method(:handle_show){ |api:| Result::Status.new("api=#{api}")}
             allow(options).to(receive(:get_next_command).with([:show], aliases: nil).and_return(:show))
             inst = klass.new(context: context)
@@ -175,7 +175,7 @@ module Aspera
           it 'recurses into intermediate nodes' do
             klass = Class.new(Base)
             klass.command(:transfer, description: 'Transfers')
-            klass.command(:list, parent: :transfer, description: 'List', handler: :handle_list)
+            klass.command(:list, parent: :transfer, description: 'List', action: :handle_list)
             klass.define_method(:handle_list){Result::Status.new('listed')}
             allow(options).to(receive(:get_next_command).with([:transfer], aliases: nil).and_return(:transfer))
             allow(options).to(receive(:get_next_command).with([:list], aliases: nil).and_return(:list))
@@ -192,7 +192,7 @@ module Aspera
           it 'calls setup on the current node and merges result into ctx' do
             klass = Class.new(Base)
             klass.command(:parent_cmd, description: 'Parent', setup: :build_api)
-            klass.command(:child_cmd, parent: :parent_cmd, description: 'Child', handler: :handle_child)
+            klass.command(:child_cmd, parent: :parent_cmd, description: 'Child', action: :handle_child)
             klass.define_method(:build_api){{api: 'built_api'}}
             klass.define_method(:handle_child){ |api:| Result::Status.new("api=#{api}")}
             allow(options).to(receive(:get_next_command).with([:parent_cmd], aliases: nil).and_return(:parent_cmd))
@@ -204,7 +204,7 @@ module Aspera
           it 'merges setup result with existing ctx (setup wins on key collision)' do
             klass = Class.new(Base)
             klass.command(:root_cmd, description: 'Root', setup: :override_api)
-            klass.command(:leaf_cmd, parent: :root_cmd, description: 'Leaf', handler: :handle_leaf)
+            klass.command(:leaf_cmd, parent: :root_cmd, description: 'Leaf', action: :handle_leaf)
             klass.define_method(:override_api){ |**| {api: 'new_api'}}
             klass.define_method(:handle_leaf){ |api:| Result::Status.new("api=#{api}")}
             allow(options).to(receive(:get_next_command).with([:root_cmd], aliases: nil).and_return(:root_cmd))
@@ -218,7 +218,7 @@ module Aspera
             # Mirrors the cos.rb pattern: a single root-level command with both setup: and handler:
             # (no children in DSL registry). The setup must run before the handler is called.
             klass = Class.new(Base)
-            klass.command(:node, description: 'Node commands', setup: :build_node, handler: :handle_node)
+            klass.command(:node, description: 'Node commands', setup: :build_node, action: :handle_node)
             klass.define_method(:build_node){{node_plugin: 'built_plugin'}}
             klass.define_method(:handle_node){ |node_plugin:| Result::Status.new("plugin=#{node_plugin}")}
             allow(options).to(receive(:get_next_command).with([:node], aliases: nil).and_return(:node))
@@ -234,8 +234,8 @@ module Aspera
         describe '#dispatch_from_registry with condition:' do
           let(:conditional_class) do
             klass = Class.new(Base)
-            klass.command(:always,   description: 'Always available', handler: :handle_always)
-            klass.command(:ssh_only, description: 'SSH only',         handler: :handle_ssh, condition: :ssh_available?)
+            klass.command(:always,   description: 'Always available', action: :handle_always)
+            klass.command(:ssh_only, description: 'SSH only',         action: :handle_ssh, condition: :ssh_available?)
             klass.define_method(:handle_always){Result::Status.new('always')}
             klass.define_method(:handle_ssh){Result::Status.new('ssh')}
             klass
@@ -263,7 +263,7 @@ module Aspera
         describe '#dispatch_from_registry with aliases:' do
           it 'forwards aliases to get_next_command' do
             klass = Class.new(Base)
-            klass.command(:files, description: 'Files', handler: :handle_files, aliases: [:repository])
+            klass.command(:files, description: 'Files', action: :handle_files, aliases: [:repository])
             klass.define_method(:handle_files){Result::Status.new('files')}
             allow(options).to(receive(:get_next_command).with([:files], aliases: {repository: :files}).and_return(:files))
             inst = klass.new(context: context)
@@ -279,7 +279,7 @@ module Aspera
           it 'jumps to the delegated path without consuming an extra argument' do
             klass = Class.new(Base)
             klass.command(:alias_cmd, description: 'Alias', delegates_to: :real_cmd)
-            klass.command(:real_cmd,  description: 'Real',  handler: :handle_real)
+            klass.command(:real_cmd,  description: 'Real',  action: :handle_real)
             klass.define_method(:handle_real){Result::Status.new('real')}
             # Only one get_next_command call for the alias, then none for real_cmd (leaf)
             allow(options).to(receive(:get_next_command).with(%i[alias_cmd real_cmd], aliases: nil).and_return(:alias_cmd))
@@ -300,7 +300,7 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:other, description: 'Delegate', delegate_instance: :build_target, delegates_to: :other_root)
             # register :other_root so validate! would pass (not strictly needed here)
-            klass.command(:other_root, description: 'Target root', handler: :noop)
+            klass.command(:other_root, description: 'Target root', action: :noop)
             klass.define_method(:build_target){target}
             klass.define_method(:noop){nil}
             allow(options).to(receive(:get_next_command).with(%i[other other_root], aliases: nil).and_return(:other))
@@ -316,7 +316,7 @@ module Aspera
         describe '#dispatch_from_registry with transfer_paths:' do
           it 'calls the handler with only ctx (no positional args) when transfer_paths is set' do
             klass = Class.new(Base)
-            klass.command(:upload, description: 'Upload', handler: :handle_upload, transfer_paths: :send)
+            klass.command(:upload, description: 'Upload', action: :handle_upload, transfer_paths: :send)
             klass.define_method(:handle_upload){ |**ctx| Result::Status.new("upload ctx_keys=#{ctx.keys.sort.inspect}")}
             allow(options).to(receive(:get_next_command).with([:upload], aliases: nil).and_return(:upload))
             inst = klass.new(context: context)
@@ -378,7 +378,7 @@ module Aspera
           it 'recurses into children' do
             klass = Class.new(Base)
             klass.command(:transfer, description: 'Transfers')
-            klass.command(:list, parent: :transfer, description: 'List transfers', handler: :handle_list)
+            klass.command(:list, parent: :transfer, description: 'List transfers', action: :handle_list)
             klass.define_method(:handle_list){nil}
             inst = klass.new(context: context)
             result = inst.generate_help
@@ -387,7 +387,7 @@ module Aspera
 
           it 'annotates conditional commands with [condition_name]' do
             klass = Class.new(Base)
-            klass.command(:ssh_only, description: 'SSH only', handler: :handle_ssh, condition: :ssh_available?)
+            klass.command(:ssh_only, description: 'SSH only', action: :handle_ssh, condition: :ssh_available?)
             klass.define_method(:handle_ssh){nil}
             inst = klass.new(context: context)
             result = inst.generate_help
@@ -396,7 +396,7 @@ module Aspera
 
           it 'sets condition key to the method name symbol for annotated commands' do
             klass = Class.new(Base)
-            klass.command(:guarded, description: 'Guarded', handler: :handle_guarded, condition: :flag?)
+            klass.command(:guarded, description: 'Guarded', action: :handle_guarded, condition: :flag?)
             klass.define_method(:handle_guarded){nil}
             inst = klass.new(context: context)
             expect(inst.generate_help[:guarded][:condition]).to(eq(:flag?))

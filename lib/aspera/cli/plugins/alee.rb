@@ -9,7 +9,7 @@ module Aspera
     module Plugins
       class Alee < BasicAuth
         application_name 'Aspera License Entitlement Engine'
-        command(:health, description: 'Check health of ALEE metering server', handler: lambda do
+        command(:health, description: 'Check health of ALEE metering server', action: lambda do
           nagios = Nagios.new
           begin
             api = Api::Alee.new(nil, nil, version: 'ping')
@@ -22,7 +22,7 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end)
 
-        command(:entitlement, description: 'Show entitlement information', handler: lambda do
+        command(:entitlement, description: 'Show entitlement information', action: lambda do
           Result::SingleObject.new(Api::Alee.new(
             options.get_option(:username, mandatory: true),
             options.get_option(:password, mandatory: true)

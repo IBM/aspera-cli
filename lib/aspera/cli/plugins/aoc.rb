@@ -533,28 +533,28 @@ module Aspera
         command :reminder, description: 'Send reminder email with list of orgs'
         command(
           :servers, description: 'List AoC servers (no auth)',
-          handler: lambda do
+          action: lambda do
             no_auth_api = Api::AoC.new(url: options.get_option(:url), auth: :none)
             Result::ObjectList.new(no_auth_api.read('servers'))
           end
         )
         command :bearer_token,      description: 'Display bearer token',
-          handler: ->{Result::Text.new(aoc_api.oauth.authorization)}
+          action: ->{Result::Text.new(aoc_api.oauth.authorization)}
         command :organization,      description: 'Show organization info',
-          handler: ->{Result::SingleObject.new(aoc_api.read('organization'))}
+          action: ->{Result::SingleObject.new(aoc_api.read('organization'))}
         command :tier_restrictions, description: 'Show tier restrictions',
-          handler: ->{Result::SingleObject.new(aoc_api.read('tier_restrictions'))}
+          action: ->{Result::SingleObject.new(aoc_api.read('tier_restrictions'))}
         command :user,              description: 'User commands'
         command :packages,          description: 'Package commands', setup: :setup_workspace_display
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
         command :admin, description: 'Administration commands', setup: :setup_admin_scope
         commands_under(:admin) do
           command :bearer_token,   description: 'Show admin bearer token',
-            handler: ->{Result::Text.new(aoc_api.oauth.authorization)}
+            action: ->{Result::Text.new(aoc_api.oauth.authorization)}
           command :application,    description: 'Manage applications'
           command(
             :ats, description: 'Manage ATS (Aspera Transfer Service)',
-            handler: lambda do
+            action: lambda do
               ats_api = Rest.new(**aoc_api.params.deep_merge({
                 base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
                 auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
@@ -563,7 +563,7 @@ module Aspera
             end
           )
           command :usage_reports,  description: 'List usage reports',
-            handler: ->{result_list('usage_reports', base_query: workspace_id_hash)}
+            action: ->{result_list('usage_reports', base_query: workspace_id_hash)}
           command :auth_providers, description: 'Manage auth providers'
           command :subscription,   description: 'Show subscription info'
           command :analytics,      description: 'Query analytics'
@@ -596,8 +596,8 @@ module Aspera
         # admin > workspace > shared_folder sub-tree
         commands_under(%i[admin workspace shared_folder]) do
           command :list,   description: 'List shared folders'
-          command :node,   description: 'Execute node command on shared folder',   instance_arg: :sf_id
-          command :member, description: 'Show folder members',                     instance_arg: :sf_id
+          command :node,   description: 'Execute node command on shared folder',   instance_arg: :sf_id, setup: :setup_admin_workspace_shared_folder_node
+          command :member, description: 'Show folder members',                     instance_arg: :sf_id, setup: :setup_admin_workspace_shared_folder_member
         end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
@@ -619,10 +619,10 @@ module Aspera
         end
         commands_under(%i[admin auth_providers]) do
           command :list, description: 'List auth providers',
-            handler: ->{result_list('admin/auth_providers')}
+            action: ->{result_list('admin/auth_providers')}
           command(
             :update, description: 'Update auth provider',
-            handler: ->{Aspera.error_not_implemented}
+            action: ->{Aspera.error_not_implemented}
           )
         end
         commands_under(%i[admin subscription]) do
@@ -637,7 +637,7 @@ module Aspera
         # application sub-commands
         commands_under(%i[admin application]) do
           command :types,      description: 'List application types',
-            handler: ->{Result::ObjectList.new(aoc_api.read('admin/apps'))}
+            action: ->{Result::ObjectList.new(aoc_api.read('admin/apps'))}
           command :settings,   description: 'Manage per-app-type settings'
           command :instance,   description: 'Manage app instances'
           command :membership, description: 'Manage app memberships'
@@ -650,8 +650,8 @@ module Aspera
             command(app_type, description: "Settings for #{app_type} app")
             commands_under(APP_SETTINGS_PATH + [app_type]) do
               command :show,   description: "Show #{app_type} settings",
-                handler: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
-              command(:modify, description: "Modify #{app_type} settings", handler: lambda do
+                action: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
+              command(:modify, description: "Modify #{app_type} settings", action: lambda do
                 aoc_api.update("/apps/#{app_type}/settings", options.get_next_argument('properties', validation: Hash))
                 Result::Status.new('modified')
               end)
@@ -659,7 +659,7 @@ module Aspera
           end
         end
         commands_under(APP_INSTANCE_PATH) do
-          command(:list, description: 'List app instances', handler: lambda do
+          command(:list, description: 'List app instances', action: lambda do
             result_list(
               'admin/apps_new',
               fields:        %w[id app_type available workspace_id],
@@ -676,12 +676,12 @@ module Aspera
         end
         commands_under(%i[admin application membership]) do
           command :list, description: 'List app memberships',
-            handler: ->{result_list('apps/app_memberships')}
+            action: ->{result_list('apps/app_memberships')}
           command :show,   description: 'Show an app membership',   instance_arg: :res_id
           command :delete, description: 'Delete an app membership', instance_arg: :res_id
           command(
             :create, description: 'Create an app membership',
-            handler: lambda do
+            action: lambda do
               data = options.get_next_argument('membership properties', validation: Hash)
               app_type = data.delete('app_type')
               Aspera.assert_type(app_type, String){'app_type'}
@@ -709,17 +709,17 @@ module Aspera
 
         commands_under(%i[user workspaces]) do
           command :list,    description: 'List workspaces',
-            handler: ->{result_list('workspaces', fields: %w[id name])}
+            action: ->{result_list('workspaces', fields: %w[id name])}
           command :current, description: 'Show current workspace',
-            handler: ->{Result::SingleObject.new(aoc_api.workspace_info)}
+            action: ->{Result::SingleObject.new(aoc_api.workspace_info)}
         end
 
         commands_under(%i[user profile]) do
           command :show, description: 'Show user profile',
-            handler: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
+            action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
           command(
             :modify, description: 'Modify user profile',
-            handler: lambda do
+            action: lambda do
               aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
               Result::Status.new('modified')
             end
@@ -729,14 +729,14 @@ module Aspera
         commands_under(%i[user preferences]) do
           command(
             :show, description: 'Show user preferences',
-            handler: lambda do
+            action: lambda do
               user_id = aoc_api.current_user_info(exception: true)['id']
               Result::SingleObject.new(aoc_api.read("users/#{user_id}/user_interaction_preferences"))
             end
           )
           command(
             :modify, description: 'Modify user preferences',
-            handler: lambda do
+            action: lambda do
               user_id = aoc_api.current_user_info(exception: true)['id']
               aoc_api.update("users/#{user_id}/user_interaction_preferences", options.get_next_argument('properties', validation: Hash))
               Result::Status.new('modified')
@@ -747,14 +747,14 @@ module Aspera
         commands_under(%i[user notifications]) do
           command(
             :show, description: 'Show notification preferences',
-            handler: lambda do
+            action: lambda do
               user_id = aoc_api.current_user_info(exception: true)['id']
               Result::SingleObject.new(aoc_api.read("users/#{user_id}/notification_preferences"))
             end
           )
           command(
             :modify, description: 'Modify notification preferences',
-            handler: lambda do
+            action: lambda do
               user_id = aoc_api.current_user_info(exception: true)['id']
               aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
               Result::Status.new('modified')
@@ -780,7 +780,7 @@ module Aspera
 
         commands_under(%i[packages shared_inboxes]) do
           command :list,       description: 'List shared inboxes',
-            handler: (lambda do
+            action: (lambda do
               result_list(
                 'dropbox_memberships',
                 fields: %w[dropbox_id dropbox.name],
@@ -788,7 +788,7 @@ module Aspera
               )
             end)
           command :show,       description: 'Show a shared inbox', instance_arg: :dropbox_id,
-            handler: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
+            action: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
           command :short_link, description: 'Manage shared inbox short links',
             setup: :setup_packages_short_link
         end
@@ -839,7 +839,7 @@ module Aspera
           command :modify,  description: 'Modify a workflow'
           command :delete,  description: 'Delete a workflow'
           command :launch, description: 'Launch a workflow', instance_arg: :wf_id,
-            handler: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
+            action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
           command :action, description: 'Add action to workflow (TODO)'
         end
 

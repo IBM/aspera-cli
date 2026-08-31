@@ -83,7 +83,7 @@ module Aspera
         commands_under(%i[transfer current]) do
           command :list,          description: 'List current transfers'
           command :show,          description: 'Show a transfer',          instance_arg: :transfer_id,
-            handler: ->(api_console:, transfer_id:, **){Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))}
+            action: ->(api_console:, transfer_id:, **){Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))}
           command :files,         description: 'List files in a transfer', instance_arg: :transfer_id
           command :start,         description: 'Start a transfer',         instance_arg: :transfer_id
           command :pause,         description: 'Pause a transfer',         instance_arg: :transfer_id
@@ -106,7 +106,7 @@ module Aspera
         end
 
         commands_under(%i[transfer smart]) do
-          command :list,   description: 'List smart transfers', handler: ->(api_console:){Result::ObjectList.new(api_console.read('smart_transfers'))}
+          command :list,   description: 'List smart transfers', action: ->(api_console:){Result::ObjectList.new(api_console.read('smart_transfers'))}
           command :submit, description: 'Submit a smart transfer'
         end
 

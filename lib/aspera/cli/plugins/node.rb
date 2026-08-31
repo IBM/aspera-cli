@@ -350,27 +350,27 @@ module Aspera
         command :mkfile,      description: 'Create a file (Gen3)'
         command :rename,      description: 'Rename a file or folder (Gen3)'
         command :delete,      description: 'Delete files or folders (Gen3)'
-        command :browse,      description: 'Browse files (Gen3)', handler: ->{browse_gen3}
+        command :browse,      description: 'Browse files (Gen3)', action: ->{browse_gen3}
         command :upload,      description: 'Upload files (Gen3)'
         command :download,    description: 'Download files (Gen3)'
         command :cat,         description: 'Show file contents (Gen3)'
         command :sync,        description: 'Synchronize folders (Gen3)'
         command :transport,   description: 'Show transport parameters',
-          handler: ->{Result::SingleObject.new(@api_node.transport_params)}
+          action: ->{Result::SingleObject.new(@api_node.transport_params)}
         command :spec,        description: 'Show transfer spec base',
-          handler: ->{Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))}
+          action: ->{Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))}
         # Other common leaf commands
         command :api_details, description: 'Show API details',
-          handler: ->{Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))}
+          action: ->{Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))}
         command :health,      description: 'Check node health'
         command :events,      description: 'List events',
-          handler: ->{Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})}
+          action: ->{Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})}
         command :info,        description: 'Show node info',
-          handler: ->{Result::SingleObject.new(@api_node.read('info'))}
+          action: ->{Result::SingleObject.new(@api_node.read('info'))}
         command :slash,       description: 'Show root info',
-          handler: ->{Result::SingleObject.new(@api_node.read(''))}
+          action: ->{Result::SingleObject.new(@api_node.read(''))}
         command :license,     description: 'Show license',
-          handler: ->{Result::SingleObject.new(@api_node.read('license'))}
+          action: ->{Result::SingleObject.new(@api_node.read('license'))}
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
         commands_under(:access_keys) do
@@ -389,7 +389,7 @@ module Aspera
         commands_under(%i[access_keys do permission]) do
           command :list,   description: 'List permissions on a file'
           command :show,   description: 'Show a permission',   instance_arg: :perm_id,
-            handler: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
+            action: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
           command :create, description: 'Create a permission'
           command :modify, description: 'Modify a permission', instance_arg: :perm_id
           command :delete, description: 'Delete permission(s)'
@@ -397,7 +397,7 @@ module Aspera
         # async (legacy /async)
         command :async, description: 'Manage async operations (legacy /async)', instance_arg: :async_id, lookup: :async_lookup
         commands_under(:async) do
-          command :list,      description: 'List async sync IDs', handler: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
+          command :list,      description: 'List async sync IDs', action: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
           command :show,      description: 'Show async summary'
           command :delete,    description: 'Delete async'
           command :bandwidth, description: 'Show async bandwidth'
@@ -419,11 +419,11 @@ module Aspera
         # stream
         command :stream, description: 'Manage stream operations'
         commands_under(:stream) do
-          command :list,   description: 'List streams',    handler: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
-          command :create, description: 'Create a stream', handler: ->{Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))}
-          command :show,   description: 'Show a stream',   handler: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))}
-          command :modify, description: 'Modify a stream', handler: ->{Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))}
-          command :cancel, description: 'Cancel a stream', handler: ->{Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))}
+          command :list,   description: 'List streams',    action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
+          command :create, description: 'Create a stream', action: ->{Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))}
+          command :show,   description: 'Show a stream',   action: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))}
+          command :modify, description: 'Modify a stream', action: ->{Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))}
+          command :cancel, description: 'Cancel a stream', action: ->{Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))}
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
@@ -431,7 +431,7 @@ module Aspera
           command :list,              description: 'List transfers'
           command :cancel,            description: 'Cancel a transfer'
           command :show,              description: 'Show a transfer', instance_arg: :transfer_id,
-            handler: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
+            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify,            description: 'Modify a transfer'
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
@@ -439,7 +439,7 @@ module Aspera
         # service
         command :service, description: 'Manage services'
         commands_under(:service) do
-          command :list,   description: 'List services', handler: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
+          command :list,   description: 'List services', action: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
           command :create, description: 'Create a service'
           command :delete, description: 'Delete a service'
         end
@@ -447,15 +447,15 @@ module Aspera
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
         commands_under(:watch_folder) do
           command :create, description: 'Create a watch folder',
-            handler: ->{Result::Status.new("#{@api_node.create('v3/watchfolders', value_create_modify(command: :create))['id']} created")}
+            action: ->{Result::Status.new("#{@api_node.create('v3/watchfolders', value_create_modify(command: :create))['id']} created")}
           command :list,   description: 'List watch folders',
-            handler: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
+            action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
           command :show,   description: 'Show a watch folder',   instance_arg: :res_id,
-            handler: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
+            action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
           command :modify, description: 'Modify a watch folder', instance_arg: :res_id
           command :delete, description: 'Delete a watch folder', instance_arg: :res_id
           command :state,  description: 'Show watch folder state', instance_arg: :res_id,
-            handler: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
+            action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
         end
         # central
         command :central, description: 'Query Central service'
@@ -470,7 +470,7 @@ module Aspera
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
-        command :basic_token,   description: 'Generate basic auth token', handler: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
+        command :basic_token,   description: 'Generate basic auth token', action: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
         command :bearer_token,  description: 'Generate bearer token'
         command :simulator,     description: 'Start node simulator'
         command :telemetry,     description: 'Report telemetry to external system'

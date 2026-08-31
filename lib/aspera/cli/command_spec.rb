@@ -51,7 +51,7 @@ module Aspera
       :allowed,
       :default,
       :short,
-      :handler,
+      :handler,   # kept as-is: this is the option accessor delegation, not a command action
       :deprecation,
       :schema,
       keyword_init: true
@@ -64,7 +64,7 @@ module Aspera
     # @!attribute description      [String]                      User-facing help text
     # @!attribute options          [Array<Symbol>]               Option names consumed by this command
     # @!attribute arguments        [Array<ArgumentSpec>]         Positional arguments, in order
-    # @!attribute handler          [Symbol, Proc, nil]           Instance method (Symbol) or inline block (Proc) called when this is a leaf command
+    # @!attribute action           [Symbol, Proc, nil]           Instance method (Symbol) or inline block (Proc) called when this is a leaf command
     # @!attribute setup            [Symbol, nil]                 Instance method called before dispatching to children; returns Hash merged into ctx
     # @!attribute delegates_to     [Symbol, Array<Symbol>, nil]  Re-enter the command tree at this path
     # @!attribute delegate_instance [Symbol, nil]                Instance method returning a different plugin object
@@ -84,7 +84,7 @@ module Aspera
       :description,
       :options,
       :arguments,
-      :handler,
+      :action,
       :setup,
       :delegates_to,
       :delegate_instance,

@@ -110,11 +110,11 @@ module Aspera
         end
 
         # DSL command declarations - replaces ACTIONS + execute_action
-        # :preset is an opaque handler: execute_preset handles all sub-dispatch internally
-        command :preset, description: 'Manage presets of options', handler: ->{execute_preset}
+        # :preset is an opaque action: execute_preset handles all sub-dispatch internally
+        command :preset, description: 'Manage presets of options', action: ->{execute_preset}
         command(
           :open, description: 'Open the configuration file in the default editor',
-          handler: lambda do
+          action: lambda do
             Environment.instance.open_editor(context.presets.config_file.to_s)
             Result::Nothing.new
           end
@@ -128,11 +128,11 @@ module Aspera
           ]
         command :pubkey, description: 'Display the public key of an RSA private key',
           arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)],
-          handler: ->(private_key_pem){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
+          action: ->(private_key_pem){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo, description: 'Display the value of a given argument',
           arguments: [ArgumentSpec.new(name: :value, type: nil)],
-          handler: ->(value){Result.auto(value)}
+          action: ->(value){Result.auto(value)}
         command :download, description: 'Download a file from a URL',
           arguments: [
             ArgumentSpec.new(name: :file_url,  type: String),
@@ -142,39 +142,39 @@ module Aspera
         command :plugins, description: 'Manage CLI plugins'
         command :detect, description: 'Detect the Aspera product from a URL (interactive)'
         command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)'
-        command :coffee, description: 'Display a coffee image', handler: ->{Result::Image.new(COFFEE_IMAGE_URL)}
+        command :coffee, description: 'Display a coffee image', action: ->{Result::Image.new(COFFEE_IMAGE_URL)}
         command :image, description: 'Display an image',
           arguments: [ArgumentSpec.new(name: :image_uri, type: nil)],
-          handler: ->(image_uri){Result::Image.new(image_uri)}
-        command :ascp, description: 'Manage the transfer SDK (ascp/transferd)', handler: ->{execute_action_ascp}
-        command :agents, description: 'Display transfer agent information', handler: ->{execute_action_agents}
+          action: ->(image_uri){Result::Image.new(image_uri)}
+        command :ascp, description: 'Manage the transfer SDK (ascp/transferd)', action: ->{execute_action_ascp}
+        command :agents, description: 'Display transfer agent information', action: ->{execute_action_agents}
         command :sync, description: 'Manage Aspera Sync operations'
-        command :transferd, description: 'Manage the transfer daemon (transferd)', handler: ->{execute_action_transferd}
+        command :transferd, description: 'Manage the transfer daemon (transferd)', action: ->{execute_action_transferd}
         command :gem, description: 'Display gem information'
-        command :folder, description: 'Display the configuration folder path', handler: ->{Result::Text.new(context.main_folder)}
-        command :file, description: 'Display the configuration file path', handler: ->{Result::Text.new(context.presets.config_file)}
+        command :folder, description: 'Display the configuration folder path', action: ->{Result::Text.new(context.main_folder)}
+        command :file, description: 'Display the configuration file path', action: ->{Result::Text.new(context.presets.config_file)}
         command(
           :email_test, description: 'Send a test email',
-          handler: lambda do
+          action: lambda do
             context.mailer.send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
             Result::Nothing.new
           end
         )
-        command :smtp_settings, description: 'Display the current SMTP settings', handler: ->{Result::SingleObject.new(context.mailer.email_settings)}
+        command :smtp_settings, description: 'Display the current SMTP settings', action: ->{Result::SingleObject.new(context.mailer.email_settings)}
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [ArgumentSpec.new(name: :server_url, type: String)],
-          handler: lambda do |server_url|
+          action: lambda do |server_url|
             raise Cli::BadArgument, 'No PAC script configured, use --fpac' if context.pac_executor.nil?
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
           end
         )
-        command :check_update, description: 'Check if a newer version of the gem is available', handler: ->{Result::SingleObject.new(check_gem_version)}
+        command :check_update, description: 'Check if a newer version of the gem is available', action: ->{Result::SingleObject.new(check_gem_version)}
         command :initdemo, description: 'Initialize the demo server preset'
-        command :vault, description: 'Manage the secrets vault', handler: ->{execute_vault}
+        command :vault, description: 'Manage the secrets vault', action: ->{execute_vault}
         command :commands, description: 'List all available commands across all plugins'
         command :test, description: 'Internal test commands'
-        command :platform, description: 'Display the current platform/architecture', handler: ->{Result::Text.new(Environment.instance.architecture)}
+        command :platform, description: 'Display the current platform/architecture', action: ->{Result::Text.new(Environment.instance.architecture)}
         command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
@@ -191,14 +191,14 @@ module Aspera
         commands_under(:tokens) do
           command(
             :flush, description: 'Delete all cached OAuth tokens',
-            handler: lambda do
+            action: lambda do
               require 'aspera/api/node'
               Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
             end
           )
           command(
             :list, description: 'List all cached OAuth tokens',
-            handler: lambda do
+            action: lambda do
               require 'aspera/api/node'
               Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
             end
@@ -221,22 +221,22 @@ module Aspera
         commands_under(:sync) do
           command(
             :spec, description: 'Display the sync configuration schema',
-            handler: lambda do
+            action: lambda do
               builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
               Result::ObjectList.new(builder.rows, fields: builder.columns)
             end
           )
-          command :admin, description: 'Run sync admin operations', handler: ->{execute_sync_admin}
+          command :admin, description: 'Run sync admin operations', action: ->{execute_sync_admin}
           command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)],
-            handler: ->(async_arguments){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
+            action: ->(async_arguments){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
         end
 
         # gem sub-commands
         commands_under(:gem) do
-          command :path,    description: 'Display the gem source root path',    handler: ->{Result::Text.new(self.class.gem_src_root)}
-          command :version, description: 'Display the gem version',             handler: ->{Result::Text.new(Cli::VERSION)}
-          command :name,    description: 'Display the gem name',                handler: ->{Result::Text.new(Info::GEM_NAME)}
+          command :path,    description: 'Display the gem source root path',    action: ->{Result::Text.new(self.class.gem_src_root)}
+          command :version, description: 'Display the gem version',             action: ->{Result::Text.new(Cli::VERSION)}
+          command :name,    description: 'Display the gem name',                action: ->{Result::Text.new(Info::GEM_NAME)}
         end
 
         # test sub-commands
@@ -246,7 +246,7 @@ module Aspera
               ArgumentSpec.new(name: :exception_class_name, type: String),
               ArgumentSpec.new(name: :exception_text,       type: String)
             ]
-          command :web, description: 'Test web browser interaction', handler: -> {}
+          command :web, description: 'Test web browser interaction', action: -> {}
         end
 
         # completion sub-commands
@@ -351,7 +351,7 @@ module Aspera
               module Cli
                 module Plugins
                   class #{plugin_name.snake_to_capital} < Base
-                    command :example, description: 'example command', handler: :handle_example
+                    command :example, description: 'example command', action: :handle_example
                     def handle_example
                       Result::Status.new('You called plugin #{plugin_name}')
                     end

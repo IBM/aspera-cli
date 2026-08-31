@@ -37,7 +37,7 @@ module Aspera
             command_registry.register(CommandSpec.new(id: id, **kwargs))
           end
 
-          # DSL class method: shorthand for a command whose sole handler is Base#entity_execute.
+          # DSL class method: shorthand for a command whose sole action is Base#entity_execute.
           # The api: value is a Symbol resolved at runtime: if it starts with '@' it is treated
           # as an instance variable name; otherwise it is sent as a method call.
           # description: defaults to "Manage <last segment of entity path>" when omitted.
@@ -298,48 +298,57 @@ module Aspera
             # Intermediate node: recurse (child setup runs at the top of the next call)
             dispatch_from_registry(current_path + [command], ctx)
           else
-            # Leaf: run child setup (if any), then execute handler
+            # Leaf: consume instance identifier (if any), run child setup (if any), then execute action
+            if child.instance_arg && !options.help_requested
+              lookup_method = child.lookup
+              res_id = if lookup_method
+                options.instance_identifier(description: child.instance_arg.to_s){ |f, v| send(lookup_method, f, v)}
+              else
+                options.instance_identifier(description: child.instance_arg.to_s)
+              end
+              ctx = ctx.merge(child.instance_arg => res_id)
+            end
             ctx = ctx.merge(send(child.setup, **ctx)) if child.setup
             execute_leaf(child, ctx)
           end
         end
 
-        # Resolve the handler for a leaf CommandSpec.
-        # Returns spec.handler (Symbol or Proc) if explicitly set; otherwise derives a Symbol
+        # Resolve the action for a leaf CommandSpec.
+        # Returns spec.action (Symbol or Proc) if explicitly set; otherwise derives a Symbol
         # from the full path as :handle_<path_segment_1>_<path_segment_2>_...
         # (e.g. [:access_key, :list] -> :handle_access_key_list).
         # @param spec [CommandSpec]
         # @return [Symbol, Proc]
-        def handler_for(spec)
-          spec.handler || :"handle_#{spec.full_path.join('_')}"
+        def action_for(spec)
+          spec.action || :"handle_#{spec.full_path.join('_')}"
         end
 
-        # Invoke a handler (Symbol method or Proc block) with the given positional
+        # Invoke an action (Symbol method or Proc block) with the given positional
         # arguments and keyword context.
         # Procs are executed via instance_exec so they share the plugin's `self`.
-        # @param handler [Symbol, Proc]
-        # @param args    [Array]  positional arguments
-        # @param ctx     [Hash]   keyword context
+        # @param action [Symbol, Proc]
+        # @param args   [Array]  positional arguments
+        # @param ctx    [Hash]   keyword context
         # @return [Object]
-        def invoke_handler(handler, args, ctx)
-          if handler.is_a?(Proc)
-            instance_exec(*args, **ctx, &handler)
+        def invoke_action(action, args, ctx)
+          if action.is_a?(Proc)
+            instance_exec(*args, **ctx, &action)
           else
-            send(handler, *args, **ctx)
+            send(action, *args, **ctx)
           end
         end
 
-        # Execute a leaf CommandSpec: resolve arguments (or skip for transfer_paths) and call handler.
+        # Execute a leaf CommandSpec: resolve arguments (or skip for transfer_paths) and call action.
         # @param spec [CommandSpec] a leaf node (no children)
         # @param ctx  [Hash]        accumulated context
         # @return [Object]
         def execute_leaf(spec, ctx)
-          h = handler_for(spec)
+          a = action_for(spec)
           if spec.transfer_paths
-            invoke_handler(h, [], ctx)
+            invoke_action(a, [], ctx)
           else
             args = (spec.arguments || []).map{ |a| resolve_argument(a)}
-            invoke_handler(h, args, ctx)
+            invoke_action(a, args, ctx)
           end
         end
 

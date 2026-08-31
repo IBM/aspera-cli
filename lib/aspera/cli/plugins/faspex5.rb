@@ -464,26 +464,26 @@ module Aspera
         # Commands that need @api_v5 carry setup: :setup_api_v5.
         # :health and :postprocessing work without authentication, so they have no setup.
         command :health,         description: 'Check Faspex 5 health'
-        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, handler: ->{Result::SingleObject.new(@api_v5.read('version'))}
-        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, handler: ->{Result::Text.new(@api_v5.oauth.authorization)}
+        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: ->{Result::SingleObject.new(@api_v5.read('version'))}
+        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: ->{Result::Text.new(@api_v5.oauth.authorization)}
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under(:packages) do
           command :list,   description: 'List packages'
-          command :send,   description: 'Send a package', handler: ->{package_send}
+          command :send,   description: 'Send a package', action: ->{package_send}
           command :show,   description: 'Show a package', setup: :setup_package_id,
-            handler: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
+            action: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
           command :browse, description: 'Browse package files', setup: :setup_package_id,
-            handler: ->(package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))}
-          command(:status, description: 'Wait for package status', setup: :setup_package_id, handler: lambda do |package_id:, **|
+            action: ->(package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))}
+          command(:status, description: 'Wait for package status', setup: :setup_package_id, action: lambda do |package_id:, **|
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))
           end)
           command :delete, description: 'Delete package(s)', setup: :setup_package_id
           command(
             :receive, description: 'Receive a package', setup: :setup_package_id,
-            handler: ->(package_id:, **){package_receive(package_id)}
+            action: ->(package_id:, **){package_receive(package_id)}
           )
-          command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, handler: lambda do |package_id:, **|
+          command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)
           end)
@@ -504,20 +504,20 @@ module Aspera
         end
 
         commands_under(:user) do
-          command :account, description: 'Show account information', handler: ->{Result::SingleObject.new(@api_v5.read('account', query_read_delete))}
+          command :account, description: 'Show account information', action: ->{Result::SingleObject.new(@api_v5.read('account', query_read_delete))}
           command :profile, description: 'Manage user profile'
         end
 
         commands_under(%i[user profile]) do
-          command :show,   description: 'Show user profile',   handler: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
-          command(:modify, description: 'Modify user profile', handler: lambda do
+          command :show,   description: 'Show user profile',   action: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
+          command(:modify, description: 'Modify user profile', action: lambda do
             @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
             Result::Status.new('modified')
           end)
         end
 
         commands_under(:shared_folders) do
-          command :list,   description: 'List shared folders', handler: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
+          command :list,   description: 'List shared folders', action: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
           command :browse, description: 'Browse a shared folder'
         end
 
@@ -585,25 +585,25 @@ module Aspera
         end
 
         commands_under(%i[admin configuration]) do
-          command :show,   description: 'Show configuration',   handler: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
-          command(:modify, description: 'Modify configuration', handler: lambda do
+          command :show,   description: 'Show configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
+          command(:modify, description: 'Modify configuration', action: lambda do
             Result::SingleObject.new(@api_v5.update('configuration', value_create_modify(command: :modify)))
           end)
         end
 
         commands_under(%i[admin smtp]) do
-          command :show,   description: 'Show SMTP configuration',   handler: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
-          command(:create, description: 'Create SMTP configuration', handler: lambda do
+          command :show,   description: 'Show SMTP configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
+          command(:create, description: 'Create SMTP configuration', action: lambda do
             Result::SingleObject.new(@api_v5.create('configuration/smtp', value_create_modify(command: :create)))
           end)
-          command(:modify, description: 'Modify SMTP configuration', handler: lambda do
+          command(:modify, description: 'Modify SMTP configuration', action: lambda do
             Result::SingleObject.new(@api_v5.update('configuration/smtp', value_create_modify(command: :modify)))
           end)
-          command(:delete, description: 'Delete SMTP configuration', handler: lambda do
+          command(:delete, description: 'Delete SMTP configuration', action: lambda do
             @api_v5.delete('configuration/smtp')
             Result::Status.new('SMTP configuration deleted')
           end)
-          command(:test, description: 'Test SMTP configuration', handler: lambda do
+          command(:test, description: 'Test SMTP configuration', action: lambda do
             test_data = options.get_next_argument('Email or test data, see API')
             test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
             creation = @api_v5.create('configuration/smtp/test', test_data)
@@ -618,11 +618,11 @@ module Aspera
         end
 
         commands_under(%i[admin events]) do
-          command(:application, description: 'List application events', handler: lambda do
+          command(:application, description: 'List application events', action: lambda do
             list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
             Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
           end)
-          command(:webhook, description: 'List webhook events', handler: lambda do
+          command(:webhook, description: 'List webhook events', action: lambda do
             list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete, items_key: 'events')
             Result::ObjectList.new(list, total: total)
           end)

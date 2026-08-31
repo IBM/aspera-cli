@@ -280,7 +280,7 @@ module Aspera
         command :health,       description: 'Check Faspex 4 API health'
         command :package,      description: 'Manage packages'
         command :source,       description: 'Manage sources'
-        command :me,           description: 'Show current user information', handler: ->{Result::SingleObject.new(api_v3.read('me'))}
+        command :me,           description: 'Show current user information', action: ->{Result::SingleObject.new(api_v3.read('me'))}
         command :dropbox,      description: 'Manage dropboxes'
         command :v4,           description: 'Faspex v4 admin commands'
         command :address_book, description: 'Show address book'
@@ -289,13 +289,13 @@ module Aspera
         commands_under(:package) do
           command :send,    description: 'Send a package'
           command :receive, description: 'Receive a package', aliases: [:recv]
-          command :list,    description: 'List packages', handler: ->{Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])}
+          command :list,    description: 'List packages', action: ->{Result::ObjectList.new(mailbox_filtered_entries, fields: [PACKAGE_MATCH_FIELD, 'title', 'items'])}
           command :show,    description: 'Show a package'
         end
 
         commands_under(:source) do
-          command :list, description: 'List sources', handler: ->{Result::ObjectList.new(api_v3.read('source_shares')['items'])}
-          command :info, description: 'Show source info', setup: :setup_source_selected, handler: ->(source_info:){Result::SingleObject.new(source_info)}
+          command :list, description: 'List sources', action: ->{Result::ObjectList.new(api_v3.read('source_shares')['items'])}
+          command :info, description: 'Show source info', setup: :setup_source_selected, action: ->(source_info:){Result::SingleObject.new(source_info)}
           command :node, description: 'Execute node commands on source', setup: :setup_source_selected
         end
 
