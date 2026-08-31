@@ -108,9 +108,10 @@ module Aspera
       end
 
       # Delete all existing tokens in cache
-      # @return [void]
+      # @return [nil]
       def flush_tokens
         persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN)
+        nil
       end
 
       # Retrieve all persisted tokens with their decoded information
@@ -155,9 +156,10 @@ module Aspera
 
       # Register a bearer token decoder for inspecting token properties
       # @param method [Proc] The decoder lambda/proc to register
-      # @return [void]
+      # @return [nil]
       def register_decoder(method)
         @decoders.push(method)
+        nil
       end
 
       # Decode a token using all registered decoders
@@ -173,12 +175,13 @@ module Aspera
 
       # Register a token creation method
       # @param creator_class [Class] The token creator class to register
-      # @return [void]
+      # @return [nil]
       def register_token_creator(creator_class)
         Aspera.assert_type(creator_class, Class)
         id = Factory.class_to_id(creator_class)
         Log.log.debug{"registering creator for #{id}"}
         @token_type_classes[id] = creator_class
+        nil
       end
 
       # Create a token creator instance for the specified grant method

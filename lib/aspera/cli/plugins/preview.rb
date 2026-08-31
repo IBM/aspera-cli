@@ -99,7 +99,7 @@ module Aspera
         # Process legacy transfer events and trigger preview generation for completed downloads.
         #
         # @param iteration_persistency [PersistencyActionOnce, nil] stores the last processed event id
-        # @return [void]
+        # @return [nil]
         def process_trevents(iteration_persistency)
           events_filter = {
             'access_key' => @access_key_self['id'],
@@ -139,12 +139,13 @@ module Aspera
               iteration_persistency.save
             end
           end
+          nil
         end
 
         # Process recent Node API file events since the last persisted checkpoint.
         #
         # @param iteration_persistency [PersistencyActionOnce, nil] stores the last processed event id
-        # @return [void]
+        # @return [nil]
         def process_events(iteration_persistency)
           # Restrict the event stream to file-related changes for the current access key.
           events_filter = {
@@ -175,6 +176,7 @@ module Aspera
               iteration_persistency.save
             end
           end
+          nil
         end
 
         # Transfer a file to or from the configured Node storage using a tagged transfer spec.
@@ -265,7 +267,7 @@ module Aspera
         # Remote entries must include `parent_file_id`.
         #
         # @param entry [Hash] local or remote file entry to preview
-        # @return [void]
+        # @return [nil]
         def generate_preview(entry)
           # prepare generic information
           gen_infos = @preview_formats_to_generate.map do |preview_format|

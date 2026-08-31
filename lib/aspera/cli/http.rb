@@ -41,7 +41,7 @@ module Aspera
         # Called once from Config#initialize before this instance is available as a target.
         # Handlers are bound in a second pass via bind_options once the instance exists.
         # @param options [Aspera::Cli::Options] CLI options manager to declare options into
-        # @return [void]
+        # @return [nil]
         def declare_options(options)
           options.declare(:insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Allowed::TYPES_BOOLEAN, default: false)
           options.declare(:ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass])
@@ -49,13 +49,14 @@ module Aspera
           options.declare(:cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Allowed::TYPES_STRING_ARRAY)
           options.declare(:http_options,       schema: Schema::Registry::HTTP_OPTIONS)
           options.declare(:http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials')
+          nil
         end
       end
 
       # Bind all HTTP options to this instance using set_handler.
       # Called from Config#initialize immediately after Http.new.
       # @param options [Aspera::Cli::Options]
-      # @return [void]
+      # @return [nil]
       def bind_options(options)
         options.set_handler(:insecure,           object: self, method: :insecure)
         options.set_handler(:ignore_certificate, object: self, method: :ignore_cert_host_port)
@@ -72,7 +73,7 @@ module Aspera
       # This runs on every assignment (JSON hash, dotted notation, preset merge) so timing
       # of option parsing never matters.
       # @param new_options [Hash] merged http_options hash
-      # @return [void]
+      # @return [nil]
       def http_options=(new_options)
         Aspera.assert_type(new_options, Hash)
         kept = {}
@@ -89,6 +90,7 @@ module Aspera
           end
         end
         @http_options = kept
+        nil
       end
 
       # ------------------------------------------------------------------
@@ -138,7 +140,7 @@ module Aspera
 
       # Add files, folders or the default OS locations to the cert store.
       # @param path_list [Array<String>] list of file/folder paths to add to the certificate store
-      # @return [void]
+      # @return [nil]
       def trusted_cert_locations=(path_list)
         Aspera.assert_type(path_list, Array){'cert locations'}
         if @certificate_store.nil?
@@ -174,6 +176,7 @@ module Aspera
           end
         end
         @certificate_paths.uniq!
+        nil
       end
 
       # Return cert file paths (computes OS defaults lazily if never set).
@@ -194,7 +197,7 @@ module Aspera
       # ------------------------------------------------------------------
 
       # @param http_session [Net::HTTP] HTTP session to configure
-      # @return [void]
+      # @return [nil]
       def update_session(http_session)
         http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
         http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
@@ -208,6 +211,7 @@ module Aspera
             Log.log.error{"Unknown HTTP session attribute: #{k}"}
           end
         end
+        nil
       end
     end
   end

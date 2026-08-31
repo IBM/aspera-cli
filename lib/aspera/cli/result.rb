@@ -34,7 +34,7 @@ module Aspera
       # Base implementation handles common formats: text, nagios, ruby, json, jsonpp, yaml
       # Subclasses should call super first, then handle their specific formats
       # @param formatter [Formatter] The formatter to use
-      # @return [void]
+      # @return [nil]
       def format(formatter)
         # Apply field filtering once for formats that need it
         filtered_data = formatter.filter_list_on_fields(@data)
