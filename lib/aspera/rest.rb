@@ -77,6 +77,9 @@ module Aspera
   # and error are analyzed in RestErrorAnalyzer
   class Rest
     class << self
+      # Build a Basic authentication header value
+      # @param user [String] Username
+      # @param pass [String] Password
       # @return [String] Basic auth token
       def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
@@ -93,7 +96,8 @@ module Aspera
       # Check if php style is specified.
       # `nil` values in query result in key without value, e.g. `?a`, while empty string values result in `?a=`.
       # @param url   [String]            The URL without query.
-      # @param query [Hash,Array,String] The query.
+      # @param query [Hash,Array,String] The query parameters.
+      # @return [URI] The built URI.
       def build_uri(url, query)
         uri = URI.parse(url)
         Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
@@ -118,6 +122,7 @@ module Aspera
       # Either p=1&p=2 (default)
       # or p[]=1&p[]=2 (if `:x_array_php_style` is set to true in query)
       # @param query [Hash] HTTP query as hash
+      # @return [Array<Array>] Array of [key, value] pairs suitable for URI.encode_www_form
       def h_to_query_array(query)
         Aspera.assert_type(query, Hash)
         suffix = query.delete(:x_array_php_style) ? '[]' : nil

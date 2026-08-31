@@ -39,8 +39,9 @@ module Aspera
           @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
         end
 
-        # File list is provided directly with `ascp` arguments
-        # @columns ascp_args [Array,NilClass] `ascp` arguments
+        # Check whether a file list option is already present in the `ascp` argument list
+        # @param ascp_args [Array, nil] `ascp` arguments
+        # @return [Boolean] true if a file list option is present
         def ascp_args_file_list?(ascp_args)
           ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end

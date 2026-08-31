@@ -19,7 +19,8 @@ module Aspera
     end
 
     # Get value of persisted item
-    # @return [String,nil] Value of persisted id
+    # @param object_id [String] Identifier of persisted item
+    # @return [String, nil] Persisted value, or nil if not found
     def get(object_id)
       Log.log.debug{"persistency get: #{object_id}"}
       if @cache.key?(object_id)
@@ -59,7 +60,10 @@ module Aspera
       @cache.delete(object_id)
     end
 
-    # Delete persisted items
+    # Delete persisted items matching the given category, optionally older than a given age
+    # @param persist_category [String]       Prefix used to identify files belonging to the category
+    # @param max_age_seconds  [Integer, nil] If set, only delete files older than this many seconds
+    # @return [Array<String>] List of deleted file paths
     def garbage_collect(persist_category, max_age_seconds = nil)
       garbage_files = current_files(persist_category)
       if !max_age_seconds.nil?
@@ -74,6 +78,9 @@ module Aspera
       return garbage_files
     end
 
+    # List all persisted files matching the given category prefix
+    # @param persist_category [String] Prefix identifying the category
+    # @return [Array<String>] List of matching file paths
     def current_files(persist_category)
       Dir[File.join(@folder, "#{persist_category}*#{FILE_SUFFIX}")]
     end

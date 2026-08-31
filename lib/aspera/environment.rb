@@ -78,7 +78,9 @@ module Aspera
         argv
       end
 
-      # like `Shellwords.shellescape`, but does not escape `=`
+      # Like `Shellwords.shellescape`, but does not escape `=`
+      # @param str [String] String to escape for shell usage
+      # @return [String] Shell-safe string
       def shell_escape_pretty(str)
         # Safe unquoted characters + '=' explicitly allowed
         return str if str.match?(%r{\A[A-Za-z0-9_.,:/@+=-]+\z})
@@ -168,7 +170,10 @@ module Aspera
         return path
       end
 
-      # restrict access to a file or folder to user only
+      # Restrict access to a file or folder to the current user only (chmod 600/700)
+      # @param path [String]       Path to the file or directory
+      # @param mode [Integer, nil] Octal permission mode; if nil, inferred from path type
+      # @return [nil]
       def restrict_file_access(path, mode: nil)
         if mode.nil?
           # or FileUtils ?
@@ -181,6 +186,7 @@ module Aspera
           end
         end
         File.chmod(mode, path) unless mode.nil?
+        nil
       rescue => e
         Log.log.warn(e.message)
       end
@@ -291,16 +297,17 @@ module Aspera
       @default_gui_mode == :graphical
     end
 
-    # Open a URI in a graphical browser
-    # Command must be non blocking
-    # @param uri [String] the URI to open
+    # Open a URI in the system's default graphical browser (non-blocking)
+    # @param uri [String, URI] the URI to open
+    # @return [nil]
     def open_uri_graphical(uri)
       case @os
-      when Environment::OS_MACOS then return self.class.secure_execute('open', uri.to_s)
-      when Environment::OS_WINDOWS then return self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
-      when Environment::OS_LINUX   then return self.class.secure_execute('xdg-open', uri.to_s)
+      when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
+      when Environment::OS_WINDOWS then self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
+      when Environment::OS_LINUX   then self.class.secure_execute('xdg-open', uri.to_s)
       else Aspera.error_unexpected_value(os){'no graphical open method'}
       end
+      nil
     end
 
     # open a file in an editor

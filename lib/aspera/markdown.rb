@@ -26,28 +26,46 @@ module Aspera
       end
 
       # Generate markdown list from the provided list
+      # @param items [Array<String>] list of items
+      # @return [String] markdown unordered list
       def list(items)
         items.map{ |i| "- #{i}"}.join("\n")
       end
 
+      # Generate a markdown heading
+      # @param title [String] heading text
+      # @param level [Integer] heading level (1–6)
+      # @return [String] markdown heading
       def heading(title, level: 1)
         "#{'#' * level} #{title}\n\n"
       end
 
-      # type: NOTE CAUTION WARNING IMPORTANT TIP INFO
+      # Generate a GitHub-flavoured admonition block
+      # @param lines [Array<String>] lines of the admonition body
+      # @param type [String] admonition type: NOTE, CAUTION, WARNING, IMPORTANT, TIP, INFO
+      # @return [String] markdown admonition block
       def admonition(lines, type: 'INFO')
         "> [!#{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
       end
 
+      # Generate a fenced code block
+      # @param lines [Array<String>] lines of code
+      # @param type [String] language identifier for syntax highlighting
+      # @return [String] markdown fenced code block
       def code(lines, type: 'shell')
         "```#{type}\n#{lines.join("\n")}\n```\n\n"
       end
 
-      # inline code
+      # Wrap text in inline code backticks
+      # @param text [String] text to wrap
+      # @return [String] inline code span
       def icode(text)
         "`#{text}`"
       end
 
+      # Wrap text in a markdown paragraph (trailing blank line)
+      # @param text [String] paragraph content
+      # @return [String] paragraph with trailing newlines
       def paragraph(text)
         "#{text}\n\n"
       end

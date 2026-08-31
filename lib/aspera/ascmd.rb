@@ -28,17 +28,17 @@ module Aspera
     ENUM_START = 1
 
     # Description of result structures (see ascmdtypes.h).
-    # Base types are big endian
-    # key = name of type
-    # index in array `fields` is: the numerical type of TLV - `ENUM_START`. i.e. add `ENUM_START` to index, to get `T`
-    # decoding always start at `result`
-    # some fields have special handling indicated by `special`
-    # field_list, list_tlv_list, list_tlv_restart are composed with a list of TLV
-    # decode:
-    # - :base : value
-    # - :buffer_list : an array of {btype,buffer}
-    # - :field_list : a hash, or array
-    # :check: ???
+    # Base types are big endian.
+    # Keys are type names; the index in each `fields` array equals (TLV numerical type - `ENUM_START`).
+    # Decoding always starts at `result`.
+    # Some fields have special handling indicated by `special`:
+    #   - `:field_list`       : a Hash or Array of child TLVs
+    #   - `:list_tlv_list`    : a list of TLV sub-lists (Array of Hash)
+    #   - `:list_tlv_restart` : same but restarted per entry
+    # `decode` values:
+    #   - `:base`        : a single scalar value (unpack with `unpack`)
+    #   - `:buffer_list` : an Array of `{btype, buffer}` entries
+    #   - `:field_list`  : a Hash or Array built from child TLVs
     # rubocop:disable-next Layout/FirstHashElementLineBreak
     TYPES_DESCR = {
       result: {decode: :field_list,

@@ -112,7 +112,7 @@ module Aspera
       class << self
         # Declare all formatter CLI options (metadata only - no handler binding yet).
         # @param options [Aspera::Cli::Options]
-        # @return [void]
+        # @return [nil]
         def declare_options(options)
           options.declare(:display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
           options.declare(:format,       description: 'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table)
@@ -124,21 +124,26 @@ module Aspera
           options.declare(:multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single],          default: :no)
           options.declare(:show_secrets, description: 'Show secrets on command output',                                                                    allowed: Allowed::TYPES_BOOLEAN,     default: false)
           options.declare(:image,        schema: Schema::Registry::IMAGE_OPTIONS)
+          nil
         end
       end
 
       # Bind all formatter options to this instance using set_handler.
       # Called from Runner after Formatter.new.
       # @param options [Aspera::Cli::Options]
-      # @return [void]
+      # @return [nil]
       def bind_options(options)
         %i[display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
           options.set_handler(opt, object: self, method: :option_handler)
         end
+        nil
       end
 
-      # method accessed by option manager
-      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
+      # Getter/setter handler called by the option manager for all formatter options
+      # @param option_symbol [Symbol]       Option name (one of :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
+      # @param operation     [Symbol]       :get or :set
+      # @param value         [Object, nil]  Value to set (only used when operation is :set)
+      # @return [Object, nil] Current option value when operation is :get; nil otherwise
       def option_handler(option_symbol, operation, value = nil)
         Aspera.assert_values(operation, %i[set get])
         case operation
@@ -172,7 +177,7 @@ module Aspera
       # @param message_level [Symbol] The level of the message - must be one of: :data, :info, :error
       # @param message [String] The message to display
       # @param hide_secrets [Boolean] Whether to hide secrets in the message (default: true)
-      # @return [void]
+      # @return [nil]
       # @note Message display behavior depends on the message_level:
       #   - +:data+ messages are displayed unless display level is +:error+
       #   - +:info+ messages are only displayed when display level is +:info+
@@ -365,7 +370,7 @@ module Aspera
         final_table_rows = object_array.map{ |r| fields.map{ |c| r[c].to_s}}
         # remove empty rows
         final_table_rows.select!{ |i| !(i.is_a?(Hash) && i.empty?)}
-        # here : fields : list of column names
+        # fields: list of column names to display
         case @options[:format]
         when :table
           format_style[:border] = :unicode_round if Environment.terminal_supports_unicode?

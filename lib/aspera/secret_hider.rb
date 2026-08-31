@@ -59,10 +59,15 @@ module Aspera
       end
     end
 
+    # Replace private key content in a string with the hidden password placeholder
+    # @param value [String] Input string possibly containing a private key
+    # @return [String] String with private key replaced by placeholder
     def hide_secrets_in_string(value)
       return value.gsub(REGEX_LOG_REPLACES.first){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
     end
 
+    # @param keyword [String, Symbol] Key name to check
+    # @param value   [String]         Associated value (must be a String to be a secret)
     # @return [Boolean] true if the key denotes a secret
     def secret?(keyword, value)
       keyword = keyword.to_s if keyword.is_a?(Symbol)

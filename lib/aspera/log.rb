@@ -36,13 +36,16 @@ class Logger
   end
 
   class << self
-    # Define methods for a given log level
+    # Define logger methods for a given log level (e.g. `debug`, `debug?`, `debug!`)
+    # @param str_level [String] Log level name (e.g. "DEBUG", "TRACE1")
+    # @return [nil]
     def make_methods(str_level)
       int_level = ::Logger.const_get(str_level.upcase)
       method_base = str_level.downcase
       define_method(method_base, ->(message = nil, &block){add(int_level, message, &block)})
       define_method("#{method_base}?", ->{level <= int_level})
       define_method("#{method_base}!", ->{self.level = int_level})
+      nil
     end
   end
   # Declare methods for all levels
@@ -142,9 +145,13 @@ module Aspera
     attr_reader :logger_type, :logger
     attr_accessor :dump_format
 
+    # Set the program name used in log output
+    # @param value [String] Program name
+    # @return [nil]
     def program_name=(value)
       @program_name = value
       self.logger_type = @logger_type
+      nil
     end
 
     # Set log level of underlying logger given symbol level
@@ -154,6 +161,9 @@ module Aspera
       @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
     end
 
+    # Set log formatter; accepts a symbol name, a Proc, or a Logger::Formatter instance
+    # @param formatter [String, Proc, Logger::Formatter] Formatter to use; one of: standard, default, caller
+    # @return [nil]
     def formatter=(formatter)
       if formatter.is_a?(String)
         raise Error, "Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}" unless FORMATTER_LAMBDAS.key?(formatter.to_sym)
@@ -163,6 +173,7 @@ module Aspera
       end
       # Update formatter with password hiding
       @logger.formatter = SecretHider.instance.log_formatter(formatter)
+      nil
     end
 
     def formatter
@@ -176,7 +187,9 @@ module Aspera
       Logger::SEVERITY_LABEL[@logger.level].downcase
     end
 
-    # Change underlying logger, but keep log level (default: INFO)
+    # Change underlying logger output destination, keeping current log level
+    # @param new_log_type [Symbol] Log destination; one of LOG_TYPES (:stderr, :stdout, :syslog)
+    # @return [nil]
     def logger_type=(new_log_type)
       # [Integer]
       current_severity_integer = @logger&.level || ENV['AS_LOG_LEVEL']&.to_i || Logger::Severity::INFO
@@ -203,6 +216,7 @@ module Aspera
       @logger_type = new_log_type
       # add secret hider to default logger
       self.formatter = @logger.formatter
+      nil
     end
 
     private

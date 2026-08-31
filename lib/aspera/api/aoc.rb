@@ -297,8 +297,7 @@ module Aspera
         # default values for client id
         client_id, client_secret = self.class.get_client_info if client_id.nil?
         # access key secrets are provided out of band to get node api access
-        # key: access key
-        # value: associated secret
+        # maps access key (String) to its associated secret (String)
         @secret_finder = secret_finder
         @cache_user_info = nil
         @cache_url_token_info = nil

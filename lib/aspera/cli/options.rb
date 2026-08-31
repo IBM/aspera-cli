@@ -163,7 +163,7 @@ module Aspera
       # Safe to call after construction - used by Options#set_handler to bind a composed
       # instance variable that did not exist at class-load time (Category C handlers).
       # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
-      # @return [void]
+      # @return [nil]
       def bind_handler(handler)
         Aspera.assert_type(handler, Hash){'handler'}
         # Capture any value already stored locally before switching to delegated storage.
@@ -181,6 +181,7 @@ module Aspera
         Log.log.trace1{"bind_handler: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
         # Push the pending local value to the new target if one was stored
         assign_value(pending_value, where: 'bind_handler', warn_deprecation: false) unless pending_value.nil?
+        nil
       end
 
       # @return [String] description of the option: explicit one, or first line of schema description
@@ -590,7 +591,7 @@ module Aspera
       # @param option_symbol [Symbol] name of the already-declared option
       # @param object [Object] the target object for get/set delegation
       # @param method [Symbol] accessor method name on object
-      # @return [void]
+      # @return [nil]
       def set_handler(option_symbol, object:, method:)
         Aspera.assert_type(option_symbol, Symbol)
         option_def(option_symbol).bind_handler(o: object, m: method)
