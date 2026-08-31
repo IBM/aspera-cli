@@ -690,7 +690,7 @@ module Aspera
 
         # admin > nodes > shared_folders > user — consumes sf_id positionally, builds user_path for all children
         def setup_admin_nodes_shared_folders_user(sf_entity:, **)
-          sf_id = options.instance_identifier(description: 'sf_id')
+          sf_id = options.instance_identifier(description: 'sf_id'){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
           {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
         end
 

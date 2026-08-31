@@ -775,7 +775,7 @@ module Aspera
                 default_query: workspace_id_hash({'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}, string: true)
               )
             end)
-          command :show,       description: 'Show a shared inbox', instance_arg: :dropbox_id,
+          command :show,       description: 'Show a shared inbox', instance_arg: :dropbox_id, lookup: :lookup_aoc_dropbox_id,
             action: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
           command :short_link, description: 'Manage shared inbox short links',
             setup: :setup_packages_short_link
