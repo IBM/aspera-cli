@@ -561,17 +561,21 @@ module Aspera
           Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
         end
 
+        MEMBER_SUBS = %i[members saml_groups].freeze
+        CRUD_NO_SHOW = %i[create list modify delete].freeze
+        CRUD_NO_LIST = %i[create modify delete show].freeze
+
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # instance_arg: :res_id consumed before sub-command routing
         %i[shared_inboxes workgroups].each do |res|
           lookup_method = :"lookup_#{res}_id"
-          %i[members saml_groups].each do |sub|
+          MEMBER_SUBS.each do |sub|
             commands_under([:admin, res]) do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
                 instance_arg: :res_id, lookup: lookup_method, setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
-              %i[create list modify delete].each{ |c| command(c, description: c.to_s.capitalize)}
+              CRUD_NO_SHOW.each{ |c| command(c, description: c.to_s.capitalize)}
             end
           end
           commands_under([:admin, res]) do
@@ -646,7 +650,7 @@ module Aspera
 
         # admin > <resource> > create / modify / delete / show
         Api::Faspex::ADMIN_RESOURCES.each do |res|
-          %i[create modify delete show].each do |op|
+          CRUD_NO_LIST.each do |op|
             define_method(:"handle_admin_#{res}_#{op}") do
               args = res_exec_args(res)
               entity_execute(command: op, **args){ |f, v| res_lookup_id(res, f, v)}
@@ -705,8 +709,8 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > members|saml_groups > create/list/modify/delete
         %i[shared_inboxes workgroups].each do |res|
-          %i[members saml_groups].each do |sub|
-            %i[create list modify delete].each do |op|
+          MEMBER_SUBS.each do |sub|
+            CRUD_NO_SHOW.each do |op|
               define_method(:"handle_admin_#{res}_#{sub}_#{op}") do |res_instance_path:, **|
                 res_path = "#{res_instance_path}/#{sub}"
                 list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
@@ -867,7 +871,8 @@ module Aspera
         WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
         PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
-        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES
+        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
+          :MEMBER_SUBS, :CRUD_NO_SHOW, :CRUD_NO_LIST
       end
     end
   end

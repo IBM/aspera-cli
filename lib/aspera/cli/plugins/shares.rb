@@ -126,7 +126,7 @@ module Aspera
 
           # all: list/show/delete + USR_GRP_SETTINGS [+ users for group]
           commands_under([:admin, entity_type, :all]) do
-            %i[list show delete].each do |op|
+            (Operations::ALL - [:create]).each do |op|
               command(op, description: "#{op.capitalize} #{entity_type}(s)")
             end
             USR_GRP_SETTINGS.each do |setting|
@@ -137,7 +137,7 @@ module Aspera
 
           # local: list/show/delete/create/modify [+ users for group]
           commands_under([:admin, entity_type, :local]) do
-            %i[list show delete create modify].each do |op|
+            Operations::ALL.each do |op|
               command(op, description: "#{op.capitalize} #{entity_type}(s)")
             end
             command(:users, description: 'List users of a group') if entity_type.eql?(:group)
@@ -154,8 +154,9 @@ module Aspera
           end
         end
 
+        ENTITY_LOCATIONS = %i[all local].freeze
         SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
-        private_constant :SHARE_DISPLAY_FIELDS
+        private_constant :ENTITY_LOCATIONS, :SHARE_DISPLAY_FIELDS
 
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
@@ -285,8 +286,8 @@ module Aspera
         # Generate handle_admin_<user|group>_<location>_<verb> for all combinations
         %i[user group].each do |entity_type|
           # all + local: CRUD + USR_GRP_SETTINGS [+ users for group]
-          %i[all local].each do |location|
-            ops = location.eql?(:all) ? %i[list show delete] : %i[list show delete create modify]
+          ENTITY_LOCATIONS.each do |location|
+            ops = location.eql?(:all) ? (Operations::ALL - [:create]) : Operations::ALL
             ops.each do |op|
               define_method(:"handle_admin_#{entity_type}_#{location}_#{op}") do
                 handle_admin_entity_crud(entity_type, location, op)
