@@ -1,0 +1,18 @@
+query ($organization_id: ID!, $startDate: Date!, $endDate: Date!, $aggregate: TransferUsageAggregateOption!) {
+  aoc (organization_id: $organization_id) {
+    bssSubscription {
+      aocOrganizations { id }
+      additionalStorageVolumeGb additionalEgressVolumeGb
+      aocPlanData { tier trial }
+      term { transferVolumeGb egressVolumeGb storageVolumeGb startDate endDate transferVolumeOffsetGb }
+      termMonths
+      transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+      egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+    }
+    subscriptionEntitlements {
+      id
+      transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+      egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+    }
+  }
+}

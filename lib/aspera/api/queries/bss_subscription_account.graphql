@@ -1,0 +1,18 @@
+query ($organization_id: ID!) {
+  aoc (organization_id: $organization_id) {
+    bssSubscription {
+      aocVersion endDate startDate termMonths plan trial termType
+      aocOrganizations { id }
+      additionalStorageVolumeGb additionalEgressVolumeGb
+      term { startDate endDate transferVolumeGb egressVolumeGb storageVolumeGb transferVolumeOffsetGb }
+      paygoRate { transferRate storageRate currency }
+      aocPlanData {
+        tier trial
+        workspaces { max }
+        users { planAmount max }
+        samlIntegration activity sharedInboxes uniqueUrls support watermarking byok
+        automation { planAmount, max }
+      }
+    }
+  }
+}

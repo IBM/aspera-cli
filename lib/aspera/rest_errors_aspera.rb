@@ -41,16 +41,6 @@ module Aspera
         end
         RestErrorAnalyzer.instance.add_simple_handler(name: 'T9:IBM cloud IAM', path: ['errorMessage'])
         RestErrorAnalyzer.instance.add_simple_handler(name: 'T10:faspex v4', path: ['user_message'])
-        RestErrorAnalyzer.instance.add_handler('bss graphql') do |type, context|
-          next unless context[:data].is_a?(Hash)
-          d_t_s = context[:data]['errors']
-          next unless d_t_s.is_a?(Array)
-          d_t_s.each do |res|
-            r_err = res['message']
-            next unless r_err.is_a?(String)
-            RestErrorAnalyzer.add_error(context, type, r_err)
-          end
-        end
         RestErrorAnalyzer.instance.add_handler('Orchestrator') do |type, context|
           next if context[:response].code.start_with?('2')
           data = context[:data]
