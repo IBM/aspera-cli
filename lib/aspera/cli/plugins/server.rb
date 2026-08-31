@@ -222,7 +222,7 @@ module Aspera
 
         # Build the transfer spec and ascmd executor from CLI options.
         # Stores results in instance variables; returns empty context hash.
-        def setup_server
+        def setup_server(**)
           @server_transfer_spec = options_to_base_transfer_spec
           @ascmd_executor = case @connection_type
           when :local then LocalExecutor.new

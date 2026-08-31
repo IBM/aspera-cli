@@ -147,7 +147,7 @@ module Aspera
 
         # Build the Orchestrator REST API from CLI options.
         # @return [Hash] ctx with no extra keys (stores api in @api_orch instance var)
-        def setup_api
+        def setup_api(**)
           auth_params =
             case options.get_option(:auth_style, mandatory: true)
             when :arg_pass

@@ -226,7 +226,7 @@ module Aspera
           spec     = registry[current_path]
 
           # Phase A - run setup on current node (skip when --help to avoid auth/network calls)
-          ctx = ctx.merge(send(spec.setup)) if spec&.setup && !options.help_requested && !skip_setup
+          ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup && !options.help_requested && !skip_setup
 
           # Phase B - leaf fast-path or child dispatch
           if spec && registry.children_of(current_path).empty?
@@ -287,7 +287,7 @@ module Aspera
             dispatch_from_registry(current_path + [command], ctx)
           else
             # Leaf: run child setup (if any), then execute handler
-            ctx = ctx.merge(send(child.setup)) if child.setup
+            ctx = ctx.merge(send(child.setup, **ctx)) if child.setup
             execute_leaf(child, ctx)
           end
         end

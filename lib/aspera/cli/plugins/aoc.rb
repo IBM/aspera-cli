@@ -357,7 +357,7 @@ module Aspera
           node_plugin = Node.new(context: context, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
-            return node_plugin.execute_command_gen4(command_repo, file_id)
+            return node_plugin.dispatch_from_registry([:access_keys, :do, command_repo], {do_root_file_id: file_id}, skip_setup: true)
           when :transfer
             # client side is agent
             # server side is transfer server
@@ -402,180 +402,55 @@ module Aspera
 
         # Execute an action on admin resources
         # @param resource_type [Symbol] One of ADMIN_OBJECTS
-        def execute_resource_action(resource_type)
-          # Set to `true` is resource creation requires a workspace id
-          require_workspace_id = false
-          # Default fields to display
-          list_default_fields = %w[id name]
-          # Default query for `list` action
-          list_default_query = {}
-          # In result of create, what is the field that contains the id of the created resource
-          id_result = 'id'
-          supported_operations = Operations::ALL
-          # API path
-          resource_class_path = "#{resource_type}s"
-          resource_class_path = resource_class_path.gsub(/ys$/, 'ies')
-          # path in openapi where post is located to get creation schema
-          create_schema_path = resource_class_path
-          case resource_type
-          when :client
-            supported_operations += %i[set_pub_key]
-            # schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{resource_class_path}.post")
-          when :client_access_key
-            resource_class_path = "admin/#{resource_type}s"
-          when :client_registration_token
-            resource_class_path = "admin/#{resource_type}s"
-            list_default_fields = %w[id value data.client_subject_scopes data.name created_at]
-            id_result = 'token'
-          when :contact
-            list_default_fields = %w[source_type source_id name email]
-            # list_default_query = {'include_only_user_personal_contacts' => true} if @scope == Api::AoC::Scope::USER
-          when :configuration_policy, :network_policy
-            list_default_fields = nil
-          when :dropbox
-            require_workspace_id = true
-            resource_class_path = "#{resource_type}es"
-            create_schema_path = resource_class_path
-          when :group, :saml_configuration
-            create_schema_path = nil
-          when :group_membership
-            list_default_fields = %w[id group_id member_type member_id]
-            create_schema_path = nil
-          when :kms_profile
-            resource_class_path = "integrations/#{resource_type}s"
-            create_schema_path = nil
-          when :node
-            list_default_fields = %w[id name host access_key]
-            supported_operations += %i[do bearer_token]
-          when :operation
-            list_default_fields = %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id]
-            supported_operations = %i[list show modify]
-          when :organization, :self
-            supported_operations = Operations::SINGLETON
-            resource_instance_path = resource_class_path = resource_type
-          when :short_link
-            list_default_fields = %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]
-          when :user
-            list_default_fields = %w[id name email]
-            supported_operations += %i[preferences notifications]
-          when :workspace
-            supported_operations += %i[shared_folder dropbox]
-          when :workspace_membership
-            list_default_fields = %w[id workspace_id member_type member_id]
-          end
-          # Default location of creation payload in schema
-          schema_create_modify = Schema::Registry.req_body(Schema::Registry::AOC, "#{create_schema_path}.post") if create_schema_path && supported_operations.include?(:create)
-          command = options.get_next_command(supported_operations)
-          # Require identifier for non global commands
-          if (supported_operations != Operations::SINGLETON) && !Operations::GLOBAL.include?(command)
-            res_id = get_resource_id_from_args(resource_class_path)
-            resource_instance_path = "#{resource_class_path}/#{res_id}"
-          end
-          case command
-          when :create
-            # TODO: report inconsistency: creation url is !=, and does not return id.
-            resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-            workspace_id = aoc_api.workspace_info[:id] if require_workspace_id
-            return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result, schema: schema_create_modify) do |params|
-              params['workspace_id'] = workspace_id if require_workspace_id && workspace_id && !params.key?('workspace_id')
-              aoc_api.create(resource_class_path, params)
-            end
-          when :list
-            return result_list(resource_class_path, fields: list_default_fields, default_query: list_default_query)
-          when :show
-            object = aoc_api.read(resource_instance_path, query_read_delete)
-            return Result::SingleObject.new(object, fields: Formatter.all_but('certificate'))
-          when :modify
-            changes = options.get_next_argument('properties', validation: Hash, schema: schema_create_modify)
-            return do_bulk_operation(command: command, values: res_id) do |one_id|
-              aoc_api.update("#{resource_class_path}/#{one_id}", changes)
-              {'id' => one_id}
-            end
-          when :delete
-            return do_bulk_operation(command: command, values: res_id) do |one_id|
-              aoc_api.delete("#{resource_class_path}/#{one_id}")
-              {'id' => one_id}
-            end
-          when :set_pub_key
-            # special : reads private and generate public
-            the_private_key = options.get_next_argument('private_key PEM value', validation: String)
-            the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
-            aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
-            return Result::Success.new
-          when :do
-            command_repo = options.get_next_command(FILES_COMMANDS)
-            return execute_nodegen4_command(command_repo, res_id, scope: Api::Node::Scope::ADMIN)
-          when :bearer_token
-            node_api = aoc_api.node_api_from(
-              node_id: res_id,
-              scope:   options.get_next_argument('scope', default: Api::Node::Scope::ADMIN)
-            )
-            return Result::Text.new(node_api.oauth.authorization)
-          when :dropbox
-            command_shared = options.get_next_command(%i[list])
-            case command_shared
-            when :list
-              query = options.get_option(:query) || {}
-              res_data = aoc_api.read('dropboxes', query.merge({'workspace_id'=>res_id}))
-              return Result::ObjectList.new(res_data, fields: %w[id name description])
-            end
-          when :shared_folder
-            query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
-            shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
-            # inside a workspace
-            command_shared = options.get_next_command(%i[list node member])
-            case command_shared
-            when :list
-              return Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
-            when :node
-              shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
-              shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-              Aspera.assert(shared_folder, 'shared folder not found')
-              command_repo = options.get_next_command(FILES_COMMANDS)
-              return execute_nodegen4_command(command_repo, shared_folder['node_id'], file_id: shared_folder['file_id'], scope: Api::Node::Scope::ADMIN)
-            when :member
-              shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
-              shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-              Aspera.assert(shared_folder, 'shared folder not found')
-              command_shared_member = options.get_next_command(%i[list])
-              case command_shared_member
-              when :list
-                node_api = aoc_api.node_api_from(
-                  node_id: shared_folder['node_id'],
-                  workspace_id: res_id,
-                  workspace_name: nil,
-                  scope: Api::Node::Scope::USER
-                )
-                result = node_api.read(
-                  'permissions',
-                  {'file_id' => shared_folder['file_id'], 'tag' => "aspera.files.workspace.id=#{res_id}"}
-                )
-                result.each do |item|
-                  item['member'] = begin
-                    if Api::AoC.workspace_access?(item)
-                      {'name'=>'[Internal permission]'}
-                    else
-                      aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name' => 'not found'}
-                    end
-                  rescue => e
-                    {'name'=>e.to_s}
-                  end
-                end
-                # TODO : read users and group name and add, if query "include_members"
-                return Result::ObjectList.new(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
-              end
-            end
-          when :preferences, :notifications
-            user_preferences_res = "#{resource_instance_path}/#{command.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'}"
-            case options.get_next_command(%i[show modify])
-            when :show
-              return Result::SingleObject.new(aoc_api.read(user_preferences_res))
-            when :modify
-              aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
-              return Result::Status.new('modified')
-            end
-          else Aspera.error_unexpected_value(command)
-          end
+        # Per-resource configuration for admin CRUD resources.
+        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton
+        ADMIN_OBJECT_CONFIG = {
+          client:                   {extra_ops: %i[set_pub_key]},
+          client_access_key:        {path: 'admin/client_access_keys'},
+          client_registration_token:{path: 'admin/client_registration_tokens', list_fields: %w[id value data.client_subject_scopes data.name created_at], id_result: 'token'},
+          configuration_policy:     {list_fields: nil},
+          contact:                  {list_fields: %w[source_type source_id name email]},
+          dropbox:                  {path: 'dropboxes', require_ws_id: true},
+          dropbox_membership:       {},
+          group:                    {create_schema: false},
+          group_membership:         {list_fields: %w[id group_id member_type member_id], create_schema: false},
+          kms_profile:              {path: 'integrations/kms_profiles', create_schema: false},
+          network_policy:           {list_fields: nil},
+          node:                     {list_fields: %w[id name host access_key], extra_ops: %i[do bearer_token]},
+          operation:                {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
+          organization:             {singleton: true},
+          package:                  {},
+          saml_configuration:       {create_schema: false},
+          self:                     {singleton: true},
+          short_link:               {list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]},
+          user:                     {list_fields: %w[id name email], extra_ops: %i[preferences notifications]},
+          workspace:                {extra_ops: %i[shared_folder dropbox], op_setup: {shared_folder: :setup_admin_workspace_shared_folder}},
+          workspace_membership:     {list_fields: %w[id workspace_id member_type member_id]}
+        }.freeze
+        private_constant :ADMIN_OBJECT_CONFIG
+
+        # @return [String] AoC REST path for an admin resource type
+        def aoc_res_path(res)
+          cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
+          return cfg[:path] if cfg[:path]
+          base = "#{res}s".gsub(/ys$/, 'ies')
+          base
+        end
+
+        # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:}
+        def aoc_res_cfg(res)
+          cfg  = ADMIN_OBJECT_CONFIG.fetch(res, {})
+          path = aoc_res_path(res)
+          ops  = cfg[:ops] || (Operations::ALL + (cfg[:extra_ops] || []))
+          schema = (cfg[:create_schema] == false) ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
+          {
+            path:         path,
+            ops:          ops,
+            id_result:    cfg[:id_result] || 'id',
+            require_ws_id: cfg[:require_ws_id] || false,
+            list_fields:  cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
+            schema:       schema
+          }
         end
 
         # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
@@ -591,136 +466,37 @@ module Aspera
           }))
         end
 
-        # Create a short link for the given entity: Shared folder or Shared Inbox
-        # Short link entity: `short_links` have:
-        # - a numerical id, e.g. `764412`
-        # - a resource type, e.g. `UrlToken`
-        # - a resource id, e.g. `scQ7uXPbvQ`
-        # - a short URL path, e.g. `dxyRpT9`
-        # @param shared_data [Hash] Information for shared data: dropbox_id+name or file_id+node_id
-        # @param shared_data [Hash] Shared data for the short link
-        # @yieldparam operation [Symbol] Operation type (:create, :update, :delete)
-        # @yieldparam resource_id [String] Resource ID for permission management
-        # @yieldparam access_levels [Object] Access levels for permissions
-        def short_link_command(**shared_data, &perm_block)
-          link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
+        # Compute short-link purposes from shared_data keys and link_type.
+        # @param shared_data [Hash] :dropbox_id+:name or :file_id+:node_id
+        # @param link_type [Symbol] :public or :private
+        # @return [Array(String,String)] [token_purpose, short_link_purpose]
+        def short_link_purposes(shared_data, link_type)
           if shared_data.keys.sort == %i[dropbox_id name]
-            # Packages app, Shared inbox
             token_purpose = 'send_package_to_dropbox'
             short_link_purpose = link_type.eql?(:public) ? 'send_package_to_dropbox' : 'shared_folder_auth_link'
           elsif shared_data.keys.sort == %i[file_id node_id]
-            # Files app, Shared folder
             token_purpose = 'view_shared_file'
             short_link_purpose = link_type.eql?(:public) ? 'token_auth_redirection' : 'shared_folder_auth_link'
           else
             Aspera.error_unexpected_value(shared_data.keys)
           end
-          command = options.get_next_command(%i[create delete list show] + (link_type.eql?(:public) ? %i[modify] : []))
-          case command
-          when :create
-            # Add workspace id
-            workspace_id_hash(shared_data)
-            create_payload = {
-              purpose:            short_link_purpose,
-              user_selected_name: nil
-            }
-            case link_type
-            when :private
-              create_payload[:data] = shared_data
-            when :public
-              create_payload[:expires_at]       = nil
-              create_payload[:password_enabled] = false
-              shared_data[:name] = ''
-              create_payload[:data] = {
-                aoc:            true,
-                url_token_data: {
-                  data:    shared_data,
-                  purpose: token_purpose
-                }
-              }
-            end
-            custom_data = value_create_modify(command: command, default: {})
-            access_levels = custom_data.delete('access_levels')
-            if (pass = custom_data.delete('password'))
-              create_payload[:data][:url_token_data][:password] = pass
-              create_payload[:password_enabled] = true
-            end
-            create_payload.deep_merge!(custom_data)
-            result_create_short_link = aoc_api.create('short_links', create_payload)
-            # Creation: perm_block: permission on node
-            yield(:create, result_create_short_link['resource_id'], access_levels) if block_given? && link_type.eql?(:public)
-            return Result::SingleObject.new(result_create_short_link)
-          when :delete, :list, :show, :modify
-            workspace_id_hash(shared_data)
-            query = if link_type.eql?(:private)
-              shared_data
-            else
-              {
-                url_token_data: {
-                  data:    shared_data,
-                  purpose: token_purpose
-                }
-              }
-            end
-            list_params = {
-              json_query:  query.to_json,
-              purpose:     short_link_purpose,
-              edit_access: true,
-              # embed: 'updated_by_user',
-              sort:        '-created_at'
-            }
-            short_list = aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact)
-            case command
-            when :delete
-              one_id = options.instance_identifier(description: 'short link id')
-              if link_type.eql?(:public)
-                found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
-                raise BadIdentifier.new('Short link', one_id) if found.nil?
-                yield(:delete, found['resource_id'], nil)
-              end
-              aoc_api.delete("short_links/#{one_id}", {
-                edit_access: true,
-                json_query:  shared_data.to_json
-              })
-              return Result::Status.new('deleted')
-            when :list
-              return Result::ObjectList.new(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
-            when :show
-              one_id = options.instance_identifier(description: 'short link id')
-              found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
-              raise BadIdentifier.new('Short link', one_id) if found.nil?
-              return Result::SingleObject.new(found, fields: Formatter.all_but('data'))
-            when :modify
-              one_id = options.instance_identifier(description: 'short link id')
-              node_file = shared_data.slice(:node_id, :file_id)
-              modify_payload = {
-                edit_access: true,
-                json_query:  node_file
-              }
-              custom_data = value_create_modify(command: command)
-              if (pass = custom_data.delete('password'))
-                modify_payload[:password_enabled] = true
-                modify_payload[:data] = {
-                  url_token_data: {
-                    password: pass,
-                    data:     node_file
-                  }
-                }
-              else
-                modify_payload[:password_enabled] = false
-              end
-              if custom_data.delete('access_levels')
-                # Modification: perm_block: permission on node
-                found = short_list[:items].find{ |item| item['id'].eql?(one_id)}
-                raise BadIdentifier.new('Short link', one_id) if found.nil?
-                yield(:update, found['resource_id'], access_levels)
-              end
-              modify_payload.deep_merge!(custom_data)
-              aoc_api.update("short_links/#{one_id}", modify_payload)
-              return Result::Status.new('modified')
-            end
-          else Aspera.error_unexpected_value(command)
+          [token_purpose, short_link_purpose]
+        end
+
+        # Build the list_params hash used by delete/list/show/modify short link operations.
+        # @return [Hash]
+        def short_link_list_params(shared_data:, link_type:, token_purpose:, short_link_purpose:, **)
+          query = if link_type.eql?(:private)
+            shared_data
+          else
+            {url_token_data: {data: shared_data, purpose: token_purpose}}
           end
+          {
+            json_query:  query.to_json,
+            purpose:     short_link_purpose,
+            edit_access: true,
+            sort:        '-created_at'
+          }
         end
 
         # @return [PersistencyActionOnce, nil] persistency object if option `once_only` is used.
@@ -786,7 +562,45 @@ module Aspera
           command :subscription,   description: 'Show subscription info'
           command :analytics,      description: 'Query analytics'
           ADMIN_OBJECTS.each do |res|
+            cfg      = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            op_setup = cfg[:op_setup] || {}
+            ops      = if cfg[:ops]
+              cfg[:ops]
+            elsif cfg[:singleton]
+              %i[show]
+            else
+              Operations::ALL + (cfg[:extra_ops] || [])
+            end
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+            commands_under([:admin, res]) do
+              ops.each do |op|
+                command(op, description: op.to_s.tr('_', ' ').capitalize, **op_setup[op] ? {setup: op_setup[op]} : {})
+              end
+            end
+          end
+        end
+        # admin > workspace > shared_folder sub-tree
+        commands_under(%i[admin workspace shared_folder]) do
+          command :list,   description: 'List shared folders'
+          command :node,   description: 'Execute node command on shared folder'
+          command :member, description: 'Show folder members'
+        end
+        commands_under(%i[admin workspace shared_folder member]) do
+          command :list, description: 'List members of a shared folder'
+        end
+        # admin > workspace > dropbox sub-tree
+        commands_under(%i[admin workspace dropbox]) do
+          command :list, description: 'List dropboxes in workspace'
+        end
+        # admin > node > do sub-tree (FILES_COMMANDS)
+        commands_under(%i[admin node do]) do
+          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+        end
+        # admin > user > preferences|notifications sub-trees
+        %i[preferences notifications].each do |pref|
+          commands_under([:admin, :user, pref]) do
+            command :show,   description: "Show #{pref}"
+            command :modify, description: "Modify #{pref}"
           end
         end
         commands_under(%i[admin auth_providers]) do
@@ -881,13 +695,16 @@ module Aspera
 
         # user sub-commands
         commands_under(:user) do
-          command :workspaces,   description: 'Workspace commands'
-          command :profile,      description: 'User profile commands'
-          command :preferences,  description: 'User interaction preferences'
+          command :workspaces,    description: 'Workspace commands'
+          command :profile,       description: 'User profile commands'
+          command :preferences,   description: 'User interaction preferences'
           command :notifications, description: 'Notification preferences'
-          command :contacts, description: 'Manage contacts',
-            handler: ->{execute_resource_action(:contact)}
+          command :contacts,      description: 'Manage contacts'
           entity_command :settings, api: :aoc_api, entity: 'client_settings', description: 'Manage client settings'
+        end
+        # user > contacts sub-commands (same CRUD as admin > contact)
+        commands_under(%i[user contacts]) do
+          Operations::ALL.each{ |op| command(op, description: op.to_s.capitalize)}
         end
 
         commands_under(%i[user workspaces]) do
@@ -973,13 +790,17 @@ module Aspera
           command :show,       description: 'Show a shared inbox',
             handler: ->{Result::SingleObject.new(aoc_api.read(get_resource_path_from_args('dropboxes')))}
           command :short_link, description: 'Manage shared inbox short links',
-            handler: ->{short_link_command(dropbox_id: get_resource_id_from_args('dropboxes'), name: '')} # TODO: check name
+            setup: :setup_packages_short_link
+        end
+        # packages > shared_inboxes > short_link sub-commands
+        commands_under(%i[packages shared_inboxes short_link]) do
+          %i[create delete list show modify].each{ |op| command(op, description: op.to_s.capitalize)}
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
         # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
         commands_under(:files) do
-          command :short_link,       description: 'Manage file short link'
+          command :short_link, description: 'Manage file short link', setup: :setup_files_short_link
           command :transfer,         description: 'Transfer files (node-to-node)'
           command :mkdir,            description: 'Create folder'
           command :mklink,           description: 'Create symbolic link'
@@ -999,6 +820,10 @@ module Aspera
           command :node_info,         description: 'Show node info for file'
           command :browse,            description: 'Browse files'
           command :find,              description: 'Find files'
+        end
+        # files > short_link sub-commands
+        commands_under(%i[files short_link]) do
+          %i[create delete list show modify].each{ |op| command(op, description: op.to_s.capitalize)}
         end
 
         # automation sub-commands
@@ -1033,7 +858,7 @@ module Aspera
 
         # Display workspace info before dispatching files/packages sub-commands.
         # Returns {} so it does not inject anything into ctx.
-        def setup_workspace_display
+        def setup_workspace_display(**)
           formatter.display_status("Workspace: #{aoc_api.workspace_info[:name].to_s.red}#{' (default)' if aoc_api.default_workspace?}")
           if !aoc_api.private_link.nil?
             folder_name = aoc_api.node_api_from(node_id: aoc_api.home[:node_id]).read("files/#{aoc_api.home[:file_id]}")['name']
@@ -1043,7 +868,7 @@ module Aspera
         end
 
         # Build automation API and store in @automation_api ivar.
-        def setup_automation_api
+        def setup_automation_api(**)
           change_api_scope(Api::AoC::Scope::ADMIN_USER)
           Log.log.warn('BETA: work under progress')
           @automation_api = Rest.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
@@ -1173,18 +998,23 @@ module Aspera
           end
         end
 
-        # files > short_link
-        def handle_files_short_link
+        # setup: files > short_link
+        # Resolves the target folder, consumes link_type argument, computes purposes.
+        # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose, sl_perm_block, sl_shared_apifid, sl_folder_dest
+        def setup_files_short_link(**)
           folder_dest = options.get_next_argument('path', validation: String)
           home_node_api = aoc_api.node_api_from(
             node_id: aoc_api.home[:node_id],
             **workspace_id_hash(name: true)
           )
           shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
-          short_link_command(
+          shared_data = {
             node_id: shared_apifid.node_api.app_info.node_info['id'],
             file_id: shared_apifid.file_id
-          ) do |op, id, access_levels|
+          }
+          link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
+          token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
+          perm_block = lambda do |op, id, access_levels|
             case op
             when :create
               perm_data = {
@@ -1215,7 +1045,136 @@ module Aspera
             else Aspera.error_unexpected_value(op)
             end
           end
+          {
+            sl_shared_data:       shared_data,
+            sl_link_type:         link_type,
+            sl_token_purpose:     token_purpose,
+            sl_short_link_purpose: short_link_purpose,
+            sl_perm_block:        perm_block
+          }
         end
+
+        # setup: packages > shared_inboxes > short_link
+        # Reads dropbox_id, consumes link_type argument, computes purposes.
+        # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose
+        def setup_packages_short_link(**)
+          dropbox_id = get_resource_id_from_args('dropboxes')
+          shared_data = {dropbox_id: dropbox_id, name: ''}
+          link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
+          token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
+          {
+            sl_shared_data:        shared_data,
+            sl_link_type:          link_type,
+            sl_token_purpose:      token_purpose,
+            sl_short_link_purpose: short_link_purpose,
+            sl_perm_block:         nil
+          }
+        end
+
+        # Shared implementation for short_link > create
+        def sl_exec_create(sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, sl_perm_block:, **)
+          shared_data = sl_shared_data.dup
+          workspace_id_hash(shared_data)
+          create_payload = {purpose: sl_short_link_purpose, user_selected_name: nil}
+          case sl_link_type
+          when :private
+            create_payload[:data] = shared_data
+          when :public
+            create_payload[:expires_at]       = nil
+            create_payload[:password_enabled] = false
+            shared_data[:name] = ''
+            create_payload[:data] = {
+              aoc: true,
+              url_token_data: {data: shared_data, purpose: sl_token_purpose}
+            }
+          end
+          custom_data = value_create_modify(command: :create, default: {})
+          access_levels = custom_data.delete('access_levels')
+          if (pass = custom_data.delete('password'))
+            create_payload[:data][:url_token_data][:password] = pass
+            create_payload[:password_enabled] = true
+          end
+          create_payload.deep_merge!(custom_data)
+          result_create_short_link = aoc_api.create('short_links', create_payload)
+          sl_perm_block&.call(:create, result_create_short_link['resource_id'], access_levels) if sl_link_type.eql?(:public)
+          Result::SingleObject.new(result_create_short_link)
+        end
+
+        # Shared implementation for short_link > delete|list|show|modify: fetch the short_list
+        def sl_fetch_list(sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, **)
+          shared_data = sl_shared_data.dup
+          workspace_id_hash(shared_data)
+          list_params = short_link_list_params(
+            shared_data: shared_data, link_type: sl_link_type,
+            token_purpose: sl_token_purpose, short_link_purpose: sl_short_link_purpose
+          )
+          {
+            sl_short_list: aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact),
+            sl_shared_data_ws: shared_data
+          }
+        end
+
+        # Shared implementation for short_link > delete
+        def sl_exec_delete(sl_shared_data_ws:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
+          one_id = options.instance_identifier(description: 'short link id')
+          if sl_link_type.eql?(:public)
+            found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+            raise BadIdentifier.new('Short link', one_id) if found.nil?
+            sl_perm_block&.call(:delete, found['resource_id'], nil)
+          end
+          aoc_api.delete("short_links/#{one_id}", {edit_access: true, json_query: sl_shared_data_ws.to_json})
+          Result::Status.new('deleted')
+        end
+
+        # Shared implementation for short_link > list
+        def sl_exec_list(sl_short_list:, **)
+          Result::ObjectList.new(sl_short_list[:items], fields: Formatter.all_but('data'), total: sl_short_list[:total])
+        end
+
+        # Shared implementation for short_link > show
+        def sl_exec_show(sl_short_list:, **)
+          one_id = options.instance_identifier(description: 'short link id')
+          found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+          raise BadIdentifier.new('Short link', one_id) if found.nil?
+          Result::SingleObject.new(found, fields: Formatter.all_but('data'))
+        end
+
+        # Shared implementation for short_link > modify
+        def sl_exec_modify(sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
+          raise Cli::BadArgument, 'modify is only available for public short links' unless sl_link_type.eql?(:public)
+          one_id = options.instance_identifier(description: 'short link id')
+          node_file = sl_shared_data.slice(:node_id, :file_id)
+          modify_payload = {edit_access: true, json_query: node_file}
+          custom_data = value_create_modify(command: :modify)
+          if (pass = custom_data.delete('password'))
+            modify_payload[:password_enabled] = true
+            modify_payload[:data] = {url_token_data: {password: pass, data: node_file}}
+          else
+            modify_payload[:password_enabled] = false
+          end
+          if custom_data.delete('access_levels')
+            found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+            raise BadIdentifier.new('Short link', one_id) if found.nil?
+            sl_perm_block&.call(:update, found['resource_id'], nil)
+          end
+          modify_payload.deep_merge!(custom_data)
+          aoc_api.update("short_links/#{one_id}", modify_payload)
+          Result::Status.new('modified')
+        end
+
+        # files > short_link > create|delete|list|show|modify
+        def handle_files_short_link_create(**ctx) = sl_exec_create(**ctx)
+        def handle_files_short_link_list(**ctx)   = sl_exec_list(**sl_fetch_list(**ctx))
+        def handle_files_short_link_show(**ctx)   = sl_exec_show(**sl_fetch_list(**ctx))
+        def handle_files_short_link_delete(**ctx) = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+        def handle_files_short_link_modify(**ctx) = sl_exec_modify(**sl_fetch_list(**ctx), **ctx)
+
+        # packages > shared_inboxes > short_link > create|delete|list|show|modify
+        def handle_packages_shared_inboxes_short_link_create(**ctx) = sl_exec_create(**ctx)
+        def handle_packages_shared_inboxes_short_link_list(**ctx)   = sl_exec_list(**sl_fetch_list(**ctx))
+        def handle_packages_shared_inboxes_short_link_show(**ctx)   = sl_exec_show(**sl_fetch_list(**ctx))
+        def handle_packages_shared_inboxes_short_link_delete(**ctx) = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+        def handle_packages_shared_inboxes_short_link_modify(**ctx) = sl_exec_modify(**sl_fetch_list(**ctx), **ctx)
 
         # files > FILES_COMMANDS (all Gen4 node commands + :transfer)
         FILES_COMMANDS.each do |action|
@@ -1225,7 +1184,7 @@ module Aspera
         end
 
         # admin - setup: change API scope to admin once
-        def setup_admin_scope
+        def setup_admin_scope(**)
           change_api_scope(Api::AoC::Scope::ADMIN)
           {}
         end
@@ -1306,10 +1265,173 @@ module Aspera
           Result::ObjectList.new(events)
         end
 
-        # admin > <ADMIN_OBJECT> - one handler per object, each calls execute_resource_action
+        # admin > <res> > list
         ADMIN_OBJECTS.each do |res|
-          define_method(:"handle_admin_#{res}") do
-            execute_resource_action(res)
+          define_method(:"handle_admin_#{res}_list") do
+            c = aoc_res_cfg(res)
+            result_list(c[:path], fields: c[:list_fields])
+          end
+        end
+
+        # admin > <res> > show
+        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+          define_method(:"handle_admin_#{res}_show") do
+            c = aoc_res_cfg(res)
+            res_id = get_resource_id_from_args(c[:path])
+            Result::SingleObject.new(aoc_api.read("#{c[:path]}/#{res_id}", query_read_delete), fields: Formatter.all_but('certificate'))
+          end
+        end
+
+        # admin > organization|self > show (singleton)
+        %i[organization self].each do |res|
+          define_method(:"handle_admin_#{res}_show") do
+            Result::SingleObject.new(aoc_api.read(res.to_s, query_read_delete), fields: Formatter.all_but('certificate'))
+          end
+        end
+
+        # admin > <res> > create
+        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+          define_method(:"handle_admin_#{res}_create") do
+            c = aoc_res_cfg(res)
+            path = c[:path]
+            # Special case: client_registration_token has a different creation URL
+            path = 'admin/client_registration/token' if path.eql?('admin/client_registration_tokens')
+            workspace_id = aoc_api.workspace_info[:id] if c[:require_ws_id]
+            do_bulk_operation(command: :create, descr: 'creation data', id_result: c[:id_result], schema: c[:schema]) do |params|
+              params['workspace_id'] = workspace_id if c[:require_ws_id] && workspace_id && !params.key?('workspace_id')
+              aoc_api.create(path, params)
+            end
+          end
+        end
+
+        # admin > <res> > modify
+        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
+          define_method(:"handle_admin_#{res}_modify") do
+            c = aoc_res_cfg(res)
+            res_id = get_resource_id_from_args(c[:path])
+            changes = options.get_next_argument('properties', validation: Hash, schema: c[:schema])
+            do_bulk_operation(command: :modify, values: res_id) do |one_id|
+              aoc_api.update("#{c[:path]}/#{one_id}", changes)
+              {'id' => one_id}
+            end
+          end
+        end
+
+        # admin > <res> > delete
+        ADMIN_OBJECTS.reject{ |r|
+          cfg = ADMIN_OBJECT_CONFIG.fetch(r, {})
+          cfg[:singleton] || (cfg[:ops] && !cfg[:ops].include?(:delete))
+        }.each do |res|
+          define_method(:"handle_admin_#{res}_delete") do
+            c = aoc_res_cfg(res)
+            res_id = get_resource_id_from_args(c[:path])
+            do_bulk_operation(command: :delete, values: res_id) do |one_id|
+              aoc_api.delete("#{c[:path]}/#{one_id}")
+              {'id' => one_id}
+            end
+          end
+        end
+
+        # user > contacts > list|show|create|modify|delete (same API path as admin > contact)
+        Operations::ALL.each do |op|
+          define_method(:"handle_user_contacts_#{op}") do
+            send(:"handle_admin_contact_#{op}")
+          end
+        end
+
+        # admin > client > set_pub_key
+        def handle_admin_client_set_pub_key
+          c = aoc_res_cfg(:client)
+          res_id = get_resource_id_from_args(c[:path])
+          the_private_key = options.get_next_argument('private_key PEM value', validation: String)
+          the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
+          aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
+          Result::Success.new
+        end
+
+        # admin > node > do > <FILES_COMMAND>
+        FILES_COMMANDS.each do |cmd|
+          define_method(:"handle_admin_node_do_#{cmd}") do
+            res_id = get_resource_id_from_args(aoc_res_path(:node))
+            execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN)
+          end
+        end
+
+        # admin > node > bearer_token
+        def handle_admin_node_bearer_token
+          res_id = get_resource_id_from_args(aoc_res_path(:node))
+          node_api = aoc_api.node_api_from(node_id: res_id, scope: options.get_next_argument('scope', default: Api::Node::Scope::ADMIN))
+          Result::Text.new(node_api.oauth.authorization)
+        end
+
+        # admin > workspace > dropbox > list
+        def handle_admin_workspace_dropbox_list
+          res_id = get_resource_id_from_args(aoc_res_path(:workspace))
+          query = options.get_option(:query) || {}
+          Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => res_id})), fields: %w[id name description])
+        end
+
+        # admin > workspace > shared_folder — setup: resolve workspace id + shared folders list
+        def setup_admin_workspace_shared_folder(**)
+          res_id = get_resource_id_from_args(aoc_res_path(:workspace))
+          resource_instance_path = "#{aoc_res_path(:workspace)}/#{res_id}"
+          query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
+          shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
+          {ws_res_id: res_id, shared_folders: shared_folders}
+        end
+
+        # admin > workspace > shared_folder > list
+        def handle_admin_workspace_shared_folder_list(shared_folders:, **)
+          Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
+        end
+
+        # admin > workspace > shared_folder > node
+        def handle_admin_workspace_shared_folder_node(shared_folders:, **)
+          shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
+          shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+          Aspera.assert(shared_folder, 'shared folder not found')
+          command_repo = options.get_next_command(FILES_COMMANDS)
+          execute_nodegen4_command(command_repo, shared_folder['node_id'], file_id: shared_folder['file_id'], scope: Api::Node::Scope::ADMIN)
+        end
+
+        # admin > workspace > shared_folder > member > list
+        def handle_admin_workspace_shared_folder_member_list(ws_res_id:, shared_folders:, **)
+          shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
+          shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+          Aspera.assert(shared_folder, 'shared folder not found')
+          node_api = aoc_api.node_api_from(
+            node_id:        shared_folder['node_id'],
+            workspace_id:   ws_res_id,
+            workspace_name: nil,
+            scope:          Api::Node::Scope::USER
+          )
+          result = node_api.read('permissions', {'file_id' => shared_folder['file_id'], 'tag' => "aspera.files.workspace.id=#{ws_res_id}"})
+          result.each do |item|
+            item['member'] = begin
+              if Api::AoC.workspace_access?(item)
+                {'name' => '[Internal permission]'}
+              else
+                aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name' => 'not found'}
+              end
+            rescue => e
+              {'name' => e.to_s}
+            end
+          end
+          # TODO : read users and group name and add, if query "include_members"
+          Result::ObjectList.new(result, fields: %w[access_type access_id access_level last_updated_at member.name member.email member.system_group_type member.system_group])
+        end
+
+        # admin > user > preferences|notifications > show|modify
+        %i[preferences notifications].each do |pref|
+          pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
+          define_method(:"handle_admin_user_#{pref}_show") do
+            res_id = get_resource_id_from_args(aoc_res_path(:user))
+            Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
+          end
+          define_method(:"handle_admin_user_#{pref}_modify") do
+            res_id = get_resource_id_from_args(aoc_res_path(:user))
+            aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", options.get_next_argument('properties', validation: Hash))
+            Result::Status.new('modified')
           end
         end
 

@@ -35,7 +35,7 @@ module Aspera
 
         # Build the COS Node API and plugin from CLI options.
         # @return [Hash] context hash containing :node_plugin
-        def setup_cos_node
+        def setup_cos_node(**)
           # get service credentials, Hash, e.g. @json:@file:...
           service_credentials = options.get_option(:service_credentials)
           cos_node_params = {

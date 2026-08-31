@@ -198,7 +198,7 @@ module Aspera
 
         # Build the Node plugin for an ATS access key and store it in an ivar.
         # @return [Hash] context hash containing :ak_node_plugin and :ak_root_file_id
-        def setup_ak_node
+        def setup_ak_node(**)
           access_key_id = options.instance_identifier
           ak_data = ats_api.read("access_keys/#{access_key_id}")
           server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
@@ -218,10 +218,10 @@ module Aspera
           }
         end
 
-        # One handler per COMMANDS_GEN4 - delegates to the Node plugin's execute_command_gen4.
+        # One handler per COMMANDS_GEN4 - delegates to the Node plugin's DSL registry.
         Node::COMMANDS_GEN4.each do |cmd|
           define_method(:"handle_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:|
-            ak_node_plugin.execute_command_gen4(cmd, ak_root_file_id)
+            ak_node_plugin.dispatch_from_registry([:access_keys, :do, cmd], {do_root_file_id: ak_root_file_id}, skip_setup: true)
           end
         end
 

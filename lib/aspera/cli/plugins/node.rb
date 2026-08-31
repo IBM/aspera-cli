@@ -299,114 +299,6 @@ module Aspera
         end
 
         # Commands based on Gen3 API for file and folder
-        def execute_command_gen3(command)
-          case command
-          when :delete
-            # TODO: add query for recursive
-            paths_to_delete = options.get_next_argument('file list', multiple: true)
-            @node_path_prefix&.add_to_paths!(paths_to_delete)
-            resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
-            return cli_result_from_paths_response(resp, 'file deleted')
-          when :search
-            search_root = options.get_next_argument('search root', validation: String)
-            search_root = @node_path_prefix.add_to_path(search_root) unless @node_path_prefix.nil?
-            parameters = {'path' => search_root}
-            other_options = options.get_option(:query)
-            parameters.merge!(other_options) unless other_options.nil?
-            resp = @api_node.create('files/search', parameters)
-            return Result::Empty.new if resp['items'].empty?
-            fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
-            formatter.display_item_count(resp['item_count'], resp['total_count'])
-            formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
-            @node_path_prefix&.remove_in_object_list!(resp['items'])
-            return Result::ObjectList.new(resp['items'], fields: fields)
-          when :space
-            path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
-            @node_path_prefix&.add_to_paths!(path_list)
-            resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
-            @node_path_prefix&.remove_in_object_list!(resp['paths'])
-            return Result::ObjectList.new(resp['paths'])
-          when :mkdir
-            path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
-            @node_path_prefix&.add_to_paths!(path_list)
-            resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
-            return cli_result_from_paths_response(resp, 'folder created')
-          when :mklink
-            target = options.get_next_argument('target', validation: String)
-            target = @node_path_prefix.add_to_path(target) unless @node_path_prefix.nil?
-            one_path = options.get_next_argument('link path', validation: String)
-            one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
-            resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
-            return cli_result_from_paths_response(resp, 'link created')
-          when :mkfile
-            one_path = options.get_next_argument('file path', validation: String)
-            one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
-            contents64 = Base64.strict_encode64(options.get_next_argument('contents'))
-            resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
-            return cli_result_from_paths_response(resp, 'file created')
-          when :rename
-            # TODO: multiple ?
-            path_base = options.get_next_argument('path_base', validation: String)
-            path_base = @node_path_prefix.add_to_path(path_base) unless @node_path_prefix.nil?
-            path_src = options.get_next_argument('path_src', validation: String)
-            path_src = @node_path_prefix.add_to_path(path_src) unless @node_path_prefix.nil?
-            path_dst = options.get_next_argument('path_dst', validation: String)
-            path_dst = @node_path_prefix.add_to_path(path_dst) unless @node_path_prefix.nil?
-            resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
-            return cli_result_from_paths_response(resp, 'entry moved')
-          when :browse
-            return browse_gen3
-          when :sync
-            return execute_sync_action do |sync_direction, local_path, remote_path|
-              # Gen3 API
-              # empty transfer spec for authorization request
-              request_transfer_spec = sync_spec_request(sync_direction, local_path, remote_path)
-              # add fixed parameters if any (for COS)
-              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-              # prepare payload for single request
-              setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-              # only one request, so only one answer
-              transfer_spec = @api_node.create('files/sync_setup', setup_payload)['transfer_specs'].first['transfer_spec']
-              # API returns null tag... but async does not like it
-              transfer_spec.delete_if{ |_k, v| v.nil?}
-              # delete this part, as the returned value contains only destination, and not sources
-              # transfer_spec.delete('paths') if command.eql?(:upload)
-              Log.dump(:ts, transfer_spec)
-              transfer_spec
-            end
-          when :upload, :download
-            # empty transfer spec for authorization request
-            request_transfer_spec = {}
-            # set requested paths depending on direction
-            request_transfer_spec[:paths] = if command.eql?(:download)
-              transfer.ts_source_paths
-            else
-              [{destination: transfer.destination_folder(Transfer::Spec::DIRECTION_SEND)}]
-            end
-            # add fixed parameters if any (for COS)
-            @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-            Api::Node.add_public_key(request_transfer_spec)
-            # prepare payload for single request
-            setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-            # only one request, so only one answer
-            transfer_spec = @api_node.create("files/#{command}_setup", setup_payload)['transfer_specs'].first['transfer_spec']
-            Api::Node.add_private_key(transfer_spec)
-            # delete this part, as the returned value contains only destination, and not sources
-            transfer_spec.delete('paths') if command.eql?(:upload)
-            return Runner.result_transfer(transfer.start(transfer_spec))
-          when :cat
-            remote_path = options.get_next_argument('remote path', validation: String)
-            remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
-            http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
-            return Result::Text.new(http.body)
-          when :transport
-            return Result::SingleObject.new(@api_node.transport_params)
-          when :spec
-            return Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))
-          end
-          Aspera.error_unreachable_line
-        end
-
         # Allows to specify a file by its path or by its id on the node in command line
         # @return [NodeFileId] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
@@ -417,148 +309,6 @@ module Aspera
           end
           # There was no selector, so it is a path
           return @api_node.resolve_api_fid(top_file_id, file_path)
-        end
-
-        def execute_command_gen4(command_repo, top_file_id)
-          override_file_id = options.get_option(:root_id)
-          top_file_id = override_file_id unless override_file_id.nil?
-          raise Cli::Error, 'Specify root file id with option root_id' if top_file_id.nil?
-          case command_repo
-          when :v3
-            # NOTE: other common actions are unauthorized with user scope
-            command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
-            # TODO: shall we support all methods here ? what if there is a link ?
-            apifid = @api_node.resolve_api_fid(top_file_id, '')
-            # Delegate to a new Node instance pointing at the resolved node API.
-            # Since command_legacy was already consumed from the argument stream,
-            # we dispatch it directly on the target instance.
-            v3_node = Node.new(context: context, api: apifid.node_api)
-            return v3_node.dispatch_v3_command(command_legacy)
-          when :node_info, :bearer_token_node
-            apifid = apifid_from_next_arg(top_file_id)
-            result = {
-              url:     apifid.node_api.base_url,
-              root_id: apifid.file_id
-            }
-            case apifid.node_api.auth_params[:type]
-            when :basic
-              result[:username] = apifid.node_api.auth_params[:username]
-              result[:password] = apifid.node_api.auth_params[:password]
-            when :oauth2
-              result[:username] = apifid.node_api.params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
-              result[:password] = apifid.node_api.oauth.authorization
-            else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]){'Node API Auth type'}
-            end
-            return Result::SingleObject.new(result) if command_repo.eql?(:node_info)
-            Log.dump(:result, result)
-            raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
-            Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
-            return Result::Text.new(result[:password])
-          when :browse
-            apifid = apifid_from_next_arg(top_file_id)
-            file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
-            # a single file
-            return Result::ObjectList.new([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
-            return Result::ObjectList.new(apifid.node_api.list_files(apifid.file_id, query: query_read_delete), fields: GEN4_LS_FIELDS)
-          when :find
-            apifid = apifid_from_next_arg(top_file_id)
-            find_lambda = Api::Node.file_matcher_from_argument(options)
-            return Result::ObjectList.new(@api_node.find_files(apifid.file_id, find_lambda), fields: ['path'])
-          when :mkdir, :mklink, :mkfile
-            containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
-            query = options.get_option(:query)
-            check_exists = true
-            payload = {name: new_item}
-            if query
-              check_exists = !query.delete('check').eql?(false)
-              target = query.delete('target')
-              if target
-                target_apifid = @api_node.resolve_api_fid(top_file_id, target, true)
-                payload[:target_id] = target_apifid.file_id
-              end
-              payload.merge!(query.symbolize_keys)
-            end
-            if check_exists
-              folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
-              link_name = ".#{new_item}.asp-lnk"
-              found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
-              raise Cli::Error, "A #{found['type']} already exists with name #{new_item}" if found
-            end
-            case command_repo
-            when :mkdir
-              payload[:type] = :folder
-            when :mklink
-              payload[:type] = :link
-              Aspera.assert(payload[:target_id], 'Missing target_id')
-              Aspera.assert(payload[:target_node_id], 'Missing target_node_id')
-            when :mkfile
-              payload[:type] = :file
-              payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
-            end
-            result = apifid.node_api.create("files/#{apifid.file_id}/files", payload)
-            return Result::SingleObject.new(result)
-          when :rename
-            file_path = options.get_next_argument('source path')
-            apifid = @api_node.resolve_api_fid(top_file_id, file_path)
-            newname = options.get_next_argument('new name')
-            result = apifid.node_api.update("files/#{apifid.file_id}", {name: newname})
-            return Result::Status.new("renamed to #{newname}")
-          when :delete
-            return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
-              apifid = if (m = Options.percent_selector(l_path))
-                Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
-                Api::NodeFileId.new(@api_node, m[:value])
-              else
-                @api_node.resolve_api_fid(top_file_id, l_path)
-              end
-              result = apifid.node_api.delete("files/#{apifid.file_id}")
-              {'path' => l_path}
-            end
-          when :sync
-            return execute_sync_action do |sync_direction, _local_path, remote_path|
-              # Gen4 API
-              Aspera.assert_values(sync_direction, %i[push pull bidi])
-              ts_direction = case sync_direction
-              when :push, :bidi then Transfer::Spec::DIRECTION_SEND
-              when :pull then Transfer::Spec::DIRECTION_RECEIVE
-              else Aspera.error_unreachable_line
-              end
-              # remote is specified by option: `to_folder`
-              apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
-              apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
-            end
-          when :upload
-            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
-            return Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_SEND)))
-          when :download
-            apifid, source_paths = @api_node.resolve_api_fid_paths(top_file_id, transfer.ts_source_paths)
-            return Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
-          when :cat
-            apifid = apifid_from_next_arg(top_file_id)
-            http = apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp)
-            return Result::Text.new(http.body)
-          when :show
-            apifid = apifid_from_next_arg(top_file_id)
-            items = apifid.node_api.read("files/#{apifid.file_id}")
-            return Result::SingleObject.new(items)
-          when :modify
-            apifid = apifid_from_next_arg(top_file_id)
-            update_param = options.get_next_argument('update data', validation: Hash)
-            apifid.node_api.update("files/#{apifid.file_id}", update_param)
-            return Result::Status.new('Done')
-          when :thumbnail
-            apifid = apifid_from_next_arg(top_file_id)
-            http = apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp)
-            return Result::Image.new(http.body)
-          when :permission
-            # :permission is now a DSL sub-tree; re-enter the registry at [:access_keys, :do, :permission]
-            # apifid is already resolved here, so skip_setup avoids re-consuming a CLI argument.
-            apifid = apifid_from_next_arg(top_file_id)
-            return dispatch_from_registry(%i[access_keys do permission], {apifid: apifid}, skip_setup: true)
-          else Aspera.error_unreachable_line
-          end
-          Aspera.error_unreachable_line
         end
 
         # Search /async by name
@@ -600,13 +350,15 @@ module Aspera
         command :mkfile,      description: 'Create a file (Gen3)'
         command :rename,      description: 'Rename a file or folder (Gen3)'
         command :delete,      description: 'Delete files or folders (Gen3)'
-        command :browse,      description: 'Browse files (Gen3)'
+        command :browse,      description: 'Browse files (Gen3)', handler: ->{browse_gen3}
         command :upload,      description: 'Upload files (Gen3)'
         command :download,    description: 'Download files (Gen3)'
         command :cat,         description: 'Show file contents (Gen3)'
         command :sync,        description: 'Synchronize folders (Gen3)'
-        command :transport,   description: 'Show transport parameters'
-        command :spec,        description: 'Show transfer spec base'
+        command :transport,   description: 'Show transport parameters',
+          handler: ->{Result::SingleObject.new(@api_node.transport_params)}
+        command :spec,        description: 'Show transfer spec base',
+          handler: ->{Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))}
         # Other common leaf commands
         command :api_details, description: 'Show API details',
           handler: ->{Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))}
@@ -725,10 +477,127 @@ module Aspera
         command :simulator,     description: 'Start node simulator'
         command :telemetry,     description: 'Report telemetry to external system'
 
-        # --- Handler methods ---
+        # --- Handler methods (Gen3) ---
 
-        # Gen3 leaf commands: dispatch to execute_command_gen3
-        COMMANDS_GEN3.each{ |cmd| define_method(:"handle_#{cmd}"){execute_command_gen3(cmd)}}
+        def handle_delete
+          # TODO: add query for recursive
+          paths_to_delete = options.get_next_argument('file list', multiple: true)
+          @node_path_prefix&.add_to_paths!(paths_to_delete)
+          resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
+          cli_result_from_paths_response(resp, 'file deleted')
+        end
+
+        def handle_search
+          search_root = options.get_next_argument('search root', validation: String)
+          search_root = @node_path_prefix.add_to_path(search_root) unless @node_path_prefix.nil?
+          parameters = {'path' => search_root}
+          other_options = options.get_option(:query)
+          parameters.merge!(other_options) unless other_options.nil?
+          resp = @api_node.create('files/search', parameters)
+          return Result::Empty.new if resp['items'].empty?
+          fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
+          formatter.display_item_count(resp['item_count'], resp['total_count'])
+          formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
+          @node_path_prefix&.remove_in_object_list!(resp['items'])
+          Result::ObjectList.new(resp['items'], fields: fields)
+        end
+
+        def handle_space
+          path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
+          @node_path_prefix&.add_to_paths!(path_list)
+          resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
+          @node_path_prefix&.remove_in_object_list!(resp['paths'])
+          Result::ObjectList.new(resp['paths'])
+        end
+
+        def handle_mkdir
+          path_list = options.get_next_argument('folder path or ext.val. list', multiple: true)
+          @node_path_prefix&.add_to_paths!(path_list)
+          resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
+          cli_result_from_paths_response(resp, 'folder created')
+        end
+
+        def handle_mklink
+          target = options.get_next_argument('target', validation: String)
+          target = @node_path_prefix.add_to_path(target) unless @node_path_prefix.nil?
+          one_path = options.get_next_argument('link path', validation: String)
+          one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
+          resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
+          cli_result_from_paths_response(resp, 'link created')
+        end
+
+        def handle_mkfile
+          one_path = options.get_next_argument('file path', validation: String)
+          one_path = @node_path_prefix.add_to_path(one_path) unless @node_path_prefix.nil?
+          contents64 = Base64.strict_encode64(options.get_next_argument('contents'))
+          resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
+          cli_result_from_paths_response(resp, 'file created')
+        end
+
+        def handle_rename
+          # TODO: multiple ?
+          path_base = options.get_next_argument('path_base', validation: String)
+          path_base = @node_path_prefix.add_to_path(path_base) unless @node_path_prefix.nil?
+          path_src = options.get_next_argument('path_src', validation: String)
+          path_src = @node_path_prefix.add_to_path(path_src) unless @node_path_prefix.nil?
+          path_dst = options.get_next_argument('path_dst', validation: String)
+          path_dst = @node_path_prefix.add_to_path(path_dst) unless @node_path_prefix.nil?
+          resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
+          cli_result_from_paths_response(resp, 'entry moved')
+        end
+
+        def handle_sync
+          execute_sync_action do |sync_direction, local_path, remote_path|
+            # Gen3 API
+            # empty transfer spec for authorization request
+            request_transfer_spec = sync_spec_request(sync_direction, local_path, remote_path)
+            # add fixed parameters if any (for COS)
+            @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+            # prepare payload for single request
+            setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+            # only one request, so only one answer
+            transfer_spec = @api_node.create('files/sync_setup', setup_payload)['transfer_specs'].first['transfer_spec']
+            # API returns null tag... but async does not like it
+            transfer_spec.delete_if{ |_k, v| v.nil?}
+            Log.dump(:ts, transfer_spec)
+            transfer_spec
+          end
+        end
+
+        def handle_upload
+          # empty transfer spec for authorization request
+          request_transfer_spec = {}
+          request_transfer_spec[:paths] = [{destination: transfer.destination_folder(Transfer::Spec::DIRECTION_SEND)}]
+          # add fixed parameters if any (for COS)
+          @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+          Api::Node.add_public_key(request_transfer_spec)
+          setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+          transfer_spec = @api_node.create('files/upload_setup', setup_payload)['transfer_specs'].first['transfer_spec']
+          Api::Node.add_private_key(transfer_spec)
+          transfer_spec.delete('paths')
+          Runner.result_transfer(transfer.start(transfer_spec))
+        end
+
+        def handle_download
+          # empty transfer spec for authorization request
+          request_transfer_spec = {}
+          request_transfer_spec[:paths] = transfer.ts_source_paths
+          # add fixed parameters if any (for COS)
+          @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+          Api::Node.add_public_key(request_transfer_spec)
+          setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+          transfer_spec = @api_node.create('files/download_setup', setup_payload)['transfer_specs'].first['transfer_spec']
+          Api::Node.add_private_key(transfer_spec)
+          Runner.result_transfer(transfer.start(transfer_spec))
+        end
+
+        def handle_cat
+          remote_path = options.get_next_argument('remote path', validation: String)
+          remote_path = @node_path_prefix.add_to_path(remote_path) unless @node_path_prefix.nil?
+          http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
+          Result::Text.new(http.body)
+        end
+
         def handle_health
           nagios = Nagios.new
           begin
@@ -756,7 +625,7 @@ module Aspera
         end
 
         # watch_folder setup: inject required API header (avoids "Unable to convert 2016_09_14 configuration")
-        def setup_watch_folder
+        def setup_watch_folder(**)
           @api_node.params[:headers] ||= {}
           @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
           {}
@@ -786,7 +655,7 @@ module Aspera
 
         # access_keys > do - setup: resolve access key and root file id
         # @return [Hash] context hash containing :do_root_file_id
-        def setup_access_key_do
+        def setup_access_key_do(**)
           access_key_id = options.get_next_argument('access key id')
           @do_root_file_id = options.get_option(:root_id)
           if @do_root_file_id.nil?
@@ -804,15 +673,189 @@ module Aspera
 
         # access_keys > do > permission - setup: resolve apifid from next arg
         # @return [Hash] context hash containing :apifid
-        def setup_access_key_do_permission
+        def setup_access_key_do_permission(**)
           {apifid: apifid_from_next_arg(@do_root_file_id)}
         end
 
-        # access_keys > do > <gen4_cmd> - one handler per COMMANDS_GEN4 (except :permission which is intermediate)
-        COMMANDS_GEN4.reject{ |cmd| cmd.eql?(:permission)}.each do |cmd|
-          define_method(:"handle_access_keys_do_#{cmd}") do |do_root_file_id:|
-            execute_command_gen4(cmd, do_root_file_id)
+        # access_keys > do > browse
+        def handle_access_keys_do_browse(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
+          return Result::ObjectList.new([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
+          Result::ObjectList.new(apifid.node_api.list_files(apifid.file_id, query: query_read_delete), fields: GEN4_LS_FIELDS)
+        end
+
+        # access_keys > do > find
+        def handle_access_keys_do_find(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          Result::ObjectList.new(@api_node.find_files(apifid.file_id, Api::Node.file_matcher_from_argument(options)), fields: ['path'])
+        end
+
+        # access_keys > do > cat
+        def handle_access_keys_do_cat(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          Result::Text.new(apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp).body)
+        end
+
+        # access_keys > do > show
+        def handle_access_keys_do_show(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          Result::SingleObject.new(apifid.node_api.read("files/#{apifid.file_id}"))
+        end
+
+        # access_keys > do > modify
+        def handle_access_keys_do_modify(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          apifid.node_api.update("files/#{apifid.file_id}", options.get_next_argument('update data', validation: Hash))
+          Result::Status.new('Done')
+        end
+
+        # access_keys > do > thumbnail
+        def handle_access_keys_do_thumbnail(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          Result::Image.new(apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp).body)
+        end
+
+        # access_keys > do > rename
+        def handle_access_keys_do_rename(do_root_file_id:, **)
+          apifid = @api_node.resolve_api_fid(do_root_file_id, options.get_next_argument('source path'))
+          # TODO: multiple ?
+          newname = options.get_next_argument('new name')
+          apifid.node_api.update("files/#{apifid.file_id}", {name: newname})
+          Result::Status.new("renamed to #{newname}")
+        end
+
+        # access_keys > do > delete
+        def handle_access_keys_do_delete(do_root_file_id:, **)
+          do_bulk_operation(command: :delete, descr: 'path', values: String, id_result: 'path') do |l_path|
+            apifid = if (m = Options.percent_selector(l_path))
+              Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
+              Api::NodeFileId.new(@api_node, m[:value])
+            else
+              @api_node.resolve_api_fid(do_root_file_id, l_path)
+            end
+            apifid.node_api.delete("files/#{apifid.file_id}")
+            {'path' => l_path}
           end
+        end
+
+        # access_keys > do > sync
+        def handle_access_keys_do_sync(do_root_file_id:, **)
+          execute_sync_action do |sync_direction, _local_path, remote_path|
+            # Gen4 API
+            Aspera.assert_values(sync_direction, %i[push pull bidi])
+            ts_direction = case sync_direction
+            when :push, :bidi then Transfer::Spec::DIRECTION_SEND
+            when :pull        then Transfer::Spec::DIRECTION_RECEIVE
+            else Aspera.error_unreachable_line
+            end
+            apifid = @api_node.resolve_api_fid(do_root_file_id, remote_path)
+            apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
+          end
+        end
+
+        # access_keys > do > upload
+        def handle_access_keys_do_upload(do_root_file_id:, **)
+          apifid = @api_node.resolve_api_fid(do_root_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
+          Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_SEND)))
+        end
+
+        # access_keys > do > download
+        def handle_access_keys_do_download(do_root_file_id:, **)
+          apifid, source_paths = @api_node.resolve_api_fid_paths(do_root_file_id, transfer.ts_source_paths)
+          Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+        end
+
+        # access_keys > do > permission (intermediate node: re-enter DSL at permission sub-tree)
+        def handle_access_keys_do_permission(do_root_file_id:, **)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          dispatch_from_registry(%i[access_keys do permission], {apifid: apifid}, skip_setup: true)
+        end
+
+        # access_keys > do > v3
+        def handle_access_keys_do_v3(do_root_file_id:, **)
+          # NOTE: other common actions are unauthorized with user scope
+          command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
+          # TODO: shall we support all methods here ? what if there is a link ?
+          v3_node = Node.new(context: context, api: @api_node.resolve_api_fid(do_root_file_id, '').node_api)
+          v3_node.dispatch_v3_command(command_legacy)
+        end
+
+        # access_keys > do > node_info / bearer_token_node — shared helper builds the result hash
+        def gen4_apifid_info(do_root_file_id)
+          apifid = apifid_from_next_arg(do_root_file_id)
+          result = {url: apifid.node_api.base_url, root_id: apifid.file_id}
+          case apifid.node_api.auth_params[:type]
+          when :basic
+            result[:username] = apifid.node_api.auth_params[:username]
+            result[:password] = apifid.node_api.auth_params[:password]
+          when :oauth2
+            result[:username] = apifid.node_api.params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
+            result[:password] = apifid.node_api.oauth.authorization
+          else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]){'Node API Auth type'}
+          end
+          [apifid, result]
+        end
+
+        def handle_access_keys_do_node_info(do_root_file_id:, **)
+          _apifid, result = gen4_apifid_info(do_root_file_id)
+          Result::SingleObject.new(result)
+        end
+
+        def handle_access_keys_do_bearer_token_node(do_root_file_id:, **)
+          apifid, result = gen4_apifid_info(do_root_file_id)
+          Log.dump(:result, result)
+          raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
+          Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
+          Result::Text.new(result[:password])
+        end
+
+        # access_keys > do > mkdir / mklink / mkfile — shared helper: resolve parent folder,
+        # build payload from query option, optionally check for name collision.
+        # @return [Array(NodeFileId, Hash)] parent apifid and payload with :name set
+        def gen4_mk_resolve(top_file_id)
+          containing_folder_path, new_item = Api::Node.split_folder(options.get_next_argument('path'))
+          apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
+          query = options.get_option(:query)
+          check_exists = true
+          payload = {name: new_item}
+          if query
+            check_exists = !query.delete('check').eql?(false)
+            target = query.delete('target')
+            if target
+              target_apifid = @api_node.resolve_api_fid(top_file_id, target, true)
+              payload[:target_id] = target_apifid.file_id
+            end
+            payload.merge!(query.symbolize_keys)
+          end
+          if check_exists
+            folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
+            link_name = ".#{new_item}.asp-lnk"
+            found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
+            raise Cli::Error, "A #{found['type']} already exists with name #{new_item}" if found
+          end
+          [apifid, payload]
+        end
+
+        def handle_access_keys_do_mkdir(do_root_file_id:, **)
+          apifid, payload = gen4_mk_resolve(do_root_file_id)
+          payload[:type] = :folder
+          Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
+        end
+
+        def handle_access_keys_do_mklink(do_root_file_id:, **)
+          apifid, payload = gen4_mk_resolve(do_root_file_id)
+          payload[:type] = :link
+          Aspera.assert(payload[:target_id], 'Missing target_id')
+          Aspera.assert(payload[:target_node_id], 'Missing target_node_id')
+          Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
+        end
+
+        def handle_access_keys_do_mkfile(do_root_file_id:, **)
+          apifid, payload = gen4_mk_resolve(do_root_file_id)
+          payload[:type] = :file
+          payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
+          Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
         end
 
         # access_keys > do > permission > list/show/create/modify/delete
@@ -1174,20 +1217,13 @@ module Aspera
         # Dispatch a command that has already been read from the argument stream.
         # Used when a new Node instance is created and the command was already consumed
         # (e.g., :v3 delegation, shares, cos, faspex).
-        # Re-enters the DSL registry for sub-trees, or calls directly for leaf commands.
+        # Re-enters the DSL registry for all commands so Proc handlers and sub-trees
+        # are resolved normally.
         # @param command [Symbol] command already consumed from the argument stream
         # @return [Object] CLI result
         def dispatch_v3_command(command)
-          case command
-          when *COMMANDS_GEN3
-            # Gen3 leaf: execute directly
-            execute_command_gen3(command)
-          when :health, :events, :info, :slash, :license, :api_details, :access_keys, :transfer
-            # Re-enter DSL registry so Proc handlers and sub-trees are resolved normally.
-            dispatch_from_registry([command], {})
-          else
-            Aspera.error_unexpected_value(command){'v3 command'}
-          end
+          Aspera.assert_values(command, COMMANDS_GEN3 + %i[health events info slash license api_details access_keys transfer]){'v3 command'}
+          dispatch_from_registry([command], {})
         end
 
         private

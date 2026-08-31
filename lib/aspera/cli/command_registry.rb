@@ -116,7 +116,7 @@ module Aspera
           next if spec.delegates_to || spec.entity_execute # delegated: skip
           next unless plugin_class
           implicit_method = :"handle_#{path.join('_')}"
-          unless plugin_class.method_defined?(implicit_method)
+          unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
             raise ArgumentError,
               "#{path.inspect}: no handler: and no method #{implicit_method} on #{plugin_class}"
           end

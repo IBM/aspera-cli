@@ -205,7 +205,7 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:root_cmd, description: 'Root', setup: :override_api)
             klass.command(:leaf_cmd, parent: :root_cmd, description: 'Leaf', handler: :handle_leaf)
-            klass.define_method(:override_api){{api: 'new_api'}}
+            klass.define_method(:override_api){|**| {api: 'new_api'}}
             klass.define_method(:handle_leaf){ |api:| Result::Status.new("api=#{api}")}
             allow(options).to(receive(:get_next_command).with([:root_cmd], aliases: nil).and_return(:root_cmd))
             allow(options).to(receive(:get_next_command).with([:leaf_cmd], aliases: nil).and_return(:leaf_cmd))

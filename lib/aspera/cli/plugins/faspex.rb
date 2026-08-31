@@ -487,7 +487,7 @@ module Aspera
 
         # Resolve a source by id/name and validate the storage option.
         # @return [Hash] ctx with :source_info and :source_node_plugin
-        def setup_source_selected
+        def setup_source_selected(**)
           source_list = api_v3.read('source_shares')['items']
           source_id = options.instance_identifier do |field, value|
             Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'selector field'}
@@ -510,7 +510,7 @@ module Aspera
 
         # source > node sub-handlers: one per COMMANDS_FASPEX
         # setup_source_selected injects :source_info; setup_source_node builds the Node plugin.
-        def setup_source_node(source_info:)
+        def setup_source_node(source_info:, **)
           Log.dump(:source_info, source_info)
           node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
           Log.log.debug{"node=#{node_config}"}

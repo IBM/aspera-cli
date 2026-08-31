@@ -388,14 +388,14 @@ module Aspera
           },
           jobs:                {display_fields: %w[id job_name job_type status]},
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles'},
-          nodes:               {extra_commands: %i[shared_folders browse]},
+          nodes:               {extra_commands: %i[browse]},
           oauth_clients:       {
             display_fields: ->{Formatter.all_but('public_key')},
             api:            ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
             list_query:     {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
           },
-          shared_inboxes:      {extra_commands: %i[members saml_groups invite_external_collaborator], res_id_query: {'all': true}},
-          workgroups:          {extra_commands: %i[members saml_groups invite_external_collaborator], res_id_query: {'all': true}}
+          shared_inboxes:      {res_id_query: {'all': true}},
+          workgroups:          {res_id_query: {'all': true}}
         }.freeze
         private_constant :RESOURCE_CONFIG
 
@@ -405,130 +405,29 @@ module Aspera
           v.is_a?(Proc) ? instance_exec(&v) : v
         end
 
-        # Shared handler for all admin CRUD resources registered via the DSL.
-        # `res_sym` is the resource symbol (e.g. :accounts, :nodes).
-        # Dispatches the next argument against the resource's available commands.
-        def dispatch_resource(res_sym)
-          cfg             = RESOURCE_CONFIG.fetch(res_sym, {})
-          entity          = resource_config_value(cfg, :entity) || res_sym.to_s
-          items_key       = resource_config_value(cfg, :items_key)
-          delete_style    = resource_config_value(cfg, :delete_style)
-          id_as_arg       = resource_config_value(cfg, :id_as_arg) || false
-          display_fields  = resource_config_value(cfg, :display_fields)
-          list_query      = resource_config_value(cfg, :list_query)
-          is_singleton    = resource_config_value(cfg, :is_singleton) || false
-          schema          = resource_config_value(cfg, :schema)
-          res_id_query    = resource_config_value(cfg, :res_id_query) || :default
-          api             = resource_config_value(cfg, :api) || @api_v5
-          extra_commands  = cfg[:extra_commands]                      || []
-          commands        = cfg[:commands]                            || (Operations::ALL + extra_commands)
-
-          exec_args = {
-            api: api, entity: entity, items_key: items_key, delete_style: delete_style,
-                       id_as_arg: id_as_arg, display_fields: display_fields, list_query: list_query,
-                       is_singleton: is_singleton, schema: schema
+        # Build exec_args hash for entity_execute from RESOURCE_CONFIG for the given resource.
+        def res_exec_args(res_sym)
+          cfg = RESOURCE_CONFIG.fetch(res_sym, {})
+          {
+            api:            resource_config_value(cfg, :api) || @api_v5,
+            entity:         resource_config_value(cfg, :entity) || res_sym.to_s,
+            items_key:      resource_config_value(cfg, :items_key),
+            delete_style:   resource_config_value(cfg, :delete_style),
+            id_as_arg:      resource_config_value(cfg, :id_as_arg) || false,
+            display_fields: resource_config_value(cfg, :display_fields),
+            list_query:     resource_config_value(cfg, :list_query),
+            is_singleton:   resource_config_value(cfg, :is_singleton) || false,
+            schema:         resource_config_value(cfg, :schema)
           }.compact
+        end
 
-          res_command = options.get_next_command(commands)
-
-          # Special case: :email_notifications list returns a fixed value list
-          return Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res_command.eql?(:list) && res_sym.eql?(:email_notifications)
-
-          case res_command
-          when :create, :modify, :delete, :show
-            return entity_execute(command: res_command, **exec_args) do |field, value|
-                     @api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
-                   end
-          when :list
-            data, total = api.list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query_read_delete(default: list_query))
-            return Result::ObjectList.new(data, total: total, fields: display_fields)
-          when :shared_folders
-            # nodes: manage shared folders under a node
-            node_id = options.instance_identifier do |field, value|
-              @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
-            end
-            shared_folder_entity = "nodes/#{node_id}/shared_folders"
-            sh_command = options.get_next_command(Operations::ALL + [:user])
-            case sh_command
-            when *Operations::ALL
-              return entity_execute(api: @api_v5, entity: shared_folder_entity, command: sh_command) do |field, value|
-                       @api_v5.lookup_entity_by_field(entity: shared_folder_entity, field: field, value: value)['id']
-                     end
-            when :user
-              sh_id = options.instance_identifier do |field, value|
-                @api_v5.lookup_entity_by_field(entity: shared_folder_entity, field: field, value: value)['id']
-              end
-              user_path = "#{shared_folder_entity}/#{sh_id}/custom_access_users"
-              return entity_execute(api: @api_v5, entity: user_path, items_key: 'users') do |field, value|
-                       @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
-                     end
-            end
-          when :browse
-            # nodes: browse files under a node
-            node_id = options.instance_identifier do |field, value|
-              @api_v5.lookup_entity_by_field(entity: 'nodes', value: value, field: field)['id']
-            end
-            return browse_folder("nodes/#{node_id}/browse")
-          when :invite_external_collaborator
-            # shared_inboxes / workgroups
-            shared_inbox_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
-            creation_payload = value_create_modify(command: res_command)
-            result = @api_v5.create("#{res_sym}/#{shared_inbox_id}/external_collaborator", creation_payload)
-            formatter.display_status(result['message'])
-            result = @api_v5.lookup_entity_by_field(
-              entity: "#{res_sym}/#{shared_inbox_id}/members",
-              items_key: 'members',
-              value: creation_payload['email_address'],
-              query: {}
-            )
-            return Result::SingleObject.new(result)
-          when :members, :saml_groups
-            # shared_inboxes / workgroups: manage members or saml groups
-            res_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: res_sym.to_s, field: field, value: value, query: res_id_query)['id']}
-            res_path = "#{res_sym}/#{res_id}/#{res_command}"
-            list_key = res_command.eql?(:saml_groups) ? 'groups' : res_command.to_s
-            sub_command = options.get_next_command(%i[create list modify delete])
-            if sub_command.eql?(:create) && res_command.eql?(:members)
-              users = options.get_next_argument('user id, %name:, or Array')
-              users = [users] unless users.is_a?(Array)
-              users = users.map do |user|
-                if (m = Options.percent_selector(user))
-                  @api_v5.lookup_entity_by_field(
-                    entity: 'accounts',
-                    field: m[:field],
-                    value: m[:value],
-                    query: Rest.php_style({type: ACCOUNT_TYPES})
-                  )['id']
-                else
-                  user
-                end
-              end
-              access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
-              options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
-            end
-            return entity_execute(api: @api_v5, entity: res_path, command: sub_command, items_key: list_key) do |field, value|
-                     @api_v5.lookup_entity_by_field(
-                       entity: res_path,
-                       field: field,
-                       value: value,
-                       query: Rest.php_style({type: %w[user]})
-                     )['user_id']
-                   end
-          when :reset_password
-            # accounts: reset password for one account
-            contact_id = options.instance_identifier{ |field, value| @api_v5.lookup_entity_by_field(entity: 'accounts', field: field, value: value, query: res_id_query)['id']}
-            @api_v5.create("accounts/#{contact_id}/reset_password", {})
-            return Result::Status.new('password reset, user shall check email')
-          when :next
-            # file_processing: fetch next file to process (POST-based list)
-            result, count = @api_v5.list_entities_limit_offset_total_count(
-              entity: entity,
-              operation: 'POST',
-              items_key: 'files'
-            )
-            return Result::ObjectList.new(result, total: count)
-          end
-          Aspera.error_unreachable_line
+        # Lookup id for a RESOURCE_CONFIG resource by field/value.
+        def res_lookup_id(res_sym, field, value)
+          cfg = RESOURCE_CONFIG.fetch(res_sym, {})
+          entity      = resource_config_value(cfg, :entity) || res_sym.to_s
+          items_key   = resource_config_value(cfg, :items_key)
+          res_id_query = resource_config_value(cfg, :res_id_query) || :default
+          @api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
         end
 
         # --- DSL ---
@@ -596,14 +495,54 @@ module Aspera
           command :browse, description: 'Browse a shared folder'
         end
 
-        # admin sub-tree: fixed commands + all ADMIN_RESOURCES (each dispatched via dispatch_resource)
+        # admin sub-tree: fixed commands + all ADMIN_RESOURCES with their sub-commands
         commands_under(:admin) do
           command :configuration, description: 'Manage Faspex 5 configuration'
           command :smtp,          description: 'Manage SMTP configuration'
           command :events,        description: 'List events'
           command :clean_deleted, description: 'Clean deleted packages'
           Api::Faspex::ADMIN_RESOURCES.each do |res|
+            cfg           = RESOURCE_CONFIG.fetch(res, {})
+            extra         = cfg[:extra_commands] || []
+            cmds          = cfg[:commands] || (Operations::ALL + extra)
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+            commands_under([:admin, res]) do
+              cmds.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+            end
+          end
+        end
+
+        # admin > nodes > shared_folders: setup consumes node_id before sub-command routing
+        commands_under(%i[admin nodes]) do
+          command :shared_folders, description: 'Manage shared folders', setup: :setup_admin_nodes_shared_folders
+        end
+
+        # admin > nodes > shared_folders sub-tree
+        commands_under(%i[admin nodes shared_folders]) do
+          Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+          # user: setup consumes shared_folder id before sub-command routing
+          command :user, description: 'Custom access users', setup: :setup_admin_nodes_shared_folders_user
+        end
+
+        # admin > nodes > shared_folders > user sub-tree (custom access users)
+        commands_under(%i[admin nodes shared_folders user]) do
+          Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+        end
+
+        # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
+        # setup consumes res_id before sub-command routing
+        %i[shared_inboxes workgroups].each do |res|
+          setup_method = :"setup_admin_#{res}_instance"
+          %i[members saml_groups].each do |sub|
+            commands_under([:admin, res]) do
+              command sub, description: sub.to_s.tr('_', ' ').capitalize, setup: setup_method
+            end
+            commands_under([:admin, res, sub]) do
+              %i[create list modify delete].each{ |c| command(c, description: c.to_s.capitalize)}
+            end
+          end
+          commands_under([:admin, res]) do
+            command :invite_external_collaborator, description: 'Invite external collaborator', setup: setup_method
           end
         end
 
@@ -658,10 +597,118 @@ module Aspera
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
         end
 
-        # admin > <resource> handlers - one per ADMIN_RESOURCES entry, each calls dispatch_resource
+        # admin > <resource> > list
         Api::Faspex::ADMIN_RESOURCES.each do |res|
-          define_method(:"handle_admin_#{res}") do
-            dispatch_resource(res)
+          define_method(:"handle_admin_#{res}_list") do
+            args = res_exec_args(res)
+            # Special case: email_notifications list returns a fixed value list
+            next Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res.eql?(:email_notifications)
+            data, total = args[:api].list_entities_limit_offset_total_count(
+              entity: args[:entity], items_key: args[:items_key], query: query_read_delete(default: args[:list_query])
+            )
+            Result::ObjectList.new(data, total: total, fields: args[:display_fields])
+          end
+        end
+
+        # admin > <resource> > create / modify / delete / show
+        Api::Faspex::ADMIN_RESOURCES.each do |res|
+          %i[create modify delete show].each do |op|
+            define_method(:"handle_admin_#{res}_#{op}") do
+              args = res_exec_args(res)
+              entity_execute(command: op, **args){ |f, v| res_lookup_id(res, f, v)}
+            end
+          end
+        end
+
+        # admin > accounts > reset_password
+        def handle_admin_accounts_reset_password
+          contact_id = options.instance_identifier{ |f, v| res_lookup_id(:accounts, f, v)}
+          @api_v5.create("accounts/#{contact_id}/reset_password", {})
+          Result::Status.new('password reset, user shall check email')
+        end
+
+        # admin > file_processing > next
+        def handle_admin_file_processing_next
+          args = res_exec_args(:file_processing)
+          result, count = @api_v5.list_entities_limit_offset_total_count(entity: args[:entity], operation: 'POST', items_key: 'files')
+          Result::ObjectList.new(result, total: count)
+        end
+
+        # admin > nodes > browse
+        def handle_admin_nodes_browse
+          node_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: 'nodes', field: f, value: v)['id']}
+          browse_folder("nodes/#{node_id}/browse")
+        end
+
+        # admin > nodes > shared_folders — setup: consume node_id and pass sf_entity in ctx
+        def setup_admin_nodes_shared_folders(**)
+          node_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: 'nodes', field: f, value: v)['id']}
+          {sf_entity: "nodes/#{node_id}/shared_folders"}
+        end
+
+        # admin > nodes > shared_folders > create/modify/delete/show/list
+        Operations::ALL.each do |op|
+          define_method(:"handle_admin_nodes_shared_folders_#{op}") do |sf_entity:, **|
+            entity_execute(api: @api_v5, entity: sf_entity, items_key: 'shared_folders', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
+          end
+        end
+
+        # admin > nodes > shared_folders > user — setup: consume shared_folder id and pass user_path in ctx
+        def setup_admin_nodes_shared_folders_user(sf_entity:, **)
+          sh_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
+          {user_path: "#{sf_entity}/#{sh_id}/custom_access_users"}
+        end
+
+        # admin > nodes > shared_folders > user > create/modify/delete/show/list (custom access users)
+        Operations::ALL.each do |op|
+          define_method(:"handle_admin_nodes_shared_folders_user_#{op}") do |user_path:, **|
+            entity_execute(api: @api_v5, entity: user_path, items_key: 'users', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: f, value: v)['id']}
+          end
+        end
+
+        # admin > shared_inboxes|workgroups — setup: consume res_id before sub-command routing
+        %i[shared_inboxes workgroups].each do |res|
+          define_method(:"setup_admin_#{res}_instance") do |**|
+            res_id = options.instance_identifier{ |f, v| @api_v5.lookup_entity_by_field(entity: res.to_s, field: f, value: v, query: {'all': true})['id']}
+            {res_instance_path: "#{res}/#{res_id}"}
+          end
+        end
+
+        # admin > shared_inboxes|workgroups > members|saml_groups > create/list/modify/delete
+        %i[shared_inboxes workgroups].each do |res|
+          %i[members saml_groups].each do |sub|
+            %i[create list modify delete].each do |op|
+              define_method(:"handle_admin_#{res}_#{sub}_#{op}") do |res_instance_path:, **|
+                res_path = "#{res_instance_path}/#{sub}"
+                list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
+                if op.eql?(:create) && sub.eql?(:members)
+                  users = options.get_next_argument('user id, %name:, or Array')
+                  users = [users] unless users.is_a?(Array)
+                  users = users.map do |user|
+                    if (m = Options.percent_selector(user))
+                      @api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
+                    else
+                      user
+                    end
+                  end
+                  access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
+                  options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
+                end
+                entity_execute(api: @api_v5, entity: res_path, command: op, items_key: list_key) do |f, v|
+                  @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
+                end
+              end
+            end
+          end
+        end
+
+        # admin > shared_inboxes|workgroups > invite_external_collaborator
+        %i[shared_inboxes workgroups].each do |res|
+          define_method(:"handle_admin_#{res}_invite_external_collaborator") do |res_instance_path:, **|
+            creation_payload = value_create_modify(command: :invite_external_collaborator)
+            result = @api_v5.create("#{res_instance_path}/external_collaborator", creation_payload)
+            formatter.display_status(result['message'])
+            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: creation_payload['email_address'], query: {}))
           end
         end
 
@@ -669,7 +716,7 @@ module Aspera
 
         # Build @api_v5 for all commands that need it (all except :health and :postprocessing).
         # @return [Hash] empty ctx (state stored in @api_v5)
-        def setup_api_v5
+        def setup_api_v5(**)
           return {} if @api_v5
           @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
           # in case user wants to use HTTPGW tell transfer agent how to get address
@@ -679,7 +726,7 @@ module Aspera
 
         # Setup for package sub-commands that need an id: resolves package_id from pub_link or argument.
         # @return [Hash] ctx key: package_id
-        def setup_package_id
+        def setup_package_id(**)
           package_id = @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
           {package_id: package_id}
         end

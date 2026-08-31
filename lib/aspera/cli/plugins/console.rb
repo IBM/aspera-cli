@@ -119,7 +119,7 @@ module Aspera
 
         # Build the Console REST API.
         # @return [Hash] ctx with :api_console
-        def setup_api
+        def setup_api(**)
           {api_console: basic_auth_api('api')}
         end
 

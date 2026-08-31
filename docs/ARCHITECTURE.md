@@ -144,7 +144,7 @@ command tree statically introspectable, self-documenting, and testable without e
 | `options` | `Array<Symbol>` | Option names consumed by this command |
 | `arguments` | `Array<ArgumentSpec>` | Positional arguments in parse order |
 | `handler` | `Symbol \| Proc \| nil` | Handler for the leaf command. Three forms: **(1)** omitted → convention `handle_<full_path_joined_by_underscores>` is called; **(2)** `Symbol` → named instance method (use when body > 3 lines); **(3)** `Proc` / lambda → inline handler (use when body ≤ 3 lines — prefer `->{ ... }` for zero or keyword-only args, `lambda do \|arg\| … end` for multi-line bodies) |
-| `setup` | `Symbol \| nil` | Instance method called before dispatching to children; returns a `Hash` merged into the context (`ctx`) passed down |
+| `setup` | `Symbol \| nil` | Instance method called with `**ctx` before dispatching to children **or** before invoking the leaf handler; returns a `Hash` merged into `ctx` and passed to all descendants |
 | `root_setup` | `Symbol \| nil` | Instance method called once before the root dispatch (class-level DSL method); used when state must exist before root command conditions are evaluated |
 | `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for delegation loops) |
 | `delegate_instance` | `Symbol \| nil` | Instance method returning a different plugin object; dispatcher calls `dispatch_from_registry` on that object |
@@ -191,9 +191,9 @@ The dispatcher operates in two phases for each node:
 2. **Dispatch** — the next positional argument is consumed and matched against the node's children. `condition:` commands are excluded from runtime dispatch but included in help output.
 
 ```text
-dispatch_from_registry(current_path, ctx = {})
-  # Phase A: setup on the current node
-  ctx = ctx.merge(send(spec.setup)) if spec&.setup
+dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
+  # Phase A: setup on the current node (skipped when --help or skip_setup: true)
+  ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup && !skip_setup
 
   # Phase B: select child command
   command = options.get_next_command(available_children, aliases: ...)
@@ -209,9 +209,12 @@ dispatch_from_registry(current_path, ctx = {})
   return run_entity_execute(child.entity_execute, ctx) if child.entity_execute
 
   if grandchildren.any?
-    dispatch_from_registry(current_path + [command], ctx)   # intermediate node
+    # Intermediate node: recurse; child setup runs at top of next call
+    dispatch_from_registry(current_path + [command], ctx)
   else
-    send(handler_for(child), **ctx)                          # leaf: call handler
+    # Leaf: run child setup (if any), then execute handler
+    ctx = ctx.merge(send(child.setup, **ctx)) if child.setup
+    send(handler_for(child), **ctx)
   end
 end
 ```
@@ -219,7 +222,8 @@ end
 Key properties of the `ctx` hash:
 
 - **Additive**: each `setup:` call enriches the accumulated context; descendants can rely on all ancestor setups.
-- **Setup runs before child selection**: matches the imperative pattern where local variables are created before `get_next_command`.
+- **Intermediate node**: setup runs before child command selection (before `get_next_command`), so context is available for all children.
+- **Leaf node**: setup runs immediately before the handler, injecting extra context that the handler receives as keyword arguments.
 - `transfer_paths:` bypasses argument resolution entirely; `TransferAgent#ts_source_paths` handles the argument stream conditionally based on `--sources`.
 
 #### Handler style convention
@@ -248,8 +252,21 @@ The 3-line threshold is deliberately informal. The deciding factor is readabilit
 | `entity_command` helper | One-liner alternative to `command(…, entity_execute: {…})` when no extra `command` parameters are needed; `api:` is resolved at runtime so the API object can be created lazily |
 | `delegate_instance:` separate from `delegates_to:` | The `node access_keys do v3` case needs a different API object, not just a different path |
 | `transfer_paths: :send\|:receive` instead of positional args | The `--sources` mechanism in `TransferAgent` is incompatible with static argument declaration |
-| Opaque private helpers for highly dynamic sub-trees | `execute_resource_action` (aoc), `execute_admin_entity_type` (shares), etc. contain runtime-dynamic dispatch that cannot be statically declared |
-| `define_method` for homogeneous command groups | Avoids repetitive handler definitions for commands sharing the same one-line body |
+| `define_method` for homogeneous command groups | Avoids repetitive handler definitions for commands sharing the same one-line body (e.g. CRUD handlers generated from `ADMIN_OBJECTS.each` in `aoc.rb`, `RESOURCE_CONFIG.each` in `faspex5.rb`) |
+| `skip_setup: true` on `dispatch_from_registry` | Allows callers that already resolved the setup context (e.g. `execute_nodegen4_command` in `aoc.rb`) to bypass setup and inject `ctx` directly, avoiding double consumption of positional arguments |
+
+#### `dispatch_v3_command` — pre-consumed command entry point
+
+Some callers (e.g. `shares`, `cos`, `faspex`, `:v3` delegation inside `node`) create a new `Node`
+instance and have **already consumed** the command symbol from the argument stream before
+calling into the Node plugin. `dispatch_v3_command(command)` handles this case: it validates
+that the symbol belongs to the node's known command set, then re-enters the DSL dispatcher via
+`dispatch_from_registry([command], {})` exactly as if the argument had been consumed normally.
+
+**Rule**: `dispatch_v3_command` must **never** call handler methods directly (e.g. `send(:"handle_#{command}")`).
+All execution must go through `dispatch_from_registry` so that setup hooks, context propagation,
+inline lambda handlers, and help generation work identically whether a command is reached from
+the top-level argument stream or via a delegated call.
 
 #### Transfer Agent Abstraction
 
@@ -620,12 +637,12 @@ Analyzes API errors and provides:
 
 ### Test Structure
 
-**Directory**: [`tests/`](../tests/)
+**Directory**: [`spec/`](../spec/)
 
-- Unit tests for individual components
-- Integration tests for API interactions
-- End-to-end transfer tests
-- Mock servers for offline testing
+- `spec/aspera-cli_spec.rb` — integration / smoke tests (require a live server config via `build/lib/test_env.rb`)
+- `spec/base_dsl_spec.rb` — unit tests for the `Base` DSL dispatcher; fully self-contained (no server needed)
+- `spec/command_registry_spec.rb` — unit tests for `CommandRegistry` validation rules
+- `spec/aoc_registry_spec.rb` — validates that `Aoc.command_registry.validate!(plugin_class: Aoc)` is internally consistent (every leaf has a handler or a matching `handle_*` method)
 
 ### CI/CD Integration
 

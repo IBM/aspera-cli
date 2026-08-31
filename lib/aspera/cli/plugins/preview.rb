@@ -410,7 +410,7 @@ module Aspera
 
         # Build the Node API and set up storage references for scan/events/trevents.
         # @return [Hash] empty ctx (state stored in instance variables)
-        def setup_node_api
+        def setup_node_api(**)
           @api_node = Api::Node.new(**basic_auth_params)
           @transfer_server_address = URI.parse(@api_node.base_url).host
           # Get current access key information

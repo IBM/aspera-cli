@@ -111,8 +111,47 @@ module Aspera
           entity_command :node, api: :@api_shares_admin, entity: 'data/nodes'
           command :share,             description: 'Manage shares'
           command :transfer_settings, description: 'Manage transfer settings'
-          command :user,              description: 'Manage users',  handler: ->{execute_admin_entity_type(:user)}
-          command :group,             description: 'Manage groups', handler: ->{execute_admin_entity_type(:group)}
+          command :user,              description: 'Manage users'
+          command :group,             description: 'Manage groups'
+        end
+
+        # admin > user / group: sub-commands per location, generated for both entity types
+        %i[user group].each do |entity_type|
+          commands_under([:admin, entity_type]) do
+            command :all,   description: "#{entity_type.capitalize}s from all sources"
+            command :local, description: "Local #{entity_type}s"
+            command :ldap,  description: "LDAP #{entity_type}s"
+            command :saml,  description: "SAML #{entity_type}s"
+          end
+
+          # all: list/show/delete + USR_GRP_SETTINGS [+ users for group]
+          commands_under([:admin, entity_type, :all]) do
+            %i[list show delete].each do |op|
+              command(op, description: "#{op.capitalize} #{entity_type}(s)")
+            end
+            USR_GRP_SETTINGS.each do |setting|
+              command(setting, description: "Manage #{setting} for a #{entity_type}")
+            end
+            command(:users, description: 'List users of a group') if entity_type.eql?(:group)
+          end
+
+          # local: list/show/delete/create/modify [+ users for group]
+          commands_under([:admin, entity_type, :local]) do
+            %i[list show delete create modify].each do |op|
+              command(op, description: "#{op.capitalize} #{entity_type}(s)")
+            end
+            command(:users, description: 'List users of a group') if entity_type.eql?(:group)
+          end
+
+          # ldap: add only
+          commands_under([:admin, entity_type, :ldap]) do
+            command :add, description: "Add a LDAP #{entity_type}"
+          end
+
+          # saml: import only
+          commands_under([:admin, entity_type, :saml]) do
+            command :import, description: "Import a SAML #{entity_type}"
+          end
         end
 
         SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
@@ -146,14 +185,14 @@ module Aspera
 
         # Build the Shares node API plugin and inject into ctx.
         # @return [Hash] context hash containing :shares_node_plugin
-        def setup_shares_node
+        def setup_shares_node(**)
           api_shares_node = basic_auth_api(NODE_API_PATH)
           {shares_node_plugin: Node.new(context: context, api: api_shares_node)}
         end
 
         # Build the admin REST API and store in ivar.
         # @return [Hash] empty ctx (state stored in @api_shares_admin)
-        def setup_admin
+        def setup_admin(**)
           @api_shares_admin = basic_auth_api(ADMIN_API_PATH)
           {}
         end
@@ -200,59 +239,90 @@ module Aspera
 
         private
 
-        # Shared implementation for `admin user` and `admin group` commands.
-        # @param entity_type [:user, :group]
-        def execute_admin_entity_type(entity_type)
-          entities_location = options.get_next_command(%i[all local ldap saml])
-          entities_prefix = entities_location.eql?(:all) ? '' : "#{entities_location}_"
-          entities_path = "data/#{entities_prefix}#{entity_type}s"
-          entity_commands =
-            case entities_location
-            when :all
-              cmds = %i[list show delete].concat(USR_GRP_SETTINGS)
-              cmds.push(:users) if entity_type.eql?(:group)
-              cmds.freeze
-            when :local
-              cmds = %i[list show delete create modify]
-              cmds.push(:users) if entity_type.eql?(:group)
-              cmds.freeze
-            when :ldap then %i[add].freeze
-            when :saml then %i[import].freeze
+        # @return [String] admin API path for the given entity_type and location
+        def admin_entity_path(entity_type, location)
+          prefix = location.eql?(:all) ? '' : "#{location}_"
+          "data/#{prefix}#{entity_type}s"
+        end
+
+        # --- admin > user|group handlers ---
+
+        # Shared handler for list/show/delete/create/modify on user or group.
+        # @param entity_type [Symbol] :user or :group
+        # @param location    [Symbol] :all or :local
+        # @param op          [Symbol] CRUD operation
+        def handle_admin_entity_crud(entity_type, location, op)
+          path = admin_entity_path(entity_type, location)
+          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
+          display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
+          display_fields&.push('directory_user') if entity_type.eql?(:user) && location.eql?(:all)
+          entity_execute(api: @api_shares_admin, entity: path, command: op, display_fields: display_fields, &lookup)
+        end
+
+        # Shared handler for USR_GRP_SETTINGS (transfer_settings, app_authorizations, share_permissions)
+        # @param entity_type [Symbol] :user or :group
+        # @param location    [Symbol] :all or :local
+        # @param setting     [Symbol] one of USR_GRP_SETTINGS
+        def handle_admin_entity_setting(entity_type, location, setting)
+          path = admin_entity_path(entity_type, location)
+          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
+          entity_id = options.instance_identifier(&lookup)
+          entity_execute(
+            api:          @api_shares_admin,
+            entity:       "#{path}/#{entity_id}/#{setting}",
+            is_singleton: !setting.eql?(:share_permissions)
+          ){ |f, v| lookup_share_id(f, v)}
+        end
+
+        # Shared handler for :users (group only)
+        def handle_admin_entity_users(entity_type, location)
+          path = admin_entity_path(entity_type, location)
+          prefix = location.eql?(:all) ? '' : "#{location}_"
+          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
+          entity_execute(api: @api_shares_admin, entity: "#{path}/#{options.instance_identifier(&lookup)}/#{prefix}users")
+        end
+
+        # Generate handle_admin_<user|group>_<location>_<verb> for all combinations
+        %i[user group].each do |entity_type|
+          # all + local: CRUD + USR_GRP_SETTINGS [+ users for group]
+          %i[all local].each do |location|
+            ops = location.eql?(:all) ? %i[list show delete] : %i[list show delete create modify]
+            ops.each do |op|
+              define_method(:"handle_admin_#{entity_type}_#{location}_#{op}") do
+                handle_admin_entity_crud(entity_type, location, op)
+              end
             end
-          entity_verb = options.get_next_command(entity_commands)
-          lookup_block = ->(field, value){RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){@api_shares_admin.read(entities_path)}['id']}
-          case entity_verb
-          when *Operations::ALL
-            display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
-            display_fields.push('directory_user') if entity_type.eql?(:user) && entities_location.eql?(:all)
-            return entity_execute(
-              api:            @api_shares_admin,
-              entity:         entities_path,
-              command:        entity_verb,
-              display_fields: display_fields,
-              &lookup_block
-            )
-          when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
-            group_id = options.instance_identifier(&lookup_block)
-            sub_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-            return entity_execute(api: @api_shares_admin, entity: sub_path, is_singleton: !entity_verb.eql?(:share_permissions)){ |f, v| lookup_share_id(f, v)}
-          when :import # saml
-            return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
+            USR_GRP_SETTINGS.each do |setting|
+              define_method(:"handle_admin_#{entity_type}_#{location}_#{setting}") do
+                handle_admin_entity_setting(entity_type, location, setting)
+              end
+            end
+            next unless entity_type.eql?(:group)
+            define_method(:"handle_admin_#{entity_type}_#{location}_users") do
+              handle_admin_entity_users(entity_type, location)
+            end
+          end
+
+          # ldap: add
+          define_method(:"handle_admin_#{entity_type}_ldap_add") do
+            path = admin_entity_path(entity_type, :ldap)
+            do_bulk_operation(command: :add, descr: "#{entity_type} name", values: String) do |entity_name|
+              @api_shares_admin.create(path, {entity_type => entity_name})
+            end
+          end
+
+          # saml: import
+          define_method(:"handle_admin_#{entity_type}_saml_import") do
+            path = admin_entity_path(entity_type, :saml)
+            do_bulk_operation(command: :import, descr: 'user information') do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
               Aspera.assert_type(entity_parameters, Hash)
               SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
               entity_parameters.each_key do |p|
                 raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
               end
-              @api_shares_admin.create("#{entities_path}/import", entity_parameters)
+              @api_shares_admin.create("#{path}/import", entity_parameters)
             end
-          when :add # ldap
-            return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
-              @api_shares_admin.create(entities_path, {entity_type=>entity_name})
-            end
-          when :users # group
-            return entity_execute(api: @api_shares_admin, entity: "#{entities_path}/#{options.instance_identifier(&lookup_block)}/#{entities_prefix}users")
-          else Aspera.error_unexpected_value(entity_verb)
           end
         end
       end
