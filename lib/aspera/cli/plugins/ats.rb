@@ -221,6 +221,9 @@ module Aspera
         # One handler per COMMANDS_GEN4 - delegates to the Node plugin's DSL registry.
         Node::COMMANDS_GEN4.each do |cmd|
           define_method(:"handle_access_key_node_#{cmd}") do |ak_node_plugin:, ak_root_file_id:|
+            # For permission: the handler consumes the path first then re-dispatches to sub-commands.
+            # Calling dispatch_from_registry with skip_setup would bypass path consumption and fail.
+            next ak_node_plugin.send(:"handle_access_keys_do_#{cmd}", do_root_file_id: ak_root_file_id) if cmd.eql?(:permission)
             ak_node_plugin.dispatch_from_registry([:access_keys, :do, cmd], {do_root_file_id: ak_root_file_id}, skip_setup: true)
           end
         end

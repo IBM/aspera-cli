@@ -357,6 +357,9 @@ module Aspera
           node_plugin = Node.new(context: context, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
+            # For permission: the handler consumes the path first then re-dispatches to sub-commands.
+            # Calling dispatch_from_registry with skip_setup would bypass path consumption and fail.
+            return node_plugin.send(:"handle_access_keys_do_#{command_repo}", do_root_file_id: file_id) if command_repo.eql?(:permission)
             return node_plugin.dispatch_from_registry([:access_keys, :do, command_repo], {do_root_file_id: file_id}, skip_setup: true)
           when :transfer
             # client side is agent
@@ -403,7 +406,10 @@ module Aspera
         # Execute an action on admin resources
         # @param resource_type [Symbol] One of ADMIN_OBJECTS
         # Per-resource configuration for admin CRUD resources.
-        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton
+        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton, op_setup
+        # op_setup: Hash of op => setup method name, used for ops that require consuming an instance identifier.
+        #   For Operations::INSTANCE ops (show/modify/delete), use the auto-generated :setup_admin_<res>_instance.
+        #   For extra_ops that are instance ops, specify explicitly (or rely on the auto-generated one).
         ADMIN_OBJECT_CONFIG = {
           client:                   {extra_ops: %i[set_pub_key]},
           client_access_key:        {path: 'admin/client_access_keys'},
@@ -423,8 +429,8 @@ module Aspera
           saml_configuration:       {create_schema: false},
           self:                     {singleton: true},
           short_link:               {list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]},
-          user:                     {list_fields: %w[id name email], extra_ops: %i[preferences notifications]},
-          workspace:                {extra_ops: %i[shared_folder dropbox], op_setup: {shared_folder: :setup_admin_workspace_shared_folder}},
+          user:                     {list_fields: %w[id name email], extra_ops: %i[preferences notifications], op_setup: {preferences: :setup_admin_user_instance, notifications: :setup_admin_user_instance}},
+          workspace:                {extra_ops: %i[shared_folder dropbox], op_setup: {shared_folder: :setup_admin_workspace_shared_folder, dropbox: :setup_admin_workspace_dropbox}},
           workspace_membership:     {list_fields: %w[id workspace_id member_type member_id]}
         }.freeze
         private_constant :ADMIN_OBJECT_CONFIG
@@ -562,9 +568,10 @@ module Aspera
           command :subscription,   description: 'Show subscription info'
           command :analytics,      description: 'Query analytics'
           ADMIN_OBJECTS.each do |res|
-            cfg      = ADMIN_OBJECT_CONFIG.fetch(res, {})
-            op_setup = cfg[:op_setup] || {}
-            ops      = if cfg[:ops]
+            cfg             = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            op_setup        = cfg[:op_setup] || {}
+            instance_setup  = cfg[:singleton] ? nil : :"setup_admin_#{res}_instance"
+            ops             = if cfg[:ops]
               cfg[:ops]
             elsif cfg[:singleton]
               %i[show]
@@ -574,7 +581,8 @@ module Aspera
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
             commands_under([:admin, res]) do
               ops.each do |op|
-                command(op, description: op.to_s.tr('_', ' ').capitalize, **op_setup[op] ? {setup: op_setup[op]} : {})
+                setup = op_setup[op] || (Operations::GLOBAL.include?(op) ? nil : instance_setup)
+                command(op, description: op.to_s.tr('_', ' ').capitalize, **setup ? {setup: setup} : {})
               end
             end
           end
@@ -582,8 +590,8 @@ module Aspera
         # admin > workspace > shared_folder sub-tree
         commands_under(%i[admin workspace shared_folder]) do
           command :list,   description: 'List shared folders'
-          command :node,   description: 'Execute node command on shared folder'
-          command :member, description: 'Show folder members'
+          command :node,   description: 'Execute node command on shared folder',   setup: :setup_admin_workspace_shared_folder_instance
+          command :member, description: 'Show folder members',                     setup: :setup_admin_workspace_shared_folder_instance
         end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
@@ -1265,6 +1273,13 @@ module Aspera
           Result::ObjectList.new(events)
         end
 
+        # admin > <res> > instance — setup: consume resource id (generic, for all non-singleton resources)
+        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+          define_method(:"setup_admin_#{res}_instance") do |**|
+            {res_id: get_resource_id_from_args(aoc_res_path(res))}
+          end
+        end
+
         # admin > <res> > list
         ADMIN_OBJECTS.each do |res|
           define_method(:"handle_admin_#{res}_list") do
@@ -1275,9 +1290,8 @@ module Aspera
 
         # admin > <res> > show
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_method(:"handle_admin_#{res}_show") do
+          define_method(:"handle_admin_#{res}_show") do |res_id:, **|
             c = aoc_res_cfg(res)
-            res_id = get_resource_id_from_args(c[:path])
             Result::SingleObject.new(aoc_api.read("#{c[:path]}/#{res_id}", query_read_delete), fields: Formatter.all_but('certificate'))
           end
         end
@@ -1306,9 +1320,8 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
-          define_method(:"handle_admin_#{res}_modify") do
+          define_method(:"handle_admin_#{res}_modify") do |res_id:, **|
             c = aoc_res_cfg(res)
-            res_id = get_resource_id_from_args(c[:path])
             changes = options.get_next_argument('properties', validation: Hash, schema: c[:schema])
             do_bulk_operation(command: :modify, values: res_id) do |one_id|
               aoc_api.update("#{c[:path]}/#{one_id}", changes)
@@ -1322,9 +1335,8 @@ module Aspera
           cfg = ADMIN_OBJECT_CONFIG.fetch(r, {})
           cfg[:singleton] || (cfg[:ops] && !cfg[:ops].include?(:delete))
         }.each do |res|
-          define_method(:"handle_admin_#{res}_delete") do
+          define_method(:"handle_admin_#{res}_delete") do |res_id:, **|
             c = aoc_res_cfg(res)
-            res_id = get_resource_id_from_args(c[:path])
             do_bulk_operation(command: :delete, values: res_id) do |one_id|
               aoc_api.delete("#{c[:path]}/#{one_id}")
               {'id' => one_id}
@@ -1334,41 +1346,45 @@ module Aspera
 
         # user > contacts > list|show|create|modify|delete (same API path as admin > contact)
         Operations::ALL.each do |op|
-          define_method(:"handle_user_contacts_#{op}") do
-            send(:"handle_admin_contact_#{op}")
+          define_method(:"handle_user_contacts_#{op}") do |**ctx|
+            send(:"handle_admin_contact_#{op}", **ctx)
           end
         end
 
         # admin > client > set_pub_key
-        def handle_admin_client_set_pub_key
+        def handle_admin_client_set_pub_key(res_id:, **)
           c = aoc_res_cfg(:client)
-          res_id = get_resource_id_from_args(c[:path])
           the_private_key = options.get_next_argument('private_key PEM value', validation: String)
           the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
           aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
           Result::Success.new
         end
 
+        # admin > node > do | bearer_token — setup reuses the generic instance setup
+        # (setup_admin_node_instance is auto-generated above, providing res_id:)
+
         # admin > node > do > <FILES_COMMAND>
         FILES_COMMANDS.each do |cmd|
-          define_method(:"handle_admin_node_do_#{cmd}") do
-            res_id = get_resource_id_from_args(aoc_res_path(:node))
+          define_method(:"handle_admin_node_do_#{cmd}") do |res_id:, **|
             execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN)
           end
         end
 
         # admin > node > bearer_token
-        def handle_admin_node_bearer_token
-          res_id = get_resource_id_from_args(aoc_res_path(:node))
+        def handle_admin_node_bearer_token(res_id:, **)
           node_api = aoc_api.node_api_from(node_id: res_id, scope: options.get_next_argument('scope', default: Api::Node::Scope::ADMIN))
           Result::Text.new(node_api.oauth.authorization)
         end
 
+        # admin > workspace > dropbox — setup: consume workspace id
+        def setup_admin_workspace_dropbox(**)
+          {ws_res_id: get_resource_id_from_args(aoc_res_path(:workspace))}
+        end
+
         # admin > workspace > dropbox > list
-        def handle_admin_workspace_dropbox_list
-          res_id = get_resource_id_from_args(aoc_res_path(:workspace))
+        def handle_admin_workspace_dropbox_list(ws_res_id:, **)
           query = options.get_option(:query) || {}
-          Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => res_id})), fields: %w[id name description])
+          Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => ws_res_id})), fields: %w[id name description])
         end
 
         # admin > workspace > shared_folder — setup: resolve workspace id + shared folders list
@@ -1385,27 +1401,30 @@ module Aspera
           Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
         end
 
-        # admin > workspace > shared_folder > node
-        def handle_admin_workspace_shared_folder_node(shared_folders:, **)
+        # admin > workspace > shared_folder > node|member — setup: consume shared_folder id from ctx
+        # @return [Hash] ctx key: sf_item (the resolved shared folder hash)
+        def setup_admin_workspace_shared_folder_instance(shared_folders:, **)
           shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
-          shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-          Aspera.assert(shared_folder, 'shared folder not found')
+          sf_item = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
+          Aspera.assert(sf_item, 'shared folder not found')
+          {sf_item: sf_item}
+        end
+
+        # admin > workspace > shared_folder > node
+        def handle_admin_workspace_shared_folder_node(sf_item:, **)
           command_repo = options.get_next_command(FILES_COMMANDS)
-          execute_nodegen4_command(command_repo, shared_folder['node_id'], file_id: shared_folder['file_id'], scope: Api::Node::Scope::ADMIN)
+          execute_nodegen4_command(command_repo, sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
         end
 
         # admin > workspace > shared_folder > member > list
-        def handle_admin_workspace_shared_folder_member_list(ws_res_id:, shared_folders:, **)
-          shared_folder_id = options.instance_identifier(description: 'Shared folder ID')
-          shared_folder = shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-          Aspera.assert(shared_folder, 'shared folder not found')
+        def handle_admin_workspace_shared_folder_member_list(ws_res_id:, sf_item:, **)
           node_api = aoc_api.node_api_from(
-            node_id:        shared_folder['node_id'],
+            node_id:        sf_item['node_id'],
             workspace_id:   ws_res_id,
             workspace_name: nil,
             scope:          Api::Node::Scope::USER
           )
-          result = node_api.read('permissions', {'file_id' => shared_folder['file_id'], 'tag' => "aspera.files.workspace.id=#{ws_res_id}"})
+          result = node_api.read('permissions', {'file_id' => sf_item['file_id'], 'tag' => "aspera.files.workspace.id=#{ws_res_id}"})
           result.each do |item|
             item['member'] = begin
               if Api::AoC.workspace_access?(item)
@@ -1422,14 +1441,13 @@ module Aspera
         end
 
         # admin > user > preferences|notifications > show|modify
+        # (setup_admin_user_instance is auto-generated, providing res_id:)
         %i[preferences notifications].each do |pref|
           pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
-          define_method(:"handle_admin_user_#{pref}_show") do
-            res_id = get_resource_id_from_args(aoc_res_path(:user))
+          define_method(:"handle_admin_user_#{pref}_show") do |res_id:, **|
             Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
           end
-          define_method(:"handle_admin_user_#{pref}_modify") do
-            res_id = get_resource_id_from_args(aoc_res_path(:user))
+          define_method(:"handle_admin_user_#{pref}_modify") do |res_id:, **|
             aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", options.get_next_argument('properties', validation: Hash))
             Result::Status.new('modified')
           end
