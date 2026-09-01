@@ -615,7 +615,6 @@ module Aspera
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
               instance_arg: :res_id, lookup: :"lookup_#{res}_id",
-              setup: :"setup_admin_#{res}_instance",
               arguments: [{name: :input_data, type: Hash}]
           end
         end
@@ -783,7 +782,7 @@ module Aspera
                   res_path = "#{res_instance_path}/#{sub}"
                   list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
                   resolved = resolve_member_user_ids(users)
-                  input_data = {user: resolved.map{ |u| {id: u, access: access}}}
+                  input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
                   entity_execute(api: @api_v5, entity: res_path, command: op, input_data: input_data, items_key: list_key) do |f, v|
                     @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
                   end
@@ -803,7 +802,8 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data, res_instance_path:, **|
+          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data, res_id:, **|
+            res_instance_path = "#{res}/#{res_id}"
             result = @api_v5.create("#{res_instance_path}/external_collaborator", input_data)
             formatter.display_status(result['message'])
             Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: input_data['email_address'], query: {}))
