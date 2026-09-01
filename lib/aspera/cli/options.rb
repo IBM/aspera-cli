@@ -446,7 +446,7 @@ module Aspera
 
       # Low-level positional argument reader.  Prefer +Base#resolve_argument+ from action methods.
       # Direct calls from outside +Options+ are legacy exceptions documented in ST12/ST13
-      # (mixins without DSL: vault_manager, sync_actions, preset_actions, ascp_actions; setup callbacks: aoc.rb).
+      # (mixins without DSL: sync_actions, ascp_actions; setup callbacks: aoc.rb).
       # @api private
       # @param descr       [String] description for help
       # @param mandatory   [Boolean] `true`: raise error no more argument

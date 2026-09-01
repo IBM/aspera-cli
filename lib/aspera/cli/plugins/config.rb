@@ -110,8 +110,33 @@ module Aspera
         end
 
         # DSL command declarations - replaces ACTIONS + execute_action
-        # :preset is an opaque action: execute_preset handles all sub-dispatch internally
-        command :preset, description: 'Manage presets of options', action: ->{execute_preset}
+        commands_under(:preset) do
+          command :list,     description: 'List all presets'
+          command :overview, description: 'Display all options from all presets'
+          command :lookup,   description: 'Find preset matching URL and username'
+          command :secure,   description: 'Move secrets to vault',
+            arguments: [{name: :config_name, type: String, mandatory: false}]
+          command :show,       description: 'Display a preset',
+            arguments: [{name: :name, type: :identifier}]
+          command :delete,     description: 'Delete a preset',
+            arguments: [{name: :name, type: :identifier}]
+          command :get,        description: 'Get a single parameter from a preset',
+            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
+          command :unset,      description: 'Remove a parameter from a preset',
+            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
+          command(
+            :set, description: 'Set a parameter in a preset',
+            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String},
+                        {name: :param_value, type: nil}]
+          )
+          command :initialize, description: 'Initialize a preset with a value',
+            arguments: [{name: :name, type: :identifier}, {name: :config_value, type: Hash}]
+          command :update,     description: 'Update a preset with current option values',
+            arguments: [{name: :name, type: :identifier}]
+          command :ask,        description: 'Interactively ask for option values',
+            arguments: [{name: :name, type: :identifier},
+                        {name: :option_names, type: String, multiple: true}]
+        end
         command(
           :open, description: 'Open the configuration file in the default editor',
           action: lambda do
