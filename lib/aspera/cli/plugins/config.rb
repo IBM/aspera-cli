@@ -367,13 +367,13 @@ module Aspera
           Result::Status.new("Created #{plugin_file}")
         end
 
-        def action_detect(url:, plugin_name:, **)
+        def action_detect(url, plugin_name = nil)
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
           Result::ObjectList.new(apps)
         end
 
-        def action_wizard(url:, plugin_name:, preset_name:, **)
+        def action_wizard(url, plugin_name = nil, preset_name = '')
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
           @wizard.find(apps, preset_name: preset_name)
