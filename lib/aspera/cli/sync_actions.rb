@@ -141,40 +141,12 @@ module Aspera
         Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
       end
 
-      # Execute sync action
-      # @param &block [nil, Proc] block to generate transfer spec, takes: `direction` (one of DIRECTIONS), `local_dir`, `remote_dir`
-      def execute_sync_action(&block)
-        command = options.get_next_command(%i[admin] + Sync::Operations::DIRECTIONS)
-        # try to get 3 arguments as simple arguments
-        case command
-        when *Sync::Operations::DIRECTIONS
-          Sync::Operations.start(async_info_from_args(direction: command), transfer.user_transfer_spec, &block)
-          return Result::Success.new
-        when :admin
-          return execute_sync_admin_dispatch
-        else Aspera.error_unexpected_value(command)
-        end
-      end
-
-      private
-
-      # Impérative dispatch pour la branche :admin utilisée par execute_sync_action (node/server).
-      # Appelé uniquement depuis execute_sync_action — hors portée de la migration DSL.
-      # Single-thread assumption: Ruby serializes require calls (Mutex), @current_parent safe.
-      # path: nil → async_info_from_args reads path + sync_info from CLI automatically.
-      def execute_sync_admin_dispatch
-        command2 = options.get_next_command(%i[status find meta counters file_info overview query])
-        case command2
-        when :find
-          action_sync_admin_find(path: options.get_next_argument('path'))
-        when :status   then action_sync_admin_status(path: nil, sync_info: nil)
-        when :meta     then action_sync_admin_meta(path: nil, sync_info: nil)
-        when :counters then action_sync_admin_counters(path: nil, sync_info: nil)
-        when :file_info then action_sync_admin_file_info(path: nil, sync_info: nil)
-        when :overview then action_sync_admin_overview(path: nil, sync_info: nil)
-        when :query    then action_sync_admin_query(path: nil, sync_info: nil)
-        else Aspera.error_unexpected_value(command2)
-        end
+      # Execute a sync transfer for a given direction.
+      # @param direction [Symbol] one of Sync::Operations::DIRECTIONS (:push, :pull, :bidi)
+      # @param block     [Proc, nil] block to generate transfer spec; receives (direction, local_dir, remote_dir)
+      def run_sync_transfer(direction, &block)
+        Sync::Operations.start(async_info_from_args(direction: direction), transfer.user_transfer_spec, &block)
+        Result::Success.new
       end
     end
   end
