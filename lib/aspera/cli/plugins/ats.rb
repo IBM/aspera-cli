@@ -85,7 +85,7 @@ module Aspera
           end)
           command :create, description: 'Create an ATS API key',
             arguments: [{name: :params, type: Hash, mandatory: false, default: {}}],
-            action: ->(params, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params))}
+            action: ->(params:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params))}
           command :list,   description: 'List ATS API keys',     action: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
@@ -152,7 +152,7 @@ module Aspera
           Result::SingleObject.new(server_data)
         end
 
-        def action_access_key_create(params = {}, **)
+        def action_access_key_create(params: {}, **)
           server_data = nil
           # if transfer_server_id not provided, get it from command line options
           if !params.key?('transfer_server_id')
@@ -186,7 +186,7 @@ module Aspera
           # TODO : action : modify, with "PUT"
         end
 
-        def action_access_key_modify(params, access_key_id:, **)
+        def action_access_key_modify(params:, access_key_id:, **)
           params['id'] = access_key_id
           ats_api.update("access_keys/#{access_key_id}", params)
           return Result::Status.new('modified')

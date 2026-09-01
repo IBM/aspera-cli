@@ -343,19 +343,21 @@ module Aspera
           if spec.transfer_paths
             invoke_action(a, [], ctx)
           else
-            args = (spec.arguments || []).map do |arg_spec|
-              if arg_spec.type.eql?(:identifier) && !ctx.key?(arg_spec.name)
-                # Identifier argument not yet consumed in Phase A — resolve it now.
-                lookup_method = arg_spec.lookup
-                block = lookup_method ? ->(f, v) {send(lookup_method, f, v, **ctx)} : nil
-                val = resolve_argument(arg_spec, &block)
-                ctx = ctx.merge(arg_spec.name => val)
-                val
+            (spec.arguments || []).each do |arg_spec|
+              if arg_spec.type.eql?(:identifier)
+                # Identifier arguments go into ctx (keyword), not into positional args.
+                unless ctx.key?(arg_spec.name)
+                  # Not yet consumed in Phase A — resolve it now.
+                  lookup_method = arg_spec.lookup
+                  block = lookup_method ? ->(f, v) {send(lookup_method, f, v, **ctx)} : nil
+                  ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
+                end
               else
-                resolve_argument(arg_spec)
+                # Non-identifier arguments are also passed as keyword args by name.
+                ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
               end
             end
-            invoke_action(a, args, ctx)
+            invoke_action(a, [], ctx)
           end
         end
 

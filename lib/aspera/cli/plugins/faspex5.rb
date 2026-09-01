@@ -476,16 +476,16 @@ module Aspera
           command :list,   description: 'List packages'
           command :send,   description: 'Send a package',
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
-            action: ->(data, **){package_send(data)}
+            action: ->(data:, **){package_send(data)}
           command :show,   description: 'Show a package', setup: :setup_package_id,
             action: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}],
-            action: ->(folder_path, package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path)}
+            action: ->(folder_path:, package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path)}
           command(
             :status, description: 'Wait for package status', setup: :setup_package_id,
             arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
-            action: ->(status_list, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
+            action: ->(status_list:, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
           )
           command :delete, description: 'Delete package(s)', setup: :setup_package_id
           command :receive, description: 'Receive a package', setup: :setup_package_id, action: ->(package_id:, **){package_receive(package_id)}
@@ -523,7 +523,7 @@ module Aspera
           command(
             :modify, description: 'Modify user profile',
             arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties, **|
+            action: lambda do |properties:, **|
               @api_v5.update('account/preferences', properties)
               Result::Status.new('modified')
             end
@@ -627,7 +627,7 @@ module Aspera
           command(
             :modify, description: 'Modify configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data, **){Result::SingleObject.new(@api_v5.update('configuration', input_data))}
+            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration', input_data))}
           )
         end
 
@@ -636,12 +636,12 @@ module Aspera
           command(
             :create, description: 'Create SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data, **){Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data))}
+            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data))}
           )
           command(
             :modify, description: 'Modify SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data, **){Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data))}
+            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data))}
           )
           command(:delete, description: 'Delete SMTP configuration', action: lambda do
             @api_v5.delete('configuration/smtp')
@@ -694,7 +694,7 @@ module Aspera
           end
         end
 
-        def action_admin_smtp_test(test_data, **)
+        def action_admin_smtp_test(test_data:, **)
           test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
           creation = @api_v5.create('configuration/smtp/test', test_data)
           result = wait_for_job(creation['job_id'])
@@ -720,7 +720,7 @@ module Aspera
         end
 
         # admin > nodes > browse
-        def action_admin_nodes_browse(folder_path, node_id:, **)
+        def action_admin_nodes_browse(folder_path:, node_id:, **)
           browse_folder("nodes/#{node_id}/browse", {}, folder_path: folder_path)
         end
 
@@ -781,7 +781,7 @@ module Aspera
           MEMBER_SUBS.each do |sub|
             CRUD_NO_SHOW.each do |op|
               if op.eql?(:create) && sub.eql?(:members)
-                define_action_method([:admin, res, sub, op]) do |users, access, res_instance_path:, **|
+                define_action_method([:admin, res, sub, op]) do |users:, access:, res_instance_path:, **|
                   res_path = "#{res_instance_path}/#{sub}"
                   list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
                   resolved = resolve_member_user_ids(users)
@@ -805,7 +805,7 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data, res_id:, **|
+          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data:, res_id:, **|
             res_instance_path = "#{res}/#{res_id}"
             result = @api_v5.create("#{res_instance_path}/external_collaborator", input_data)
             formatter.display_status(result['message'])
@@ -881,7 +881,7 @@ module Aspera
           matches.first['id']
         end
 
-        def action_shared_folders_browse(folder_path, shared_folder_id:, **)
+        def action_shared_folders_browse(folder_path:, shared_folder_id:, **)
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
           node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
           raise "No such shared folder id #{shared_folder_id}" if node.nil?
@@ -895,7 +895,7 @@ module Aspera
           Result::Status.new('Invitation resent')
         end
 
-        def action_invitations_create(input_data, **)
+        def action_invitations_create(input_data:, **)
           is_bulk = options.get_option(:bulk)
           Result.bulk(input_data, is_bulk: is_bulk, command: :create, bfail: options.get_option(:bfail)) do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
@@ -918,7 +918,7 @@ module Aspera
           end
         end
 
-        def action_gateway(parameters = {}, **)
+        def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
@@ -929,7 +929,7 @@ module Aspera
           Result::Status.new('Gateway terminated')
         end
 
-        def action_postprocessing(parameters = {}, **)
+        def action_postprocessing(parameters: {}, **)
           require 'aspera/faspex_postproc' # cspell:disable-line
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})

@@ -128,11 +128,11 @@ module Aspera
           ]
         command :pubkey, description: 'Display the public key of an RSA private key',
           arguments: [{name: :private_key_pem, type: String}],
-          action: ->(private_key_pem){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
+          action: ->(private_key_pem:, **){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo, description: 'Display the value of a given argument',
           arguments: [{name: :value, type: nil}],
-          action: ->(value){Result.auto(value)}
+          action: ->(value:, **){Result.auto(value)}
         command :download, description: 'Download a file from a URL',
           arguments: [
             {name: :file_url,  type: String},
@@ -148,7 +148,7 @@ module Aspera
         command :coffee, description: 'Display a coffee image', action: ->{Result::Image.new(COFFEE_IMAGE_URL)}
         command :image, description: 'Display an image',
           arguments: [{name: :image_uri, type: nil}],
-          action: ->(image_uri){Result::Image.new(image_uri)}
+          action: ->(image_uri:, **){Result::Image.new(image_uri)}
         command :ascp, description: 'Manage the transfer SDK (ascp/transferd)', action: ->{execute_action_ascp}
         command :agents, description: 'Display transfer agent information', action: ->{execute_action_agents}
         command :sync, description: 'Manage Aspera Sync operations'
@@ -167,7 +167,7 @@ module Aspera
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [{name: :server_url, type: String}],
-          action: lambda do |server_url|
+          action: lambda do |server_url:, **|
             raise Cli::BadArgument, 'No PAC script configured, use --fpac' if context.pac_executor.nil?
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
           end
@@ -232,7 +232,7 @@ module Aspera
           command :admin, description: 'Run sync admin operations', action: ->{execute_sync_admin}
           command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [{name: :async_arguments, type: String, multiple: true}],
-            action: ->(async_arguments){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
+            action: ->(async_arguments:, **){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
         end
 
         # gem sub-commands
@@ -287,36 +287,36 @@ module Aspera
 
         # DSL handlers - one method per leaf command
 
-        def action_documentation(section = nil)
+        def action_documentation(section: nil, **)
           section = "##{section}" unless section.nil?
           Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
           Result::Nothing.new
         end
 
-        def action_genkey(private_key_path, private_key_length = OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
+        def action_genkey(private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **)
           OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
           Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
         end
 
-        def action_remote_certificate_chain(remote_url)
+        def action_remote_certificate_chain(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
         end
 
-        def action_remote_certificate_only(remote_url)
+        def action_remote_certificate_only(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.first.to_pem)
         end
 
-        def action_remote_certificate_name(remote_url)
+        def action_remote_certificate_name(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
           raise "No certificate found for #{remote_url}" unless remote_chain&.first
           Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
         end
 
-        def action_download(file_url, file_dest = nil)
+        def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
           Log.log.info("Downloading: #{file_url}")
@@ -324,7 +324,7 @@ module Aspera
           Result::Status.new("Saved to: #{file_dest}")
         end
 
-        def action_tokens_show(token_id)
+        def action_tokens_show(token_id:, **)
           require 'aspera/api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
           raise Cli::Error, 'Unknown identifier' if data.nil?
@@ -344,9 +344,9 @@ module Aspera
           Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
         end
 
-        def action_plugins_create(plugin_name, destination_folder = nil)
-          plugin_name = plugin_name.downcase
-          destination_folder ||= File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
+        def action_plugins_create(name:, folder: nil, **)
+          plugin_name = name.downcase
+          destination_folder = folder || File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
           plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
           content = <<~END_OF_PLUGIN_CODE
             require 'aspera/cli/plugins/base'
@@ -367,13 +367,13 @@ module Aspera
           Result::Status.new("Created #{plugin_file}")
         end
 
-        def action_detect(url, plugin_name = nil)
+        def action_detect(url:, plugin_name: nil, **)
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
           Result::ObjectList.new(apps)
         end
 
-        def action_wizard(url, plugin_name = nil, preset_name = '')
+        def action_wizard(url:, plugin_name: nil, preset_name: '', **)
           options.ask_missing_mandatory = true
           apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
           @wizard.find(apps, preset_name: preset_name)
@@ -414,13 +414,13 @@ module Aspera
           Result::ValueList.new(commands, name: 'command')
         end
 
-        def action_test_throw(exception_class_name, exception_text)
+        def action_test_throw(exception_class_name:, exception_text:, **)
           type = Object.const_get(exception_class_name)
           Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
           raise type, exception_text
         end
 
-        def action_completion_bash(words = nil)
+        def action_completion_bash(words: nil, **)
           if words.nil?
             Plugins::Factory.instance.plugin_list.each{ |p| puts p}
           else

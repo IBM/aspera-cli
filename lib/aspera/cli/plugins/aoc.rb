@@ -689,7 +689,7 @@ module Aspera
               command(
                 :modify, description: "Modify #{app_type} settings",
                 arguments: [{name: :properties, type: Hash}],
-                action: lambda do |properties, **|
+                action: lambda do |properties:, **|
                   aoc_api.update("/apps/#{app_type}/settings", properties)
                   Result::Status.new('modified')
                 end
@@ -756,7 +756,7 @@ module Aspera
           command(
             :modify, description: 'Modify user profile',
             arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties, **|
+            action: lambda do |properties:, **|
               aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", properties)
               Result::Status.new('modified')
             end
@@ -774,7 +774,7 @@ module Aspera
           command(
             :modify, description: 'Modify user preferences',
             arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties, **|
+            action: lambda do |properties:, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
               aoc_api.update("users/#{user_id}/user_interaction_preferences", properties)
               Result::Status.new('modified')
@@ -793,7 +793,7 @@ module Aspera
           command(
             :modify, description: 'Modify notification preferences',
             arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties, **|
+            action: lambda do |properties:, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
               aoc_api.update("users/#{user_id}/notification_preferences", properties)
               Result::Status.new('modified')
@@ -950,7 +950,7 @@ module Aspera
         end
 
         # packages > send
-        def action_packages_send(data, **)
+        def action_packages_send(data:, **)
           package_data = data
           new_user_option = options.get_option(:new_user_option)
           option_validate = options.get_option(:validate_metadata)
@@ -1048,7 +1048,7 @@ module Aspera
         end
 
         # packages > modify
-        def action_packages_modify(data, package_id:, **)
+        def action_packages_modify(data:, package_id:, **)
           aoc_api.update("packages/#{package_id}", data)
           Result::Status.new('modified')
         end
@@ -1227,26 +1227,26 @@ module Aspera
         end
 
         # files > short_link > create|delete|list|show|modify
-        def action_files_short_link_create(**ctx) = sl_exec_create(**ctx)
-        def action_files_short_link_list(**ctx)   = sl_exec_list(**sl_fetch_list(**ctx))
-        def action_files_short_link_show(**ctx)   = sl_exec_show(**sl_fetch_list(**ctx))
-        def action_files_short_link_delete(**ctx) = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_files_short_link_modify(**ctx) = sl_exec_modify(**sl_fetch_list(**ctx), **ctx)
+        def action_files_short_link_create(custom_data: {}, **ctx) = sl_exec_create(custom_data, **ctx)
+        def action_files_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
+        def action_files_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
+        def action_files_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+        def action_files_short_link_modify(custom_data: {}, **ctx)  = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
 
         # packages > shared_inboxes > short_link > create|delete|list|show|modify
-        def action_packages_shared_inboxes_short_link_create(**ctx) = sl_exec_create(**ctx)
-        def action_packages_shared_inboxes_short_link_list(**ctx)   = sl_exec_list(**sl_fetch_list(**ctx))
-        def action_packages_shared_inboxes_short_link_show(**ctx)   = sl_exec_show(**sl_fetch_list(**ctx))
-        def action_packages_shared_inboxes_short_link_delete(**ctx) = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_packages_shared_inboxes_short_link_modify(**ctx) = sl_exec_modify(**sl_fetch_list(**ctx), **ctx)
+        def action_packages_shared_inboxes_short_link_create(custom_data: {}, **ctx) = sl_exec_create(custom_data, **ctx)
+        def action_packages_shared_inboxes_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
+        def action_packages_shared_inboxes_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
+        def action_packages_shared_inboxes_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+        def action_packages_shared_inboxes_short_link_modify(custom_data: {}, **ctx)  = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
 
         # files > transfer
-        def action_files_transfer(direction, source_folder, **)
+        def action_files_transfer(direction:, source_folder:, **)
           execute_nodegen4_command(
             :transfer, aoc_api.home[:node_id],
             file_id:            aoc_api.home[:file_id],
             scope:              Api::Node::Scope::USER,
-            transfer_direction: direction,
+            transfer_direction: direction.to_sym,
             transfer_source:    source_folder
           )
         end
@@ -1264,13 +1264,13 @@ module Aspera
             Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{res_id}", query_read_delete))
           end
 
-          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties, res_id:, **|
+          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties:, res_id:, **|
             aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", properties)
             Result::Status.new('modified')
           end
         end
 
-        def action_admin_application_membership_create(membership, **)
+        def action_admin_application_membership_create(membership:, **)
           data = membership.dup
           app_type = data.delete('app_type')
           Aspera.assert_type(app_type, String){'app_type'}
@@ -1302,7 +1302,7 @@ module Aspera
         end
 
         # admin > subscription > usage
-        def action_admin_subscription_usage(aggregate, start_date, end_date, **)
+        def action_admin_subscription_usage(aggregate:, start_date:, end_date:, **)
           today      = Date.today
           aggregate  = :ALL if aggregate.nil?
           start_date = today.prev_year.strftime('%Y-%m-%d') if start_date.nil?
@@ -1323,7 +1323,7 @@ module Aspera
         end
 
         # admin > analytics > transfers
-        def action_admin_analytics_transfers(event_resource_type, event_resource_id, **)
+        def action_admin_analytics_transfers(event_resource_type:, event_resource_id:, **)
           analytics_api = build_analytics_api
           event_resource_id ||=
             case event_resource_type
@@ -1354,7 +1354,7 @@ module Aspera
         end
 
         # admin > analytics > files
-        def action_admin_analytics_files(event_resource_type, event_resource_id, event_uuid, **)
+        def action_admin_analytics_files(event_resource_type:, event_resource_id:, event_uuid:, **)
           analytics_api = build_analytics_api
           event_resource_id =
             case event_resource_type
@@ -1402,7 +1402,7 @@ module Aspera
 
         # admin > <res> > create
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_action_method([:admin, res, :create]) do |data, **|
+          define_action_method([:admin, res, :create]) do |data:, **|
             c = aoc_res_cfg(res)
             path = c[:path]
             # Special case: client_registration_token has a different creation URL
@@ -1418,7 +1418,7 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
-          define_action_method([:admin, res, :modify]) do |data, res_id:, **|
+          define_action_method([:admin, res, :modify]) do |data:, res_id:, **|
             c = aoc_res_cfg(res)
             aoc_api.update("#{c[:path]}/#{res_id}", data)
             Result::Status.new('modified')
@@ -1449,7 +1449,7 @@ module Aspera
         end
 
         # admin > client > set_pub_key
-        def action_admin_client_set_pub_key(private_key_pem, res_id:, **)
+        def action_admin_client_set_pub_key(private_key_pem:, res_id:, **)
           c = aoc_res_cfg(:client)
           the_public_key = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
           aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
@@ -1467,7 +1467,7 @@ module Aspera
         end
 
         # admin > node > bearer_token
-        def action_admin_node_bearer_token(scope, res_id:, **)
+        def action_admin_node_bearer_token(scope:, res_id:, **)
           scope ||= Api::Node::Scope::ADMIN
           node_api = aoc_api.node_api_from(node_id: res_id, scope: scope)
           Result::Text.new(node_api.oauth.authorization)
@@ -1544,7 +1544,7 @@ module Aspera
           define_action_method([:admin, :user, pref, :show]) do |res_id:, **|
             Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
           end
-          define_action_method([:admin, :user, pref, :modify]) do |properties, res_id:, **|
+          define_action_method([:admin, :user, pref, :modify]) do |properties:, res_id:, **|
             aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", properties)
             Result::Status.new('modified')
           end
@@ -1569,7 +1569,7 @@ module Aspera
           end
         end
 
-        def action_gateway(parameters = {}, **)
+        def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})

@@ -301,7 +301,8 @@ module Aspera
         def apifid_from_path(top_file_id, path)
           if (m = Options.percent_selector(path))
             raise BadArgument, 'Only selection "id" is supported (file id)' unless m[:field].eql?('id')
-            return Api::NodeFileId.new(@api_node, m[:value].presence || top_file_id)
+            val = m[:value]
+            return Api::NodeFileId.new(@api_node, (val.nil? || val.empty?) ? top_file_id : val)
           end
           @api_node.resolve_api_fid(top_file_id, path)
         end
@@ -312,7 +313,7 @@ module Aspera
         def apifid_from_next_arg(top_file_id)
           file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
-            return Api::NodeFileId.new(@api_node, value.presence || top_file_id)
+            return Api::NodeFileId.new(@api_node, (value.nil? || value.empty?) ? top_file_id : value)
           end
           @api_node.resolve_api_fid(top_file_id, file_path)
         end
@@ -365,7 +366,7 @@ module Aspera
           arguments: [{name: :paths, multiple: true}]
         command :browse,      description: 'Browse files (Gen3)',
           arguments: [{name: :path, type: String}],
-          action: ->(path, **){browse_gen3(path)}
+          action: ->(path:, **){browse_gen3(path)}
         command :upload,      description: 'Upload files (Gen3)'
         command :download,    description: 'Download files (Gen3)'
         command :cat,         description: 'Show file contents (Gen3)',
@@ -399,7 +400,7 @@ module Aspera
         end
 
         # Commands requiring a single path argument (Gen4)
-        COMMANDS_GEN4_SINGLE_PATH = %i[mkdir mklink browse cat show find thumbnail].freeze
+        COMMANDS_GEN4_SINGLE_PATH = %i[mkdir mklink browse cat show find thumbnail bearer_token_node node_info].freeze
         private_constant :COMMANDS_GEN4_SINGLE_PATH
 
         commands_under(%i[access_keys do]) do
@@ -480,13 +481,13 @@ module Aspera
           command :list,   description: 'List streams',    action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
           command :create, description: 'Create a stream',
             arguments: [{name: :data, type: Hash}],
-            action: ->(data, **){Result::SingleObject.new(@api_node.create('streams', data))}
+            action: ->(data:, **){Result::SingleObject.new(@api_node.create('streams', data))}
           command :show,   description: 'Show a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify, description: 'Modify a stream',
             arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash}],
-            action: ->(data, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
+            action: ->(data:, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
           command :cancel, description: 'Cancel a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}"))}
@@ -519,7 +520,7 @@ module Aspera
         commands_under(:watch_folder) do
           command :create, description: 'Create a watch folder',
             arguments: [{name: :data, type: Hash}],
-            action: ->(data, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
+            action: ->(data:, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
           command :list,   description: 'List watch folders',
             action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
           command :show,   description: 'Show a watch folder',
@@ -561,7 +562,7 @@ module Aspera
 
         # --- Handler methods (Gen3) ---
 
-        def action_delete(paths, **)
+        def action_delete(paths:, **)
           # TODO: add query for recursive
           paths_to_delete = Array(paths)
           @node_path_prefix&.add_to_paths!(paths_to_delete)
@@ -569,7 +570,7 @@ module Aspera
           cli_result_from_paths_response(resp, 'file deleted')
         end
 
-        def action_search(search_root, **)
+        def action_search(search_root:, **)
           search_root = @node_path_prefix.nil? ? search_root : @node_path_prefix.add_to_path(search_root)
           parameters = {'path' => search_root}
           other_options = options.get_option(:query)
@@ -583,7 +584,7 @@ module Aspera
           Result::ObjectList.new(resp['items'], fields: fields)
         end
 
-        def action_space(path_list, **)
+        def action_space(path_list:, **)
           path_list = Array(path_list)
           @node_path_prefix&.add_to_paths!(path_list)
           resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
@@ -591,28 +592,28 @@ module Aspera
           Result::ObjectList.new(resp['paths'])
         end
 
-        def action_mkdir(path_list, **)
+        def action_mkdir(path_list:, **)
           path_list = Array(path_list)
           @node_path_prefix&.add_to_paths!(path_list)
           resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
           cli_result_from_paths_response(resp, 'folder created')
         end
 
-        def action_mklink(target, link_path, **)
+        def action_mklink(target:, link_path:, **)
           target    = @node_path_prefix.nil? ? target : @node_path_prefix.add_to_path(target)
           one_path  = @node_path_prefix.nil? ? link_path : @node_path_prefix.add_to_path(link_path)
           resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
           cli_result_from_paths_response(resp, 'link created')
         end
 
-        def action_mkfile(file_path, contents, **)
+        def action_mkfile(file_path:, contents:, **)
           one_path = @node_path_prefix.nil? ? file_path : @node_path_prefix.add_to_path(file_path)
           contents64 = contents.nil? ? '' : Base64.strict_encode64(contents)
           resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
           cli_result_from_paths_response(resp, 'file created')
         end
 
-        def action_rename(path_base, path_src, path_dst, **)
+        def action_rename(path_base:, path_src:, path_dst:, **)
           # TODO: multiple ?
           path_base = @node_path_prefix.nil? ? path_base : @node_path_prefix.add_to_path(path_base)
           path_src  = @node_path_prefix.nil? ? path_src  : @node_path_prefix.add_to_path(path_src)
@@ -666,7 +667,7 @@ module Aspera
           Runner.result_transfer(transfer.start(transfer_spec))
         end
 
-        def action_cat(remote_path, **)
+        def action_cat(remote_path:, **)
           remote_path = @node_path_prefix.nil? ? remote_path : @node_path_prefix.add_to_path(remote_path)
           http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
           Result::Text.new(http.body)
@@ -705,12 +706,12 @@ module Aspera
           {}
         end
 
-        def action_access_keys_do_permission_modify(data, apifid:, perm_id:, **)
+        def action_access_keys_do_permission_modify(data:, apifid:, perm_id:, **)
           apifid.node_api.update("permissions/#{perm_id}", data)
           Result::Status.new('Updated')
         end
 
-        def action_watch_folder_modify(data, res_id:, **)
+        def action_watch_folder_modify(data:, res_id:, **)
           @api_node.update("v3/watchfolders/#{res_id}", data)
           Result::Status.new("#{res_id} updated")
         end
@@ -756,7 +757,7 @@ module Aspera
         end
 
         # access_keys > do > browse
-        def action_access_keys_do_browse(path, do_root_file_id:, **)
+        def action_access_keys_do_browse(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
           return Result::ObjectList.new([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')
@@ -764,45 +765,45 @@ module Aspera
         end
 
         # access_keys > do > find
-        def action_access_keys_do_find(path, do_root_file_id:, **)
+        def action_access_keys_do_find(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           Result::ObjectList.new(@api_node.find_files(apifid.file_id, Api::Node.file_matcher_from_argument(options)), fields: ['path'])
         end
 
         # access_keys > do > cat
-        def action_access_keys_do_cat(path, do_root_file_id:, **)
+        def action_access_keys_do_cat(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           Result::Text.new(apifid.node_api.read("files/#{apifid.file_id}/content", ret: :resp).body)
         end
 
         # access_keys > do > show
-        def action_access_keys_do_show(path, do_root_file_id:, **)
+        def action_access_keys_do_show(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           Result::SingleObject.new(apifid.node_api.read("files/#{apifid.file_id}"))
         end
 
         # access_keys > do > modify
-        def action_access_keys_do_modify(path, update_value, do_root_file_id:, **)
+        def action_access_keys_do_modify(path:, update_value:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           apifid.node_api.update("files/#{apifid.file_id}", update_value)
           Result::Status.new('Done')
         end
 
         # access_keys > do > thumbnail
-        def action_access_keys_do_thumbnail(path, do_root_file_id:, **)
+        def action_access_keys_do_thumbnail(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           Result::Image.new(apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp).body)
         end
 
         # access_keys > do > rename
-        def action_access_keys_do_rename(source_path, new_name, do_root_file_id:, **)
+        def action_access_keys_do_rename(source_path:, new_name:, do_root_file_id:, **)
           apifid = @api_node.resolve_api_fid(do_root_file_id, source_path)
           apifid.node_api.update("files/#{apifid.file_id}", {name: new_name})
           Result::Status.new("renamed to #{new_name}")
         end
 
         # access_keys > do > delete
-        def action_access_keys_do_delete(paths, do_root_file_id:, **)
+        def action_access_keys_do_delete(paths:, do_root_file_id:, **)
           is_bulk = options.get_option(:bulk)
           Result.bulk(paths, is_bulk: is_bulk, command: :delete, id_result: 'path', bfail: options.get_option(:bfail)) do |l_path|
             apifid = if (m = Options.percent_selector(l_path))
@@ -874,12 +875,12 @@ module Aspera
           [apifid, result]
         end
 
-        def action_access_keys_do_node_info(path, do_root_file_id:, **)
+        def action_access_keys_do_node_info(path:, do_root_file_id:, **)
           _apifid, result = gen4_apifid_info(do_root_file_id, path)
           Result::SingleObject.new(result)
         end
 
-        def action_access_keys_do_bearer_token_node(path, do_root_file_id:, **)
+        def action_access_keys_do_bearer_token_node(path:, do_root_file_id:, **)
           apifid, result = gen4_apifid_info(do_root_file_id, path)
           Log.dump(:result, result)
           raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
@@ -915,13 +916,13 @@ module Aspera
           [apifid, payload]
         end
 
-        def action_access_keys_do_mkdir(path, do_root_file_id:, **)
+        def action_access_keys_do_mkdir(path:, do_root_file_id:, **)
           apifid, payload = gen4_mk_resolve(do_root_file_id, path)
           payload[:type] = :folder
           Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
         end
 
-        def action_access_keys_do_mklink(path, do_root_file_id:, **)
+        def action_access_keys_do_mklink(path:, do_root_file_id:, **)
           apifid, payload = gen4_mk_resolve(do_root_file_id, path)
           payload[:type] = :link
           Aspera.assert(payload[:target_id], 'Missing target_id')
@@ -929,7 +930,7 @@ module Aspera
           Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
         end
 
-        def action_access_keys_do_mkfile(path, contents, do_root_file_id:, **)
+        def action_access_keys_do_mkfile(path:, contents:, do_root_file_id:, **)
           apifid, payload = gen4_mk_resolve(do_root_file_id, path)
           payload[:type] = :file
           payload[:contents] = contents.nil? ? '' : Base64.strict_encode64(contents)
@@ -945,7 +946,7 @@ module Aspera
           Result::ObjectList.new(apifid.node_api.read_with_pages('permissions', list_query))
         end
 
-        def action_access_keys_do_permission_delete(perm_id, apifid:, **)
+        def action_access_keys_do_permission_delete(perm_id:, apifid:, **)
           is_bulk = options.get_option(:bulk)
           items = perm_id.is_a?(Array) ? perm_id : [perm_id]
           Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
@@ -956,7 +957,7 @@ module Aspera
           end
         end
 
-        def action_access_keys_do_permission_create(data, apifid:, **)
+        def action_access_keys_do_permission_create(data:, apifid:, **)
           create_param = data
           raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
           create_param['file_id'] = apifid.file_id
@@ -969,7 +970,7 @@ module Aspera
         end
 
         # access_keys > set_bearer_key
-        def action_access_keys_set_bearer_key(access_key_id, bearer_key_pem, **)
+        def action_access_keys_set_bearer_key(access_key_id:, bearer_key_pem:, **)
           access_key_id = @api_node.read('access_keys/self')['id'] if access_key_id.eql?('self')
           key = OpenSSL::PKey.read(bearer_key_pem)
           key = key.public_key if key.private?
@@ -1094,7 +1095,7 @@ module Aspera
           Result::Status.new('Cancelled')
         end
 
-        def action_transfer_modify(update_value, transfer_id:, **)
+        def action_transfer_modify(update_value:, transfer_id:, **)
           @api_node.update("ops/transfers/#{transfer_id}", update_value)
           Result::Status.new('Modified')
         end
@@ -1130,7 +1131,7 @@ module Aspera
         end
 
         # service sub-commands
-        def action_service_create(creation_data, **)
+        def action_service_create(creation_data:, **)
           resp = @api_node.create('rund/services', creation_data)
           Result::Status.new("#{resp['id']} created")
         end
@@ -1147,7 +1148,7 @@ module Aspera
         end
 
         # central > session > list
-        def action_central_session_list(request_data, **)
+        def action_central_session_list(request_data:, **)
           request_data ||= {}
           validation = central_validation
           request_data.deep_merge!({'validation' => validation}) unless validation.nil?
@@ -1156,7 +1157,7 @@ module Aspera
         end
 
         # central > file > list
-        def action_central_file_list(request_data, **)
+        def action_central_file_list(request_data:, **)
           request_data ||= {}
           validation = central_validation
           request_data.deep_merge!({'validation' => validation}) unless validation.nil?
@@ -1167,7 +1168,7 @@ module Aspera
         end
 
         # central > file > modify
-        def action_central_file_modify(request_data, **)
+        def action_central_file_modify(request_data:, **)
           request_data ||= {}
           validation = central_validation
           request_data.deep_merge!(validation) unless validation.nil?
@@ -1187,13 +1188,13 @@ module Aspera
           return Result::Status.new('done')
         end
 
-        def action_bearer_token(private_key_pem, user_group_id, **)
+        def action_bearer_token(private_key_pem:, user_group_id:, **)
           private_key = OpenSSL::PKey::RSA.new(private_key_pem)
           access_key  = options.get_option(:username, mandatory: true)
           Result::Text.new(Api::Node.bearer_token(payload: user_group_id, access_key: access_key, private_key: private_key))
         end
 
-        def action_simulator(parameters = {}, **)
+        def action_simulator(parameters: {}, **)
           require 'aspera/node_simulator'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
@@ -1203,7 +1204,7 @@ module Aspera
           return Result::Status.new('Simulator terminated')
         end
 
-        def action_telemetry(parameters = {}, **)
+        def action_telemetry(parameters: {}, **)
           parameters = parameters.symbolize_keys
           %i[url key].each do |psym|
             raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)

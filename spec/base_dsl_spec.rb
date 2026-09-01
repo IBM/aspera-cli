@@ -148,7 +148,7 @@ module Aspera
             expect(plugin.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'info')))
           end
 
-          it 'passes positional arguments resolved by resolve_argument to the handler' do
+          it 'passes named arguments resolved by resolve_argument as keyword args to the handler' do
             klass = Class.new(Base)
             klass.command(
               :greet,
@@ -156,7 +156,7 @@ module Aspera
               action:     :handle_greet,
               arguments:   [ArgumentSpec.new(name: :name, type: String)]
             )
-            klass.define_method(:handle_greet){ |name| Result::Status.new("hello #{name}")}
+            klass.define_method(:handle_greet){ |name:, **| Result::Status.new("hello #{name}")}
             allow(options).to(receive(:get_next_command).with([:greet], aliases: nil).and_return(:greet))
             allow(options).to(receive(:get_next_argument).with('name', mandatory: true, multiple: false, validation: String, default: nil, schema: nil).and_return('world'))
             inst = klass.new(context: context)
