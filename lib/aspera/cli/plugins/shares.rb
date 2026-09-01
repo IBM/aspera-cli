@@ -131,14 +131,14 @@ module Aspera
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
-              commands_under(setting) do
+              commands_under([:admin, entity_type, :all, setting]) do
                 setting_ops.each do |op|
                   command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}")
                 end
               end
             end
             if entity_type.eql?(:group)
-              commands_under(:users) do
+              commands_under([:admin, entity_type, :all, :users]) do
                 Operations::ALL.each do |op|
                   command(op, description: "#{op.capitalize} users of a group")
                 end
@@ -153,14 +153,14 @@ module Aspera
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
-              commands_under(setting) do
+              commands_under([:admin, entity_type, :local, setting]) do
                 setting_ops.each do |op|
                   command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}")
                 end
               end
             end
             if entity_type.eql?(:group)
-              commands_under(:users) do
+              commands_under([:admin, entity_type, :local, :users]) do
                 Operations::ALL.each do |op|
                   command(op, description: "#{op.capitalize} users of a group")
                 end
