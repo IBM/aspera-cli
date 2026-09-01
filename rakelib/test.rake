@@ -184,8 +184,8 @@ def select_test_cases(selection)
   if list.nil?
     ALL_TESTS.keys
   elsif list.first.eql?('next')
-    next_test = ALL_TESTS.keys.find{ |name| !SKIP_STATES.include?(STATES[name])}
-    next_test ? [next_test] : []
+    count = list[1]&.match?(/\A\d+\z/) ? list[1].to_i : 1
+    ALL_TESTS.keys.reject{ |name| SKIP_STATES.include?(STATES[name])}.first(count)
   elsif list.first.eql?('tag')
     list.shift
     list.map!(&:to_sym)
