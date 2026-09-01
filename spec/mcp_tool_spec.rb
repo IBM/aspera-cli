@@ -6,9 +6,11 @@ unless defined?(MCP::Tool)
   module MCP
     class Tool
       # DSL class methods used at class-body evaluation time in McpTool
-      def self.tool_name(_name); end
-      def self.description(_text); end
-      def self.input_schema(**_kwargs); end
+      class << self
+        def tool_name(_name); end
+        def description(_text); end
+        def input_schema(**_kwargs); end
+      end
 
       class Response
         attr_reader :content, :structured_content

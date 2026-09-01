@@ -635,19 +635,19 @@ module Aspera
           cli_result_from_paths_response(resp, 'entry moved')
         end
 
-        # Shared Gen3 sync block: obtains a transfer spec via the Node API for the given direction/folders.
+        # Obtains a transfer spec via the Node API for the given direction/folders.
         def sync_gen3_block
-          ->(direction, local_path, remote_path) {
+          lambda do |direction, local_path, remote_path|
             request_transfer_spec = sync_spec_request(direction, local_path, remote_path)
-                                                              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-                                                              transfer_spec = @api_node.create(
-                                                                'files/sync_setup',
-                                                                {transfer_requests: [{transfer_request: request_transfer_spec}]}
-                                                              )['transfer_specs'].first['transfer_spec']
-                                                              transfer_spec.delete_if{ |_k, v| v.nil?}
-                                                              Log.dump(:ts, transfer_spec)
-                                                              transfer_spec
-          }
+            @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+            transfer_spec = @api_node.create(
+              'files/sync_setup',
+              {transfer_requests: [{transfer_request: request_transfer_spec}]}
+            )['transfer_specs'].first['transfer_spec']
+            transfer_spec.delete_if{ |_k, v| v.nil?}
+            Log.dump(:ts, transfer_spec)
+            transfer_spec
+          end
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
@@ -833,11 +833,11 @@ module Aspera
 
         # Shared Gen4 sync block: obtains a transfer spec via the Gen4 API for the given direction/remote_path.
         def sync_gen4_block(do_root_file_id)
-          ->(direction, _local_path, remote_path) {
+          lambda do |direction, _local_path, remote_path|
             ts_direction = direction.eql?(:pull) ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND
-                                                               apifid = @api_node.resolve_api_fid(do_root_file_id, remote_path)
-                                                               apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
-          }
+            apifid = @api_node.resolve_api_fid(do_root_file_id, remote_path)
+            apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
+          end
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
