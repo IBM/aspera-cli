@@ -127,6 +127,8 @@ module Aspera
         options.ask_missing_mandatory = true
         cp = presets.config_presets
         cp[name] ||= {}
+        # If no option names given, re-ask all existing keys of the preset
+        option_names = cp[name].keys if option_names.empty?
         option_names.each do |option_name|
           option_value = options.get_interactive(option_name, check_option: true)
           cp[name][option_name] = option_value
