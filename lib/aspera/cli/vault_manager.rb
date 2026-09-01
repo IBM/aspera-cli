@@ -9,28 +9,24 @@ module Aspera
     # Mixin providing vault/keychain functionality to Plugin::Config.
     # Depends on `options` and `context.main_folder` being available in the including class.
     module VaultManager
-      # @return [Result] result of vault sub-command
-      def execute_vault
-        command = options.get_next_command(%i[info list show create delete password])
-        case command
-        when :info
-          return Result::SingleObject.new(vault.info)
-        when :list
-          return Result::ObjectList.new(vault.list)
-        when :show
-          return Result::SingleObject.new(vault.get(label: options.get_next_argument('label')))
-        when :create
-          vault.set(options.get_next_argument('info', validation: Hash).symbolize_keys)
-          return Result::Status.new('Secret added')
-        when :delete
-          label_to_delete = options.get_next_argument('label')
-          vault.delete(label: label_to_delete)
-          return Result::Status.new("Secret deleted: #{label_to_delete}")
-        when :password
-          Aspera.assert(vault.respond_to?(:change_password), 'Vault does not support password change')
-          vault.change_password(options.get_next_argument('new_password'))
-          return Result::Status.new('Vault password updated')
-        end
+      def action_vault_show(label:, **)
+        Result::SingleObject.new(vault.get(label: label))
+      end
+
+      def action_vault_create(info:, **)
+        vault.set(info.symbolize_keys)
+        Result::Status.new('Secret added')
+      end
+
+      def action_vault_delete(label:, **)
+        vault.delete(label: label)
+        Result::Status.new("Secret deleted: #{label}")
+      end
+
+      def action_vault_password(new_password:, **)
+        Aspera.assert(vault.respond_to?(:change_password), 'Vault does not support password change')
+        vault.change_password(new_password)
+        Result::Status.new('Vault password updated')
       end
 
       # @return [String] value from vault matching <name>.<param>

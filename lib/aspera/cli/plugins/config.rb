@@ -174,7 +174,20 @@ module Aspera
         )
         command :check_update, description: 'Check if a newer version of the gem is available', action: ->{Result::SingleObject.new(check_gem_version)}
         command :initdemo, description: 'Initialize the demo server preset'
-        command :vault, description: 'Manage the secrets vault', action: ->{execute_vault}
+        commands_under(:vault) do
+          command :info,     description: 'Display vault information',
+            action: ->(**){ Result::SingleObject.new(vault.info) }
+          command :list,     description: 'List secrets in the vault',
+            action: ->(**){ Result::ObjectList.new(vault.list) }
+          command :show,     description: 'Show a secret by label',
+            arguments: [{name: :label, type: String}]
+          command :create,   description: 'Add a new secret to the vault',
+            arguments: [{name: :info, type: Hash}]
+          command :delete,   description: 'Delete a secret by label',
+            arguments: [{name: :label, type: String}]
+          command :password, description: 'Change the vault password',
+            arguments: [{name: :new_password, type: String}]
+        end
         command :commands, description: 'List all available commands across all plugins'
         command :test, description: 'Internal test commands'
         command :platform, description: 'Display the current platform/architecture', action: ->{Result::Text.new(Environment.instance.architecture)}
