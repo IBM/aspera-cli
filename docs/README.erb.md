@@ -8679,6 +8679,15 @@ To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS 
 
 <%=include_commands_for_plugin(:mcp)%>
 
+### End-to-end AI testing
+
+The file [`docs/test-mcp-with-ai.md`](test-mcp-with-ai.md) contains a step-by-step test
+procedure for validating the MCP server with a live AI assistant (Bob, Claude Desktop,
+VS Code Copilot, or any MCP-capable client).
+It covers tool visibility, self-discovery, Hash schema introspection, option listing,
+documentation retrieval, live transfer tasks, truncation handling, error handling, and
+credential safety.
+
 ## Operational Utilities
 
 This section covers the specialized modules and utilities used to integrate <%=tool%> into your broader operational infrastructure.
