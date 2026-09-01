@@ -22,15 +22,20 @@ module Aspera
         end
       end
 
-      # Read 1 or 2 command line arguments and converts to `sync_info` format
+      # Convert path + sync_info to internal `sync_info` format.
       # The resulting sync_info has `args` format only if it contains one of the `sessions` or `instance` keys.
       # It has the `conf` format (default) otherwise.
       # If the `conf` format is detected, then both `local` and `remote` keys are set.
-      # @param direction [Symbol,NilClass] One of directions, or `nil` if only for admin command
+      # @param path      [String,NilClass]  local/remote path; when nil, read from CLI
+      # @param sync_info [Hash,NilClass]    extra sync info; when nil, read from CLI
+      # @param direction [Symbol,NilClass]  one of DIRECTIONS, or nil for admin commands
       # @return [Hash] sync info
-      def async_info_from_args(direction: nil)
-        path = options.get_next_argument('path')
-        sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {}, schema: Schema::Registry::SYNC_CONF)
+      def async_info_from_args(path: nil, sync_info: nil, direction: nil)
+        if path.nil?
+          path = options.get_next_argument('path')
+          sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {}, schema: Schema::Registry::SYNC_CONF)
+        end
+        sync_info ||= {}
         # is the positional path a remote path ?
         path_is_remote = direction.eql?(:pull)
         if sync_info.key?('sessions') || sync_info.key?('instance')
@@ -82,9 +87,11 @@ module Aspera
         sync_info
       end
 
-      # Provide database object from command line arguments for admin ops
-      def db_from_args
-        sync_info = async_info_from_args
+      # Provide database object from path + sync_info for admin ops
+      # @param path [String,NilClass] when nil, read from CLI
+      # @param sync_info [Hash,NilClass] when nil, read from CLI
+      def db_from_args(path: nil, sync_info: nil)
+        sync_info = async_info_from_args(path: path, sync_info: sync_info)
         session = sync_info.key?('sessions') ? sync_info['sessions'].first : sync_info
         # if name not provided, check in db folder if there is only one name
         if !session.key?('name')
@@ -96,37 +103,42 @@ module Aspera
         Sync::Database.new(Sync::Operations.session_db_file(sync_info))
       end
 
-      def execute_sync_admin
-        command2 = options.get_next_command(%i[status find meta counters file_info overview query])
-        require 'aspera/sync/database' unless command2.eql?(:status)
-        sql_suffix = options.get_option(:sql)
-        case command2
-        when :status
-          return Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args))
-        when :find
-          folder = options.get_next_argument('path')
-          dbs = Sync::Operations.list_db_files(folder)
-          return Result::ObjectList.new(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
-        when :meta, :counters
-          return Result::SingleObject.new(db_from_args.send(command2, sql_suffix))
-        when :file_info
-          result = db_from_args.file_info(sql_suffix)
-          result.each do |r|
-            r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
-          end
-          return Result::ObjectList.new(
-            result,
-            fields: %w[sstate record_id f_meta_path message]
-          )
-        when :overview
-          return Result::ObjectList.new(
-            db_from_args.overview,
-            fields: %w[table name type]
-          )
-        when :query
-          return Result.auto(db_from_args.execute(options.get_option(:sql, mandatory: true)))
-        else Aspera.error_unexpected_value(command2)
+      def action_sync_admin_status(path:, sync_info: {}, **)
+        Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info)))
+      end
+
+      def action_sync_admin_find(path:, **)
+        dbs = Sync::Operations.list_db_files(path)
+        Result::ObjectList.new(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
+      end
+
+      def action_sync_admin_meta(path:, sync_info: {}, **)
+        require 'aspera/sync/database'
+        Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
+      end
+
+      def action_sync_admin_counters(path:, sync_info: {}, **)
+        require 'aspera/sync/database'
+        Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
+      end
+
+      def action_sync_admin_file_info(path:, sync_info: {}, **)
+        require 'aspera/sync/database'
+        result = db_from_args(path: path, sync_info: sync_info).file_info(options.get_option(:sql))
+        result.each do |r|
+          r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
         end
+        Result::ObjectList.new(result, fields: %w[sstate record_id f_meta_path message])
+      end
+
+      def action_sync_admin_overview(path:, sync_info: {}, **)
+        require 'aspera/sync/database'
+        Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
+      end
+
+      def action_sync_admin_query(path:, sync_info: {}, **)
+        require 'aspera/sync/database'
+        Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
       end
 
       # Execute sync action
@@ -139,8 +151,29 @@ module Aspera
           Sync::Operations.start(async_info_from_args(direction: command), transfer.user_transfer_spec, &block)
           return Result::Success.new
         when :admin
-          return execute_sync_admin
+          return execute_sync_admin_dispatch
         else Aspera.error_unexpected_value(command)
+        end
+      end
+
+      private
+
+      # Impérative dispatch pour la branche :admin utilisée par execute_sync_action (node/server).
+      # Appelé uniquement depuis execute_sync_action — hors portée de la migration DSL.
+      # Single-thread assumption: Ruby serializes require calls (Mutex), @current_parent safe.
+      # path: nil → async_info_from_args reads path + sync_info from CLI automatically.
+      def execute_sync_admin_dispatch
+        command2 = options.get_next_command(%i[status find meta counters file_info overview query])
+        case command2
+        when :find
+          action_sync_admin_find(path: options.get_next_argument('path'))
+        when :status   then action_sync_admin_status(path: nil, sync_info: nil)
+        when :meta     then action_sync_admin_meta(path: nil, sync_info: nil)
+        when :counters then action_sync_admin_counters(path: nil, sync_info: nil)
+        when :file_info then action_sync_admin_file_info(path: nil, sync_info: nil)
+        when :overview then action_sync_admin_overview(path: nil, sync_info: nil)
+        when :query    then action_sync_admin_query(path: nil, sync_info: nil)
+        else Aspera.error_unexpected_value(command2)
         end
       end
     end

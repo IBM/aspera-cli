@@ -294,7 +294,33 @@ module Aspera
               Result::ObjectList.new(builder.rows, fields: builder.columns)
             end
           )
-          command :admin, description: 'Run sync admin operations', action: ->{execute_sync_admin}
+          path_and_info_args = [
+            {name: :path, type: String},
+            {name: :sync_info, type: Hash, mandatory: false, default: {}}
+          ]
+          commands_under(:admin) do
+            command :status,    description: 'Show sync session status',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_status
+            command :find,      description: 'Find sync database files in a folder',
+              arguments: [{name: :path, type: String}],
+              action: :action_sync_admin_find
+            command :meta,      description: 'Show sync session metadata',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_meta
+            command :counters,  description: 'Show sync counters',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_counters
+            command :file_info, description: 'Show per-file sync state',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_file_info
+            command :overview,  description: 'Show sync database overview',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_overview
+            command :query,     description: 'Execute a raw SQL query',
+              arguments: path_and_info_args,
+              action: :action_sync_admin_query
+          end
           command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [{name: :async_arguments, type: String, multiple: true}],
             action: ->(async_arguments:, **){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
