@@ -427,13 +427,17 @@ module Aspera
               options.instance_identifier(description: arg_spec.name.to_s, &block)
             else
               # Class or Array<Class> -> pass as validation type
+              # When interactive: true, set ask_missing_mandatory so that get_interactive is triggered
+              # when no CLI arguments are provided (mandatory is forced to true for the same reason:
+              # a non-nil default would short-circuit get_interactive before it is ever called).
+              options.ask_missing_mandatory = true if arg_spec.interactive
               options.get_next_argument(
                 arg_spec.name.to_s,
-                mandatory:   arg_spec.mandatory,
+                mandatory:   arg_spec.interactive ? true : arg_spec.mandatory,
                 multiple:    arg_spec.multiple || false,
                 validation:  arg_spec.type,
                 accept_list: arg_spec.allowed,
-                default:     arg_spec.default,
+                default:     arg_spec.interactive ? nil : arg_spec.default,
                 schema:      arg_spec.schema
               )
             end

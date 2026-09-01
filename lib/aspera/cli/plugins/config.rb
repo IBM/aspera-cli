@@ -136,7 +136,7 @@ module Aspera
             arguments: [{name: :name, type: :identifier}]
           command :ask,        description: 'Interactively ask for option values',
             arguments: [{name: :name, type: :identifier},
-                        {name: :option_names, type: String, multiple: true, mandatory: false, default: []}]
+                        {name: :option_names, type: String, multiple: true, interactive: true}]
         end
         command(
           :open, description: 'Open the configuration file in the default editor',

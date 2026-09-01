@@ -16,6 +16,7 @@ module Aspera
     # @!attribute bulk        [Boolean]                   When true, wraps read+loop for bulk mode (Array if --bulk yes)
     # @!attribute lookup      [Symbol, nil]               Instance method name for percent-selector resolution (only used when type: :identifier)
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
+    # @!attribute interactive [Boolean]                   When true, sets ask_missing_mandatory before resolving so interactive prompting is triggered when no CLI args are provided
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -27,12 +28,14 @@ module Aspera
       :bulk,
       :lookup,
       :allowed,
+      :interactive,
       keyword_init: true
     ) do
       def initialize(**kwargs)
-        kwargs[:mandatory] = true  if kwargs[:mandatory].nil?
-        kwargs[:multiple]  = false if kwargs[:multiple].nil?
-        kwargs[:bulk]      = false if kwargs[:bulk].nil?
+        kwargs[:mandatory]    = true  if kwargs[:mandatory].nil?
+        kwargs[:multiple]     = false if kwargs[:multiple].nil?
+        kwargs[:bulk]         = false if kwargs[:bulk].nil?
+        kwargs[:interactive]  = false if kwargs[:interactive].nil?
         super
       end
     end
