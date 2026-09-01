@@ -9,6 +9,71 @@ module Aspera
 
     class << self
       COL_WIDTH = 80
+
+      # Convert a Markdown heading text to a GitHub-flavoured anchor.
+      # Rules: downcase, keep letters/digits/spaces/hyphens, replace spaces with hyphens.
+      # Duplicate anchors are disambiguated by appending -1, -2, … (pass a seen Hash to track).
+      # @param text  [String]           raw heading text (without leading # and spaces)
+      # @param seen  [Hash{String=>Integer}, nil]  mutable counter; pass the same Hash across a document
+      # @return [String] anchor slug (without leading #)
+      def heading_to_anchor(text, seen: nil)
+        slug = text
+          .downcase
+          .gsub(/[`*_]/, '')           # strip inline code/bold/italic markers
+          .gsub(/&[a-z]+;/, '')        # strip HTML entities
+          .gsub(/[^\w\s-]/, '')        # keep word chars, spaces, hyphens
+          .gsub(/\s+/, '-')            # spaces → hyphens
+          .squeeze('-')                # collapse consecutive hyphens
+          .strip
+        if seen
+          count = seen[slug].to_i
+          seen[slug] = count + 1
+          slug = "#{slug}-#{count}" if count > 0
+        end
+        slug
+      end
+
+      # Extract the table of contents from a Markdown document.
+      # @param content [String]  full Markdown source
+      # @return [Array<Hash>]   array of { level, title, anchor }
+      HEADING_RE = /^(\#{1,6})\s+(.+)$/
+
+      def toc(content)
+        seen = {}
+        content.each_line.filter_map do |line|
+          m = line.match(HEADING_RE)
+          next unless m
+          title = m[2].strip
+          {level: m[1].length, title: title, anchor: heading_to_anchor(title, seen: seen)}
+        end
+      end
+
+      # Extract the content of a single section (heading + body until next heading of same/higher level).
+      # @param content   [String]  full Markdown source
+      # @param anchor    [String]  GitHub anchor slug (without #)
+      # @return [String, nil]  the section content, or nil if not found
+      def extract_section(content, anchor)
+        seen = {}
+        section_level = nil
+        result = []
+        content.each_line do |line|
+          m = line.match(HEADING_RE)
+          if m
+            slug = heading_to_anchor(m[2].strip, seen: seen)
+            if section_level.nil?
+              # not yet found: check if this heading matches
+              next unless slug == anchor
+              section_level = m[1].length
+            elsif m[1].length <= section_level
+              # already in section: stop at same/higher level heading
+              break
+            end
+          end
+          result << line if section_level
+        end
+        result.empty? ? nil : result.join
+      end
+
       # Generate markdown from the provided 2D table
       # @param table [Array<Array<String>>] 2D array of strings
       # @return [String] markdown table

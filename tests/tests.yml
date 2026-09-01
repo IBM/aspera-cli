@@ -4668,6 +4668,28 @@ conf_commands:
   args:
     - config
     - commands
+conf_options_server:
+  description: List all options for the server plugin as structured data
+  args:
+    - config
+    - options
+    - server
+conf_options_aoc:
+  description: List all options for the aoc plugin as structured data
+  args:
+    - config
+    - options
+    - aoc
+conf_options_unknown:
+  description: Error when plugin name does not exist
+  tags:
+    - must_fail
+    - nodoc
+  expect: plugin not found
+  args:
+    - config
+    - options
+    - no_such_plugin_xyz
 conf_gem_path_proxy:
   description: Test of `http_proxy` and `http_options.user_agent`
   tags:
@@ -5056,7 +5078,34 @@ conf_doc_transfer_params:
   args:
     - config
     - doc
+    - github
     - transfer-parameters
+conf_doc_toc:
+  description: List table of contents of local documentation
+  args:
+    - config
+    - doc
+    - toc
+conf_doc_local_section:
+  description: Extract a single section from local documentation by anchor
+  args:
+    - config
+    - doc
+    - local
+    - quick-start
+    - --ui=text
+conf_doc_local_section_not_found:
+  description: Error when section anchor does not exist
+  tags:
+    - must_fail
+    - nodoc
+  expect: Section not found
+  args:
+    - config
+    - doc
+    - local
+    - no-such-section-xyz
+    - --ui=text
 conf_echo_simple:
   args:
     - config

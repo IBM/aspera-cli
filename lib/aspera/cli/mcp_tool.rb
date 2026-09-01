@@ -24,39 +24,67 @@ module Aspera
       description <<~DESC.strip
         Execute any ascli (Aspera CLI) command in-process and return its result.
 
-        SYNTAX: provide arguments as a JSON array of strings, exactly as on the command line.
-        The first element is always the plugin (top-level command), followed by the action and
-        any options. Options use the long form "--option=value". Extended value prefixes are
-        supported: "@json:{...}", "@preset:name", "@env:VAR_NAME", "@file:path".
+        SYNTAX
+          args is a JSON array of strings mirroring the CLI command line.
+          Element 0 : plugin name (aoc, faspex5, node, server, config, …).
+          Elements 1+: sub-commands, then --option=value flags in any order.
+          Passing structured values: use an extended-value prefix on the relevant element:
+            "@json:{...}"   — inline JSON object or array (use for Hash/Array arguments)
+            "@preset:name"  — expand a saved credential preset
+            "@env:VAR"      — read value from environment variable
+            "@file:/path"   — read value from a file
 
-        DISCOVERY (start here):
-          ["config", "commands"] — returns ALL leaf commands across every plugin as structured
-            objects: { syntax: "plugin command <arg> [<opt_arg>]", description }. Positional
-            arguments are inlined in the syntax string: <mandatory>, [<optional>], <a|b|c> for
-            enumerated values, <name...> for variadic. This is the single best starting point
-            to understand every available capability without reading any documentation.
-          ["config", "plugins", "list"] — list plugins (name, detect, wizard).
-          ["<plugin>", "--help"] — list all options available for a plugin.
-          ["help"] — full CLI usage text.
-          ["<plugin>", "<cmd>", "--help"] — show options for a specific command path.
-          ["<plugin>", "<cmd>", "help"] — when a positional argument expects a Hash or
-            complex type, pass "help" as its value to display the full field schema.
+        DISCOVERY — recommended sequence
+          Step 1 — enumerate all commands:
+            ["config", "commands"]
+            Returns { syntax, description } for every leaf command of every plugin.
+            Syntax notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic.
+            This single call covers all 800+ commands — no other discovery step is needed
+            unless you want details about a specific command or its Hash arguments.
 
-        RESULT FORMAT: structured data is always in structuredContent (a JSON object). The text
-        content may be truncated to the first #{DEFAULT_MAX_ITEMS} items when the result is a list; use
-        structuredContent for the complete dataset.
+          Step 2 — inspect a Hash argument schema (only when <data> appears in the syntax):
+            ["<plugin>", "<cmd>", ..., "help"]
+            Replace the Hash positional argument with the literal string "help".
+            Returns a table of field names, types, and descriptions for that argument.
+            Example: ["aoc", "admin", "user", "create", "help"]
+            Note: only works for Hash-typed arguments, not for plain String arguments.
 
-        AVAILABLE PLUGINS: aoc, faspex5, node, server, config, console, orchestrator, ats,
-        preview, shares, cos, httpgw, faspio, alee.
+          Step 3 — list all options for a plugin as structured data:
+            ["config", "options", "<plugin>"]
+            Returns { option, description, allowed, deprecated } for every --flag
+            accepted by that plugin (global + plugin-specific, ~80 entries).
+            Use when you need to know the exact allowed values or find a specific flag.
 
-        EXAMPLES:
-          ["config", "commands"]
-          ["config", "gem", "version"]
-          ["config", "plugins", "list"]
-          ["server", "browse", "/", "--url=https://host", "--username=user", "--password=secret"]
+          Full documentation:
+            ["config", "documentation", "toc"]
+            Returns the table of contents: { level, title, anchor } for every heading.
+            ["config", "documentation", "local", "<anchor>"]
+            Returns only the section matching that anchor (same slugs as GitHub).
+            ["config", "documentation", "local", "--ui=text"]
+            Returns the complete README (~300 KB). Use only when a specific section
+            is insufficient and you need broader narrative context.
+
+        RESULT FORMAT
+          Structured data is always in structuredContent (a JSON object).
+          Text content may be truncated to the first #{DEFAULT_MAX_ITEMS} items for lists;
+          use structuredContent for the complete dataset.
+
+        EXAMPLES
+          ["config", "commands"]                       ← Step 1: full capability map
+          ["aoc", "admin", "user", "create", "help"]   ← Step 2: schema of <data> Hash
+          ["config", "options", "aoc"]                 ← Step 3: all --flags for aoc plugin
+          ["config", "documentation", "toc"]           ← TOC of local README
+          ["config", "documentation", "local",
+           "leveraging-ai-assistance"]                 ← single README section by anchor
+          ["aoc", "admin", "user", "create",
+           '@json:{"email":"a@b.com","name":"Alice"}',
+           "--url=https://org.ibmaspera.com", "--username=admin@org.com",
+           "--password=secret"]
+          ["server", "browse", "/",
+           "--url=https://host", "--username=user", "--password=secret"]
           ["aoc", "packages", "list", "--workspace=MyWorkspace"]
-          ["node", "info", "--url=https://node-host", "--username=user", "--password=pass"]
-          ["faspex5", "packages", "list", "--url=https://faspex-host", "--username=user", "--password=pass"]
+          ["node", "info", "--url=https://node-host",
+           "--username=user", "--password=pass"]
       DESC
 
       input_schema(

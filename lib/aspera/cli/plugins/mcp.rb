@@ -43,21 +43,19 @@ module Aspera
         DEFAULT_INSTRUCTIONS = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
           It exposes a single tool, execute_ascli_command, which runs any ascli command in-process.
+          Refer to the tool description for full syntax, discovery steps, and examples.
 
           Key plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API),
           server (FASP/SSH server), config (local configuration), console, orchestrator,
           ats (Aspera Transfer Service), preview, shares, cos, httpgw, faspio, alee.
 
-          Workflow tips:
-          - Call ["config", "commands"] FIRST to get a complete structured list of every available
-            command with two fields: syntax (e.g. "aoc admin user modify <id> <data>") and
-            description. Mandatory args are <name>, optional are [<name>], enumerated are <a|b>,
-            variadic are <name...>. This is the fastest way to discover all capabilities.
-          - Add "--help" to any command to list all available options for that plugin/path.
-          - When a command takes a <data> or Hash argument, pass "help" in its place to display
-            the full field schema (names, types, descriptions) before constructing the real call.
-          - Credentials can be stored in named presets and referenced with --preset=name.
-          - Call ["config", "preset", "list"] to list saved presets.
+          Recommended workflow for any task:
+          1. Call ["config", "commands"] to map available commands to their syntax.
+          2. For any command whose syntax shows a <data> argument, call it with "help"
+             instead of the real value to see the full field schema before constructing
+             the @json:{...} payload.
+          3. When credentials are already saved, use --preset=name instead of inline
+             credentials. Call ["config", "preset", "list"] to see saved presets.
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

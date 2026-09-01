@@ -84,7 +84,7 @@ module Aspera
     # Description of option, how to manage
     class OptionValue
       # [Array(Class)] List of allowed types
-      attr_reader :types, :sensitive, :schema, :option
+      attr_reader :types, :sensitive, :schema, :option, :deprecation
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
       # [String] Help section group name (set by Options#group)
@@ -539,6 +539,9 @@ module Aspera
       def option_declared?(option_symbol)
         @declared_options.key?(option_symbol)
       end
+
+      # @return [Hash{Symbol => OptionValue}] all declared options (read-only view)
+      attr_reader :declared_options
 
       # Get an option definition by name
       # @param option_symbol [Symbol] name of the option

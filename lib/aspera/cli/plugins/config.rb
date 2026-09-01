@@ -146,7 +146,10 @@ module Aspera
           end
         )
         command :documentation, description: 'Open the documentation in the default browser',
-          arguments: [{name: :section, type: String, mandatory: false}]
+          arguments: [
+            {name: :location, type: Symbol, mandatory: false, default: :github, allowed: %i[github local toc]},
+            {name: :section,  type: String, mandatory: false}
+          ]
         command :genkey, description: 'Generate a new RSA private key',
           arguments: [
             {name: :private_key_path, type: String},
@@ -213,6 +216,8 @@ module Aspera
             arguments: [{name: :new_password, type: String}]
         end
         command :commands, description: 'List all available commands across all plugins'
+        command :options, description: 'List all options available for a plugin',
+          arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
         command :platform, description: 'Display the current platform/architecture', action: ->{Result::Text.new(Environment.instance.architecture)}
         command :completion, description: 'Generate shell completion scripts'
@@ -359,10 +364,33 @@ module Aspera
 
         # DSL handlers - one method per leaf command
 
-        def action_documentation(section: nil, **)
-          section = "##{section}" unless section.nil?
-          Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
-          Result::Nothing.new
+        def action_documentation(location: :github, section: nil, **)
+          case location
+          when :github
+            section = "##{section}" unless section.nil?
+            Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
+            return Result::Nothing.new
+          when :toc, :local
+            require 'aspera/markdown'
+            local_doc = File.join(self.class.gem_src_root, '..', 'docs', 'README.md')
+            raise Cli::Error, "Local documentation not found: #{local_doc}" unless File.exist?(local_doc)
+            content = File.read(local_doc)
+            if location == :toc
+              entries = Markdown.toc(content)
+              return Result::ObjectList.new(entries, fields: %w[level title anchor])
+            end
+            # :local
+            if section
+              text = Markdown.extract_section(content, section)
+              raise Cli::Error, "Section not found: #{section}" if text.nil?
+              return Result::Text.new(text)
+            end
+            if Environment.instance.url_method.eql?(:graphical)
+              Environment.instance.open_uri("file://#{local_doc}")
+              return Result::Nothing.new
+            end
+            return Result::Text.new(content)
+          end
         end
 
         def action_genkey(private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **)
@@ -499,6 +527,21 @@ module Aspera
             end
           end
           Result::ObjectList.new(commands, fields: %w[syntax description])
+        end
+
+        def action_options(plugin_name:, **)
+          # Instantiate the plugin so that it registers all its options in context.options
+          Plugins::Factory.instance.create(plugin_name.to_sym, context: context)
+          rows = context.options.declared_options.map do |sym, opt|
+            row = {
+              option:      "--#{sym.to_s.tr('_', '-')}",
+              description: opt.description.to_s
+            }
+            row[:allowed]    = opt.values.join('|') if opt.values&.any?
+            row[:deprecated] = opt.deprecation      if opt.deprecation
+            row
+          end
+          Result::ObjectList.new(rows, fields: %w[option description allowed deprecated])
         end
 
         def action_test_throw(exception_class_name:, exception_text:, **)
