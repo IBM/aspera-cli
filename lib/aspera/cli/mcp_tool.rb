@@ -5,10 +5,12 @@
 require 'json'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
-begin
-  require 'mcp'
-rescue LoadError
-  raise Cli::Error, "The 'mcp' gem is required. Install it with: gem install mcp"
+unless defined?(MCP::Tool)
+  begin
+    require 'mcp'
+  rescue LoadError
+    raise Cli::Error, "The 'mcp' gem is required. Install it with: gem install mcp"
+  end
 end
 
 module Aspera

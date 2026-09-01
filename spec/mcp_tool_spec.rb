@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/mcp_tool'
-require 'aspera/cli/result'
-
-# Provide a minimal MCP::Tool::Response stub when the mcp gem is not installed.
-unless defined?(MCP::Tool::Response)
+# Stub MCP::Tool and MCP::Tool::Response before loading mcp_tool.rb so that
+# the file can be required even when the optional 'mcp' gem is not installed.
+unless defined?(MCP::Tool)
   module MCP
     class Tool
+      # DSL class methods used at class-body evaluation time in McpTool
+      def self.tool_name(_name); end
+      def self.description(_text); end
+      def self.input_schema(**_kwargs); end
+
       class Response
         attr_reader :content, :structured_content
 
@@ -23,6 +26,9 @@ unless defined?(MCP::Tool::Response)
     end
   end
 end
+
+require 'aspera/cli/mcp_tool'
+require 'aspera/cli/result'
 
 RSpec.describe(Aspera::Cli::McpTool) do
   # Helper: stub Runner so McpTool.call never spawns a real CLI execution.
