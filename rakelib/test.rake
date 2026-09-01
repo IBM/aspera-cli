@@ -183,6 +183,9 @@ def select_test_cases(selection)
   list = selection&.split(' ')
   if list.nil?
     ALL_TESTS.keys
+  elsif list.first.eql?('next')
+    next_test = ALL_TESTS.keys.find{ |name| !SKIP_STATES.include?(STATES[name])}
+    next_test ? [next_test] : []
   elsif list.first.eql?('tag')
     list.shift
     list.map!(&:to_sym)
