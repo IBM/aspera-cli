@@ -81,6 +81,17 @@ module Aspera
       # @raise [ArgumentError] on any violation
       # @return [self]
       def validate!(plugin_class: nil)
+        # Rule: every non-root parent path that appears in the children index must have
+        # a registered CommandSpec. A missing parent means commands_under(:x) was used
+        # without a matching command :x declaration.
+        @children_index.each_key do |parent_path|
+          next if parent_path.empty? # root is never a CommandSpec
+          unless @specs.key?(parent_path)
+            raise ArgumentError,
+              "commands_under(#{parent_path.map(&:inspect).join(', ')}) used but #{parent_path.last.inspect} has no command declaration"
+          end
+        end
+
         @specs.each_value do |spec|
           path = spec.full_path
 

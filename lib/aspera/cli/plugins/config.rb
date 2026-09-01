@@ -110,6 +110,7 @@ module Aspera
         end
 
         # DSL command declarations - replaces ACTIONS + execute_action
+        command :preset, description: 'Manage configuration presets'
         commands_under(:preset) do
           command :list,     description: 'List all presets'
           command :overview, description: 'Display all options from all presets'
@@ -196,6 +197,7 @@ module Aspera
         )
         command :check_update, description: 'Check if a newer version of the gem is available', action: ->{Result::SingleObject.new(check_gem_version)}
         command :initdemo, description: 'Initialize the demo server preset'
+        command :vault, description: 'Manage secrets in the vault'
         commands_under(:vault) do
           command :info,     description: 'Display vault information',
             action: ->(**){ Result::SingleObject.new(vault.info) }
@@ -256,6 +258,7 @@ module Aspera
         end
 
         # ascp sub-commands
+        command :ascp, description: 'Manage FASP/ascp transfer engine'
         commands_under(:ascp) do
           command :show,    description: 'Display ascp binary path'
           command :info,    description: 'Display ascp and transfer spec information'
@@ -264,13 +267,15 @@ module Aspera
           command :spec,    description: 'Display the transfer spec schema'
           command :schema,  description: 'Display the transfer spec JSON schema',
             arguments: [{name: :agent_name, mandatory: false, default: nil}]
-          command :errors,  description: 'Display FASP error codes'
-          commands_under(:products) do
+          command :errors,   description: 'Display FASP error codes'
+          command :products, description: 'Manage installed Aspera products'
+          commands_under(%i[ascp products]) do
             command :list, description: 'List installed Aspera products'
           end
         end
 
         # agents sub-commands
+        command :agents, description: 'Manage transfer agents'
         commands_under(:agents) do
           command :list,       description: 'List all transfer agents'
           command :show,       description: 'Show details for a transfer agent',
@@ -280,6 +285,7 @@ module Aspera
         end
 
         # transferd sub-commands
+        command :transferd, description: 'Manage the transfer daemon (transferd)'
         commands_under(:transferd) do
           command :install, description: 'Install the transfer daemon'
           command :list,    description: 'List available SDK locations'
@@ -298,7 +304,8 @@ module Aspera
             {name: :path, type: String},
             {name: :sync_info, type: Hash, mandatory: false, default: {}}
           ]
-          commands_under(:admin) do
+          command :admin, description: 'Manage sync database (admin operations)'
+          commands_under(%i[sync admin]) do
             command :status,    description: 'Show sync session status',
               arguments: path_and_info_args,
               action: :action_sync_admin_status

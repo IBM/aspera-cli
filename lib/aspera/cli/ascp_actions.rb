@@ -88,7 +88,7 @@ module Aspera
         Result::ObjectList.new(error_data)
       end
 
-      def action_products_list(**)
+      def action_ascp_products_list(**)
         Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
       end
 
