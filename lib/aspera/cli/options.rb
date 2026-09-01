@@ -709,8 +709,8 @@ module Aspera
               unknown_options.push(opt)
             end
           elsif opt.start_with?('-') && (option_sym = @short_options[opt[1]])
-            # Short option: -h, -v
-            dispatch_option(option_sym, nil)
+            # Short option: -h, -v, or -Pvalue (value glued to flag)
+            dispatch_option(option_sym, opt.length > 2 ? opt[2..] : nil)
             @args_before_option[opt]&.shift # consumed: advance to next occurrence
           else
             unknown_options.push(opt)
