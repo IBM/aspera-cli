@@ -11,7 +11,7 @@ module Aspera
       # Special value for the :secret option that triggers a preset lookup
       PRESET_MAGIC = 'PRESET'
 
-      # @param options [Options]       CLI options manager (provides :secret)
+      # @param options [Parser]       CLI options manager (provides :secret)
       # @param presets [PresetManager] preset resolver (provides #lookup_preset)
       def initialize(options, presets)
         @options = options

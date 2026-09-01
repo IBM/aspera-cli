@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
-# Unit tests for Aspera::Cli::Options — no server, no config file needed.
+# Unit tests for Aspera::Cli::Parser — no server, no config file needed.
 
-require 'aspera/cli/options'
+require 'aspera/cli/parser'
 
 module Aspera
   module Cli
-    RSpec.describe(Options) do
-      # Build a fresh Options instance with the given argv each time
-      def build_options(argv)
-        Options.new('test', argv)
+    RSpec.describe(Parser) do
+      # Build a fresh Parser instance with the given argv each time
+      def build_parser(argv)
+        Parser.new('test', argv)
       end
 
       describe 'short option parsing' do
         it 'parses -X value when value is glued to flag (-Xvalue)' do
-          opts = build_options(['-Xhello', 'arg1'])
+          opts = build_parser(['-Xhello', 'arg1'])
           received = nil
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
           opts.parse_options!
@@ -23,14 +23,14 @@ module Aspera
         end
 
         it 'parses -X value when value is a separate token (after parse via set_option)' do
-          opts = build_options([])
+          opts = build_parser([])
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
           opts.set_option(:xenon, 'world', where: 'test')
           expect(opts.get_option(:xenon)).to(eq('world'))
         end
 
         it 'treats -X alone (no glued value) as nil' do
-          opts = build_options(['-X'])
+          opts = build_parser(['-X'])
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
           opts.parse_options!
           expect(opts.get_option(:xenon)).to(be_nil)
@@ -43,7 +43,7 @@ module Aspera
             target.define_singleton_method(:my_preset=) { |v| received = v }
             target.define_singleton_method(:my_preset)  { received }
 
-            opts = build_options(['-Pmypreset'])
+            opts = build_parser(['-Pmypreset'])
             opts.declare(:my_preset, description: 'Load preset', short: 'P',
               handler: {o: target, m: :my_preset})
             opts.parse_options!

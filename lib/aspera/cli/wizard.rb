@@ -14,7 +14,7 @@ module Aspera
 
       class << self
         # Declare all wizard CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Options]
+        # @param options [Aspera::Cli::Parser]
         def declare_options(options)
           options.declare(:override,  description: 'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)
           options.declare(:default,   description: 'Wizard: set as default configuration for specified plugin (also: update)',           allowed: Allowed::TYPES_BOOLEAN, default: true)

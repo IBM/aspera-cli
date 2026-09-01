@@ -40,7 +40,7 @@ module Aspera
         # Declare all HTTP/S CLI options (metadata only - no handler binding yet).
         # Called once from Config#initialize before this instance is available as a target.
         # Handlers are bound in a second pass via bind_options once the instance exists.
-        # @param options [Aspera::Cli::Options] CLI options manager to declare options into
+        # @param options [Aspera::Cli::Parser] CLI options manager to declare options into
         # @return [nil]
         def declare_options(options)
           options.declare(:insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Allowed::TYPES_BOOLEAN, default: false)
@@ -55,7 +55,7 @@ module Aspera
 
       # Bind all HTTP options to this instance using set_handler.
       # Called from Config#initialize immediately after Http.new.
-      # @param options [Aspera::Cli::Options]
+      # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
         options.set_handler(:insecure,           object: self, method: :insecure)

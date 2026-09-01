@@ -46,7 +46,7 @@ module Aspera
         end
 
         # Declare all transfer CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Options]
+        # @param options [Aspera::Cli::Parser]
         def declare_options(options)
           options.declare(:ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC)
           options.declare(:to_folder,     description: 'Destination folder for transferred files')
@@ -60,7 +60,7 @@ module Aspera
       # @param context [Context] Application context
       def initialize(context)
         Aspera.assert_type(context, Context){'context'}
-        Aspera.assert_type(context.options, Options){'context.options'}
+        Aspera.assert_type(context.options, Parser){'context.options'}
         @context = context
         # Command line can override transfer spec
         @user_transfer_spec = {
@@ -119,7 +119,7 @@ module Aspera
         return @agent unless @agent.nil?
         # agent type: from composite option 'agent' key, default :direct
         raw_type = @transfer_options['agent'] || :direct
-        agent_type = Options.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
+        agent_type = Parser.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
         # set keys as symbols, strip internal 'agent' key
         agent_options = @transfer_options.except('agent').symbolize_keys
         agent_options[:progress] = @context.progress_bar

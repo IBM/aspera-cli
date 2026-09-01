@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/extended_value'
-require 'aspera/cli/options'
+require 'aspera/cli/parser'
 require 'aspera/assert'
 require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
@@ -183,7 +183,7 @@ module Aspera
         # Nil until set by dispatch_from_registry.
         attr_reader :help_path
 
-        # @return [Aspera::Cli::Options]
+        # @return [Aspera::Cli::Parser]
         def options; @context.options; end
         # @return [Aspera::Cli::TransferAgent]
         def transfer; @context.transfer; end

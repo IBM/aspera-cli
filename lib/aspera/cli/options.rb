@@ -87,7 +87,7 @@ module Aspera
       attr_reader :types, :sensitive, :schema, :option, :deprecation
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
-      # [String] Help section group name (set by Options#group)
+      # [String] Help section group name (set by Parser#group)
       attr_accessor :group
       # [Proc, nil] Block to call for flag options (TYPES_NONE)
       attr_accessor :block
@@ -160,7 +160,7 @@ module Aspera
       end
 
       # Wire (or re-wire) the getter/setter delegation for this option.
-      # Safe to call after construction - used by Options#set_handler to bind a composed
+      # Safe to call after construction - used by Parser#set_handler to bind a composed
       # instance variable that did not exist at class-load time (Category C handlers).
       # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
       # @return [nil]
@@ -222,9 +222,9 @@ module Aspera
         # Centralized here so all sources (CLI dispatch, preset, env) go through the same path.
         case @types
         when Allowed::TYPES_ENUM
-          new_value = Options.get_from_list(new_value, @option, @values) if new_value.is_a?(String)
+          new_value = Parser.get_from_list(new_value, @option, @values) if new_value.is_a?(String)
         when Allowed::TYPES_BOOLEAN
-          new_value = Options.get_from_list(new_value, @option, BoolValue::ALL) if new_value.is_a?(String)
+          new_value = Parser.get_from_list(new_value, @option, BoolValue::ALL) if new_value.is_a?(String)
           new_value = BoolValue.true?(new_value)
         when Allowed::TYPES_INTEGER
           new_value = Integer(new_value)
@@ -233,7 +233,7 @@ module Aspera
         when Allowed::TYPES_SYMBOL_ARRAY
           new_value = [new_value] if new_value.is_a?(String)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
-          new_value = new_value.map{ |v| Options.get_from_list(v, @option, @values)}
+          new_value = new_value.map{ |v| Parser.get_from_list(v, @option, @values)}
         else
           # nil (setting nil on a Hash/Array option resets to empty container)
           new_value = {} if new_value.nil? && @types&.first.eql?(Hash)
@@ -258,7 +258,7 @@ module Aspera
     # parse command line options
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
-    class Options
+    class Parser
       class << self
         # Find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
@@ -445,7 +445,7 @@ module Aspera
       end
 
       # Low-level positional argument reader.  Prefer +Base#resolve_argument+ from action methods.
-      # Direct calls from outside +Options+ are legacy exceptions documented in ST12/ST13
+      # Direct calls from outside +Parser+ are legacy exceptions documented in ST12/ST13
       # (mixins without DSL: sync_actions, ascp_actions; setup callbacks: aoc.rb).
       # @api private
       # @param descr       [String] description for help
@@ -524,7 +524,7 @@ module Aspera
       def instance_identifier(description: 'identifier', &block)
         res_id = get_next_argument(description, multiple: get_option(:bulk))
         # Can be an Array
-        if res_id.is_a?(String) && (m = Options.percent_selector(res_id))
+        if res_id.is_a?(String) && (m = Parser.percent_selector(res_id))
           Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
           res_id = yield(m[:field], m[:value])
         end

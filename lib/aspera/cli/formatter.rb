@@ -111,7 +111,7 @@ module Aspera
 
       class << self
         # Declare all formatter CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Options]
+        # @param options [Aspera::Cli::Parser]
         # @return [nil]
         def declare_options(options)
           options.declare(:display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
@@ -130,7 +130,7 @@ module Aspera
 
       # Bind all formatter options to this instance using set_handler.
       # Called from Runner after Formatter.new.
-      # @param options [Aspera::Cli::Options]
+      # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
         %i[display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|

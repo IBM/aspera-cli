@@ -296,7 +296,7 @@ module Aspera
         # @param top_file_id [String] root file id for path resolution
         # @param path        [String] plain path or %id:<file_id> selector
         def apifid_from_path(top_file_id, path)
-          if (m = Options.percent_selector(path))
+          if (m = Parser.percent_selector(path))
             Aspera.assert_values(m[:field], ['id'], type: BadArgument){'file id'}
             val = m[:value]
             return Api::NodeFileId.new(@api_node, val.nil? || val.empty? ? top_file_id : val)
@@ -820,7 +820,7 @@ module Aspera
         def action_access_keys_do_delete(paths:, do_root_file_id:, **)
           is_bulk = options.get_option(:bulk)
           Result.bulk(paths, is_bulk: is_bulk, command: :delete, id_result: 'path', bfail: options.get_option(:bfail)) do |l_path|
-            apifid = if (m = Options.percent_selector(l_path))
+            apifid = if (m = Parser.percent_selector(l_path))
               Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
               Api::NodeFileId.new(@api_node, m[:value])
             else

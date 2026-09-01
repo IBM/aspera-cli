@@ -16,14 +16,14 @@ module Aspera
       SMTP_INT_PARAMS  = %i[port].freeze
       SMTP_STR_PARAMS  = %i[server domain username password from_email from_name].freeze
 
-      # @param options     [Options]  CLI options manager (provides :smtp, :notify_to, :notify_template)
+      # @param options     [Parser]  CLI options manager (provides :smtp, :notify_to, :notify_template)
       # @param main_folder [String]   application main folder (unused directly but kept for symmetry)
       def initialize(options, main_folder)
         @options     = options
         @main_folder = main_folder
       end
 
-      # @return [Options]
+      # @return [Parser]
       attr_reader :options
 
       # @return [Hash] email server settings with defaults applied

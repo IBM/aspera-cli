@@ -101,7 +101,7 @@ module Aspera
 
       def action_preset_set(name:, param_name:, param_value:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
-        param_name = Options.option_line_to_name(param_name)
+        param_name = Parser.option_line_to_name(param_name)
         presets.set_key(name, param_name, param_value)
         Result::Nothing.new
       end

@@ -2,7 +2,7 @@
 
 require 'aspera/cli/command_spec'
 require 'aspera/cli/context'
-require 'aspera/cli/options'
+require 'aspera/cli/parser'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/bootstrapper'
@@ -297,7 +297,7 @@ module Aspera
         # Create formatter, in case there is an exception, it is used to display.
         @context.formatter = Formatter.new
         # Create command line manager with arguments
-        @context.options = Options.new(Info::CMD_NAME, @argv)
+        @context.options = Parser.new(Info::CMD_NAME, @argv)
         ExtendedValue.instance.on(EXTEND_ARGS){ |v| @context.options.args_as_extended(v)}
         # Formatter: declare metadata (class method), then bind to the instance
         Formatter.declare_options(@context.options)
