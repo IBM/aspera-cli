@@ -130,6 +130,17 @@ module Aspera
       def action_method_name
         self.class.action_method(full_path)
       end
+
+      # Return the full ordered list of ArgumentSpecs for this command:
+      # instance_arg (if any) prepended as a synthetic ArgumentSpec(type: :identifier),
+      # followed by the declared arguments.
+      # @return [Array<ArgumentSpec>]
+      def all_arguments
+        result = []
+        result << ArgumentSpec.new(name: instance_arg, type: :identifier, mandatory: true) if instance_arg
+        result.concat(arguments) if arguments&.any?
+        result
+      end
     end
   end
 end

@@ -232,11 +232,12 @@ module Aspera
         def dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
           registry = self.class.command_registry
           spec     = registry[current_path]
+          is_leaf  = spec && registry.children_of(current_path).empty?
 
           unless options.help_requested || skip_setup
-            # Phase A - consume instance_arg (works for both intermediate and leaf nodes),
-            # then run setup method on current node
-            if spec&.instance_arg
+            # Phase A - for intermediate nodes only: consume instance_arg before dispatching
+            # to children (leaf nodes resolve instance_arg inside execute_leaf instead).
+            if spec&.instance_arg && !is_leaf
               lookup_method = spec.lookup
               res_id = if lookup_method
                 options.instance_identifier(description: spec.instance_arg.to_s){ |f, v| send(lookup_method, f, v, **ctx)}
@@ -249,7 +250,7 @@ module Aspera
           end
 
           # Phase B - leaf fast-path or child dispatch
-          if spec && registry.children_of(current_path).empty?
+          if is_leaf
             dispatch_leaf(current_path, spec, ctx)
           else
             dispatch_child(current_path, registry, ctx)
@@ -332,6 +333,8 @@ module Aspera
         end
 
         # Execute a leaf CommandSpec: resolve arguments (or skip for transfer_paths) and call action.
+        # instance_arg (if any) is resolved here as an ArgumentSpec(type: :identifier) and merged
+        # into ctx, exactly like any other keyword argument received by the action.
         # @param spec [CommandSpec] a leaf node (no children)
         # @param ctx  [Hash]        accumulated context
         # @return [Object]
@@ -340,6 +343,13 @@ module Aspera
           if spec.transfer_paths
             invoke_action(a, [], ctx)
           else
+            # Resolve instance_arg as a synthetic ArgumentSpec and inject into ctx
+            if spec.instance_arg
+              lookup_method = spec.lookup
+              id_spec = ArgumentSpec.new(name: spec.instance_arg, type: :identifier, mandatory: true)
+              block   = lookup_method ? ->(f, v) {send(lookup_method, f, v, **ctx)} : nil
+              ctx     = ctx.merge(spec.instance_arg => resolve_argument(id_spec, &block))
+            end
             args = (spec.arguments || []).map{ |a| resolve_argument(a)}
             invoke_action(a, args, ctx)
           end
@@ -374,13 +384,17 @@ module Aspera
 
         # Resolve a single positional argument from the CLI argument stream.
         # When arg_spec.bulk is true, always returns an Array (normalized to [value] when non-bulk).
+        # For type: :identifier, an optional block provides the percent-selector lookup.
         # @param arg_spec [ArgumentSpec]
+        # @yieldparam field [String]  field name from a percent-selector (%field:value)
+        # @yieldparam value [String]  value from a percent-selector
+        # @yieldreturn [String]       resolved identifier
         # @return [Object] the resolved value, or Array when arg_spec.bulk is true
-        def resolve_argument(arg_spec)
+        def resolve_argument(arg_spec, &block)
           if arg_spec.bulk
             is_bulk = options.get_option(:bulk)
             if arg_spec.type.eql?(:identifier)
-              val = options.instance_identifier(description: arg_spec.name.to_s)
+              val = options.instance_identifier(description: arg_spec.name.to_s, &block)
             else
               val = options.get_next_argument(
                 arg_spec.name.to_s,
@@ -398,7 +412,7 @@ module Aspera
           else
             case arg_spec.type
             when :identifier
-              options.instance_identifier
+              options.instance_identifier(description: arg_spec.name.to_s, &block)
             else
               # Class or Array<Class> -> pass as validation type
               options.get_next_argument(

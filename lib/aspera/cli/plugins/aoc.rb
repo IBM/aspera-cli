@@ -343,11 +343,13 @@ module Aspera
         FILES_COMMANDS = (Node::COMMANDS_GEN4 + %i[transfer]).freeze
 
         # Execute a node gen4 command starting at given node and file IDs
-        # @param command_repo [Symbol] Command to execute
-        # @param node_id [String] Node identifier
-        # @param file_id [String] Root file id for the operation (can be AK root, or other, e.g. package, or link). If `nil` use AK root file id.
-        # @param scope [String] node scope (Node::SCOPE_<USER|ADMIN>), or nil (requires secret)
-        def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil)
+        # @param command_repo       [Symbol] Command to execute
+        # @param node_id            [String] Node identifier
+        # @param file_id            [String] Root file id for the operation. If nil, uses AK root file id.
+        # @param scope              [String] node scope (Node::SCOPE_<USER|ADMIN>), or nil (requires secret)
+        # @param transfer_direction [Symbol] :push or :pull (only for command_repo == :transfer)
+        # @param transfer_source    [String] source folder (only for command_repo == :transfer)
+        def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil, transfer_direction: nil, transfer_source: nil)
           top_node_api = aoc_api.node_api_from(
             node_id:        node_id,
             scope:          scope,
@@ -365,8 +367,8 @@ module Aspera
             # client side is agent
             # server side is transfer server
             # in same workspace
-            push_pull = options.get_next_argument('direction', accept_list: %i[push pull])
-            source_folder = options.get_next_argument('folder or source files', validation: String)
+            push_pull = transfer_direction
+            source_folder = transfer_source
             case push_pull
             when :push
               client_direction = Transfer::Spec::DIRECTION_SEND
@@ -411,7 +413,7 @@ module Aspera
         #   For Operations::INSTANCE ops (show/modify/delete), use the auto-generated :setup_admin_<res>_instance.
         #   For extra_ops that are instance ops, specify explicitly (or rely on the auto-generated one).
         ADMIN_OBJECT_CONFIG = {
-          client:                    {extra_ops: %i[set_pub_key]},
+          client:                    {extra_ops: %i[set_pub_key], extra_op_args: {set_pub_key: [{name: :private_key_pem, type: String}]}},
           client_access_key:         {path: 'admin/client_access_keys'},
           client_registration_token: {path: 'admin/client_registration_tokens', list_fields: %w[id value data.client_subject_scopes data.name created_at], id_result: 'token'},
           configuration_policy:      {list_fields: nil},
@@ -422,7 +424,7 @@ module Aspera
           group_membership:          {list_fields: %w[id group_id member_type member_id], create_schema: false},
           kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
           network_policy:            {list_fields: nil},
-          node:                      {list_fields: %w[id name host access_key], extra_ops: %i[do bearer_token]},
+          node:                      {list_fields: %w[id name host access_key], extra_ops: %i[do bearer_token], extra_op_args: {bearer_token: [{name: :scope, mandatory: false, default: nil}]}},
           operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:              {singleton: true},
           package:                   {},
@@ -575,6 +577,7 @@ module Aspera
           ADMIN_OBJECTS.each do |res|
             cfg            = ADMIN_OBJECT_CONFIG.fetch(res, {})
             op_setup       = cfg[:op_setup] || {}
+            extra_op_args  = cfg[:extra_op_args] || {}
             is_singleton   = cfg[:singleton]
             instance_attrs = is_singleton ? {} : {instance_arg: :res_id, lookup: :"lookup_aoc_#{res}_id"}
             ops            = if cfg[:ops]
@@ -600,6 +603,8 @@ module Aspera
                   elsif !is_singleton && op.eql?(:modify)
                     c = aoc_res_cfg(res)
                     {arguments: [{name: :data, type: Hash, schema: c[:schema]}]}
+                  elsif extra_op_args.key?(op)
+                    {arguments: extra_op_args[op]}
                   else
                     {}
                   end
@@ -629,7 +634,8 @@ module Aspera
         %i[preferences notifications].each do |pref|
           commands_under([:admin, :user, pref]) do
             command :show,   description: "Show #{pref}"
-            command :modify, description: "Modify #{pref}"
+            command :modify, description: "Modify #{pref}",
+              arguments: [{name: :properties, type: Hash}]
           end
         end
         commands_under(%i[admin auth_providers]) do
@@ -639,12 +645,26 @@ module Aspera
         end
         commands_under(%i[admin subscription]) do
           command :account, description: 'Show subscription account'
-          command :usage,   description: 'Show subscription usage'
+          command :usage,   description: 'Show subscription usage',
+            arguments: [
+              {name: :aggregate,   mandatory: false, default: :ALL},
+              {name: :start_date,  mandatory: false, default: nil},
+              {name: :end_date,    mandatory: false, default: nil}
+            ]
         end
         commands_under(%i[admin analytics]) do
           command :application_events, description: 'List application events'
-          command :transfers,          description: 'List transfer events'
-          command :files,              description: 'List file events'
+          command :transfers,          description: 'List transfer events',
+            arguments: [
+              {name: :event_resource_type, mandatory: true},
+              {name: :event_resource_id,   mandatory: false, default: nil}
+            ]
+          command :files,              description: 'List file events',
+            arguments: [
+              {name: :event_resource_type, mandatory: true},
+              {name: :event_resource_id,   mandatory: true},
+              {name: :event_uuid,          mandatory: true}
+            ]
         end
         # application sub-commands
         commands_under(%i[admin application]) do
@@ -661,12 +681,16 @@ module Aspera
           APP_TYPES.each do |app_type|
             command(app_type, description: "Settings for #{app_type} app")
             commands_under(APP_SETTINGS_PATH + [app_type]) do
-              command :show,   description: "Show #{app_type} settings",
+              command :show, description: "Show #{app_type} settings",
                 action: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
-              command(:modify, description: "Modify #{app_type} settings", action: lambda do
-                aoc_api.update("/apps/#{app_type}/settings", options.get_next_argument('properties', validation: Hash))
-                Result::Status.new('modified')
-              end)
+              command(
+                :modify, description: "Modify #{app_type} settings",
+                arguments: [{name: :properties, type: Hash}],
+                action: lambda do |properties, **|
+                  aoc_api.update("/apps/#{app_type}/settings", properties)
+                  Result::Status.new('modified')
+                end
+              )
             end
           end
         end
@@ -681,8 +705,9 @@ module Aspera
           APP_TYPES.each do |app_type|
             command(app_type, description: "Show or modify a #{app_type} instance")
             commands_under(APP_INSTANCE_PATH + [app_type]) do
-              command :show,   description: "Show a #{app_type} instance",   instance_arg: :res_id
-              command :modify, description: "Modify a #{app_type} instance", instance_arg: :res_id
+              command :show,   description: "Show a #{app_type} instance", instance_arg: :res_id
+              command :modify, description: "Modify a #{app_type} instance", instance_arg: :res_id,
+                arguments: [{name: :properties, type: Hash}]
             end
           end
         end
@@ -691,7 +716,8 @@ module Aspera
             action: ->{result_list('apps/app_memberships')}
           command :show,   description: 'Show an app membership',   instance_arg: :res_id
           command :delete, description: 'Delete an app membership', instance_arg: :res_id
-          command :create, description: 'Create an app membership'
+          command :create, description: 'Create an app membership',
+            arguments: [{name: :membership, type: Hash}]
         end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway',
@@ -723,8 +749,9 @@ module Aspera
             action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
           command(
             :modify, description: 'Modify user profile',
-            action: lambda do
-              aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
+            arguments: [{name: :properties, type: Hash}],
+            action: lambda do |properties, **|
+              aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", properties)
               Result::Status.new('modified')
             end
           )
@@ -740,9 +767,10 @@ module Aspera
           )
           command(
             :modify, description: 'Modify user preferences',
-            action: lambda do
+            arguments: [{name: :properties, type: Hash}],
+            action: lambda do |properties, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/user_interaction_preferences", options.get_next_argument('properties', validation: Hash))
+              aoc_api.update("users/#{user_id}/user_interaction_preferences", properties)
               Result::Status.new('modified')
             end
           )
@@ -758,9 +786,10 @@ module Aspera
           )
           command(
             :modify, description: 'Modify notification preferences',
-            action: lambda do
+            arguments: [{name: :properties, type: Hash}],
+            action: lambda do |properties, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/notification_preferences", options.get_next_argument('properties', validation: Hash))
+              aoc_api.update("users/#{user_id}/notification_preferences", properties)
               Result::Status.new('modified')
             end
           )
@@ -800,18 +829,21 @@ module Aspera
         end
         # packages > shared_inboxes > short_link sub-commands
         commands_under(%i[packages shared_inboxes short_link]) do
-          %i[create modify].each do |op|
-            command(op, description: op.to_s.capitalize,
-              arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}])
-          end
-          %i[delete list show].each{ |op| command(op, description: op.to_s.capitalize)}
+          command :create, description: 'Create',
+            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :modify, description: 'Modify', instance_arg: :short_link_id,
+            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :list,   description: 'List short links'
+          command :show,   description: 'Show a short link',   instance_arg: :short_link_id
+          command :delete, description: 'Delete a short link', instance_arg: :short_link_id
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
         # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
         commands_under(:files) do
           command :short_link, description: 'Manage file short link', setup: :setup_files_short_link
-          command :transfer,         description: 'Transfer files (node-to-node)'
+          command :transfer, description: 'Transfer files (node-to-node)',
+            arguments: [{name: :direction}, {name: :source_folder, type: String}]
           command :mkdir,            description: 'Create folder'
           command :mklink,           description: 'Create symbolic link'
           command :mkfile,           description: 'Create file'
@@ -833,11 +865,13 @@ module Aspera
         end
         # files > short_link sub-commands
         commands_under(%i[files short_link]) do
-          %i[create modify].each do |op|
-            command(op, description: op.to_s.capitalize,
-              arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}])
-          end
-          %i[delete list show].each{ |op| command(op, description: op.to_s.capitalize)}
+          command :create, description: 'Create',
+            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :modify, description: 'Modify', instance_arg: :short_link_id,
+            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :list,   description: 'List short links'
+          command :show,   description: 'Show a short link',   instance_arg: :short_link_id
+          command :delete, description: 'Delete a short link', instance_arg: :short_link_id
         end
 
         # automation sub-commands
@@ -858,9 +892,9 @@ module Aspera
         end
 
         commands_under(%i[automation workflows action]) do
-          command :list,   description: 'List actions (TODO)'
-          command :create, description: 'Create an action (TODO)'
-          command :show,   description: 'Show an action (TODO)'
+          command :list,   description: 'List actions (TODO)',    instance_arg: :wf_id
+          command :create, description: 'Create an action (TODO)', instance_arg: :wf_id
+          command :show,   description: 'Show an action (TODO)',   instance_arg: :wf_id
         end
 
         # --- setup methods ---
@@ -1123,8 +1157,8 @@ module Aspera
         end
 
         # Shared implementation for short_link > delete
-        def sl_exec_delete(sl_shared_data_ws:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
-          one_id = options.instance_identifier(description: 'short link id')
+        def sl_exec_delete(sl_shared_data_ws:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
+          one_id = short_link_id
           if sl_link_type.eql?(:public)
             found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
             raise BadIdentifier.new('Short link', one_id) if found.nil?
@@ -1140,17 +1174,17 @@ module Aspera
         end
 
         # Shared implementation for short_link > show
-        def sl_exec_show(sl_short_list:, **)
-          one_id = options.instance_identifier(description: 'short link id')
+        def sl_exec_show(sl_short_list:, short_link_id: nil, **)
+          one_id = short_link_id
           found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
           raise BadIdentifier.new('Short link', one_id) if found.nil?
           Result::SingleObject.new(found, fields: Formatter.all_but('data'))
         end
 
         # Shared implementation for short_link > modify
-        def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
+        def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
           raise Cli::BadArgument, 'modify is only available for public short links' unless sl_link_type.eql?(:public)
-          one_id = options.instance_identifier(description: 'short link id')
+          one_id = short_link_id
           node_file = sl_shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}
           custom_data = {}
@@ -1184,8 +1218,19 @@ module Aspera
         def action_packages_shared_inboxes_short_link_delete(**ctx) = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
         def action_packages_shared_inboxes_short_link_modify(**ctx) = sl_exec_modify(**sl_fetch_list(**ctx), **ctx)
 
-        # files > FILES_COMMANDS (all Gen4 node commands + :transfer)
-        FILES_COMMANDS.each do |action|
+        # files > transfer
+        def action_files_transfer(direction, source_folder, **)
+          execute_nodegen4_command(
+            :transfer, aoc_api.home[:node_id],
+            file_id:            aoc_api.home[:file_id],
+            scope:              Api::Node::Scope::USER,
+            transfer_direction: direction,
+            transfer_source:    source_folder
+          )
+        end
+
+        # files > FILES_COMMANDS (all Gen4 node commands except :transfer, handled above)
+        FILES_COMMANDS.reject{ |a| a.eql?(:transfer)}.each do |action|
           define_action_method([:files, action]) do
             execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
           end
@@ -1197,14 +1242,14 @@ module Aspera
             Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{res_id}", query_read_delete))
           end
 
-          define_action_method([:admin, :application, :instance, app_type, :modify]) do |res_id:, **|
-            aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", options.get_next_argument('properties', validation: Hash))
+          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties, res_id:, **|
+            aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", properties)
             Result::Status.new('modified')
           end
         end
 
-        def action_admin_application_membership_create
-          data = options.get_next_argument('membership properties', validation: Hash)
+        def action_admin_application_membership_create(membership, **)
+          data = membership.dup
           app_type = data.delete('app_type')
           Aspera.assert_type(app_type, String){'app_type'}
           Aspera.assert_values(app_type.to_sym, APP_TYPES){'app_type'}
@@ -1235,13 +1280,16 @@ module Aspera
         end
 
         # admin > subscription > usage
-        def action_admin_subscription_usage
-          org = aoc_api.read('organization')
-          aggregate = options.get_next_argument('aggregation', accept_list: %i[ALL MONTHLY], default: :ALL)
-          today = Date.today
-          start_date = options.get_next_argument('start date', mandatory: false, default: today.prev_year.strftime('%Y-%m-%d'))
-          end_date   = options.get_next_argument('end date',   mandatory: false, default: today.strftime('%Y-%m-%d'))
-          result = GraphQL.execute(api_from_options('bss/platform/graphql'), 'bss_subscription_usage', {organization_id: org['id'], aggregate: aggregate, startDate: start_date, endDate: end_date})
+        def action_admin_subscription_usage(aggregate, start_date, end_date, **)
+          today      = Date.today
+          aggregate  = :ALL if aggregate.nil?
+          start_date = today.prev_year.strftime('%Y-%m-%d') if start_date.nil?
+          end_date   = today.strftime('%Y-%m-%d') if end_date.nil?
+          org    = aoc_api.read('organization')
+          result = GraphQL.execute(
+            api_from_options('bss/platform/graphql'), 'bss_subscription_usage',
+            {organization_id: org['id'], aggregate: aggregate, startDate: start_date, endDate: end_date}
+          )
           Result::SingleObject.new(result['aoc'])
         end
 
@@ -1253,10 +1301,9 @@ module Aspera
         end
 
         # admin > analytics > transfers
-        def action_admin_analytics_transfers
+        def action_admin_analytics_transfers(event_resource_type, event_resource_id, **)
           analytics_api = build_analytics_api
-          event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-          event_resource_id = options.get_next_argument("#{event_resource_type} identifier", mandatory: false) ||
+          event_resource_id ||=
             case event_resource_type
             when :organizations then aoc_api.current_user_info['organization_id']
             when :users         then aoc_api.current_user_info['id']
@@ -1285,18 +1332,15 @@ module Aspera
         end
 
         # admin > analytics > files
-        def action_admin_analytics_files
+        def action_admin_analytics_files(event_resource_type, event_resource_id, event_uuid, **)
           analytics_api = build_analytics_api
-          event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-          event_resource_id = options.instance_identifier(description: "#{event_resource_type} identifier")
           event_resource_id =
             case event_resource_type
             when :organizations then aoc_api.current_user_info['organization_id']
             when :users         then aoc_api.current_user_info['id']
             when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
             else Aspera.error_unreachable_line
-            end if event_resource_id.empty?
-          event_uuid = options.instance_identifier(description: 'event uuid')
+            end if event_resource_id.to_s.empty?
           filter = query_read_delete(default: {})
           filter['limit'] ||= 100
           events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/files", filter)['files']
@@ -1383,10 +1427,9 @@ module Aspera
         end
 
         # admin > client > set_pub_key
-        def action_admin_client_set_pub_key(res_id:, **)
+        def action_admin_client_set_pub_key(private_key_pem, res_id:, **)
           c = aoc_res_cfg(:client)
-          the_private_key = options.get_next_argument('private_key PEM value', validation: String)
-          the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
+          the_public_key = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
           aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
           Result::Success.new
         end
@@ -1402,8 +1445,9 @@ module Aspera
         end
 
         # admin > node > bearer_token
-        def action_admin_node_bearer_token(res_id:, **)
-          node_api = aoc_api.node_api_from(node_id: res_id, scope: options.get_next_argument('scope', default: Api::Node::Scope::ADMIN))
+        def action_admin_node_bearer_token(scope, res_id:, **)
+          scope ||= Api::Node::Scope::ADMIN
+          node_api = aoc_api.node_api_from(node_id: res_id, scope: scope)
           Result::Text.new(node_api.oauth.authorization)
         end
 
@@ -1478,8 +1522,8 @@ module Aspera
           define_action_method([:admin, :user, pref, :show]) do |res_id:, **|
             Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
           end
-          define_action_method([:admin, :user, pref, :modify]) do |res_id:, **|
-            aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", options.get_next_argument('properties', validation: Hash))
+          define_action_method([:admin, :user, pref, :modify]) do |properties, res_id:, **|
+            aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", properties)
             Result::Status.new('modified')
           end
         end
@@ -1493,8 +1537,7 @@ module Aspera
 
         # automation > workflows > action > * (TODO: not fully implemented)
         %i[list create show].each do |cmd|
-          define_action_method([:automation, :workflows, :action, cmd]) do
-            wf_id = options.instance_identifier
+          define_action_method([:automation, :workflows, :action, cmd]) do |wf_id:, **|
             Log.log.warn{"Not implemented: #{cmd}"}
             step = @automation_api.create('steps', {'workflow_id' => wf_id})
             @automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})

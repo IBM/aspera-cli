@@ -318,8 +318,9 @@ module Aspera
 
         # Browse a folder
         # @param browse_endpoint [String] the endpoint to browse
-        def browse_folder(browse_endpoint, base_query = {})
-          folders_to_process = [options.get_next_argument('folder path', default: '/')]
+        # @param folder_path     [String] starting path (default: '/')
+        def browse_folder(browse_endpoint, base_query = {}, folder_path: '/')
+          folders_to_process = [folder_path]
           query = base_query.merge(query_read_delete(default: {}))
           filters = query.delete('filters'){{}}
           Aspera.assert_type(filters, Hash)
@@ -393,7 +394,13 @@ module Aspera
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles'},
           nodes:               {
             extra_commands:        %i[browse],
-            instance_arg_commands: {browse: {instance_arg: :node_id, lookup: :lookup_node_id}}
+            instance_arg_commands: {
+              browse: {
+                instance_arg: :node_id,
+                lookup:       :lookup_node_id,
+                arguments:    [{name: :folder_path, type: String, mandatory: false, default: '/'}]
+              }
+            }
           },
           oauth_clients:       {
             display_fields: ->{Formatter.all_but('public_key')},
@@ -474,11 +481,13 @@ module Aspera
           command :show,   description: 'Show a package', setup: :setup_package_id,
             action: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
           command :browse, description: 'Browse package files', setup: :setup_package_id,
-            action: ->(package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id))}
-          command(:status, description: 'Wait for package status', setup: :setup_package_id, action: lambda do |package_id:, **|
-            status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
-            Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))
-          end)
+            arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}],
+            action: ->(folder_path, package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path)}
+          command(
+            :status, description: 'Wait for package status', setup: :setup_package_id,
+            arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
+            action: ->(status_list, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
+          )
           command :delete, description: 'Delete package(s)', setup: :setup_package_id
           command :receive, description: 'Receive a package', setup: :setup_package_id, action: ->(package_id:, **){package_receive(package_id)}
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
@@ -510,16 +519,22 @@ module Aspera
         end
 
         commands_under(%i[user profile]) do
-          command :show,   description: 'Show user profile',   action: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
-          command(:modify, description: 'Modify user profile', action: lambda do
-            @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
-            Result::Status.new('modified')
-          end)
+          command :show, description: 'Show user profile', action: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
+          command(
+            :modify, description: 'Modify user profile',
+            arguments: [{name: :properties, type: Hash}],
+            action: lambda do |properties, **|
+              @api_v5.update('account/preferences', properties)
+              Result::Status.new('modified')
+            end
+          )
         end
 
         commands_under(:shared_folders) do
           command :list,   description: 'List shared folders', action: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
-          command :browse, description: 'Browse a shared folder'
+          command :browse, description: 'Browse a shared folder',
+            instance_arg: :shared_folder_id, lookup: :lookup_shared_folder_id,
+            arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}]
         end
 
         # admin sub-tree: fixed commands + all ADMIN_RESOURCES with their sub-commands
@@ -587,7 +602,14 @@ module Aspera
                 setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
-              CRUD_NO_SHOW.each{ |c| command(c, description: c.to_s.capitalize)}
+              CRUD_NO_SHOW.each do |c|
+                args = if c.eql?(:create) && sub.eql?(:members)
+                  {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
+                else
+                  {}
+                end
+                command(c, description: c.to_s.capitalize, **args)
+              end
             end
           end
           commands_under([:admin, res]) do
@@ -696,8 +718,8 @@ module Aspera
         end
 
         # admin > nodes > browse
-        def action_admin_nodes_browse(node_id:, **)
-          browse_folder("nodes/#{node_id}/browse")
+        def action_admin_nodes_browse(folder_path, node_id:, **)
+          browse_folder("nodes/#{node_id}/browse", {}, folder_path: folder_path)
         end
 
         # admin > nodes > shared_folders — node_id: already in ctx via instance_arg:
@@ -738,28 +760,41 @@ module Aspera
           end
         end
 
+        # Resolve user ids for shared_inbox/workgroup members/create, handling percent selectors.
+        # @param users [Array] raw user ids or percent-selector strings
+        # @return [Array<String>] resolved user ids
+        def resolve_member_user_ids(users)
+          users = [users] unless users.is_a?(Array)
+          users.map do |user|
+            if (m = Options.percent_selector(user))
+              @api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
+            else
+              user
+            end
+          end
+        end
+
         # admin > shared_inboxes|workgroups > members|saml_groups > create/list/modify/delete
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             CRUD_NO_SHOW.each do |op|
-              define_action_method([:admin, res, sub, op]) do |res_instance_path:, **|
-                res_path = "#{res_instance_path}/#{sub}"
-                list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
-                if op.eql?(:create) && sub.eql?(:members)
-                  users = options.get_next_argument('user id, %name:, or Array')
-                  users = [users] unless users.is_a?(Array)
-                  users = users.map do |user|
-                    if (m = Options.percent_selector(user))
-                      @api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
-                    else
-                      user
-                    end
+              if op.eql?(:create) && sub.eql?(:members)
+                define_action_method([:admin, res, sub, op]) do |users, access, res_instance_path:, **|
+                  res_path = "#{res_instance_path}/#{sub}"
+                  list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
+                  resolved = resolve_member_user_ids(users)
+                  input_data = {user: resolved.map{ |u| {id: u, access: access}}}
+                  entity_execute(api: @api_v5, entity: res_path, command: op, input_data: input_data, items_key: list_key) do |f, v|
+                    @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
                   end
-                  access = options.get_next_argument('level', mandatory: false, accept_list: SHARED_INBOX_MEMBER_LEVELS, default: :standard)
-                  options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
                 end
-                entity_execute(api: @api_v5, entity: res_path, command: op, items_key: list_key) do |f, v|
-                  @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
+              else
+                define_action_method([:admin, res, sub, op]) do |res_instance_path:, **|
+                  res_path = "#{res_instance_path}/#{sub}"
+                  list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
+                  entity_execute(api: @api_v5, entity: res_path, command: op, items_key: list_key) do |f, v|
+                    @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
+                  end
                 end
               end
             end
@@ -833,17 +868,21 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
-        def action_shared_folders_browse
+        # Lookup a shared folder id by field/value.
+        # Called via lookup: :lookup_shared_folder_id on the shared_folders > browse command.
+        def lookup_shared_folder_id(field, value, **)
+          all = @api_v5.read('shared_folders')['shared_folders']
+          matches = all.select{ |i| i[field].eql?(value)}
+          raise "no match for #{field} = #{value}" if matches.empty?
+          raise "multiple matches for #{field} = #{value}" if matches.length > 1
+          matches.first['id']
+        end
+
+        def action_shared_folders_browse(shared_folder_id:, folder_path:, **)
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
-          shared_folder_id = options.instance_identifier do |field, value|
-            matches = all_shared_folders.select{ |i| i[field].eql?(value)}
-            raise "no match for #{field} = #{value}" if matches.empty?
-            raise "multiple matches for #{field} = #{value}" if matches.length > 1
-            matches.first['id']
-          end
           node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
           raise "No such shared folder id #{shared_folder_id}" if node.nil?
-          browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
+          browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse", {}, folder_path: folder_path)
         end
 
         # invitations sub-handlers

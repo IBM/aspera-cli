@@ -267,12 +267,9 @@ module Aspera
             spec = registry[path]
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
-            # Build the full argument list: instance_arg (if any) + declared arguments
-            display_args = []
-            if spec&.instance_arg
-              display_args << ArgumentSpec.new(name: spec.instance_arg, type: :identifier, mandatory: true)
-            end
-            display_args.concat(spec.arguments) if spec&.arguments&.any?
+            # Build the full argument list via CommandSpec#all_arguments
+            # (instance_arg synthetic spec + declared arguments, in order)
+            display_args = spec&.all_arguments || []
             if display_args.any?
               lines << "\nARGUMENTS:"
               col_w = display_args.map{ |a| a.name.to_s.length}.max + 2
