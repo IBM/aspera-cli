@@ -292,6 +292,45 @@ module Aspera
       end
 
       class << self
+        # Execute a bulk operation over a list of already-resolved items and return a CLI result.
+        # This is a pure helper: it reads nothing from the CLI.
+        # @param items   [Array]   List of items to process (one element when non-bulk)
+        # @param is_bulk [Boolean] Whether the caller is in bulk mode
+        # @param command [Symbol]  Operation name (:create, :delete, …) used to build the past-tense status string
+        # @param id_result [String] Key in the result Hash used as item identifier
+        # @param fields   [Object] Fields hint passed to the Result constructor (non-bulk only, when not :default)
+        # @param bfail    [Boolean] When true, re-raise errors; when false, capture them as a status string
+        # @yieldparam item [Object] Each item in +items+
+        # @yieldreturn [Hash, Array, nil] REST response; a Hash replaces the default id-keyed result
+        # @return [Result::ObjectList, Result::SingleObject]
+        def bulk(items, is_bulk:, command:, id_result: 'id', fields: :default, bfail: true)
+          Aspera.assert(block_given?, 'missing block')
+          Log.log.warn('Empty list given for bulk operation') if items.empty?
+          Log.dump(:bulk_operation, items)
+          result_list = []
+          items.each do |item|
+            result = {id_result => item}
+            begin
+              res = yield(item)
+              result = res if res.is_a?(Hash)
+              # TODO: remove when faspio gw api fixes this
+              result = res.first if res.is_a?(Array) && res.first.is_a?(Hash)
+              result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
+            rescue StandardError => e
+              raise e if bfail
+              result['status'] = e.to_s
+            end
+            result_list.push(result)
+          end
+          display_fields = [id_result, 'status']
+          if is_bulk
+            return ObjectList.new(result_list, fields: display_fields)
+          else
+            display_fields = fields unless fields.eql?(:default)
+            return SingleObject.new(result_list.first, fields: display_fields)
+          end
+        end
+
         # Class method to automatically determine result type from data
         # @param data [Object] the data to analyze and format
         # @return [Result]

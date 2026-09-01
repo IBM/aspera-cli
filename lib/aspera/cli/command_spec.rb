@@ -13,6 +13,7 @@ module Aspera
     # @!attribute multiple    [Boolean, String]           true: consume all remaining; String: consume until named marker
     # @!attribute default     [Object, nil]               Default value when mandatory: false and no argument provided
     # @!attribute schema      [String, nil]               JSON schema name for validation and --help introspection
+    # @!attribute bulk        [Boolean]                   When true, wraps read+loop for bulk mode (Array if --bulk yes)
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -21,11 +22,13 @@ module Aspera
       :multiple,
       :default,
       :schema,
+      :bulk,
       keyword_init: true
     ) do
       def initialize(**kwargs)
         kwargs[:mandatory] = true  if kwargs[:mandatory].nil?
         kwargs[:multiple]  = false if kwargs[:multiple].nil?
+        kwargs[:bulk]      = false if kwargs[:bulk].nil?
         super
       end
     end
@@ -96,6 +99,16 @@ module Aspera
       :lookup,
       keyword_init: true
     ) do
+      def initialize(**kwargs)
+        # Coerce each element of arguments: from Hash to ArgumentSpec if needed
+        if kwargs[:arguments]
+          kwargs[:arguments] = kwargs[:arguments].map do |a|
+            a.is_a?(Hash) ? ArgumentSpec.new(**a) : a
+          end
+        end
+        super
+      end
+
       class << self
         # Derive the implicit action method name from a path array.
         # e.g. [:admin, :user, :list] -> :action_admin_user_list

@@ -145,12 +145,14 @@ module Aspera
 
           # ldap: add only
           commands_under([:admin, entity_type, :ldap]) do
-            command :add, description: "Add a LDAP #{entity_type}"
+            command :add, description: "Add a LDAP #{entity_type}",
+              arguments: [{name: :entity_name, type: String, bulk: true}]
           end
 
           # saml: import only
           commands_under([:admin, entity_type, :saml]) do
-            command :import, description: "Import a SAML #{entity_type}"
+            command :import, description: "Import a SAML #{entity_type}",
+              arguments: [{name: :entity_parameters, type: Hash, bulk: true}]
           end
         end
 
@@ -305,17 +307,19 @@ module Aspera
           end
 
           # ldap: add
-          define_action_method([:admin, entity_type, :ldap, :add]) do
+          define_action_method([:admin, entity_type, :ldap, :add]) do |entity_names, **|
             path = admin_entity_path(entity_type, :ldap)
-            do_bulk_operation(command: :add, descr: "#{entity_type} name", values: String) do |entity_name|
+            is_bulk = options.get_option(:bulk)
+            Result.bulk(entity_names, is_bulk: is_bulk, command: :add, id_result: entity_type.to_s, bfail: options.get_option(:bfail)) do |entity_name|
               @api_shares_admin.create(path, {entity_type => entity_name})
             end
           end
 
           # saml: import
-          define_action_method([:admin, entity_type, :saml, :import]) do
+          define_action_method([:admin, entity_type, :saml, :import]) do |entity_params_list, **|
             path = admin_entity_path(entity_type, :saml)
-            do_bulk_operation(command: :import, descr: 'user information') do |entity_parameters|
+            is_bulk = options.get_option(:bulk)
+            Result.bulk(entity_params_list, is_bulk: is_bulk, command: :import, bfail: options.get_option(:bfail)) do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
               Aspera.assert_type(entity_parameters, Hash)
               SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}

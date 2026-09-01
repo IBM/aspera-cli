@@ -120,23 +120,23 @@ module Aspera
           end
         )
         command :documentation, description: 'Open the documentation in the default browser',
-          arguments: [ArgumentSpec.new(name: :section, type: String, mandatory: false)]
+          arguments: [{name: :section, type: String, mandatory: false}]
         command :genkey, description: 'Generate a new RSA private key',
           arguments: [
-            ArgumentSpec.new(name: :private_key_path, type: String),
-            ArgumentSpec.new(name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH)
+            {name: :private_key_path, type: String},
+            {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
           ]
         command :pubkey, description: 'Display the public key of an RSA private key',
-          arguments: [ArgumentSpec.new(name: :private_key_pem, type: String)],
+          arguments: [{name: :private_key_pem, type: String}],
           action: ->(private_key_pem){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo, description: 'Display the value of a given argument',
-          arguments: [ArgumentSpec.new(name: :value, type: nil)],
+          arguments: [{name: :value, type: nil}],
           action: ->(value){Result.auto(value)}
         command :download, description: 'Download a file from a URL',
           arguments: [
-            ArgumentSpec.new(name: :file_url,  type: String),
-            ArgumentSpec.new(name: :file_dest, type: String, mandatory: false)
+            {name: :file_url,  type: String},
+            {name: :file_dest, type: String, mandatory: false}
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
@@ -144,7 +144,7 @@ module Aspera
         command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)'
         command :coffee, description: 'Display a coffee image', action: ->{Result::Image.new(COFFEE_IMAGE_URL)}
         command :image, description: 'Display an image',
-          arguments: [ArgumentSpec.new(name: :image_uri, type: nil)],
+          arguments: [{name: :image_uri, type: nil}],
           action: ->(image_uri){Result::Image.new(image_uri)}
         command :ascp, description: 'Manage the transfer SDK (ascp/transferd)', action: ->{execute_action_ascp}
         command :agents, description: 'Display transfer agent information', action: ->{execute_action_agents}
@@ -163,7 +163,7 @@ module Aspera
         command :smtp_settings, description: 'Display the current SMTP settings', action: ->{Result::SingleObject.new(context.mailer.email_settings)}
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
-          arguments: [ArgumentSpec.new(name: :server_url, type: String)],
+          arguments: [{name: :server_url, type: String}],
           action: lambda do |server_url|
             raise Cli::BadArgument, 'No PAC script configured, use --fpac' if context.pac_executor.nil?
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
@@ -180,11 +180,11 @@ module Aspera
         # remote_certificate sub-commands
         commands_under(:remote_certificate) do
           command :chain, description: 'Display the full certificate chain as PEM',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
+            arguments: [{name: :remote_url, type: String}]
           command :only, description: 'Display only the server certificate as PEM',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
+            arguments: [{name: :remote_url, type: String}]
           command :name, description: 'Display the CN of the server certificate',
-            arguments: [ArgumentSpec.new(name: :remote_url, type: String)]
+            arguments: [{name: :remote_url, type: String}]
         end
 
         # tokens sub-commands
@@ -204,7 +204,7 @@ module Aspera
             end
           )
           command :show, description: 'Show details of a cached OAuth token',
-            arguments: [ArgumentSpec.new(name: :token_id, type: :identifier)]
+            arguments: [{name: :token_id, type: :identifier}]
         end
 
         # plugins sub-commands
@@ -212,8 +212,8 @@ module Aspera
           command :list, description: 'List all available plugins'
           command :create, description: 'Create a new plugin skeleton file',
             arguments: [
-              ArgumentSpec.new(name: :name,   type: String),
-              ArgumentSpec.new(name: :folder, type: String, mandatory: false)
+              {name: :name,   type: String},
+              {name: :folder, type: String, mandatory: false}
             ]
         end
 
@@ -228,7 +228,7 @@ module Aspera
           )
           command :admin, description: 'Run sync admin operations', action: ->{execute_sync_admin}
           command :translate, description: 'Translate async-style arguments to sync config format',
-            arguments: [ArgumentSpec.new(name: :async_arguments, type: String, multiple: true)],
+            arguments: [{name: :async_arguments, type: String, multiple: true}],
             action: ->(async_arguments){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
         end
 
@@ -243,8 +243,8 @@ module Aspera
         commands_under(:test) do
           command :throw, description: 'Raise an exception (for testing)',
             arguments: [
-              ArgumentSpec.new(name: :exception_class_name, type: String),
-              ArgumentSpec.new(name: :exception_text,       type: String)
+              {name: :exception_class_name, type: String},
+              {name: :exception_text,       type: String}
             ]
           command :web, description: 'Test web browser interaction', action: -> {}
         end
@@ -252,7 +252,7 @@ module Aspera
         # completion sub-commands
         commands_under(:completion) do
           command :bash, description: 'Generate bash completion script',
-            arguments: [ArgumentSpec.new(name: :words, type: String, multiple: true, mandatory: false)]
+            arguments: [{name: :words, type: String, multiple: true, mandatory: false}]
         end
 
         attr_accessor :option_cache_tokens

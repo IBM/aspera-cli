@@ -435,29 +435,34 @@ module Aspera
         }.freeze
         private_constant :ADMIN_OBJECT_CONFIG
 
-        # @return [String] AoC REST path for an admin resource type
-        def aoc_res_path(res)
-          cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
-          return cfg[:path] if cfg[:path]
-          base = "#{res}s".gsub(/ys$/, 'ies')
-          base
+        class << self
+          # @return [String] AoC REST path for an admin resource type
+          def aoc_res_path(res)
+            cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            return cfg[:path] if cfg[:path]
+            "#{res}s".gsub(/ys$/, 'ies')
+          end
+
+          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:}
+          def aoc_res_cfg(res)
+            cfg    = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            path   = aoc_res_path(res)
+            ops    = cfg[:ops] || (Base::Operations::ALL + (cfg[:extra_ops] || []))
+            schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
+            {
+              path:          path,
+              ops:           ops,
+              id_result:     cfg[:id_result] || 'id',
+              require_ws_id: cfg[:require_ws_id] || false,
+              list_fields:   cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
+              schema:        schema
+            }
+          end
         end
 
-        # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:}
-        def aoc_res_cfg(res)
-          cfg  = ADMIN_OBJECT_CONFIG.fetch(res, {})
-          path = aoc_res_path(res)
-          ops  = cfg[:ops] || (Operations::ALL + (cfg[:extra_ops] || []))
-          schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
-          {
-            path:          path,
-            ops:           ops,
-            id_result:     cfg[:id_result] || 'id',
-            require_ws_id: cfg[:require_ws_id] || false,
-            list_fields:   cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
-            schema:        schema
-          }
-        end
+        # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg without self.class.
+        def aoc_res_path(res) = self.class.aoc_res_path(res)
+        def aoc_res_cfg(res)  = self.class.aoc_res_cfg(res)
 
         # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
         APP_TYPES = %i[activity automation files packages].freeze
@@ -588,7 +593,17 @@ module Aspera
                 else
                   instance_attrs.merge(extra_setup ? {setup: extra_setup} : {})
                 end
-                command(op, description: op.to_s.tr('_', ' ').capitalize, **attrs)
+                extra_args =
+                  if !is_singleton && op.eql?(:create)
+                    c = aoc_res_cfg(res)
+                    {arguments: [{name: :data, type: Hash, bulk: true, schema: c[:schema]}]}
+                  elsif !is_singleton && op.eql?(:modify)
+                    c = aoc_res_cfg(res)
+                    {arguments: [{name: :data, type: Hash, schema: c[:schema]}]}
+                  else
+                    {}
+                  end
+                command(op, description: op.to_s.tr('_', ' ').capitalize, **attrs, **extra_args)
               end
             end
           end
@@ -679,7 +694,8 @@ module Aspera
           command :create, description: 'Create an app membership'
         end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
-        command :gateway,           description: 'Start AoC Faspex4 gateway'
+        command :gateway,           description: 'Start AoC Faspex4 gateway',
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
 
         # user sub-commands
         commands_under(:user) do
@@ -753,12 +769,14 @@ module Aspera
         # packages sub-commands — instance commands consume package_id
         commands_under(:packages) do
           command :shared_inboxes,    description: 'Shared inbox commands'
-          command :send,              description: 'Send a package'
+          command :send,              description: 'Send a package',
+            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive,           description: 'Receive package(s)', aliases: [:recv], instance_arg: :package_id
           command :list,              description: 'List packages'
           command :show,              description: 'Show a package',              instance_arg: :package_id
           command :delete,            description: 'Delete package(s)',           instance_arg: :package_id
-          command :modify,            description: 'Modify a package',            instance_arg: :package_id
+          command :modify,            description: 'Modify a package',            instance_arg: :package_id,
+            arguments: [{name: :data, type: Hash}]
           # Node Gen4 read-only actions on packages
           command :bearer_token_node, description: 'Show bearer token for package node', instance_arg: :package_id
           command :node_info,         description: 'Show node info for package',         instance_arg: :package_id
@@ -782,7 +800,11 @@ module Aspera
         end
         # packages > shared_inboxes > short_link sub-commands
         commands_under(%i[packages shared_inboxes short_link]) do
-          %i[create delete list show modify].each{ |op| command(op, description: op.to_s.capitalize)}
+          %i[create modify].each do |op|
+            command(op, description: op.to_s.capitalize,
+              arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}])
+          end
+          %i[delete list show].each{ |op| command(op, description: op.to_s.capitalize)}
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
@@ -811,7 +833,11 @@ module Aspera
         end
         # files > short_link sub-commands
         commands_under(%i[files short_link]) do
-          %i[create delete list show modify].each{ |op| command(op, description: op.to_s.capitalize)}
+          %i[create modify].each do |op|
+            command(op, description: op.to_s.capitalize,
+              arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}])
+          end
+          %i[delete list show].each{ |op| command(op, description: op.to_s.capitalize)}
         end
 
         # automation sub-commands
@@ -868,8 +894,8 @@ module Aspera
         end
 
         # packages > send
-        def action_packages_send
-          package_data = value_create_modify(command: :send, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post'))
+        def action_packages_send(data, **)
+          package_data = data
           new_user_option = options.get_option(:new_user_option)
           option_validate = options.get_option(:validate_metadata)
           workspace_id_hash(package_data, string: true) unless package_data.key?('workspace_id')
@@ -957,15 +983,17 @@ module Aspera
 
         # packages > delete
         def action_packages_delete(package_id:, **)
-          do_bulk_operation(command: :delete, values: package_id) do |one_id|
+          is_bulk = options.get_option(:bulk)
+          items = package_id.is_a?(Array) ? package_id : [package_id]
+          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
             Aspera.assert_type(one_id, String, Integer){'identifier'}
             aoc_api.delete("packages/#{one_id}")
           end
         end
 
         # packages > modify
-        def action_packages_modify(package_id:, **)
-          aoc_api.update("packages/#{package_id}", value_create_modify(command: :modify))
+        def action_packages_modify(data, package_id:, **)
+          aoc_api.update("packages/#{package_id}", data)
           Result::Status.new('modified')
         end
 
@@ -1052,7 +1080,7 @@ module Aspera
         end
 
         # Shared implementation for short_link > create
-        def sl_exec_create(sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, sl_perm_block:, **)
+        def sl_exec_create(custom_data = {}, sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, sl_perm_block:, **)
           shared_data = sl_shared_data.dup
           workspace_id_hash(shared_data)
           create_payload = {purpose: sl_short_link_purpose, user_selected_name: nil}
@@ -1068,7 +1096,7 @@ module Aspera
               url_token_data: {data: shared_data, purpose: sl_token_purpose}
             }
           end
-          custom_data = value_create_modify(command: :create, default: {})
+          custom_data = {}
           access_levels = custom_data.delete('access_levels')
           if (pass = custom_data.delete('password'))
             create_payload[:data][:url_token_data][:password] = pass
@@ -1120,12 +1148,12 @@ module Aspera
         end
 
         # Shared implementation for short_link > modify
-        def sl_exec_modify(sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
+        def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, **)
           raise Cli::BadArgument, 'modify is only available for public short links' unless sl_link_type.eql?(:public)
           one_id = options.instance_identifier(description: 'short link id')
           node_file = sl_shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}
-          custom_data = value_create_modify(command: :modify)
+          custom_data = {}
           if (pass = custom_data.delete('password'))
             modify_payload[:password_enabled] = true
             modify_payload[:data] = {url_token_data: {password: pass, data: node_file}}
@@ -1308,13 +1336,14 @@ module Aspera
 
         # admin > <res> > create
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_action_method([:admin, res, :create]) do
+          define_action_method([:admin, res, :create]) do |data, **|
             c = aoc_res_cfg(res)
             path = c[:path]
             # Special case: client_registration_token has a different creation URL
             path = 'admin/client_registration/token' if path.eql?('admin/client_registration_tokens')
             workspace_id = aoc_api.workspace_info[:id] if c[:require_ws_id]
-            do_bulk_operation(command: :create, descr: 'creation data', id_result: c[:id_result], schema: c[:schema]) do |params|
+            is_bulk = options.get_option(:bulk)
+            Result.bulk(data, is_bulk: is_bulk, command: :create, id_result: c[:id_result], bfail: options.get_option(:bfail)) do |params|
               params['workspace_id'] = workspace_id if c[:require_ws_id] && workspace_id && !params.key?('workspace_id')
               aoc_api.create(path, params)
             end
@@ -1323,13 +1352,10 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
-          define_action_method([:admin, res, :modify]) do |res_id:, **|
+          define_action_method([:admin, res, :modify]) do |data, res_id:, **|
             c = aoc_res_cfg(res)
-            changes = options.get_next_argument('properties', validation: Hash, schema: c[:schema])
-            do_bulk_operation(command: :modify, values: res_id) do |one_id|
-              aoc_api.update("#{c[:path]}/#{one_id}", changes)
-              {'id' => one_id}
-            end
+            aoc_api.update("#{c[:path]}/#{res_id}", data)
+            Result::Status.new('modified')
           end
         end
 
@@ -1340,7 +1366,9 @@ module Aspera
         end.each do |res|
           define_action_method([:admin, res, :delete]) do |res_id:, **|
             c = aoc_res_cfg(res)
-            do_bulk_operation(command: :delete, values: res_id) do |one_id|
+            is_bulk = options.get_option(:bulk)
+            items = res_id.is_a?(Array) ? res_id : [res_id]
+            Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
               aoc_api.delete("#{c[:path]}/#{one_id}")
               {'id' => one_id}
             end
@@ -1476,9 +1504,9 @@ module Aspera
           end
         end
 
-        def action_gateway
+        def action_gateway(parameters = {}, **)
           require 'aspera/faspex_gw'
-          parameters = value_create_modify(command: :gateway, default: {}).symbolize_keys
+          parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}

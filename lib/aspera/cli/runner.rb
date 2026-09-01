@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/command_spec'
 require 'aspera/cli/context'
 require 'aspera/cli/options'
 require 'aspera/cli/formatter'
@@ -266,13 +267,25 @@ module Aspera
             spec = registry[path]
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
-            if spec&.arguments&.any?
+            # Build the full argument list: instance_arg (if any) + declared arguments
+            display_args = []
+            if spec&.instance_arg
+              display_args << ArgumentSpec.new(name: spec.instance_arg, type: :identifier, mandatory: true)
+            end
+            display_args.concat(spec.arguments) if spec&.arguments&.any?
+            if display_args.any?
               lines << "\nARGUMENTS:"
-              col_w = spec.arguments.map{ |a| a.name.to_s.length}.max + 2
-              spec.arguments.each do |arg|
+              col_w = display_args.map{ |a| a.name.to_s.length}.max + 2
+              display_args.each do |arg|
                 flag  = arg.mandatory ? arg.name.to_s : "[#{arg.name}]"
-                types = arg.type.is_a?(Array) ? arg.type.map(&:name).join(', ') : arg.type.to_s
-                lines << "    #{flag.ljust(col_w)}  #{arg.description || types}"
+                types = case arg.type
+                        when :identifier then 'identifier'
+                        when Array       then arg.type.map(&:name).join(', ')
+                        when nil         then ''
+                        else arg.type.name
+                        end
+                hint  = arg.type.eql?(Hash) && arg.schema ? "  (use 'help' as value to see schema)" : ''
+                lines << "    #{flag.ljust(col_w)}  #{arg.description || types}#{hint}"
               end
             end
           end

@@ -268,8 +268,7 @@ module Aspera
           return Runner.result_transfer_multiple(result_transfer)
         end
 
-        def package_send
-          parameters = value_create_modify(command: :send, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post'))
+        def package_send(parameters)
           # autofill recipient for public url
           if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
             parameters['recipients'] = [{
@@ -469,7 +468,9 @@ module Aspera
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under(:packages) do
           command :list,   description: 'List packages'
-          command :send,   description: 'Send a package', action: ->{package_send}
+          command :send,   description: 'Send a package',
+            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
+            action: ->(data, **){package_send(data)}
           command :show,   description: 'Show a package', setup: :setup_package_id,
             action: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
           command :browse, description: 'Browse package files', setup: :setup_package_id,
@@ -488,12 +489,15 @@ module Aspera
         command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
         command :user,           description: 'Manage current user',               setup: :setup_api_v5
         command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
-        command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5
-        command :postprocessing, description: 'Start Faspex 4 post-processing server'
+        command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5,
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+        command :postprocessing, description: 'Start Faspex 4 post-processing server',
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
         command :invitations,    description: 'Manage invitations', setup: :setup_api_v5
 
         commands_under(:invitations) do
-          command :create, description: 'Create an invitation'
+          command :create, description: 'Create an invitation',
+            arguments: [{name: :input_data, type: Hash, bulk: true}]
           command :resend, description: 'Resend an invitation', instance_arg: :invitation_id
           Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
@@ -523,17 +527,28 @@ module Aspera
           command :configuration, description: 'Manage Faspex 5 configuration'
           command :smtp,          description: 'Manage SMTP configuration'
           command :events,        description: 'List events'
-          command :clean_deleted, description: 'Clean deleted packages'
+          command :clean_deleted, description: 'Clean deleted packages',
+            arguments: [{name: :input_data, type: Hash, mandatory: false, default: {}}]
           Api::Faspex::ADMIN_RESOURCES.each do |res|
             cfg          = RESOURCE_CONFIG.fetch(res, {})
             extra        = cfg[:extra_commands] || []
             cmds         = cfg[:commands] || (Operations::ALL + extra)
             ia_cmds      = cfg[:instance_arg_commands] || {}
+            is_singleton = cfg[:is_singleton] || false
+            schema_val   = cfg[:schema]
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
             commands_under([:admin, res]) do
               cmds.each do |c|
                 ia = ia_cmds[c] || {}
-                command(c, description: c.to_s.tr('_', ' ').capitalize, **ia)
+                arg_spec =
+                  if !is_singleton && c.eql?(:create)
+                    {arguments: [{name: :input_data, type: Hash, bulk: true, schema: schema_val}]}
+                  elsif c.eql?(:modify)
+                    {arguments: [{name: :input_data, type: Hash, schema: schema_val}]}
+                  else
+                    {}
+                  end
+                command(c, description: c.to_s.tr('_', ' ').capitalize, **ia, **arg_spec)
               end
             end
           end
@@ -578,30 +593,38 @@ module Aspera
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
               instance_arg: :res_id, lookup: :"lookup_#{res}_id",
-              setup: :"setup_admin_#{res}_instance"
+              setup: :"setup_admin_#{res}_instance",
+              arguments: [{name: :input_data, type: Hash}]
           end
         end
 
         commands_under(%i[admin configuration]) do
           command :show,   description: 'Show configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
-          command(:modify, description: 'Modify configuration', action: lambda do
-            Result::SingleObject.new(@api_v5.update('configuration', value_create_modify(command: :modify)))
-          end)
+          command(
+            :modify, description: 'Modify configuration',
+            arguments: [{name: :input_data, type: Hash}],
+            action: ->(input_data, **){Result::SingleObject.new(@api_v5.update('configuration', input_data))}
+          )
         end
 
         commands_under(%i[admin smtp]) do
           command :show,   description: 'Show SMTP configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
-          command(:create, description: 'Create SMTP configuration', action: lambda do
-            Result::SingleObject.new(@api_v5.create('configuration/smtp', value_create_modify(command: :create)))
-          end)
-          command(:modify, description: 'Modify SMTP configuration', action: lambda do
-            Result::SingleObject.new(@api_v5.update('configuration/smtp', value_create_modify(command: :modify)))
-          end)
+          command(
+            :create, description: 'Create SMTP configuration',
+            arguments: [{name: :input_data, type: Hash}],
+            action: ->(input_data, **){Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data))}
+          )
+          command(
+            :modify, description: 'Modify SMTP configuration',
+            arguments: [{name: :input_data, type: Hash}],
+            action: ->(input_data, **){Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data))}
+          )
           command(:delete, description: 'Delete SMTP configuration', action: lambda do
             @api_v5.delete('configuration/smtp')
             Result::Status.new('SMTP configuration deleted')
           end)
-          command :test, description: 'Test SMTP configuration'
+          command :test, description: 'Test SMTP configuration',
+            arguments: [{name: :test_data, type: nil}]
         end
 
         commands_under(%i[admin events]) do
@@ -616,10 +639,9 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_action_method([:admin, :clean_deleted]) do
-          delete_data = value_create_modify(command: :clean_deleted, default: {})
-          delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
-          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', delete_data))
+        define_action_method([:admin, :clean_deleted]) do |input_data = {}, **|
+          input_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if input_data.empty?
+          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', input_data))
         end
 
         # admin > <resource> > list
@@ -638,15 +660,17 @@ module Aspera
         # admin > <resource> > create / modify / delete / show
         Api::Faspex::ADMIN_RESOURCES.each do |res|
           CRUD_NO_LIST.each do |op|
-            define_action_method([:admin, res, op]) do
+            define_action_method([:admin, res, op]) do |input_data = nil, res_id: nil, **|
               args = res_exec_args(res)
-              entity_execute(command: op, **args){ |f, v| res_lookup_id(res, f, v)}
+              is_bulk = options.get_option(:bulk)
+              items = input_data
+              items = [items] if items && !items.is_a?(Array)
+              entity_execute(command: op, input_data: items, res_id: res_id, is_bulk: is_bulk, bfail: options.get_option(:bfail), **args){ |f, v| res_lookup_id(res, f, v)}
             end
           end
         end
 
-        def action_admin_smtp_test
-          test_data = options.get_next_argument('Email or test data, see API')
+        def action_admin_smtp_test(test_data, **)
           test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
           creation = @api_v5.create('configuration/smtp/test', test_data)
           result = wait_for_job(creation['job_id'])
@@ -744,11 +768,10 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_action_method([:admin, res, :invite_external_collaborator]) do |res_instance_path:, **|
-            creation_payload = value_create_modify(command: :invite_external_collaborator)
-            result = @api_v5.create("#{res_instance_path}/external_collaborator", creation_payload)
+          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data, res_instance_path:, **|
+            result = @api_v5.create("#{res_instance_path}/external_collaborator", input_data)
             formatter.display_status(result['message'])
-            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: creation_payload['email_address'], query: {}))
+            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: input_data['email_address'], query: {}))
           end
         end
 
@@ -830,8 +853,9 @@ module Aspera
           Result::Status.new('Invitation resent')
         end
 
-        def action_invitations_create
-          do_bulk_operation(command: :create, descr: 'data') do |params|
+        def action_invitations_create(input_data, **)
+          is_bulk = options.get_option(:bulk)
+          Result.bulk(input_data, is_bulk: is_bulk, command: :create, bfail: options.get_option(:bfail)) do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
             @api_v5.create(endpoint, params)
           end
@@ -852,9 +876,9 @@ module Aspera
           end
         end
 
-        def action_gateway
+        def action_gateway(parameters = {}, **)
           require 'aspera/faspex_gw'
-          parameters = value_create_modify(command: :gateway, default: {}).symbolize_keys
+          parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
@@ -863,9 +887,9 @@ module Aspera
           Result::Status.new('Gateway terminated')
         end
 
-        def action_postprocessing
+        def action_postprocessing(parameters = {}, **)
           require 'aspera/faspex_postproc' # cspell:disable-line
-          parameters = value_create_modify(command: :postprocessing, default: {}).symbolize_keys
+          parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
           parameters[:root] = uri.path
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))

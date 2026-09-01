@@ -379,6 +379,13 @@ module Aspera
           COMMANDS_GEN4.each do |cmd|
             kwargs = {description: "Gen4 #{cmd} command"}
             kwargs[:setup] = :setup_access_key_do_permission if cmd.eql?(:permission)
+            kwargs[:arguments] = [
+              {name: :source_path, type: String},
+              {name: :new_name, type: String}
+            ] if cmd.eql?(:rename)
+            kwargs[:arguments] = [
+              {name: :paths, type: String, bulk: true}
+            ] if cmd.eql?(:delete)
             command(cmd, **kwargs)
           end
         end
@@ -386,8 +393,10 @@ module Aspera
           command :list,   description: 'List permissions on a file'
           command :show,   description: 'Show a permission',   instance_arg: :perm_id,
             action: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
-          command :create, description: 'Create a permission'
-          command :modify, description: 'Modify a permission', instance_arg: :perm_id
+          command :create, description: 'Create a permission',
+            arguments: [{name: :data, type: Hash}]
+          command :modify, description: 'Modify a permission', instance_arg: :perm_id,
+            arguments: [{name: :data, type: Hash}]
           command :delete, description: 'Delete permission(s)'
         end
         # async (legacy /async)
@@ -425,10 +434,16 @@ module Aspera
         command :stream, description: 'Manage stream operations'
         commands_under(:stream) do
           command :list,   description: 'List streams',    action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
-          command :create, description: 'Create a stream', action: ->{Result::SingleObject.new(@api_node.create('streams', value_create_modify(command: :create)))}
-          command :show,   description: 'Show a stream',   action: ->{Result::SingleObject.new(@api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}"))}
-          command :modify, description: 'Modify a stream', action: ->{Result::SingleObject.new(@api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: :modify)))}
-          command :cancel, description: 'Cancel a stream', action: ->{Result::SingleObject.new(@api_node.cancel("streams/#{options.get_next_argument('transfer id')}"))}
+          command :create, description: 'Create a stream',
+            arguments: [{name: :data, type: Hash}],
+            action: ->(data, **){Result::SingleObject.new(@api_node.create('streams', data))}
+          command :show,   description: 'Show a stream',   instance_arg: :transfer_id,
+            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
+          command :modify, description: 'Modify a stream', instance_arg: :transfer_id,
+            arguments: [{name: :data, type: Hash}],
+            action: ->(data, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
+          command :cancel, description: 'Cancel a stream', instance_arg: :transfer_id,
+            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}"))}
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
@@ -452,12 +467,14 @@ module Aspera
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
         commands_under(:watch_folder) do
           command :create, description: 'Create a watch folder',
-            action: ->{Result::Status.new("#{@api_node.create('v3/watchfolders', value_create_modify(command: :create))['id']} created")}
+            arguments: [{name: :data, type: Hash}],
+            action: ->(data, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
           command :list,   description: 'List watch folders',
             action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
           command :show,   description: 'Show a watch folder',   instance_arg: :res_id,
             action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
-          command :modify, description: 'Modify a watch folder', instance_arg: :res_id
+          command :modify, description: 'Modify a watch folder', instance_arg: :res_id,
+            arguments: [{name: :data, type: Hash}]
           command :delete, description: 'Delete a watch folder', instance_arg: :res_id
           command :state,  description: 'Show watch folder state', instance_arg: :res_id,
             action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
@@ -477,8 +494,10 @@ module Aspera
         command :asperabrowser, description: 'Open Aspera browser'
         command :basic_token,   description: 'Generate basic auth token', action: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
         command :bearer_token,  description: 'Generate bearer token'
-        command :simulator,     description: 'Start node simulator'
-        command :telemetry,     description: 'Report telemetry to external system'
+        command :simulator,     description: 'Start node simulator',
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+        command :telemetry,     description: 'Report telemetry to external system',
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
 
         # --- Handler methods (Gen3) ---
 
@@ -634,13 +653,13 @@ module Aspera
           {}
         end
 
-        def action_access_keys_do_permission_modify(apifid:, perm_id:, **)
-          apifid.node_api.update("permissions/#{perm_id}", value_create_modify(command: 'permission modify'))
+        def action_access_keys_do_permission_modify(data, apifid:, perm_id:, **)
+          apifid.node_api.update("permissions/#{perm_id}", data)
           Result::Status.new('Updated')
         end
 
-        def action_watch_folder_modify(res_id:, **)
-          @api_node.update("v3/watchfolders/#{res_id}", value_create_modify(command: :watch_folder))
+        def action_watch_folder_modify(data, res_id:, **)
+          @api_node.update("v3/watchfolders/#{res_id}", data)
           Result::Status.new("#{res_id} updated")
         end
 
@@ -723,17 +742,16 @@ module Aspera
         end
 
         # access_keys > do > rename
-        def action_access_keys_do_rename(do_root_file_id:, **)
-          apifid = @api_node.resolve_api_fid(do_root_file_id, options.get_next_argument('source path'))
-          # TODO: multiple ?
-          newname = options.get_next_argument('new name')
-          apifid.node_api.update("files/#{apifid.file_id}", {name: newname})
-          Result::Status.new("renamed to #{newname}")
+        def action_access_keys_do_rename(source_path, new_name, do_root_file_id:, **)
+          apifid = @api_node.resolve_api_fid(do_root_file_id, source_path)
+          apifid.node_api.update("files/#{apifid.file_id}", {name: new_name})
+          Result::Status.new("renamed to #{new_name}")
         end
 
         # access_keys > do > delete
-        def action_access_keys_do_delete(do_root_file_id:, **)
-          do_bulk_operation(command: :delete, descr: 'path', values: String, id_result: 'path') do |l_path|
+        def action_access_keys_do_delete(paths, do_root_file_id:, **)
+          is_bulk = options.get_option(:bulk)
+          Result.bulk(paths, is_bulk: is_bulk, command: :delete, id_result: 'path', bfail: options.get_option(:bfail)) do |l_path|
             apifid = if (m = Options.percent_selector(l_path))
               Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
               Api::NodeFileId.new(@api_node, m[:value])
@@ -874,7 +892,10 @@ module Aspera
         end
 
         def action_access_keys_do_permission_delete(apifid:, **)
-          do_bulk_operation(command: :delete, values: :identifier) do |one_id|
+          ids = options.instance_identifier
+          is_bulk = options.get_option(:bulk)
+          items = ids.is_a?(Array) ? ids : [ids]
+          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
             apifid.node_api.delete("permissions/#{one_id}")
             the_app = apifid.node_api.app_info
             the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
@@ -882,8 +903,8 @@ module Aspera
           end
         end
 
-        def action_access_keys_do_permission_create(apifid:, **)
-          create_param = options.get_next_argument('creation data', validation: Hash)
+        def action_access_keys_do_permission_create(data, apifid:, **)
+          create_param = data
           raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
           create_param['file_id'] = apifid.file_id
           create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
@@ -965,7 +986,9 @@ module Aspera
         end
 
         def action_ssync_delete(ssync_id:, **)
-          do_bulk_operation(command: :delete, values: ssync_id) do |one_id|
+          is_bulk = options.get_option(:bulk)
+          items = ssync_id.is_a?(Array) ? ssync_id : [ssync_id]
+          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
             @api_node.delete("asyncs/#{one_id}", query_read_delete)
             {'id' => one_id}
           end
@@ -1121,9 +1144,9 @@ module Aspera
           return Result::Text.new(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
         end
 
-        def action_simulator
+        def action_simulator(parameters = {}, **)
           require 'aspera/node_simulator'
-          parameters = value_create_modify(command: :simulator, default: {}).symbolize_keys
+          parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
@@ -1131,8 +1154,8 @@ module Aspera
           return Result::Status.new('Simulator terminated')
         end
 
-        def action_telemetry
-          parameters = value_create_modify(command: :telemetry, default: {}).symbolize_keys
+        def action_telemetry(parameters = {}, **)
+          parameters = parameters.symbolize_keys
           %i[url key].each do |psym|
             raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
           end

@@ -373,22 +373,43 @@ module Aspera
         end
 
         # Resolve a single positional argument from the CLI argument stream.
+        # When arg_spec.bulk is true, always returns an Array (normalized to [value] when non-bulk).
         # @param arg_spec [ArgumentSpec]
-        # @return [Object] the resolved value
+        # @return [Object] the resolved value, or Array when arg_spec.bulk is true
         def resolve_argument(arg_spec)
-          case arg_spec.type
-          when :identifier
-            options.instance_identifier
+          if arg_spec.bulk
+            is_bulk = options.get_option(:bulk)
+            if arg_spec.type.eql?(:identifier)
+              val = options.instance_identifier(description: arg_spec.name.to_s)
+            else
+              val = options.get_next_argument(
+                arg_spec.name.to_s,
+                mandatory: arg_spec.mandatory,
+                validation: is_bulk ? Array : arg_spec.type,
+                default:   arg_spec.default,
+                schema:    arg_spec.schema
+              )
+              if is_bulk
+                Aspera.assert_array_all(val, arg_spec.type, type: Cli::BadArgument){'type'} unless arg_spec.type.nil?
+              end
+            end
+            # Always return an Array when bulk: true
+            is_bulk ? val : [val]
           else
-            # Class or Array<Class> -> pass as validation type
-            options.get_next_argument(
-              arg_spec.name.to_s,
-              mandatory: arg_spec.mandatory,
-              multiple:  arg_spec.multiple || false,
-              validation: arg_spec.type,
-              default:   arg_spec.default,
-              schema:    arg_spec.schema
-            )
+            case arg_spec.type
+            when :identifier
+              options.instance_identifier
+            else
+              # Class or Array<Class> -> pass as validation type
+              options.get_next_argument(
+                arg_spec.name.to_s,
+                mandatory: arg_spec.mandatory,
+                multiple:  arg_spec.multiple || false,
+                validation: arg_spec.type,
+                default:   arg_spec.default,
+                schema:    arg_spec.schema
+              )
+            end
           end
         end
 
@@ -407,68 +428,25 @@ module Aspera
           end
         end
 
-        # For create and delete operations: execute one action or multiple if bulk is yes
-        # @param command [Symbol] Operation: :create, :delete, ...
-        # @param descr [String, nil] Description of the value
-        # @param values [Class, Array, Symbol] Type, or list of values, or :identifier, result is given to the block in loop
-        # @param id_result [String] Key in result Hash to use as identifier
-        # @param fields [Symbol, Array] Fields to display
-        # @param schema [Hash, nil] JSON schema for validation
-        # @yieldparam param [Object] The parameter value to process
-        # @yieldreturn [Hash, nil] Result hash for the operation (optional)
-        # @return [Hash] Result suitable for CLI output
-        def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default, schema: nil, &block)
-          Aspera.assert(block_given?, 'missing block')
-          is_bulk = options.get_option(:bulk)
-          case values
-          when :identifier
-            values = options.instance_identifier(description: descr)
-          when Class
-            values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk, schema: schema)
-          end
-          # If not bulk, there is a single value
-          params = is_bulk ? values : [values]
-          Log.log.warn('Empty list given for bulk operation') if params.empty?
-          Log.dump(:bulk_operation, params)
-          result_list = []
-          params.each do |param|
-            # Init for delete
-            result = {id_result => param}
-            begin
-              # Execute custom code
-              res = yield(param)
-              # If block returns a hash, let's use this (create)
-              result = res if res.is_a?(Hash)
-              # TODO: remove when faspio gw api fixes this
-              result = res.first if res.is_a?(Array) && res.first.is_a?(Hash)
-              # Create -> created
-              result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
-            rescue StandardError => e
-              raise e if options.get_option(:bfail)
-              result['status'] = e.to_s
-            end
-            result_list.push(result)
-          end
-          display_fields = [id_result, 'status']
-          if is_bulk
-            return Result::ObjectList.new(result_list, fields: display_fields)
-          else
-            display_fields = fields unless fields.eql?(:default)
-            return Result::SingleObject.new(result_list.first, fields: display_fields)
-          end
-        end
-
         # Operations: Create, Delete, Show, List, Modify
         # @param api [Aspera::Rest] API to use
         # @param entity [String] Sub path in URL to resource relative to base url
         # @param command [Symbol, nil] Command to execute: :create, :show, :list, :modify, :delete
+        #   When nil, reads the next command token from the CLI (fallback, deprecated).
         # @param display_fields [Array, nil] Fields to display by default
         # @param items_key [String, nil] Result is in a sub key of the JSON
         # @param delete_style [String, nil] If set, the delete operation by array in payload
         # @param id_as_arg [Boolean, String] If set, the id is provided as url argument ?<id_as_arg>=<id>
         # @param is_singleton [Boolean] If `true`, entity is the full path to the resource
         # @param list_query [Hash, nil] Query parameters for list operation
-        # @yieldparam value [String] Value to search for identifier
+        # @param schema [String, nil] JSON schema name for create/modify validation
+        # @param input_data [Array, Hash, nil] Pre-resolved data for :create (Array) or :modify (Hash).
+        #   When nil, data is read from the CLI (fallback, deprecated).
+        # @param res_id [String, Array, nil] Pre-resolved resource identifier(s) for instance commands.
+        #   When nil, identifier is read from the CLI (fallback, deprecated).
+        # @param is_bulk [Boolean] Whether operation runs in bulk mode (used when data: is provided)
+        # @param bfail [Boolean] When false, errors are captured as status strings instead of re-raised
+        # @yieldparam value [String] Value to search for identifier (lookup block)
         # @yieldreturn [String] The identifier
         # @return [Hash] Result suitable for CLI result
         def entity_execute(
@@ -482,13 +460,20 @@ module Aspera
           is_singleton: false,
           list_query: nil,
           schema: nil,
+          input_data: nil,
+          res_id: nil,
+          is_bulk: false,
+          bfail: true,
           &block
         )
+          # Fallback: read command from CLI when not provided (legacy callers — removed in ST8)
           command = options.get_next_command(Operations::ALL) if command.nil?
+
           if is_singleton
             one_res_path = entity
           elsif Operations::INSTANCE.include?(command)
-            one_res_id = options.instance_identifier(&block)
+            # Use pre-resolved identifier if provided; otherwise fall back to CLI read (legacy)
+            one_res_id = res_id || options.instance_identifier(&block)
             one_res_path = "#{entity}/#{one_res_id}"
             one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg
           end
@@ -496,7 +481,15 @@ module Aspera
           case command
           when :create
             raise BadArgument, 'cannot create singleton' if is_singleton
-            return do_bulk_operation(command: command, descr: 'data', fields: display_fields, schema: schema) do |params|
+            unless input_data
+              # No pre-resolved data: read from CLI
+              cli_is_bulk = options.get_option(:bulk)
+              raw = options.get_next_argument('data', validation: cli_is_bulk ? Array : Hash, schema: schema)
+              input_data = cli_is_bulk ? raw : [raw]
+              is_bulk  = cli_is_bulk
+              bfail    = options.get_option(:bfail)
+            end
+            return Result.bulk(input_data, is_bulk: is_bulk, command: command, fields: display_fields, bfail: bfail) do |params|
               api.create(entity, params)
             end
           when :delete
@@ -512,7 +505,8 @@ module Aspera
               )
               return Result::Status.new('deleted')
             end
-            return do_bulk_operation(command: command, values: one_res_id) do |one_id|
+            items = one_res_id.is_a?(Array) ? one_res_id : [one_res_id]
+            return Result.bulk(items, is_bulk: is_bulk, command: command, bfail: bfail) do |one_id|
               api.delete("#{entity}/#{one_id}", query_read_delete)
               {'id' => one_id}
             end
@@ -537,7 +531,8 @@ module Aspera
               Aspera.error_unexpected_value(data.class.name){'list type'}
             end
           when :modify
-            parameters = value_create_modify(command: command, schema: schema)
+            # Use pre-resolved data if provided; otherwise read from CLI
+            parameters = input_data || options.get_next_argument('data', validation: Hash, schema: schema)
             api.update(one_res_path, parameters)
             return Result::Status.new('modified')
           else
@@ -561,33 +556,6 @@ module Aspera
           return query
         end
 
-        # Retrieves an extended value from command line.
-        # Used for creation or modification of entities.
-        # @param command [Symbol] Command name for error message
-        # @param description [String, nil] Description of the value
-        # @param type [Class, nil] Expected type of value
-        # @param bulk [Boolean] If `true`, value must be an Array of `type`
-        # @param default [Object, nil] Default value if not provided
-        # @param schema [Hash, nil] JSON schema for validation
-        # @return [Hash, Array<Hash>] The value(s) to create object(s)
-        def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil, schema: nil)
-          value = options.get_next_argument(
-            "parameters for #{command}#{" (#{description})" unless description.nil?}",
-            mandatory: default.nil?,
-            validation: bulk ? Array : type,
-            schema: schema
-          )
-          value = default if value.nil?
-          unless type.nil?
-            Aspera.assert_type(type, Class){'type'}
-            if bulk
-              Aspera.assert_array_all(value, type, type: Cli::BadArgument){'type'}
-            else
-              Aspera.assert_type(value, type, type: Cli::BadArgument){'type'}
-            end
-          end
-          return value
-        end
       end
     end
   end
