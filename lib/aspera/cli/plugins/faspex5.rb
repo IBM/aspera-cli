@@ -663,7 +663,7 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_action_method(%i[admin clean_deleted]) do |input_data = {}, **|
+        define_action_method(%i[admin clean_deleted]) do |input_data: {}, **|
           input_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if input_data.empty?
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', input_data))
         end
@@ -684,7 +684,7 @@ module Aspera
         # admin > <resource> > create / modify / delete / show
         Api::Faspex::ADMIN_RESOURCES.each do |res|
           CRUD_NO_LIST.each do |op|
-            define_action_method([:admin, res, op]) do |input_data = nil, res_id: nil, **|
+            define_action_method([:admin, res, op]) do |input_data: nil, res_id: nil, **|
               args = res_exec_args(res)
               is_bulk = options.get_option(:bulk)
               items = input_data
