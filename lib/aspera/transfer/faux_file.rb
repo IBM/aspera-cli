@@ -12,16 +12,19 @@ module Aspera
       private_constant :SCHEME, :PREFIX, :SIZE_UNITS
       class << self
         # Parse a faux URI and return a `FauxFile` instance, or `nil` if the URI does not use the faux scheme.
-        # URI format: `faux:///<path>?<integer><unit>`, e.g. `faux:///file.bin?10m` (unit is case-insensitive)
+        # URI format: `faux:///<path>?<size>`, where `<size>` is a decimal integer with an optional
+        # case-insensitive unit suffix: `k`, `m`, `g`, `t`, `p`, `e` (powers of 1024).
+        # When no suffix is given, the size is interpreted as raw bytes.
+        # Examples: `faux:///file.bin?10` (10 bytes), `faux:///file.bin?10m` (10 MiB)
         # @param name [String] source file name, possibly a faux URI
         # @return [FauxFile, nil] `nil` if not a faux scheme, else a `FauxFile` instance
         def create(name)
           return unless name.start_with?(PREFIX)
           name_params = name.delete_prefix(PREFIX).split('?', 2)
           Aspera.assert(name_params.length.eql?(2), type: Error){"Format: #{PREFIX}<file path>?<size>"}
-          m = name_params[1].downcase.match(/^(\d+)([#{SIZE_UNITS.join('')}])$/)
+          m = name_params[1].downcase.match(/^(\d+)([#{SIZE_UNITS.join('')}]?)$/)
           Aspera.assert(m, type: Error){"Format: <integer>[#{SIZE_UNITS.join(',')}]"}
-          size = m[1].to_i * (1024**(SIZE_UNITS.index(m[2]) + 1))
+          size = m[2].empty? ? m[1].to_i : m[1].to_i * (1024**(SIZE_UNITS.index(m[2]) + 1))
           return FauxFile.new(name_params[0], size)
         end
       end
