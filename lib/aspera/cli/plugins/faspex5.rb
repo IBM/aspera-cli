@@ -878,7 +878,7 @@ module Aspera
           matches.first['id']
         end
 
-        def action_shared_folders_browse(shared_folder_id:, folder_path:, **)
+        def action_shared_folders_browse(folder_path, shared_folder_id:, **)
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
           node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
           raise "No such shared folder id #{shared_folder_id}" if node.nil?
