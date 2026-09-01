@@ -2597,7 +2597,9 @@ detect https://tst.example.com/path faspio
 detect https://tst.example.com/path httpgw
 detect my_org aoc
 doc
-doc transfer-parameters
+doc github transfer-parameters
+doc local quick-start --ui=text
+doc toc
 echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>' --format=image --image.text=true
 echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
@@ -2632,6 +2634,8 @@ genkey my_key 4096
 image https://eudemo.asperademo.com/wallpaper.jpg
 initdemo
 open
+options aoc
+options server
 plugins create my_command .
 plugins list
 preset delete conf_name
@@ -2727,10 +2731,14 @@ Example: Define options using a `Hash`:
 ascli -N --preset=@json:'{"url":"_url_here_","password":"<PASSWORD>","username":"_name_here_"}' node --show-config
 ```
 
-#### Bash Completion
+#### Shell Completion
 
-`ascli` supports shell tab-completion for Bash.
-A ready-made completion script is provided in `etc/bash_autocomplete` in the gem sources.
+`ascli` supports shell tab-completion for **Bash**, **Zsh**, and **Fish**.
+Ready-made completion scripts are provided in the `etc/` directory of the gem sources.
+
+All scripts call `ascli config completion bash [words...]` internally to query available sub-commands at any depth.
+
+##### Bash
 
 To enable it, source the script in your shell profile (e.g. `~/.bashrc` or `~/.bash_profile`):
 
@@ -2744,15 +2752,44 @@ Or copy it to the system completion directory:
 cp $(gem contents aspera-cli | grep bash_autocomplete) /etc/bash_completion.d/ascli
 ```
 
+##### Zsh
+
+Place the script somewhere on your `$fpath` and rebuild the completion cache:
+
+```zsh
+cp $(gem contents aspera-cli | grep zsh_autocomplete) ~/.zsh/completions/_ascli
+# Add to ~/.zshrc if not already present:
+#   fpath=(~/.zsh/completions $fpath)
+#   autoload -Uz compinit && compinit
+exec zsh
+```
+
 Once active, press `Tab` to complete commands at any depth:
 
-```bash
+```zsh
 ascli <Tab>               # lists all plugins: aoc, server, node, ...
 ascli server <Tab>        # lists server sub-commands: upload, download, ls, ...
 ascli aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
 ```
 
-The completion script calls `ascli config completion bash [words...]` internally.
+##### Fish
+
+Copy the completion script to Fish's completions directory:
+
+```fish
+cp $(gem contents aspera-cli | grep fish_autocomplete) ~/.config/fish/completions/ascli.fish
+```
+
+No further configuration is needed — Fish loads files from `~/.config/fish/completions/` automatically.
+
+Once active, press `Tab` to complete commands at any depth:
+
+```fish
+ascli <Tab>               # lists all plugins: aoc, server, node, ...
+ascli server <Tab>        # lists server sub-commands: upload, download, ls, ...
+ascli aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+```
+
 This sub-command can also be used directly to inspect available commands:
 
 ```bash
@@ -9689,6 +9726,15 @@ To register `ascli` as an MCP server in an AI client (e.g. Claude Desktop, VS Co
 server
 server @: transport=http port=13777
 ```
+
+### End-to-end AI testing
+
+The file [`docs/test-mcp-with-ai.md`](test-mcp-with-ai.md) contains a step-by-step test
+procedure for validating the MCP server with a live AI assistant (Bob, Claude Desktop,
+VS Code Copilot, or any MCP-capable client).
+It covers tool visibility, self-discovery, Hash schema introspection, option listing,
+documentation retrieval, live transfer tasks, truncation handling, error handling, and
+credential safety.
 
 ## Operational Utilities
 

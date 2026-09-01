@@ -2559,10 +2559,14 @@ Example: Define options using a `Hash`:
 <%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"<%=ph :password%>","username":"_name_here_"}' node --show-config
 ```
 
-#### Bash Completion
+#### Shell Completion
 
-<%=tool%> supports shell tab-completion for Bash.
-A ready-made completion script is provided in `etc/bash_autocomplete` in the gem sources.
+<%=tool%> supports shell tab-completion for **Bash**, **Zsh**, and **Fish**.
+Ready-made completion scripts are provided in the `etc/` directory of the gem sources.
+
+All scripts call `<%=cmd%> config completion bash [words...]` internally to query available sub-commands at any depth.
+
+##### Bash
 
 To enable it, source the script in your shell profile (e.g. `~/.bashrc` or `~/.bash_profile`):
 
@@ -2576,15 +2580,44 @@ Or copy it to the system completion directory:
 cp $(gem contents <%=gemspec.name%> | grep bash_autocomplete) /etc/bash_completion.d/ascli
 ```
 
+##### Zsh
+
+Place the script somewhere on your `$fpath` and rebuild the completion cache:
+
+```zsh
+cp $(gem contents <%=gemspec.name%> | grep zsh_autocomplete) ~/.zsh/completions/_ascli
+# Add to ~/.zshrc if not already present:
+#   fpath=(~/.zsh/completions $fpath)
+#   autoload -Uz compinit && compinit
+exec zsh
+```
+
 Once active, press `Tab` to complete commands at any depth:
 
-```bash
+```zsh
 <%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
 <%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
 <%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
 ```
 
-The completion script calls `<%=cmd%> config completion bash [words...]` internally.
+##### Fish
+
+Copy the completion script to Fish's completions directory:
+
+```fish
+cp $(gem contents <%=gemspec.name%> | grep fish_autocomplete) ~/.config/fish/completions/ascli.fish
+```
+
+No further configuration is needed — Fish loads files from `~/.config/fish/completions/` automatically.
+
+Once active, press `Tab` to complete commands at any depth:
+
+```fish
+<%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
+<%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
+<%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+```
+
 This sub-command can also be used directly to inspect available commands:
 
 ```bash
