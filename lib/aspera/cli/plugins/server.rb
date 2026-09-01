@@ -189,26 +189,29 @@ module Aspera
         end
 
         # AsCmd operations (available only when SSH/local - not WSS)
-        command :ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse]
-        command :rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete]
-        command :mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename]
-        command :cp,     description: 'Copy file(s) on server',          condition: :ascmd_available?
-        command :mkdir,  description: 'Create directory on server',       condition: :ascmd_available?
-        command :df,     description: 'Show disk usage on server',        condition: :ascmd_available?
-        command :du,     description: 'Show file sizes on server',        condition: :ascmd_available?
-        command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?
-        command :info,   description: 'Show server system information',   condition: :ascmd_available?
+        ASCMD_ARGS = [{name: :command_arguments, multiple: true, mandatory: false, default: nil}].freeze
+        private_constant :ASCMD_ARGS
+
+        command :ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse], arguments: ASCMD_ARGS
+        command :rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete], arguments: ASCMD_ARGS
+        command :mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename], arguments: ASCMD_ARGS
+        command :cp,     description: 'Copy file(s) on server',          condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :mkdir,  description: 'Create directory on server',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :df,     description: 'Show disk usage on server',        condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :du,     description: 'Show file sizes on server',        condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :info,   description: 'Show server system information',   condition: :ascmd_available?,                     arguments: ASCMD_ARGS
 
         # Generate ascmd handlers - convention: action_<op>
         %i[rm mv cp mkdir].each do |op|
-          define_action_method([op]) do
-            execute_ascmd(op){Result::Success.new}
+          define_action_method([op]) do |command_arguments:, **|
+            execute_ascmd(op, command_arguments){Result::Success.new}
           end
         end
 
         %i[du md5sum info].each do |op|
-          define_action_method([op]) do
-            execute_ascmd(op){ |r| Result::SingleObject.new(r.stringify_keys)}
+          define_action_method([op]) do |command_arguments:, **|
+            execute_ascmd(op, command_arguments){ |r| Result::SingleObject.new(r.stringify_keys)}
           end
         end
 
@@ -254,22 +257,21 @@ module Aspera
 
         # --- ascmd handlers ---
 
-        def action_ls
-          execute_ascmd(:ls) do |result|
+        def action_ls(command_arguments:, **)
+          execute_ascmd(:ls, command_arguments) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys), fields: %w[zmode zuid zgid size mtime name])
           end
         end
 
-        def action_df
-          execute_ascmd(:df) do |result|
+        def action_df(command_arguments:, **)
+          execute_ascmd(:df, command_arguments) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys))
           end
         end
 
         private
 
-        def execute_ascmd(op)
-          command_arguments = options.get_next_argument('ascmd command arguments', multiple: true, mandatory: false)
+        def execute_ascmd(op, command_arguments)
           ascmd = AsCmd.new(@ascmd_executor)
           begin
             result = ascmd.execute_single(op, command_arguments)

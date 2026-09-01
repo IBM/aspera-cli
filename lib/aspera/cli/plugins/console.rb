@@ -107,7 +107,8 @@ module Aspera
 
         commands_under(%i[transfer smart]) do
           command :list,   description: 'List smart transfers', action: ->(api_console:){Result::ObjectList.new(api_console.read('smart_transfers'))}
-          command :submit, description: 'Submit a smart transfer'
+          command :submit, description: 'Submit a smart transfer',
+            arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash}]
         end
 
         # --- setup ---
@@ -155,10 +156,8 @@ module Aspera
 
         # --- transfer smart ---
 
-        def action_transfer_smart_submit(api_console:)
-          smart_id = options.get_next_argument('smart_id')
-          params = options.get_next_argument('transfer parameters', validation: Hash)
-          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", params))
+        def action_transfer_smart_submit(api_console:, smart_id:, transfer_params:, **)
+          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer_params))
         end
 
         private

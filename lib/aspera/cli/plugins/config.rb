@@ -140,8 +140,11 @@ module Aspera
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
-        command :detect, description: 'Detect the Aspera product from a URL (interactive)'
-        command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)'
+        command :detect, description: 'Detect the Aspera product from a URL (interactive)',
+          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil}]
+        command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
+          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
+                      {name: :preset_name, mandatory: false, default: ''}]
         command :coffee, description: 'Display a coffee image', action: ->{Result::Image.new(COFFEE_IMAGE_URL)}
         command :image, description: 'Display an image',
           arguments: [{name: :image_uri, type: nil}],
@@ -364,16 +367,16 @@ module Aspera
           Result::Status.new("Created #{plugin_file}")
         end
 
-        def action_detect
+        def action_detect(url:, plugin_name:, **)
           options.ask_missing_mandatory = true
-          apps = @wizard.identify_plugins_for_url.freeze
+          apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
           Result::ObjectList.new(apps)
         end
 
-        def action_wizard
+        def action_wizard(url:, plugin_name:, preset_name:, **)
           options.ask_missing_mandatory = true
-          apps = @wizard.identify_plugins_for_url.freeze
-          @wizard.find(apps)
+          apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
+          @wizard.find(apps, preset_name: preset_name)
         end
 
         def action_initdemo

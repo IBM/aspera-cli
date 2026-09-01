@@ -47,10 +47,9 @@ module Aspera
 
       # Find a plugin, and issue the "require"
       # @return [Hash] plugin info: { product:, name:, url:, version: }
-      def identify_plugins_for_url
-        app_url = options.get_next_argument('url', mandatory: true)
-        check_only = options.get_next_argument('plugin name', mandatory: false)
-        check_only = check_only.to_sym unless check_only.nil?
+      def identify_plugins_for_url(url:, plugin_name: nil)
+        app_url = url
+        check_only = plugin_name&.to_sym
         found_apps = []
         my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
         Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
@@ -124,7 +123,7 @@ module Aspera
 
       # Wizard function, creates configuration
       # @param apps [Array] list of detected apps
-      def find(apps)
+      def find(apps, preset_name: '')
         identification = if apps.length.eql?(1)
           Log.log.debug{"Detected: #{identification}"}
           apps.first
@@ -135,7 +134,7 @@ module Aspera
           answer = options.prompt_user_input_in_list('product', apps.map{ |a| a[:product]})
           apps.find{ |a| a[:product].eql?(answer)}
         end
-        wiz_preset_name = options.get_next_argument('preset name', default: '')
+        wiz_preset_name = preset_name
         Log.dump(:identification, identification)
         wiz_url = identification[:url]
         formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)

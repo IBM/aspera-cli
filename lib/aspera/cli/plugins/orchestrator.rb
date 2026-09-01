@@ -122,7 +122,8 @@ module Aspera
           command :status,     description: 'Check running status of workflow(s)',          instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])}
           command :inputs,     description: 'Fetch input specification for a workflow',     instance_arg: :wf_id, action: ->(wf_id:, **){Result::SingleObject.new(call_ao("workflow_inputs_spec/#{wf_id}")['workflow_inputs_spec'])}
           command :details,    description: 'Check detailed running status of a workflow',  instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_details/#{wf_id}")['workflows']['workflow']['statuses'])}
-          command :start,      description: 'Initiate a work order (sync or async)',        instance_arg: :wf_id
+          command :start,      description: 'Initiate a work order (sync or async)',        instance_arg: :wf_id,
+            arguments: [{name: :external_parameters, type: Hash, mandatory: false, default: {}}]
           command :export,     description: 'Export a workflow',                            instance_arg: :wf_id, action: ->(wf_id:, **){Result::Text.new(call_ao("export_workflow/#{wf_id}", format: nil, http: true).body)}
           command :workorders, description: 'Fetch all work orders from a workflow',        instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("work_orders_list/#{wf_id}")['work_orders'])}
           command :outputs,    description: 'Fetch output specification for a workflow',    instance_arg: :wf_id, action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_outputs_spec/#{wf_id}")['workflow_outputs_spec']['output'])}
@@ -184,10 +185,10 @@ module Aspera
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)
-        def action_workflows_start(wf_id:, **)
+        def action_workflows_start(wf_id:, external_parameters:, **)
           call_params = {format: :json}
           # get external parameters if any
-          options.get_next_argument('external_parameters', mandatory: false, validation: Hash, default: {}).each do |name, value|
+          external_parameters.each do |name, value|
             call_params["external_parameters[#{name}]"] = value
           end
           # synchronous call ?

@@ -403,8 +403,10 @@ module Aspera
         command :events,   description: 'Process file events and generate previews', setup: :setup_node_api
         command :trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api
         command :check,    description: 'Check required tools are installed'
-        command :test,     description: 'Test preview generation for a source file'
-        command :show,     description: 'Generate and display preview of a source file'
+        command :test,     description: 'Test preview generation for a source file',
+          arguments: [{name: :source_file, type: String}, {name: :format, type: Symbol, mandatory: false, default: :png}]
+        command :show,     description: 'Generate and display preview of a source file',
+          arguments: [{name: :source_file, type: String}]
 
         # --- setup ---
 
@@ -496,23 +498,21 @@ module Aspera
           cleanup_tmp_folder
         end
 
-        def action_test
+        def action_test(source_file:, format:, **)
           check_tools_and_mimemagic
-          source = options.get_next_argument('source file')
-          format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
+          Aspera.assert(Aspera::Preview::Generator::PREVIEW_FORMATS.include?(format), type: Cli::BadArgument){"Invalid format: #{format}, expected one of: #{Aspera::Preview::Generator::PREVIEW_FORMATS.join(', ')}"}
           generated_file_path = preview_filename(format, options.get_option(:base))
-          Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
+          Aspera::Preview::Generator.new(source_file, generated_file_path, @gen_options, @tmp_folder).generate
           Result::Status.new("generated: #{generated_file_path}")
         ensure
           cleanup_tmp_folder
         end
 
-        def action_show
+        def action_show(source_file:, **)
           check_tools_and_mimemagic
-          source = options.get_next_argument('source file')
           # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
           generated_file_path = preview_filename(:png, options.get_option(:base))
-          Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder).generate
+          Aspera::Preview::Generator.new(source_file, generated_file_path, @gen_options, @tmp_folder).generate
           formatter.display_status("generated: #{generated_file_path}")
           # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
           # Result::Status.new("generated: #{generated_file_path}")
