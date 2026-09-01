@@ -158,13 +158,8 @@ module Aspera
           return server_transfer_spec
         end
 
-        def execute_transfer(command, transfer_spec)
-          transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(command)
-          Runner.result_transfer(transfer.start(transfer_spec))
-        end
-
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir){ @server_transfer_spec } }
+          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir){@server_transfer_spec}}
         end
 
         # --- DSL ---
@@ -178,24 +173,21 @@ module Aspera
         root_setup :setup_server
 
         command :health,   description: 'Check transfer health'
-        command :upload,   description: 'Upload files to server',        transfer_paths: :send,    action: ->{execute_transfer(:upload,   @server_transfer_spec)}
-        command :download, description: 'Download files from server',    transfer_paths: :receive, action: ->{execute_transfer(:download, @server_transfer_spec)}
-        command :sync,     description: 'Synchronize files with server'
+        command :upload,   description: 'Upload files to server', transfer_paths: :send, action: lambda do
+          @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
+          Runner.result_transfer(transfer.start(@server_transfer_spec))
+        end
+        command :download, description: 'Download files from server', transfer_paths: :receive, action: lambda do
+          @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
+          Runner.result_transfer(transfer.start(@server_transfer_spec))
+        end
+        command :sync, description: 'Synchronize files with server'
         commands_under(:sync) do
           Sync::Operations::DIRECTIONS.each do |dir|
             command(dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send)
           end
           command :admin, description: 'Manage sync database (admin operations)'
-          commands_under(%i[sync admin]) do
-            path_and_info_args = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}]
-            command :status,    description: 'Show sync session status',    arguments: path_and_info_args, action: :action_sync_admin_status
-            command :find,      description: 'Find sync database files',    arguments: [{name: :path, type: String}], action: :action_sync_admin_find
-            command :meta,      description: 'Show sync session metadata',  arguments: path_and_info_args, action: :action_sync_admin_meta
-            command :counters,  description: 'Show sync counters',          arguments: path_and_info_args, action: :action_sync_admin_counters
-            command :file_info, description: 'Show per-file sync state',    arguments: path_and_info_args, action: :action_sync_admin_file_info
-            command :overview,  description: 'Show sync database overview', arguments: path_and_info_args, action: :action_sync_admin_overview
-            command :query,     description: 'Execute a raw SQL query',     arguments: path_and_info_args, action: :action_sync_admin_query
-          end
+          SyncActions.register_sync_admin_commands(self, %i[sync admin])
         end
 
         commands_under(:health) do

@@ -158,10 +158,7 @@ module Aspera
         # commands for : `execute_simple_common`: actions used commonly when a node is involved
         COMMON_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
-        # actions available in v3 in gen4
-        V3_IN_V4_ACTIONS = %i[transfer].concat(COMMON_ACTIONS).freeze
-
-        private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :V3_IN_V4_ACTIONS, :COMMON_ACTIONS
+        private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :COMMON_ACTIONS
 
         # used in aoc
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
@@ -377,16 +374,7 @@ module Aspera
             command(dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send)
           end
           command :admin, description: 'Manage sync database (admin operations)'
-          commands_under(%i[sync admin]) do
-            path_and_info_args = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}]
-            command :status,    description: 'Show sync session status',    arguments: path_and_info_args, action: :action_sync_admin_status
-            command :find,      description: 'Find sync database files',    arguments: [{name: :path, type: String}], action: :action_sync_admin_find
-            command :meta,      description: 'Show sync session metadata',  arguments: path_and_info_args, action: :action_sync_admin_meta
-            command :counters,  description: 'Show sync counters',          arguments: path_and_info_args, action: :action_sync_admin_counters
-            command :file_info, description: 'Show per-file sync state',    arguments: path_and_info_args, action: :action_sync_admin_file_info
-            command :overview,  description: 'Show sync database overview', arguments: path_and_info_args, action: :action_sync_admin_overview
-            command :query,     description: 'Execute a raw SQL query',     arguments: path_and_info_args, action: :action_sync_admin_query
-          end
+          SyncActions.register_sync_admin_commands(self, %i[sync admin])
         end
         command :transport,   description: 'Show transport parameters',
           action: ->{Result::SingleObject.new(@api_node.transport_params)}
@@ -437,16 +425,7 @@ module Aspera
               command(dir, description: "#{dir.capitalize}-sync (Gen4)", transfer_paths: :send)
             end
             command :admin, description: 'Manage sync database (admin operations)'
-            commands_under(%i[access_keys do sync admin]) do
-              path_and_info_args = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}]
-              command :status,    description: 'Show sync session status',    arguments: path_and_info_args, action: :action_sync_admin_status
-              command :find,      description: 'Find sync database files',    arguments: [{name: :path, type: String}], action: :action_sync_admin_find
-              command :meta,      description: 'Show sync session metadata',  arguments: path_and_info_args, action: :action_sync_admin_meta
-              command :counters,  description: 'Show sync counters',          arguments: path_and_info_args, action: :action_sync_admin_counters
-              command :file_info, description: 'Show per-file sync state',    arguments: path_and_info_args, action: :action_sync_admin_file_info
-              command :overview,  description: 'Show sync database overview', arguments: path_and_info_args, action: :action_sync_admin_overview
-              command :query,     description: 'Execute a raw SQL query',     arguments: path_and_info_args, action: :action_sync_admin_query
-            end
+            SyncActions.register_sync_admin_commands(self, %i[access_keys do sync admin])
           end
         end
         commands_under(%i[access_keys do permission]) do
@@ -660,17 +639,19 @@ module Aspera
         def sync_gen3_block
           ->(direction, local_path, remote_path) {
             request_transfer_spec = sync_spec_request(direction, local_path, remote_path)
-            @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-            transfer_spec = @api_node.create('files/sync_setup',
-              {transfer_requests: [{transfer_request: request_transfer_spec}]})['transfer_specs'].first['transfer_spec']
-            transfer_spec.delete_if{ |_k, v| v.nil?}
-            Log.dump(:ts, transfer_spec)
-            transfer_spec
+                                                              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+                                                              transfer_spec = @api_node.create(
+                                                                'files/sync_setup',
+                                                                {transfer_requests: [{transfer_request: request_transfer_spec}]}
+                                                              )['transfer_specs'].first['transfer_spec']
+                                                              transfer_spec.delete_if{ |_k, v| v.nil?}
+                                                              Log.dump(:ts, transfer_spec)
+                                                              transfer_spec
           }
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir, &sync_gen3_block) }
+          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir, &sync_gen3_block)}
         end
 
         def action_upload
@@ -854,8 +835,8 @@ module Aspera
         def sync_gen4_block(do_root_file_id)
           ->(direction, _local_path, remote_path) {
             ts_direction = direction.eql?(:pull) ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND
-            apifid = @api_node.resolve_api_fid(do_root_file_id, remote_path)
-            apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
+                                                               apifid = @api_node.resolve_api_fid(do_root_file_id, remote_path)
+                                                               apifid.node_api.transfer_spec_gen4(apifid.file_id, ts_direction)
           }
         end
 
@@ -885,11 +866,9 @@ module Aspera
 
         # access_keys > do > v3
         def action_access_keys_do_v3(do_root_file_id:, **)
-          # NOTE: other common actions are unauthorized with user scope
-          command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
-          # TODO: shall we support all methods here ? what if there is a link ?
+          # Build a fresh Node for the v3 root, then let the DSL dispatcher consume the next command.
           v3_node = Node.new(context: context, api: @api_node.resolve_api_fid(do_root_file_id, '').node_api)
-          v3_node.dispatch_v3_command(command_legacy)
+          v3_node.execute_action
         end
 
         # access_keys > do > node_info / bearer_token_node — shared helper builds the result hash

@@ -20,6 +20,23 @@ module Aspera
         def included(base)
           base.option(:sql, description: 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
         end
+
+        # DSL helper: register the 7 `sync admin` leaf commands under the given parent path.
+        # Called at class-load time from any plugin that includes SyncActions.
+        # @param base        [Class]          the plugin class (receiver of DSL methods)
+        # @param admin_path  [Symbol, Array<Symbol>]  full parent path, e.g. %i[sync admin]
+        def register_sync_admin_commands(base, admin_path)
+          path_and_info_args = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}]
+          base.commands_under(admin_path) do
+            base.command(:status,    description: 'Show sync session status',     arguments: path_and_info_args, action: :action_sync_admin_status)
+            base.command(:find,      description: 'Find sync database files',     arguments: [{name: :path, type: String}], action: :action_sync_admin_find)
+            base.command(:meta,      description: 'Show sync session metadata',   arguments: path_and_info_args, action: :action_sync_admin_meta)
+            base.command(:counters,  description: 'Show sync counters',           arguments: path_and_info_args, action: :action_sync_admin_counters)
+            base.command(:file_info, description: 'Show per-file sync state',     arguments: path_and_info_args, action: :action_sync_admin_file_info)
+            base.command(:overview,  description: 'Show sync database overview',  arguments: path_and_info_args, action: :action_sync_admin_overview)
+            base.command(:query,     description: 'Execute a raw SQL query',      arguments: path_and_info_args, action: :action_sync_admin_query)
+          end
+        end
       end
 
       # Convert path + sync_info to internal `sync_info` format.

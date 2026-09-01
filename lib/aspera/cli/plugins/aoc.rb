@@ -460,6 +460,32 @@ module Aspera
               schema:        schema
             }
           end
+
+          # DSL helper: register the 5 short_link leaf commands under the given parent path.
+          # The action convention (:action_<path>_<cmd>) is resolved implicitly by the dispatcher.
+          # @param base        [Class]                  the plugin class
+          # @param parent_path [Array<Symbol>]  full path ending with :short_link
+          def register_short_link_commands(base, parent_path)
+            base.commands_under(parent_path) do
+              base.command(
+                :create, description: 'Create',
+                arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+              )
+              base.command(
+                :modify, description: 'Modify',
+                arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
+              )
+              base.command(:list, description: 'List short links')
+              base.command(
+                :show, description: 'Show a short link',
+                arguments: [{name: :short_link_id, type: :identifier}]
+              )
+              base.command(
+                :delete, description: 'Delete a short link',
+                arguments: [{name: :short_link_id, type: :identifier}]
+              )
+            end
+          end
         end
 
         # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg without self.class.
@@ -846,17 +872,7 @@ module Aspera
             setup: :setup_packages_short_link
         end
         # packages > shared_inboxes > short_link sub-commands
-        commands_under(%i[packages shared_inboxes short_link]) do
-          command :create, description: 'Create',
-            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :modify, description: 'Modify',
-            arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :list,   description: 'List short links'
-          command :show,   description: 'Show a short link',
-            arguments: [{name: :short_link_id, type: :identifier}]
-          command :delete, description: 'Delete a short link',
-            arguments: [{name: :short_link_id, type: :identifier}]
-        end
+        register_short_link_commands(self, %i[packages shared_inboxes short_link])
 
         # files sub-commands: all FILES_COMMANDS + :short_link
         # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
@@ -884,17 +900,7 @@ module Aspera
           command :find,              description: 'Find files'
         end
         # files > short_link sub-commands
-        commands_under(%i[files short_link]) do
-          command :create, description: 'Create',
-            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :modify, description: 'Modify',
-            arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :list,   description: 'List short links'
-          command :show,   description: 'Show a short link',
-            arguments: [{name: :short_link_id, type: :identifier}]
-          command :delete, description: 'Delete a short link',
-            arguments: [{name: :short_link_id, type: :identifier}]
-        end
+        register_short_link_commands(self, %i[files short_link])
 
         # automation sub-commands
         commands_under(:automation) do
