@@ -66,8 +66,9 @@ module Aspera
 
         RESULT FORMAT
           Structured data is always in structuredContent (a JSON object).
-          Text content may be truncated to the first #{DEFAULT_MAX_ITEMS} items for lists;
-          use structuredContent for the complete dataset.
+          When a list result exceeds #{DEFAULT_MAX_ITEMS} items, text content is truncated and
+          a second text block is appended: "WARNING: result truncated to N of TOTAL items."
+          Always use structuredContent for the complete dataset when truncation occurs.
 
         EXAMPLES
           ["config", "commands"]                       ← Step 1: full capability map
@@ -112,11 +113,16 @@ module Aspera
             structured = result.data.is_a?(Array) ? {items: result.data} : result.data
             # Truncate text content to avoid overwhelming the client; full data is in structuredContent.
             limit = max_items || DEFAULT_MAX_ITEMS
-            text_data = result.data.is_a?(Array) ? result.data.first(limit) : result.data
-            MCP::Tool::Response.new(
-              [{type: 'text', text: JSON.generate(text_data)}],
-              structured_content: structured
-            )
+            content = if result.data.is_a?(Array) && result.data.size > limit
+              total = result.data.size
+              [
+                {type: 'text', text: JSON.generate(result.data.first(limit))},
+                {type: 'text', text: "WARNING: result truncated to #{limit} of #{total} items. Full dataset available in structuredContent."}
+              ]
+            else
+              [{type: 'text', text: JSON.generate(result.data)}]
+            end
+            MCP::Tool::Response.new(content, structured_content: structured)
           else
             MCP::Tool::Response.new([{type: 'text', text: result.data.to_s}])
           end

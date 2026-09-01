@@ -50,11 +50,13 @@ module Aspera
           ats (Aspera Transfer Service), preview, shares, cos, httpgw, faspio, alee.
 
           Recommended workflow for any task:
-          1. Call ["config", "commands"] to map available commands to their syntax.
+          1. Call ["config", "commands"] to map all 800+ commands to their syntax.
           2. For any command whose syntax shows a <data> argument, call it with "help"
              instead of the real value to see the full field schema before constructing
              the @json:{...} payload.
-          3. When credentials are already saved, use --preset=name instead of inline
+          3. Call ["config", "options", "<plugin>"] to list every --flag accepted by a
+             plugin with its allowed values (e.g. --auth=basic|oauth2|…, --url, --preset).
+          4. When credentials are already saved, use --preset=name instead of inline
              credentials. Call ["config", "preset", "list"] to see saved presets.
         INST
 
