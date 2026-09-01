@@ -344,6 +344,23 @@ All execution must go through `dispatch_from_registry` so that setup hooks, cont
 inline lambda handlers, and help generation work identically whether a command is reached from
 the top-level argument stream or via a delegated call.
 
+#### Legitimate residual uses of `get_next_command` and `case command`
+
+The goal of the Command DSL migration was to eliminate *plugin-level* imperative dispatch.
+A few occurrences remain in the **infrastructure** itself — they are intentional and must not
+be removed:
+
+| File | Location | Role |
+|------|----------|------|
+| [`options.rb`](../lib/aspera/cli/options.rb) | method definition | Infrastructure — defines `get_next_command` |
+| [`base.rb`](../lib/aspera/cli/plugins/base.rb) line ~286 | `dispatch_from_registry` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
+| [`base.rb`](../lib/aspera/cli/plugins/base.rb) line ~490 | `entity_execute` | Legitimate shorthand: `entity_command` without explicit `command:` reads the next CRUD verb from the stream |
+| [`runner.rb`](../lib/aspera/cli/runner.rb) line ~85 | top-level routing | Acceptable top-level plugin selector, not a per-plugin dispatch |
+| [`runner.rb`](../lib/aspera/cli/runner.rb) line ~88 | `case command` | Top-level routing switch, not a per-plugin dispatch |
+| [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) line ~360 | `case command_repo` | Parameter already resolved before the `case`; no CLI read |
+
+All plugin files have zero uses of `get_next_command` or bare `case command` for dispatching.
+
 #### Transfer Agent Abstraction
 
 **File**: [`lib/aspera/cli/transfer_agent.rb`](../lib/aspera/cli/transfer_agent.rb)
