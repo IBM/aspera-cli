@@ -174,10 +174,7 @@ module Aspera
         command :image, description: 'Display an image',
           arguments: [{name: :image_uri, type: nil}],
           action: ->(image_uri:, **){Result::Image.new(image_uri)}
-        command :ascp, description: 'Manage the transfer SDK (ascp/transferd)', action: ->{execute_action_ascp}
-        command :agents, description: 'Display transfer agent information', action: ->{execute_action_agents}
         command :sync, description: 'Manage Aspera Sync operations'
-        command :transferd, description: 'Manage the transfer daemon (transferd)', action: ->{execute_action_transferd}
         command :gem, description: 'Display gem information'
         command :folder, description: 'Display the configuration folder path', action: ->{Result::Text.new(context.main_folder)}
         command :file, description: 'Display the configuration file path', action: ->{Result::Text.new(context.presets.config_file)}
@@ -256,6 +253,36 @@ module Aspera
               {name: :name,   type: String},
               {name: :folder, type: String, mandatory: false}
             ]
+        end
+
+        # ascp sub-commands
+        commands_under(:ascp) do
+          command :show,    description: 'Display ascp binary path'
+          command :info,    description: 'Display ascp and transfer spec information'
+          command :install, description: 'Install the transfer SDK',
+            arguments: [{name: :version, mandatory: false, default: nil}]
+          command :spec,    description: 'Display the transfer spec schema'
+          command :schema,  description: 'Display the transfer spec JSON schema',
+            arguments: [{name: :agent_name, mandatory: false, default: nil}]
+          command :errors,  description: 'Display FASP error codes'
+          commands_under(:products) do
+            command :list, description: 'List installed Aspera products'
+          end
+        end
+
+        # agents sub-commands
+        commands_under(:agents) do
+          command :list,       description: 'List all transfer agents'
+          command :show,       description: 'Show details for a transfer agent',
+            arguments: [{name: :agent_name, type: Symbol}]
+          command :parameters, description: 'Show configurable parameters for a transfer agent',
+            arguments: [{name: :agent_name, type: Symbol}]
+        end
+
+        # transferd sub-commands
+        commands_under(:transferd) do
+          command :install, description: 'Install the transfer daemon'
+          command :list,    description: 'List available SDK locations'
         end
 
         # sync sub-commands
