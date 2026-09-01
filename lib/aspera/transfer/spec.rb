@@ -57,7 +57,7 @@ module Aspera
         # @return [Integer] value in kbps
         def rate_string_to_kbps(value)
           m = value.to_s.strip.match(/\A(\d+)([kKmMgG])?\z/)
-          raise "Invalid rate value: #{value.inspect}. Expected integer with optional suffix k/K, m/M or g/G." unless m
+          Aspera.assert(m){"Invalid rate value: #{value.inspect}. Expected integer with optional suffix k/K, m/M or g/G."}
           multiplier = m[2] ? RATE_SUFFIX_KBPS.fetch(m[2].downcase) : 1
           return m[1].to_i * multiplier
         end

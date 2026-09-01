@@ -44,7 +44,7 @@ module Aspera
           context_ip = r_addr.to_s if r_addr.is_a?(Resolv::IPv4)
         end
       end
-      raise "DNS name not found: #{context_host}" if context_ip.nil?
+      Aspera.assert(!context_ip.nil?){"DNS name not found: #{context_host}"}
       # NOTE: Javascript code here with string inclusions
       javascript = <<END_OF_JAVASCRIPT
       function dnsResolve(host) {

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
+
 module Aspera
   module Cli
     # Mixin for Config plugin: preset CRUD actions
@@ -32,7 +34,7 @@ module Aspera
         url = options.get_option(:url, mandatory: true)
         user = options.get_option(:username, mandatory: true)
         result = presets.lookup_preset(url: url, username: user)
-        raise Error, 'no such config found' if result.nil?
+        Aspera.assert(!result.nil?, type: Error){'no such config found'}
         Result::SingleObject.new(result)
       end
 

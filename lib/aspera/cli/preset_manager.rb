@@ -83,7 +83,7 @@ module Aspera
       # Save to disk only if content changed since last load/save.
       # @return [Boolean] true if actually written
       def save_if_needed
-        raise Cli::Error, 'no configuration loaded' if @config_presets.nil?
+        Aspera.assert(!@config_presets.nil?, type: Cli::Error){'no configuration loaded'}
         current = checksum
         return false if @checksum_on_disk.eql?(current)
         FileUtils.mkdir_p(File.dirname(@config_file))
@@ -124,14 +124,14 @@ module Aspera
       # @param config_name [String]
       # @param include_path [Array] guard against include loops
       def by_name(config_name, include_path = [])
-        raise Cli::Error, 'loop in include' if include_path.include?(config_name)
+        Aspera.assert(!include_path.include?(config_name), type: Cli::Error){'loop in include'}
         include_path = include_path.clone
         current = @config_presets
         config_name.split(PRESET_DIG_SEPARATOR).each do |name|
           Aspera.assert_type(current, Hash, type: Cli::Error){"sub key: #{include_path}"}
           include_path.push(name)
           current = current[name]
-          raise Cli::Error, "Unknown config preset: #{include_path}" if current.nil?
+          Aspera.assert(!current.nil?, type: Cli::Error){"Unknown config preset: #{include_path}"}
         end
         current = self.class.deep_clone(current) unless current.is_a?(String)
         ExtendedValue.instance.evaluate(current, context: 'preset')
@@ -224,7 +224,7 @@ module Aspera
         Aspera.assert_type(@config_presets, Hash){'config file YAML'}
         Aspera.assert(@config_presets.key?(Key::CONFIG)){"Cannot find key: #{Key::CONFIG}"}
         version = @config_presets[Key::CONFIG][Key::VERSION]
-        raise Cli::Error, 'No version found in config section.' if version.nil?
+        Aspera.assert(!version.nil?, type: Cli::Error){'No version found in config section.'}
         Log.log.debug{"conf version: #{version}"}
         # Fix bug in 4.4 (creating key "true" in "default" preset)
         @config_presets[Key::DEFAULTS].delete(true) if @config_presets[Key::DEFAULTS].is_a?(Hash)

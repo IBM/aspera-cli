@@ -209,7 +209,7 @@ module Aspera
         def setup_ak_node(access_key_id:, **)
           ak_data = ats_api.read("access_keys/#{access_key_id}")
           server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
-          raise Cli::Error, 'no such server found' if server_data.nil?
+          Aspera.assert(!server_data.nil?, type: Cli::Error){'no such server found'}
           node_url = server_data['transfer_setup_url']
           api_node = Api::Node.new(
             base_url: node_url,

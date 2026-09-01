@@ -64,7 +64,7 @@ module Aspera
       def set(options)
         validate_set(options)
         label = options.delete(:label)
-        raise "secret #{label} already exist, delete first" if @all_secrets.key?(label)
+        Aspera.assert(!@all_secrets.key?(label)){"secret #{label} already exist, delete first"}
         @all_secrets[label] = options.symbolize_keys
         save
       end

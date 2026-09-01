@@ -306,7 +306,7 @@ module Aspera
         def field_snake_to_native(name)
           field = name.delete('_')
           result = PARAMETERS.find{ |w| w.casecmp?(field)}
-          raise "No such field: #{name}" if result.nil?
+          Aspera.assert(!result.nil?){"No such field: #{name}"}
           result
         end
 

@@ -142,7 +142,7 @@ module Aspera
         return
       end
       # check mandatory parameter (nil is valid value), TODO: change exception ?
-      raise Transfer::Error, "Missing mandatory parameter: #{name}" if @schema['required']&.include?(name) && !properties['x-cli-special'] && !@object.key?(name)
+      Aspera.assert(!(@schema['required']&.include?(name) && !properties['x-cli-special'] && !@object.key?(name)), type: Transfer::Error){"Missing mandatory parameter: #{name}"}
       parameter_value = @object[name]
       # no default setting
       # parameter_value=properties['default'] if parameter_value.nil? and properties.has_key?('default')
@@ -168,7 +168,7 @@ module Aspera
       return if parameter_value.nil?
 
       # check that value is of an accepted type (string, integer, boolean)
-      raise "Enum value #{parameter_value} is not allowed for #{name}" if properties.key?('enum') && !properties['enum'].include?(parameter_value)
+      Aspera.assert(!(properties.key?('enum') && !properties['enum'].include?(parameter_value))){"Enum value #{parameter_value} is not allowed for #{name}"}
 
       # convert some values if value on command line needs processing from value in structure
       if (convert = properties['x-cli-convert'])
@@ -178,7 +178,7 @@ module Aspera
           when String then @convert.send(convert, parameter_value)
           else Aspera.error_unexpected_value(convert){"Conversion type for #{name} is Hash or String only."}
           end
-        raise "No conversion for: #{name}=#{parameter_value}" if converted_value.nil?
+        Aspera.assert(!converted_value.nil?){"No conversion for: #{name}=#{parameter_value}"}
         parameter_value = converted_value
       end
 

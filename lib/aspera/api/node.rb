@@ -393,7 +393,7 @@ module Aspera
         return NodeFileId.new(self, top_file_id) if path_elements.empty?
         resolve_state = {path: path_elements, consumed: [], result: nil, process_last_link: process_last_link}
         process_folder_tree(method_sym: :process_api_fid, state: resolve_state, top_file_id: top_file_id)
-        raise ParameterError, "Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}" if resolve_state[:result].nil?
+        Aspera.assert(!resolve_state[:result].nil?, type: ParameterError){"Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}"}
         Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result].node_api.base_url} #{resolve_state[:result].file_id}"}
         return resolve_state[:result]
       end
@@ -659,7 +659,7 @@ module Aspera
               # We found it
               other_node = nil
               other_node = node_id_to_node(entry['target_node_id']) if entry_has_link_information(entry)
-              raise Error, 'Cannot resolve link' if other_node.nil?
+              Aspera.assert(!other_node.nil?, type: Error){'Cannot resolve link'}
               state[:result] = NodeFileId.new(other_node, entry['target_id'])
             else
               # We found it but we do not process the link

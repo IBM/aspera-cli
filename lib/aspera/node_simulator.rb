@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
 require 'aspera/log'
@@ -175,7 +176,7 @@ module Aspera
     require 'time'
 
     def folder_to_structure(folder_path)
-      raise "Path does not exist or is not a directory: #{folder_path}" unless Dir.exist?(folder_path)
+      Aspera.assert(Dir.exist?(folder_path)){"Path does not exist or is not a directory: #{folder_path}"}
 
       # Build self structure
       folder_stat = File.stat(folder_path)

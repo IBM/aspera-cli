@@ -166,7 +166,7 @@ module Aspera
     # @return [nil]
     def formatter=(formatter)
       if formatter.is_a?(String)
-        raise Error, "Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}" unless FORMATTER_LAMBDAS.key?(formatter.to_sym)
+        Aspera.assert(FORMATTER_LAMBDAS.key?(formatter.to_sym), type: Error){"Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}"}
         formatter = FORMATTER_LAMBDAS[formatter.to_sym]
       elsif !formatter.respond_to?(:call) && !formatter.is_a?(Logger::Formatter)
         raise Error, 'Formatter must be a String, a Logger::Formatter or a Proc'

@@ -24,7 +24,7 @@ module Aspera
           endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')
           Log.dump(:endpoints, endpoints)
           endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
-          raise "no such region: #{bucket_region}" if endpoint.nil?
+          Aspera.assert(!endpoint.nil?){"no such region: #{bucket_region}"}
           return {
             instance_id: service_credentials['resource_instance_id'],
             api_key:     service_credentials['apikey'],

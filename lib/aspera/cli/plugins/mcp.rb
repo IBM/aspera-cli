@@ -79,7 +79,7 @@ module Aspera
           require 'aspera/cli/mcp_tool'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
-          raise Cli::BadArgument, "Unknown MCP option(s): #{unknown.join(', ')}" unless unknown.empty?
+          Aspera.assert(unknown.empty?, type: Cli::BadArgument){"Unknown MCP option(s): #{unknown.join(', ')}"}
           Cli::McpTool.max_items = mcp_options.delete(:max_items)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \

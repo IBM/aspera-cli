@@ -113,7 +113,7 @@ module Aspera
       def ignore_cert_host_port=(url_list)
         url_list.each do |url|
           uri = URI.parse(url)
-          raise "Expecting https scheme: #{url}" unless uri.scheme.eql?('https')
+          Aspera.assert(uri.scheme.eql?('https')){"Expecting https scheme: #{url}"}
           @ignore_cert_host_port.push([uri.host, uri.port].freeze)
         end
       end

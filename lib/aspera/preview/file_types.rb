@@ -86,9 +86,9 @@ module Aspera
         mimetype = TYPE_NOT_FOUND if mimetype.nil? || (mimetype.is_a?(String) && mimetype.empty?)
         mimetype = Marcel::MimeType.for(Pathname.new(filepath), name: File.basename(filepath), declared_type: mimetype)
         mimetype = 'text/plain' if mimetype.eql?(TYPE_NOT_FOUND) && ascii_text_file?(filepath)
-        raise "no MIME type found for #{File.basename(filepath)}" if mimetype.eql?(TYPE_NOT_FOUND)
+        Aspera.assert(!mimetype.eql?(TYPE_NOT_FOUND)){"no MIME type found for #{File.basename(filepath)}"}
         conversion_type = mime_to_type(mimetype)
-        raise "no conversion type found for #{File.basename(filepath)}" if conversion_type.nil?
+        Aspera.assert(!conversion_type.nil?){"no conversion type found for #{File.basename(filepath)}"}
         Log.log.trace1{"conversion_type(#{File.basename(filepath)}): #{conversion_type.class.name} [#{conversion_type}]"}
         return conversion_type
       end

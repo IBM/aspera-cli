@@ -80,7 +80,7 @@ module Aspera
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
         RestParameters.instance.spinner_cb.call(action: :success)
-        raise "No known application found at #{app_url}" if found_apps.empty?
+        Aspera.assert(!found_apps.empty?){"No known application found at #{app_url}"}
         Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)}, 'all app info keys must be symbols')
         return found_apps
       end

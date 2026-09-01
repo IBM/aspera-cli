@@ -322,7 +322,7 @@ module Aspera
               end
             end
             path, props = find_option(CONF_SCHEMA, [], option)
-            raise "Option not found: #{option}" if path.nil?
+            Aspera.assert(!path.nil?){"Option not found: #{option}"}
             last_key = path.pop
             # navigate in the current result to insert the value
             current = result

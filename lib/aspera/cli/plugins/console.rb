@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/nagios'
 
@@ -174,10 +175,10 @@ module Aspera
         private
 
         def parse_extended_filter(filter, query)
-          raise BadArgument, "Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..." unless filter.start_with?('(') && filter.end_with?(')')
+          Aspera.assert(filter.start_with?('(') && filter.end_with?(')'), type: BadArgument){"Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..."}
           filter[1..-2].split(')and(').each_with_index do |expr, i|
             m = expr.match(EXPR_RE)
-            raise BadArgument, "Invalid expression: #{expr}, shall be: <field> <op> <val>" unless m
+            Aspera.assert(m, type: BadArgument){"Invalid expression: #{expr}, shall be: <field> <op> <val>"}
             t = m.captures
             i += 1
             query["filter#{i}"] = t[0]

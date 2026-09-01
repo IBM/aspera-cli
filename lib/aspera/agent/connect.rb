@@ -21,7 +21,7 @@ module Aspera
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
-        raise Error, 'Using connect requires a graphical environment' unless Environment.instance.graphical?
+        Aspera.assert(Environment.instance.graphical?, type: Error){'Using connect requires a graphical environment'}
         method_index = 0
         begin
           # raise exception if connect not started and file does not exist
@@ -38,7 +38,7 @@ module Aspera
           Log.log.debug{"Exception: #{e}"}
           start_url = CONNECT_START_URIS[method_index]
           method_index += 1
-          raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?
+          Aspera.assert(!start_url.nil?){"Unable to start connect #{method_index} times"}
           Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
           Environment.instance.open_uri_graphical(start_url)
           sleep(SLEEP_SEC_BETWEEN_RETRY)

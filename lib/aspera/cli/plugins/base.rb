@@ -511,7 +511,7 @@ module Aspera
 
           case command
           when :create
-            raise BadArgument, 'cannot create singleton' if is_singleton
+            Aspera.assert(!is_singleton, type: BadArgument){'cannot create singleton'}
             unless input_data
               # No pre-resolved data: read from CLI
               cli_is_bulk = options.get_option(:bulk)
@@ -524,7 +524,7 @@ module Aspera
               api.create(entity, params)
             end
           when :delete
-            raise BadArgument, 'cannot delete singleton' if is_singleton
+            Aspera.assert(!is_singleton, type: BadArgument){'cannot delete singleton'}
             if !delete_style.nil?
               one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
               Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)

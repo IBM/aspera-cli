@@ -876,15 +876,15 @@ module Aspera
         def lookup_shared_folder_id(field, value, **)
           all = @api_v5.read('shared_folders')['shared_folders']
           matches = all.select{ |i| i[field].eql?(value)}
-          raise "no match for #{field} = #{value}" if matches.empty?
-          raise "multiple matches for #{field} = #{value}" if matches.length > 1
+          Aspera.assert(!matches.empty?){"no match for #{field} = #{value}"}
+          Aspera.assert(matches.length == 1){"multiple matches for #{field} = #{value}"}
           matches.first['id']
         end
 
         def action_shared_folders_browse(folder_path:, shared_folder_id:, **)
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
           node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-          raise "No such shared folder id #{shared_folder_id}" if node.nil?
+          Aspera.assert(!node.nil?){"No such shared folder id #{shared_folder_id}"}
           browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse", {}, folder_path: folder_path)
         end
 

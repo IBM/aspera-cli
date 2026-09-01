@@ -95,7 +95,7 @@ module Aspera
           # get Transfer::Uri::SCHEME URI from entry in xml, and fix problems.
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
-              raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
+              Aspera.assert(!raise_no_link, type: Cli::BadArgument){'package has no link (deleted?)'}
               return
             end
             result = entry['link'].find{ |e| e['rel'].eql?('package')}['href']
@@ -244,7 +244,7 @@ module Aspera
           delivery_info = package_create_params['delivery']
           # pub link user
           link_data = self.class.get_link_data(public_link_url)
-          raise Cli::BadArgument, "pub link is #{link_data[:subpath]}, expecting external/submissions/new" if !['external/submissions/new', 'external/dropbox_submissions/new'].include?(link_data[:subpath])
+          Aspera.assert_values(link_data[:subpath], ['external/submissions/new', 'external/dropbox_submissions/new'], type: Cli::BadArgument){'pub link subpath'}
           create_path = link_data[:subpath].split('/')[0..-2].join('/')
           package_create_params[:passcode] = link_data[:query]['passcode']
           delivery_info[:transfer_type] = 'connect'
@@ -366,7 +366,7 @@ module Aspera
               # no transfer spec if remote source: handled by faspex
               return Result::ValueList.new([pkg_created['links']['status']], name: 'link')
             end
-            raise Cli::BadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
+            Aspera.assert(pkg_created['xfer_sessions'].length == 1, type: Cli::BadArgument){'expecting one session exactly'}
             transfer_spec = pkg_created['xfer_sessions'].first
             # use source from cmd line, this one only contains destination (already in dest root)
             transfer_spec.delete('paths')
@@ -427,7 +427,7 @@ module Aspera
             pkg_id_uri = [{id: 'package', uri: link_url}]
           else
             link_data = self.class.get_link_data(link_url)
-            raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}" if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
+            Aspera.assert(link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH), type: Cli::BadArgument){"Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"}
             # NOTE: unauthenticated API (authorization is in url params)
             api_public_link = Rest.new(base_url: link_data[:base_url])
             pkg_xml = api_public_link.call(
@@ -494,7 +494,7 @@ module Aspera
             self.class.get_source_id_by_name(value, source_list)
           end.to_i
           selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
-          raise BadArgument, 'No such source' if selected_source.nil?
+          Aspera.assert(!selected_source.nil?, type: BadArgument){'No such source'}
           source_name = selected_source['name']
           source_hash = options.get_option(:storage, mandatory: true)
           Aspera.assert_type(source_hash, Hash, type: Cli::Error){'storage option'}
@@ -504,7 +504,7 @@ module Aspera
               Aspera.assert(storage.key?(key), type: Cli::Error){"storage '#{name}' must have a '#{key}'"}
             end
           end
-          raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]" unless source_hash.key?(source_name)
+          Aspera.assert(source_hash.key?(source_name), type: Cli::Error){"No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"}
           {source_info: source_hash[source_name]}
         end
 

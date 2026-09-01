@@ -329,7 +329,7 @@ module Aspera
           Log.log.debug('management io closed')
           # check that last status was received before process exit
           last_event = processor.last_event
-          raise Transfer::Error, "No management event (#{last_event.class})" unless last_event.is_a?(Hash)
+          Aspera.assert_type(last_event, Hash, type: Transfer::Error){'management event'}
           case last_event['Type']
           when 'DONE'
             Log.log.trace1{'Graceful shutdown, DONE message received'}

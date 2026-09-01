@@ -221,7 +221,7 @@ module Aspera
           result_location = options.get_option(:result)
           unless result_location.nil?
             fields = result_location.split(':')
-            raise Cli::BadArgument, "Expects: work_step:result_name : #{result_location}" if fields.length != 2
+            Aspera.assert(fields.length == 2, type: Cli::BadArgument){"Expects: work_step:result_name : #{result_location}"}
             call_params['explicit_output_step'] = fields[0]
             call_params['explicit_output_variable'] = fields[1]
             # implicitly, call is synchronous

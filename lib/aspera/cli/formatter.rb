@@ -164,7 +164,7 @@ module Aspera
             allowed_options = Preview::Terminal.method(:build).parameters.select{ |i| i[0].eql?(:key)}.map{ |i| i[1]}
             # check that only supported options are given
             unknown_options = value.keys.map(&:to_sym) - allowed_options
-            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
+            Aspera.assert(unknown_options.empty?){"Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}"}
           end
         when :get then return @options[option_symbol]
         else Aspera.error_unreachable_line

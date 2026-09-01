@@ -45,7 +45,7 @@ module Aspera
           end
         when SCHEME_FILE, NilClass
           local_file_path = uri.path
-          raise Error, 'URL shall have a path, check syntax' if local_file_path.nil?
+          Aspera.assert(!local_file_path.nil?, type: Error){'URL shall have a path, check syntax'}
           local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
         else Aspera.error_unexpected_value(uri.scheme){"scheme for [#{uri_to_read}]"}

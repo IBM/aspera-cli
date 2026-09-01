@@ -129,7 +129,7 @@ module Aspera
         when :node
           if !agent_options.key?(:url)
             param_set_name = @context.presets.plugin_default_name(:node)
-            raise Cli::BadArgument, "No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}" if param_set_name.nil?
+            Aspera.assert(!param_set_name.nil?, type: Cli::BadArgument){"No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}"}
             agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
@@ -224,7 +224,7 @@ module Aspera
             special_case_direct_with_list =
               (@transfer_options['agent'] || :direct).to_sym.eql?(:direct) &&
               Transfer::Parameters.ascp_args_file_list?(@transfer_options['ascp_args'])
-            raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
+            Aspera.assert(!@transfer_paths.nil? || special_case_direct_with_list, type: Cli::BadArgument){'transfer spec on command line must have sources'}
             # can be nil
             @transfer_paths
           when Array

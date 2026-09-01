@@ -94,7 +94,7 @@ module Aspera
           Aspera.assert(!ascp_file_list_provided, 'file list provided both in transfer spec and ascp file list. Remove one of them.')
           Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}, "All elements of paths must have a 'source' key")
           is_pair_list = ts_paths_array.any?{ |i| i.key?('destination')}
-          raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')}
+          Aspera.assert(!(is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')})){"All elements of paths must be consistent with 'destination' key"}
           if !@file_list || self.class.file_list_folder.nil?
             Aspera.assert(!is_pair_list, 'file pair list is not supported when file list folder is not set')
             # not safe for special characters ? (maybe not, depends on OS)

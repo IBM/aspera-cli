@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'aspera/rest'
 require 'aspera/oauth/base'
 require 'aspera/rest_list'
@@ -169,7 +170,7 @@ module Aspera
             Log.dump(:final_url, final_url, level: :trace1)
             # Get context from query
             encoded_context = Rest.query_to_h(URI.parse(final_url).query)['context']
-            raise ParameterError, 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
+            Aspera.assert(!encoded_context.nil?, type: ParameterError){'Bad faspex5 public link, missing context in query'}
             # public link information (contains passcode and allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.dump(:pub_link_context, @pub_link_context, level: :trace1)

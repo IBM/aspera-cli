@@ -174,7 +174,7 @@ module Aspera
       # @return [Hash] field description
       def field_description(struct_name, typed_buffer)
         result = TYPES_DESCR[struct_name][:fields][typed_buffer[:btype] - ENUM_START]
-        raise "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" if result.nil?
+        Aspera.assert(!result.nil?){"Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}"}
         return result
       end
 
@@ -183,7 +183,7 @@ module Aspera
       def parse(buffer, type_name, indent_level = nil)
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]
-        raise "Unexpected type #{type_name}" if type_descr.nil?
+        Aspera.assert(!type_descr.nil?){"Unexpected type #{type_name}"}
         Log.log.trace1{"#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red}
         result = nil
         case type_descr[:decode]

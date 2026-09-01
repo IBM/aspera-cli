@@ -53,7 +53,7 @@ module Aspera
             # do not retry non-retryable
             raise unless e.retryable?
             # exit if we exceed the max number of retry
-            raise Error, "Maximum number of retry reached: #{@iter_max}" if remaining_resumes <= 0
+            Aspera.assert(remaining_resumes > 0, type: Error){"Maximum number of retry reached: #{@iter_max}"}
           end
 
           # take this retry in account

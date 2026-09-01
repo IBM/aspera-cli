@@ -50,7 +50,7 @@ module Aspera
         when :session_start
           Aspera.assert_type(session_id, String)
           Aspera.assert(info.nil?, 'info must be nil for :session_start event')
-          raise "Session #{session_id} already started" if @sessions[session_id]
+          Aspera.assert(!@sessions[session_id]){"Session #{session_id} already started"}
           @sessions[session_id] = {
             job_size: 0, # Total size of transfer (pre-calc)
             current:  0,

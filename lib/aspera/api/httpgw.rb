@@ -308,7 +308,7 @@ module Aspera
         Log.dump(:gw_url, url)
         # add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
-        raise Error, 'GW URL shall be with scheme https' unless url.start_with?('https://')
+        Aspera.assert(url.start_with?('https://'), type: Error){'GW URL shall be with scheme https'}
         # remove trailing slash and version (o=only once) if present
         # TODO: issue warning ?
         url = url.chomp('/').gsub(%r{/#{API_V1}$}o, '')

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'aspera/api/alee'
 require 'aspera/nagios'
 require 'aspera/cli/plugins/basic_auth'
@@ -14,7 +15,7 @@ module Aspera
           begin
             api = Api::Alee.new(nil, nil, version: 'ping')
             http = api.read(nil, ret: :resp)
-            raise "unexpected response: #{http.body}" unless http.body.eql?('pong')
+            Aspera.assert(http.body.eql?('pong')){"unexpected response: #{http.body}"}
             nagios.add_ok('api', 'answered ok')
           rescue StandardError => e
             nagios.add_critical('api', e.to_s)

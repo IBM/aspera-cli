@@ -220,7 +220,7 @@ module Aspera
           single_call = query.key?('skip')
           # API default is 100, so use 1000 for default
           query['count'] ||= 1000
-          raise Cli::BadArgument, 'options `recursive` and `skip` cannot be used together' if recursive && single_call
+          Aspera.assert(!(recursive && single_call), type: Cli::BadArgument){'options `recursive` and `skip` cannot be used together'}
           all_items = []
           until folders_to_process.empty?
             path = folders_to_process.shift
@@ -297,7 +297,7 @@ module Aspera
         # @param path        [String] plain path or %id:<file_id> selector
         def apifid_from_path(top_file_id, path)
           if (m = Options.percent_selector(path))
-            raise BadArgument, 'Only selection "id" is supported (file id)' unless m[:field].eql?('id')
+            Aspera.assert_values(m[:field], ['id'], type: BadArgument){'file id'}
             val = m[:value]
             return Api::NodeFileId.new(@api_node, val.nil? || val.empty? ? top_file_id : val)
           end
@@ -309,7 +309,7 @@ module Aspera
         # (intermediate nodes whose path cannot yet be injected via execute_leaf).
         def apifid_from_next_arg(top_file_id)
           file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
-            raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
+            Aspera.assert_values(attribute, ['id'], type: BadArgument){'file id'}
             return Api::NodeFileId.new(@api_node, value.nil? || value.empty? ? top_file_id : value)
           end
           @api_node.resolve_api_fid(top_file_id, file_path)
@@ -321,7 +321,7 @@ module Aspera
         # @return [Integer] id of the sync
         # @raise [Cli::BadArgument] if no such sync, or not by name
         def async_lookup(field, value)
-          raise Cli::BadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
+          Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'search field'}
           async_ids = @api_node.read('async/list')['sync_ids']
           summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
           selected = summaries.find{ |s| s['name'].eql?(value)}
@@ -335,7 +335,7 @@ module Aspera
         # @return [Integer] id of the sync
         # @raise [Cli::BadArgument] if no such sync, or not by name
         def ssync_lookup(field, value)
-          raise Cli::BadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
+          Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'search field'}
           @api_node.read('asyncs')['ids'].each do |id|
             sync_info = @api_node.read("asyncs/#{id}")['configuration']
             # name is unique, so we can return
@@ -739,7 +739,7 @@ module Aspera
         Operations::ALL.each do |op|
           define_action_method([:access_keys, op]) do
             entity_execute(api: @api_node, entity: 'access_keys', command: op) do |field, value|
-              raise BadArgument, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
+              Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
               @api_node.read('access_keys/self')['id']
             end
           end
@@ -895,7 +895,7 @@ module Aspera
         def action_access_keys_do_bearer_token_node(path:, do_root_file_id:, **)
           apifid, result = gen4_apifid_info(do_root_file_id, path)
           Log.dump(:result, result)
-          raise BadArgument, "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" unless apifid.node_api.auth_params[:type].eql?(:oauth2)
+          Aspera.assert(apifid.node_api.auth_params[:type].eql?(:oauth2), type: BadArgument){"Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})"}
           Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
           Result::Text.new(result[:password])
         end
@@ -923,7 +923,7 @@ module Aspera
             folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
             link_name = ".#{new_item}.asp-lnk"
             found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
-            raise Cli::Error, "A #{found['type']} already exists with name #{new_item}" if found
+            Aspera.assert(!found, type: Cli::Error){"A #{found['type']} already exists with name #{new_item}"}
           end
           [apifid, payload]
         end
@@ -971,7 +971,7 @@ module Aspera
 
         def action_access_keys_do_permission_create(data:, apifid:, **)
           create_param = data
-          raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
+          Aspera.assert(!create_param.key?('file_id'), type: Cli::BadArgument){'no file_id'}
           create_param['file_id'] = apifid.file_id
           create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
           the_app = apifid.node_api.app_info
@@ -1219,13 +1219,13 @@ module Aspera
         def action_telemetry(parameters: {}, **)
           parameters = parameters.symbolize_keys
           %i[url key].each do |psym|
-            raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
+            Aspera.assert(parameters.key?(psym), type: Cli::BadArgument){"Missing parameter: #{psym}"}
           end
           require 'socket'
           parameters[:interval] = 10 unless parameters.key?(:interval)
           parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
           interval = parameters[:interval].to_f
-          raise Cli::BadArgument, 'Interval must be a positive number in seconds' if interval <= 0
+          Aspera.assert(interval > 0, type: Cli::BadArgument){'Interval must be a positive number in seconds'}
           otel_api = Rest.new(
             base_url: "#{parameters[:url]}/v1",
             headers: {

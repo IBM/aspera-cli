@@ -26,7 +26,7 @@ module Aspera
                 login_page = Rest
                   .new(base_url: url, redirect_max: 2)
                   .read('', headers: {'Accept'=>'text/html'})
-                raise 'not Shares' unless login_page.include?('aspera-Shares')
+                Aspera.assert(login_page.include?('aspera-Shares')){'not Shares'}
                 if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
                   version = m[1]
                   if (m = login_page.match(/Patch level ([0-9]+)/))
@@ -394,7 +394,7 @@ module Aspera
               Aspera.assert_type(entity_parameters, Hash)
               SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
               entity_parameters.each_key do |p|
-                raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
+                Aspera.assert_values(p, SAML_IMPORT_ALLOWED){'SAML field'}
               end
               @api_shares_admin.create("#{path}/import", entity_parameters)
             end

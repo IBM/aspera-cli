@@ -24,7 +24,7 @@ module Aspera
     # @return [String] decoded data
     def item(name)
       index = ELEMENTS.index(name)
-      raise ParameterError, "Unknown data item #{name} (#{name.class})" unless index
+      Aspera.assert(index, type: ParameterError){"Unknown data item #{name} (#{name.class})"}
       raw_data = data(START_INDEX + index)
       case name
       when :dsa, :rsa

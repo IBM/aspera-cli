@@ -321,7 +321,7 @@ module Aspera
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
-            raise BadArgument, 'Use field dropbox_name or dropbox_id, not both' if query.key?('dropbox_id')
+            Aspera.assert(!query.key?('dropbox_id'), type: BadArgument){'Use field dropbox_name or dropbox_id, not both'}
             # TODO : craft a query that looks for dropbox only in current workspace
             query['dropbox_id'] = aoc_api.lookup_with_q('dropboxes', value: query.delete('dropbox_name'))['id']
           end
@@ -1126,11 +1126,11 @@ module Aspera
               aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
             when :update
               found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
-              raise Error, "Short link not found: #{id}" if found.nil?
+              Aspera.assert(!found.nil?, type: Error){"Short link not found: #{id}"}
               shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
             when :delete
               found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
-              raise Error, "Short link not found: #{id}" if found.nil?
+              Aspera.assert(!found.nil?, type: Error){"Short link not found: #{id}"}
               shared_apifid.node_api.delete("permissions/#{found['id']}")
             else Aspera.error_unexpected_value(op)
             end
@@ -1230,7 +1230,7 @@ module Aspera
 
         # Shared implementation for short_link > modify
         def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
-          raise Cli::BadArgument, 'modify is only available for public short links' unless sl_link_type.eql?(:public)
+          Aspera.assert_values(sl_link_type, [:public], type: Cli::BadArgument){'link_type'}
           one_id = short_link_id
           node_file = sl_shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}

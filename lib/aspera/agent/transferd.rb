@@ -35,7 +35,7 @@ module Aspera
         @transfer_id = nil
         @stop = stop
         is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
-        raise Error, 'Cannot set options `stop` or `start` to false with port zero' if is_local_auto_port && (!@stop || !start)
+        Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error){'Cannot set options `stop` or `start` to false with port zero'}
         # keep PID for optional shutdown
         @daemon_pid = nil
         daemon_endpoint = url
@@ -116,7 +116,7 @@ module Aspera
         ) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_response = @transfer_client.start_transfer(transfer_request)
-        raise Transfer::Error, start_response.error.description if start_response.status.eql?(:FAILED)
+        Aspera.assert(!start_response.status.eql?(:FAILED), type: Transfer::Error){start_response.error.description}
         Log.log.debug{"start transfer response #{start_response}"}
         @transfer_id = start_response.transferId
         Log.log.debug{"transfer started with id #{@transfer_id}"}

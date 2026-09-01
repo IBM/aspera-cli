@@ -61,11 +61,11 @@ module Aspera
           Aspera.assert(sync_info['sessions'].length == 1, 'Only one session is supported')
           session = sync_info['sessions'].first
           dir_key = path_is_remote ? 'remote_dir' : 'local_dir'
-          raise "Parameter #{dir_key} shall not be in sync_info" if session.key?(dir_key)
+          Aspera.assert(!session.key?(dir_key)){"Parameter #{dir_key} shall not be in sync_info"}
           session[dir_key] = path
           if direction
             dir_key = path_is_remote ? 'local_dir' : 'remote_dir'
-            raise "Parameter #{dir_key} shall not be in sync_info" if session.key?(dir_key)
+            Aspera.assert(!session.key?(dir_key)){"Parameter #{dir_key} shall not be in sync_info"}
             session[dir_key] = transfer.destination_folder(path_is_remote ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND)
             local_remote = %w[local remote].map{ |i| session["#{i}_dir"]}
           end
@@ -74,12 +74,12 @@ module Aspera
           session = sync_info
           dir_key = path_is_remote ? 'remote' : 'local'
           session[dir_key] ||= {}
-          raise "Parameter #{dir_key}.path shall not be in sync_info" if session[dir_key].key?('path')
+          Aspera.assert(!session[dir_key].key?('path')){"Parameter #{dir_key}.path shall not be in sync_info"}
           session[dir_key]['path'] = path
           if direction
             dir_key = path_is_remote ? 'local' : 'remote'
             session[dir_key] ||= {}
-            raise "Parameter #{dir_key}.path shall not be in sync_info" if session[dir_key].key?('path')
+            Aspera.assert(!session[dir_key].key?('path')){"Parameter #{dir_key}.path shall not be in sync_info"}
             session[dir_key]['path'] = transfer.destination_folder(path_is_remote ? Transfer::Spec::DIRECTION_RECEIVE : Transfer::Spec::DIRECTION_SEND)
             local_remote = %w[local remote].map{ |i| session[i]['path']}
           end
@@ -87,7 +87,7 @@ module Aspera
           session['quiet'] = false if !session.key?('quiet') && Environment.terminal?
         end
         if direction
-          raise BadArgument, 'direction shall not be in sync_info' if session.key?('direction')
+          Aspera.assert(!session.key?('direction'), type: BadArgument){'direction shall not be in sync_info'}
           session['direction'] = direction.to_s
           # generate name if not provided by user
           if !session.key?('name')
@@ -114,7 +114,7 @@ module Aspera
         if !session.key?('name')
           local_db_dir = Sync::Operations.local_db_folder(sync_info)
           dbs = Sync::Operations.list_db_files(local_db_dir)
-          raise "#{dbs.length} session found in #{local_db_dir}, please provide a name" unless dbs.length == 1
+          Aspera.assert(dbs.length == 1){"#{dbs.length} session found in #{local_db_dir}, please provide a name"}
           session['name'] = dbs.keys.first
         end
         Sync::Database.new(Sync::Operations.session_db_file(sync_info))

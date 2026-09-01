@@ -67,10 +67,10 @@ module Aspera
             product_name = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
             if product_name.eql?(FIRST_FOUND)
               pl = installed_products.first
-              raise "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install" if pl.nil?
+              Aspera.assert(!pl.nil?){"No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install"}
             else
               pl = installed_products.find{ |i| i[:name].eql?(product_name)}
-              raise "No such product installed: #{product_name}" if pl.nil?
+              Aspera.assert(!pl.nil?){"No such product installed: #{product_name}"}
             end
             File.dirname(pl[:ascp_path])
           else
@@ -238,10 +238,10 @@ module Aspera
         all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
         locations = all_locations.select{ |l| l['platform'].eql?(platform)}
-        raise "No SDK for platform: #{platform}, available: #{all_locations.map{ |i| i['platform']}.uniq}" if locations.empty?
+        Aspera.assert(!locations.empty?){"No SDK for platform: #{platform}, available: #{all_locations.map{ |i| i['platform']}.uniq}"}
         version = locations.max_by{ |entry| Gem::Version.new(entry['version'])}['version'] if version.nil?
         info = locations.select{ |entry| entry['version'].eql?(version)}
-        raise "No such version: #{version} for #{platform}" if info.empty?
+        Aspera.assert(!info.empty?){"No such version: #{version} for #{platform}"}
         return info.first['url']
       end
 

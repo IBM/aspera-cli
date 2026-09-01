@@ -16,7 +16,7 @@ module Aspera
       @parameters = parameters.symbolize_keys
       Log.dump(:post_proc_parameters, @parameters)
       not_allowed = @parameters.keys - ALLOWED_PARAMETERS
-      raise "unsupported parameters: #{not_allowed.join(', ')}" unless not_allowed.empty?
+      Aspera.assert(not_allowed.empty?){"unsupported parameters: #{not_allowed.join(', ')}"}
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
@@ -63,7 +63,7 @@ module Aspera
             post_proc_pid = nil
           end
           process_status = $CHILD_STATUS
-          raise "script #{script_path} failed with code #{process_status.exitstatus}" if !process_status.success? && @parameters[:fail_on_error]
+          Aspera.assert(process_status.success? || !@parameters[:fail_on_error]){"script #{script_path} failed with code #{process_status.exitstatus}"}
         end
         response.status = 200
         response.content_type = Mime::JSON

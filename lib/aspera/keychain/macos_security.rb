@@ -44,7 +44,7 @@ module Aspera
               uri = URI.parse(url)
               Aspera.assert(uri.scheme.eql?('https'), 'only https')
               options[:protocol] = 'htps' # cspell: disable-line
-              raise Error, 'host required in URL' if uri.host.nil?
+              Aspera.assert(!uri.host.nil?, type: Error){'host required in URL'}
               options[:server] = uri.host
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
@@ -128,7 +128,7 @@ module Aspera
         super()
         @keychain_name = name.nil? ? 'default keychain' : name
         @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
-        raise "no such keychain #{name}" if @keychain.nil?
+        Aspera.assert(!@keychain.nil?){"no such keychain #{name}"}
       end
 
       def info
@@ -155,7 +155,7 @@ module Aspera
         unsupported = options.keys - %i[label]
         Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         info = @keychain.password(:find, :generic, label: options[:label])
-        raise Error, 'not found' if info.nil?
+        Aspera.assert(!info.nil?, type: Error){'not found'}
         result = options.clone
         result[:secret] = info['password']
         result[:description] = info['icmt'] # cspell: disable-line

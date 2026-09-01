@@ -236,8 +236,7 @@ module Aspera
         # @param fields [Array<String>, Proc, nil] Fields to display in table/csv format
         # @param total [Integer, nil] Total number of items available (for pagination display)
         def initialize(data, fields: nil, total: nil)
-          Aspera.assert_type(data, Array){'object list result data'}
-          raise ArgumentError, 'Object list result requires Array of Hash' unless data.all?(Hash)
+          Aspera.assert_array_all(data, Hash, type: ArgumentError){'object list result data'}
           Aspera.assert_type(total, Integer, NilClass){'total'}
           super(data: data, fields: fields)
           @total = total

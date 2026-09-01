@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'yaml'
 
 module Aspera
@@ -42,7 +43,7 @@ module Aspera
     # @raise [RuntimeError] If duplicate keys are found
     def safe_load(yaml)
       duplicate_keys = find_duplicate_keys(Psych.parse_stream(yaml))
-      raise "Duplicate keys: #{duplicate_keys.join('; ')}" unless duplicate_keys.empty?
+      Aspera.assert(duplicate_keys.empty?){"Duplicate keys: #{duplicate_keys.join('; ')}"}
       YAML.safe_load(yaml, permitted_classes: [Time, Date, Symbol])
     end
 

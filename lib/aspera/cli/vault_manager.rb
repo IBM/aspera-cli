@@ -32,7 +32,7 @@ module Aspera
       # @return [String] value from vault matching <name>.<param>
       def vault_value(name)
         m = name.split('.')
-        raise BadArgument, 'vault name shall match <name>.<param>' unless m.length.eql?(2)
+        Aspera.assert(m.length.eql?(2), type: BadArgument){'vault name shall match <name>.<param>'}
         info = vault.get(label: m[0])
         value = info[m[1].to_sym]
         raise "no such entry value: #{m[1]}" if value.nil?

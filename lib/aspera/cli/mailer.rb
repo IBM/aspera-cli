@@ -32,7 +32,7 @@ module Aspera
         # Change keys from string into symbol
         smtp = smtp.symbolize_keys
         unsupported = smtp.keys - SMTP_CONF_PARAMS
-        raise Cli::Error, "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" unless unsupported.empty?
+        Aspera.assert(unsupported.empty?, type: Cli::Error){"Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}"}
         # Boolean fields must be actual booleans, not strings like "false"
         SMTP_BOOL_PARAMS.each do |k|
           Aspera.assert_values(smtp[k], [true, false], type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)

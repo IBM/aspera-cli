@@ -194,7 +194,7 @@ module Aspera
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [{name: :server_url, type: String}],
           action: lambda do |server_url:, **|
-            raise Cli::BadArgument, 'No PAC script configured, use --fpac' if context.pac_executor.nil?
+            Aspera.assert(!context.pac_executor.nil?, type: Cli::BadArgument){'No PAC script configured, use --fpac'}
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
           end
         )
@@ -373,7 +373,7 @@ module Aspera
           when :toc, :local
             require 'aspera/markdown'
             local_doc = File.join(self.class.gem_src_root, '..', 'docs', 'README.md')
-            raise Cli::Error, "Local documentation not found: #{local_doc}" unless File.exist?(local_doc)
+            Aspera.assert(File.exist?(local_doc), type: Cli::Error){"Local documentation not found: #{local_doc}"}
             content = File.read(local_doc)
             if location == :toc
               entries = Markdown.toc(content)
@@ -382,7 +382,7 @@ module Aspera
             # :local
             if section
               text = Markdown.extract_section(content, section)
-              raise Cli::Error, "Section not found: #{section}" if text.nil?
+              Aspera.assert(!text.nil?, type: Cli::Error){"Section not found: #{section}"}
               return Result::Text.new(text)
             end
             if Environment.instance.url_method.eql?(:graphical)
@@ -400,19 +400,19 @@ module Aspera
 
         def action_remote_certificate_chain(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
           Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
         end
 
         def action_remote_certificate_only(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
           Result::Text.new(remote_chain.first.to_pem)
         end
 
         def action_remote_certificate_name(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          raise "No certificate found for #{remote_url}" unless remote_chain&.first
+          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
           Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
         end
 
@@ -427,7 +427,7 @@ module Aspera
         def action_tokens_show(token_id:, **)
           require 'aspera/api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
-          raise Cli::Error, 'Unknown identifier' if data.nil?
+          Aspera.assert(!data.nil?, type: Cli::Error){'Unknown identifier'}
           Result::SingleObject.new(data)
         end
 
