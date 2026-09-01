@@ -404,7 +404,7 @@ module Aspera
         command :trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api
         command :check,    description: 'Check required tools are installed'
         command :test,     description: 'Test preview generation for a source file',
-          arguments: [{name: :source_file, type: String}, {name: :format, type: Symbol, mandatory: false, default: :png}]
+          arguments: [{name: :source_file, type: String}, {name: :format, allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}]
         command :show,     description: 'Generate and display preview of a source file',
           arguments: [{name: :source_file, type: String}]
 
@@ -500,7 +500,6 @@ module Aspera
 
         def action_test(source_file:, format:, **)
           check_tools_and_mimemagic
-          Aspera.assert(Aspera::Preview::Generator::PREVIEW_FORMATS.include?(format), type: Cli::BadArgument){"Invalid format: #{format}, expected one of: #{Aspera::Preview::Generator::PREVIEW_FORMATS.join(', ')}"}
           generated_file_path = preview_filename(format, options.get_option(:base))
           Aspera::Preview::Generator.new(source_file, generated_file_path, @gen_options, @tmp_folder).generate
           Result::Status.new("generated: #{generated_file_path}")

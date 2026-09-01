@@ -111,7 +111,6 @@ module Aspera
       end
 
       def action_agents_show(agent_name:, **)
-        Aspera.assert(Agent::Factory::ALL.key?(agent_name)){"Unknown agent: #{agent_name}. Use: #{Agent::Factory::ALL.keys.join(', ')}"}
         names = Agent::Factory::ALL[agent_name]
         schema_key = AGENT_SCHEMA_KEY[agent_name]
         agent_info = {

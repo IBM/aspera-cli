@@ -279,9 +279,9 @@ module Aspera
         commands_under(:agents) do
           command :list,       description: 'List all transfer agents'
           command :show,       description: 'Show details for a transfer agent',
-            arguments: [{name: :agent_name, type: Symbol}]
+            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
           command :parameters, description: 'Show configurable parameters for a transfer agent',
-            arguments: [{name: :agent_name, type: Symbol}]
+            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
         end
 
         # transferd sub-commands
