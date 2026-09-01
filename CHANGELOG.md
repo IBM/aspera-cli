@@ -15,6 +15,7 @@ Released: [Place date of release here]
 * `direct`: New `transfer` parameter `file_list` (default: `true`). Setting to `false` will pass source paths directly on the `ascp` command line instead of a temp file list.
 * **global**: New pseudo transfer-spec parameter `target_rate` (bps). It translates to `target_rate_kbps` with optional unit suffix (`k`/`K`, `m`/`M`, `g`/`G`). Example: `--ts.target_rate=100m`.
 * **codebase**: Major internal refactoring. Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` class methods on `Plugins::Base`) backed by `CommandRegistry` / `CommandSpec`, replacing per-plugin `case`/`when` dispatch. Help is directly generated, not using OptParse anymore, for multi-level help.
+* `config`: Bash completion (`config completion bash`) is now multi-level: pressing `Tab` after a plugin name or sub-command completes the next level of sub-commands (previously only first-level plugin names were completed).
 
 ### Issues Fixed
 

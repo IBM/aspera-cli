@@ -2559,6 +2559,38 @@ Example: Define options using a `Hash`:
 <%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"<%=ph :password%>","username":"_name_here_"}' node --show-config
 ```
 
+#### Bash Completion
+
+<%=tool%> supports shell tab-completion for Bash.
+A ready-made completion script is provided in `etc/bash_autocomplete` in the gem sources.
+
+To enable it, source the script in your shell profile (e.g. `~/.bashrc` or `~/.bash_profile`):
+
+```bash
+source $(gem contents <%=gemspec.name%> | grep bash_autocomplete)
+```
+
+Or copy it to the system completion directory:
+
+```bash
+cp $(gem contents <%=gemspec.name%> | grep bash_autocomplete) /etc/bash_completion.d/ascli
+```
+
+Once active, press `Tab` to complete commands at any depth:
+
+```bash
+<%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
+<%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
+<%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+```
+
+The completion script calls `<%=cmd%> config completion bash [words...]` internally.
+This sub-command can also be used directly to inspect available commands:
+
+```bash
+<%=cmd%> config completion bash aoc admin
+```
+
 #### Wizard
 
 The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information for a given application.

@@ -2586,6 +2586,7 @@ coffee --log-level=trace2 --log-format=caller
 coffee --ui=text
 coffee --ui=text --image.text=true
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
+commands
 detect app.example.com
 detect https://faspex5.example.com/path
 detect https://faspex5.example.com/path faspex5
@@ -2724,6 +2725,38 @@ Example: Define options using a `Hash`:
 
 ```shell
 ascli -N --preset=@json:'{"url":"_url_here_","password":"<PASSWORD>","username":"_name_here_"}' node --show-config
+```
+
+#### Bash Completion
+
+`ascli` supports shell tab-completion for Bash.
+A ready-made completion script is provided in `etc/bash_autocomplete` in the gem sources.
+
+To enable it, source the script in your shell profile (e.g. `~/.bashrc` or `~/.bash_profile`):
+
+```bash
+source $(gem contents aspera-cli | grep bash_autocomplete)
+```
+
+Or copy it to the system completion directory:
+
+```bash
+cp $(gem contents aspera-cli | grep bash_autocomplete) /etc/bash_completion.d/ascli
+```
+
+Once active, press `Tab` to complete commands at any depth:
+
+```bash
+ascli <Tab>               # lists all plugins: aoc, server, node, ...
+ascli server <Tab>        # lists server sub-commands: upload, download, ls, ...
+ascli aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+```
+
+The completion script calls `ascli config completion bash [words...]` internally.
+This sub-command can also be used directly to inspect available commands:
+
+```bash
+ascli config completion bash aoc admin
 ```
 
 #### Wizard
@@ -4781,301 +4814,90 @@ OPTIONS
 ARGS
         Some commands require mandatory arguments, e.g. a path.
 
-OPTIONS: global
-        --interactive=ENUM           Use interactive input of missing params: [no], yes
-        --ask-options=ENUM           Ask even optional options: [no], yes
-        --display=ENUM               Output only some information: [data], error, info
-        --format=ENUM                Output format: csv, image, json, jsonpp, nagios, ruby, [table], text, yaml
-        --output=VALUE               Destination for results
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (Array, Regexp, Proc)
-        --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
-        --table-style=VALUE          (Table) Display style (Hash)
-        --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
-        --multi-single=ENUM          (Table) Control how object list is displayed as single table, or multiple objects: [no], single, yes
-        --show-secrets=ENUM          Show secrets on command output: [no], yes
-        --image=VALUE                Options for displaying images and thumbnails in the terminal (Hash)
-    -h, --help                       Show this message
-        --show-config                Display parameters used for the provided action
-    -v, --version                    Display version
-        --ui=ENUM                    Method to start browser: [graphical], text
-        --invalid-characters=VALUE   Replacement character and invalid filename characters
-        --log-level=ENUM             Log level: debug, error, fatal, [info], trace1, trace2, unknown, warn
-        --log-format=VALUE           Log formatter (Proc, Logger::Formatter)
-        --logger=ENUM                Logging method: [stderr], stdout, syslog
-        --log=VALUE                  Logging options (dot-notation: level, type, format, secrets) (Hash)
-        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
-        --once-only=ENUM             Process only new items (some commands): [no], yes
-        --log-secrets=ENUM           Show passwords in logs: [no], yes
-        --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
-        --temp-folder=VALUE          Temporary folder
-        --pid-file=VALUE             Write process identifier to file, delete on exit
-        --parser=ENUM                Default parser for structured parameters and options: json, none, ruby, yaml
-        --home=VALUE                 Home folder for tool
-        --config-file=VALUE          Path to YAML file with preset configuration
-        --secret=VALUE               Secret for access keys
-        --vault=VALUE                Secret vault configuration (Hash)
-        --vault-password=VALUE       Vault password
-        --progress-bar=ENUM          Display progress bar: [no], yes
-        --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
-        --query=VALUE                Additional filter for for some commands (list/delete) (Hash, Array)
-        --bulk=ENUM                  Bulk operation (only some): [no], yes
-        --bfail=ENUM                 Bulk operation error handling: no, [yes]
-    -N, --no-default                 Do not load default configuration for plugin
-    -P, --presetVALUE                Load the named option preset from current config file
-        --version-check-days=VALUE   Period in days to check new version (zero to disable) (Integer)
-        --plugin-folder=VALUE        Folder where to find additional plugins
-        --override=ENUM              Wizard: override existing value: [no], yes
-        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
-        --key-path=VALUE             Wizard: path to private key for JWT
-        --sdk-url=VALUE              Ascp: URL to get Aspera Transfer Executables
-        --locations-url=VALUE        Ascp: URL to get download locations of Aspera Transfer Daemon
-        --sdk-folder=VALUE           Ascp: Path to folder with ascp (or product with "product:")
-        --smtp=VALUE                 SMTP email server configuration (Hash)
-        --notify-to=VALUE            Email: Recipient for notification of transfers
-        --notify-template=VALUE      Email: ERB template for notification of transfers
-        --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
-        --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
-        --warn-insecure=ENUM         HTTP/S: Issue a warning if certificate is ignored: no, [yes]
-        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array)
-        --http-options=VALUE         HTTP/S connection parameters for REST calls (not `ascp` WSS) (Hash)
-        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials
-        --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
-        --ts=VALUE                   Override transfer spec values (Hash)
-        --to-folder=VALUE            Destination folder for transferred files
-        --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
-        --src-type=ENUM              Type of file list: [list], pair
-        --transfer=VALUE             Transfer agent type, or agent parameters with optional agent key (Hash)
-        --transfer-info=VALUE        Parameters for transfer agent (Hash) (deprecated: use --transfer instead)
+OPTIONS: config
+    --interactive=ENUM          Use interactive input of missing params
+    --ask-options=ENUM          Ask even optional options
+    --display=ENUM              Output only some information
+    --format=ENUM               Output format
+    --output=VALUE              Destination for results
+    --fields=VALUE              Comma separated list of: fields, or ALL, or DEF
+    --select=VALUE              Select only some items in lists: column, value
+    --table-style=VALUE         (Table) Display style
+    --flat-hash=ENUM            (Table) Display deep values as additional keys
+    --multi-single=ENUM         (Table) Control how object list is displayed as single table, or multiple objects
+    --show-secrets=ENUM         Show secrets on command output
+    --image=VALUE               Options for displaying images and thumbnails in the terminal
+-h, --help                      Show this message
+    --show-config               Display parameters used for the provided action
+-v, --version                   Display version
+    --ui=ENUM                   Method to start browser
+    --invalid-characters=VALUE  Replacement character and invalid filename characters
+    --log-level=ENUM            Log level
+    --log-format=VALUE          Log formatter
+    --logger=ENUM               Logging method
+    --log=VALUE                 Logging options (dot-notation: level, type, format, secrets)
+    --lock-port=VALUE           Prevent dual execution of a command, e.g. in cron
+    --once-only=ENUM            Process only new items (some commands)
+    --log-secrets=ENUM          Show passwords in logs
+    --clean-temp=ENUM           Cleanup temporary files on exit
+    --temp-folder=VALUE         Temporary folder
+    --pid-file=VALUE            Write process identifier to file, delete on exit
+    --parser=ENUM               Default parser for structured parameters and options
+    --home=VALUE                Home folder for tool
+    --config-file=VALUE         Path to YAML file with preset configuration
+    --secret=VALUE              Secret for access keys
+    --vault=VALUE               Secret vault configuration
+    --vault-password=VALUE      Vault password
+    --progress-bar=ENUM         Display progress bar
+    --fpac=VALUE                Proxy auto configuration script
+    --proxy-credentials=VALUE   HTTP proxy credentials for fpac: user, password
+    --sql=VALUE                 SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+-P, --preset=VALUE              Load the named option preset from current config file
+    --version-check-days=VALUE  Period in days to check new version (zero to disable)
+    --plugin-folder=VALUE       Folder where to find additional plugins
+    --sdk-url=VALUE             Ascp: URL to get Aspera Transfer Executables
+    --locations-url=VALUE       Ascp: URL to get download locations of Aspera Transfer Daemon
+    --sdk-folder=VALUE          Ascp: Path to folder with ascp (or product with "product:")
+    --smtp=VALUE                SMTP email server configuration
+    --notify-to=VALUE           Email: Recipient for notification of transfers
+    --notify-template=VALUE     Email: ERB template for notification of transfers
+    --cache-tokens=ENUM         Save and reuse OAuth tokens
+    --query=VALUE               Additional filter for for some commands (list/delete)
+    --bulk=ENUM                 Bulk operation (only some)
+    --bfail=ENUM                Bulk operation error handling
+-N, --no-default                Do not load default configuration for plugin
+    --override=ENUM             Wizard: override existing value
+    --default=ENUM              Wizard: set as default configuration for specified plugin (also: update)
+    --key-path=VALUE            Wizard: path to private key for JWT
+    --insecure=ENUM             HTTP/S: Do not validate any certificate
+    --ignore-certificate=VALUE  HTTP/S: Do not validate certificate for these URLs
+    --warn-insecure=ENUM        HTTP/S: Issue a warning if certificate is ignored
+    --cert-stores=VALUE         HTTP/S: List of folder with trusted certificates
+    --http-options=VALUE        HTTP/S connection parameters for REST calls (not `ascp` WSS)
+    --http-proxy=VALUE          HTTP/S: URL for proxy with optional credentials
+    --ts=VALUE                  Override transfer spec values
+    --to-folder=VALUE           Destination folder for transferred files
+    --sources=VALUE             How list of transferred files is provided (@args,@ts,Array)
+    --src-type=ENUM             Type of file list
+    --transfer=VALUE            Transfer agent type, or agent parameters with optional agent key
+    --transfer-info=VALUE       Parameters for transfer agent
 
-COMMAND: config
-SUBCOMMANDS: agents ascp check_update coffee completion detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings sync test tokens transferd vault wizard
-
-
-
-COMMAND: alee
-SUBCOMMANDS: entitlement health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-
-
-
-COMMAND: aoc
-SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: boot, [jwt], web
-        --client-id=VALUE            OAuth client identifier
-        --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
-        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --workspace=VALUE            Name of workspace
-        --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
-        --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --package-folder=VALUE       Package download folder organization (Hash)
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
-        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
-        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-
-
-
-COMMAND: ats
-SUBCOMMANDS: access_key api_key aws_trust_policy cluster
-OPTIONS:
-        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
-        --instance=VALUE             ATS instance in ibm cloud
-        --ats-key=VALUE              ATS key identifier (ats_xxx)
-        --ats-secret=VALUE           ATS key secret
-        --cloud=VALUE                Cloud provider
-        --region=VALUE               Cloud region
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
-        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
-        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-
-
-
-COMMAND: console
-SUBCOMMANDS: health transfer
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-
-
-
-COMMAND: cos
-SUBCOMMANDS: node
-OPTIONS:
-        --bucket=VALUE               Bucket name
-        --endpoint=VALUE             Storage endpoint (URL)
-        --apikey=VALUE               Storage API key
-        --crn=VALUE                  Resource instance id (CRN)
-        --service-credentials=VALUE  IBM Cloud service credentials (Hash)
-        --region=VALUE               Storage region
-        --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
-        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
-        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-
-
-
-COMMAND: faspex
-SUBCOMMANDS: address_book dropbox health login_methods me package source v4
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --link=VALUE                 Public link for specific operation
-        --delivery-info=VALUE        Package delivery information (Hash)
-        --remote-source=VALUE        Remote source for package send (id or %name:)
-        --storage=VALUE              Faspex local storage definition (for browsing source)
-        --recipient=VALUE            Use if recipient is a dropbox (with *)
-        --box=ENUM                   Package box: archive, [inbox], sent
-
-
-
-COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: boot, [jwt], web
-        --client-id=VALUE            OAuth client identifier
-        --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth (Web) redirect URI for web authentication
-        --private-key=VALUE          OAuth (JWT) RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth (JWT) RSA private key passphrase
-        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, pending, pending_history, all, outbox, outbox_history or ALL
-        --shared-folder=VALUE        Send package with files from shared folder
-        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
-
-
-
-COMMAND: faspio
-SUBCOMMANDS: bridges health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --auth=ENUM                  OAuth type of authentication: basic, jwt
-        --client-id=VALUE            OAuth client identifier
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           OAuth JWT RSA private key passphrase
-
-
-
-COMMAND: httpgw
-SUBCOMMANDS: health info
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-
-
-
-COMMAND: mcp
-SUBCOMMANDS: server
-OPTIONS:
-
-
-
-COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space spec ssync stream sync telemetry transfer transport upload watch_folder
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --node-api=VALUE             Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read (Hash)
-        --root-id=VALUE              Gen4: File id of top folder when using access key (override AK root id)
-        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
-        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-
-
-
-COMMAND: orchestrator
-SUBCOMMANDS: health info monitors plugins processes workflows workorders workstep
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --result=VALUE               Specify result value as: 'work_step:parameter'
-        --synchronous=ENUM           Wait for completion: [no], yes
-        --ret-style=ENUM             How return type is requested in api: [arg], ext, header
-        --auth-style=ENUM            Authentication type: apikey, arg_pass, [head_basic]
-
-
-
-COMMAND: preview
-SUBCOMMANDS: check events scan show test trevents
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --skip-format=ENUM           Skip this preview format: mp4, png
-        --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: header, [no], read
-        --skip-types=VALUE           Skip generation for those types of files (Array)
-        --previews-folder=VALUE      Preview folder in storage root
-        --skip-folders=VALUE         List of folder to skip (Array)
-        --base=VALUE                 Basename of output for for test
-        --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
-        --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
-        --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
-        --overwrite=ENUM             When to overwrite result file: always, [mtime], never
-        --root-url=VALUE             How to read and write files on storage (<empty>, aspera:, or file:///<folder>)
-        --max-size=VALUE             Maximum size (in bytes) of preview file
-        --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
-        --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
-        --thumb-img-size=VALUE       Png: non-video: height (and width)
-        --thumb-text-font=VALUE      Png: plaintext: font for text rendering: `magick identify -list font`
-        --office-conversion=ENUM     Office: method for office document conversion: [soffice], unoconv
-        --video-conversion=ENUM      Mp4: method for preview generation: blend, clips, [reencode]
-        --video-png-conv=ENUM        Mp4: method for thumbnail generation: animated, [fixed]
-        --video-scale=VALUE          Mp4: all: video scale (ffmpeg scale argument)
-        --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
-        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg, keys: `in`, `out`
-        --blend-keyframes=VALUE      Mp4: blend: # key frames
-        --blend-pauseframes=VALUE    Mp4: blend: # pause frames
-        --blend-transframes=VALUE    Mp4: blend: # transition blend frames
-        --blend-fps=VALUE            Mp4: blend: frame per second
-        --clips-count=VALUE          Mp4: clips: number of clips
-        --clips-length=VALUE         Mp4: clips: length in seconds of each clips
-
-
-
-COMMAND: server
-SUBCOMMANDS: cp df download du health info ls md5sum mkdir mv rm sync upload
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
-        --ssh-keys=VALUE             SSH key path list (Array)
-        --passphrase=VALUE           SSH private key passphrase
-        --ssh-options=VALUE          SSH options (Hash)
-        --sql=VALUE                  SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-
-
-
-COMMAND: shares
-SUBCOMMANDS: admin files health info
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
-        --username=VALUE             User's identifier
-        --password=VALUE             User's password
+PLUGINS
+    alee            Aspera License Entitlement Engine
+    aoc             Aspera on Cloud
+    ats             Aspera Transfer Service
+    console         Console
+    cos             IBM Cloud Object Storage
+    faspex          Faspex v4
+    faspex5         Faspex v5
+    faspio          faspio Gateway
+    httpgw          HTTP Gateway
+    mcp             Model Context Protocol Server
+    node            HSTS Node API
+    orchestrator    Orchestrator
+    preview         Preview
+    server          HSTS Fasp/SSH
+    shares          Shares
 
 
 ```

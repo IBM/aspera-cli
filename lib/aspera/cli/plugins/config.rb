@@ -493,10 +493,19 @@ module Aspera
         end
 
         def action_completion_bash(words: nil, **)
-          if words.nil?
+          if words.nil? || words.empty?
+            # Level 0: propose plugin names
             Plugins::Factory.instance.plugin_list.each{ |p| puts p}
           else
-            Log.log.warn('only first level completion so far')
+            plugin_sym = words.first.to_sym
+            plugin_class = begin
+              Plugins::Factory.instance.plugin_class(plugin_sym)
+            rescue StandardError
+              Process.exit(0)
+            end
+            # Navigate into the registry using remaining words as path
+            path = words[1..].map(&:to_sym)
+            plugin_class.command_registry.children_of(path).each_key{ |k| puts k}
           end
           Process.exit(0)
         end
