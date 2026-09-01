@@ -461,10 +461,10 @@ module Aspera
             }
           end
 
-          # DSL helper: register the 5 short_link leaf commands under the given parent path.
-          # The action convention (:action_<path>_<cmd>) is resolved implicitly by the dispatcher.
-          # @param base        [Class]                  the plugin class
-          # @param parent_path [Array<Symbol>]  full path ending with :short_link
+          # DSL helper: register the 5 short_link leaf commands under the given parent path
+          # and define the corresponding action methods on `base`.
+          # @param base        [Class]         the plugin class
+          # @param parent_path [Array<Symbol>] full path ending with :short_link
           def register_short_link_commands(base, parent_path)
             base.commands_under(parent_path) do
               base.command(
@@ -484,6 +484,21 @@ module Aspera
                 :delete, description: 'Delete a short link',
                 arguments: [{name: :short_link_id, type: :identifier}]
               )
+            end
+            base.define_action_method(parent_path + [:create]) do |custom_data: {}, **ctx|
+              sl_exec_create(custom_data, **ctx)
+            end
+            base.define_action_method(parent_path + [:list]) do |**ctx|
+              sl_exec_list(**sl_fetch_list(**ctx))
+            end
+            base.define_action_method(parent_path + [:show]) do |**ctx|
+              sl_exec_show(**sl_fetch_list(**ctx))
+            end
+            base.define_action_method(parent_path + [:delete]) do |**ctx|
+              sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+            end
+            base.define_action_method(parent_path + [:modify]) do |custom_data: {}, **ctx|
+              sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
             end
           end
         end
@@ -869,6 +884,7 @@ module Aspera
             arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             action: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
           command :short_link, description: 'Manage shared inbox short links',
+            arguments: [{name: :link_type, allowed: %i[public private]}],
             setup: :setup_packages_short_link
         end
         # packages > shared_inboxes > short_link sub-commands
@@ -877,7 +893,9 @@ module Aspera
         # files sub-commands: all FILES_COMMANDS + :short_link
         # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
         commands_under(:files) do
-          command :short_link, description: 'Manage file short link', setup: :setup_files_short_link
+          command :short_link, description: 'Manage file short link',
+            arguments: [{name: :folder_dest, type: String}, {name: :link_type, allowed: %i[public private]}],
+            setup: :setup_files_short_link
           command :transfer, description: 'Transfer files (node-to-node)',
             arguments: [{name: :direction, allowed: %i[push pull]}, {name: :source_folder, type: String}]
           command :mkdir,            description: 'Create folder'
@@ -1075,8 +1093,7 @@ module Aspera
         # setup: files > short_link
         # Resolves the target folder, consumes link_type argument, computes purposes.
         # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose, sl_perm_block, sl_shared_apifid, sl_folder_dest
-        def setup_files_short_link(**)
-          folder_dest = options.get_next_argument('path', validation: String)
+        def setup_files_short_link(folder_dest:, link_type:, **)
           home_node_api = aoc_api.node_api_from(
             node_id: aoc_api.home[:node_id],
             **workspace_id_hash(name: true)
@@ -1086,7 +1103,6 @@ module Aspera
             node_id: shared_apifid.node_api.app_info.node_info['id'],
             file_id: shared_apifid.file_id
           }
-          link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
           token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           perm_block = lambda do |op, id, access_levels|
             case op
@@ -1131,10 +1147,9 @@ module Aspera
         # setup: packages > shared_inboxes > short_link
         # Reads dropbox_id, consumes link_type argument, computes purposes.
         # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose
-        def setup_packages_short_link(**)
+        def setup_packages_short_link(link_type:, **)
           dropbox_id = get_resource_id_from_args('dropboxes')
           shared_data = {dropbox_id: dropbox_id, name: ''}
-          link_type = options.get_next_argument('link access (public or private)', accept_list: %i[public private])
           token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           {
             sl_shared_data:        shared_data,
@@ -1235,20 +1250,6 @@ module Aspera
           aoc_api.update("short_links/#{one_id}", modify_payload)
           Result::Status.new('modified')
         end
-
-        # files > short_link > create|delete|list|show|modify
-        def action_files_short_link_create(custom_data: {}, **ctx) = sl_exec_create(custom_data, **ctx)
-        def action_files_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
-        def action_files_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
-        def action_files_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_files_short_link_modify(custom_data: {}, **ctx) = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
-
-        # packages > shared_inboxes > short_link > create|delete|list|show|modify
-        def action_packages_shared_inboxes_short_link_create(custom_data: {}, **ctx) = sl_exec_create(custom_data, **ctx)
-        def action_packages_shared_inboxes_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
-        def action_packages_shared_inboxes_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
-        def action_packages_shared_inboxes_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_packages_shared_inboxes_short_link_modify(custom_data: {}, **ctx) = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
 
         # files > transfer
         def action_files_transfer(direction:, source_folder:, **)

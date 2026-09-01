@@ -235,16 +235,23 @@ module Aspera
           is_leaf  = spec && registry.children_of(current_path).empty?
 
           unless options.help_requested || skip_setup
-            # Phase A - for intermediate nodes only: consume the first :identifier ArgumentSpec
-            # before dispatching to children (leaf nodes resolve it inside execute_leaf instead).
-            if !is_leaf && (id_spec = spec&.arguments&.find{ |a| a.type.eql?(:identifier)})
-              lookup_method = id_spec.lookup
-              res_id = if lookup_method
-                options.instance_identifier(description: id_spec.name.to_s){ |f, v| send(lookup_method, f, v, **ctx)}
-              else
-                options.instance_identifier(description: id_spec.name.to_s)
+            # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
+            # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
+            if !is_leaf
+              (spec&.arguments || []).each do |arg_spec|
+                next if ctx.key?(arg_spec.name)
+                if arg_spec.type.eql?(:identifier)
+                  lookup_method = arg_spec.lookup
+                  res_id = if lookup_method
+                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| send(lookup_method, f, v, **ctx)}
+                  else
+                    options.instance_identifier(description: arg_spec.name.to_s)
+                  end
+                  ctx = ctx.merge(arg_spec.name => res_id)
+                else
+                  ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
+                end
               end
-              ctx = ctx.merge(id_spec.name => res_id)
             end
             ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
           end
