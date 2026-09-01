@@ -380,7 +380,7 @@ module Aspera
           accounts:            {
             display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {instance_arg: :contact_id, lookup: :lookup_accounts_id}}
+            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}}
           },
           alternate_addresses: {entity: 'configuration/alternate_addresses'},
           distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids'},
@@ -396,9 +396,8 @@ module Aspera
             extra_commands:        %i[browse],
             instance_arg_commands: {
               browse: {
-                instance_arg: :node_id,
-                lookup:       :lookup_node_id,
-                arguments:    [{name: :folder_path, type: String, mandatory: false, default: '/'}]
+                arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
+                            {name: :folder_path, type: String, mandatory: false, default: '/'}]
               }
             }
           },
@@ -434,7 +433,7 @@ module Aspera
           }.compact
         end
 
-        # Lookup methods for instance_arg: + lookup: on specific nodes
+        # Lookup methods for arguments: + lookup: on specific nodes
 
         # admin > nodes — lookup node id by field/value
         def lookup_node_id(field, value, **)
@@ -451,7 +450,7 @@ module Aspera
           @api_v5.lookup_entity_by_field(entity: 'workgroups', field: field, value: value, query: {'all': true})['id']
         end
 
-        # admin > accounts — lookup id by field/value (used for reset_password instance_arg:)
+        # admin > accounts — lookup id by field/value (used for reset_password arguments:)
         def lookup_accounts_id(field, value, **)
           res_lookup_id(:accounts, field, value)
         end
@@ -507,7 +506,8 @@ module Aspera
         commands_under(:invitations) do
           command :create, description: 'Create an invitation',
             arguments: [{name: :input_data, type: Hash, bulk: true}]
-          command :resend, description: 'Resend an invitation', instance_arg: :invitation_id
+          command :resend, description: 'Resend an invitation',
+            arguments: [{name: :invitation_id, type: :identifier}]
           Operations::ALL.reject{ |op| op == :create}.each do |op|
             command(op, description: "#{op.capitalize} invitation(s)")
           end
@@ -533,8 +533,8 @@ module Aspera
         commands_under(:shared_folders) do
           command :list,   description: 'List shared folders', action: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
           command :browse, description: 'Browse a shared folder',
-            instance_arg: :shared_folder_id, lookup: :lookup_shared_folder_id,
-            arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}]
+            arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
+                        {name: :folder_path, type: String, mandatory: false, default: '/'}]
         end
 
         # admin sub-tree: fixed commands + all ADMIN_RESOURCES with their sub-commands
@@ -555,15 +555,18 @@ module Aspera
             commands_under([:admin, res]) do
               cmds.each do |c|
                 ia = ia_cmds[c] || {}
-                arg_spec =
+                extra_args =
                   if !is_singleton && c.eql?(:create)
-                    {arguments: [{name: :input_data, type: Hash, bulk: true, schema: schema_val}]}
+                    [{name: :input_data, type: Hash, bulk: true, schema: schema_val}]
                   elsif c.eql?(:modify)
-                    {arguments: [{name: :input_data, type: Hash, schema: schema_val}]}
+                    [{name: :input_data, type: Hash, schema: schema_val}]
                   else
-                    {}
+                    []
                   end
-                command(c, description: c.to_s.tr('_', ' ').capitalize, **ia, **arg_spec)
+                # Merge arguments: from ia (e.g. identifier spec) with extra_args for this operation
+                merged_args = Array(ia[:arguments]) + extra_args
+                spec_kwargs = merged_args.empty? ? ia.except(:arguments) : ia.except(:arguments).merge(arguments: merged_args)
+                command(c, description: c.to_s.tr('_', ' ').capitalize, **spec_kwargs)
               end
             end
           end
@@ -571,7 +574,7 @@ module Aspera
 
         commands_under(%i[admin nodes]) do
           command :shared_folders, description: 'Manage shared folders',
-            instance_arg: :node_id, lookup: :lookup_node_id,
+            arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id}],
             setup: :setup_admin_nodes_shared_folders
         end
 
@@ -579,7 +582,7 @@ module Aspera
         commands_under(%i[admin nodes shared_folders]) do
           Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
           command :user, description: 'Custom access users',
-            instance_arg: :sf_id, lookup: :lookup_sf_id,
+            arguments: [{name: :sf_id, type: :identifier, lookup: :lookup_sf_id}],
             setup: :setup_admin_nodes_shared_folders_user
         end
 
@@ -593,12 +596,12 @@ module Aspera
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
-        # res_id consumed via instance_arg: + lookup:, builds res_instance_path for all children
+        # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             commands_under([:admin, res]) do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
-                instance_arg: :res_id, lookup: :"lookup_#{res}_id",
+                arguments: [{name: :res_id, type: :identifier, lookup: :"lookup_#{res}_id"}],
                 setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
@@ -614,8 +617,8 @@ module Aspera
           end
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
-              instance_arg: :res_id, lookup: :"lookup_#{res}_id",
-              arguments: [{name: :input_data, type: Hash}]
+              arguments: [{name: :res_id, type: :identifier, lookup: :"lookup_#{res}_id"},
+                          {name: :input_data, type: Hash}]
           end
         end
 
@@ -721,7 +724,7 @@ module Aspera
           browse_folder("nodes/#{node_id}/browse", {}, folder_path: folder_path)
         end
 
-        # admin > nodes > shared_folders — node_id: already in ctx via instance_arg:
+        # admin > nodes > shared_folders — node_id: already in ctx via arguments: on the :shared_folders command
         def setup_admin_nodes_shared_folders(node_id:, **)
           {sf_entity: "nodes/#{node_id}/shared_folders"}
         end
@@ -740,7 +743,7 @@ module Aspera
           end
         end
 
-        # admin > nodes > shared_folders > user — sf_id: already in ctx via instance_arg:
+        # admin > nodes > shared_folders > user — sf_id: already in ctx via arguments: on the :user command
         def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
           {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
         end
@@ -752,7 +755,7 @@ module Aspera
           end
         end
 
-        # admin > shared_inboxes|workgroups — res_id: already in ctx via instance_arg:
+        # admin > shared_inboxes|workgroups — res_id: already in ctx via arguments: on the :members|:saml_groups command
         %i[shared_inboxes workgroups].each do |res|
           define_method(:"setup_admin_#{res}_instance") do |res_id:, **|
             {res_instance_path: "#{res}/#{res_id}"}

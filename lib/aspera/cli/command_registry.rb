@@ -110,12 +110,6 @@ module Aspera
               "#{path.inspect}: transfer_paths and arguments are mutually exclusive"
           end
 
-          # Rule: lookup: requires instance_arg:
-          if spec.lookup && spec.instance_arg.nil?
-            raise ArgumentError,
-              "#{path.inspect}: lookup: requires instance_arg: to be set"
-          end
-
           # Rule: leaf commands with no explicit action must have a matching instance method
           next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip

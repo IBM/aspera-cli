@@ -14,6 +14,7 @@ module Aspera
     # @!attribute default     [Object, nil]               Default value when mandatory: false and no argument provided
     # @!attribute schema      [String, nil]               JSON schema name for validation and --help introspection
     # @!attribute bulk        [Boolean]                   When true, wraps read+loop for bulk mode (Array if --bulk yes)
+    # @!attribute lookup      [Symbol, nil]               Instance method name for percent-selector resolution (only used when type: :identifier)
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -23,6 +24,7 @@ module Aspera
       :default,
       :schema,
       :bulk,
+      :lookup,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -66,7 +68,9 @@ module Aspera
     # @!attribute parent           [Symbol, Array<Symbol>, nil]  Full path to parent; nil for root commands
     # @!attribute description      [String]                      User-facing help text
     # @!attribute options          [Array<Symbol>]               Option names consumed by this command
-    # @!attribute arguments        [Array<ArgumentSpec>]         Positional arguments, in order
+    # @!attribute arguments        [Array<ArgumentSpec>]         Positional arguments, in order.
+    #                                                            The first ArgumentSpec with type: :identifier is treated as the instance
+    #                                                            identifier for intermediate nodes (consumed in Phase A) and leaf nodes.
     # @!attribute action           [Symbol, Proc, nil]           Instance method (Symbol) or inline block (Proc) called when this is a leaf command
     # @!attribute setup            [Symbol, nil]                 Instance method called before dispatching to children; returns Hash merged into ctx
     # @!attribute delegates_to     [Symbol, Array<Symbol>, nil]  Re-enter the command tree at this path
@@ -75,12 +79,6 @@ module Aspera
     # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
-    # @!attribute instance_arg     [Symbol, nil]                 When set, consume one instance identifier from the CLI before executing
-    #                                                            this command and inject it into ctx under this key.
-    #                                                            Works for both leaf and intermediate nodes (consumed in Phase A).
-    # @!attribute lookup           [Symbol, nil]                 Instance method name used as the %selector resolution block for instance_arg.
-    #                                                            The method must accept (field, value) and return the resolved identifier.
-    #                                                            Ignored when instance_arg: is nil.
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -95,8 +93,6 @@ module Aspera
       :entity_execute,
       :transfer_paths,
       :condition,
-      :instance_arg,
-      :lookup,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -129,17 +125,6 @@ module Aspera
       # @return [Symbol]
       def action_method_name
         self.class.action_method(full_path)
-      end
-
-      # Return the full ordered list of ArgumentSpecs for this command:
-      # instance_arg (if any) prepended as a synthetic ArgumentSpec(type: :identifier),
-      # followed by the declared arguments.
-      # @return [Array<ArgumentSpec>]
-      def all_arguments
-        result = []
-        result << ArgumentSpec.new(name: instance_arg, type: :identifier, mandatory: true) if instance_arg
-        result.concat(arguments) if arguments&.any?
-        result
       end
     end
   end

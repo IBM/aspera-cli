@@ -82,18 +82,29 @@ module Aspera
 
         commands_under(%i[transfer current]) do
           command :list,          description: 'List current transfers'
-          command :show,          description: 'Show a transfer',          instance_arg: :transfer_id,
+          command :show,          description: 'Show a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(api_console:, transfer_id:, **){Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))}
-          command :files,         description: 'List files in a transfer', instance_arg: :transfer_id
-          command :start,         description: 'Start a transfer',         instance_arg: :transfer_id
-          command :pause,         description: 'Pause a transfer',         instance_arg: :transfer_id
-          command :cancel,        description: 'Cancel a transfer',        instance_arg: :transfer_id
-          command :resume,        description: 'Resume a transfer',        instance_arg: :transfer_id
-          command :rerun,         description: 'Rerun a transfer',         instance_arg: :transfer_id
-          command :change_rate,   description: 'Change transfer rate',     instance_arg: :transfer_id
-          command :change_policy, description: 'Change transfer policy',   instance_arg: :transfer_id
-          command :move_forwards, description: 'Move transfer forwards',   instance_arg: :transfer_id
-          command :move_back,     description: 'Move transfer backwards',  instance_arg: :transfer_id
+          command :files,         description: 'List files in a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :start,         description: 'Start a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :pause,         description: 'Pause a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :cancel,        description: 'Cancel a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :resume,        description: 'Resume a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :rerun,         description: 'Rerun a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :change_rate,   description: 'Change transfer rate',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :change_policy, description: 'Change transfer policy',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :move_forwards, description: 'Move transfer forwards',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :move_back,     description: 'Move transfer backwards',
+            arguments: [{name: :transfer_id, type: :identifier}]
         end
 
         # Generate one handler per transfer/current action.

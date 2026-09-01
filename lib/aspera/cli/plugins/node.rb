@@ -391,7 +391,8 @@ module Aspera
         command :access_keys, description: 'Manage access keys'
         commands_under(:access_keys) do
           command :do, description: 'Execute Gen4 command via access key',
-            instance_arg: :access_key_id, setup: :setup_access_key_do
+            arguments: [{name: :access_key_id, type: :identifier}],
+            setup: :setup_access_key_do
           command :set_bearer_key, description: 'Set bearer key on access key',
             arguments: [{name: :access_key_id}, {name: :bearer_key_pem, type: String}]
           Operations::ALL.each{ |op| command(op, description: "#{op.capitalize} access key(s)")}
@@ -415,12 +416,13 @@ module Aspera
         end
         commands_under(%i[access_keys do permission]) do
           command :list,   description: 'List permissions on a file'
-          command :show,   description: 'Show a permission',   instance_arg: :perm_id,
+          command :show,   description: 'Show a permission',
+            arguments: [{name: :perm_id, type: :identifier}],
             action: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
           command :create, description: 'Create a permission',
             arguments: [{name: :data, type: Hash}]
-          command :modify, description: 'Modify a permission', instance_arg: :perm_id,
-            arguments: [{name: :data, type: Hash}]
+          command :modify, description: 'Modify a permission',
+            arguments: [{name: :perm_id, type: :identifier}, {name: :data, type: Hash}]
           command :delete, description: 'Delete permission(s)',
             arguments: [{name: :perm_id, bulk: true}]
         end
@@ -428,31 +430,48 @@ module Aspera
         command :async, description: 'Manage async operations (legacy /async)'
         commands_under(:async) do
           command :list,      description: 'List async sync IDs', action: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
-          command :show,      description: 'Show async summary',   instance_arg: :async_id, lookup: :async_lookup
-          command :delete,    description: 'Delete async',         instance_arg: :async_id, lookup: :async_lookup
-          command :bandwidth, description: 'Show async bandwidth', instance_arg: :async_id, lookup: :async_lookup
-          command :files,     description: 'List async files',     instance_arg: :async_id, lookup: :async_lookup
-          command :counters,  description: 'Show async counters',  instance_arg: :async_id, lookup: :async_lookup
+          command :show,      description: 'Show async summary',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
+          command :delete,    description: 'Delete async',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
+          command :bandwidth, description: 'Show async bandwidth',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
+          command :files,     description: 'List async files',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
+          command :counters,  description: 'Show async counters',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
         end
         # ssync (/asyncs)
         command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under(:ssync) do
           command :create,    description: 'Create ssync',         action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :create, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
           command :list,      description: 'List ssync',           action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :list,   items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
-          command :show,      description: 'Show ssync',           instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :show,      description: 'Show ssync',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}"))}
-          command :delete,    description: 'Delete ssync',         instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_delete
-          command :start,     description: 'Start a sync',         instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_start
-          command :stop,      description: 'Stop a sync',          instance_arg: :ssync_id, lookup: :ssync_lookup, action: :action_ssync_stop
-          command :bandwidth, description: 'Show sync bandwidth',   instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :delete,    description: 'Delete ssync',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
+            action: :action_ssync_delete
+          command :start,     description: 'Start a sync',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
+            action: :action_ssync_start
+          command :stop,      description: 'Stop a sync',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
+            action: :action_ssync_stop
+          command :bandwidth, description: 'Show sync bandwidth',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {}))}
-          command :counters,  description: 'Show sync counters',    instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :counters,  description: 'Show sync counters',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {}))}
-          command :files,     description: 'List sync files',       instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :files,     description: 'List sync files',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {}))}
-          command :state,     description: 'Show sync state',       instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :state,     description: 'Show sync state',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state"))}
-          command :summary,   description: 'Show sync summary',     instance_arg: :ssync_id, lookup: :ssync_lookup,
+          command :summary,   description: 'Show sync summary',
+            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/summary"))}
         end
         # stream
@@ -462,23 +481,27 @@ module Aspera
           command :create, description: 'Create a stream',
             arguments: [{name: :data, type: Hash}],
             action: ->(data, **){Result::SingleObject.new(@api_node.create('streams', data))}
-          command :show,   description: 'Show a stream',   instance_arg: :transfer_id,
+          command :show,   description: 'Show a stream',
+            arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
-          command :modify, description: 'Modify a stream', instance_arg: :transfer_id,
-            arguments: [{name: :data, type: Hash}],
+          command :modify, description: 'Modify a stream',
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash}],
             action: ->(data, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
-          command :cancel, description: 'Cancel a stream', instance_arg: :transfer_id,
+          command :cancel, description: 'Cancel a stream',
+            arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}"))}
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
         commands_under(:transfer) do
           command :list,              description: 'List transfers'
-          command :cancel,            description: 'Cancel a transfer', instance_arg: :transfer_id
-          command :show,              description: 'Show a transfer',   instance_arg: :transfer_id,
+          command :cancel,            description: 'Cancel a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}]
+          command :show,              description: 'Show a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
-          command :modify,            description: 'Modify a transfer', instance_arg: :transfer_id,
-            arguments: [{name: :update_value, type: Hash}]
+          command :modify,            description: 'Modify a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :update_value, type: Hash}]
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
         end
@@ -488,7 +511,8 @@ module Aspera
           command :list,   description: 'List services', action: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
           command :create, description: 'Create a service',
             arguments: [{name: :creation_data, type: Hash}]
-          command :delete, description: 'Delete a service', instance_arg: :service_id
+          command :delete, description: 'Delete a service',
+            arguments: [{name: :service_id, type: :identifier}]
         end
         # watch_folder
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
@@ -498,12 +522,15 @@ module Aspera
             action: ->(data, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
           command :list,   description: 'List watch folders',
             action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
-          command :show,   description: 'Show a watch folder',   instance_arg: :res_id,
+          command :show,   description: 'Show a watch folder',
+            arguments: [{name: :res_id, type: :identifier}],
             action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
-          command :modify, description: 'Modify a watch folder', instance_arg: :res_id,
-            arguments: [{name: :data, type: Hash}]
-          command :delete, description: 'Delete a watch folder', instance_arg: :res_id
-          command :state,  description: 'Show watch folder state', instance_arg: :res_id,
+          command :modify, description: 'Modify a watch folder',
+            arguments: [{name: :res_id, type: :identifier}, {name: :data, type: Hash}]
+          command :delete, description: 'Delete a watch folder',
+            arguments: [{name: :res_id, type: :identifier}]
+          command :state,  description: 'Show watch folder state',
+            arguments: [{name: :res_id, type: :identifier}],
             action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
         end
         # central

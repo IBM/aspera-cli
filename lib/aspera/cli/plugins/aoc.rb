@@ -579,7 +579,7 @@ module Aspera
             op_setup       = cfg[:op_setup] || {}
             extra_op_args  = cfg[:extra_op_args] || {}
             is_singleton   = cfg[:singleton]
-            instance_attrs = is_singleton ? {} : {instance_arg: :res_id, lookup: :"lookup_aoc_#{res}_id"}
+            id_arg_spec    = is_singleton ? [] : [{name: :res_id, type: :identifier, lookup: :"lookup_aoc_#{res}_id"}]
             ops            = if cfg[:ops]
               cfg[:ops]
             elsif is_singleton
@@ -591,24 +591,23 @@ module Aspera
             commands_under([:admin, res]) do
               ops.each do |op|
                 extra_setup = op_setup[op]
-                attrs = if Operations::GLOBAL.include?(op)
-                  extra_setup ? {setup: extra_setup} : {}
-                else
-                  instance_attrs.merge(extra_setup ? {setup: extra_setup} : {})
-                end
-                extra_args =
+                base_attrs = extra_setup ? {setup: extra_setup} : {}
+                extra_arg_list =
                   if !is_singleton && op.eql?(:create)
                     c = aoc_res_cfg(res)
-                    {arguments: [{name: :data, type: Hash, bulk: true, schema: c[:schema]}]}
+                    [{name: :data, type: Hash, bulk: true, schema: c[:schema]}]
                   elsif !is_singleton && op.eql?(:modify)
                     c = aoc_res_cfg(res)
-                    {arguments: [{name: :data, type: Hash, schema: c[:schema]}]}
+                    [{name: :data, type: Hash, schema: c[:schema]}]
                   elsif extra_op_args.key?(op)
-                    {arguments: extra_op_args[op]}
+                    extra_op_args[op]
                   else
-                    {}
+                    []
                   end
-                command(op, description: op.to_s.tr('_', ' ').capitalize, **attrs, **extra_args)
+                # For non-global ops, prepend the identifier spec
+                arg_list = (Operations::GLOBAL.include?(op) ? [] : id_arg_spec) + extra_arg_list
+                merged = arg_list.empty? ? base_attrs : base_attrs.merge(arguments: arg_list)
+                command(op, description: op.to_s.tr('_', ' ').capitalize, **merged)
               end
             end
           end
@@ -616,8 +615,12 @@ module Aspera
         # admin > workspace > shared_folder sub-tree
         commands_under(%i[admin workspace shared_folder]) do
           command :list,   description: 'List shared folders'
-          command :node,   description: 'Execute node command on shared folder',   instance_arg: :sf_id, setup: :setup_admin_workspace_shared_folder_node
-          command :member, description: 'Show folder members',                     instance_arg: :sf_id, setup: :setup_admin_workspace_shared_folder_member
+          command :node,   description: 'Execute node command on shared folder',
+            arguments: [{name: :sf_id, type: :identifier}],
+            setup: :setup_admin_workspace_shared_folder_node
+          command :member, description: 'Show folder members',
+            arguments: [{name: :sf_id, type: :identifier}],
+            setup: :setup_admin_workspace_shared_folder_member
         end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
@@ -705,17 +708,20 @@ module Aspera
           APP_TYPES.each do |app_type|
             command(app_type, description: "Show or modify a #{app_type} instance")
             commands_under(APP_INSTANCE_PATH + [app_type]) do
-              command :show,   description: "Show a #{app_type} instance", instance_arg: :res_id
-              command :modify, description: "Modify a #{app_type} instance", instance_arg: :res_id,
-                arguments: [{name: :properties, type: Hash}]
+              command :show,   description: "Show a #{app_type} instance",
+                arguments: [{name: :res_id, type: :identifier}]
+              command :modify, description: "Modify a #{app_type} instance",
+                arguments: [{name: :res_id, type: :identifier}, {name: :properties, type: Hash}]
             end
           end
         end
         commands_under(%i[admin application membership]) do
           command :list, description: 'List app memberships',
             action: ->{result_list('apps/app_memberships')}
-          command :show,   description: 'Show an app membership',   instance_arg: :res_id
-          command :delete, description: 'Delete an app membership', instance_arg: :res_id
+          command :show,   description: 'Show an app membership',
+            arguments: [{name: :res_id, type: :identifier}]
+          command :delete, description: 'Delete an app membership',
+            arguments: [{name: :res_id, type: :identifier}]
           command :create, description: 'Create an app membership',
             arguments: [{name: :membership, type: Hash}]
         end
@@ -800,17 +806,24 @@ module Aspera
           command :shared_inboxes,    description: 'Shared inbox commands'
           command :send,              description: 'Send a package',
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
-          command :receive,           description: 'Receive package(s)', aliases: [:recv], instance_arg: :package_id
+          command :receive,           description: 'Receive package(s)', aliases: [:recv],
+            arguments: [{name: :package_id, type: :identifier}]
           command :list,              description: 'List packages'
-          command :show,              description: 'Show a package',              instance_arg: :package_id
-          command :delete,            description: 'Delete package(s)',           instance_arg: :package_id
-          command :modify,            description: 'Modify a package',            instance_arg: :package_id,
-            arguments: [{name: :data, type: Hash}]
+          command :show,              description: 'Show a package',
+            arguments: [{name: :package_id, type: :identifier}]
+          command :delete,            description: 'Delete package(s)',
+            arguments: [{name: :package_id, type: :identifier}]
+          command :modify,            description: 'Modify a package',
+            arguments: [{name: :package_id, type: :identifier}, {name: :data, type: Hash}]
           # Node Gen4 read-only actions on packages
-          command :bearer_token_node, description: 'Show bearer token for package node', instance_arg: :package_id
-          command :node_info,         description: 'Show node info for package',         instance_arg: :package_id
-          command :browse,            description: 'Browse package contents',            instance_arg: :package_id
-          command :find,              description: 'Find files in package',              instance_arg: :package_id
+          command :bearer_token_node, description: 'Show bearer token for package node',
+            arguments: [{name: :package_id, type: :identifier}]
+          command :node_info,         description: 'Show node info for package',
+            arguments: [{name: :package_id, type: :identifier}]
+          command :browse,            description: 'Browse package contents',
+            arguments: [{name: :package_id, type: :identifier}]
+          command :find,              description: 'Find files in package',
+            arguments: [{name: :package_id, type: :identifier}]
         end
 
         commands_under(%i[packages shared_inboxes]) do
@@ -822,7 +835,8 @@ module Aspera
                 default_query: workspace_id_hash({'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}, string: true)
               )
             end)
-          command :show,       description: 'Show a shared inbox', instance_arg: :dropbox_id, lookup: :lookup_aoc_dropbox_id,
+          command :show,       description: 'Show a shared inbox',
+            arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             action: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
           command :short_link, description: 'Manage shared inbox short links',
             setup: :setup_packages_short_link
@@ -831,11 +845,13 @@ module Aspera
         commands_under(%i[packages shared_inboxes short_link]) do
           command :create, description: 'Create',
             arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :modify, description: 'Modify', instance_arg: :short_link_id,
-            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :modify, description: 'Modify',
+            arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
           command :list,   description: 'List short links'
-          command :show,   description: 'Show a short link',   instance_arg: :short_link_id
-          command :delete, description: 'Delete a short link', instance_arg: :short_link_id
+          command :show,   description: 'Show a short link',
+            arguments: [{name: :short_link_id, type: :identifier}]
+          command :delete, description: 'Delete a short link',
+            arguments: [{name: :short_link_id, type: :identifier}]
         end
 
         # files sub-commands: all FILES_COMMANDS + :short_link
@@ -867,11 +883,13 @@ module Aspera
         commands_under(%i[files short_link]) do
           command :create, description: 'Create',
             arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
-          command :modify, description: 'Modify', instance_arg: :short_link_id,
-            arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+          command :modify, description: 'Modify',
+            arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
           command :list,   description: 'List short links'
-          command :show,   description: 'Show a short link',   instance_arg: :short_link_id
-          command :delete, description: 'Delete a short link', instance_arg: :short_link_id
+          command :show,   description: 'Show a short link',
+            arguments: [{name: :short_link_id, type: :identifier}]
+          command :delete, description: 'Delete a short link',
+            arguments: [{name: :short_link_id, type: :identifier}]
         end
 
         # automation sub-commands
@@ -886,15 +904,19 @@ module Aspera
           command :show,    description: 'Show a workflow'
           command :modify,  description: 'Modify a workflow'
           command :delete,  description: 'Delete a workflow'
-          command :launch, description: 'Launch a workflow', instance_arg: :wf_id,
+          command :launch, description: 'Launch a workflow',
+            arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
           command :action, description: 'Add action to workflow (TODO)'
         end
 
         commands_under(%i[automation workflows action]) do
-          command :list,   description: 'List actions (TODO)',    instance_arg: :wf_id
-          command :create, description: 'Create an action (TODO)', instance_arg: :wf_id
-          command :show,   description: 'Show an action (TODO)',   instance_arg: :wf_id
+          command :list,   description: 'List actions (TODO)',
+            arguments: [{name: :wf_id, type: :identifier}]
+          command :create, description: 'Create an action (TODO)',
+            arguments: [{name: :wf_id, type: :identifier}]
+          command :show,   description: 'Show an action (TODO)',
+            arguments: [{name: :wf_id, type: :identifier}]
         end
 
         # --- setup methods ---
@@ -945,7 +967,7 @@ module Aspera
           return Result::SingleObject.new(created_package[:info])
         end
 
-        # packages > receive — package_id: from instance_arg: (or overridden by public_link)
+        # packages > receive — package_id: from arguments:(:identifier) (or overridden by public_link)
         def action_packages_receive(package_id:, **)
           ids_to_download = if aoc_api.public_link.nil?
             package_id
@@ -1347,7 +1369,7 @@ module Aspera
           Result::ObjectList.new(events)
         end
 
-        # Lookup methods for instance_arg: + lookup: on admin resources.
+        # Lookup methods for arguments:(:identifier) + lookup: on admin resources.
         # One method per non-singleton resource; each delegates to get_resource_id_from_args.
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
           define_method(:"lookup_aoc_#{res}_id") do |_field, value, **|
@@ -1451,7 +1473,7 @@ module Aspera
           Result::Text.new(node_api.oauth.authorization)
         end
 
-        # admin > workspace > dropbox — res_id: already in ctx via instance_arg:
+        # admin > workspace > dropbox — res_id: already in ctx via arguments:(:identifier)
         def setup_admin_workspace_dropbox(res_id:, **)
           {ws_res_id: res_id}
         end
@@ -1462,7 +1484,7 @@ module Aspera
           Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => ws_res_id})), fields: %w[id name description])
         end
 
-        # admin > workspace > shared_folder — res_id: already in ctx via instance_arg:
+        # admin > workspace > shared_folder — res_id: already in ctx via arguments:(:identifier)
         def setup_admin_workspace_shared_folder(res_id:, **)
           resource_instance_path = "#{aoc_res_path(:workspace)}/#{res_id}"
           query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
@@ -1475,7 +1497,7 @@ module Aspera
           Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
         end
 
-        # admin > workspace > shared_folder > node|member — sf_id: already in ctx via instance_arg:
+        # admin > workspace > shared_folder > node|member — sf_id: already in ctx via arguments:(:identifier)
         def resolve_sf_item(shared_folders:, sf_id:, **)
           sf_item = shared_folders.find{ |i| i['id'].eql?(sf_id)}
           Aspera.assert(sf_item, 'shared folder not found')
