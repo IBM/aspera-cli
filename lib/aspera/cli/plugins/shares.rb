@@ -131,6 +131,11 @@ module Aspera
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
+              lookup_method = :"lookup_shares_#{entity_type}_all_id"
+              command(
+                setting, description: "Manage #{setting} for a #{entity_type}",
+                arguments: [{name: :entity_id, type: :identifier, lookup: lookup_method}]
+              )
               commands_under([:admin, entity_type, :all, setting]) do
                 setting_ops.each do |op|
                   command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}")
@@ -138,6 +143,10 @@ module Aspera
               end
             end
             if entity_type.eql?(:group)
+              command(
+                :users, description: 'Manage users of a group',
+                arguments: [{name: :group_id, type: :identifier}]
+              )
               commands_under([:admin, entity_type, :all, :users]) do
                 Operations::ALL.each do |op|
                   command(op, description: "#{op.capitalize} users of a group")
@@ -153,6 +162,11 @@ module Aspera
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
+              lookup_method = :"lookup_shares_#{entity_type}_local_id"
+              command(
+                setting, description: "Manage #{setting} for a #{entity_type}",
+                arguments: [{name: :entity_id, type: :identifier, lookup: lookup_method}]
+              )
               commands_under([:admin, entity_type, :local, setting]) do
                 setting_ops.each do |op|
                   command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}")
@@ -160,6 +174,10 @@ module Aspera
               end
             end
             if entity_type.eql?(:group)
+              command(
+                :users, description: 'Manage users of a group',
+                arguments: [{name: :group_id, type: :identifier}]
+              )
               commands_under([:admin, entity_type, :local, :users]) do
                 Operations::ALL.each do |op|
                   command(op, description: "#{op.capitalize} users of a group")
@@ -185,6 +203,19 @@ module Aspera
         SHARE_DISPLAY_FIELDS = %w[id name node_id directory percent_free].freeze
         private_constant :ENTITY_LOCATIONS, :SHARE_DISPLAY_FIELDS
 
+        # Lookup methods used by arguments:(:identifier, lookup:) on setting nodes.
+        # One method per entity_type/location combination; each returns the entity id.
+        %i[user group].each do |entity_type|
+          ENTITY_LOCATIONS.each do |location|
+            lookup_method = :"lookup_shares_#{entity_type}_#{location}_id"
+            define_method(lookup_method) do |field, value, **|
+              path = admin_entity_path(entity_type, location)
+              RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){@api_shares_admin.read(path)}['id']
+            end
+            private lookup_method
+          end
+        end
+
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
             command(op, description: "#{op.capitalize} share(s)", action: lambda do
@@ -194,8 +225,14 @@ module Aspera
               ){ |f, v| lookup_share_id(f, v)}
             end)
           end
-          command(:user_permissions, description: 'Manage user permissions on a share')
-          command(:group_permissions, description: 'Manage group permissions on a share')
+          command(
+            :user_permissions, description: 'Manage user permissions on a share',
+            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}]
+          )
+          command(
+            :group_permissions, description: 'Manage group permissions on a share',
+            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}]
+          )
         end
 
         %i[user_permissions group_permissions].each do |perm_type|
@@ -294,10 +331,9 @@ module Aspera
         # @param location    [Symbol] :all or :local
         # @param setting     [Symbol] one of USR_GRP_SETTINGS
         # @param op          [Symbol] CRUD operation
-        def action_admin_entity_setting(entity_type, location, setting, op)
+        # entity_id: resolved by Phase A via arguments:(:identifier) on the setting node
+        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, **)
           path = admin_entity_path(entity_type, location)
-          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
-          entity_id = options.instance_identifier(&lookup)
           entity_execute(
             api:          @api_shares_admin,
             entity:       "#{path}/#{entity_id}/#{setting}",
@@ -307,11 +343,11 @@ module Aspera
         end
 
         # Shared handler for :users (group only)
-        def action_admin_entity_users(entity_type, location, op)
+        # group_id: resolved by Phase A via arguments:(:identifier) on the :users node
+        def action_admin_entity_users(entity_type, location, op, group_id:, **)
           path = admin_entity_path(entity_type, location)
           prefix = location.eql?(:all) ? '' : "#{location}_"
-          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
-          entity_execute(api: @api_shares_admin, entity: "#{path}/#{options.instance_identifier(&lookup)}/#{prefix}users", command: op)
+          entity_execute(api: @api_shares_admin, entity: "#{path}/#{group_id}/#{prefix}users", command: op)
         end
 
         # Generate action_admin_<user|group>_<location>_<verb> for all combinations
@@ -327,15 +363,15 @@ module Aspera
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
               setting_ops.each do |op|
-                define_action_method([:admin, entity_type, location, setting, op]) do
-                  action_admin_entity_setting(entity_type, location, setting, op)
+                define_action_method([:admin, entity_type, location, setting, op]) do |entity_id:, **|
+                  action_admin_entity_setting(entity_type, location, setting, op, entity_id: entity_id)
                 end
               end
             end
             next unless entity_type.eql?(:group)
             Operations::ALL.each do |op|
-              define_action_method([:admin, entity_type, location, :users, op]) do
-                action_admin_entity_users(entity_type, location, op)
+              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, **|
+                action_admin_entity_users(entity_type, location, op, group_id: group_id)
               end
             end
           end
@@ -366,10 +402,10 @@ module Aspera
         end
 
         # Handlers for admin > share > user_permissions|group_permissions > op
+        # share_id: resolved by Phase A via arguments:(:identifier, lookup: :lookup_share_id) on the perm_type node
         %i[user_permissions group_permissions].each do |perm_type|
           Operations::ALL.each do |op|
-            define_action_method([:admin, :share, perm_type, op]) do
-              share_id = options.instance_identifier{ |f, v| lookup_share_id(f, v)}
+            define_action_method([:admin, :share, perm_type, op]) do |share_id:, **|
               entity_execute(api: @api_shares_admin, entity: "data/shares/#{share_id}/#{perm_type}", command: op)
             end
           end

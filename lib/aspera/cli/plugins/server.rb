@@ -172,15 +172,15 @@ module Aspera
         # @server_transfer_spec and @ascmd_executor so that condition methods work.
         root_setup :setup_server
 
-        command :health,   description: 'Check transfer health'
-        command :upload,   description: 'Upload files to server', transfer_paths: :send, action: lambda do
+        command :health, description: 'Check transfer health'
+        command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do
           @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
           Runner.result_transfer(transfer.start(@server_transfer_spec))
-        end
-        command :download, description: 'Download files from server', transfer_paths: :receive, action: lambda do
+        end)
+        command(:download, description: 'Download files from server', transfer_paths: :receive, action: lambda do
           @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
           Runner.result_transfer(transfer.start(@server_transfer_spec))
-        end
+        end)
         command :sync, description: 'Synchronize files with server'
         commands_under(:sync) do
           Sync::Operations::DIRECTIONS.each do |dir|
