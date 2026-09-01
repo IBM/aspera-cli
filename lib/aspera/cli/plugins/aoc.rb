@@ -622,6 +622,10 @@ module Aspera
             arguments: [{name: :sf_id, type: :identifier}],
             setup: :setup_admin_workspace_shared_folder_member
         end
+        # admin > workspace > shared_folder > node sub-tree (FILES_COMMANDS)
+        commands_under(%i[admin workspace shared_folder node]) do
+          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+        end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
         end
@@ -1507,10 +1511,11 @@ module Aspera
         alias_method :setup_admin_workspace_shared_folder_node,   :resolve_sf_item
         alias_method :setup_admin_workspace_shared_folder_member, :resolve_sf_item
 
-        # admin > workspace > shared_folder > node
-        def action_admin_workspace_shared_folder_node(sf_item:, **)
-          command_repo = options.get_next_command(FILES_COMMANDS)
-          execute_nodegen4_command(command_repo, sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
+        # admin > workspace > shared_folder > node > <FILES_COMMAND>
+        FILES_COMMANDS.each do |cmd|
+          define_action_method([:admin, :workspace, :shared_folder, :node, cmd]) do |sf_item:, **|
+            execute_nodegen4_command(cmd, sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
+          end
         end
 
         # admin > workspace > shared_folder > member > list
