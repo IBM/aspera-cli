@@ -23,7 +23,7 @@ on:
       - "tests/tests.yml"
       - ".github/workflows/test.yml"
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
     env:
       BUNDLE_WITHOUT: optional:special
@@ -38,9 +38,43 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler-cache: true
 
-      - name: Run tests
+      - name: Run unit tests (no server required)
+        run: |
+          bundle exec rspec \
+            spec/base_dsl_spec.rb \
+            spec/command_registry_spec.rb \
+            spec/mcp_tool_spec.rb \
+            spec/aoc_registry_spec.rb \
+            spec/transfer_uri_spec.rb \
+            spec/assert_spec.rb \
+            spec/version_spec.rb \
+            spec/proxy_auto_config_spec.rb \
+            spec/rest_spec.rb \
+            spec/hash_ext_spec.rb \
+            spec/uri_reader_spec.rb \
+            spec/environment_spec.rb
+
+  test:
+    runs-on: ubuntu-latest
+    needs: unit
+    env:
+      BUNDLE_WITHOUT: optional:special
+    strategy:
+      matrix:
+        ruby: ["3.1", "3.2", "3.3", "3.4", "4.0", "jruby"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run smoke tests
         run: |
           export ASPERA_CLI_TEST_CONF_URL="data:application/yaml;base64,$(base64 -w0 <<<$(cat <<'EOF'
           ---
