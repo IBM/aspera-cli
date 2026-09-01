@@ -541,7 +541,7 @@ module Aspera
 
         def action_v4_package_users
           pkg_box_id = options.instance_identifier
-          entity_execute(api: api_v4, entity: "users/#{pkg_box_id}/packages")
+          entity_execute(api: api_v4, entity: "users/#{pkg_box_id}/packages", command: :list)
         end
 
         def action_address_book

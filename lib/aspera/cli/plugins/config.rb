@@ -200,9 +200,9 @@ module Aspera
         command :vault, description: 'Manage secrets in the vault'
         commands_under(:vault) do
           command :info,     description: 'Display vault information',
-            action: ->(**){ Result::SingleObject.new(vault.info) }
+            action: ->(**){Result::SingleObject.new(vault.info)}
           command :list,     description: 'List secrets in the vault',
-            action: ->(**){ Result::ObjectList.new(vault.list) }
+            action: ->(**){Result::ObjectList.new(vault.list)}
           command :show,     description: 'Show a secret by label',
             arguments: [{name: :label, type: String}]
           command :create,   description: 'Add a new secret to the vault',

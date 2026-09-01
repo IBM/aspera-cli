@@ -86,7 +86,7 @@ module Aspera
           command :create, description: 'Create an ATS API key',
             arguments: [{name: :params, type: Hash, mandatory: false, default: {}}],
             action: ->(params:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params))}
-          command :list,   description: 'List ATS API keys',     action: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
+          command :list,   description: 'List ATS API keys', action: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
             action: ->(api_key_id:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}"))}

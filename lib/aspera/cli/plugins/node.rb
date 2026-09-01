@@ -302,7 +302,7 @@ module Aspera
           if (m = Options.percent_selector(path))
             raise BadArgument, 'Only selection "id" is supported (file id)' unless m[:field].eql?('id')
             val = m[:value]
-            return Api::NodeFileId.new(@api_node, (val.nil? || val.empty?) ? top_file_id : val)
+            return Api::NodeFileId.new(@api_node, val.nil? || val.empty? ? top_file_id : val)
           end
           @api_node.resolve_api_fid(top_file_id, path)
         end
@@ -313,7 +313,7 @@ module Aspera
         def apifid_from_next_arg(top_file_id)
           file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             raise BadArgument, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
-            return Api::NodeFileId.new(@api_node, (value.nil? || value.empty?) ? top_file_id : value)
+            return Api::NodeFileId.new(@api_node, value.nil? || value.empty? ? top_file_id : value)
           end
           @api_node.resolve_api_fid(top_file_id, file_path)
         end
@@ -478,7 +478,7 @@ module Aspera
         # stream
         command :stream, description: 'Manage stream operations'
         commands_under(:stream) do
-          command :list,   description: 'List streams',    action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
+          command :list,   description: 'List streams', action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
           command :create, description: 'Create a stream',
             arguments: [{name: :data, type: Hash}],
             action: ->(data:, **){Result::SingleObject.new(@api_node.create('streams', data))}

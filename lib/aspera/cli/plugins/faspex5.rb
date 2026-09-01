@@ -623,7 +623,7 @@ module Aspera
         end
 
         commands_under(%i[admin configuration]) do
-          command :show,   description: 'Show configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
+          command :show, description: 'Show configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
           command(
             :modify, description: 'Modify configuration',
             arguments: [{name: :input_data, type: Hash}],
@@ -632,7 +632,7 @@ module Aspera
         end
 
         commands_under(%i[admin smtp]) do
-          command :show,   description: 'Show SMTP configuration',   action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
+          command :show, description: 'Show SMTP configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
           command(
             :create, description: 'Create SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
@@ -663,7 +663,7 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_action_method([:admin, :clean_deleted]) do |input_data = {}, **|
+        define_action_method(%i[admin clean_deleted]) do |input_data = {}, **|
           input_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if input_data.empty?
           Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', input_data))
         end

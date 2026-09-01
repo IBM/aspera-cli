@@ -341,7 +341,6 @@ module Aspera
         def execute_leaf(spec, ctx)
           a = action_for(spec)
           if spec.transfer_paths
-            invoke_action(a, [], ctx)
           else
             (spec.arguments || []).each do |arg_spec|
               if arg_spec.type.eql?(:identifier)
@@ -349,7 +348,7 @@ module Aspera
                 unless ctx.key?(arg_spec.name)
                   # Not yet consumed in Phase A — resolve it now.
                   lookup_method = arg_spec.lookup
-                  block = lookup_method ? ->(f, v) {send(lookup_method, f, v, **ctx)} : nil
+                  block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
                   ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
                 end
               else
@@ -357,8 +356,8 @@ module Aspera
                 ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
               end
             end
-            invoke_action(a, [], ctx)
           end
+          invoke_action(a, [], ctx)
         end
 
         # Expand an entity_execute shorthand from a CommandSpec.
@@ -487,13 +486,13 @@ module Aspera
           bfail: true,
           &block
         )
-          # Fallback: read command from CLI when not provided (legacy callers — removed in ST8)
+          # Fallback: read command from CLI when not provided (entity_command shorthand without command:)
           command = options.get_next_command(Operations::ALL) if command.nil?
 
           if is_singleton
             one_res_path = entity
           elsif Operations::INSTANCE.include?(command)
-            # Use pre-resolved identifier if provided; otherwise fall back to CLI read (legacy)
+            # Use pre-resolved identifier if provided; otherwise fall back to CLI read (entity_command shorthand)
             one_res_id = res_id || options.instance_identifier(&block)
             one_res_path = "#{entity}/#{one_res_id}"
             one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg
@@ -576,7 +575,6 @@ module Aspera
           end
           return query
         end
-
       end
     end
   end

@@ -274,11 +274,11 @@ module Aspera
               display_args.each do |arg|
                 flag  = arg.mandatory ? arg.name.to_s : "[#{arg.name}]"
                 types = case arg.type
-                        when :identifier then 'identifier'
-                        when Array       then arg.type.map(&:name).join(', ')
-                        when nil         then ''
-                        else arg.type.name
-                        end
+                when :identifier then 'identifier'
+                when Array       then arg.type.map(&:name).join(', ')
+                when nil         then ''
+                else arg.type.name
+                end
                 hint  = arg.type.eql?(Hash) && arg.schema ? "  (use 'help' as value to see schema)" : ''
                 lines << "    #{flag.ljust(col_w)}  #{arg.description || types}#{hint}"
               end

@@ -1235,14 +1235,14 @@ module Aspera
         def action_files_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
         def action_files_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
         def action_files_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_files_short_link_modify(custom_data: {}, **ctx)  = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
+        def action_files_short_link_modify(custom_data: {}, **ctx) = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
 
         # packages > shared_inboxes > short_link > create|delete|list|show|modify
         def action_packages_shared_inboxes_short_link_create(custom_data: {}, **ctx) = sl_exec_create(custom_data, **ctx)
         def action_packages_shared_inboxes_short_link_list(**ctx)                      = sl_exec_list(**sl_fetch_list(**ctx))
         def action_packages_shared_inboxes_short_link_show(**ctx)                      = sl_exec_show(**sl_fetch_list(**ctx))
         def action_packages_shared_inboxes_short_link_delete(**ctx)                    = sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-        def action_packages_shared_inboxes_short_link_modify(custom_data: {}, **ctx)  = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
+        def action_packages_shared_inboxes_short_link_modify(custom_data: {}, **ctx) = sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
 
         # files > transfer
         def action_files_transfer(direction:, source_folder:, **)

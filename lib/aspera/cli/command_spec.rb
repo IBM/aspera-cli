@@ -58,7 +58,7 @@ module Aspera
       :allowed,
       :default,
       :short,
-      :handler,   # kept as-is: this is the option accessor delegation, not a command action
+      :handler, # kept as-is: this is the option accessor delegation, not a command action
       :deprecation,
       :schema,
       keyword_init: true
