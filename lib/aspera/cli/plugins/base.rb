@@ -423,11 +423,12 @@ module Aspera
               # Class or Array<Class> -> pass as validation type
               options.get_next_argument(
                 arg_spec.name.to_s,
-                mandatory: arg_spec.mandatory,
-                multiple:  arg_spec.multiple || false,
-                validation: arg_spec.type,
-                default:   arg_spec.default,
-                schema:    arg_spec.schema
+                mandatory:   arg_spec.mandatory,
+                multiple:    arg_spec.multiple || false,
+                validation:  arg_spec.type,
+                accept_list: arg_spec.allowed,
+                default:     arg_spec.default,
+                schema:      arg_spec.schema
               )
             end
           end

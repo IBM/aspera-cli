@@ -15,6 +15,7 @@ module Aspera
     # @!attribute schema      [String, nil]               JSON schema name for validation and --help introspection
     # @!attribute bulk        [Boolean]                   When true, wraps read+loop for bulk mode (Array if --bulk yes)
     # @!attribute lookup      [Symbol, nil]               Instance method name for percent-selector resolution (only used when type: :identifier)
+    # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -25,6 +26,7 @@ module Aspera
       :schema,
       :bulk,
       :lookup,
+      :allowed,
       keyword_init: true
     ) do
       def initialize(**kwargs)

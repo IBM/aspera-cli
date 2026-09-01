@@ -650,7 +650,7 @@ module Aspera
           command :account, description: 'Show subscription account'
           command :usage,   description: 'Show subscription usage',
             arguments: [
-              {name: :aggregate,   mandatory: false, default: :ALL},
+              {name: :aggregate,   mandatory: false, default: :ALL, allowed: %i[ALL MONTHLY]},
               {name: :start_date,  mandatory: false, default: nil},
               {name: :end_date,    mandatory: false, default: nil}
             ]
@@ -659,12 +659,12 @@ module Aspera
           command :application_events, description: 'List application events'
           command :transfers,          description: 'List transfer events',
             arguments: [
-              {name: :event_resource_type, mandatory: true},
+              {name: :event_resource_type, mandatory: true,  allowed: %i[organizations users nodes]},
               {name: :event_resource_id,   mandatory: false, default: nil}
             ]
           command :files,              description: 'List file events',
             arguments: [
-              {name: :event_resource_type, mandatory: true},
+              {name: :event_resource_type, mandatory: true, allowed: %i[organizations users nodes]},
               {name: :event_resource_id,   mandatory: true},
               {name: :event_uuid,          mandatory: true}
             ]
@@ -859,7 +859,7 @@ module Aspera
         commands_under(:files) do
           command :short_link, description: 'Manage file short link', setup: :setup_files_short_link
           command :transfer, description: 'Transfer files (node-to-node)',
-            arguments: [{name: :direction}, {name: :source_folder, type: String}]
+            arguments: [{name: :direction, allowed: %i[push pull]}, {name: :source_folder, type: String}]
           command :mkdir,            description: 'Create folder'
           command :mklink,           description: 'Create symbolic link'
           command :mkfile,           description: 'Create file'
@@ -1246,7 +1246,7 @@ module Aspera
             :transfer, aoc_api.home[:node_id],
             file_id:            aoc_api.home[:file_id],
             scope:              Api::Node::Scope::USER,
-            transfer_direction: direction.to_sym,
+            transfer_direction: direction,
             transfer_source:    source_folder
           )
         end
