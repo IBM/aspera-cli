@@ -29,17 +29,28 @@ module Aspera
         any options. Options use the long form "--option=value". Extended value prefixes are
         supported: "@json:{...}", "@preset:name", "@env:VAR_NAME", "@file:path".
 
-        DISCOVERY: call ["help"] for full usage text, or ["config", "plugins", "list"] to list
-        all available plugins. Use ["<plugin>", "--help"] to list all actions of a plugin.
+        DISCOVERY (start here):
+          ["config", "commands"] — returns ALL leaf commands across every plugin as structured
+            objects: { syntax: "plugin command <arg> [<opt_arg>]", description }. Positional
+            arguments are inlined in the syntax string: <mandatory>, [<optional>], <a|b|c> for
+            enumerated values, <name...> for variadic. This is the single best starting point
+            to understand every available capability without reading any documentation.
+          ["config", "plugins", "list"] — list plugins (name, detect, wizard).
+          ["<plugin>", "--help"] — list all options available for a plugin.
+          ["help"] — full CLI usage text.
+          ["<plugin>", "<cmd>", "--help"] — show options for a specific command path.
+          ["<plugin>", "<cmd>", "help"] — when a positional argument expects a Hash or
+            complex type, pass "help" as its value to display the full field schema.
 
         RESULT FORMAT: structured data is always in structuredContent (a JSON object). The text
-        content may be truncated to the first 20 items when the result is a list; use
+        content may be truncated to the first #{DEFAULT_MAX_ITEMS} items when the result is a list; use
         structuredContent for the complete dataset.
 
         AVAILABLE PLUGINS: aoc, faspex5, node, server, config, console, orchestrator, ats,
         preview, shares, cos, httpgw, faspio, alee.
 
         EXAMPLES:
+          ["config", "commands"]
           ["config", "gem", "version"]
           ["config", "plugins", "list"]
           ["server", "browse", "/", "--url=https://host", "--username=user", "--password=secret"]

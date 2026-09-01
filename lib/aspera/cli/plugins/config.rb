@@ -480,10 +480,25 @@ module Aspera
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
             reg.all_paths.reject{ |path| reg.children_of(path).any?}.map do |path|
-              "#{name} #{path.join(' ')}"
+              spec = reg[path]
+              arg_tokens = spec&.arguments.to_a.map do |a|
+                token =
+                  if a.allowed
+                    a.allowed.join('|')
+                  else
+                    a.name.to_s
+                  end
+                token += '...' if a.multiple
+                a.mandatory ? "<#{token}>" : "[<#{token}>]"
+              end
+              syntax = ([name.to_s] + path.map(&:to_s) + arg_tokens).join(' ')
+              {
+                syntax:      syntax,
+                description: spec&.description.to_s
+              }
             end
           end
-          Result::ValueList.new(commands, name: 'command')
+          Result::ObjectList.new(commands, fields: %w[syntax description])
         end
 
         def action_test_throw(exception_class_name:, exception_text:, **)
