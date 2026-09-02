@@ -31,8 +31,7 @@ module Aspera
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
       CP4I_REMOTE_HOST_LB = 'N/A'
-      private_constant :FILE_LIST_FROM_ARGS,
-        :FILE_LIST_FROM_TRANSFER_SPEC,
+      private_constant :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
 

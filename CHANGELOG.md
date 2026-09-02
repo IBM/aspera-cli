@@ -7,20 +7,21 @@ Released: [Place date of release here]
 ### New Features
 
 * `config`: `ascp install` / `transferd install`: Default version is now the SDK version tested with this release (`1.1.9`) instead of latest. Pass `LATEST` to install the latest available version.
-* `config`: New commands `agents list`, `agents show <name>` and `agents parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters.
+* `config`: New command commands `agents` with `list`, `show <name>` and `parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters.
 * `mcp`: New plugin - starts a [Model Context Protocol](https://modelcontextprotocol.io/) server exposing `execute_ascli_command`. Supports `stdio` (default) and `http` (Streamable HTTP) transports.
 * **global**: Documentation for growing files using the `file` PVCL adapter (`file:///path?grow=<seconds>`).
-* **global**: New composite option `log` with sub-properties `level`, `type`, `format` (aliases for `--log-level`, `--logger`, `--log-format`). Individual options preserved for backward compatibility.
-* **global**: Option `transfer` is now composite (`Hash`). Option `--transfer-info` is deprecated in favor of `--transfer`. `transfer` also accepts a `String` (`agent` shorthand) for backward compatibility.
+* **global**: New composite option `log` with sub-properties `level`, `type`, `format`.
+* **global**: Option `transfer` is now composite (`Hash`). `transfer` also accepts a `String` (`agent` shorthand) for backward compatibility.
 * `direct`: New `transfer` parameter `file_list` (default: `true`). Setting to `false` will pass source paths directly on the `ascp` command line instead of a temp file list.
 * **global**: New pseudo transfer-spec parameter `target_rate` (bps). It translates to `target_rate_kbps` with optional unit suffix (`k`/`K`, `m`/`M`, `g`/`G`). Example: `--ts.target_rate=100m`.
 * **codebase**: Major internal refactoring. Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` class methods on `Plugins::Base`) backed by `CommandRegistry` / `CommandSpec`, replacing per-plugin `case`/`when` dispatch. Help is directly generated, not using OptParse anymore, for multi-level help.
 * `config`: Bash completion (`config completion bash`) is now multi-level: pressing `Tab` after a plugin name or sub-command completes the next level of sub-commands (previously only first-level plugin names were completed).
 * **global**: Use `--query=help` on any `list` command to display the available filter parameters and their types, as documented in the embedded OpenAPI spec. Supported for `faspex5 admin` resources and `aoc admin` resources.
 
-### Issues Fixed
-
 ### Breaking Changes
+
+* **global**: Option `--transfer-info` is deprecated in favor of `--transfer`.
+* **global**: Options `--log-level`, `--logger`, `--log-format` are deprecated in favor of option `--log`. Individual options preserved for backward compatibility.
 
 ## 4.26.2
 

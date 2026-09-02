@@ -364,8 +364,8 @@ module Aspera
         command :browse,      description: 'Browse files (Gen3)',
           arguments: [{name: :path, type: String}],
           action: ->(path:, **){browse_gen3(path)}
-        command :upload,      description: 'Upload files (Gen3)'
-        command :download,    description: 'Download files (Gen3)'
+        command :upload,      description: 'Upload files (Gen3)',   transfer_paths: :send
+        command :download,    description: 'Download files (Gen3)', transfer_paths: :receive
         command :cat,         description: 'Show file contents (Gen3)',
           arguments: [{name: :remote_path, type: String}]
         command :sync,        description: 'Synchronize folders (Gen3)'
@@ -417,6 +417,8 @@ module Aspera
             kwargs[:arguments] = [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}] if cmd.eql?(:mkfile)
             kwargs[:arguments] = [{name: :path, type: String}, {name: :update_value, type: Hash}] if cmd.eql?(:modify)
             kwargs[:arguments] = [{name: :path, type: String}] if COMMANDS_GEN4_SINGLE_PATH.include?(cmd)
+            kwargs[:transfer_paths] = :send     if cmd.eql?(:upload)
+            kwargs[:transfer_paths] = :receive  if cmd.eql?(:download)
             command(cmd, **kwargs)
           end
           command :sync, description: 'Synchronize folders (Gen4)'

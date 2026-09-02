@@ -858,9 +858,9 @@ module Aspera
         # packages sub-commands — instance commands consume package_id
         commands_under(:packages) do
           command :shared_inboxes,    description: 'Shared inbox commands'
-          command :send,              description: 'Send a package',
+          command :send,              description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
-          command :receive,           description: 'Receive package(s)', aliases: [:recv],
+          command :receive,           description: 'Receive package(s)', aliases: [:recv], transfer_paths: :receive,
             arguments: [{name: :package_id, type: :identifier}]
           command :list,              description: 'List packages'
           command :show,              description: 'Show a package',
@@ -912,8 +912,8 @@ module Aspera
           command :mkfile,           description: 'Create file'
           command :rename,           description: 'Rename entry'
           command :delete,           description: 'Delete entry'
-          command :upload,           description: 'Upload files'
-          command :download,         description: 'Download files'
+          command :upload,           description: 'Upload files',   transfer_paths: :send
+          command :download,         description: 'Download files', transfer_paths: :receive
           command :sync,             description: 'Synchronize folders'
           command :cat,              description: 'Show file contents'
           command :show,             description: 'Show file info'

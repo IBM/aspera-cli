@@ -235,7 +235,16 @@ module Aspera
           spec     = registry[current_path]
           is_leaf  = spec && registry.children_of(current_path).empty?
 
-          unless options.help_requested || skip_setup
+          if options.help_requested || skip_setup
+            # help_requested on an intermediate node: drain positional args without validation
+            # so that dispatch_child can still consume the correct sub-command token
+            if !is_leaf && !skip_setup && spec&.arguments
+              spec.arguments.each do |arg_spec|
+                next if ctx.key?(arg_spec.name)
+                options.get_next_argument(arg_spec.name.to_s, mandatory: false)
+              end
+            end
+          else
             # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
             # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
             if !is_leaf
@@ -348,21 +357,17 @@ module Aspera
         # @return [Object]
         def execute_leaf(spec, ctx)
           a = action_for(spec)
-          if spec.transfer_paths
-          else
-            (spec.arguments || []).each do |arg_spec|
-              if arg_spec.type.eql?(:identifier)
-                # Identifier arguments go into ctx (keyword), not into positional args.
-                unless ctx.key?(arg_spec.name)
-                  # Not yet consumed in Phase A — resolve it now.
-                  lookup_method = arg_spec.lookup
-                  block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
-                  ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
-                end
-              else
-                # Non-identifier arguments are also passed as keyword args by name.
-                ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
+          # Always resolve declared arguments (even when transfer_paths is set — those arguments
+          # are consumed first; ts_source_paths then reads whatever remains in the queue).
+          (spec.arguments || []).each do |arg_spec|
+            if arg_spec.type.eql?(:identifier)
+              unless ctx.key?(arg_spec.name)
+                lookup_method = arg_spec.lookup
+                block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
+                ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
               end
+            else
+              ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
             end
           end
           invoke_action(a, [], ctx)

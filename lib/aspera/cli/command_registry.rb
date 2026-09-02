@@ -115,12 +115,6 @@ module Aspera
               "#{path.inspect}: delegate_instance requires delegates_to to be set"
           end
 
-          # Rule: transfer_paths and arguments are mutually exclusive
-          if spec.transfer_paths && spec.arguments && !spec.arguments.empty?
-            raise ArgumentError,
-              "#{path.inspect}: transfer_paths and arguments are mutually exclusive"
-          end
-
           # Rule: leaf commands with no explicit action must have a matching instance method
           next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip

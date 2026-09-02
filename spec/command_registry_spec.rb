@@ -182,10 +182,10 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     end
 
     context 'transfer_paths combined with arguments' do
-      it 'raises when both transfer_paths and arguments are present' do
+      it 'does not raise when both transfer_paths and arguments are present' do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
         registry.register(spec(id: :upload, transfer_paths: :send, arguments: args))
-        expect{registry.validate!}.to(raise_error(ArgumentError, /transfer_paths and arguments are mutually exclusive/))
+        expect{registry.validate!}.not_to(raise_error)
       end
 
       it 'does not raise when only transfer_paths is set' do

@@ -271,7 +271,18 @@ module Aspera
           registry = plugin.class.command_registry
           cmds     = registry.children_of(path)
           label    = plugin.class.name.split('::').last.downcase
-          label   += " #{path.join(' ')}" unless path.empty?
+          # Build label with positional argument slots inserted after each intermediate node
+          # e.g. [:access_keys, :do, :download] -> "node access_keys do <access_key_id> download"
+          path.each_with_index do |seg, i|
+            label += " #{seg}"
+            seg_path = path[0..i]
+            seg_spec = registry[seg_path]
+            if seg_spec && registry.children_of(seg_path).any? && seg_spec.arguments
+              seg_spec.arguments.each do |arg_spec|
+                label += " <#{arg_spec.name}>"
+              end
+            end
+          end
           if cmds.any?
             # Intermediate node: list subcommands
             lines << "\nCOMMANDS: #{label}"
@@ -285,11 +296,19 @@ module Aspera
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
             display_args = spec&.arguments || []
+            # transfer_paths commands use --sources for the file list; default is positional args (@args)
+            if spec&.transfer_paths
+              file_desc = spec.transfer_paths == :receive \
+                ? "Remote path(s) to download (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --to-folder)" \
+                : "Source file(s) to upload (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
+              display_args += [ArgumentSpec.new(name: :source_file, description: file_desc, mandatory: false, multiple: true)]
+            end
             if display_args.any?
               lines << "\nARGUMENTS:"
               col_w = display_args.map{ |a| a.name.to_s.length}.max + 2
               display_args.each do |arg|
                 flag  = arg.mandatory ? arg.name.to_s : "[#{arg.name}]"
+                flag += '...' if arg.multiple
                 types = case arg.type
                 when :identifier then 'identifier'
                 when Array       then arg.type.map(&:name).join(', ')

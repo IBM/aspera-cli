@@ -485,7 +485,7 @@ module Aspera
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under(:packages) do
           command :list,   description: 'List packages'
-          command :send,   description: 'Send a package',
+          command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(data:, **){package_send(data)}
           command :show,   description: 'Show a package', setup: :setup_package_id,
@@ -499,7 +499,8 @@ module Aspera
             action: ->(status_list:, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
           )
           command :delete, description: 'Delete package(s)', setup: :setup_package_id
-          command :receive, description: 'Receive a package', setup: :setup_package_id, action: ->(package_id:, **){package_receive(package_id)}
+          command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive,
+            action: ->(package_id:, **){package_receive(package_id)}
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)
