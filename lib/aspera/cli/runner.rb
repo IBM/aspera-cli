@@ -84,6 +84,8 @@ module Aspera
         @context = Context.new
       end
 
+      attr_reader :context
+
       # Execute the command and return the raw `Result` object.
       # Pure computation: no display, no Process.exit - raises on any error.
       # @return [Result, nil] the result of the command, or nil if nothing to execute

@@ -33,9 +33,22 @@ require 'aspera/cli/mcp_tool'
 require 'aspera/cli/result'
 
 RSpec.describe(Aspera::Cli::McpTool) do
+  # Minimal formatter stub that only implements filter_columns_on_select.
+  # When select_filter is nil the method is a no-op, otherwise it applies the Hash filter.
+  let(:formatter_stub) do
+    f = Object.new
+    f.define_singleton_method(:filter_columns_on_select) do |data|
+      # no-op by default; individual examples may re-define this
+    end
+    f
+  end
+
+  let(:context_stub){instance_double(Aspera::Cli::Context, formatter: formatter_stub)}
+
   # Helper: stub Runner so McpTool.call never spawns a real CLI execution.
+  # @param result [Aspera::Cli::Result] the result to return from run_with_result
   def call_with_result(result)
-    runner = instance_double(Aspera::Cli::Runner, run_with_result: result)
+    runner = instance_double(Aspera::Cli::Runner, run_with_result: result, context: context_stub)
     allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
     described_class.call(args: %w[config gem version])
   end
@@ -118,6 +131,35 @@ RSpec.describe(Aspera::Cli::McpTool) do
     it 'structuredContent contains all items' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.structured_content[:items].size).to(eq(4))
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # --select filter applied before truncation
+  # -----------------------------------------------------------------------
+  describe '--select filter applied before byte truncation' do
+    let(:data){[{'n' => 1, 'keep' => true}, {'n' => 2, 'keep' => false}, {'n' => 3, 'keep' => true}]}
+
+    # Override formatter_stub to apply a keep=true filter for this describe block.
+    let(:formatter_stub) do
+      f = Object.new
+      f.define_singleton_method(:filter_columns_on_select) do |arr|
+        arr.select!{ |i| i['keep'] }
+      end
+      f
+    end
+
+    it 'only matching items appear in text content' do
+      resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
+      parsed = JSON.parse(resp.content.first[:text])
+      expect(parsed.all?{ |i| i['keep'] }).to(be(true))
+      expect(parsed.size).to(eq(2))
+    end
+
+    it 'structuredContent also contains only the filtered items' do
+      resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
+      expect(resp.structured_content[:items].size).to(eq(2))
+      expect(resp.structured_content[:items].all?{|i| i['keep']}).to(be(true))
     end
   end
 

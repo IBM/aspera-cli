@@ -107,11 +107,14 @@ module Aspera
         attr_accessor :max_text_bytes
 
         def call(args:, server_context: nil)
-          result = Runner.new(args).run_with_result
+          runner = Runner.new(args)
+          result = runner.run_with_result
           case result
           when Result::Nothing, Result::Empty, NilClass
             MCP::Tool::Response.new([{type: 'text', text: ''}])
           when Result::SingleObject, Result::ObjectList, Result::ValueList
+            # Apply --select filter in place (affects both text and structuredContent).
+            runner.context.formatter.filter_columns_on_select(result.data) if result.data.is_a?(Array)
             # MCP spec requires structuredContent to be a JSON object (not an array).
             structured = result.data.is_a?(Array) ? {items: result.data} : result.data
             content = if result.data.is_a?(Array)
