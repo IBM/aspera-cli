@@ -62,46 +62,48 @@ module Aspera
 
         it 'set_option stores "help" without raising when option has no static schema' do
           opts = build_query_option(build_parser([]))
-          expect { opts.set_option(:query, 'help', where: 'test') }.not_to raise_error
+          expect{opts.set_option(:query, 'help', where: 'test')}.not_to(raise_error)
         end
 
         it 'raises SchemaRequest in get_option when value is "help" and schema: is provided' do
           opts = build_query_option(build_parser([]))
           opts.set_option(:query, 'help', where: 'test')
-          expect {
+          expect do
             opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')
-          }.to raise_error(SchemaRequest) { |e|
-            expect(e.path).to eq('faspex:paths./packages.get.parameters')
-            expect(e.message).to include('query')
-          }
+          end.to(raise_error(SchemaRequest) do |e|
+            expect(e.path).to(eq('faspex:paths./packages.get.parameters'))
+            expect(e.message).to(include('query'))
+          end)
         end
 
         it 'returns the value normally when schema: is provided but value is not "help"' do
           opts = build_query_option(build_parser([]))
           opts.set_option(:query, {'status' => 'completed'}, where: 'test')
-          expect(opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')).to eq({'status' => 'completed'})
+          expect(opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')).to(eq({'status' => 'completed'}))
         end
 
         it 'does not raise SchemaRequest in get_option when schema: is nil and value is "help"' do
           opts = build_query_option(build_parser([]))
           opts.set_option(:query, 'help', where: 'test')
-          expect { opts.get_option(:query) }.not_to raise_error(SchemaRequest)
+          expect{opts.get_option(:query)}.not_to(raise_error(SchemaRequest))
         end
 
         it 'returns nil normally when schema: is provided but no value is set' do
           opts = build_query_option(build_parser([]))
-          expect(opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')).to be_nil
+          expect(opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')).to(be_nil)
         end
 
         it 'set_option still raises SchemaRequest immediately for options with a static schema' do
           opts = build_parser([])
-          opts.declare(:data, description: 'Data', allowed: [Hash],
-            schema: 'faspex:paths./packages.post.requestBody.content.application/json.schema')
-          expect {
+          opts.declare(
+            :data, description: 'Data', allowed: [Hash],
+            schema: 'faspex:paths./packages.post.requestBody.content.application/json.schema'
+          )
+          expect do
             opts.set_option(:data, 'help', where: 'test')
-          }.to raise_error(SchemaRequest) { |e|
-            expect(e.path).to include('requestBody')
-          }
+          end.to(raise_error(SchemaRequest) do |e|
+            expect(e.path).to(include('requestBody'))
+          end)
         end
       end
     end

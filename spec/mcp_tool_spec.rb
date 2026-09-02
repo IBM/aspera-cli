@@ -144,7 +144,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
     let(:formatter_stub) do
       f = Object.new
       f.define_singleton_method(:filter_columns_on_select) do |arr|
-        arr.select!{ |i| i['keep'] }
+        arr.select!{ |i| i['keep']}
       end
       f
     end
@@ -152,14 +152,14 @@ RSpec.describe(Aspera::Cli::McpTool) do
     it 'only matching items appear in text content' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       parsed = JSON.parse(resp.content.first[:text])
-      expect(parsed.all?{ |i| i['keep'] }).to(be(true))
+      expect(parsed.all?{ |i| i['keep']}).to(be(true))
       expect(parsed.size).to(eq(2))
     end
 
     it 'structuredContent also contains only the filtered items' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.structured_content[:items].size).to(eq(2))
-      expect(resp.structured_content[:items].all?{|i| i['keep']}).to(be(true))
+      expect(resp.structured_content[:items].all?{ |i| i['keep']}).to(be(true))
     end
   end
 

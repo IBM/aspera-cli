@@ -149,6 +149,7 @@ module Aspera
         rescue => e
           MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
         end
+
         # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
         # Items are appended whole — no item is ever split mid-JSON.
         def truncate_items_by_bytes(items, max_bytes)
@@ -158,7 +159,7 @@ module Aspera
             break if buf.bytesize + fragment.bytesize + 1 > max_bytes # +1 for closing ']'
             buf << fragment
           end
-          buf.empty? ? [] : JSON.parse(buf + ']')
+          buf.empty? ? [] : JSON.parse("#{buf}]")
         end
       end
     end

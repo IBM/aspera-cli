@@ -2775,7 +2775,6 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
-
 ```shell
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
 ```

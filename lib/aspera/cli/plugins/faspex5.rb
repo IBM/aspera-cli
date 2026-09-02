@@ -20,6 +20,8 @@ module Aspera
     module Plugins
       class Faspex5 < Oauth
         application_name 'Faspex v5'
+        # Commands that may carry a query_schema annotation
+        QUERY_SCHEMA_COMMANDS = %i[list delete].freeze
 
         class << self
           # @return [Hash,NilClass]
@@ -382,7 +384,7 @@ module Aspera
             display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
             extra_commands:        [:reset_password],
             instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}},
-            query_component: Schema::Registry::FASPEX
+            query_component:       Schema::Registry::FASPEX
           },
           alternate_addresses: {entity: 'configuration/alternate_addresses', query_component: Schema::Registry::FASPEX},
           contacts:            {query_component: Schema::Registry::FASPEX},
@@ -403,12 +405,12 @@ module Aspera
                             {name: :folder_path, type: String, mandatory: false, default: '/'}]
               }
             },
-            query_component: Schema::Registry::FASPEX
+            query_component:       Schema::Registry::FASPEX
           },
           oauth_clients:       {
-            display_fields: ->{Formatter.all_but('public_key')},
-            api:            ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
-            list_query:     {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
+            display_fields:  ->{Formatter.all_but('public_key')},
+            api:             ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
+            list_query:      {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
             query_component: Schema::Registry::FASPEX
           },
           registrations:       {query_component: Schema::Registry::FASPEX},
@@ -577,7 +579,7 @@ module Aspera
                 spec_kwargs = merged_args.empty? ? ia.except(:arguments) : ia.except(:arguments).merge(arguments: merged_args)
                 # Attach query_schema (full path) to :list/:delete CommandSpec so --help shows the tip.
                 # cfg[:query_component] is always a String constant so direct read is safe here (no Proc).
-                if %i[list delete].include?(c) && cfg[:query_component]
+                if QUERY_SCHEMA_COMMANDS.include?(c) && cfg[:query_component]
                   entity_path = cfg[:entity] || res.to_s
                   spec_kwargs = spec_kwargs.merge(
                     query_schema: Schema::Registry.query_params(cfg[:query_component], entity_path)
