@@ -54,6 +54,8 @@ module Aspera
           2. For any command whose syntax shows a <data> argument, call it with "help"
              instead of the real value to see the full field schema before constructing
              the @json:{...} payload.
+          2b. For any list command, add --query=help to discover available filter parameters.
+              Example: ["aoc", "admin", "user", "list", "--query=help"]
           3. Call ["config", "options", "<plugin>"] to list every --flag accepted by a
              plugin with its allowed values (e.g. --auth=basic|oauth2|..., --url, --preset).
           4. When credentials are already saved, use --preset=name instead of inline

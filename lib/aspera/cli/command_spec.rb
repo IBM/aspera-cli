@@ -84,6 +84,7 @@ module Aspera
     # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
+    # @!attribute query_schema     [String, nil]                 Schema path for --query help; when set, the runner hints `--query=help`
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -98,6 +99,7 @@ module Aspera
       :entity_execute,
       :transfer_paths,
       :condition,
+      :query_schema,
       keyword_init: true
     ) do
       def initialize(**kwargs)

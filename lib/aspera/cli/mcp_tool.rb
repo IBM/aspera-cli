@@ -52,6 +52,14 @@ module Aspera
             Example: ["aoc", "admin", "user", "create", "help"]
             Note: only works for Hash-typed arguments, not for plain String arguments.
 
+          Step 2b — discover available query/filter parameters for list commands:
+            ["<plugin>", "<cmd>", ..., "--query=help"]
+            Add --query=help to any list command to see all supported filter parameters
+            with their types and descriptions.
+            Example: ["aoc", "admin", "user", "list", "--query=help"]
+            Example: ["faspex5", "admin", "packages", "list", "--query=help"]
+            Note: only works on commands that support --query filtering (list/delete).
+
           Step 3 — list all options for a plugin as structured data:
             ["config", "options", "<plugin>"]
             Returns { option, description, allowed, deprecated } for every --flag

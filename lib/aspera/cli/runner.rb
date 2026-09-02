@@ -300,6 +300,7 @@ module Aspera
                 lines << "    #{flag.ljust(col_w)}  #{arg.description || types}#{hint}"
               end
             end
+            lines << "\nTIP: use --query=help to list available query parameters" if spec&.query_schema || spec&.entity_execute&.[](:query_schema)
           end
         end
         lines.join("\n")

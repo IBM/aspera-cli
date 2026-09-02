@@ -381,18 +381,20 @@ module Aspera
           accounts:            {
             display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}}
+            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}},
+            query_component: Schema::Registry::FASPEX
           },
-          alternate_addresses: {entity: 'configuration/alternate_addresses'},
-          distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids'},
-          email_notifications: {id_as_arg: 'type'},
+          alternate_addresses: {entity: 'configuration/alternate_addresses', query_component: Schema::Registry::FASPEX},
+          contacts:            {query_component: Schema::Registry::FASPEX},
+          distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX},
+          email_notifications: {id_as_arg: 'type', query_component: Schema::Registry::FASPEX},
           file_processing:     {
             commands:     %i[next modify],
             schema:       ->{Schema::Registry.req_body(Schema::Registry::FASPEX, 'file_processing.put')},
             is_singleton: true
           },
-          jobs:                {display_fields: %w[id job_name job_type status]},
-          metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles'},
+          jobs:                {display_fields: %w[id job_name job_type status], query_component: Schema::Registry::FASPEX},
+          metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX},
           nodes:               {
             extra_commands:        %i[browse],
             instance_arg_commands: {
@@ -400,15 +402,20 @@ module Aspera
                 arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
                             {name: :folder_path, type: String, mandatory: false, default: '/'}]
               }
-            }
+            },
+            query_component: Schema::Registry::FASPEX
           },
           oauth_clients:       {
             display_fields: ->{Formatter.all_but('public_key')},
             api:            ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
-            list_query:     {'expand': true, 'no_api_path': true, 'client_types[]': 'public'}
+            list_query:     {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
+            query_component: Schema::Registry::FASPEX
           },
-          shared_inboxes:      {res_id_query: {'all': true}},
-          workgroups:          {res_id_query: {'all': true}}
+          registrations:       {query_component: Schema::Registry::FASPEX},
+          saml_configs:        {query_component: Schema::Registry::FASPEX},
+          shared_inboxes:      {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX},
+          webhooks:            {query_component: Schema::Registry::FASPEX},
+          workgroups:          {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX}
         }.freeze
         private_constant :RESOURCE_CONFIG
 
@@ -422,15 +429,16 @@ module Aspera
         def res_exec_args(res_sym)
           cfg = RESOURCE_CONFIG.fetch(res_sym, {})
           {
-            api:            resource_config_value(cfg, :api) || @api_v5,
-            entity:         resource_config_value(cfg, :entity) || res_sym.to_s,
-            items_key:      resource_config_value(cfg, :items_key),
-            delete_style:   resource_config_value(cfg, :delete_style),
-            id_as_arg:      resource_config_value(cfg, :id_as_arg) || false,
-            display_fields: resource_config_value(cfg, :display_fields),
-            list_query:     resource_config_value(cfg, :list_query),
-            is_singleton:   resource_config_value(cfg, :is_singleton) || false,
-            schema:         resource_config_value(cfg, :schema)
+            api:             resource_config_value(cfg, :api) || @api_v5,
+            entity:          resource_config_value(cfg, :entity) || res_sym.to_s,
+            items_key:       resource_config_value(cfg, :items_key),
+            delete_style:    resource_config_value(cfg, :delete_style),
+            id_as_arg:       resource_config_value(cfg, :id_as_arg) || false,
+            display_fields:  resource_config_value(cfg, :display_fields),
+            list_query:      resource_config_value(cfg, :list_query),
+            is_singleton:    resource_config_value(cfg, :is_singleton) || false,
+            schema:          resource_config_value(cfg, :schema),
+            query_component: resource_config_value(cfg, :query_component)
           }.compact
         end
 
@@ -567,6 +575,14 @@ module Aspera
                 # Merge arguments: from ia (e.g. identifier spec) with extra_args for this operation
                 merged_args = Array(ia[:arguments]) + extra_args
                 spec_kwargs = merged_args.empty? ? ia.except(:arguments) : ia.except(:arguments).merge(arguments: merged_args)
+                # Attach query_schema (full path) to :list/:delete CommandSpec so --help shows the tip.
+                # cfg[:query_component] is always a String constant so direct read is safe here (no Proc).
+                if %i[list delete].include?(c) && cfg[:query_component]
+                  entity_path = cfg[:entity] || res.to_s
+                  spec_kwargs = spec_kwargs.merge(
+                    query_schema: Schema::Registry.query_params(cfg[:query_component], entity_path)
+                  )
+                end
                 command(c, description: c.to_s.tr('_', ' ').capitalize, **spec_kwargs)
               end
             end
@@ -676,7 +692,11 @@ module Aspera
             # Special case: email_notifications list returns a fixed value list
             next Result::ValueList.new(Api::Faspex::EMAIL_NOTIF_LIST, name: 'email_id') if res.eql?(:email_notifications)
             data, total = args[:api].list_entities_limit_offset_total_count(
-              entity: args[:entity], items_key: args[:items_key], query: query_read_delete(default: args[:list_query])
+              entity: args[:entity], items_key: args[:items_key],
+              query: query_read_delete(
+                default: args[:list_query],
+                schema:  args[:query_component] ? Schema::Registry.query_params(args[:query_component], args[:entity]) : nil
+              )
             )
             Result::ObjectList.new(data, total: total, fields: args[:display_fields])
           end

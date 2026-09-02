@@ -4550,6 +4550,10 @@ If PHP-style arrays are expected in the API, add `[]` to the name of the paramet
 
 For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
 
+> [!TIP]
+> Use `--query=help` on any `list` command to display the available query parameters and their types, as documented in the API.
+> For example: `<%=cmd%> faspex5 admin accounts list --query=help`
+
 ### Plugins
 
 <%=tool%> uses a plugin mechanism.
@@ -5353,7 +5357,10 @@ The following parameters are supported:
 > `page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000.
 (AoC allows a maximum page size of 1000).
 > Other parameters depend on the type of resource (refer to AoC API) and are directly sent as parameters to the `GET` request on API.
-> See the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
+
+> [!TIP]
+> Use `--query=help` to display the full list of supported query parameters for any `list` command.
+> For example: `<%=cmd%> aoc admin user list --query=help`
 
 > [!TIP]
 > The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).

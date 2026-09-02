@@ -307,11 +307,13 @@ module Aspera
         # @param fields              [Array, nil] fields to display
         # @param base_query          [Hash]       a query applied always
         # @param default_query       [Hash]       default query unless overridden by user
+        # @param query_component     [String, nil] registry component key; when set, --query=help shows filter schema
         # @yieldparam query [Hash] The user's or default query for modification
-        def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
+        def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {}, query_component: nil)
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
-          query = query_read_delete(default: default_query)
+          qs_path = query_component ? Schema::Registry.query_params(query_component, resource_class_path) : nil
+          query = query_read_delete(default: default_query, schema: qs_path)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
           result = aoc_api.read_with_paging(resource_class_path, base_query.merge(query).compact)
@@ -446,19 +448,20 @@ module Aspera
             "#{res}s".gsub(/ys$/, 'ies')
           end
 
-          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:}
+          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:, query_component:}
           def aoc_res_cfg(res)
             cfg    = ADMIN_OBJECT_CONFIG.fetch(res, {})
             path   = aoc_res_path(res)
             ops    = cfg[:ops] || (Base::Operations::ALL + (cfg[:extra_ops] || []))
             schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
             {
-              path:          path,
-              ops:           ops,
-              id_result:     cfg[:id_result] || 'id',
-              require_ws_id: cfg[:require_ws_id] || false,
-              list_fields:   cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
-              schema:        schema
+              path:            path,
+              ops:             ops,
+              id_result:       cfg[:id_result] || 'id',
+              require_ws_id:   cfg[:require_ws_id] || false,
+              list_fields:     cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
+              schema:          schema,
+              query_component: Schema::Registry::AOC
             }
           end
 
@@ -649,6 +652,11 @@ module Aspera
                 # For non-global ops, prepend the identifier spec
                 arg_list = (Operations::GLOBAL.include?(op) ? [] : id_arg_spec) + extra_arg_list
                 merged = arg_list.empty? ? base_attrs : base_attrs.merge(arguments: arg_list)
+                # Attach query_schema (full path) to :list CommandSpec so --help shows the tip
+                if op.eql?(:list)
+                  c = aoc_res_cfg(res)
+                  merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
+                end
                 command(op, description: op.to_s.tr('_', ' ').capitalize, **merged)
               end
             end
@@ -1393,7 +1401,7 @@ module Aspera
         ADMIN_OBJECTS.each do |res|
           define_action_method([:admin, res, :list]) do
             c = aoc_res_cfg(res)
-            result_list(c[:path], fields: c[:list_fields])
+            result_list(c[:path], fields: c[:list_fields], query_component: c[:query_component])
           end
         end
 

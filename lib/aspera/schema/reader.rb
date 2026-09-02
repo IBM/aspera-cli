@@ -7,6 +7,29 @@ module Aspera
     class Reader
       attr_reader :current
 
+      class << self
+        # Build a synthetic Reader from an OAS `parameters` array (entries with `in: query`).
+        # Produces a JSON Schema object whose `properties` map each query param name to its schema,
+        # with the OAS-level `description` and `required` merged in.
+        # @param params [Array<Hash>] raw OAS parameter objects (may contain path/header params too)
+        # @return [Reader]
+        def from_query_params(params)
+          properties = {}
+          required_names = []
+          params.each do |param|
+            next unless param['in'] == 'query'
+            name = param['name']
+            prop = (param['schema'] || {}).dup
+            prop['description'] = param['description'] if param['description'] && !prop.key?('description')
+            properties[name] = prop
+            required_names << name if param['required']
+          end
+          synthetic = {'type' => 'object', 'properties' => properties}
+          synthetic['required'] = required_names unless required_names.empty?
+          new(synthetic)
+        end
+      end
+
       # Shortcut to access current value at path
       # @param key [String] path element
       # @return [Hash, Array, String, Integer] current value at path

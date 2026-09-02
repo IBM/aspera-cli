@@ -4980,6 +4980,30 @@ conf_help_global:
     - nodoc
   args:
     - -h
+conf_query_help_faspex5:
+  description: Display query parameters schema for faspex5 admin accounts list (no network call).
+  expect: offset
+  args:
+    - faspex5
+    - --url=https://fake.example.com
+    - --username=u
+    - --password=p
+    - admin
+    - accounts
+    - list
+    - --query=help
+conf_query_help_aoc:
+  description: Display query parameters schema for aoc admin user list (no network call).
+  expect: email
+  args:
+    - aoc
+    - --url=https://fake.ibmaspera.com
+    - --username=u
+    - --password=p
+    - admin
+    - user
+    - list
+    - --query=help
 conf_completion_bash:
   tags:
     - nodoc

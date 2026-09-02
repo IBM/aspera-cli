@@ -239,6 +239,16 @@ module Aspera
           new_value = {} if new_value.nil? && @types&.first.eql?(Hash)
           new_value = [] if new_value.nil? && @types&.first.eql?(Array)
         end
+        # Skip type validation for the special 'help' value on Hash options: store it as-is
+        # so that get_option(schema:) can raise SchemaRequest with the contextual schema later.
+        if new_value.eql?(Parser::HELP) && @types&.include?(Hash) && !@schema
+          case @access
+          when :local  then @object = new_value
+          when :write  then @object.send(@write_method, new_value)
+          when :setter then @object.send(@read_method, @option, :set, new_value)
+          end
+          return
+        end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
         if new_value.is_a?(Hash) || new_value.is_a?(Array)
           current_value = value(log: false)
@@ -557,10 +567,14 @@ module Aspera
       # ask interactively if requested/required
       # @param option_symbol [Symbol] name of the option to retrieve
       # @param mandatory [Boolean] if true, raise error if option not set
-      def get_option(option_symbol, mandatory: false)
+      # @param schema [String, nil] contextual schema path override; when set, raises SchemaRequest
+      #   if the option value is 'help' (used for --query whose schema depends on the current command)
+      def get_option(option_symbol, mandatory: false, schema: nil)
         Aspera.assert_type(option_symbol, Symbol)
         option_attrs = option_def(option_symbol)
         result = option_attrs.value
+        # Contextual schema: raise SchemaRequest when value is 'help'
+        raise SchemaRequest.new(:option, option_symbol.to_s, schema) if schema && result.eql?(HELP)
         # Do not fail for manual generation if option mandatory but not set
         return :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
         if result.nil?
@@ -583,7 +597,10 @@ module Aspera
       def set_option(option_symbol, value, where: 'code override')
         Aspera.assert_type(option_symbol, Symbol)
         option = option_def(option_symbol)
-        raise SchemaRequest.new(:option, option.option, option.schema) if option.types&.include?(Hash) && value.eql?(HELP)
+        # Raise immediately only when the option has a static schema: the schema is known at parse time.
+        # When schema is nil (e.g. --query), 'help' is stored as-is and SchemaRequest is raised later
+        # in get_option() with the contextual schema provided by the calling command.
+        raise SchemaRequest.new(:option, option.option, option.schema) if option.types&.include?(Hash) && value.eql?(HELP) && option.schema
         option.assign_value(value, where: where)
       end
 

@@ -5,6 +5,7 @@ require 'aspera/cli/parser'
 require 'aspera/assert'
 require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
+require 'aspera/schema/registry'
 
 module Aspera
   module Cli
@@ -471,6 +472,9 @@ module Aspera
         # @param is_singleton [Boolean] If `true`, entity is the full path to the resource
         # @param list_query [Hash, nil] Query parameters for list operation
         # @param schema [String, nil] JSON schema name for create/modify validation
+        # @param query_component [String, nil] Registry component key (e.g. 'faspex', 'aoc') used to derive
+        #   the query parameters schema path from the entity name. When set, `--query=help` on list/delete
+        #   commands displays the available filter parameters from the OpenAPI spec.
         # @param input_data [Array, Hash, nil] Pre-resolved data for :create (Array) or :modify (Hash).
         #   When nil, data is read from the CLI (fallback, deprecated).
         # @param res_id [String, Array, nil] Pre-resolved resource identifier(s) for instance commands.
@@ -491,6 +495,7 @@ module Aspera
           is_singleton: false,
           list_query: nil,
           schema: nil,
+          query_component: nil,
           input_data: nil,
           res_id: nil,
           is_bulk: false,
@@ -499,6 +504,8 @@ module Aspera
         )
           # Fallback: read command from CLI when not provided (entity_command shorthand without command:)
           command = options.get_next_command(Operations::ALL) if command.nil?
+          # Derive query schema path from component + entity when component is given
+          qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
 
           if is_singleton
             one_res_path = entity
@@ -538,13 +545,13 @@ module Aspera
             end
             items = one_res_id.is_a?(Array) ? one_res_id : [one_res_id]
             return Result.bulk(items, is_bulk: is_bulk, command: command, bfail: bfail) do |one_id|
-              api.delete("#{entity}/#{one_id}", query_read_delete)
+              api.delete("#{entity}/#{one_id}", query_read_delete(schema: qs_path))
               {'id' => one_id}
             end
           when :show
             return Result::SingleObject.new(api.read(one_res_path), fields: display_fields)
           when :list
-            data, http = api.read(entity, query_read_delete, ret: :both)
+            data, http = api.read(entity, query_read_delete(default: list_query, schema: qs_path), ret: :both)
             return Result::Empty.new if http.code == '204'
             # TODO: not generic : which application is this for ?
             if http['Content-Type'].start_with?('application/vnd.api+json')
@@ -573,10 +580,11 @@ module Aspera
 
         # Query parameters in URL suitable for REST: list/`GET` and delete/`DELETE`
         # @param default [Hash, nil] Default query parameters
+        # @param schema [String, nil] Contextual schema path for --query help display
         # @return [Hash, nil] Query parameters
-        def query_read_delete(default: nil)
+        def query_read_delete(default: nil, schema: nil)
           # Dup default, as it could be frozen
-          query = options.get_option(:query) || default.dup
+          query = options.get_option(:query, schema: schema) || default&.dup
           Log.log.debug{"query_read_delete=#{query}".bg_red}
           begin
             # Check it is suitable
