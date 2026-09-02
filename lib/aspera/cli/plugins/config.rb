@@ -14,6 +14,7 @@ require 'aspera/cli/sync_actions'
 require 'aspera/cli/ascp_actions'
 require 'aspera/cli/preset_actions'
 require 'aspera/cli/vault_manager'
+require 'aspera/cli/transfer_actions'
 require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
@@ -44,6 +45,7 @@ module Aspera
         include GemChecker
         include AscpActions
         include PresetActions
+        include TransferActions
 
         class << self
           # Folder containing plugins in the gem's main folder
@@ -287,6 +289,15 @@ module Aspera
             arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
           command :parameters, description: 'Show configurable parameters for a transfer agent',
             arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
+        end
+
+        # transfer async management sub-commands
+        command :transfer, description: 'Manage asynchronous transfers'
+        commands_under(:transfer) do
+          command :list,    description: 'List all async transfer jobs'
+          command :status,  description: 'Show status of an async transfer job',
+            arguments: [{name: :job_id, type: String}]
+          command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
         end
 
         # transferd sub-commands

@@ -6,6 +6,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/transfer_agent'
+require 'aspera/transfer/result'
 require 'aspera/transfer/uri'
 require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
@@ -456,7 +457,7 @@ module Aspera
           pkg_id_uri.each do |id_uri|
             if id_uri[:uri].nil?
               # skip package with no link: empty or content deleted
-              statuses = [:success]
+              statuses = Transfer::Result.success
             else
               transfer_spec = Transfer::Uri.new(id_uri[:uri]).transfer_spec
               # NOTE: only external users have token in Transfer::Uri::SCHEME link !
@@ -479,7 +480,7 @@ module Aspera
             end
             result_transfer.push({'package' => id_uri[:id], Runner::STATUS_FIELD => statuses})
             # skip only if all sessions completed
-            skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
+            skip_ids_data.push(id_uri[:id]) if statuses.is_a?(Transfer::Result::Success)
           end
           skip_ids_persistency&.save
           return Runner.result_transfer_multiple(result_transfer)

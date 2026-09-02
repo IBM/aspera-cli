@@ -15,7 +15,7 @@ module Aspera
       describe 'short option parsing' do
         it 'parses -X value when value is glued to flag (-Xvalue)' do
           opts = build_parser(['-Xhello', 'arg1'])
-          received = nil
+          nil
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
           opts.parse_options!
           received = opts.get_option(:xenon)
@@ -40,12 +40,14 @@ module Aspera
           it 'passes the glued value to the handler when using -Pvalue syntax' do
             received = nil
             target = Object.new
-            target.define_singleton_method(:my_preset=) { |v| received = v }
-            target.define_singleton_method(:my_preset)  { received }
+            target.define_singleton_method(:my_preset=){ |v| received = v}
+            target.define_singleton_method(:my_preset){received}
 
             opts = build_parser(['-Pmypreset'])
-            opts.declare(:my_preset, description: 'Load preset', short: 'P',
-              handler: {o: target, m: :my_preset})
+            opts.declare(
+              :my_preset, description: 'Load preset', short: 'P',
+              handler: {o: target, m: :my_preset}
+            )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
           end

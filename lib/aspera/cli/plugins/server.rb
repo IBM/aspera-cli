@@ -3,6 +3,7 @@
 # cspell:ignore ascmd zmode zuid zgid fasping
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'
+require 'aspera/transfer/result'
 require 'aspera/transfer/spec'
 require 'aspera/ascmd'
 require 'aspera/ssh'
@@ -253,10 +254,10 @@ module Aspera
             'paths'         => [{'source' => 'faux:///pingfile?1k', 'destination' => '.fasping'}]
           })
           statuses = transfer.start(probe_ts)
-          if TransferAgent.session_status(statuses).eql?(:success)
+          if statuses.is_a?(Transfer::Result::Success)
             nagios.add_ok('transfer', 'ok')
           else
-            nagios.add_critical('transfer', statuses.reject{ |i| i.eql?(:success)}.first.to_s)
+            nagios.add_critical('transfer', statuses.is_a?(Transfer::Result::Error) ? statuses.exception.message : statuses.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
         end

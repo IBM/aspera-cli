@@ -2,10 +2,13 @@
 
 require 'aspera/agent/factory'
 require 'aspera/schema/registry'
+require 'aspera/transfer/result'
 require 'aspera/transfer/spec'
 require 'aspera/cli/info'
+require 'aspera/cli/async_transfer_store'
 require 'aspera/log'
 require 'aspera/assert'
+require 'securerandom'
 
 module Aspera
   module Cli
@@ -34,17 +37,6 @@ module Aspera
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
 
       class << self
-        # Analyze transfer session statuses and return a global status
-        #
-        # @param statuses [Array] list of session status, each status is :success or an error message string
-        # @return [:success]  if all sessions statuses returned by "start" are success
-        # @return [Exception] if one sessions statuses returned by "start" is failed
-        def session_status(statuses)
-          error_statuses = statuses.reject{ |i| i.eql?(:success)}
-          return :success if error_statuses.empty?
-          return error_statuses.first
-        end
-
         # Declare all transfer CLI options (metadata only - no handler binding yet).
         # @param options [Aspera::Cli::Parser]
         def declare_options(options)
@@ -120,8 +112,8 @@ module Aspera
         # agent type: from composite option 'agent' key, default :direct
         raw_type = @transfer_options['agent'] || :direct
         agent_type = Parser.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
-        # set keys as symbols, strip internal 'agent' key
-        agent_options = @transfer_options.except('agent').symbolize_keys
+        # set keys as symbols, strip internal keys not forwarded to the agent constructor
+        agent_options = @transfer_options.except('agent', 'asynchronous').symbolize_keys
         agent_options[:progress] = @context.progress_bar
         agent_options[:config_dir] = @context.main_folder
         # special cases
@@ -275,15 +267,60 @@ module Aspera
         transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
-        # list of: :success or "error message string"
+        # --- async mode ---
+        if @transfer_options['asynchronous']
+          agent_type = (@transfer_options['agent'] || 'direct').to_s
+          raise Cli::BadArgument, 'asynchronous mode is not supported for agent httpgw' if agent_type.eql?('httpgw')
+          # For direct agent: the transfer lives in this Ruby process (threads).
+          # We return the job_id from the agent itself; no persistent store needed.
+          if agent_type.eql?('direct')
+            job_id = agent_instance.instance_variable_get(:@sessions).last[:job_id]
+            Log.log.info{"Async direct transfer started: job_id=#{job_id}"}
+            return Transfer::Result.async(job_id: job_id)
+          end
+          # For remote-daemon agents (desktop, node, connect, transferd): persist transfer_id
+          # so the status can be re-queried in a later process invocation.
+          agent_params = @transfer_options.except('agent', 'asynchronous')
+          case agent_type
+          when 'desktop'
+            agent_params['application_id'] = agent_instance.application_id
+          when 'connect'
+            agent_params['app_id'] = agent_instance.app_id
+          when 'transferd'
+            # store the resolved daemon endpoint (auto-port may have been assigned)
+            agent_params['url'] = agent_instance.daemon_endpoint
+          end
+          job_id = SecureRandom.uuid
+          async_store.write(job_id, {
+            'job_id'            => job_id,
+            'agent_type'        => agent_type,
+            'transfer_id'       => agent_instance.instance_variable_get(:@transfer_id).to_s,
+            'agent_params'      => agent_params,
+            'status'            => 'running',
+            'bytes_transferred' => 0,
+            'started_at'        => Time.now.utc.iso8601,
+            'ended_at'          => nil,
+            'error'             => nil
+          })
+          Log.log.info{"Async transfer started: job_id=#{job_id}"}
+          return Transfer::Result.async(job_id: job_id)
+        end
+        # --- synchronous mode (default) ---
         result = agent_instance.wait_for_completion
-        @notification_cb&.call(transfer_spec, self.class.session_status(result))
+        @notification_cb&.call(transfer_spec, result)
         return result
       end
 
       # shut down if agent requires it
       def shutdown
         @agent.shutdown if @agent.respond_to?(:shutdown)
+      end
+
+      private
+
+      # Lazy accessor for the async transfer store (only created when needed)
+      def async_store
+        @async_store ||= AsyncTransferStore.new(@context.persistency)
       end
     end
   end

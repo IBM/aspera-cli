@@ -8,6 +8,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
 require 'aspera/agent/node'
+require 'aspera/transfer/result'
 require 'aspera/transfer/spec'
 require 'aspera/api/aoc'
 require 'aspera/api/node'
@@ -1042,7 +1043,7 @@ module Aspera
             statuses = transfer.start(transfer_spec, rest_token: package_node_api)
             File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
             result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
-            if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
+            if skip_ids_persistency && statuses.is_a?(Transfer::Result::Success)
               skip_ids_persistency.data.push(package_id)
               skip_ids_persistency.save
             end

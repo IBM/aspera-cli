@@ -3362,6 +3362,46 @@ Parameters in transfer-spec can be modified with option `ts`.
 > [!NOTE]
 > Parameters in `transfer` are specific for each agent type and are described in the agents respective sections.
 
+#### Asynchronous Transfer Mode
+
+For agents that delegate transfers to an external daemon (`desktop`, `node`, `connect`, `transferd`),
+the transfer lives entirely in that daemon — <%=tool%> does not need to stay connected while it runs.
+Adding `asynchronous: true` to the `transfer` option makes <%=tool%> return immediately after
+submitting the transfer, without waiting for completion.
+
+The returned `job_id` can be used at any time, even in a later invocation, to check progress:
+
+```shell
+# Start a download and return immediately
+<%=cmd%> server download /remote/big-file.bin --to-folder=/tmp \
+  '--transfer=@json:{"agent":"desktop","asynchronous":true}'
+
+# Poll status later
+<%=cmd%> config transfer status <job_id>
+
+# List all pending/completed async transfers
+<%=cmd%> config transfer list
+
+# Remove completed/failed entries
+<%=cmd%> config transfer cleanup
+```
+
+| Agent | Async support | Status source |
+|---|---|---|
+| `desktop` | ✅ | JSON-RPC `get_transfer` (auto-discovered URL) |
+| `node` | ✅ | REST `ops/transfers/{id}` |
+| `connect` | ✅ | REST `transfers/info/{id}` (auto-discovered URL) |
+| `transferd` | ✅ | gRPC `monitor_transfers` |
+| `direct` | ✅ in-process only | `@sessions` (not persisted across process restarts) |
+| `httpgw` | ❌ | Synchronous by nature — error if requested |
+
+> [!NOTE]
+> **`asynchronous` and MCP** — When <%=tool%> is used as an MCP server, an AI assistant calling
+> a transfer command may time out or cancel the request and retry, causing duplicate transfers.
+> Using `asynchronous: true` eliminates this risk: the transfer is submitted once to the external
+> daemon, the `job_id` is returned immediately, and the AI can poll
+> `config transfer status <job_id>` to track progress without any risk of duplication.
+
 #### Agent: Direct
 
 The `direct` agent directly executes a local `ascp` in <%=tool%>.

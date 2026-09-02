@@ -4,6 +4,7 @@
 
 require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/extended_value'
+require 'aspera/transfer/result'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
 require 'aspera/api/faspex'
@@ -260,7 +261,7 @@ module Aspera
             statuses = transfer.start(transfer_spec)
             result_transfer.push({'package' => pkg_id, Runner::STATUS_FIELD => statuses})
             # skip only if all sessions completed
-            if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
+            if statuses.is_a?(Transfer::Result::Success) && skip_ids_persistency
               skip_ids_persistency.data.push(pkg_id)
               skip_ids_persistency.save
             end

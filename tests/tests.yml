@@ -4509,6 +4509,57 @@ conf_agents_show_bad:
     - agents
     - show
     - badagent
+# Async transfer tests (config transfer sub-commands)
+conf_async_node_upload:
+  description: Start an async transfer via node agent and capture the job_id.
+  tags:
+    - nodoc
+    - save_output
+    - background_transfer
+  args:
+    - server
+    - upload
+    - --to-folder=@preset:server.upload_folder
+    - --ts=@json:{"target_rate_kbps":10000,"resume_policy":"none"}
+    - faux:///async_test_file?1m
+    - --progress=no
+    - --transfer.agent=node
+    - --transfer.asynchronous=true
+    - --fields=job_id
+    - --format=csv
+    - --display=data
+conf_async_transfer_status:
+  description: Re-query the status of an async transfer by job_id.
+  depends_on:
+    - conf_async_node_upload
+  tags:
+    - background_transfer
+  args:
+    - config
+    - transfer
+    - status
+    - $(t.saved_output :conf_async_node_upload)
+conf_async_transfer_list:
+  description: List all async transfer entries.
+  depends_on:
+    - conf_async_node_upload
+  tags:
+    - background_transfer
+  args:
+    - config
+    - transfer
+    - list
+conf_async_transfer_cleanup:
+  description: Remove completed/failed entries from the async transfer store.
+  depends_on:
+    - conf_async_transfer_status
+    - conf_async_transfer_list
+  tags:
+    - background_transfer
+  args:
+    - config
+    - transfer
+    - cleanup
 conf_ascp_installg:
   tags:
     - nodoc

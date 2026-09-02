@@ -13,6 +13,38 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Base
+      class << self
+        # Re-query a previously started transfer via the Node REST API.
+        # agent_params must contain 'url', 'username', 'password' (and optionally 'root_id').
+        # @return [Hash] normalized status hash
+        def transfer_status(transfer_id, agent_params)
+          rest_params = {base_url: agent_params['url']}
+          if OAuth::Factory.bearer_auth?(agent_params['password'])
+            rest_params[:headers] = Api::Node.bearer_headers(agent_params['password'], access_key: agent_params['username'])
+          else
+            rest_params[:auth] = {type: :basic, username: agent_params['username'], password: agent_params['password']}
+          end
+          node_api = Rest.new(**rest_params)
+          data = node_api.read("ops/transfers/#{transfer_id}") || {'status' => 'unknown'}
+          normalize_status(data)
+        end
+
+        # Normalize a node API transfer hash into the standard async-transfer fields.
+        def normalize_status(data)
+          result = {'bytes_transferred' => data['bytes_transferred'].to_i}
+          case data['status']
+          when 'completed'
+            result['status'] = 'completed'
+            result['ended_at'] = Time.now.utc.iso8601
+          when 'failed'
+            result.merge!('status' => 'failed', 'ended_at' => Time.now.utc.iso8601, 'error' => data['error_desc'].to_s)
+          else
+            result['status'] = 'running'
+          end
+          result
+        end
+      end
+
       # @param url          [String] the base url of the node api
       # @param username     [String] the username to use for the node api
       # @param password     [String] the password to use for the node api

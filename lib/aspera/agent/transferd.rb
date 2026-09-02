@@ -21,6 +21,37 @@ module Aspera
 
       private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
 
+      class << self
+        # Re-query a previously started transfer from a running transferd daemon.
+        # agent_params must contain 'url' (the daemon endpoint, e.g. "127.0.0.1:12345").
+        # @return [Hash] normalized status hash
+        def transfer_status(transfer_id, agent_params)
+          client = ::Transferd::Api::TransferService::Stub.new(agent_params['url'], :this_channel_is_insecure)
+          result = {'bytes_transferred' => 0}
+          client.monitor_transfers(::Transferd::Api::RegistrationRequest.new(transferId: [transfer_id])) do |response|
+            result = case response.status
+            when :COMPLETED
+              {
+                'status' => 'completed', 'ended_at' => Time.now.utc.iso8601,
+                        'bytes_transferred' => response.transferInfo.bytesTransferred
+              }
+            when :FAILED, :CANCELED
+              {
+                'status' => response.status == :FAILED ? 'failed' : 'cancelled',
+                        'ended_at' => Time.now.utc.iso8601, 'bytes_transferred' => 0,
+                        'error' => JSON.parse(response.message.to_s)['Description']
+              }
+            else
+              {'status' => 'running', 'bytes_transferred' => response.transferInfo.bytesTransferred}
+            end
+            break
+          end
+          result
+        rescue StandardError => e
+          {'status' => 'running', 'bytes_transferred' => 0, 'error' => e.message}
+        end
+      end
+
       # @param url   [String]  URL of the transfer manager daemon
       # @param start [Boolean] If `false`, expect that an external daemon is already running
       # @param stop  [Boolean] If `false`, do not shutdown daemon on exit
@@ -38,6 +69,7 @@ module Aspera
         Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error){'Cannot set options `stop` or `start` to false with port zero'}
         # keep PID for optional shutdown
         @daemon_pid = nil
+        @daemon_endpoint = nil
         daemon_endpoint = url
         Log.dump(:daemon_endpoint, daemon_endpoint)
         # retry loop
@@ -48,6 +80,7 @@ module Aspera
           @transfer_client = ::Transferd::Api::TransferService::Stub.new(daemon_endpoint, :this_channel_is_insecure)
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
+          @daemon_endpoint = daemon_endpoint
           Log.log.debug{"Daemon info: #{get_info_response}"}
           Log.log.warn('Attached to existing daemon') unless @daemon_pid || !start || !@stop
           at_exit{shutdown}
@@ -104,6 +137,9 @@ module Aspera
           retry
         end
       end
+
+      # Actual endpoint the daemon is listening on (resolved after connect, e.g. when port 0 was used)
+      attr_reader :daemon_endpoint
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)

@@ -55,9 +55,19 @@ module Aspera
              instead of the real value to see the full field schema before constructing
              the @json:{...} payload.
           3. Call ["config", "options", "<plugin>"] to list every --flag accepted by a
-             plugin with its allowed values (e.g. --auth=basic|oauth2|…, --url, --preset).
+             plugin with its allowed values (e.g. --auth=basic|oauth2|..., --url, --preset).
           4. When credentials are already saved, use --preset=name instead of inline
              credentials. Call ["config", "preset", "list"] to see saved presets.
+
+          IMPORTANT - Always start transfers asynchronously:
+          Transfer commands (server upload/download, aoc packages send/receive, ...) block
+          until completion by default, which will cause MCP timeouts on large files.
+          Always add "asynchronous":true to the --transfer option. The transfer is submitted
+          to the external daemon and a job_id is returned immediately. Poll progress with
+          ["config", "transfer", "status", "<job_id>"] and never retry a command that already
+          returned a job_id - the transfer is already running in the daemon.
+          Example: ["server", "download", "/big-file.bin", "--to-folder=/tmp",
+                    '--transfer=@json:{"agent":"desktop","asynchronous":true}']
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

@@ -15,6 +15,51 @@ module Aspera
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
+
+      class << self
+        # Re-query a previously started transfer via the Connect REST API.
+        # agent_params must contain 'app_id'; the Connect URL is auto-discovered.
+        # @return [Hash] normalized status hash
+        def transfer_status(transfer_id, agent_params)
+          connect_api = Rest.new(
+            base_url: "#{connect_api_url}/v5/connect",
+            headers:  {'Origin' => RestParameters.instance.user_agent}
+          )
+          tr_info = connect_api.create("transfers/info/#{transfer_id}", {'aspera_connect_settings' => {'app_id' => agent_params['app_id']}})
+          transfer = tr_info['transfer_info']
+          return {'status' => 'running', 'bytes_transferred' => 0} unless transfer.is_a?(Hash)
+          normalize_status(transfer)
+        end
+
+        # Normalize a Connect transfer_info hash into the standard async-transfer fields.
+        def normalize_status(transfer)
+          result = {'bytes_transferred' => transfer['bytes_written'].to_i}
+          case transfer['status']
+          when 'completed'
+            result['status'] = 'completed'
+            result['ended_at'] = Time.now.utc.iso8601
+          when 'failed'
+            result.merge!('status' => 'failed', 'ended_at' => Time.now.utc.iso8601, 'error' => transfer['error_desc'].to_s)
+          when 'cancelled'
+            result['status'] = 'cancelled'
+            result['ended_at'] = Time.now.utc.iso8601
+          else
+            result['status'] = 'running'
+          end
+          result
+        end
+
+        # Auto-discover the Connect API base URL from its local URI file.
+        def connect_api_url
+          folder = File.join(Products::Other.find(Products::Connect.locations).first[:run_root], 'var', 'run')
+          ['', 's'].each do |ext|
+            uri_file = File.join(folder, "http#{ext}.uri")
+            return File.open(uri_file, &:gets).strip if File.exist?(uri_file)
+          end
+          raise "no connect uri file found in #{folder}"
+        end
+      end
+
       def initialize(**base_options)
         super
         @transfer_id = nil
@@ -25,7 +70,7 @@ module Aspera
         method_index = 0
         begin
           # raise exception if connect not started and file does not exist
-          connect_url = connect_api_url
+          connect_url = self.class.connect_api_url
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
@@ -44,6 +89,11 @@ module Aspera
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
         end
+      end
+
+      # Returns the app_id so callers can persist it in agent_params.
+      def app_id
+        @connect_settings['app_id']
       end
 
       # :reek:UnusedParameters token_regenerator
@@ -130,19 +180,6 @@ module Aspera
           return [e]
         end
         return [:success]
-      end
-
-      private
-
-      # @return [String] the file path of local connect where API's URI can be read
-      def connect_api_url
-        folder = File.join(Products::Other.find(Products::Connect.locations).first[:run_root], 'var', 'run')
-        ['', 's'].each do |ext|
-          uri_file = File.join(folder, "http#{ext}.uri")
-          Log.log.debug{"checking connect port file: #{uri_file}"}
-          return File.open(uri_file, &:gets).strip if File.exist?(uri_file)
-        end
-        raise "no connect uri file found in #{folder}"
       end
     end
   end

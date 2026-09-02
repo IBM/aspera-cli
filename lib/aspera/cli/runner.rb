@@ -15,6 +15,7 @@ require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/cli/hints'
 require 'aspera/cli/result'
+require 'aspera/transfer/result'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
@@ -31,29 +32,43 @@ module Aspera
       STATUS_FIELD = 'status'
 
       class << self
-        # Process statuses of finished transfer sessions
-        # @param statuses [Array] array of transfer session statuses
-        # @raise [Symbol] exception if there is one error
-        # @return [Result] empty status result if all transfers succeeded
-        def result_transfer(statuses)
-          worst = TransferAgent.session_status(statuses)
-          raise worst unless worst.eql?(:success)
-          return Result::Nothing.new
+        # Process the typed result of a finished (or submitted) transfer.
+        # @param transfer_result [Transfer::Result] typed result from TransferAgent#start
+        # @raise [StandardError] if the transfer failed
+        # @return [Result] CLI result object
+        def result_transfer(transfer_result)
+          case transfer_result
+          when Transfer::Result::Async
+            return Result::SingleObject.new(transfer_result.to_h)
+          when Transfer::Result::Error
+            raise transfer_result.exception
+          when Transfer::Result::Success
+            return Result::Nothing.new
+          else
+            raise "Unexpected transfer result type: #{transfer_result.class}"
+          end
         end
 
         # Used when one command executes several transfer jobs (each job being possibly multi session)
-        # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
+        # @param status_table [Array] [{STATUS_FIELD=>Transfer::Result,...},...]
         # @return [Result] a status object suitable as command result
-        # Each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
         def result_transfer_multiple(status_table)
-          global_status = :success
-          # Transform status array into string and find if there was problem
+          failed_result = nil
           status_table.each do |item|
-            worst = TransferAgent.session_status(item[STATUS_FIELD])
-            global_status = worst unless worst.eql?(:success)
-            item[STATUS_FIELD] = item[STATUS_FIELD].join(',')
+            tr = item[STATUS_FIELD]
+            case tr
+            when Transfer::Result::Error
+              failed_result ||= tr
+              item[STATUS_FIELD] = tr.exception.message
+            when Transfer::Result::Success
+              item[STATUS_FIELD] = 'success'
+            when Transfer::Result::Async
+              item[STATUS_FIELD] = "async:#{tr.job_id}"
+            else
+              item[STATUS_FIELD] = tr.to_s
+            end
           end
-          raise global_status unless global_status.eql?(:success)
+          raise failed_result.exception unless failed_result.nil?
           return Result::ObjectList.new(status_table)
         end
       end
