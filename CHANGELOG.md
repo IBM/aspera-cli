@@ -977,18 +977,33 @@ Released: 2021-02-03
 
 ## 0.11.8
 
+Released: 2020-11-30
+
+### New Features
+
 * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require an X server (previously using `Xvfb`).
 
 ## 0.11.7
 
-* Rework on rest call error handling.
+Released: 2020-11-27
+
+### New Features
+
 * Use option `display` with value `data` to remove out of extraneous information.
-* Fixed option `lock_port` not working.
 * Generate special icon if preview failed.
 * Possibility to choose transfer progress bar type with option `progress`.
 * AoC package creation now output package ID.
 
+### Issues Fixed
+
+* Rework on rest call error handling.
+* Fixed option `lock_port` not working.
+
 ## 0.11.6
+
+Released: 2020-11-19
+
+### New Features
 
 * `orchestrator`: Added more choice in auth type.
 * `preview`: Cleanup in generator (removed and renamed parameters).
@@ -1000,111 +1015,220 @@ Released: 2021-02-03
 
 ## 0.11.5
 
+Released: 2020-11-16
+
+### New Features
+
 * Added option `default_ports` for AoC (see manual).
 * Allow bulk delete in `aspera files` with option `bulk=yes`.
-* Fix getting connect versions.
 * Added section for AIX.
 * Support all ciphers for [`direct`](README.md#agt_direct) agent (including GCM, etc.).
 * Added transfer spec parameter `apply_local_docroot` for [`direct`](README.md#agt_direct).
 
+### Issues Fixed
+
+* Fix getting connect versions.
+
 ## 0.11.4
+
+Released: 2020-10-16
+
+### New Features
 
 * Possibility to give shared inbox name when sending a package (else use ID and type).
 
 ## 0.11.3
 
+Released: 2020-10-12
+
+### Issues Fixed
+
 * Minor fixes on multi-session: Avoid exception on progress bar.
 
 ## 0.11.2
+
+Released: 2020-10-09
+
+### Issues Fixed
 
 * Fixes on multi-session: Progress bar and transfer spec parameter for `direct`.
 
 ## 0.11.1
 
+Released: 2020-10-01
+
+### New Features
+
 * Enhanced short_link creation commands (see examples).
 
 ## 0.11
+
+Released: 2020-09-23
+
+### New Features
 
 * Add transfer spec option (agent `direct` only) to provide file list directly to `ascp`: `EX_file_list`.
 
 ## 0.10.18
 
-* New option in. `server` : `ssh_options`.
+Released: 2020-09-15
+
+### New Features
+
+* New option in `server`: `ssh_options`.
 
 ## 0.10.17
 
-* Fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
+Released: 2020-09-01
+
+### New Features
+
 * New modifier: `@list:<separator>val1<separator>...`.
 
+### Issues Fixed
+
+* Fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
+
 ## 0.10.16
+
+Released: 2020-08-21
+
+### New Features
 
 * Added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`.
 
 ## 0.10.15
 
-* In case of command line error, display the error cause first, and non-parsed argument second.
+Released: 2020-07-23
+
+### New Features
+
 * `aoc`: Activity / Analytics.
 
+### Issues Fixed
+
+* In case of command line error, display the error cause first, and non-parsed argument second.
+
 ## 0.10.14
+
+Released: 2020-06-17
+
+### New Features
 
 * Added missing `bss` plugin.
 
 ## 0.10.13
 
+Released: 2020-06-12
+
+### New Features
+
 * Added Faspex5 (use option `value` to give API arguments).
 
 ## 0.10.12
 
+Released: 2020-05-15
+
+### New Features
+
 * Added support for AoC node registration keys.
-* Replaced option : `local_resume` with `transfer_info` for agent [`direct`](README.md#agt_direct).
 * Transfer agent is no more a Singleton instance, but only one is used in CLI.
-* `@incps` : New extended value modifier.
-* ATS: No more provides access keys secrets: now user must provide it.
+* `@incps`: New extended value modifier.
 * Begin work on `aoc` transfer agent.
 
+### Breaking Changes
+
+* Replaced option `local_resume` with `transfer_info` for agent [`direct`](README.md#agt_direct).
+* `ats`: No more provides access keys secrets: now user must provide it.
+
 ## 0.10.11
+
+Released: 2020-04-29
+
+### Issues Fixed
 
 * Minor refactor and fixes.
 
 ## 0.10.10
 
+Released: 2020-04-10
+
+### Issues Fixed
+
 * Fix on documentation.
 
 ## 0.10.9.1
 
+Released: 2020-03-31
+
+### New Features
+
 * Add total number of items for AoC resource list.
+
+### Issues Fixed
+
 * Better gem version dependency (and fixes to support Ruby 2.0.0).
+
+### Breaking Changes
+
 * Removed `aoc search_nodes`.
 
 ## 0.10.8
 
-* Removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`.
-* Removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`.
-* Several other changes.
+Released: 2020-02-13
+
+### Breaking Changes
+
+* Removed option `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`.
+* Removed option `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`.
 
 ## 0.10.7
+
+Released: 2020-01-03
+
+### Issues Fixed
 
 * Fix: `ascli` fails when username cannot be computed on Linux.
 
 ## 0.10.6
+
+Released: 2019-12-11
+
+### New Features
 
 * FaspManager: Transfer spec `authentication` is no longer needed for local transfer to use Aspera public keys. Public keys will be used if there is a token and no key or password is provided.
 * Gem version requirements made more open.
 
 ## 0.10.5
 
+Released: 2019-12-11
+
+### Issues Fixed
+
 * Fix Faspex package receive command not working.
 
 ## 0.10.4
 
-* New options for AoC : `secrets`.
+Released: 2019-12-04
+
+### New Features
+
+* New options for AoC: `secrets`.
 * `ACLI-533` temp file list folder to use file lists is set by default, and used by `asession`.
 
 ## 0.10.3
 
+Released: 2019-12-02
+
+### New Features
+
 * Included username in OAuth bearer token cache for AoC when JWT is used.
 
 ## 0.10.2
+
+Released: 2019-11-25
+
+### New Features
 
 * Updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
 * Added doc for "cargo" like actions.
@@ -1112,51 +1236,89 @@ Released: 2021-02-03
 
 ## 0.10.1
 
+Released: 2019-11-11
+
+### New Features
+
 * AoC and node v4 "browse" works now on non-folder items: file, link.
 * Initial support for AoC automation (do not use yet).
 
 ## 0.10
+
+Released: 2019-10-19
+
+### New Features
 
 * Support for transfer using IBM Cloud Object Storage.
 * Improved `find` action using arbitrary expressions.
 
 ## 0.9.36
 
+Released: 2019-10-16
+
+### New Features
+
 * Added option to specify file pair lists.
 
 ## 0.9.35
 
+Released: 2019-10-11
+
+### New Features
+
 * `preview`: Changed parameter names, added documentation.
+
+### Issues Fixed
+
 * `ats`: Fix: instance ID needed in request header.
 
 ## 0.9.34
+
+Released: 2019-10-03
+
+### Issues Fixed
 
 * Parser `@preset` can be used again in option `transfer_info`.
 * Some documentation re-organizing.
 
 ## 0.9.33
 
+Released: 2019-08-28
+
+### New Features
+
 * New command to display basic token of node.
 * New command to display bearer token of node in AoC.
 * The `--fields=` option, support `+_field_name_` to add a field to default fields.
-* Many small changes.
 
 ## 0.9.32
+
+Released: 2019-06-13
 
 ### New Features
 
 * All Faspex public links are now supported.
+
+### Breaking Changes
+
 * Removed Faspex operation `recv_publink`. Replaced with option `link` (consistent with AoC).
 
 ## 0.9.31
 
+Released: 2019-06-12
+
 ### New Features
 
 * Added more support for public link: receive and send package, to user or dropbox and files view.
-* Delete expired file lists.
 * Changed text table gem from text-table to terminal-table because it supports multiline values.
 
+### Issues Fixed
+
+* Delete expired file lists.
+
 ## 0.9.27
+
+Released: 2019-03-27
 
 ### New Features
 
@@ -1165,6 +1327,8 @@ Released: 2021-02-03
 
 ## 0.9.26
 
+Released: 2019-03-13
+
 ### New Features
 
 * Table display with `--fields=ALL` now includes all column names from all lines, not only first one.
@@ -1172,20 +1336,29 @@ Released: 2021-02-03
 
 ## 0.9.25
 
+Released: 2019-03-11
+
 ### New Features
 
-* The option `value` of command `find` to filter on name is mandatory.
 * `find` now also reports all types (file, folder, link).
 * `find` now is able to report all fields (type, size, etc...).
 
+### Breaking Changes
+
+* The option `value` of command `find` to filter on name is mandatory.
+
 ## 0.9.24
 
-### New Features
+Released: 2019-03-05
+
+### Issues Fixed
 
 * Fix bug where AoC node to node transfer did not work.
 * Fix bug on error if ED25519 private key is defined in .ssh.
 
 ## 0.9.23
+
+Released: 2019-03-04
 
 ### New Features
 
@@ -1194,6 +1367,8 @@ Released: 2021-02-03
 
 ## 0.9.21
 
+Released: 2019-02-09
+
 ### New Features
 
 * Supports simplified wizard using global client.
@@ -1201,13 +1376,16 @@ Released: 2021-02-03
 
 ## 0.9.20
 
+Released: 2019-01-22
+
 ### New Features
 
 * Improved wizard (prepare for AoC global client ID).
-* Preview generator: Added option : `skip_format` with values `png`, `mp4`.
-* Removed outdated pictures from this doc.
+* Preview generator: Added option: `skip_format` with values `png`, `mp4`.
 
 ## 0.9.19
+
+Released: 2019-01-15
 
 ### New Features
 
@@ -1215,11 +1393,15 @@ Released: 2021-02-03
 
 ## 0.9.18
 
+Released: 2019-01-12
+
 ### New Features
 
 * Enhanced Aspera admin events to support query.
 
 ## 0.9.16
+
+Released: 2019-01-11
 
 ### New Features
 
@@ -1228,6 +1410,8 @@ Released: 2021-02-03
 
 ## 0.9.15
 
+Released: 2018-12-20
+
 ### New Features
 
 * New feature: `find` command in Aspera Files.
@@ -1235,20 +1419,35 @@ Released: 2021-02-03
 
 ## 0.9.12
 
+Released: 2018-12-13
+
 ### New Features
 
 * Add `nagios` commands.
-* Support of ATS for IBM Cloud, removed old version based on Aspera ID.
-
-## 0.9.11
-
-* Support of ATS for IBM Cloud, removed old version based on Aspera ID.
+* Support of ATS for IBM Cloud.
 
 ### Breaking Changes
 
+* Removed old ATS implementation based on Aspera ID.
+
+## 0.9.11
+
+Released: 2018-11-29
+
+### New Features
+
+* Support of ATS for IBM Cloud.
+
+### Breaking Changes
+
+* Removed old ATS implementation based on Aspera ID.
 * **global**: `@stdin` is now `@stdin:`.
 
 ## 0.9.10
+
+Released: 2018-11-20
+
+### New Features
 
 * Display SaaS storage usage with command: `aspera admin res node --id=nn info`.
 * Cleaner way of specifying source file list for transfers.
@@ -1260,6 +1459,8 @@ Released: 2021-02-03
 
 ## 0.9.9
 
+Released: 2018-11-14
+
 ### New Features
 
 * Now supports "cargo" for Aspera on Cloud (automatic package download).
@@ -1270,12 +1471,16 @@ Released: 2021-02-03
 
 ## 0.9.8
 
+Released: 2018-11-13
+
 ### New Features
 
 * `faspex`: Use option `once_only` set to `yes` to enable cargo like function. `id=NEW` deprecated.
 * `aoc`: Share to share transfer with command `transfer`.
 
 ## 0.9.7
+
+Released: 2018-11-08
 
 ### New Features
 
@@ -1287,6 +1492,8 @@ Released: 2021-02-03
 
 ## 0.9.6
 
+Released: 2018-10-30
+
 ### New Features
 
 * AoC: Added command to display current workspace information.
@@ -1297,12 +1504,19 @@ Released: 2021-02-03
 
 ## 0.9.5
 
+Released: 2018-10-22
+
 ### New Features
 
 * New parameter: `new_user_option` used to choose between public_link and invite of external users.
+
+### Issues Fixed
+
 * Fixed bug in wizard, and wizard uses now product detection.
 
 ## 0.9.4
+
+Released: 2018-10-19
 
 ### New Features
 
@@ -1314,6 +1528,8 @@ Released: 2021-02-03
 * `oncloud`: `oncloud file list` follow `--source` convention as well (plus specific case for download when first path is source folder, and others are source file names).
 
 ## 0.9.3
+
+Released: 2018-10-18
 
 ### New Features
 
@@ -1329,17 +1545,23 @@ Released: 2021-02-03
 
 ## 0.9.2
 
+Released: 2018-10-11
+
 ### Breaking Changes
 
 * `aoc`: Changed AoC package creation to match API, see AoC section.
 
 ## 0.9.1
 
+Released: 2018-10-08
+
 ### Breaking Changes
 
 * `faspex`: Changed Faspex package creation to match API, see Faspex section.
 
 ## 0.9
+
+Released: 2018-10-04
 
 ### New Features
 
@@ -1351,11 +1573,15 @@ Released: 2021-02-03
 
 ## 0.7.6
 
+Released: 2018-08-30
+
 ### New Features
 
 * Add `sync` plugin.
 
 ## 0.7
+
+Released: 2018-05-31
 
 ### New Features
 
@@ -1370,6 +1596,8 @@ Released: 2021-02-03
 
 ## 0.6.19
 
+Released: 2018-04-27
+
 ### Breaking Changes
 
 * `ats`: `ats server list provisioned` &rarr; `ats cluster list`.
@@ -1383,11 +1611,15 @@ Released: 2021-02-03
 
 ## 0.6.18
 
+Released: 2018-04-19
+
 ### New Features
 
 * Some commands take now `--id` option instead of `id` command.
 
 ## 0.6.15
+
+Released: 2018-04-16
 
 ### Breaking Changes
 
