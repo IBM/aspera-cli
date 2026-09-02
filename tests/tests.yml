@@ -4061,11 +4061,11 @@ nd_sync_status:
     - status
     - $(PATH_TMP_SYNCS / 'nd_sync_pull_json')
 nd_async_show_invalid_id:
-  $comment: Fails because only search by namùe is supported
+  $comment: Fails because only search by name is supported
   tags:
     - must_fail
     - nodoc
-  expect: Only search by name is supported
+  expect: 'search field: expecting one of ["name"], but have "foo"'
   args:
     - node
     - async
