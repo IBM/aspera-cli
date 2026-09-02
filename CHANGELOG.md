@@ -5,7 +5,10 @@
 Released: [Place date of release here]
 
 > [!IMPORTANT]
-> **Major internal refactoring (codebase):** Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` class methods on `Plugins::Base`) backed by `CommandRegistry` / `CommandSpec`, replacing per-plugin `case`/`when` dispatch. Help is directly generated, not using `OptParse` anymore, for multi-level help.
+> This release includes a **major internal rework** of the command dispatch layer.
+> Plugin commands are now declared via a Ruby DSL (`command`, `commands_under`, `option`, `root_setup` on `Plugins::Base`), backed by `CommandRegistry` / `CommandSpec`, replacing the previous per-plugin `case`/`when` dispatch.
+> Help output is now generated directly, removing the dependency on `OptParse` and enabling proper multi-level help.
+> This change has been thoroughly tested, but if you encounter any unexpected behavior, please [open an issue](https://github.com/IBM/aspera-cli/issues) and consider reverting to the previous release.
 
 ### New Features
 
