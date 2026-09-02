@@ -3,6 +3,7 @@
 # cspell:ignore ascli
 
 require 'json'
+require 'aspera/log'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
 unless defined?(MCP::Tool)
@@ -21,6 +22,9 @@ module Aspera
       # Items are appended whole until the limit is reached; the full list is always
       # available in structuredContent.
       DEFAULT_MAX_TEXT_BYTES = 100_000
+      # Default extra arguments automatically prepended to every ascli call.
+      # Keeps the AI from having to remember mandatory flags on every invocation.
+      DEFAULT_EXTRA_ARGS = ['--interactive=no', '--transfer.asynchronous=true'].freeze
 
       tool_name 'execute_ascli_command'
 
@@ -37,6 +41,16 @@ module Aspera
             "@env:VAR"      — read value from environment variable
             "@file:/path"   — read value from a file
 
+        AUTOMATIC FLAGS
+          The server automatically prepends extra_args to every call (default:
+          --interactive=no and --transfer.asynchronous=true).
+          Do NOT repeat these flags in your args array — they are already injected.
+          If you explicitly need to override one (e.g. --interactive=yes), include it
+          in your args; your value will take precedence because it appears after the
+          injected ones.
+          If credentials are missing or incomplete, the command will return an error;
+          report it and stop, never wait for input.
+
         DISCOVERY — recommended sequence
           Step 1 — enumerate all commands:
             ["config", "commands"]
@@ -44,8 +58,13 @@ module Aspera
             Syntax notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic.
             This single call covers all 800+ commands — no other discovery step is needed
             unless you want details about a specific command or its Hash arguments.
+            IMPORTANT: never guess command names from training data. If you are unsure of
+            the exact subcommand name (e.g. shared_folders vs shared_inboxes), always call
+            ["config", "commands"] first to find the correct name.
 
-          Step 2 — inspect a Hash argument schema (only when <data> appears in the syntax):
+          Step 2 — inspect a Hash argument schema BEFORE calling any command with <data>:
+            MANDATORY: whenever the command syntax shows a <data> argument, you MUST call
+            "help" offline first. Never infer field names from server error messages.
             ["<plugin>", "<cmd>", ..., "help"]
             Replace the Hash positional argument with the literal string "help".
             Returns a table of field names, types, and descriptions for that argument.
@@ -79,7 +98,15 @@ module Aspera
           Structured data is always in structuredContent (a JSON object).
           For list results, text content is limited to #{DEFAULT_MAX_TEXT_BYTES} bytes (whole items only).
           When truncated, a WARNING block is appended: "WARNING: result truncated to N of TOTAL items."
-          Always use structuredContent for the complete dataset when truncation occurs.
+          You MUST read structuredContent.items to obtain the full dataset — never report
+          counts, totals, or search results from a truncated text block.
+
+        FILE LIST FOR TRANSFERS
+          For all transfers (upload, download, package send, …), append source file paths
+          at the end of the args array — no --sources flag needed.
+          ["server", "upload", "--to-folder=/dst", "/local/file1", "/local/file2"]
+          ["aoc", "packages", "send", "@:", "name=pkg", "recipients.0=user@example.com", "END",
+           "/local/file1", "/local/file2"]
 
         EXAMPLES
           ["config", "commands"]                       ← Step 1: full capability map
@@ -94,6 +121,8 @@ module Aspera
            "--password=secret"]
           ["server", "browse", "/",
            "--url=https://host", "--username=user", "--password=secret"]
+          ["server", "upload", "--url=https://host", "--username=user", "--password=secret",
+           "--to-folder=/uploads", "/local/file1.txt", "/local/file2.txt"]
           ["aoc", "packages", "list", "--workspace=MyWorkspace"]
           ["node", "info", "--url=https://node-host",
            "--username=user", "--password=pass"]
@@ -112,10 +141,12 @@ module Aspera
       )
 
       class << self
-        attr_accessor :max_text_bytes
+        attr_accessor :max_text_bytes, :extra_args
 
         def call(args:, server_context: nil)
-          runner = Runner.new(args)
+          effective_args = Array(extra_args || DEFAULT_EXTRA_ARGS) + args
+          Log.dump(:mcp_execute, effective_args)
+          runner = Runner.new(effective_args)
           result = runner.run_with_result
           case result
           when Result::Nothing, Result::Empty, NilClass

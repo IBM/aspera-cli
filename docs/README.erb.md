@@ -8646,6 +8646,9 @@ Nevertheless, <%=tool%> may or may not have direct file system access to the acc
 
 ## Plugin: `mcp`: Model Context Protocol server
 
+> [!WARNING]
+> This plugin is **experimental**. The interface, options, and behaviour may change in future releases without notice.
+
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants and LLM-based tools.
 The server registers a single tool, `execute_<%=cmd%>_command`, which executes any <%=tool%> command in-process and returns the result as text.
 

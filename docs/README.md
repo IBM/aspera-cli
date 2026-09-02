@@ -9656,6 +9656,9 @@ trevents --once-only=yes --skip-types=office --log-level=info
 
 ## Plugin: `mcp`: Model Context Protocol server
 
+> [!WARNING]
+> This plugin is **experimental**. The interface, options, and behaviour may change in future releases without notice.
+
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes `ascli` to AI assistants and LLM-based tools.
 The server registers a single tool, `execute_ascli_command`, which executes any `ascli` command in-process and returns the result as text.
 

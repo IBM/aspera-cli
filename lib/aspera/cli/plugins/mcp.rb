@@ -16,6 +16,8 @@ module Aspera
       #
       # Supported keys in the options Hash:
       #   transport:              "stdio" (default) or "http"
+      #   extra_args:             Array<String> - flags prepended to every ascli call
+      #                           (default: ["--interactive=no", "--transfer.asynchronous=true"])
       #   max_text_bytes:         Integer - max bytes of JSON text content for list results (default 100_000)
       #   # stdio transport:
       #   max_line_bytes:         Integer - max JSON frame size (default 4 MiB)
@@ -51,9 +53,10 @@ module Aspera
 
           Recommended workflow for any task:
           1. Call ["config", "commands"] to map all 800+ commands to their syntax.
+             Never guess subcommand names from training data — always verify with this call.
           2. For any command whose syntax shows a <data> argument, call it with "help"
              instead of the real value to see the full field schema before constructing
-             the @json:{...} payload.
+             the @json:{...} payload. This is mandatory — never infer fields from errors.
           2b. For any list command, add --query=help to discover available filter parameters.
               Example: ["aoc", "admin", "user", "list", "--query=help"]
           3. Call ["config", "options", "<plugin>"] to list every --flag accepted by a
@@ -61,15 +64,45 @@ module Aspera
           4. When credentials are already saved, use --preset=name instead of inline
              credentials. Call ["config", "preset", "list"] to see saved presets.
 
-          IMPORTANT - Always start transfers asynchronously:
-          Transfer commands (server upload/download, aoc packages send/receive, ...) block
-          until completion by default, which will cause MCP timeouts on large files.
-          Always add "asynchronous":true to the --transfer option. The transfer is submitted
-          to the external daemon and a job_id is returned immediately. Poll progress with
-          ["config", "transfer", "status", "<job_id>"] and never retry a command that already
-          returned a job_id - the transfer is already running in the daemon.
-          Example: ["server", "download", "/big-file.bin", "--to-folder=/tmp",
-                    '--transfer=@json:{"agent":"desktop","asynchronous":true}']
+          AUTOMATIC FLAGS
+          The server automatically injects --interactive=no and --transfer.asynchronous=true
+          before every command. Do NOT add them yourself — they are already applied.
+          If credentials are missing, the command returns an error; report it and stop.
+          The transfer agent defaults to "direct" (in-process ascp). To use the IBM Aspera
+          Desktop Client for all transfers, the server can be started with extra_args including
+          --transfer.agent=desktop:
+            ascli mcp server @json:{"extra_args":["--interactive=no","--transfer.asynchronous=true","--transfer.agent=desktop"]}
+
+          CREDENTIAL INTEGRITY
+          Use saved presets by default — do not specify server address or credentials if a
+          default preset is already configured, unless the user asks otherwise.
+          Call ["config", "preset", "overview"] to check available presets.
+          Some plugins support web-based authentication: the user logs in via a browser
+          (use --auth=web or follow the wizard).
+          If the user explicitly provides credentials inline (--url, --username, --password,
+          --private-key), use those exact values verbatim — never silently substitute a
+          preset or a different server. Report errors as-is and stop.
+
+          TRANSFER OPTIONS
+          Any flags explicitly requested by the user (--transfer.agent=<agent>, --to-folder,
+          etc.) must be passed verbatim. Never omit or replace them.
+          The agent is selected with "--transfer.agent=<agent>" (e.g. "--transfer.agent=desktop",
+          "--transfer.agent=direct", "--transfer.agent=node").
+          For a graphical transfer (IBM Aspera Desktop Client), use --transfer.agent=desktop.
+          Because --transfer.asynchronous=true is injected automatically, transfer commands
+          return a job_id immediately — never retry a command that already returned one.
+          Async transfer lifecycle:
+            submit  → e.g. ["server", "download", "/file", "--to-folder=/tmp"] → returns job_id
+            monitor → ["config", "transfer", "status", "<job_id>"]
+            list    → ["config", "transfer", "list"]
+            cleanup → ["config", "transfer", "cleanup"]
+
+          FILE LIST FOR TRANSFERS
+          For all transfers (upload, download, package send, …), append source file paths
+          at the end of the args array — no --sources flag needed.
+          ["server", "upload", "--to-folder=/dst", "/local/a.txt", "/local/b.txt"]
+          ["aoc", "packages", "send", "@:", "name=pkg", "recipients.0=u@example.com", "END",
+           "/local/a.txt", "/local/b.txt"]
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)
@@ -81,7 +114,7 @@ module Aspera
         # Keys forwarded to StreamableHTTPTransport
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys consumed locally (not forwarded to MCP gem)
-        TOOL_KEYS   = %i[max_text_bytes].freeze
+        TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
@@ -93,6 +126,7 @@ module Aspera
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument){"Unknown MCP option(s): #{unknown.join(', ')}"}
           Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
+          Cli::McpTool.extra_args     = mcp_options.delete(:extra_args)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)

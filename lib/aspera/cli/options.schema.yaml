@@ -155,6 +155,18 @@ components:
           type: boolean
           description: Wait for acknowledgment after each message.
           default: false
+    DesktopAgentOptions:
+      type: object
+      description: >-
+        Parameters for the IBM Aspera Desktop Client transfer agent.
+        The Desktop Client must be running locally. No additional options are required.
+      properties: {}
+    ConnectAgentOptions:
+      type: object
+      description: >-
+        Parameters for the IBM Aspera Connect Client transfer agent.
+        The Connect Client must be running locally. No additional options are required.
+      properties: {}
     TransferdAgentOptions:
       type: object
       description: Parameters for the Transfer Daemon transfer agent.
@@ -184,6 +196,8 @@ components:
         - $ref: "#/components/schemas/NodeAgentOptions"
         - $ref: "#/components/schemas/HttpgwAgentOptions"
         - $ref: "#/components/schemas/TransferdAgentOptions"
+        - $ref: "#/components/schemas/DesktopAgentOptions"
+        - $ref: "#/components/schemas/ConnectAgentOptions"
       discriminator:
         propertyName: agent
         mapping:
@@ -191,6 +205,8 @@ components:
           node: "#/components/schemas/NodeAgentOptions"
           httpgw: "#/components/schemas/HttpgwAgentOptions"
           transferd: "#/components/schemas/TransferdAgentOptions"
+          desktop: "#/components/schemas/DesktopAgentOptions"
+          connect: "#/components/schemas/ConnectAgentOptions"
     SmtpOptions:
       type: object
       description: SMTP email server configuration.
