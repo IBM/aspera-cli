@@ -2602,9 +2602,29 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: admin
+          in: query
+          description: Filter users by admin status.
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number for paginated results.
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of results per page.
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: Specify a field for sorting results.
+          schema:
+            type: string
         - name: embed[]
           in: query
-          description: embed[]=home_node embed[]=organization
+          description: embed[]=home_node embed[]=organization embed[]=auth_provider
           schema:
             type: string
       responses:
