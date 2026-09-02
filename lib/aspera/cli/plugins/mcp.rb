@@ -16,7 +16,7 @@ module Aspera
       #
       # Supported keys in the options Hash:
       #   transport:              "stdio" (default) or "http"
-      #   max_items:              Integer - max items in text content of list results (default 100)
+      #   max_text_bytes:         Integer - max bytes of JSON text content for list results (default 100_000)
       #   # stdio transport:
       #   max_line_bytes:         Integer - max JSON frame size (default 4 MiB)
       #   # http transport:
@@ -79,7 +79,7 @@ module Aspera
         # Keys forwarded to StreamableHTTPTransport
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys consumed locally (not forwarded to MCP gem)
-        TOOL_KEYS   = %i[max_items].freeze
+        TOOL_KEYS   = %i[max_text_bytes].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
@@ -90,7 +90,7 @@ module Aspera
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument){"Unknown MCP option(s): #{unknown.join(', ')}"}
-          Cli::McpTool.max_items = mcp_options.delete(:max_items)
+          Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)

@@ -17,9 +17,10 @@ module Aspera
   module Cli
     # MCP Tool: executes an ascli command in-process.
     class McpTool < MCP::Tool
-      # Default maximum number of items returned in the text content of a list result.
-      # The full list is always available in structuredContent.
-      DEFAULT_MAX_ITEMS = 100
+      # Default maximum byte size of the JSON text content returned for list results.
+      # Items are appended whole until the limit is reached; the full list is always
+      # available in structuredContent.
+      DEFAULT_MAX_TEXT_BYTES = 100_000
 
       tool_name 'execute_ascli_command'
 
@@ -68,8 +69,8 @@ module Aspera
 
         RESULT FORMAT
           Structured data is always in structuredContent (a JSON object).
-          When a list result exceeds #{DEFAULT_MAX_ITEMS} items, text content is truncated and
-          a second text block is appended: "WARNING: result truncated to N of TOTAL items."
+          For list results, text content is limited to #{DEFAULT_MAX_TEXT_BYTES} bytes (whole items only).
+          When truncated, a WARNING block is appended: "WARNING: result truncated to N of TOTAL items."
           Always use structuredContent for the complete dataset when truncation occurs.
 
         EXAMPLES
@@ -103,7 +104,7 @@ module Aspera
       )
 
       class << self
-        attr_accessor :max_items
+        attr_accessor :max_text_bytes
 
         def call(args:, server_context: nil)
           result = Runner.new(args).run_with_result
@@ -113,14 +114,18 @@ module Aspera
           when Result::SingleObject, Result::ObjectList, Result::ValueList
             # MCP spec requires structuredContent to be a JSON object (not an array).
             structured = result.data.is_a?(Array) ? {items: result.data} : result.data
-            # Truncate text content to avoid overwhelming the client; full data is in structuredContent.
-            limit = max_items || DEFAULT_MAX_ITEMS
-            content = if result.data.is_a?(Array) && result.data.size > limit
+            content = if result.data.is_a?(Array)
+              text_limit = max_text_bytes || DEFAULT_MAX_TEXT_BYTES
+              truncated_items = truncate_items_by_bytes(result.data, text_limit)
               total = result.data.size
-              [
-                {type: 'text', text: JSON.generate(result.data.first(limit))},
-                {type: 'text', text: "WARNING: result truncated to #{limit} of #{total} items. Full dataset available in structuredContent."}
-              ]
+              if truncated_items.size < total
+                [
+                  {type: 'text', text: JSON.generate(truncated_items)},
+                  {type: 'text', text: "WARNING: result truncated to #{truncated_items.size} of #{total} items. Full dataset available in structuredContent."}
+                ]
+              else
+                [{type: 'text', text: JSON.generate(result.data)}]
+              end
             else
               [{type: 'text', text: JSON.generate(result.data)}]
             end
@@ -132,6 +137,17 @@ module Aspera
           MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
         rescue => e
           MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
+        end
+        # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
+        # Items are appended whole — no item is ever split mid-JSON.
+        def truncate_items_by_bytes(items, max_bytes)
+          buf = +''
+          items.each_with_index do |item, i|
+            fragment = (i.zero? ? '[' : ',') + JSON.generate(item)
+            break if buf.bytesize + fragment.bytesize + 1 > max_bytes # +1 for closing ']'
+            buf << fragment
+          end
+          buf.empty? ? [] : JSON.parse(buf + ']')
         end
       end
     end

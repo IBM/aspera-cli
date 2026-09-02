@@ -40,7 +40,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
     described_class.call(args: %w[config gem version])
   end
 
-  before{described_class.max_items = nil} # reset between examples
+  before{described_class.max_text_bytes = nil} # reset between examples
 
   # -----------------------------------------------------------------------
   # Result::Nothing / Result::Empty  →  empty text content, no structured
@@ -79,7 +79,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
   describe 'Result::ObjectList below limit' do
     it 'returns one content block with all items, wrapped in structuredContent' do
       data = [{'a' => 1}, {'a' => 2}]
-      described_class.max_items = 10
+      described_class.max_text_bytes = 10_000
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.content.size).to(eq(1))
       expect(JSON.parse(resp.content.first[:text])).to(eq(data))
@@ -88,28 +88,31 @@ RSpec.describe(Aspera::Cli::McpTool) do
   end
 
   # -----------------------------------------------------------------------
-  # Result::ObjectList — truncation
+  # Result::ObjectList — truncation by byte size
   # -----------------------------------------------------------------------
-  describe 'Result::ObjectList above limit' do
-    before{described_class.max_items = 2}
-
+  describe 'Result::ObjectList above byte limit' do
+    # Each item serializes to ~10 bytes: {"n":1} = 7 bytes + separator.
+    # Setting max_text_bytes to 20 fits at most 2 items.
     let(:data){[{'n' => 1}, {'n' => 2}, {'n' => 3}, {'n' => 4}]}
+    before{described_class.max_text_bytes = 20}
 
     it 'returns two content blocks' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.content.size).to(eq(2))
     end
 
-    it 'first block contains only the first max_items items' do
+    it 'first block contains only the items that fit within the byte limit' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
-      expect(JSON.parse(resp.content.first[:text])).to(eq(data.first(2)))
+      parsed = JSON.parse(resp.content.first[:text])
+      expect(parsed.size).to(be < data.size)
+      expect(JSON.generate(parsed).bytesize).to(be <= 20)
     end
 
     it 'second block is a WARNING mentioning the counts' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       warning = resp.content.last[:text]
       expect(warning).to(match(/WARNING/))
-      expect(warning).to(include('2 of 4'))
+      expect(warning).to(include('of 4'))
     end
 
     it 'structuredContent contains all items' do
@@ -124,7 +127,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
   describe 'Result::ValueList truncation' do
     it 'also emits a WARNING when truncated' do
       data = %w[a b c d e]
-      described_class.max_items = 2
+      described_class.max_text_bytes = 10 # too small for all 5 items
       resp = call_with_result(Aspera::Cli::Result::ValueList.new(data, name: 'item'))
       expect(resp.content.size).to(eq(2))
       expect(resp.content.last[:text]).to(match(/WARNING/))

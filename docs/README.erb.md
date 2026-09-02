@@ -8668,6 +8668,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `instructions` | `string` | - | Longer hint shown to the AI client describing what the server does and how to use it |
 | `protocol_version` | `string` | - | MCP protocol version to advertise, for example, `2024-11-05` |
 | `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
+| `max_text_bytes` | `integer` | `100000` | Maximum byte size of the JSON text content for list results. Items are appended whole until the limit is reached; the full list is always available in `structuredContent` |
 
 #### `stdio` transport
 
