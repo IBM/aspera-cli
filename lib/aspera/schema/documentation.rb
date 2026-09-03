@@ -80,8 +80,14 @@ module Aspera
         schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
-          item_type = JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])
-          item_type = "#{item_type}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]" if node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
+          item_type =
+            if node['type'].is_a?(Array)
+              node['type'].map{ |t| JSON_TYPE_TO_DOC.fetch(t, t) }.join(', ')
+            elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
+              "#{JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]"
+            else
+              JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])
+            end
           item = {
             'name'        => code.call(property_full_name),
             'type'        => code.call(item_type),
