@@ -43,6 +43,7 @@ module Aspera
         opts:         'aspera/cli/options.schema.yaml',
         aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
+        node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
         async_tables: 'aspera/schema/async_tables.yaml'
       }
 
@@ -52,6 +53,7 @@ module Aspera
       SYNC_ARGS = 'args'
       AOC = 'aoc'
       FASPEX = 'faspex'
+      NODE = 'node'
       ASYNC_TABLES = 'async_tables'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
       DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"
