@@ -413,7 +413,7 @@ module Aspera
           #{t}#{Info::CMD_NAME} -- a command line tool for Aspera Applications (v#{Cli::VERSION})
 
           SYNOPSIS
-          #{t}#{Info::CMD_NAME} COMMANDS [OPTIONS] [ARGS]
+          #{t}#{Info::CMD_NAME} [GLOBAL_OPTIONS] <command> [OPTIONS] [ARGS]
 
           DESCRIPTION
           #{t}Use Aspera application to perform operations on command line.
@@ -432,8 +432,8 @@ module Aspera
           OPTIONS
           #{t}Options begin with a '-' (minus), and value is provided on command line.
           #{t}Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-          #{t}#{ExtendedValue.instance.modifiers.join(', ')}
-          #{t}Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+          #{t}#{ExtendedValue.instance.modifiers.reject(&:empty?).join(', ')}
+          #{t}Dates format is 'YYYY-MM-DD HH:MM:SS', or 'now' or '-<num>h'
 
           ARGS
           #{t}Some commands require mandatory arguments, e.g. a path.

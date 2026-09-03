@@ -106,6 +106,25 @@ module Aspera
           end)
         end
       end
+
+      describe '#help_text' do
+        it 'displays semantic placeholders based on option type and schema' do
+          opts = build_parser([])
+          opts.declare(:bool_opt, description: 'Boolean option', allowed: Allowed::TYPES_BOOLEAN)
+          opts.declare(:enum_opt, description: 'Enum option', allowed: %i[alpha beta])
+          opts.declare(:int_opt, description: 'Integer option', allowed: Allowed::TYPES_INTEGER)
+          opts.declare(:object_opt, description: 'Object option', allowed: Hash)
+          opts.declare(:list_opt, description: 'List option', allowed: Allowed::TYPES_STRING_ARRAY)
+          opts.declare(:str_opt, description: 'String option')
+          help = opts.help_text
+          expect(help).to(include('--bool-opt=yes|no'))
+          expect(help).to(include('--enum-opt=alpha|beta'))
+          expect(help).to(include('--int-opt=INT'))
+          expect(help).to(include('--object-opt=HASH'))
+          expect(help).to(include('--list-opt=LIST'))
+          expect(help).to(include('--str-opt=VALUE'))
+        end
+      end
     end
   end
 end

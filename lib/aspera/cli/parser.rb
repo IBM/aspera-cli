@@ -857,12 +857,26 @@ module Aspera
       end.freeze
 
       # @param opt [OptionValue] option descriptor
-      # @return [String, nil] placeholder shown in flag column: 'ENUM', 'VALUE', or nil for flag switches
+      # @return [String, nil] placeholder shown in flag column: 'ENUM', 'HASH', 'INT', 'LIST', 'VALUE', or nil for flag switches
       def option_display_value(opt)
         case opt.types
         when Allowed::TYPES_NONE then nil
-        when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN then 'ENUM'
-        else 'VALUE'
+        when Allowed::TYPES_BOOLEAN then 'yes|no'
+        when Allowed::TYPES_INTEGER then 'INT'
+        when Allowed::TYPES_ENUM
+          if opt.values&.any? && opt.values.length <= 4
+            opt.values.join('|')
+          else
+            'ENUM'
+          end
+        else
+          if opt.types&.include?(Hash) || !opt.schema.nil?
+            'HASH'
+          elsif opt.types&.include?(Array)
+            'LIST'
+          else
+            'VALUE'
+          end
         end
       end
 
