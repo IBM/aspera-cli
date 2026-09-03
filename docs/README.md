@@ -3596,14 +3596,14 @@ ascli config transfer list
 ascli config transfer cleanup
 ```
 
-| Agent | Async support | Status source |
-|---|---|---|
-| `desktop` | ✅ | JSON-RPC `get_transfer` (auto-discovered URL) |
-| `node` | ✅ | REST `ops/transfers/{id}` |
-| `connect` | ✅ | REST `transfers/info/{id}` (auto-discovered URL) |
-| `transferd` | ✅ | gRPC `monitor_transfers` |
-| `direct` | ✅ in-process only | `@sessions` (not persisted across process restarts) |
-| `httpgw` | ❌ | Synchronous by nature — error if requested |
+| Agent     | Async support | Status source                         |
+| --------- | ------------- | ------------------------------------- |
+| `desktop` | Yes | JSON-RPC `get_transfer` (auto-discovered URL) |
+| `node` | Yes | REST `ops/transfers/{id}` |
+| `connect` | Yes | REST `transfers/info/{id}` (auto-discovered URL) |
+| `transferd` | Yes | gRPC `monitor_transfers` |
+| `direct` | Yes in-process only | `@sessions` (not persisted across process restarts) |
+| `httpgw` | Yes in-process only | Synchronous by nature — error if requested |
 
 > [!NOTE]
 > **`asynchronous` and MCP** — When `ascli` is used as an MCP server, an AI assistant calling

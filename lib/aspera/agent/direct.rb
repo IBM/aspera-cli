@@ -19,6 +19,30 @@ module Aspera
   module Agent
     # Execute a local `ascp` and use its management port to monitor progress
     class Direct < Base
+      class << self
+        # Re-query the status of a direct transfer that was started in-process.
+        # Only works if the same Ruby process is still alive (e.g. MCP mode).
+        # agent_params must contain '_agent_ref' pointing to the live Direct instance.
+        # @param transfer_id  [String] job_id returned by start_transfer / last_job_id
+        # @param agent_params [Hash]   connection parameters; '_agent_ref' is the live agent
+        # @return [Hash] status hash with at least 'status' key
+        def transfer_status(transfer_id, agent_params)
+          agent = agent_params['_agent_ref']
+          return {'status' => 'unknown', 'note' => 'direct agent not available (different process?)'} if agent.nil?
+          sessions = agent.sessions_by_job(transfer_id)
+          return {'status' => 'unknown', 'note' => "no sessions found for job #{transfer_id}"} if sessions.empty?
+          errors  = sessions.map{ |s| s[:error]}.compact
+          running = sessions.any?{ |s| s[:thread]&.alive?}
+          if errors.any?
+            {'status' => 'failed', 'error' => errors.first.message}
+          elsif running
+            {'status' => 'running'}
+          else
+            {'status' => 'completed'}
+          end
+        end
+      end
+
       # `ascp` started locally, so listen local
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
       # 0 means: use any available port
@@ -166,6 +190,11 @@ module Aspera
           end
         end
         return session[:job_id]
+      end
+
+      # @return [String, nil] job_id of the last submitted transfer
+      def last_job_id
+        @sessions.last&.dig(:job_id)
       end
 
       # wait for completion of all jobs started

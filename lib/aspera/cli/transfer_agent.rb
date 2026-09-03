@@ -269,31 +269,35 @@ module Aspera
         # --- async mode ---
         if @transfer_options['asynchronous']
           agent_type = (@transfer_options['agent'] || 'direct').to_s
-          raise Cli::BadArgument, 'asynchronous mode is not supported for agent httpgw' if agent_type.eql?('httpgw')
-          # For direct agent: the transfer lives in this Ruby process (threads).
-          # We return the job_id from the agent itself; no persistent store needed.
-          if agent_type.eql?('direct')
-            job_id = agent_instance.instance_variable_get(:@sessions).last[:job_id]
-            Log.log.info{"Async direct transfer started: job_id=#{job_id}"}
-            return Transfer::Result.async(job_id: job_id)
-          end
-          # For remote-daemon agents (desktop, node, connect, transferd): persist transfer_id
-          # so the status can be re-queried in a later process invocation.
+          # In-process agents (direct, httpgw) expose last_job_id directly.
+          # Remote-daemon agents do not override last_job_id (returns nil): generate a UUID.
+          job_id = agent_instance.last_job_id || SecureRandom.uuid
+          # Base agent_params from transfer options (strip internal keys)
           agent_params = @transfer_options.except('agent', 'asynchronous')
+          # For daemon agents: capture any runtime-resolved connection detail
           case agent_type
           when 'desktop'
             agent_params['application_id'] = agent_instance.application_id
           when 'connect'
             agent_params['app_id'] = agent_instance.app_id
           when 'transferd'
-            # store the resolved daemon endpoint (auto-port may have been assigned)
             agent_params['url'] = agent_instance.daemon_endpoint
           end
-          job_id = SecureRandom.uuid
+          # '_agent_ref' is an in-process reference so direct/httpgw can be re-queried
+          # while the process lives (e.g. MCP mode). AsyncTransferStore strips '_*' keys
+          # before persisting, so this never reaches the file system.
+          agent_params['_agent_ref'] = agent_instance
+          # transfer_id: in-process agents use job_id; daemon agents expose @transfer_id
+          transfer_id =
+            if %w[direct httpgw].include?(agent_type)
+              job_id
+            else
+              agent_instance.instance_variable_get(:@transfer_id).to_s
+            end
           async_store.write(job_id, {
             'job_id'            => job_id,
             'agent_type'        => agent_type,
-            'transfer_id'       => agent_instance.instance_variable_get(:@transfer_id).to_s,
+            'transfer_id'       => transfer_id,
             'agent_params'      => agent_params,
             'status'            => 'running',
             'bytes_transferred' => 0,
@@ -301,7 +305,7 @@ module Aspera
             'ended_at'          => nil,
             'error'             => nil
           })
-          Log.log.info{"Async transfer started: job_id=#{job_id}"}
+          Log.log.info{"Async transfer started: job_id=#{job_id}, agent=#{agent_type}"}
           return Transfer::Result.async(job_id: job_id)
         end
         # --- synchronous mode (default) ---

@@ -62,14 +62,16 @@ module Aspera
       end
 
       # Delegate to the appropriate agent class method.
-      # Returns nil for direct transfers (in-process only, not re-queryable across processes).
+      # All agent types are supported:
+      # - in-process agents (direct, httpgw): re-queryable while the same process lives
+      #   (e.g. MCP mode); '_agent_ref' in agent_params points to the live instance.
+      #   When the process has restarted, '_agent_ref' is nil and transfer_status returns
+      #   {'status' => 'unknown'} — which is the correct and safe answer.
+      # - daemon agents (node, desktop, connect, transferd): re-query via their REST/IPC API.
       def query_live_status(entry)
-        agent_type  = entry['agent_type']
-        transfer_id = entry['transfer_id']
+        agent_type   = entry['agent_type']
+        transfer_id  = entry['transfer_id']
         agent_params = entry['agent_params'] || {}
-
-        # direct transfers live in Ruby threads - not persistable across process restarts
-        return if agent_type.eql?('direct')
 
         require "aspera/agent/#{agent_type}"
         agent_class = Aspera::Agent.const_get(agent_type.capitalize)

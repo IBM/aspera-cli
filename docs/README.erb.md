@@ -2608,7 +2608,7 @@ Copy the completion script to Fish's completions directory:
 cp $(gem contents <%=gemspec.name%> | grep fish_autocomplete) ~/.config/fish/completions/ascli.fish
 ```
 
-No further configuration is needed — Fish loads files from `~/.config/fish/completions/` automatically.
+No further configuration is needed - Fish loads files from `~/.config/fish/completions/` automatically.
 
 Once active, press `Tab` to complete commands at any depth:
 
@@ -3363,12 +3363,10 @@ Parameters in transfer-spec can be modified with option `ts`.
 
 #### Asynchronous Transfer Mode
 
-For agents that delegate transfers to an external daemon (`desktop`, `node`, `connect`, `transferd`),
-the transfer lives entirely in that daemon — <%=tool%> does not need to stay connected while it runs.
 Adding `asynchronous: true` to the `transfer` option makes <%=tool%> return immediately after
 submitting the transfer, without waiting for completion.
 
-The returned `job_id` can be used at any time, even in a later invocation, to check progress:
+The returned `job_id` can be used at any time to check progress:
 
 ```shell
 # Start a download and return immediately
@@ -3385,21 +3383,28 @@ The returned `job_id` can be used at any time, even in a later invocation, to ch
 <%=cmd%> config transfer cleanup
 ```
 
-| Agent | Async support | Status source |
-|---|---|---|
-| `desktop` | ✅ | JSON-RPC `get_transfer` (auto-discovered URL) |
-| `node` | ✅ | REST `ops/transfers/{id}` |
-| `connect` | ✅ | REST `transfers/info/{id}` (auto-discovered URL) |
-| `transferd` | ✅ | gRPC `monitor_transfers` |
-| `direct` | ✅ in-process only | `@sessions` (not persisted across process restarts) |
-| `httpgw` | ❌ | Synchronous by nature — error if requested |
+All transfer agents support asynchronous mode:
+
+| Agent       | Status source                                                                 | Persisted across restart |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------ |
+| `desktop`   | JSON-RPC `get_transfer` (auto-discovered URL)                                 | Yes |
+| `node`      | REST `ops/transfers/{id}`                                                     | Yes |
+| `connect`   | REST `transfers/info/{id}` (auto-discovered URL)                              | Yes |
+| `transferd` | gRPC `monitor_transfers`                                                      | Yes |
+| `direct`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No — returns `unknown` after restart |
+| `httpgw`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No — returns `unknown` after restart |
+
+For `direct` and `httpgw`, the transfer runs as a Ruby thread inside the <%=tool%> process.
+The `job_id` is persisted on disk but the live thread state is only available as long as the same process is running.
+If the process is restarted, `config transfer status` returns `unknown` for those jobs.
 
 > [!NOTE]
-> **`asynchronous` and MCP** — When <%=tool%> is used as an MCP server, an AI assistant calling
+> **`asynchronous` and MCP** - When <%=tool%> is used as an MCP server, an AI assistant calling
 > a transfer command may time out or cancel the request and retry, causing duplicate transfers.
-> Using `asynchronous: true` eliminates this risk: the transfer is submitted once to the external
-> daemon, the `job_id` is returned immediately, and the AI can poll
+> Using `asynchronous: true` eliminates this risk: the transfer is submitted immediately,
+> the `job_id` is returned, and the AI can poll
 > `config transfer status <job_id>` to track progress without any risk of duplication.
+> This works with all agents, including `direct` and `httpgw`.
 
 #### Agent: Direct
 
@@ -3424,14 +3429,14 @@ max( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 To display the native progress bar of `ascp`, use:
 
 ```shell
---progress-bar=no --transfer.quiet=false`
+--progress-bar=no --transfer.quiet=false
 ```
 
 To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
 In that, use the native progress bar:
 
 ```shell
---transfer.monitor=false --transfer.quiet=false`
+--transfer.monitor=false --transfer.quiet=false
 ```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (for example, WSS).
@@ -8686,7 +8691,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `max_line_bytes` | `integer` | 4194304 (4 MiB) | Maximum JSON frame size in bytes |
 
 > [!NOTE]
-> **`stdio` transport and server description** — The MCP protocol does not carry a `description` field in the `initialize` handshake.
+> **`stdio` transport and server description** - The MCP protocol does not carry a `description` field in the `initialize` handshake.
 > For `stdio` servers, AI clients (Claude Desktop, VS Code, Bob, …) cannot retrieve the description automatically.
 > Add a `"description"` field directly in the client's `mcpServers` configuration to display it in the UI.
 
@@ -8703,7 +8708,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
 
 > [!NOTE]
-> **HTTP transport discovery endpoint** — When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
+> **HTTP transport discovery endpoint** - When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
 > AI clients that support this convention (such as Bob) automatically read the description from this endpoint and display it in their MCP server list without any manual configuration.
 
 ### Examples
@@ -8743,7 +8748,7 @@ To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS 
 ```
 
 > [!NOTE]
-> **Development mode** — if the <%=tool%> gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
+> **Development mode** - if the <%=tool%> gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
 > Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the project:
 >
 > ```json

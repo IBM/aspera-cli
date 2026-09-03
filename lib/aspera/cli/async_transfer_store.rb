@@ -33,12 +33,14 @@ module Aspera
       end
 
       # Persist (create or update) an async transfer entry.
+      # Keys whose name starts with '_' are in-process references (e.g. '_agent_ref')
+      # and are intentionally excluded from the JSON serialization — at every nesting level.
       # @param job_id [String] the ascli-generated UUID
       # @param data   [Hash]   fields to store (will be JSON-serialised)
       def write(job_id, data)
         Aspera.assert_type(job_id, String){'job_id'}
         Aspera.assert_type(data, Hash){'data'}
-        @persistency.put(store_key(job_id), JSON.generate(data))
+        @persistency.put(store_key(job_id), JSON.generate(strip_internal_keys(data)))
         nil
       end
 
@@ -75,6 +77,22 @@ module Aspera
       # Map a job_id to the PersistencyFolder key (includes category prefix).
       def store_key(job_id)
         "#{CATEGORY}#{job_id}"
+      end
+
+      # Recursively remove keys whose name starts with '_' from a Hash.
+      # Such keys hold in-process Ruby object references (e.g. '_agent_ref') that
+      # cannot be serialized to JSON and must never reach the file system.
+      def strip_internal_keys(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(k, v), h|
+            h[k] = strip_internal_keys(v) unless k.to_s.start_with?('_')
+          end
+        when Array
+          value.map{ |v| strip_internal_keys(v)}
+        else
+          value
+        end
       end
     end
   end

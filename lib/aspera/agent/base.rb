@@ -33,6 +33,14 @@ module Aspera
         return errors.empty? ? Transfer::Result.success : Transfer::Result.error(errors.first)
       end
 
+      # Return the job_id of the last transfer submitted by this agent.
+      # In-process agents (direct, httpgw) override this to expose their internal job id.
+      # Remote-daemon agents do not need to override it: TransferAgent generates a UUID itself.
+      # @return [String, nil]
+      def last_job_id
+        nil
+      end
+
       private
 
       Aspera.require_method!(:start_transfer)
