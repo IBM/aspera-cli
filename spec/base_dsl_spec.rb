@@ -417,8 +417,9 @@ module Aspera
             )
             klass.define_method(:stub_api){stub_api_obj}
             allow(options).to(receive(:get_next_command).with([:bridges], aliases: nil).and_return(:bridges))
+            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:show))
             inst = klass.new(context: context)
-            expect(inst).to(receive(:entity_execute).with(api: stub_api_obj, entity: 'bridges').and_return(Result::Status.new('ok')))
+            expect(inst).to(receive(:entity_execute).with(api: stub_api_obj, entity: 'bridges', command: :show).and_return(Result::Status.new('ok')))
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'ok')))
           end
 
@@ -431,9 +432,10 @@ module Aspera
             )
             klass.define_method(:spec_api){spec_api_obj}
             allow(options).to(receive(:get_next_command).with([:items], aliases: nil).and_return(:items))
+            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:list))
             inst = klass.new(context: context)
             # ctx carries an api key; spec has its own api — spec should win
-            expect(inst).to(receive(:entity_execute).with(api: spec_api_obj, entity: 'items').and_return(Result::Status.new('ok')))
+            expect(inst).to(receive(:entity_execute).with(api: spec_api_obj, entity: 'items', command: :list).and_return(Result::Status.new('ok')))
             inst.dispatch_from_registry([], {api: :ctx_api})
           end
 
@@ -443,13 +445,14 @@ module Aspera
             klass.command(:res, description: 'Resource', entity_execute: {api: :a, entity: 'res'})
             klass.define_method(:a){api_obj}
             allow(options).to(receive(:get_next_command).with([:res], aliases: nil).and_return(:res))
+            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:show))
             inst = klass.new(context: context)
             lookup = proc{'found'}
-            # lookup_block must NOT be forwarded as a kwarg — only as a block
+            # lookup_block must NOT be forwarded as a kwarg — only as a block (may be wrapped for instance_exec)
             expect(inst).to(
-              receive(:entity_execute).with(api: api_obj, entity: 'res') do |**kwargs, &blk|
+              receive(:entity_execute).with(api: api_obj, entity: 'res', command: :show) do |**kwargs, &blk|
                 expect(kwargs).not_to(have_key(:lookup_block))
-                expect(blk).to(be(lookup))
+                expect(blk).not_to(be_nil)
                 Result::Status.new('ok')
               end
             )
@@ -466,9 +469,10 @@ module Aspera
             klass.define_method(:build_stub_api){{api: :ctx_api}}
             allow(options).to(receive(:get_next_command).with([:root_cmd], aliases: nil).and_return(:root_cmd))
             allow(options).to(receive(:get_next_command).with([:bridges], aliases: nil).and_return(:bridges))
+            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:list))
             inst = klass.new(context: context)
             # ctx api comes from setup; spec has no api — ctx api is used
-            expect(inst).to(receive(:entity_execute).with(api: :ctx_api, entity: 'bridges').and_return(Result::Status.new('ok')))
+            expect(inst).to(receive(:entity_execute).with(api: :ctx_api, entity: 'bridges', command: :list).and_return(Result::Status.new('ok')))
             inst.dispatch_from_registry([])
           end
         end

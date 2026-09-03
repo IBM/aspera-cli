@@ -18,21 +18,32 @@ module Aspera
           LOCATIONS.key?(sym)
         end
 
+        # Split a component string into registry key and optional path prefix.
+        # Syntax: 'key' or 'key+/prefix' (e.g. 'shares+/api/v1')
+        # @param component [String] registry key with optional '+/prefix'
+        # @return [Array(String, String)] [key, prefix] where prefix may be ''
+        def split_component(component)
+          key, prefix = component.split('+', 2)
+          [key, prefix || '']
+        end
+
         # Get path to request body schema, no check if it exists
-        # @param component [String] registry key (e.g. 'faspex', 'aoc')
-        # @param endpoint  [String] endpoint path without leading slash (e.g. 'packages.post')
+        # @param component [String] registry key, optionally with path prefix (e.g. 'shares+/api/v1')
+        # @param endpoint  [String] endpoint path without leading slash (e.g. 'data/shares.post')
         # @return [String] schema path usable in schema: keyword
         def req_body(component, endpoint)
-          "#{component}:paths./#{endpoint}.requestBody.content.application/json.schema"
+          key, prefix = split_component(component)
+          "#{key}:paths.#{prefix}/#{endpoint}.requestBody.content.application/json.schema"
         end
 
         # Get path to query parameters for a GET endpoint
-        # @param component [String] registry key (e.g. 'faspex', 'aoc')
-        # @param endpoint  [String] resource path without leading slash (e.g. 'packages')
+        # @param component [String] registry key, optionally with path prefix (e.g. 'shares+/api/v1')
+        # @param endpoint  [String] resource path without leading slash (e.g. 'data/shares')
         # @param method    [String] HTTP method (default: 'get')
         # @return [String] schema path usable in query_schema: keyword
         def query_params(component, endpoint, method: 'get')
-          "#{component}:paths./#{endpoint}.#{method}#{QUERY_PARAMS_SUFFIX}"
+          key, prefix = split_component(component)
+          "#{key}:paths.#{prefix}/#{endpoint}.#{method}#{QUERY_PARAMS_SUFFIX}"
         end
       end
 
@@ -43,7 +54,9 @@ module Aspera
         opts:         'aspera/cli/options.schema.yaml',
         aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
+        faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0.yaml',
         node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
+        shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         async_tables: 'aspera/schema/async_tables.yaml'
       }
 
@@ -53,7 +66,9 @@ module Aspera
       SYNC_ARGS = 'args'
       AOC = 'aoc'
       FASPEX = 'faspex'
+      FASPIO = 'faspio'
       NODE = 'node'
+      SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
       DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"

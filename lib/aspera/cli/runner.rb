@@ -299,11 +299,18 @@ module Aspera
               lines << "    #{id.to_s.ljust(col_w)}  #{spec.description}"
             end
           else
-            # Leaf node: show description + arguments
-            spec = registry[path]
+            # Leaf node: show description + arguments.
+            # When path points to an entity_execute command (e.g. [:faspio, :bridges, :create]),
+            # the command itself is not registered — only the parent node (:bridges) is.
+            cmd  = path.last
+            spec = registry[path] || registry[path[0..-2]]
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
             display_args = spec&.arguments || []
+            # entity_execute with body_component: implies an implicit `data` (Hash) argument for :create/:modify
+            if (body_schema = spec&.body_schema_for(cmd))
+              display_args += [ArgumentSpec.new(name: :data, type: Hash, schema: body_schema)]
+            end
             # transfer_paths commands use --sources for the file list; default is positional args (@args)
             if spec&.transfer_paths
               file_desc = if spec.transfer_paths == :receive

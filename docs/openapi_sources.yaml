@@ -7,3 +7,7 @@ schemas:
     destination: lib/aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml
   - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Node%20API-4.4.6.yaml
     destination: lib/aspera/schema/IBM Aspera Node API-4.4.6.yaml
+  - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM_Aspera_Shares.yaml
+    destination: lib/aspera/schema/IBM_Aspera_Shares.yaml
+  - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20faspio%20Gateway%20API-1.0.0.yaml
+    destination: lib/aspera/schema/IBM Aspera faspio Gateway API-1.0.0.yaml

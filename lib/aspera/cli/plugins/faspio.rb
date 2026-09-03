@@ -38,7 +38,7 @@ module Aspera
         end
 
         command :health, description: 'Check health of faspio Gateway'
-        entity_command :bridges, api: :build_api, entity: 'bridges'
+        entity_command :bridges, api: :build_api, entity: 'bridges', body_component: Schema::Registry::FASPIO
 
         option :auth,        description: 'OAuth type of authentication', allowed: %i[jwt basic]
         option :client_id,   description: 'OAuth client identifier'

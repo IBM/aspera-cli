@@ -145,6 +145,10 @@ module Aspera
           Aspera.assert_type(context, Context){'context'}
           Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
           @context = context
+          # Switch to the plugin-specific options group so that all options declared
+          # below (DSL-registered and imperative) appear under the plugin section in
+          # --help output, separate from the global options.
+          options.group(self.class.name.split('::').last.downcase) if @context.man_header
           # Auto-declare all options registered via the DSL `option` class method.
           # Walk the ancestor chain so that options declared on parent plugin classes
           # (e.g. Oauth, BasicAuth) are also registered for sub-classes (e.g. Aoc).
@@ -175,7 +179,6 @@ module Aspera
               )
             end
           end
-          add_manual_header if @context.man_header
         end
 
         # Global objects
@@ -202,7 +205,8 @@ module Aspera
         def progress_bar; @context.progress_bar; end
 
         def add_manual_header(_has_options = true)
-          options.rename_current_group(self.class.name.split('::').last.downcase)
+          # No-op: the group is set at the start of initialize.
+          # Kept for compatibility with Config, which calls add_manual_header(false) from Runner.
         end
 
         # Entry point for all DSL-based plugins.
@@ -318,7 +322,7 @@ module Aspera
           return dispatch_from_registry(Array(child.delegates_to), ctx) if child.delegates_to
 
           # entity_execute shorthand
-          return run_entity_execute(child, ctx) if child.entity_execute
+          return run_entity_execute(child, ctx, current_path + [command]) if child.entity_execute
 
           # Both intermediate and leaf: instance_arg + setup are handled by Phase A of the next call
           dispatch_from_registry(current_path + [command], ctx)
@@ -379,7 +383,7 @@ module Aspera
         # @param spec [CommandSpec] the command spec carrying entity_execute: Hash
         # @param ctx [Hash] accumulated context (e.g. api:, lookup block)
         # @return [Object]
-        def run_entity_execute(spec, ctx)
+        def run_entity_execute(spec, ctx, help_path = nil)
           ee_params = spec.entity_execute.dup
           # Resolve api: Symbol at runtime: :@ivar -> instance_variable_get, :method -> send
           if (api_ref = ee_params[:api]).is_a?(Symbol)
@@ -391,8 +395,19 @@ module Aspera
           end
           # Merge context into params (spec wins on key collision)
           merged = ctx.merge(ee_params)
-          # Extract lookup_block before passing to entity_execute (it is not a kwarg of entity_execute)
-          block = merged.delete(:lookup_block)
+          # When no command: was declared in entity_execute:, read it from the CLI
+          merged[:command] ||= options.get_next_command(Operations::ALL)
+          # Intercept --help after the command is known
+          if options.help_requested
+            @help_path = help_path ? help_path + [merged[:command]] : [merged[:command]]
+            raise Cli::HelpRequest, self
+          end
+          # Extract lookup_block before passing to entity_execute (it is not a kwarg of entity_execute).
+          # Wrap it with instance_exec so that instance variables (e.g. @api_node) defined on the
+          # CommandSpec's lookup_block lambda resolve against the current plugin instance at call time,
+          # not against the class scope where the lambda was lexically defined.
+          raw_block = merged.delete(:lookup_block)
+          block = raw_block ? ->(*args) { instance_exec(*args, &raw_block) } : nil
           if block
             entity_execute(**merged, &block)
           else
@@ -468,22 +483,21 @@ module Aspera
         # Operations: Create, Delete, Show, List, Modify
         # @param api [Aspera::Rest] API to use
         # @param entity [String] Sub path in URL to resource relative to base url
-        # @param command [Symbol, nil] Command to execute: :create, :show, :list, :modify, :delete
-        #   When nil, reads the next command token from the CLI (fallback, deprecated).
+        # @param command [Symbol] Command to execute: :create, :show, :list, :modify, :delete
         # @param display_fields [Array, nil] Fields to display by default
         # @param items_key [String, nil] Result is in a sub key of the JSON
         # @param delete_style [String, nil] If set, the delete operation by array in payload
         # @param id_as_arg [Boolean, String] If set, the id is provided as url argument ?<id_as_arg>=<id>
         # @param is_singleton [Boolean] If `true`, entity is the full path to the resource
         # @param list_query [Hash, nil] Query parameters for list operation
-        # @param schema [String, nil] JSON schema name for create/modify validation
-        # @param query_component [String, nil] Registry component key (e.g. 'faspex', 'aoc') used to derive
-        #   the query parameters schema path from the entity name. When set, `--query=help` on list/delete
-        #   commands displays the available filter parameters from the OpenAPI spec.
+        # @param body_component [String, nil] Registry component key used to derive the request body schema:
+        #   :create -> `entity.post`, :modify -> `entity.put`
+        # @param query_component [String, nil] Registry component key used to derive the query parameters schema.
+        #   When set, `--query=help` on list/delete commands displays the available filter parameters.
         # @param input_data [Array, Hash, nil] Pre-resolved data for :create (Array) or :modify (Hash).
-        #   When nil, data is read from the CLI (fallback, deprecated).
+        #   When nil, data is read from the CLI.
         # @param res_id [String, Array, nil] Pre-resolved resource identifier(s) for instance commands.
-        #   When nil, identifier is read from the CLI (fallback, deprecated).
+        #   When nil, identifier is read from the CLI.
         # @param is_bulk [Boolean] Whether operation runs in bulk mode (used when data: is provided)
         # @param bfail [Boolean] When false, errors are captured as status strings instead of re-raised
         # @yieldparam value [String] Value to search for identifier (lookup block)
@@ -492,28 +506,32 @@ module Aspera
         def entity_execute(
           api:,
           entity:,
-          command: nil,
+          command:,
           display_fields: nil,
           items_key: nil,
           delete_style: nil,
           id_as_arg: false,
           is_singleton: false,
           list_query: nil,
-          schema: nil,
+          body_component: nil,
           query_component: nil,
-          create_component: nil,
           input_data: nil,
           res_id: nil,
           is_bulk: false,
           bfail: true,
           &block
         )
-          # Fallback: read command from CLI when not provided (entity_command shorthand without command:)
-          command = options.get_next_command(Operations::ALL) if command.nil?
-          # Derive query schema path from component + entity when component is given
+          Aspera.assert_type(command, Symbol)
+          # Derive query schema path from query_component + entity
           qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
-          # Derive create body schema from component + entity when create_component is given
-          schema ||= Schema::Registry.req_body(create_component, "#{entity}.post") if create_component
+          # Derive request body schema from body_component + entity + HTTP method
+          schema =
+            if body_component
+              case command
+              when :create then Schema::Registry.req_body(body_component, "#{entity}.post")
+              when :modify then Schema::Registry.req_body(body_component, "#{entity}.put")
+              end
+            end
 
           if is_singleton
             one_res_path = entity

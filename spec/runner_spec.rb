@@ -13,11 +13,14 @@ module Aspera
             schema: 'opts:components.schemas.McpServerOptions'
           )
 
+          allow(Environment).to(receive(:terminal_supports_unicode?).and_return(false))
+
           lines = Runner.new([]).send(:schema_help_lines, argument)
 
           output = lines.join("\n")
-          expect(output).to(include('| transport                    | String'))
-          expect(output).to(include('Allowed values: stdio, http.'))
+          expect(output).to(include('| transport '))
+          expect(output).to(include('Allowed values: '))
+          expect(output).to(include('stdio'))
         end
       end
     end

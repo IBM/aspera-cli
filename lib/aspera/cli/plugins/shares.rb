@@ -218,12 +218,18 @@ module Aspera
 
         commands_under(%i[admin share]) do
           Operations::ALL.each do |op|
-            command(op, description: "#{op.capitalize} share(s)", action: lambda do
-              entity_execute(
-                api: @api_shares_admin, entity: 'data/shares', command: op,
-                display_fields: SHARE_DISPLAY_FIELDS
-              ){ |f, v| lookup_share_id(f, v)}
-            end)
+            command(
+              op,
+              description:    "#{op.capitalize} share(s)",
+              entity_execute: {
+                api:              :@api_shares_admin,
+                entity:           'data/shares',
+                command:          op,
+                display_fields:   SHARE_DISPLAY_FIELDS,
+                body_component:   Schema::Registry::SHARES,
+                lookup_block:     ->(f, v){lookup_share_id(f, v)}
+              }
+            )
           end
           command(
             :user_permissions, description: 'Manage user permissions on a share',
@@ -323,7 +329,9 @@ module Aspera
           lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
           display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
           display_fields&.push('directory_user') if entity_type.eql?(:user) && location.eql?(:all)
-          entity_execute(api: @api_shares_admin, entity: path, command: op, display_fields: display_fields, &lookup)
+          # :all excludes :create; :local has a documented POST requestBody for both users and groups
+          body_component = location.eql?(:local) ? Schema::Registry::SHARES : nil
+          entity_execute(api: @api_shares_admin, entity: path, command: op, display_fields: display_fields, body_component: body_component, &lookup)
         end
 
         # Shared handler for USR_GRP_SETTINGS (transfer_settings, app_authorizations, share_permissions)

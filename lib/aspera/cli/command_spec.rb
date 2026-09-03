@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/schema/registry'
+
 module Aspera
   module Cli
     # Declares a positional argument consumed by a command.
@@ -132,6 +134,19 @@ module Aspera
       # @return [Symbol]
       def action_method_name
         self.class.action_method(full_path)
+      end
+
+      # Derive the request body schema path from body_component + entity + command.
+      # Returns nil when body_component is absent or command has no body (:show, :list, :delete).
+      # @param cmd [Symbol] e.g. :create, :modify
+      # @return [String, nil]
+      def body_schema_for(cmd)
+        return nil unless (bc = entity_execute&.[](:body_component))
+        entity_path = entity_execute[:entity].to_s
+        case cmd
+        when :create then Schema::Registry.req_body(bc, "#{entity_path}.post")
+        when :modify then Schema::Registry.req_body(bc, "#{entity_path}.put")
+        end
       end
     end
   end

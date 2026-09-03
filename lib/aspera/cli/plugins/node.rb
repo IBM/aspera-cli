@@ -400,7 +400,20 @@ module Aspera
             setup: :setup_access_key_do
           command :set_bearer_key, description: 'Set bearer key on access key',
             arguments: [{name: :access_key_id}, {name: :bearer_key_pem, type: String}]
-          Operations::ALL.each{ |op| command(op, description: "#{op.capitalize} access key(s)")}
+          Operations::ALL.each do |op|
+            entity_command(
+              op,
+              api:         :@api_node,
+              entity:      'access_keys',
+              description: "#{op.capitalize} access key(s)",
+              command:     op,
+              body_component: Schema::Registry::NODE,
+              lookup_block: ->(field, value) do
+                Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
+                @api_node.read('access_keys/self')['id']
+              end
+            )
+          end
         end
 
         # Commands requiring a single path argument (Gen4)
@@ -735,16 +748,6 @@ module Aspera
         def action_watch_folder_delete(res_id:, **)
           @api_node.delete("v3/watchfolders/#{res_id}")
           Result::Status.new("#{res_id} deleted")
-        end
-
-        # access_keys > CRUD
-        Operations::ALL.each do |op|
-          define_action_method([:access_keys, op]) do
-            entity_execute(api: @api_node, entity: 'access_keys', command: op, create_component: Schema::Registry::NODE) do |field, value|
-              Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
-              @api_node.read('access_keys/self')['id']
-            end
-          end
         end
 
         # access_keys > do - setup: resolve access key and root file id

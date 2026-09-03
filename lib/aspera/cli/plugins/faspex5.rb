@@ -384,19 +384,20 @@ module Aspera
             display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
             extra_commands:        [:reset_password],
             instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}},
-            query_component:       Schema::Registry::FASPEX
+            query_component:       Schema::Registry::FASPEX,
+            body_component:        Schema::Registry::FASPEX
           },
-          alternate_addresses: {entity: 'configuration/alternate_addresses', query_component: Schema::Registry::FASPEX},
+          alternate_addresses: {entity: 'configuration/alternate_addresses', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           contacts:            {query_component: Schema::Registry::FASPEX},
-          distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX},
+          distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           email_notifications: {id_as_arg: 'type', query_component: Schema::Registry::FASPEX},
           file_processing:     {
             commands:     %i[next modify],
-            schema:       ->{Schema::Registry.req_body(Schema::Registry::FASPEX, 'file_processing.put')},
+            body_component: Schema::Registry::FASPEX,
             is_singleton: true
           },
           jobs:                {display_fields: %w[id job_name job_type status], query_component: Schema::Registry::FASPEX},
-          metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX},
+          metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           nodes:               {
             extra_commands:        %i[browse],
             instance_arg_commands: {
@@ -405,19 +406,21 @@ module Aspera
                             {name: :folder_path, type: String, mandatory: false, default: '/'}]
               }
             },
-            query_component:       Schema::Registry::FASPEX
+            query_component:       Schema::Registry::FASPEX,
+            body_component:        Schema::Registry::FASPEX
           },
           oauth_clients:       {
-            display_fields:  ->{Formatter.all_but('public_key')},
-            api:             ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
-            list_query:      {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
-            query_component: Schema::Registry::FASPEX
+            display_fields:   ->{Formatter.all_but('public_key')},
+            api:              ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
+            list_query:       {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
+            query_component:  Schema::Registry::FASPEX,
+            body_component:   Schema::Registry::FASPEX
           },
           registrations:       {query_component: Schema::Registry::FASPEX},
-          saml_configs:        {query_component: Schema::Registry::FASPEX},
-          shared_inboxes:      {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX},
-          webhooks:            {query_component: Schema::Registry::FASPEX},
-          workgroups:          {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX}
+          saml_configs:        {query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
+          shared_inboxes:      {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
+          webhooks:            {query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
+          workgroups:          {res_id_query: {'all': true}, query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX}
         }.freeze
         private_constant :RESOURCE_CONFIG
 
@@ -439,8 +442,8 @@ module Aspera
             display_fields:  resource_config_value(cfg, :display_fields),
             list_query:      resource_config_value(cfg, :list_query),
             is_singleton:    resource_config_value(cfg, :is_singleton) || false,
-            schema:          resource_config_value(cfg, :schema),
-            query_component: resource_config_value(cfg, :query_component)
+            query_component: resource_config_value(cfg, :query_component),
+            body_component:  resource_config_value(cfg, :body_component)
           }.compact
         end
 
@@ -562,11 +565,19 @@ module Aspera
             cmds         = cfg[:commands] || (Operations::ALL + extra)
             ia_cmds      = cfg[:instance_arg_commands] || {}
             is_singleton = cfg[:is_singleton] || false
-            schema_val   = cfg[:schema]
+            entity_path    = cfg[:entity] || res.to_s
+            body_component = cfg[:body_component]
             command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
             commands_under([:admin, res]) do
               cmds.each do |c|
                 ia = ia_cmds[c] || {}
+                schema_val =
+                  if body_component
+                    case c
+                    when :create then Schema::Registry.req_body(body_component, "#{entity_path}.post")
+                    when :modify then Schema::Registry.req_body(body_component, "#{entity_path}.put")
+                    end
+                  end
                 extra_args =
                   if !is_singleton && c.eql?(:create)
                     [{name: :input_data, type: Hash, bulk: true, schema: schema_val}]
@@ -581,7 +592,6 @@ module Aspera
                 # Attach query_schema (full path) to :list/:delete CommandSpec so --help shows the tip.
                 # cfg[:query_component] is always a String constant so direct read is safe here (no Proc).
                 if QUERY_SCHEMA_COMMANDS.include?(c) && cfg[:query_component]
-                  entity_path = cfg[:entity] || res.to_s
                   spec_kwargs = spec_kwargs.merge(
                     query_schema: Schema::Registry.query_params(cfg[:query_component], entity_path)
                   )

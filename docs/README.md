@@ -4898,7 +4898,7 @@ OPTIONS
 ARGS
         Some commands require mandatory arguments, e.g. a path.
 
-OPTIONS: config
+OPTIONS: global
     --interactive=ENUM          Use interactive input of missing params
     --ask-options=ENUM          Ask even optional options
     --display=ENUM              Output only some information
