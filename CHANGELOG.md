@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.27.0.pre
+## 4.27.0
 
-Released: [Place date of release here]
+Released: 2026-09-03
 
 > [!IMPORTANT]
 > This release includes a **major internal rework** of the command dispatch layer.
