@@ -283,6 +283,14 @@ module Aspera
               end
             end
           end
+          if cmds.none?
+            leaf_spec = registry[path]
+            leaf_spec&.arguments&.each do |arg_spec|
+              argument = arg_spec.mandatory ? "<#{arg_spec.name}>" : "[#{arg_spec.name}]"
+              argument += '...' if arg_spec.multiple
+              label += " #{argument}"
+            end
+          end
           if cmds.any?
             # Intermediate node: list subcommands
             lines << "\nCOMMANDS: #{label}"
@@ -298,9 +306,11 @@ module Aspera
             display_args = spec&.arguments || []
             # transfer_paths commands use --sources for the file list; default is positional args (@args)
             if spec&.transfer_paths
-              file_desc = spec.transfer_paths == :receive \
-                ? "Remote path(s) to download (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --to-folder)" \
-                : "Source file(s) to upload (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
+              file_desc = if spec.transfer_paths == :receive
+                "Remote path(s) to download (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --to-folder)"
+              else
+                "Source file(s) to upload (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
+              end
               display_args += [ArgumentSpec.new(name: :source_file, description: file_desc, mandatory: false, multiple: true)]
             end
             if display_args.any?
@@ -315,14 +325,29 @@ module Aspera
                 when nil         then ''
                 else arg.type.name
                 end
-                hint  = arg.type.eql?(Hash) && arg.schema ? "  (use 'help' as value to see schema)" : ''
+                hint  = Array(arg.type).include?(Hash) && arg.schema ? '  (schema shown below)' : ''
                 lines << "    #{flag.ljust(col_w)}  #{arg.description || types}#{hint}"
+                lines.concat(schema_help_lines(arg)) if Array(arg.type).include?(Hash) && arg.schema
               end
             end
             lines << "\nTIP: use --query=help to list available query parameters" if spec&.query_schema || spec&.entity_execute&.[](:query_schema)
           end
         end
         lines.join("\n")
+      end
+
+      # Render the structure of a Hash argument's JSON schema in command help.
+      # @param arg [ArgumentSpec]
+      # @return [Array<String>]
+      def schema_help_lines(arg)
+        builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(arg.schema)).build
+        rows = builder.rows.reject{ |row| row['type'].eql?('&nbsp;')}.map do |row|
+          builder.columns.map{ |column| row[column].to_s}
+        end
+        style = {}
+        style[:border] = :unicode_round if Environment.terminal_supports_unicode?
+        table = Terminal::Table.new(headings: builder.columns, rows: rows, style: style).to_s
+        ["\n    SCHEMA: #{arg.name}", table.lines.map{ |line| "    #{line.chomp}"}.join("\n")]
       end
 
       # Initialize agents and options

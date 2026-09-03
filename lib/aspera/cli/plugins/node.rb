@@ -415,7 +415,7 @@ module Aspera
             kwargs[:arguments] = [{name: :source_path, type: String}, {name: :new_name, type: String}] if cmd.eql?(:rename)
             kwargs[:arguments] = [{name: :paths, type: String, bulk: true}] if cmd.eql?(:delete)
             kwargs[:arguments] = [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}] if cmd.eql?(:mkfile)
-            kwargs[:arguments] = [{name: :path, type: String}, {name: :update_value, type: Hash}] if cmd.eql?(:modify)
+            kwargs[:arguments] = [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}] if cmd.eql?(:modify)
             kwargs[:arguments] = [{name: :path, type: String}] if COMMANDS_GEN4_SINGLE_PATH.include?(cmd)
             kwargs[:transfer_paths] = :send     if cmd.eql?(:upload)
             kwargs[:transfer_paths] = :receive  if cmd.eql?(:download)
@@ -436,9 +436,9 @@ module Aspera
             arguments: [{name: :perm_id, type: :identifier}],
             action: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
           command :create, description: 'Create a permission',
-            arguments: [{name: :data, type: Hash}]
+            arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
           command :modify, description: 'Modify a permission',
-            arguments: [{name: :perm_id, type: :identifier}, {name: :data, type: Hash}]
+            arguments: [{name: :perm_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
           command :delete, description: 'Delete permission(s)',
             arguments: [{name: :perm_id, bulk: true}]
         end
@@ -495,13 +495,13 @@ module Aspera
         commands_under(:stream) do
           command :list,   description: 'List streams', action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
           command :create, description: 'Create a stream',
-            arguments: [{name: :data, type: Hash}],
+            arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
             action: ->(data:, **){Result::SingleObject.new(@api_node.create('streams', data))}
           command :show,   description: 'Show a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify, description: 'Modify a stream',
-            arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash}],
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.transferPutRequest'}],
             action: ->(data:, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
           command :cancel, description: 'Cancel a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
@@ -517,7 +517,7 @@ module Aspera
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify,            description: 'Modify a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}, {name: :update_value, type: Hash}]
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :update_value, type: Hash, schema: 'node:components.schemas.transferPutRequest'}]
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
         end
