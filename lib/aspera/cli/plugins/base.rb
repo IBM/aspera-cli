@@ -501,6 +501,7 @@ module Aspera
           list_query: nil,
           schema: nil,
           query_component: nil,
+          create_component: nil,
           input_data: nil,
           res_id: nil,
           is_bulk: false,
@@ -511,6 +512,8 @@ module Aspera
           command = options.get_next_command(Operations::ALL) if command.nil?
           # Derive query schema path from component + entity when component is given
           qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
+          # Derive create body schema from component + entity when create_component is given
+          schema ||= Schema::Registry.req_body(create_component, "#{entity}.post") if create_component
 
           if is_singleton
             one_res_path = entity

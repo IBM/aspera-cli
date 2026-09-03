@@ -98,6 +98,15 @@ module Aspera
           end
           return
         end
+        if @current.key?('allOf')
+          # Merge all branches: each branch contributes its properties (no variants)
+          @current['allOf'].each do |branch_node|
+            ref = branch_node['$ref']
+            branch_reader = ref ? resolve_ref(ref) : Reader.new(@root, branch_node)
+            branch_reader.each_property(prefix, on_variant: on_variant, &block)
+          end
+          return
+        end
         properties = dig('properties')
         properties.current.each_key do |name|
           property_full_name = "#{prefix}#{name}"
@@ -117,6 +126,8 @@ module Aspera
               array_item_schema.each_property("#{property_full_name}[].", on_variant: on_variant, &block) if array_item_schema.current['properties']
             end
           end
+          # allOf without explicit type: object — recurse to merge all branches
+          property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['allOf']
         end
       end
     end

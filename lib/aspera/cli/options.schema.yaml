@@ -500,3 +500,102 @@ components:
             If `true`, creates a `<ID>.info.json` sidecar file inside the folder
             containing package metadata.
           default: false
+    NodeBearerTokenOptions:
+      type: object
+      description: >-
+        JWT payload used to generate an Aspera Node bearer token (`node bearer_token`).
+        `user_id` is the only mandatory field.
+        The CLI strips the `_validity` and `_scope` convenience keys before signing;
+        remaining fields are embedded verbatim in the token.
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          description: Identifier of the user for whom the token is generated.
+          example: jdoe
+        _validity:
+          type: integer
+          description: Token lifetime in seconds (convenience key, removed before signing).
+          default: 86400
+        _scope:
+          type: string
+          description: >-
+            Scope shorthand used to build the `scope` field (convenience key, removed before signing).
+            Maps to `node.<access_key>:<scope>`.
+          enum: [user, admin]
+          default: user
+        scope:
+          type: string
+          description: >-
+            Full scope string. Computed automatically from `_scope` when absent.
+            Example: `node::ik-00000000-0000-0000-0000-000000000000:user`.
+        auth_type:
+          type: string
+          description: Authentication type embedded in the token.
+          default: access_key
+        expires_at:
+          type: string
+          description: >-
+            Token expiry timestamp in ISO 8601 format (`YYYY-MM-DDTHH:MM:SSZ`).
+            Computed automatically from `_validity` when absent.
+          example: "2030-01-01T00:00:00Z"
+    NodeSimulatorOptions:
+      type: object
+      description: >-
+        Configuration for the embedded Node API simulator (`node simulator`).
+        The simulator starts a local WEBrick server that answers `/ops/transfers`,
+        `/ops/transfers/{id}`, `/files/browse`, and `/info` — sufficient to test
+        CLI commands against a live Node API without a real HSTS instance.
+      properties:
+        url:
+          type: string
+          description: >-
+            Address and port the simulator listens on.
+            Use `https://` with `cert`/`key` for TLS.
+          default: http://localhost:8080
+        cert:
+          type: string
+          description: >-
+            Path to the TLS certificate file.
+            Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
+          example: /path/to/cert.pem
+        key:
+          type: string
+          description: >-
+            Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
+          example: /path/to/key.pem
+        chain:
+          type: string
+          description: Path to the PEM certificate chain file (appended as extra chain certificates).
+          example: /path/to/chain.pem
+    NodeTelemetryOptions:
+      type: object
+      description: >-
+        Configuration for the telemetry reporter (`node telemetry`).
+        The command periodically queries `ops/transfers?active_only=true` and sends
+        an OpenTelemetry gauge metric to an Instana backend.
+      required:
+        - url
+        - key
+      properties:
+        url:
+          type: string
+          description: Base URL of the Instana backend (without `/v1`).
+          example: https://my-instana.example.com
+        key:
+          type: string
+          description: Instana API key sent in the `x-instana-key` header.
+          example: my-instana-api-key
+        interval:
+          type: number
+          format: float
+          description: >-
+            Polling interval in seconds. Use `0` for a single-shot run (no loop).
+          default: 10
+        hostname:
+          type: string
+          description: >-
+            Value sent in the `x-instana-host` header.
+            Defaults to the local machine's hostname.
+          example: hsts-prod-01

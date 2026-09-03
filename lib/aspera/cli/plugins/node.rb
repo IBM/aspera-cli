@@ -569,11 +569,11 @@ module Aspera
         command :asperabrowser, description: 'Open Aspera browser'
         command :basic_token,   description: 'Generate basic auth token', action: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
         command :bearer_token, description: 'Generate bearer token',
-          arguments: [{name: :private_key_pem, type: String}, {name: :user_group_id, type: Hash}]
+          arguments: [{name: :private_key_pem, type: String}, {name: :user_group_id, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
         command :simulator,     description: 'Start node simulator',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeSimulatorOptions'}]
         command :telemetry,     description: 'Report telemetry to external system',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeTelemetryOptions'}]
 
         # --- Handler methods (Gen3) ---
 
@@ -740,7 +740,7 @@ module Aspera
         # access_keys > CRUD
         Operations::ALL.each do |op|
           define_action_method([:access_keys, op]) do
-            entity_execute(api: @api_node, entity: 'access_keys', command: op) do |field, value|
+            entity_execute(api: @api_node, entity: 'access_keys', command: op, create_component: Schema::Registry::NODE) do |field, value|
               Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
               @api_node.read('access_keys/self')['id']
             end
