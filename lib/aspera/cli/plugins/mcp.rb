@@ -118,7 +118,7 @@ module Aspera
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
-          arguments:   [{name: :mcp_options, type: [Hash], mandatory: false}]
+          arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
 
         def action_server(mcp_options: nil, **)
           require 'aspera/cli/mcp_tool'

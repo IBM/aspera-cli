@@ -29,6 +29,69 @@ components:
           type: boolean
           description: Show passwords and secrets in logs.
           default: false
+    McpServerOptions:
+      type: object
+      description: MCP server configuration for the `mcp server` command.
+      properties:
+        transport:
+          type: string
+          description: Transport used by the MCP server.
+          enum: [stdio, http]
+          default: stdio
+        extra_args:
+          type: array
+          description: Flags prepended to every `ascli` command.
+          items:
+            type: string
+        max_text_bytes:
+          type: integer
+          description: Maximum number of bytes for JSON text content in list results.
+          default: 100000
+        max_line_bytes:
+          type: integer
+          description: Maximum JSON frame size for stdio transport.
+          default: 4194304
+        port:
+          type: integer
+          description: TCP port for HTTP transport.
+          default: 3000
+        bind:
+          type: string
+          description: Bind address for HTTP transport.
+          default: 127.0.0.1
+        stateless:
+          type: boolean
+          description: Run HTTP transport in stateless mode.
+          default: false
+        allowed_origins:
+          type: array
+          description: Allowed HTTP origin values.
+          items:
+            type: string
+        allowed_hosts:
+          type: array
+          description: Allowed HTTP host values.
+          items:
+            type: string
+        session_idle_timeout:
+          type: integer
+          description: HTTP session idle timeout in seconds.
+        max_sessions:
+          type: integer
+          description: Maximum number of HTTP sessions.
+        instructions:
+          type: string
+          description: Instructions shown to the AI client.
+        description:
+          type: string
+          description: Description advertised by the MCP server.
+        protocol_version:
+          type: string
+          description: MCP protocol version, for example `2024-11-05`.
+        validate_tool_call_arguments:
+          type: boolean
+          description: Validate MCP tool call arguments.
+          default: true
     DirectAgentOptions:
       type: object
       description: Parameters for the `ascp` transfer agent.
