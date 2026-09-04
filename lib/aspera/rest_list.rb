@@ -60,7 +60,8 @@ module Aspera
       Aspera.assert_type(entity, String)
       Aspera.assert_type(items_key, String)
       Aspera.assert_type(query, Hash)
-      Log.log.debug{"list_entities t=#{entity} k=#{items_key} q=#{query}"}
+      Log.log.debug{"list_entities t=#{entity} k=#{items_key}"}
+      Log.dump(:query, query)
       result = []
       offset = 0
       max_items = query.delete(MAX_ITEMS)

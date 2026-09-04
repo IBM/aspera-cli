@@ -27,7 +27,7 @@ module Aspera
     # :reek:UncommunicativeMethodName
     def do_POST(request, response)
       Log.log.debug{"request=#{request.path}"}
-      Log.log.debug{"query=#{request.query}"}
+      Log.dump(:query, request.query)
       begin
         # Only accept requests on the root
         if !request.path.start_with?(@parameters[:root])
