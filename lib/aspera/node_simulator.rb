@@ -164,19 +164,25 @@ module Aspera
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
     PATH_BROWSE = '/files/browse'
-    # @param app_api [Api::AoC]
-    # @param app_context [String]
+    # @param credentials [Hash]
+    # @param simulator   [NodeSimulator]
     def initialize(server, credentials, simulator)
       super(server)
       @credentials = credentials
       @simulator = simulator
+      # Resolve once at startup; default to current working directory
+      @browse_root = File.realpath(credentials[:browse_root] || Dir.pwd)
     end
 
     require 'json'
     require 'time'
 
     def folder_to_structure(folder_path)
-      Aspera.assert(Dir.exist?(folder_path)){"Path does not exist or is not a directory: #{folder_path}"}
+      # Resolve and confine to browse_root (prevents path traversal via client-supplied path)
+      resolved = File.realpath(folder_path)
+      Aspera.assert(resolved.start_with?("#{@browse_root}/") || resolved.eql?(@browse_root)){'Browse path traversal attempt detected'}
+      Aspera.assert(Dir.exist?(resolved)){"Path does not exist or is not a directory: #{resolved}"}
+      folder_path = resolved
 
       # Build self structure
       folder_stat = File.stat(folder_path)
@@ -242,7 +248,7 @@ module Aspera
       when PATH_BROWSE
         req = JSON.parse(request.body)
         # req['count']
-        set_json_response(request, response, folder_to_structure(req['path']))
+        set_json_response(request, response, folder_to_structure(req['path'] || @browse_root))
       else
         set_json_response(request, response, [{error: 'Bad request'}], code: 400)
       end

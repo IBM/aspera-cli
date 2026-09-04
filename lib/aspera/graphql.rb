@@ -28,7 +28,9 @@ module Aspera
       private
 
       def load_query(name)
-        File.read(File.join(QUERIES_FOLDER, "#{name}.graphql"))
+        candidate = File.realpath(File.join(QUERIES_FOLDER, "#{name}.graphql"))
+        Aspera.assert(candidate.start_with?("#{QUERIES_FOLDER}/")){"Invalid GraphQL query name: #{name}"}
+        File.read(candidate)
       end
     end
   end

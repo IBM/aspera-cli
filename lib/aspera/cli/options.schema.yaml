@@ -569,6 +569,13 @@ components:
           type: string
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
           example: /path/to/chain.pem
+        browse_root:
+          type: string
+          description: >-
+            Root directory the simulator is allowed to expose via `/files/browse`.
+            Requests for paths outside this directory are rejected.
+            Defaults to the current working directory.
+          example: /data/aspera
     NodeTelemetryOptions:
       type: object
       description: >-
