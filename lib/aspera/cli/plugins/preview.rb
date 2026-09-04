@@ -204,7 +204,11 @@ module Aspera
         # @param entry [Hash] file entry containing at least the relative path
         # @return [String] local directory where previews for this entry are stored
         def get_infos_local(gen_infos, entry)
-          local_original_filepath = File.join(@local_storage_root, entry['path'])
+          # Resolve to a real path and ensure it stays within the storage root (prevents path traversal via API response)
+          candidate = File.expand_path(File.join(@local_storage_root, entry['path']))
+          resolved_root = File.realpath(@local_storage_root)
+          Aspera.assert(candidate.start_with?("#{resolved_root}/")){'Preview entry path traversal attempt detected'}
+          local_original_filepath = candidate
           original_mtime = File.mtime(local_original_filepath)
           # Output directory for previews generated from the local source file.
           local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name(entry))

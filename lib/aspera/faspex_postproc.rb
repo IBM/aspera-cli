@@ -46,6 +46,11 @@ module Aspera
         script_file = request.path[@parameters[:root].size..]
         Log.log.debug{"script file=#{script_file}"}
         script_path = File.join(@parameters[:script_folder], script_file)
+        # Resolve the real path and ensure it stays within script_folder (prevents path traversal)
+        resolved_script_folder = File.realpath(@parameters[:script_folder])
+        resolved_script_path = File.realpath(script_path)
+        Aspera.assert(resolved_script_path.start_with?("#{resolved_script_folder}/")){'Script path traversal attempt detected'}
+        script_path = resolved_script_path
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
         Log.dump(:webhook_parameters, webhook_parameters)

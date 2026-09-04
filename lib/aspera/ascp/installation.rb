@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore protobuf ckpt
+require 'aspera/yaml'
 require 'aspera/environment'
 require 'aspera/data_repository'
 require 'aspera/log'
@@ -48,7 +49,7 @@ module Aspera
         transferd_locations = UriReader.read(location_url)
         Log.log.debug{"Retrieving SDK locations from #{location_url}"}
         begin
-          return YAML.load(transferd_locations)
+          return Yaml.safe_load(transferd_locations)
         rescue Psych::SyntaxError
           raise "Error when parsing yaml data from: #{location_url}"
         end

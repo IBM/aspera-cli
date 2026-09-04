@@ -433,7 +433,11 @@ module Aspera
             # override user's path to path in header
             if !response['Content-Disposition'].nil?
               disposition = self.class.parse_header(response['Content-Disposition'])
-              target_file = File.join(File.dirname(target_file), disposition[:parameters][:filename]) if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
+              if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
+                # Use only the basename to prevent path traversal via a server-controlled Content-Disposition header
+                safe_filename = File.basename(disposition[:parameters][:filename])
+                target_file = File.join(File.dirname(target_file), safe_filename) unless safe_filename.empty?
+              end
             end
             # download with temp filename
             target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
