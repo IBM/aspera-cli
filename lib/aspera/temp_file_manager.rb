@@ -3,6 +3,7 @@
 require 'singleton'
 require 'fileutils'
 require 'etc'
+require 'tempfile'
 
 module Aspera
   # create a temp file name for a given folder
@@ -51,11 +52,16 @@ module Aspera
       @created_files = []
     end
 
-    # Ensure that provided folder exists, or create it, generate a unique filename
+    # Ensure that provided folder exists, or create it, atomically create and reserve a unique file.
+    # The file is created immediately (O_EXCL) to prevent TOCTOU race conditions.
     # @return [String] path to that unique file
     def new_file_path_in_folder(temp_folder, prefix: nil, suffix: nil)
       FileUtils.mkdir_p(temp_folder)
-      new_file = File.join(temp_folder, [prefix, SecureRandom.uuid, suffix].compact.join('-'))
+      basename = [prefix || 'aspera', SecureRandom.uuid].join('-')
+      # Tempfile.new creates the file atomically with O_EXCL; close keeps it on disk
+      tmp = Tempfile.new([basename, suffix ? "-#{suffix}" : ''], temp_folder)
+      tmp.close
+      new_file = tmp.path
       @created_files.push(new_file)
       new_file
     end
