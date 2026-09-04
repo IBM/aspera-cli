@@ -70,7 +70,7 @@ module Aspera
         begin
           Aspera.assert(!request.body.nil?, 'payload missing')
           faspex_pkg_parameters = JSON.parse(request.body)
-          Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
+          Log.dump(:faspex_pkg_parameters, faspex_pkg_parameters)
           # compare string, as class is not yet known here
           faspex_package_create_result =
             case @app_api.class.name
@@ -80,7 +80,7 @@ module Aspera
               faspex4_send_to_faspex5(faspex_pkg_parameters)
             else Aspera.error_unexpected_value(@app_api.class.name)
             end
-          Log.log.debug{"faspex_package_create_result=#{faspex_package_create_result}"}
+          Log.dump(:faspex_package_create_result, faspex_package_create_result)
           response.status = 200
           response.content_type = Mime::JSON
           response.body = JSON.generate(faspex_package_create_result)

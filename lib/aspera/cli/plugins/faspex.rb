@@ -514,7 +514,7 @@ module Aspera
         def setup_source_node(source_info:, **)
           Log.dump(:source_info, source_info)
           node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE], context: 'faspex node')
-          Log.log.debug{"node=#{node_config}"}
+          Log.dump(:node, node_config)
           Aspera.assert_type(node_config, Hash, type: Cli::Error){source_info[KEY_NODE]}
           api_node = Rest.new(
             base_url: node_config['url'],

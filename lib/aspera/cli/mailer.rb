@@ -58,7 +58,7 @@ module Aspera
         %i[server port domain].each do |n|
           Aspera.assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
         end
-        Log.log.debug{"smtp=#{smtp.reject{ |k, _| k == :password}}"}
+        Log.dump(:smtp, smtp.reject{ |k, _| k == :password})
         return smtp
       end
 

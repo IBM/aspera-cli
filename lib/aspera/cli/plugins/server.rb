@@ -139,7 +139,7 @@ module Aspera
           if !ssh_key_list.nil?
             Aspera.assert_array_all(ssh_key_list, String){'ssh_keys'}
             ssh_key_list.map!{ |p| File.expand_path(p)}
-            Log.log.debug{"SSH keys=#{ssh_key_list}"}
+            Log.dump(:ssh_keys, ssh_key_list)
             if !ssh_key_list.empty?
               @ssh_opts[:keys] = ssh_key_list
               # PEM as per RFC 7468

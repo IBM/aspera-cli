@@ -224,7 +224,7 @@ module Aspera
             list_to_paths(sources)
           else Aspera.error_unexpected_value(sources){'sources'}
           end
-        Log.log.debug{"paths=#{@transfer_paths}"}
+        Log.dump(:paths, @transfer_paths)
         return @transfer_paths
       end
 

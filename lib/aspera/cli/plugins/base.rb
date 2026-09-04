@@ -611,7 +611,7 @@ module Aspera
         def query_read_delete(default: nil, schema: nil)
           # Dup default, as it could be frozen
           query = options.get_option(:query, schema: schema) || default&.dup
-          Log.log.debug{"query_read_delete=#{query}".bg_red}
+          Log.dump(:query_read_delete, query)
           begin
             # Check it is suitable
             URI.encode_www_form(query) unless query.nil?

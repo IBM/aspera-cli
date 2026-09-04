@@ -117,7 +117,7 @@ module Aspera
       def action_preset_update(name:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         unprocessed_options = options.unprocessed_options_with_value
-        Log.log.debug{"opts=#{unprocessed_options}"}
+        Log.dump(:opts, unprocessed_options)
         cp = presets.config_presets
         cp[name] ||= {}
         cp[name].merge!(unprocessed_options)

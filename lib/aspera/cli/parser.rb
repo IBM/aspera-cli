@@ -348,7 +348,7 @@ module Aspera
         ENV.each do |k, v|
           @option_pairs_env[k.delete_prefix(env_prefix).downcase.to_sym] = v if k.start_with?(env_prefix)
         end
-        Log.log.debug{"env=#{@option_pairs_env}".red}
+        Log.dump(:env, @option_pairs_env)
         # command line values starting with at least one '-'
         @unprocessed_cmd_line_options = []
         # command line values *not* starting with '-'
