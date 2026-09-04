@@ -24,7 +24,7 @@ module Aspera
         uri = URI.parse(@redirect_uri)
         Aspera.assert_values(uri.scheme, %w[http https]){'redirect_uri scheme must be http or https'}
         Aspera.assert(!uri.port.nil?, 'redirect_uri must have a port')
-        # TODO: we could check that host is localhost or local address, as we are going to listen locally
+        Aspera.assert(%w[127.0.0.1 ::1 localhost].include?(uri.host)){'redirect_uri host must be localhost or loopback address'}
       end
 
       def create_token

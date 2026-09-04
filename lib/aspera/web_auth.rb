@@ -2,6 +2,7 @@
 
 require 'aspera/web_server_simple'
 require 'aspera/assert'
+require 'cgi'
 
 module Aspera
   # servlet called on callback: it records the callback request
@@ -91,7 +92,7 @@ module Aspera
         <body>
         <h1>Thank You!</h1>
         <p>You can close this window.</p>
-        <p>#{additional_info}</p>
+        <p>#{additional_info.nil? ? '' : CGI.escapeHTML(additional_info.to_s)}</p>
 
         <!-- JavaScript to generate IBM logos -->
         <script>
