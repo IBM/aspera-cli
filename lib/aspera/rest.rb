@@ -498,7 +498,7 @@ module Aspera
             # regenerate a brand new token
             req['Authorization'] = oauth.authorization(cache: false)
           end
-          Log.log.debug{"using new token=#{headers['Authorization']}"}
+          Log.log.debug('using new token')
           do_retry ||= true
         end
         if do_retry && (error_tries -= 1).positive?

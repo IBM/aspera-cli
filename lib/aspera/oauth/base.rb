@@ -99,7 +99,6 @@ module Aspera
             # lets try the existing refresh token
             # NOTE: AoC admin token has no refresh, and lives by default 1800secs
             if !refresh_token.nil?
-              Log.log.debug{"refresh token=[#{refresh_token}]"}
               begin
                 http = create_token_call(base_params(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
                 # Save only if success
