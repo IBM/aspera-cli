@@ -407,7 +407,7 @@ module Aspera
           # CommandSpec's lookup_block lambda resolve against the current plugin instance at call time,
           # not against the class scope where the lambda was lexically defined.
           raw_block = merged.delete(:lookup_block)
-          block = raw_block ? ->(*args) { instance_exec(*args, &raw_block) } : nil
+          block = raw_block ? ->(*args){instance_exec(*args, &raw_block)} : nil
           if block
             entity_execute(**merged, &block)
           else

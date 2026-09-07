@@ -78,6 +78,20 @@ module Aspera
       new_file_path_in_folder(@global_temp, prefix: prefix, suffix: suffix)
     end
 
+    # Generate a unique directory path inside the global temp folder (does NOT create it).
+    # Unlike new_file_path_global, the caller is expected to use the path as a directory.
+    # @return [String] path to a unique (not yet existing) directory
+    def new_dir_path_global(prefix = nil)
+      username =
+        begin
+          Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
+        rescue StandardError
+          'unknown_user'
+        end
+      dir_name = [prefix, username, SecureRandom.uuid].compact.join('-')
+      File.join(@global_temp, dir_name)
+    end
+
     # Garbage collect undeleted files
     def cleanup_expired(temp_folder)
       Dir.entries(temp_folder).each do |name|

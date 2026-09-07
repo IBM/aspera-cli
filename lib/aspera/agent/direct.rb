@@ -31,7 +31,7 @@ module Aspera
           return {'status' => 'unknown', 'note' => 'direct agent not available (different process?)'} if agent.nil?
           sessions = agent.sessions_by_job(transfer_id)
           return {'status' => 'unknown', 'note' => "no sessions found for job #{transfer_id}"} if sessions.empty?
-          errors  = sessions.map{ |s| s[:error]}.compact
+          errors  = sessions.filter_map{ |s| s[:error]}
           running = sessions.any?{ |s| s[:thread]&.alive?}
           if errors.any?
             {'status' => 'failed', 'error' => errors.first.message}

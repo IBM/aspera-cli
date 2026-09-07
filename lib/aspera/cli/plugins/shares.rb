@@ -222,12 +222,12 @@ module Aspera
               op,
               description:    "#{op.capitalize} share(s)",
               entity_execute: {
-                api:              :@api_shares_admin,
-                entity:           'data/shares',
-                command:          op,
-                display_fields:   SHARE_DISPLAY_FIELDS,
-                body_component:   Schema::Registry::SHARES,
-                lookup_block:     ->(f, v){lookup_share_id(f, v)}
+                api:            :@api_shares_admin,
+                entity:         'data/shares',
+                command:        op,
+                display_fields: SHARE_DISPLAY_FIELDS,
+                body_component: Schema::Registry::SHARES,
+                lookup_block:   ->(f, v){lookup_share_id(f, v)}
               }
             )
           end

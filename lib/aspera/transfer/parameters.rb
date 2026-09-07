@@ -36,7 +36,7 @@ module Aspera
         # because of garbage collection takes any file there
         # this could be refined, as, for example, on macos, temp folder is already user specific
         def file_list_folder
-          @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
+          @file_list_folder ||= TempFileManager.instance.new_dir_path_global('asession_filelists')
         end
 
         # Check whether a file list option is already present in the `ascp` argument list

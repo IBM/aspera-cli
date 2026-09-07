@@ -278,7 +278,7 @@ module Aspera
         end
 
         it 'returns completed when all threads have finished without error' do
-          dead_thread = Thread.new{}
+          dead_thread = Thread.new {}
           dead_thread.join
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-456').and_return([{thread: dead_thread, error: nil}]))
@@ -287,7 +287,7 @@ module Aspera
         end
 
         it 'returns failed when a session has an error' do
-          dead_thread = Thread.new{}
+          dead_thread = Thread.new {}
           dead_thread.join
           err = RuntimeError.new('ascp failed')
           agent = double('Agent::Direct instance')
@@ -325,7 +325,7 @@ module Aspera
         end
 
         it 'returns completed when thread finished without error' do
-          dead_thread = Thread.new{}
+          dead_thread = Thread.new {}
           dead_thread.join
           agent = double('Agent::Httpgw instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(dead_thread))
@@ -335,7 +335,7 @@ module Aspera
         end
 
         it 'returns failed when thread finished with error' do
-          dead_thread = Thread.new{}
+          dead_thread = Thread.new {}
           dead_thread.join
           err = RuntimeError.new('ws error')
           agent = double('Agent::Httpgw instance')

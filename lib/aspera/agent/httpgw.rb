@@ -47,7 +47,7 @@ module Aspera
           synchronous:       synchronous,
           notify_cb:         ->(*pa, **ka){notify_progress(*pa, **ka)}
         )
-        @last_job_id    = nil
+        @last_job_id = nil
         @transfer_thread = nil
         @transfer_error  = nil
       end
@@ -62,7 +62,7 @@ module Aspera
         Aspera.assert_type(transfer_spec['token'], String){'only token based transfer is supported in GW'}
         Log.dump(:user_spec, transfer_spec)
         transfer_spec['authentication'] ||= 'token'
-        @last_job_id    = SecureRandom.uuid
+        @last_job_id     = SecureRandom.uuid
         @transfer_error  = nil
         @transfer_thread = Thread.new{run_transfer(transfer_spec)}
         @last_job_id
@@ -76,9 +76,7 @@ module Aspera
       end
 
       # @return [String, nil] job_id of the last submitted transfer
-      def last_job_id
-        @last_job_id
-      end
+      attr_reader :last_job_id
 
       private
 

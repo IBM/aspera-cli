@@ -141,7 +141,7 @@ module Aspera
       # @param cmd [Symbol] e.g. :create, :modify
       # @return [String, nil]
       def body_schema_for(cmd)
-        return nil unless (bc = entity_execute&.[](:body_component))
+        return unless (bc = entity_execute&.[](:body_component))
         entity_path = entity_execute[:entity].to_s
         case cmd
         when :create then Schema::Registry.req_body(bc, "#{entity_path}.post")

@@ -82,7 +82,7 @@ module Aspera
           # Manual table
           item_type =
             if node['type'].is_a?(Array)
-              node['type'].map{ |t| JSON_TYPE_TO_DOC.fetch(t, t) }.join(', ')
+              node['type'].map{ |t| JSON_TYPE_TO_DOC.fetch(t, t)}.join(', ')
             elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
               "#{JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]"
             else

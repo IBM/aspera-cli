@@ -12,12 +12,13 @@ module Aspera
       IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
       TOKEN_FIELD = 'delegated_refresh_token'
       FASP_INFO_KEYS = %w[ATSEndpoint AccessKey].freeze
+      SERVICE_CREDS_PARAMS = %w[apikey resource_instance_id endpoints]
       class << self
         def parameters_from_svc_credentials(service_credentials, bucket_region)
           # check necessary contents
           Aspera.assert_type(service_credentials, Hash){'service_credentials'}
-          Log.dump(:service_credentials, service_credentials.reject{ |k, _| %w[apikey].include?(k)})
-          %w[apikey resource_instance_id endpoints].each do |field|
+          Log.dump(:service_credentials, service_credentials)
+          SERVICE_CREDS_PARAMS.each do |field|
             Aspera.assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
           end
           # read endpoints from service provided in service credentials

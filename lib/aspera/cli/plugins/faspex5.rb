@@ -392,9 +392,9 @@ module Aspera
           distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           email_notifications: {id_as_arg: 'type', query_component: Schema::Registry::FASPEX},
           file_processing:     {
-            commands:     %i[next modify],
+            commands:       %i[next modify],
             body_component: Schema::Registry::FASPEX,
-            is_singleton: true
+            is_singleton:   true
           },
           jobs:                {display_fields: %w[id job_name job_type status], query_component: Schema::Registry::FASPEX},
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
@@ -410,11 +410,11 @@ module Aspera
             body_component:        Schema::Registry::FASPEX
           },
           oauth_clients:       {
-            display_fields:   ->{Formatter.all_but('public_key')},
-            api:              ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
-            list_query:       {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
-            query_component:  Schema::Registry::FASPEX,
-            body_component:   Schema::Registry::FASPEX
+            display_fields:  ->{Formatter.all_but('public_key')},
+            api:             ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
+            list_query:      {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
+            query_component: Schema::Registry::FASPEX,
+            body_component:  Schema::Registry::FASPEX
           },
           registrations:       {query_component: Schema::Registry::FASPEX},
           saml_configs:        {query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
