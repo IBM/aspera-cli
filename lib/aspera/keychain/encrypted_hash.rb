@@ -6,7 +6,6 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/keychain/base'
 require 'aspera/yaml'
-require 'symmetric_encryption/core'
 require 'openssl'
 require 'yaml'
 
@@ -34,6 +33,7 @@ module Aspera
         @cipher_name = DEFAULT_CIPHER_NAME
         @kdf_params = nil
         vault_encrypted_data = nil
+        Log.dump(:vault_file, File.expand_path(@path))
         if File.exist?(@path)
           vault_file = File.read(@path)
           if vault_file.start_with?('---')
@@ -102,6 +102,36 @@ module Aspera
 
       private
 
+      # Minimal cipher wrapper using OpenSSL, compatible with the SymmetricEncryption
+      # binary format: a 6-byte header "@EnC\x00\x00" followed by AES ciphertext
+      # produced with a zero IV (encoding: :none, no random IV in header).
+      class OsslCipher
+        HEADER = "@EnC\x00\x00".b.freeze
+        HEADER_SIZE = HEADER.bytesize
+
+        def initialize(cipher_name, key)
+          @cipher_name = cipher_name
+          @key         = key
+        end
+
+        def encrypt(plaintext)
+          c = OpenSSL::Cipher.new(@cipher_name)
+          c.encrypt
+          c.key = @key
+          c.iv  = "\x00".b * c.iv_len
+          HEADER + c.update(plaintext.b) + c.final
+        end
+
+        def decrypt(ciphertext)
+          body = ciphertext.b[HEADER_SIZE..]
+          c = OpenSSL::Cipher.new(@cipher_name)
+          c.decrypt
+          c.key = @key
+          c.iv  = "\x00".b * c.iv_len
+          (c.update(body) + c.final).force_encoding(Encoding::UTF_8)
+        end
+      end
+
       # Derive an AES key from +new_password+.
       # When @kdf_params is nil (new vault or password change) a fresh PBKDF2 salt
       # is generated and stored in @kdf_params so it is persisted with the vault.
@@ -126,7 +156,7 @@ module Aspera
           length:     key_bytes,
           hash:       @kdf_params['digest']
         )
-        SymmetricEncryption.cipher = SymmetricEncryption::Cipher.new(cipher_name: @cipher_name, key: key, encoding: :none)
+        OsslCipher.new(@cipher_name, key)
       end
 
       # save current data to file with format

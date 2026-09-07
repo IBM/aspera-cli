@@ -123,11 +123,27 @@ module Aspera
         @values = nil
         # Derive allowed type from schema when not explicitly provided
         if (allowed.nil? || allowed.eql?(Allowed::TYPES_STRING)) && schema
-          schema_node = Schema::Registry.instance.reader(schema).current rescue nil
+          schema_reader = Schema::Registry.instance.reader(schema) rescue nil
+          schema_node   = schema_reader&.current
           if schema_node
             case schema_node['type']
             when 'object' then allowed = Hash
             when 'array'  then allowed = Array
+            else
+              # No top-level type: inspect oneOf/anyOf branches; if all resolve to 'object', infer Hash
+              composite_key = (%w[oneOf anyOf] & schema_node.keys).first
+              if composite_key
+                branch_types = schema_node[composite_key].map do |branch|
+                  resolved = branch['$ref'] ? schema_reader.resolve_ref(branch['$ref']).current : branch
+                  resolved['type']
+                end
+                if branch_types.all?('object')
+                  allowed = Hash
+                else
+                  Aspera.assert(!allowed.nil? && !allowed.eql?(Allowed::TYPES_STRING),
+                    "option :#{option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly")
+                end
+              end
             end
           end
         end
@@ -241,12 +257,10 @@ module Aspera
         end
         # Skip type validation for the special 'help' value on Hash options: store it as-is
         # so that get_option(schema:) can raise SchemaRequest with the contextual schema later.
-        if new_value.eql?(Parser::HELP) && @types&.include?(Hash) && !@schema
-          case @access
-          when :local  then @object = new_value
-          when :write  then @object.send(@write_method, new_value)
-          when :setter then @object.send(@read_method, @option, :set, new_value)
-          end
+        # Note: set_option already raises SchemaRequest when @schema is set, so this path is
+        # only reached when @schema is nil (e.g. --query=help before schema is known).
+        if new_value.eql?(Parser::HELP) && @types&.include?(Hash)
+          store(new_value)
           return
         end
         Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
@@ -255,13 +269,19 @@ module Aspera
           new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
           new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
         end
-        case @access
-        when :local then @object = new_value
-        when :write then @object.send(@write_method, new_value)
-        when :setter then @object.send(@read_method, @option, :set, new_value)
-        end
+        store(new_value)
         Log.log.trace1{v = value(log: false); "#{@option} <- (#{v.class})#{v}"} # rubocop:disable Style/Semicolon
         nil
+      end
+
+      private
+
+      def store(new_value)
+        case @access
+        when :local  then @object = new_value
+        when :write  then @object.send(@write_method, new_value)
+        when :setter then @object.send(@read_method, @option, :set, new_value)
+        end
       end
     end
 
@@ -403,11 +423,16 @@ module Aspera
       # @param option_symbol [Symbol] option name
       # @param description   [String, nil] description for help; if nil, derived from schema
       # @param short         [String] short option name
-      # @param allowed       [Object] Allowed values, see `OptionValue`
+      # @param allowed       [Object] Allowed values, see `OptionValue`.
+      #   When `schema:` is provided:
+      #   - Omit `allowed:` when the schema has a single type (`type: object/array`): it is inferred automatically.
+      #   - Omit `allowed:` when the schema uses `oneOf`/`anyOf` and all branches are `object`: `Hash` is inferred.
+      #   - Use `allowed: [Hash, String]` when the option additionally accepts a plain String shorthand;
+      #     the schema then documents the Hash form and `=help` still shows it.
       # @param default       [Object] default value
       # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method)
       # @param deprecation   [String] deprecation
-      # @param schema        [String] Definition of schema for Hash parameters
+      # @param schema        [String] schema path documenting the Hash form of this option
       # @param block [Proc] Block to execute when option is found
       def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)

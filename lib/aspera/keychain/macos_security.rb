@@ -150,22 +150,20 @@ module Aspera
         )
       end
 
-      def get(options)
-        Aspera.assert_type(options, Hash){'options'}
-        unsupported = options.keys - %i[label]
-        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
-        info = @keychain.password(:find, :generic, label: options[:label])
-        Aspera.assert(!info.nil?, type: Error){'not found'}
-        result = options.clone
-        result[:secret] = info['password']
-        result[:description] = info['icmt'] # cspell: disable-line
-        return result
+      def get(label:, exception: true)
+        info = @keychain.password(:find, :generic, label: label)
+        if info.nil?
+          raise "Secret '#{label}' not found" if exception
+          return
+        end
+        return {
+          label:       label,
+          password:    info['password'],
+          description: info['icmt'] # cspell: disable-line
+        }
       end
 
-      def delete(options)
-        Aspera.assert_type(options, Hash){'options'}
-        unsupported = options.keys - %i[label]
-        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
+      def delete(label:)
         raise Error, 'delete not implemented, use macos keychain app'
       end
     end
