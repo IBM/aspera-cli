@@ -2429,7 +2429,9 @@ Usually, [Option presets](#option-preset) are used to contain pre-defined option
 When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
 
 > [!NOTE]
-> Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+> The special plugin name `config` in the `default` preset points to a preset containing **global default options**
+> (such as `--log-level`, `--vault`, `--interactive`), loaded before any plugin is invoked.
+> To set global default options, use the `GLOBAL` keyword (see [Plugin: `config`](#plugin-config-configuration)).
 
 Operations on this preset are done using regular `config` operations:
 
@@ -2484,7 +2486,8 @@ When <%=tool%> starts, it looks for the `default` Option Preset and checks the v
 If set, it loads the options independently of the plugin used.
 
 > [!NOTE]
-> If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global options (for example, `config ascp use`)
+> If `default.config` is not set, <%=tool%> automatically uses `global_common_defaults` as the global preset name
+> and saves that mapping in the configuration file the first time the `GLOBAL` keyword is used.
 
 > [!TIP]
 > If you do not know the name of the global preset, you can use `GLOBAL` to refer to it.
@@ -2505,13 +2508,10 @@ Set a global parameter:
 <%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
-If the default global Option Preset is not set, and you want to use a different name:
+If you want to use a custom name instead of `global_common_defaults`:
 
 ```shell
 <%=cmd%> config preset set default config <%=ph :global_options_name%>
-```
-
-```shell
 <%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
@@ -2810,6 +2810,13 @@ Instead, provide it at runtime via an environment variable:
 export <%=opt_env :vault_password%>=<%=ph :your_password%>
 ```
 
+> [!TIP]
+> Set the environment variable interactively using `read` so that the password is not recorded in the shell history:
+>
+> ```shell
+> read -rs <%=opt_env :vault_password%> && export <%=opt_env :vault_password%>
+> ```
+
 #### Vault: Operations
 
 For this use the `config vault` command.
@@ -2821,8 +2828,10 @@ Then secrets can be manipulated using commands:
 - `list`
 - `delete`
 
+To add a new password entry in the vault for label `<%=ph :name%>`:
+
 ```shell
-<%=cmd%> config vault create @json:'{"label":"<%=ph :name%>","password":"<%=ph :password%>","description":"for this account"}'
+<%=cmd%> config vault create @: label=<%=ph :name%> password=@secret:password description='for this account'
 ```
 
 #### Configuration Finder
@@ -2840,14 +2849,10 @@ Example:
 <%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=...
 ```
 
-For a more secure storage one can do:
+For a more secure storage one can first create a vault entry: see [Vault: Operations](#vault-operations), and then refer to that entry in the preset:
 
 ```shell
 <%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph :vault_label%>.password
-```
-
-```shell
-<%=cmd%> config vault create @json:'{"label":"<%=ph :vault_label%>","password":"<%=ph :password%>"}'
 ```
 
 > [!NOTE]
