@@ -337,6 +337,8 @@ module Aspera
         @fail_on_missing_mandatory = true
         # set to true when --help / -h is parsed
         @help_requested = false
+        # options explicitly reset to nil from CLI (e.g. --opt=@none:); preset injection skips these
+        @explicitly_cleared = {}
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         @option_pairs_batch = {}
         @option_pairs_env = {}
@@ -631,6 +633,8 @@ module Aspera
         Log.log.debug{"add_option_preset: #{preset_hash}, #{where}, #{override}"}
         preset_hash.each do |k, v|
           option_symbol = k.to_sym
+          # Never restore an option that was explicitly cleared from the CLI (e.g. --opt=@none:)
+          next if @explicitly_cleared.key?(option_symbol)
           @option_pairs_batch[option_symbol] = v if override || !@option_pairs_batch.key?(option_symbol)
         end
       end
@@ -889,6 +893,9 @@ module Aspera
           opt.block.call
         else
           set_option(sym, raw_value, where: SOURCE_USER)
+          # Track options explicitly cleared from CLI (e.g. --opt=@none:) so that
+          # subsequent preset injection does not silently restore the value.
+          @explicitly_cleared[sym] = true if get_option(sym).nil?
         end
       end
 

@@ -41,28 +41,45 @@ module Aspera
       def action_preset_secure(config_name: nil, **)
         cp = presets.config_presets
         preset_names = config_name.nil? ? cp.keys : [config_name]
-        secret_keywords = %w[password secret].freeze
         preset_names.each do |preset_name|
           preset = cp[preset_name]
           next unless preset.is_a?(Hash)
           preset.each_key do |option_name|
-            secret_keywords.each do |keyword|
-              next unless option_name.end_with?(keyword)
-              vault_label = preset_name
-              incr = 0
-              until vault.get(label: vault_label, exception: false).nil?
-                vault_label = "#{preset_name}#{incr}"
-                incr += 1
-              end
-              to_set = {label: vault_label, password: preset[option_name]}
-              puts "need to encode #{preset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
-              vault.set(to_set)
-              preset[option_name] = "@vault:#{vault_label}.password"
-            end
+            secure_preset_option(preset, preset_name, option_name)
           end
         end
         Result::Status.new('Secrets secured in vault: Make sure to save the vault password securely.')
       end
+
+      private
+
+      SECRET_KEYWORDS = %w[password secret].freeze
+
+      # If +option_name+ ends with a secret keyword and the vault is configured,
+      # move the clear-text value into the vault and replace it with a @vault: reference.
+      # @param preset      [Hash]   the preset hash (modified in place)
+      # @param preset_name [String] name used as base for the vault label
+      # @param option_name [String] option key to inspect
+      def secure_preset_option(preset, preset_name, option_name)
+        return unless SECRET_KEYWORDS.any? { |kw| option_name.end_with?(kw) }
+        # Never auto-secure the global preset: it holds vault credentials themselves
+        return if preset_name.eql?(presets.global_default_preset)
+        return if vault.nil?
+        value = preset[option_name]
+        # Already a vault reference or nil — nothing to do
+        return if value.nil? || value.to_s.start_with?('@vault:')
+        vault_label = preset_name
+        incr = 0
+        until vault.get(label: vault_label, exception: false).nil?
+          vault_label = "#{preset_name}#{incr}"
+          incr += 1
+        end
+        Log.log.info{"Securing #{preset_name}.#{option_name} -> vault label: #{vault_label}"}
+        vault.set({label: vault_label, password: value})
+        preset[option_name] = "@vault:#{vault_label}.password"
+      end
+
+      public
 
       def action_preset_show(name:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
@@ -103,6 +120,7 @@ module Aspera
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         param_name = Parser.option_line_to_name(param_name)
         presets.set_key(name, param_name, param_value)
+        secure_preset_option(presets.config_presets[name], name, param_name)
         Result::Nothing.new
       end
 
@@ -121,6 +139,7 @@ module Aspera
         cp = presets.config_presets
         cp[name] ||= {}
         cp[name].merge!(unprocessed_options)
+        unprocessed_options.each_key { |k| secure_preset_option(cp[name], name, k) }
         Result::Status.new("Updated: #{name}")
       end
 
@@ -131,6 +150,7 @@ module Aspera
         option_names.each do |option_name|
           option_value = options.get_interactive(option_name, check_option: true)
           cp[name][option_name] = option_value
+          secure_preset_option(cp[name], name, option_name)
         end
         Result::Status.new("Updated: #{name}")
       end

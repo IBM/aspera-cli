@@ -4895,6 +4895,43 @@ conf_preset_secure:
     - preset
     - secure
     - my_preset
+conf_preset_update_auto_secure:
+  description: When vault is configured, preset update auto-moves secrets to the vault
+  depends_on:
+    - conf_vault_file_password
+  tags:
+    - tmp_conf
+    - nodoc
+  args:
+    - config
+    - preset
+    - update
+    - auto_secure_test
+    - --password=cleartext_pass
+    - --username=alice
+  post: |
+    config = YAML.load_file(PATH_TEST_CONFIG)
+    preset = config['auto_secure_test']
+    raise "password should be a @vault: reference, got: #{preset['password']}" unless preset['password'].start_with?('@vault:')
+    raise "username should remain in clear, got: #{preset['username']}" unless preset['username'] == 'alice'
+conf_preset_update_vault_none:
+  description: With --vault=@none:, preset update keeps secrets in clear despite vault in global preset
+  depends_on:
+    - conf_vault_file_password
+  tags:
+    - tmp_conf
+    - nodoc
+  args:
+    - "--vault=@none:"
+    - config
+    - preset
+    - update
+    - vault_none_test
+    - --password=still_clear
+  post: |
+    config = YAML.load_file(PATH_TEST_CONFIG)
+    preset = config['vault_none_test']
+    raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == 'still_clear'
 conf_vault_pass:
   tags:
     - tmp_conf

@@ -1574,9 +1574,10 @@ Exceptions and Special Cases:
 - [**dot-path notation**](#dot-path-notation)
 - **Cumulative Hashes**
 
-  When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
-  Setting to `@none:` is equivalent to setting to `@json:{}`, that is, an empty `Hash`.
-  This can be used to start from an empty value, and not use the existing default value.
+  When an option of type `Hash` is set, the value is deep-merged with any existing value.
+  Setting to `@json:{}` starts from an empty hash (the existing value is discarded for that merge step).
+  Setting to `@none:` explicitly disables the option: it is set to `nil` and any preset or default value is prevented from restoring it.
+  This is useful, for example, to disable a vault or any Hash option that is configured in a default preset.
 
 Example:
 
@@ -2842,6 +2843,9 @@ This scans all presets (or a single one if a name is provided) and, for every op
 ```shell
 <%=cmd%> config preset secure <%=ph :preset_name%>
 ```
+
+When a vault is configured, the `update`, `set`, and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
+To disable this behavior for a single command, pass `--vault=@none:`.
 
 ### Private Key
 

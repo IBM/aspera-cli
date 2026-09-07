@@ -3029,6 +3029,9 @@ This scans all presets (or a single one if a name is provided) and, for every op
 ascli config preset secure <PRESET_NAME>
 ```
 
+When a vault is configured, the `update`, `set`, and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
+To disable this behavior for a single command, pass `--vault=@none:`.
+
 ### Private Key
 
 Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
