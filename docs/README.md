@@ -2481,7 +2481,9 @@ Usually, [Option presets](#option-preset) are used to contain pre-defined option
 When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option `--no-default` (or `-N`) is used.
 
 > [!NOTE]
-> Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+> The special plugin name `config` in the `default` preset points to a preset containing **global default options**
+> (such as `--log-level`, `--vault`, `--interactive`), loaded before any plugin is invoked.
+> To set global default options, use the `GLOBAL` keyword (see [Plugin: `config`](#plugin-config-configuration)).
 
 Operations on this preset are done using regular `config` operations:
 
@@ -2536,7 +2538,8 @@ When `ascli` starts, it looks for the `default` Option Preset and checks the val
 If set, it loads the options independently of the plugin used.
 
 > [!NOTE]
-> If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global options (for example, `config ascp use`)
+> If `default.config` is not set, `ascli` automatically uses `global_common_defaults` as the global preset name
+> and saves that mapping in the configuration file the first time the `GLOBAL` keyword is used.
 
 > [!TIP]
 > If you do not know the name of the global preset, you can use `GLOBAL` to refer to it.
@@ -2557,13 +2560,10 @@ Set a global parameter:
 ascli config preset set GLOBAL version_check_days 0
 ```
 
-If the default global Option Preset is not set, and you want to use a different name:
+If you want to use a custom name instead of `global_common_defaults`:
 
 ```shell
 ascli config preset set default config <GLOBAL_OPTIONS_NAME>
-```
-
-```shell
 ascli config preset set GLOBAL version_check_days 0
 ```
 
@@ -2915,23 +2915,19 @@ export ASCLI_PASSWORD
 
 Another possibility is to retrieve values from a secret vault.
 
-The vault is used with options `vault` and `vault_password`.
-
-`vault` shall be a `Hash` describing the vault:
-
-```json
-{"type":"system","name":"ascli"}
-```
-
-`vault_password` specifies the password for the vault.
-
-Although it can be specified on command line, for security reason you should avoid exposing the secret.
-For example, it can be securely specified on command line like this:
+The vault is configured with option `vault` (a `Hash` describing the vault type and parameters, see sections below) and unlocked with option `vault_password`.
+To avoid exposing the vault password in the shell history, provide it via an environment variable:
 
 ```shell
-read -s ASCLI_VAULT_PASSWORD
-export ASCLI_VAULT_PASSWORD
+export ASCLI_VAULT_PASSWORD=<YOUR_PASSWORD>
 ```
+
+> [!TIP]
+> Set it interactively using `read` so that it is not recorded in the shell history:
+>
+> ```shell
+> read -rs ASCLI_VAULT_PASSWORD && export ASCLI_VAULT_PASSWORD
+> ```
 
 #### Vault: IBM HashiCorp Vault
 
@@ -2989,26 +2985,23 @@ ascli config preset set GLOBAL vault @: type=file name=vault.bin
 
 The vault file is created automatically on first use - no explicit initialization is needed.
 
-The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
-Instead, provide it at runtime via an environment variable:
-
-```shell
-export ASCLI_VAULT_PASSWORD=<YOUR_PASSWORD>
-```
+> [!WARNING]
+> The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
+> Use an environment variable as described above.
 
 #### Vault: Operations
 
-For this use the `config vault` command.
-
-Then secrets can be manipulated using commands:
+Secrets can be manipulated using the `config vault` command:
 
 - `create`
 - `show`
 - `list`
 - `delete`
 
+To add a new password entry in the vault for label `<NAME>`:
+
 ```shell
-ascli config vault create @json:'{"label":"<NAME>","password":"<PASSWORD>","description":"for this account"}'
+ascli config vault create @: label=<NAME> password=@secret:password description='for this account'
 ```
 
 #### Configuration Finder
@@ -3026,14 +3019,10 @@ Example:
 ascli config preset update <PRESET_NAME> --url=... --username=... --password=...
 ```
 
-For a more secure storage one can do:
+For more secure storage, first create a vault entry (see [Vault: Operations](#vault-operations)), then refer to it in the preset:
 
 ```shell
 ascli config preset update <PRESET_NAME> --url=... --username=... --password=@val:@vault:<VAULT_LABEL>.password
-```
-
-```shell
-ascli config vault create @json:'{"label":"<VAULT_LABEL>","password":"<PASSWORD>"}'
 ```
 
 > [!NOTE]

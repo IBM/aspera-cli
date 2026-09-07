@@ -2740,23 +2740,19 @@ export <%=opt_env :password%>
 
 Another possibility is to retrieve values from a secret vault.
 
-The vault is used with options `vault` and `vault_password`.
-
-`vault` shall be a `Hash` describing the vault:
-
-```json
-{"type":"system","name":"<%=cmd%>"}
-```
-
-`vault_password` specifies the password for the vault.
-
-Although it can be specified on command line, for security reason you should avoid exposing the secret.
-For example, it can be securely specified on command line like this:
+The vault is configured with option `vault` (a `Hash` describing the vault type and parameters, see sections below) and unlocked with option `vault_password`.
+To avoid exposing the vault password in the shell history, provide it via an environment variable:
 
 ```shell
-read -s <%=opt_env :vault_password%>
-export <%=opt_env :vault_password%>
+export <%=opt_env :vault_password%>=<%=ph :your_password%>
 ```
+
+> [!TIP]
+> Set it interactively using `read` so that it is not recorded in the shell history:
+>
+> ```shell
+> read -rs <%=opt_env :vault_password%> && export <%=opt_env :vault_password%>
+> ```
 
 #### Vault: IBM HashiCorp Vault
 
@@ -2803,25 +2799,13 @@ To configure the encrypted file vault as the default, set the `vault` option in 
 
 The vault file is created automatically on first use - no explicit initialization is needed.
 
-The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
-Instead, provide it at runtime via an environment variable:
-
-```shell
-export <%=opt_env :vault_password%>=<%=ph :your_password%>
-```
-
-> [!TIP]
-> Set the environment variable interactively using `read` so that the password is not recorded in the shell history:
->
-> ```shell
-> read -rs <%=opt_env :vault_password%> && export <%=opt_env :vault_password%>
-> ```
+> [!WARNING]
+> The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
+> Use an environment variable as described above.
 
 #### Vault: Operations
 
-For this use the `config vault` command.
-
-Then secrets can be manipulated using commands:
+Secrets can be manipulated using the `config vault` command:
 
 - `create`
 - `show`
@@ -2849,7 +2833,7 @@ Example:
 <%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=...
 ```
 
-For a more secure storage one can first create a vault entry: see [Vault: Operations](#vault-operations), and then refer to that entry in the preset:
+For more secure storage, first create a vault entry (see [Vault: Operations](#vault-operations)), then refer to it in the preset:
 
 ```shell
 <%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph :vault_label%>.password
