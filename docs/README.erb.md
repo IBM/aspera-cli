@@ -2830,6 +2830,19 @@ For a more secure storage one can do:
 > [!NOTE]
 > Use `@val:` in front of `@vault:` so that the [Extended Value](#extended-value-syntax) is not evaluated.
 
+To migrate existing clear-text passwords from presets to the vault in one step, use the `secure` command.
+The vault must already be configured (option `vault`, see [Secret Vault](#secret-vault)).
+
+```shell
+<%=cmd%> config preset secure
+```
+
+This scans all presets (or a single one if a name is provided) and, for every option whose name ends with `password` or `secret`, moves the value into the vault and replaces it with a `@vault:` reference.
+
+```shell
+<%=cmd%> config preset secure <%=ph :preset_name%>
+```
+
 ### Private Key
 
 Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
