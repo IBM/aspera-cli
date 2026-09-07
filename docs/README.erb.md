@@ -1,5 +1,12 @@
 # Command Line Interface for IBM Aspera products
 <!--
+EDITING GUIDELINES (developers and AI):
+- This file is the source template for the generated README.md. Edit this file, not README.md.
+- Do not use Unicode characters unless strictly necessary (e.g. wizard menu labels that must
+  match the actual on-screen UI text). Use plain ASCII equivalents instead:
+    apostrophe : ' (not curly ' or ')
+    dash       : - or -- (not en-dash - or em-dash -)
+    ellipsis   : ... (not the Unicode character ...)
 <%=doc_warn('Yes edit this file!')%>
 PANDOC_DEFAULTS_BEGIN
 metadata:
@@ -2786,6 +2793,21 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 
 ```json
 {"type":"file","name":"vault.bin"}
+```
+
+To configure the encrypted file vault as the default, set the `vault` option in the global preset:
+
+```shell
+<%=cmd%> config preset set GLOBAL vault @: type=file name=vault.bin
+```
+
+The vault file is created automatically on first use - no explicit initialization is needed.
+
+The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
+Instead, provide it at runtime via an environment variable:
+
+```shell
+export <%=opt_env :vault_password%>=<%=ph :your_password%>
 ```
 
 #### Vault: Operations

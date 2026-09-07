@@ -1,5 +1,12 @@
 # Command Line Interface for IBM Aspera products
 <!--
+EDITING GUIDELINES (developers and AI):
+- This file is the source template for the generated README.md. Edit this file, not README.md.
+- Do not use Unicode characters unless strictly necessary (e.g. wizard menu labels that must
+  match the actual on-screen UI text). Use plain ASCII equivalents instead:
+    apostrophe : ' (not curly ' or ')
+    dash       : - or -- (not en-dash - or em-dash -)
+    ellipsis   : ... (not the Unicode character ...)
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_DEFAULTS_BEGIN
 metadata:
@@ -1626,9 +1633,10 @@ Exceptions and Special Cases:
 - [**dot-path notation**](#dot-path-notation)
 - **Cumulative Hashes**
 
-  When an option of type `Hash` is set, the value is deep-merged to an existing or default value.
-  Setting to `@none:` is equivalent to setting to `@json:{}`, that is, an empty `Hash`.
-  This can be used to start from an empty value, and not use the existing default value.
+  When an option of type `Hash` is set, the value is deep-merged with any existing value.
+  Setting to `@json:{}` starts from an empty hash (the existing value is discarded for that merge step).
+  Setting to `@none:` explicitly disables the option: it is set to `nil` and any preset or default value is prevented from restoring it.
+  This is useful, for example, to disable a vault or any Hash option that is configured in a default preset.
 
 Example:
 
@@ -2971,6 +2979,21 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 
 ```json
 {"type":"file","name":"vault.bin"}
+```
+
+To configure the encrypted file vault as the default, set the `vault` option in the global preset:
+
+```shell
+ascli config preset set GLOBAL vault @: type=file name=vault.bin
+```
+
+The vault file is created automatically on first use - no explicit initialization is needed.
+
+The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
+Instead, provide it at runtime via an environment variable:
+
+```shell
+export ASCLI_VAULT_PASSWORD=<YOUR_PASSWORD>
 ```
 
 #### Vault: Operations
