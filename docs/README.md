@@ -3016,6 +3016,19 @@ ascli config vault create @json:'{"label":"<VAULT_LABEL>","password":"<PASSWORD>
 > [!NOTE]
 > Use `@val:` in front of `@vault:` so that the [Extended Value](#extended-value-syntax) is not evaluated.
 
+To migrate existing clear-text passwords from presets to the vault in one step, use the `secure` command.
+The vault must already be configured (option `vault`, see [Secret Vault](#secret-vault)).
+
+```shell
+ascli config preset secure
+```
+
+This scans all presets (or a single one if a name is provided) and, for every option whose name ends with `password` or `secret`, moves the value into the vault and replaces it with a `@vault:` reference.
+
+```shell
+ascli config preset secure <PRESET_NAME>
+```
+
 ### Private Key
 
 Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
@@ -4873,7 +4886,7 @@ NAME
         ascli -- a command line tool for Aspera Applications (v4.28.0.pre)
 
 SYNOPSIS
-        ascli COMMANDS [OPTIONS] [ARGS]
+        ascli [GLOBAL_OPTIONS] <command> [OPTIONS] [ARGS]
 
 DESCRIPTION
         Use Aspera application to perform operations on command line.
@@ -4892,79 +4905,79 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, , preset, vault
-        Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, preset, vault
+        Dates format is 'YYYY-MM-DD HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
         Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
-    --interactive=ENUM          Use interactive input of missing params
-    --ask-options=ENUM          Ask even optional options
-    --display=ENUM              Output only some information
-    --format=ENUM               Output format
-    --output=VALUE              Destination for results
-    --fields=VALUE              Comma separated list of: fields, or ALL, or DEF
-    --select=VALUE              Select only some items in lists: column, value
-    --table-style=VALUE         (Table) Display style
-    --flat-hash=ENUM            (Table) Display deep values as additional keys
-    --multi-single=ENUM         (Table) Control how object list is displayed as single table, or multiple objects
-    --show-secrets=ENUM         Show secrets on command output
-    --image=VALUE               Options for displaying images and thumbnails in the terminal
--h, --help                      Show this message
-    --show-config               Display parameters used for the provided action
--v, --version                   Display version
-    --ui=ENUM                   Method to start browser
-    --invalid-characters=VALUE  Replacement character and invalid filename characters
-    --log-level=ENUM            Log level
-    --log-format=VALUE          Log formatter
-    --logger=ENUM               Logging method
-    --log=VALUE                 Logging options (dot-notation: level, type, format, secrets)
-    --lock-port=VALUE           Prevent dual execution of a command, e.g. in cron
-    --once-only=ENUM            Process only new items (some commands)
-    --log-secrets=ENUM          Show passwords in logs
-    --clean-temp=ENUM           Cleanup temporary files on exit
-    --temp-folder=VALUE         Temporary folder
-    --pid-file=VALUE            Write process identifier to file, delete on exit
-    --parser=ENUM               Default parser for structured parameters and options
-    --home=VALUE                Home folder for tool
-    --config-file=VALUE         Path to YAML file with preset configuration
-    --secret=VALUE              Secret for access keys
-    --vault=VALUE               Secret vault configuration
-    --vault-password=VALUE      Vault password
-    --progress-bar=ENUM         Display progress bar
-    --fpac=VALUE                Proxy auto configuration script
-    --proxy-credentials=VALUE   HTTP proxy credentials for fpac: user, password
-    --sql=VALUE                 SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
--P, --preset=VALUE              Load the named option preset from current config file
-    --version-check-days=VALUE  Period in days to check new version (zero to disable)
-    --plugin-folder=VALUE       Folder where to find additional plugins
-    --sdk-url=VALUE             Ascp: URL to get Aspera Transfer Executables
-    --locations-url=VALUE       Ascp: URL to get download locations of Aspera Transfer Daemon
-    --sdk-folder=VALUE          Ascp: Path to folder with ascp (or product with "product:")
-    --smtp=VALUE                SMTP email server configuration
-    --notify-to=VALUE           Email: Recipient for notification of transfers
-    --notify-template=VALUE     Email: ERB template for notification of transfers
-    --cache-tokens=ENUM         Save and reuse OAuth tokens
-    --query=VALUE               Additional filter for for some commands (list/delete)
-    --bulk=ENUM                 Bulk operation (only some)
-    --bfail=ENUM                Bulk operation error handling
--N, --no-default                Do not load default configuration for plugin
-    --override=ENUM             Wizard: override existing value
-    --default=ENUM              Wizard: set as default configuration for specified plugin (also: update)
-    --key-path=VALUE            Wizard: path to private key for JWT
-    --insecure=ENUM             HTTP/S: Do not validate any certificate
-    --ignore-certificate=VALUE  HTTP/S: Do not validate certificate for these URLs
-    --warn-insecure=ENUM        HTTP/S: Issue a warning if certificate is ignored
-    --cert-stores=VALUE         HTTP/S: List of folder with trusted certificates
-    --http-options=VALUE        HTTP/S connection parameters for REST calls (not `ascp` WSS)
-    --http-proxy=VALUE          HTTP/S: URL for proxy with optional credentials
-    --ts=VALUE                  Override transfer spec values
-    --to-folder=VALUE           Destination folder for transferred files
-    --sources=VALUE             How list of transferred files is provided (@args,@ts,Array)
-    --src-type=ENUM             Type of file list
-    --transfer=VALUE            Transfer agent type, or agent parameters with optional agent key
-    --transfer-info=VALUE       Parameters for transfer agent
+    --interactive=yes|no           Use interactive input of missing params
+    --ask-options=yes|no           Ask even optional options
+    --display=info|data|error      Output only some information
+    --format=ENUM                  Output format
+    --output=VALUE                 Destination for results
+    --fields=LIST                  Comma separated list of: fields, or ALL, or DEF
+    --select=HASH                  Select only some items in lists: column, value
+    --table-style=HASH             (Table) Display style
+    --flat-hash=yes|no             (Table) Display deep values as additional keys
+    --multi-single=no|yes|single   (Table) Control how object list is displayed as single table, or multiple objects
+    --show-secrets=yes|no          Show secrets on command output
+    --image=HASH                   Options for displaying images and thumbnails in the terminal
+-h, --help                         Show this message
+    --show-config                  Display parameters used for the provided action
+-v, --version                      Display version
+    --ui=text|graphical            Method to start browser
+    --invalid-characters=VALUE     Replacement character and invalid filename characters
+    --log-level=ENUM               Log level
+    --log-format=VALUE             Log formatter
+    --logger=stderr|stdout|syslog  Logging method
+    --log=HASH                     Logging options (dot-notation: level, type, format, secrets)
+    --lock-port=INT                Prevent dual execution of a command, e.g. in cron
+    --once-only=yes|no             Process only new items (some commands)
+    --log-secrets=yes|no           Show passwords in logs
+    --clean-temp=yes|no            Cleanup temporary files on exit
+    --temp-folder=VALUE            Temporary folder
+    --pid-file=VALUE               Write process identifier to file, delete on exit
+    --parser=none|json|ruby|yaml   Default parser for structured parameters and options
+    --home=VALUE                   Home folder for tool
+    --config-file=VALUE            Path to YAML file with preset configuration
+    --secret=VALUE                 Secret for access keys
+    --vault=HASH                   Secret vault configuration
+    --vault-password=VALUE         Vault password
+    --progress-bar=yes|no          Display progress bar
+    --fpac=VALUE                   Proxy auto configuration script
+    --proxy-credentials=LIST       HTTP proxy credentials for fpac: user, password
+    --sql=VALUE                    SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
+-P, --preset=VALUE                 Load the named option preset from current config file
+    --version-check-days=INT       Period in days to check new version (zero to disable)
+    --plugin-folder=VALUE          Folder where to find additional plugins
+    --sdk-url=VALUE                Ascp: URL to get Aspera Transfer Executables
+    --locations-url=VALUE          Ascp: URL to get download locations of Aspera Transfer Daemon
+    --sdk-folder=VALUE             Ascp: Path to folder with ascp (or product with "product:")
+    --smtp=HASH                    SMTP email server configuration
+    --notify-to=VALUE              Email: Recipient for notification of transfers
+    --notify-template=VALUE        Email: ERB template for notification of transfers
+    --cache-tokens=yes|no          Save and reuse OAuth tokens
+    --query=HASH                   Additional filter for for some commands (list/delete)
+    --bulk=yes|no                  Bulk operation (only some)
+    --bfail=yes|no                 Bulk operation error handling
+-N, --no-default                   Do not load default configuration for plugin
+    --override=yes|no              Wizard: override existing value
+    --default=yes|no               Wizard: set as default configuration for specified plugin (also: update)
+    --key-path=VALUE               Wizard: path to private key for JWT
+    --insecure=yes|no              HTTP/S: Do not validate any certificate
+    --ignore-certificate=LIST      HTTP/S: Do not validate certificate for these URLs
+    --warn-insecure=yes|no         HTTP/S: Issue a warning if certificate is ignored
+    --cert-stores=LIST             HTTP/S: List of folder with trusted certificates
+    --http-options=HASH            HTTP/S connection parameters for REST calls (not `ascp` WSS)
+    --http-proxy=VALUE             HTTP/S: URL for proxy with optional credentials
+    --ts=HASH                      Override transfer spec values
+    --to-folder=VALUE              Destination folder for transferred files
+    --sources=VALUE                How list of transferred files is provided (@args,@ts,Array)
+    --src-type=list|pair           Type of file list
+    --transfer=HASH                Transfer agent type, or agent parameters with optional agent key
+    --transfer-info=HASH           Parameters for transfer agent
 
 PLUGINS
     alee            Aspera License Entitlement Engine
