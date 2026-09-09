@@ -353,29 +353,7 @@ module Aspera
       Aspera.assert_type(subpath, String)
       # We must have a way to check return code
       Aspera.assert(exception || !ret.eql?(:data), 'ret: :data requires exception handler')
-      if headers.nil?
-        headers = @headers.clone
-      else
-        h = headers
-        headers = @headers.clone
-        headers.merge!(h)
-      end
-      Aspera.assert_type(headers, Hash)
-      case @auth_params[:type]
-      when :none
-        # no auth
-      when :basic
-        Log.log.debug('using Basic auth')
-        # done in build_req
-      when :oauth2
-        headers['Authorization'] = oauth.authorization unless headers.key?('Authorization')
-      when :url
-        query ||= {}
-        @auth_params[:url_query].each do |key, value|
-          query[key] = value
-        end
-      else Aspera.error_unexpected_value(@auth_params[:type])
-      end
+      headers, query = prepare_call(headers, query)
       result_http = nil
       result_data = nil
       # initialize with number of initial retries allowed, nil gives zero
@@ -383,37 +361,7 @@ module Aspera
       # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
       begin
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
-        # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
-        # URI.escape()
-        separator = ['', '/'].include?(subpath) ? '' : '/'
-        uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", query)
-        Log.log.debug{"URI=#{uri}"}
-        begin
-          # instantiate request object based on string name
-          req = Net::HTTP.const_get(operation.capitalize).new(uri)
-        rescue NameError
-          raise "unsupported operation : #{operation}"
-        end
-        case content_type
-        when nil # ignore
-        when Mime::JSON
-          req.body = JSON.generate(body) # , ascii_only: true
-          req['Content-Type'] = Mime::JSON
-        when Mime::WWW
-          req.body = URI.encode_www_form(body)
-          req['Content-Type'] = Mime::WWW
-        when Mime::TEXT
-          req.body = body
-          req['Content-Type'] = Mime::TEXT
-        else Aspera.error_unexpected_value(content_type){'body type'}
-        end
-        # set headers
-        headers.each do |key, value|
-          req[key] = value
-        end
-        # :type = :basic
-        req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
-        Log.dump(:req_body, req.body, level: :trace1)
+        req = build_request(operation, subpath, query, content_type, body, headers)
         # we try the call, and will retry on some error types
         error_tries ||= 1 + RestParameters.instance.retry_max
         result_mime = nil
@@ -424,64 +372,14 @@ module Aspera
           result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
           Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
-          if !save_to.nil? &&
-              result_http.code.to_s.start_with?('2') &&
-              !Mime.json?(result_mime)
-            total_size = result_http['Content-Length']&.to_i
-            Log.log.debug('before write file')
-            target_file = save_to
-            # override user's path to path in header
-            if !response['Content-Disposition'].nil?
-              disposition = self.class.parse_header(response['Content-Disposition'])
-              if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
-                # Use only the basename to prevent path traversal via a server-controlled Content-Disposition header
-                safe_filename = File.basename(disposition[:parameters][:filename])
-                target_file = File.join(File.dirname(target_file), safe_filename) unless safe_filename.empty?
-              end
-            end
-            Log.log.debug{"saving to: #{target_file}"}
-            written_size = 0
-            session_id = SecureRandom.uuid.freeze
-            RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)
-            RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size) if total_size
-            limiter = TimerLimiter.new(0.5)
-            if target_file.respond_to?(:write)
-              # IO object: stream directly into it
-              result_http.read_body do |fragment|
-                target_file.write(fragment)
-                written_size += fragment.length
-                RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
-              end
-            else
-              # file path: download to partial name first, then rename atomically
-              target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
-              FileUtils.mkdir_p(File.dirname(target_file_tmp))
-              File.open(target_file_tmp, 'wb') do |file|
-                result_http.read_body do |fragment|
-                  file.write(fragment)
-                  written_size += fragment.length
-                  RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
-                end
-              end
-              File.rename(target_file_tmp, target_file)
-            end
-            RestParameters.instance.progress_bar&.event(:session_end, session_id: session_id)
-            RestParameters.instance.progress_bar&.event(:end)
-            file_saved = true
-          end
+          file_saved = save_response(response, result_http, result_mime, save_to)
         end
         Log.log.debug{"result: code=#{result_http.code} mime=#{result_mime}"}
         # sometimes there is a UTF8 char (e.g. (c) )
         # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
         # Log.log.debug{"result: body=#{result_http.body}"}
-        result_data = result_http.body
-        Log.dump(:result_data_raw, result_data, level: :trace1)
-        # TODO: Remove next 2 lines when bug in async node api is fixed. (Aspera/core/issues/4490)
-        node_api_bug = result_data&.index('}HTTP/1.1 400 Bad Request') if result_data.is_a?(String)
-        result_data = result_data[0..node_api_bug] if node_api_bug
-        result_data = JSON.parse(result_data) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
-        Log.dump(:result_data, result_data)
+        result_data = parse_response(result_http, result_mime)
         RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
         unless file_saved || save_to.nil?
           raise 'save_to: IO object requires a streaming response' if save_to.respond_to?(:write)
@@ -552,6 +450,129 @@ module Aspera
              else Aspera.error_unexpected_value(ret){'Type of result for REST'}
              end
     end
+
+    private
+
+    def prepare_call(headers, query)
+      if headers.nil?
+        headers = @headers.clone
+      else
+        h = headers
+        headers = @headers.clone
+        headers.merge!(h)
+      end
+      Aspera.assert_type(headers, Hash)
+      case @auth_params[:type]
+      when :none
+        # no auth
+      when :basic
+        Log.log.debug('using Basic auth')
+        # done in build_req
+      when :oauth2
+        headers['Authorization'] = oauth.authorization unless headers.key?('Authorization')
+      when :url
+        query ||= {}
+        @auth_params[:url_query].each do |key, value|
+          query[key] = value
+        end
+      else Aspera.error_unexpected_value(@auth_params[:type])
+      end
+      [headers, query]
+    end
+
+    def build_request(operation, subpath, query, content_type, body, headers)
+      # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
+      # URI.escape()
+      separator = ['', '/'].include?(subpath) ? '' : '/'
+      uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", query)
+      Log.log.debug{"URI=#{uri}"}
+      begin
+        # instantiate request object based on string name
+        req = Net::HTTP.const_get(operation.capitalize).new(uri)
+      rescue NameError
+        raise "unsupported operation : #{operation}"
+      end
+      case content_type
+      when nil # ignore
+      when Mime::JSON
+        req.body = JSON.generate(body) # , ascii_only: true
+        req['Content-Type'] = Mime::JSON
+      when Mime::WWW
+        req.body = URI.encode_www_form(body)
+        req['Content-Type'] = Mime::WWW
+      when Mime::TEXT
+        req.body = body
+        req['Content-Type'] = Mime::TEXT
+      else Aspera.error_unexpected_value(content_type){'body type'}
+      end
+      # set headers
+      headers.each do |key, value|
+        req[key] = value
+      end
+      # :type = :basic
+      req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
+      Log.dump(:req_body, req.body, level: :trace1)
+      req
+    end
+
+    def save_response(response, result_http, result_mime, save_to)
+      return false unless !save_to.nil? && result_http.code.to_s.start_with?('2') && !Mime.json?(result_mime)
+
+      total_size = result_http['Content-Length']&.to_i
+      Log.log.debug('before write file')
+      target_file = save_to
+      # override user's path to path in header
+      unless response['Content-Disposition'].nil?
+        disposition = self.class.parse_header(response['Content-Disposition'])
+        if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
+          # Use only the basename to prevent path traversal via a server-controlled Content-Disposition header
+          safe_filename = File.basename(disposition[:parameters][:filename])
+          target_file = File.join(File.dirname(target_file), safe_filename) unless safe_filename.empty?
+        end
+      end
+      Log.log.debug{"saving to: #{target_file}"}
+      written_size = 0
+      session_id = SecureRandom.uuid.freeze
+      RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)
+      RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size) if total_size
+      limiter = TimerLimiter.new(0.5)
+      if target_file.respond_to?(:write)
+        # IO object: stream directly into it
+        result_http.read_body do |fragment|
+          target_file.write(fragment)
+          written_size += fragment.length
+          RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
+        end
+      else
+        # file path: download to partial name first, then rename atomically
+        target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
+        FileUtils.mkdir_p(File.dirname(target_file_tmp))
+        File.open(target_file_tmp, 'wb') do |file|
+          result_http.read_body do |fragment|
+            file.write(fragment)
+            written_size += fragment.length
+            RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
+          end
+        end
+        File.rename(target_file_tmp, target_file)
+      end
+      RestParameters.instance.progress_bar&.event(:session_end, session_id: session_id)
+      RestParameters.instance.progress_bar&.event(:end)
+      true
+    end
+
+    def parse_response(result_http, result_mime)
+      result_data = result_http.body
+      Log.dump(:result_data_raw, result_data, level: :trace1)
+      # TODO: Remove next 2 lines when bug in async node api is fixed. (Aspera/core/issues/4490)
+      node_api_bug = result_data&.index('}HTTP/1.1 400 Bad Request') if result_data.is_a?(String)
+      result_data = result_data[0..node_api_bug] if node_api_bug
+      result_data = JSON.parse(result_data) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
+      Log.dump(:result_data, result_data)
+      result_data
+    end
+
+    public
 
     #
     # CRUD simplified methods here
