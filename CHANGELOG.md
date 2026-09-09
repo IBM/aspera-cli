@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `faspex5`: Wizard was incorrectly nesting `client_id` and `client_secret` under a `params:` sub-key in the generated preset, instead of placing them at the top level.
+
 ### Breaking Changes
 
 ## 4.27.0

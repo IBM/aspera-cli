@@ -80,14 +80,12 @@ module Aspera
           )
           return {
             preset_value: {
-              url:         app_url,
-              username:    wiz_username,
-              auth:        :jwt.to_s,
-              private_key: "@file:#{private_key_path}",
-              params:      {
-                client_id:     client_id,
-                client_secret: client_secret
-              }
+              url:           app_url,
+              username:      wiz_username,
+              auth:          :jwt.to_s,
+              private_key:   "@file:#{private_key_path}",
+              client_id:     client_id,
+              client_secret: client_secret
             },
             test_args:    'user profile show'
           }
