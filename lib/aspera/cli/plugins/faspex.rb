@@ -302,7 +302,8 @@ module Aspera
 
         commands_under(%i[source node]) do
           Node::COMMANDS_FASPEX.each do |cmd|
-            command(cmd, description: "Node #{cmd} command", setup: :setup_source_node)
+            spec = Node::COMMANDS_GEN3_SPEC[cmd] || {description: "Node #{cmd} command"}
+            command(cmd, **spec, setup: :setup_source_node)
           end
         end
 
@@ -528,8 +529,8 @@ module Aspera
         end
 
         Node::COMMANDS_FASPEX.each do |cmd|
-          define_action_method([:source, :node, cmd]) do |source_node_plugin:, **|
-            source_node_plugin.dispatch_v3_command(cmd)
+          define_action_method([:source, :node, cmd]) do |source_node_plugin:, **ctx|
+            source_node_plugin.dispatch_v3_command(cmd, **ctx)
           end
         end
 

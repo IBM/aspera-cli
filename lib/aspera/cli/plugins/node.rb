@@ -132,6 +132,33 @@ module Aspera
         # Actions in execute_command_gen3
         COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete ls upload download cat sync transport spec]
 
+        # Shared DSL metadata for Gen3 commands (description:, arguments:, transfer_paths:, aliases:).
+        # Consumed by commands_under(:files) in shares.rb and commands_under(%i[source node]) in faspex.rb.
+        # :sync is excluded (intermediate node with sub-commands, handled separately).
+        # action: entries are node-specific and intentionally omitted.
+        COMMANDS_GEN3_SPEC = {
+          search:    {description: 'Search for files',             arguments: [{name: :search_root, type: String}]},
+          space:     {description: 'Show space information',       arguments: [{name: :path_list, multiple: true}]},
+          mkdir:     {description: 'Create a folder (Gen3)',       arguments: [{name: :path_list, multiple: true}]},
+          mklink:    {description: 'Create a symbolic link (Gen3)',arguments: [{name: :target, type: String}, {name: :link_path, type: String}]},
+          mkfile:    {description: 'Create a file (Gen3)',         arguments: [{name: :file_path, type: String}, {name: :contents, mandatory: false, default: nil}]},
+          rename:    {description: 'Rename a file or folder (Gen3)',arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]},
+          delete:    {description: 'Delete files or folders (Gen3)',arguments: [{name: :paths, multiple: true}]},
+          ls:        {description: 'List files (Gen3)',            arguments: [{name: :path, type: String}], aliases: [:browse]},
+          upload:    {description: 'Upload files (Gen3)',          transfer_paths: :send},
+          download:  {description: 'Download files (Gen3)',        transfer_paths: :receive},
+          cat:       {description: 'Show file contents (Gen3)',    arguments: [{name: :remote_path, type: String}]},
+          transport: {description: 'Show transport parameters'},
+          spec:      {description: 'Show transfer spec base'},
+          api_details:{description: 'Show API details'},
+          health:    {description: 'Check node health'},
+          events:    {description: 'List events'},
+          info:      {description: 'Show node info'},
+          slash:     {description: 'Show root info'},
+          license:   {description: 'Show license'},
+          access_keys:{description: 'Manage access keys'},
+        }.freeze
+
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
         SPECIAL_ACTIONS = %i[health events info slash license].freeze
@@ -146,6 +173,30 @@ module Aspera
 
         # commands for execute_command_gen4
         COMMANDS_GEN4 = %i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
+
+        # Shared DSL metadata for all Gen4 commands (description:, arguments:, transfer_paths:, aliases:).
+        # Consumed by commands_under(%i[access_keys do]) in node.rb and by aoc.rb.
+        # :sync and :permission are excluded: they are intermediate nodes handled separately.
+        SINGLE_PATH_ARG = [{name: :path, type: String}].freeze
+        COMMANDS_GEN4_SPEC = {
+          mkdir:            {description: 'Create folder',                  arguments: SINGLE_PATH_ARG},
+          mklink:           {description: 'Create symbolic link',           arguments: SINGLE_PATH_ARG},
+          mkfile:           {description: 'Create file',                    arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
+          rename:           {description: 'Rename entry',                   arguments: [{name: :source_path, type: String}, {name: :new_name, type: String}]},
+          delete:           {description: 'Delete entry',                   arguments: [{name: :paths, type: String, bulk: true}]},
+          upload:           {description: 'Upload files',                   transfer_paths: :send},
+          download:         {description: 'Download files',                 transfer_paths: :receive},
+          modify:           {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
+          cat:              {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
+          show:             {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
+          thumbnail:        {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
+          bearer_token_node:{description: 'Show bearer token for file node',arguments: SINGLE_PATH_ARG},
+          node_info:        {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
+          ls:               {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
+          find:             {description: 'Find files',                     arguments: SINGLE_PATH_ARG},
+          v3:               {description: 'Legacy v3 commands on files'},
+        }.freeze
+        private_constant :SINGLE_PATH_ARG
 
         # commands supported in ATS for COS
         COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
@@ -326,30 +377,26 @@ module Aspera
 
         # --- DSL command declarations ---
 
-        # Gen3 leaf commands
-        command :search,      description: 'Search for files',
-          arguments: [{name: :search_root, type: String}]
-        command :space,       description: 'Show space information',
-          arguments: [{name: :path_list, multiple: true}]
-        command :mkdir,       description: 'Create a folder (Gen3)',
-          arguments: [{name: :path_list, multiple: true}]
-        command :mklink,      description: 'Create a symbolic link (Gen3)',
-          arguments: [{name: :target, type: String}, {name: :link_path, type: String}]
-        command :mkfile,      description: 'Create a file (Gen3)',
-          arguments: [{name: :file_path, type: String}, {name: :contents, mandatory: false, default: nil}]
-        command :rename,      description: 'Rename a file or folder (Gen3)',
-          arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]
-        command :delete,      description: 'Delete files or folders (Gen3)',
-          arguments: [{name: :paths, multiple: true}]
-        command :ls,          description: 'List files (Gen3)',
-          aliases: [:browse],
-          arguments: [{name: :path, type: String}],
-          action: ->(path:, **){browse_gen3(path)}
-        command :upload,      description: 'Upload files (Gen3)',   transfer_paths: :send
-        command :download,    description: 'Download files (Gen3)', transfer_paths: :receive
-        command :cat,         description: 'Show file contents (Gen3)',
-          arguments: [{name: :remote_path, type: String}]
-        command :sync,        description: 'Synchronize folders (Gen3)'
+        # Gen3 leaf commands — metadata from COMMANDS_GEN3_SPEC; action: added where node-specific.
+        # :sync is declared separately (intermediate node with sub-commands).
+        GEN3_NODE_ACTIONS = {
+          ls:         ->(path:, **){browse_gen3(path)},
+          transport:  ->(**){Result::SingleObject.new(@api_node.transport_params)},
+          spec:       ->(**){Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))},
+          api_details:->(**){Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))},
+          events:     ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})},
+          info:       ->(**){Result::SingleObject.new(@api_node.read('info'))},
+          slash:      ->(**){Result::SingleObject.new(@api_node.read(''))},
+          license:    ->(**){Result::SingleObject.new(@api_node.read('license'))},
+        }.freeze
+        private_constant :GEN3_NODE_ACTIONS
+        COMMANDS_GEN3_SPEC.each do |cmd, spec|
+          next if cmd.eql?(:sync)        # intermediate node with sub-commands
+          next if cmd.eql?(:access_keys) # intermediate node declared separately below
+          action = GEN3_NODE_ACTIONS[cmd]
+          command(cmd, **spec, **(action ? {action: action} : {}))
+        end
+        command :sync, description: 'Synchronize folders (Gen3)'
         commands_under(:sync) do
           Sync::Operations::DIRECTIONS.each do |dir|
             command(dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send)
@@ -357,22 +404,6 @@ module Aspera
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, %i[sync admin])
         end
-        command :transport,   description: 'Show transport parameters',
-          action: ->{Result::SingleObject.new(@api_node.transport_params)}
-        command :spec,        description: 'Show transfer spec base',
-          action: ->{Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))}
-        # Other common leaf commands
-        command :api_details, description: 'Show API details',
-          action: ->{Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))}
-        command :health,      description: 'Check node health'
-        command :events,      description: 'List events',
-          action: ->{Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})}
-        command :info,        description: 'Show node info',
-          action: ->{Result::SingleObject.new(@api_node.read('info'))}
-        command :slash,       description: 'Show root info',
-          action: ->{Result::SingleObject.new(@api_node.read(''))}
-        command :license,     description: 'Show license',
-          action: ->{Result::SingleObject.new(@api_node.read('license'))}
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
         commands_under(:access_keys) do
@@ -397,25 +428,11 @@ module Aspera
           end
         end
 
-        # Commands requiring a single path argument (Gen4)
-        COMMANDS_GEN4_SINGLE_PATH = %i[mkdir mklink ls cat show find thumbnail bearer_token_node node_info].freeze
-        private_constant :COMMANDS_GEN4_SINGLE_PATH
-
         commands_under(%i[access_keys do]) do
-          COMMANDS_GEN4.each do |cmd|
-            next if cmd.eql?(:sync) # sync is an intermediate node declared below
-            kwargs = {description: "Gen4 #{cmd} command"}
-            kwargs[:aliases] = [:browse] if cmd.eql?(:ls)
-            kwargs[:setup] = :setup_access_key_do_permission if cmd.eql?(:permission)
-            kwargs[:arguments] = [{name: :source_path, type: String}, {name: :new_name, type: String}] if cmd.eql?(:rename)
-            kwargs[:arguments] = [{name: :paths, type: String, bulk: true}] if cmd.eql?(:delete)
-            kwargs[:arguments] = [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}] if cmd.eql?(:mkfile)
-            kwargs[:arguments] = [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}] if cmd.eql?(:modify)
-            kwargs[:arguments] = [{name: :path, type: String}] if COMMANDS_GEN4_SINGLE_PATH.include?(cmd)
-            kwargs[:transfer_paths] = :send     if cmd.eql?(:upload)
-            kwargs[:transfer_paths] = :receive  if cmd.eql?(:download)
-            command(cmd, **kwargs)
+          COMMANDS_GEN4_SPEC.each do |cmd, spec|
+            command(cmd, **spec.merge(description: "#{spec[:description]} (Gen4)"))
           end
+          command :permission, description: 'Manage permissions (Gen4)', setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders (Gen4)'
           commands_under(%i[access_keys do sync]) do
             Sync::Operations::DIRECTIONS.each do |dir|
@@ -1274,16 +1291,19 @@ module Aspera
           end
         end
 
-        # Dispatch a command that has already been read from the argument stream.
-        # Used when a new Node instance is created and the command was already consumed
-        # (e.g., :v3 delegation, shares, cos, faspex).
-        # Re-enters the DSL registry for all commands so Proc handlers and sub-trees
+        # Dispatch a Gen3 command that has already been read from the argument stream.
+        # Used when a new Node instance is created by an external plugin (shares, faspex, cos, :v3)
+        # and the command symbol was already consumed before the Node was instantiated.
+        # Re-enters the DSL registry so Proc actions and intermediate nodes (sync, access_keys)
         # are resolved normally.
+        # Pre-resolved CLI arguments (e.g. path:) can be forwarded via +ctx+ to avoid
+        # re-consuming tokens that were already resolved by the calling plugin's DSL.
         # @param command [Symbol] command already consumed from the argument stream
+        # @param ctx     [Hash]   pre-resolved context (keyword args forwarded to dispatch)
         # @return [Object] CLI result
-        def dispatch_v3_command(command)
+        def dispatch_v3_command(command, **ctx)
           Aspera.assert_values(command, COMMANDS_GEN3 + %i[health events info slash license api_details access_keys transfer]){'v3 command'}
-          dispatch_from_registry([command], {})
+          dispatch_from_registry([command], ctx)
         end
 
         private

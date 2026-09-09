@@ -299,15 +299,15 @@ module Aspera
 
         commands_under(:files) do
           Node::COMMANDS_SHARES.each do |cmd|
-            aliases = cmd.eql?(:ls) ? [:browse] : nil
-            command(cmd, description: "Node #{cmd} command", aliases: aliases)
+            spec = Node::COMMANDS_GEN3_SPEC[cmd] || {description: "Node #{cmd} command"}
+            command(cmd, **spec)
           end
         end
 
         # One handler per COMMANDS_SHARES command.
         Node::COMMANDS_SHARES.each do |cmd|
-          define_action_method([:files, cmd]) do |shares_node_plugin:|
-            shares_node_plugin.dispatch_v3_command(cmd)
+          define_action_method([:files, cmd]) do |shares_node_plugin:, **ctx|
+            shares_node_plugin.dispatch_v3_command(cmd, **ctx)
           end
         end
 

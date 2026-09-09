@@ -410,14 +410,17 @@ module Aspera
 
         FILES_COMMANDS = (Node::COMMANDS_GEN4 + %i[transfer]).freeze
 
-        # Execute a node gen4 command starting at given node and file IDs
-        # @param command_repo       [Symbol] Command to execute
+        # Execute a node gen4 command starting at given node and file IDs.
+        # Arguments already resolved by the DSL (e.g. path:) are forwarded via +resolved_args+
+        # and injected into the dispatch context so node.rb does not re-consume them from the CLI.
+        # @param command_repo       [Symbol] Command to execute (from Node::COMMANDS_GEN4 or :transfer)
         # @param node_id            [String] Node identifier
-        # @param file_id            [String] Root file id for the operation. If nil, uses AK root file id.
-        # @param scope              [String] node scope (Node::SCOPE_<USER|ADMIN>), or nil (requires secret)
-        # @param transfer_direction [Symbol] :push or :pull (only for command_repo == :transfer)
-        # @param transfer_source    [String] source folder (only for command_repo == :transfer)
-        def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil, transfer_direction: nil, transfer_source: nil)
+        # @param file_id            [String, nil] Root file id; if nil, the AK root file id is used
+        # @param scope              [String, nil] node scope (Node::Scope::USER/ADMIN), or nil (requires secret)
+        # @param transfer_direction [Symbol, nil] :push or :pull (only for command_repo == :transfer)
+        # @param transfer_source    [String, nil] source folder  (only for command_repo == :transfer)
+        # @param resolved_args      [Hash] already-resolved CLI arguments (e.g. path:) forwarded to dispatch
+        def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil, transfer_direction: nil, transfer_source: nil, **resolved_args)
           top_node_api = aoc_api.node_api_from(
             node_id:        node_id,
             scope:          scope,
@@ -429,8 +432,8 @@ module Aspera
           when *Node::COMMANDS_GEN4
             # For permission: the handler consumes the path first then re-dispatches to sub-commands.
             # Calling dispatch_from_registry with skip_setup would bypass path consumption and fail.
-            return node_plugin.send(:"action_access_keys_do_#{command_repo}", do_root_file_id: file_id) if command_repo.eql?(:permission)
-            return node_plugin.dispatch_from_registry([:access_keys, :do, command_repo], {do_root_file_id: file_id}, skip_setup: true)
+            return node_plugin.send(:"action_access_keys_do_#{command_repo}", do_root_file_id: file_id, **resolved_args) if command_repo.eql?(:permission)
+            return node_plugin.dispatch_from_registry([:access_keys, :do, command_repo], {do_root_file_id: file_id, **resolved_args}, skip_setup: true)
           when :transfer
             # client side is agent
             # server side is transfer server
@@ -670,9 +673,14 @@ module Aspera
             arguments: [{name: :sf_id, type: :identifier}],
             setup: :setup_admin_workspace_shared_folder_member
         end
-        # admin > workspace > shared_folder > node sub-tree (FILES_COMMANDS)
+        # admin > workspace > shared_folder > node sub-tree (Gen4 commands)
         commands_under(%i[admin workspace shared_folder node]) do
-          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize, aliases: c.eql?(:ls) ? [:browse] : nil)}
+          command :transfer,   description: 'Transfer files (node-to-node)'
+          command :permission, description: 'Manage permissions'
+          command :sync,       description: 'Synchronize folders'
+          Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
+            command(cmd, **spec)
+          end
         end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
@@ -681,9 +689,14 @@ module Aspera
         commands_under(%i[admin workspace dropbox]) do
           command :list, description: 'List dropboxes in workspace'
         end
-        # admin > node > do sub-tree (FILES_COMMANDS)
+        # admin > node > do sub-tree (Gen4 commands)
         commands_under(%i[admin node do]) do
-          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize, aliases: c.eql?(:ls) ? [:browse] : nil)}
+          command :transfer,   description: 'Transfer files (node-to-node)'
+          command :permission, description: 'Manage permissions'
+          command :sync,       description: 'Synchronize folders'
+          Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
+            command(cmd, **spec)
+          end
         end
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
@@ -897,32 +910,18 @@ module Aspera
         # packages > shared_inboxes > short_link sub-commands
         register_short_link_commands(self, %i[packages shared_inboxes short_link])
 
-        # files sub-commands: all FILES_COMMANDS + :short_link
-        # Declared dynamically after FILES_COMMANDS is available (class body evaluated after constants)
+        # files sub-commands: AoC-specific commands + all Gen4 commands from COMMANDS_GEN4_SPEC
         commands_under(:files) do
           command :short_link, description: 'Manage file short link',
             arguments: [{name: :folder_dest, type: String}, {name: :link_type, allowed: %i[public private]}],
             setup: :setup_files_short_link
           command :transfer, description: 'Transfer files (node-to-node)',
             arguments: [{name: :direction, allowed: %i[push pull]}, {name: :source_folder, type: String}]
-          command :mkdir,            description: 'Create folder'
-          command :mklink,           description: 'Create symbolic link'
-          command :mkfile,           description: 'Create file'
-          command :rename,           description: 'Rename entry'
-          command :delete,           description: 'Delete entry'
-          command :upload,           description: 'Upload files',   transfer_paths: :send
-          command :download,         description: 'Download files', transfer_paths: :receive
-          command :sync,             description: 'Synchronize folders'
-          command :cat,              description: 'Show file contents'
-          command :show,             description: 'Show file info'
-          command :modify,           description: 'Modify file'
-          command :permission,       description: 'Manage permissions'
-          command :thumbnail,        description: 'Show file thumbnail'
-          command :v3,               description: 'Legacy v3 commands on files'
-          command :bearer_token_node, description: 'Show bearer token for file node'
-          command :node_info,         description: 'Show node info for file'
-          command :ls,                description: 'List files', aliases: [:browse]
-          command :find,              description: 'Find files'
+          command :permission, description: 'Manage permissions'
+          command :sync,       description: 'Synchronize folders'
+          Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
+            command(cmd, **spec)
+          end
         end
         # files > short_link sub-commands
         register_short_link_commands(self, %i[files short_link])
@@ -1269,8 +1268,8 @@ module Aspera
 
         # files > FILES_COMMANDS (all Gen4 node commands except :transfer, handled above)
         FILES_COMMANDS.reject{ |a| a.eql?(:transfer)}.each do |action|
-          define_action_method([:files, action]) do
-            execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
+          define_action_method([:files, action]) do |**ctx|
+            execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, **ctx)
           end
         end
 
@@ -1474,8 +1473,8 @@ module Aspera
 
         # admin > node > do > <FILES_COMMAND>
         FILES_COMMANDS.each do |cmd|
-          define_action_method([:admin, :node, :do, cmd]) do |res_id:, **|
-            execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN)
+          define_action_method([:admin, :node, :do, cmd]) do |res_id:, **ctx|
+            execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN, **ctx)
           end
         end
 
@@ -1522,8 +1521,8 @@ module Aspera
 
         # admin > workspace > shared_folder > node > <FILES_COMMAND>
         FILES_COMMANDS.each do |cmd|
-          define_action_method([:admin, :workspace, :shared_folder, :node, cmd]) do |sf_item:, **|
-            execute_nodegen4_command(cmd, sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
+          define_action_method([:admin, :workspace, :shared_folder, :node, cmd]) do |sf_item:, **ctx|
+            execute_nodegen4_command(cmd, sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN, **ctx)
           end
         end
 

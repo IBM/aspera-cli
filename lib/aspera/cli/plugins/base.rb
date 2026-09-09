@@ -359,9 +359,15 @@ module Aspera
 
         # Phase B, child branch: consume the next command argument, resolve the matching
         # child spec, handle delegation / entity_execute shorthands, and recurse or execute.
+        # --help is intercepted at two points:
+        #   1. Before get_next_command when no positional arg is pending: raises HelpRequest
+        #      immediately so the subcommand list with descriptions is shown rather than a
+        #      MissingArgument error.
+        #   2. After get_next_command when no further args remain: raises HelpRequest scoped
+        #      to the consumed command (e.g. `aoc files find -h`).
         # @param current_path [Array<Symbol>]
-        # @param registry [CommandRegistry]
-        # @param ctx [Hash]
+        # @param registry     [CommandRegistry]
+        # @param ctx          [Hash]
         # @return [Object]
         def dispatch_child(current_path, registry, ctx)
           children  = registry.children_of(current_path)
@@ -369,11 +375,19 @@ module Aspera
           aliases   = children.values.each_with_object({}) do |c, h|
             Array(c.aliases).each{ |a| h[a] = c.id} if c.aliases
           end
+
+          # Intercept --help before consuming the command token when no arg is pending.
+          # This avoids MissingArgument being raised by get_next_command before HelpRequest.
+          if options.help_requested && options.command_or_arg_empty?
+            @help_path = current_path
+            raise Cli::HelpRequest, self
+          end
+
           command = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
           child   = available[command]
 
-          # Intercept --help when no more positional args remain after consuming this command.
-          # (e.g. `aoc files -h` or `aoc files find -h`). When args remain, keep recursing.
+          # Intercept --help after a command was consumed but no further args remain.
+          # (e.g. `aoc files find -h`). When further args remain, keep recursing.
           if options.help_requested && options.command_or_arg_empty?
             @help_path = current_path + [command]
             raise Cli::HelpRequest, self
@@ -418,23 +432,24 @@ module Aspera
           end
         end
 
-        # Execute a leaf CommandSpec: resolve arguments (or skip for transfer_paths) and call action.
+        # Execute a leaf CommandSpec: resolve arguments and call action.
+        # Arguments already present in +ctx+ (pre-resolved by a parent plugin, e.g. aoc.rb forwarding
+        # path: into execute_nodegen4_command) are skipped — the token has already been consumed.
         # instance_arg (if any) is resolved here as an ArgumentSpec(type: :identifier) and merged
         # into ctx, exactly like any other keyword argument received by the action.
         # @param spec [CommandSpec] a leaf node (no children)
-        # @param ctx  [Hash]        accumulated context
+        # @param ctx  [Hash]        accumulated context (pre-resolved keys are not re-consumed)
         # @return [Object]
         def execute_leaf(spec, ctx)
           a = action_for(spec)
           # Always resolve declared arguments (even when transfer_paths is set — those arguments
           # are consumed first; ts_source_paths then reads whatever remains in the queue).
           (spec.arguments || []).each do |arg_spec|
+            next if ctx.key?(arg_spec.name)
             if arg_spec.type.eql?(:identifier)
-              unless ctx.key?(arg_spec.name)
-                lookup_method = arg_spec.lookup
-                block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
-                ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
-              end
+              lookup_method = arg_spec.lookup
+              block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
+              ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
             else
               ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
             end
