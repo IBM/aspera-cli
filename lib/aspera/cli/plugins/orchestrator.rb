@@ -119,7 +119,7 @@ module Aspera
               fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
             )
           end)
-          command :status,     description: 'Check running status of workflow(s)',
+          command :status,     description: 'Check running status of workflows',
             arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **){Result::ObjectList.new(call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")['workflows']['workflow'])}
           command :inputs,     description: 'Fetch input specification for a workflow',

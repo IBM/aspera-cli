@@ -199,14 +199,14 @@ module Aspera
         ASCMD_ARGS = [{name: :command_arguments, multiple: true, mandatory: false, default: nil}].freeze
         private_constant :ASCMD_ARGS
 
-        command :ls,     description: 'List files on server',            condition: :ascmd_available?, aliases: [:browse], arguments: ASCMD_ARGS
-        command :rm,     description: 'Delete file(s) on server',        condition: :ascmd_available?, aliases: [:delete], arguments: ASCMD_ARGS
-        command :mv,     description: 'Rename/move file(s) on server',   condition: :ascmd_available?, aliases: [:rename], arguments: ASCMD_ARGS
-        command :cp,     description: 'Copy file(s) on server',          condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :mkdir,  description: 'Create directory on server',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :df,     description: 'Show disk usage on server',        condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :du,     description: 'Show file sizes on server',        condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :md5sum, description: 'Compute MD5 checksums on server',  condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :ls,     description: 'List files',            condition: :ascmd_available?, aliases: [:browse], arguments: ASCMD_ARGS
+        command :rm,     description: 'Delete files',          condition: :ascmd_available?, aliases: [:delete], arguments: ASCMD_ARGS
+        command :mv,     description: 'Rename/move files',     condition: :ascmd_available?, aliases: [:rename], arguments: ASCMD_ARGS
+        command :cp,     description: 'Copy files',            condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :mkdir,  description: 'Create directory',      condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :df,     description: 'Show disk usage',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :du,     description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :md5sum, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: ASCMD_ARGS
         command :info,   description: 'Show server system information',   condition: :ascmd_available?,                     arguments: ASCMD_ARGS
 
         # Generate ascmd handlers - convention: action_<op>

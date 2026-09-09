@@ -863,12 +863,12 @@ module Aspera
           command :shared_inboxes,    description: 'Shared inbox commands'
           command :send,              description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
-          command :receive,           description: 'Receive package(s)', aliases: [:recv], transfer_paths: :receive,
+          command :receive,           description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
             arguments: [{name: :package_id, type: :identifier}]
           command :list,              description: 'List packages'
           command :show,              description: 'Show a package',
             arguments: [{name: :package_id, type: :identifier}]
-          command :delete,            description: 'Delete package(s)',
+          command :delete,            description: 'Delete packages',
             arguments: [{name: :package_id, type: :identifier}]
           command :modify,            description: 'Modify a package',
             arguments: [{name: :package_id, type: :identifier}, {name: :data, type: Hash}]

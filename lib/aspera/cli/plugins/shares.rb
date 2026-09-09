@@ -127,7 +127,7 @@ module Aspera
           # all: list/show/delete + USR_GRP_SETTINGS [+ users for group]
           commands_under([:admin, entity_type, :all]) do
             (Operations::ALL - [:create]).each do |op|
-              command(op, description: "#{op.capitalize} #{entity_type}(s)")
+              command(op, description: "#{op.capitalize} #{entity_type}s")
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
@@ -158,7 +158,7 @@ module Aspera
           # local: list/show/delete/create/modify [+ users for group]
           commands_under([:admin, entity_type, :local]) do
             Operations::ALL.each do |op|
-              command(op, description: "#{op.capitalize} #{entity_type}(s)")
+              command(op, description: "#{op.capitalize} #{entity_type}s")
             end
             USR_GRP_SETTINGS.each do |setting|
               setting_ops = setting.eql?(:share_permissions) ? Operations::ALL : %i[show modify]
@@ -220,7 +220,7 @@ module Aspera
           Operations::ALL.each do |op|
             command(
               op,
-              description:    "#{op.capitalize} share(s)",
+              description:    "#{op.capitalize} shares",
               entity_execute: {
                 api:            :@api_shares_admin,
                 entity:         'data/shares',

@@ -499,7 +499,7 @@ module Aspera
             arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
             action: ->(status_list:, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
           )
-          command :delete, description: 'Delete package(s)', setup: :setup_package_id
+          command :delete, description: 'Delete packages', setup: :setup_package_id
           command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive,
             action: ->(package_id:, **){package_receive(package_id)}
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
@@ -522,7 +522,7 @@ module Aspera
           command :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}]
           Operations::ALL.reject{ |op| op == :create}.each do |op|
-            command(op, description: "#{op.capitalize} invitation(s)")
+            command(op, description: "#{op.capitalize} invitations")
           end
         end
 

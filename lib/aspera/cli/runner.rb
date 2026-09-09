@@ -292,8 +292,11 @@ module Aspera
             end
           end
           if cmds.any?
-            # Intermediate node: list subcommands
-            lines << "\nCOMMANDS: #{label}"
+            # Intermediate node: show current command + description, then list subcommands
+            lines << "\nCOMMAND: #{label}"
+            node_spec = path.empty? ? nil : registry[path]
+            lines << "  #{node_spec.description}" if node_spec&.description
+            lines << "\n  SUBCOMMANDS:"
             col_w = cmds.keys.map{ |k| k.to_s.length}.max + 2
             cmds.each do |id, spec|
               lines << "    #{id.to_s.ljust(col_w)}  #{spec.description}"

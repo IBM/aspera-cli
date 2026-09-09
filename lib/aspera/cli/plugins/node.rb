@@ -137,26 +137,26 @@ module Aspera
         # :sync is excluded (intermediate node with sub-commands, handled separately).
         # action: entries are node-specific and intentionally omitted.
         COMMANDS_GEN3_SPEC = {
-          search:    {description: 'Search for files',             arguments: [{name: :search_root, type: String}]},
-          space:     {description: 'Show space information',       arguments: [{name: :path_list, multiple: true}]},
-          mkdir:     {description: 'Create a folder (Gen3)',       arguments: [{name: :path_list, multiple: true}]},
-          mklink:    {description: 'Create a symbolic link (Gen3)',arguments: [{name: :target, type: String}, {name: :link_path, type: String}]},
-          mkfile:    {description: 'Create a file (Gen3)',         arguments: [{name: :file_path, type: String}, {name: :contents, mandatory: false, default: nil}]},
-          rename:    {description: 'Rename a file or folder (Gen3)',arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]},
-          delete:    {description: 'Delete files or folders (Gen3)',arguments: [{name: :paths, multiple: true}]},
-          ls:        {description: 'List files (Gen3)',            arguments: [{name: :path, type: String}], aliases: [:browse]},
-          upload:    {description: 'Upload files (Gen3)',          transfer_paths: :send},
-          download:  {description: 'Download files (Gen3)',        transfer_paths: :receive},
-          cat:       {description: 'Show file contents (Gen3)',    arguments: [{name: :remote_path, type: String}]},
-          transport: {description: 'Show transport parameters'},
-          spec:      {description: 'Show transfer spec base'},
-          api_details:{description: 'Show API details'},
-          health:    {description: 'Check node health'},
-          events:    {description: 'List events'},
-          info:      {description: 'Show node info'},
-          slash:     {description: 'Show root info'},
-          license:   {description: 'Show license'},
-          access_keys:{description: 'Manage access keys'},
+          search:      {description: 'Search for files',             arguments: [{name: :search_root, type: String}]},
+          space:       {description: 'Show space information',       arguments: [{name: :path_list, multiple: true}]},
+          mkdir:       {description: 'Create a folder (Gen3)',       arguments: [{name: :path_list, multiple: true}]},
+          mklink:      {description: 'Create a symbolic link (Gen3)', arguments: [{name: :target, type: String}, {name: :link_path, type: String}]},
+          mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :file_path, type: String}, {name: :contents, mandatory: false, default: nil}]},
+          rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]},
+          delete:      {description: 'Delete files or folders (Gen3)', arguments: [{name: :paths, multiple: true}]},
+          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path, type: String}], aliases: [:browse]},
+          upload:      {description: 'Upload files (Gen3)',          transfer_paths: :send},
+          download:    {description: 'Download files (Gen3)',        transfer_paths: :receive},
+          cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :remote_path, type: String}]},
+          transport:   {description: 'Show transport parameters'},
+          spec:        {description: 'Show transfer spec base'},
+          api_details: {description: 'Show API details'},
+          health:      {description: 'Check node health'},
+          events:      {description: 'List events'},
+          info:        {description: 'Show node info'},
+          slash:       {description: 'Show root info'},
+          license:     {description: 'Show license'},
+          access_keys: {description: 'Manage access keys'}
         }.freeze
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
@@ -179,22 +179,22 @@ module Aspera
         # :sync and :permission are excluded: they are intermediate nodes handled separately.
         SINGLE_PATH_ARG = [{name: :path, type: String}].freeze
         COMMANDS_GEN4_SPEC = {
-          mkdir:            {description: 'Create folder',                  arguments: SINGLE_PATH_ARG},
-          mklink:           {description: 'Create symbolic link',           arguments: SINGLE_PATH_ARG},
-          mkfile:           {description: 'Create file',                    arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
-          rename:           {description: 'Rename entry',                   arguments: [{name: :source_path, type: String}, {name: :new_name, type: String}]},
-          delete:           {description: 'Delete entry',                   arguments: [{name: :paths, type: String, bulk: true}]},
-          upload:           {description: 'Upload files',                   transfer_paths: :send},
-          download:         {description: 'Download files',                 transfer_paths: :receive},
-          modify:           {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
-          cat:              {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
-          show:             {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
-          thumbnail:        {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
-          bearer_token_node:{description: 'Show bearer token for file node',arguments: SINGLE_PATH_ARG},
-          node_info:        {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
-          ls:               {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
-          find:             {description: 'Find files',                     arguments: SINGLE_PATH_ARG},
-          v3:               {description: 'Legacy v3 commands on files'},
+          mkdir:             {description: 'Create folder',                  arguments: SINGLE_PATH_ARG},
+          mklink:            {description: 'Create symbolic link',           arguments: SINGLE_PATH_ARG},
+          mkfile:            {description: 'Create file',                    arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
+          rename:            {description: 'Rename entry',                   arguments: [{name: :source_path, type: String}, {name: :new_name, type: String}]},
+          delete:            {description: 'Delete entry',                   arguments: [{name: :paths, type: String, bulk: true}]},
+          upload:            {description: 'Upload files',                   transfer_paths: :send},
+          download:          {description: 'Download files',                 transfer_paths: :receive},
+          modify:            {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
+          cat:               {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
+          show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
+          thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
+          bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
+          node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
+          ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
+          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG},
+          v3:                {description: 'Legacy v3 commands on files'}
         }.freeze
         private_constant :SINGLE_PATH_ARG
 
@@ -380,14 +380,14 @@ module Aspera
         # Gen3 leaf commands — metadata from COMMANDS_GEN3_SPEC; action: added where node-specific.
         # :sync is declared separately (intermediate node with sub-commands).
         GEN3_NODE_ACTIONS = {
-          ls:         ->(path:, **){browse_gen3(path)},
-          transport:  ->(**){Result::SingleObject.new(@api_node.transport_params)},
-          spec:       ->(**){Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))},
-          api_details:->(**){Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))},
-          events:     ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})},
-          info:       ->(**){Result::SingleObject.new(@api_node.read('info'))},
-          slash:      ->(**){Result::SingleObject.new(@api_node.read(''))},
-          license:    ->(**){Result::SingleObject.new(@api_node.read('license'))},
+          ls:          ->(path:, **){browse_gen3(path)},
+          transport:   ->(**){Result::SingleObject.new(@api_node.transport_params)},
+          spec:        ->(**){Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))},
+          api_details: ->(**){Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))},
+          events:      ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})},
+          info:        ->(**){Result::SingleObject.new(@api_node.read('info'))},
+          slash:       ->(**){Result::SingleObject.new(@api_node.read(''))},
+          license:     ->(**){Result::SingleObject.new(@api_node.read('license'))}
         }.freeze
         private_constant :GEN3_NODE_ACTIONS
         COMMANDS_GEN3_SPEC.each do |cmd, spec|
@@ -417,7 +417,7 @@ module Aspera
               op,
               api:         :@api_node,
               entity:      'access_keys',
-              description: "#{op.capitalize} access key(s)",
+              description: "#{op.capitalize} access keys",
               command:     op,
               body_component: Schema::Registry::NODE,
               lookup_block: ->(field, value) do
@@ -430,13 +430,13 @@ module Aspera
 
         commands_under(%i[access_keys do]) do
           COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec.merge(description: "#{spec[:description]} (Gen4)"))
+            command(cmd, **spec)
           end
-          command :permission, description: 'Manage permissions (Gen4)', setup: :setup_access_key_do_permission
-          command :sync, description: 'Synchronize folders (Gen4)'
+          command :permission, description: 'Manage permissions', setup: :setup_access_key_do_permission
+          command :sync, description: 'Synchronize folders'
           commands_under(%i[access_keys do sync]) do
             Sync::Operations::DIRECTIONS.each do |dir|
-              command(dir, description: "#{dir.capitalize}-sync (Gen4)", transfer_paths: :send)
+              command(dir, description: "#{dir.capitalize}-sync", transfer_paths: :send)
             end
             command :admin, description: 'Manage sync database (admin operations)'
             SyncActions.register_sync_admin_commands(self, %i[access_keys do sync admin])
@@ -451,7 +451,7 @@ module Aspera
             arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
           command :modify, description: 'Modify a permission',
             arguments: [{name: :perm_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
-          command :delete, description: 'Delete permission(s)',
+          command :delete, description: 'Delete permissions',
             arguments: [{name: :perm_id, bulk: true}]
         end
         # async (legacy /async)
