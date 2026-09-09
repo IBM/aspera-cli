@@ -171,6 +171,48 @@ module Aspera
         end
       end
 
+      describe 'args_as_extended (@:)' do
+        # The @: extended value handler is normally registered by Runner, so we register it here for unit tests.
+        before do
+          ExtendedValue.instance.on(:'') { |v| @opts.args_as_extended(v) }
+        end
+
+        it 'collects key=value args after the option using @: (no leading positional args)' do
+          @opts = build_parser(['--query', '@:', 'status=active', 'END'])
+          @opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
+          @opts.parse_options!
+          expect(@opts.get_option(:query)).to(eq({'status' => 'active'}))
+          expect(@opts.command_or_arg_empty?).to(be(true))
+        end
+
+        it 'skips leading positional args before the option when using @:' do
+          # argv: cmd --query @: a=b END
+          # "cmd" is a positional arg before --query; it must remain available after @: collection.
+          @opts = build_parser(['cmd', '--query', '@:', 'a=b', 'END'])
+          @opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
+          @opts.parse_options!
+          expect(@opts.get_option(:query)).to(eq({'a' => 'b'}))
+          # "cmd" must still be reachable as a positional argument
+          expect(@opts.get_next_argument('cmd')).to(eq('cmd'))
+        end
+      end
+
+      describe 'edge cases' do
+        it 'raises BadArgument for a typed long option at end of line with no following value' do
+          opts = build_parser(['--level'])
+          opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
+          # nil is passed to assign_value when no argument follows; type validation raises BadArgument
+          expect { opts.parse_options! }.to(raise_error(BadArgument))
+        end
+
+        it 'returns nil for an untyped (String) short option at end of line with no following value' do
+          opts = build_parser(['-X'])
+          opts.declare(:xenon, description: 'Xenon option', short: 'X')
+          opts.parse_options!
+          expect(opts.get_option(:xenon)).to(be_nil)
+        end
+      end
+
       describe '#get_option with schema: contextual override' do
         def build_query_option(opts)
           opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
