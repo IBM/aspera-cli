@@ -605,16 +605,8 @@ module Aspera
           command :bearer_token,   description: 'Show admin bearer token',
             action: ->{Result::Text.new(aoc_api.oauth.authorization)}
           command :application,    description: 'Manage applications'
-          command(
-            :ats, description: 'Manage ATS (Aspera Transfer Service)',
-            action: lambda do
-              ats_api = Rest.new(**aoc_api.params.deep_merge({
-                base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
-                auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
-              }))
-              Ats.new(context: context, api: ats_api).execute_action
-            end
-          )
+          command :ats, description: 'Manage ATS (Aspera Transfer Service)',
+            delegate_instance: :build_ats_plugin, delegates_to: []
           command :usage_reports,  description: 'List usage reports',
             action: ->{result_list('usage_reports', base_query: workspace_id_hash)}
           command :auth_providers, description: 'Manage auth providers'
@@ -1466,6 +1458,17 @@ module Aspera
           the_public_key = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
           aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
           Result::Success.new
+        end
+
+        # admin > ats — build and return an Ats plugin instance wired to the AoC ATS API.
+        # Used as delegate_instance: target so --help traverses the Ats registry.
+        # @return [Ats] configured Ats plugin instance
+        def build_ats_plugin
+          ats_api = Rest.new(**aoc_api.params.deep_merge({
+            base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
+            auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
+          }))
+          Ats.new(context: context, api: ats_api)
         end
 
         # admin > node > do | bearer_token — setup reuses the generic instance setup
