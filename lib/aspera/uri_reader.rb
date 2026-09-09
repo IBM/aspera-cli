@@ -68,7 +68,7 @@ module Aspera
           # download to temp file
           # auto-delete on exit
           temp_file = TempFileManager.instance.new_file_path_global(suffix: File.basename(url))
-          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: temp_file)
+          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: temp_file)
           return temp_file
         end
       end

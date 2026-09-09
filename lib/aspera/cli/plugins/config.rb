@@ -435,7 +435,7 @@ module Aspera
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
           Log.log.info("Downloading: #{file_url}")
-          Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
+          Rest.new(base_url: file_url).call(operation: 'GET', save_to: file_dest)
           Result::Status.new("Saved to: #{file_dest}")
         end
 

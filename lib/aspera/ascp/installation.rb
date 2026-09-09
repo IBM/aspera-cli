@@ -246,18 +246,18 @@ module Aspera
         return info.first['url']
       end
 
-      # @param sdk_archive_path [String] path to SDK archive
+      # @param url         [String] URL or filename used to detect archive format
+      # @param archive_io  [StringIO] archive content as an in-memory IO stream
       # @yieldparam entry_name [String] File path in archive
       # @yieldparam entry_stream [IO, Gem::Package::TarReader::Entry] Data stream
       # @yieldparam link_target [String, nil] Link target if symlink, nil otherwise
-      def extract_archive_files(sdk_archive_path)
+      def extract_archive_files(url, archive_io)
         Aspera.assert(block_given?, 'missing block')
-        case sdk_archive_path
+        case url
         # Windows and Mac use zip
         when /\.zip$/
           require 'zip'
-          # extract files from archive
-          Zip::File.open(sdk_archive_path) do |zip_file|
+          Zip::File.open_buffer(archive_io) do |zip_file|
             zip_file.each do |entry|
               next if entry.name.end_with?('/')
               entry.get_input_stream do |io|
@@ -269,7 +269,7 @@ module Aspera
         when /\.tar\.gz/
           require 'zlib'
           require 'rubygems/package'
-          Zlib::GzipReader.open(sdk_archive_path) do |gzip|
+          Zlib::GzipReader.wrap(archive_io) do |gzip|
             Gem::Package::TarReader.new(gzip) do |tar|
               tar.each do |entry|
                 next if entry.directory?
@@ -278,7 +278,7 @@ module Aspera
             end
           end
         else
-          raise "unknown archive extension: #{sdk_archive_path}"
+          raise "unknown archive extension: #{url}"
         end
       end
 
@@ -302,8 +302,14 @@ module Aspera
         extracted_files = {}
         # Security: Get canonical path of installation directory for boundary checks
         install_boundary = File.realpath(folder)
-        sdk_archive_path = UriReader.read_as_file(url)
-        extract_archive_files(sdk_archive_path) do |entry_name, entry_stream, link_target|
+        archive_io = StringIO.new
+        if UriReader.file?(url)
+          archive_io.write(File.binread(UriReader.file_path(url)))
+        else
+          Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: archive_io)
+          archive_io.rewind
+        end
+        extract_archive_files(url, archive_io) do |entry_name, entry_stream, link_target|
           dest_folder = if block_given?
             yield(entry_name)
           else

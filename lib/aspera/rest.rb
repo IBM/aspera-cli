@@ -326,7 +326,7 @@ module Aspera
     # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
     # @param body         [Hash, String, nil] Body parameters
     # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
-    # @param save_to_file [String, nil] File path to save response body
+    # @param save_to      [String, IO, nil] File path or IO object to save response body; progress bar is used when set
     # @param exception    [Boolean] Whether to raise an exception on HTTP error
     # @param ret          [Symbol] One of :data, :resp, :both - controls return value
     # @return [Array(Hash, Net::HTTPResponse)] When `ret` is :both
@@ -340,7 +340,7 @@ module Aspera
       content_type: nil,
       body: nil,
       headers: nil,
-      save_to_file: nil,
+      save_to: nil,
       exception: true,
       ret: :data
     )
@@ -424,12 +424,12 @@ module Aspera
           result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
           Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
-          if !save_to_file.nil? &&
+          if !save_to.nil? &&
               result_http.code.to_s.start_with?('2') &&
               !Mime.json?(result_mime)
             total_size = result_http['Content-Length']&.to_i
             Log.log.debug('before write file')
-            target_file = save_to_file
+            target_file = save_to
             # override user's path to path in header
             if !response['Content-Disposition'].nil?
               disposition = self.class.parse_header(response['Content-Disposition'])
@@ -439,26 +439,34 @@ module Aspera
                 target_file = File.join(File.dirname(target_file), safe_filename) unless safe_filename.empty?
               end
             end
-            # download with temp filename
-            target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
             Log.log.debug{"saving to: #{target_file}"}
             written_size = 0
             session_id = SecureRandom.uuid.freeze
             RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)
             RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size) if total_size
-            FileUtils.mkdir_p(File.dirname(target_file_tmp))
             limiter = TimerLimiter.new(0.5)
-            File.open(target_file_tmp, 'wb') do |file|
+            if target_file.respond_to?(:write)
+              # IO object: stream directly into it
               result_http.read_body do |fragment|
-                file.write(fragment)
+                target_file.write(fragment)
                 written_size += fragment.length
                 RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
               end
+            else
+              # file path: download to partial name first, then rename atomically
+              target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
+              FileUtils.mkdir_p(File.dirname(target_file_tmp))
+              File.open(target_file_tmp, 'wb') do |file|
+                result_http.read_body do |fragment|
+                  file.write(fragment)
+                  written_size += fragment.length
+                  RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
+                end
+              end
+              File.rename(target_file_tmp, target_file)
             end
             RestParameters.instance.progress_bar&.event(:session_end, session_id: session_id)
             RestParameters.instance.progress_bar&.event(:end)
-            # rename at the end
-            File.rename(target_file_tmp, target_file)
             file_saved = true
           end
         end
@@ -475,9 +483,10 @@ module Aspera
         result_data = JSON.parse(result_data) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
         Log.dump(:result_data, result_data)
         RestErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
-        unless file_saved || save_to_file.nil?
-          FileUtils.mkdir_p(File.dirname(save_to_file))
-          File.write(save_to_file, result_http.body, binmode: true)
+        unless file_saved || save_to.nil?
+          raise 'save_to: IO object requires a streaming response' if save_to.respond_to?(:write)
+          FileUtils.mkdir_p(File.dirname(save_to))
+          File.write(save_to, result_http.body, binmode: true)
         end
       rescue RestCallError => e
         do_retry = false
@@ -526,7 +535,7 @@ module Aspera
             query: query,
             body: body,
             content_type: content_type,
-            save_to_file: save_to_file,
+            save_to: save_to,
             exception: exception,
             headers: headers,
             ret: ret

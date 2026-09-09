@@ -284,7 +284,7 @@ module Aspera
             File.basename(default_file_name)
           end
         file_path = File.join(transfer_spec['destination_root'], file_name)
-        call(operation: 'GET', subpath: "download/#{transfer_uuid}", save_to_file: file_path)
+        call(operation: 'GET', subpath: "download/#{transfer_uuid}", save_to: file_path)
       end
 
       def info
