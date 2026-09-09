@@ -60,7 +60,7 @@ module Aspera
         }
       end
 
-      def list
+      def all
         result = []
         @all_secrets.each do |label, values|
           normal = values.symbolize_keys

@@ -137,9 +137,9 @@ module Aspera
         }
       end
 
-      def list
+      def all
         # the only way to list is `dump-keychain` which triggers security alert
-        raise Error, 'list not implemented, use macos keychain app'
+        raise Error, 'overview not implemented, use macos keychain app'
       end
 
       def set(options)

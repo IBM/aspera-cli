@@ -4762,6 +4762,7 @@ conf_ssl_options:
     - --insecure=yes
 conf_vault_macos:
   tags:
+    - vault
     - nodoc
     - interactive
   args:
@@ -4774,6 +4775,7 @@ conf_vault_macos_prepare:
   depends_on:
     - conf_vault_macos
   tags:
+    - vault
     - pre_cleanup
     - nodoc
     - interactive
@@ -4789,6 +4791,7 @@ conf_vault_macosc:
   depends_on:
     - conf_vault_macos_prepare
   tags:
+    - vault
     - nodoc
     - interactive
   args:
@@ -4802,6 +4805,7 @@ conf_vault_macosd:
   depends_on:
     - conf_vault_macosc
   tags:
+    - vault
     - pre_cleanup
   args:
     - -N
@@ -4812,8 +4816,8 @@ conf_vault_macosd:
     - --vault.type=system
 conf_vault_file:
   tags:
+    - vault
     - tmp_conf
-    - sym_encryption
   args:
     - config
     - preset
@@ -4822,11 +4826,12 @@ conf_vault_file:
     - vault
     - "@:"
     - type=file
-    - file=$(PATH_VAULT_FILE)
+    - name=$(PATH_VAULT_FILE)
 conf_vault_file_password:
   depends_on:
     - conf_vault_file
   tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4839,6 +4844,7 @@ conf_vault_create:
   depends_on:
     - conf_vault_file_password
   tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4852,15 +4858,29 @@ conf_vault_info:
   depends_on:
     - conf_vault_create
   tags:
+    - vault
     - tmp_conf
   args:
     - config
     - vault
     - info
-conf_vault_list_after_create:
+conf_vault_ids_after_create:
+  description: vault ids returns labels only (no passwords)
   depends_on:
     - conf_vault_create
   tags:
+    - vault
+    - tmp_conf
+  args:
+    - config
+    - vault
+    - ids
+conf_vault_list_after_create:
+  description: vault list returns full secret details
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4870,6 +4890,7 @@ conf_vault_show:
   depends_on:
     - conf_vault_create
   tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4919,6 +4940,7 @@ conf_preset_update_vault_none:
   depends_on:
     - conf_vault_file_password
   tags:
+    - vault
     - tmp_conf
     - nodoc
   args:
@@ -4934,6 +4956,7 @@ conf_preset_update_vault_none:
     raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == 'still_clear'
 conf_vault_pass:
   tags:
+    - vault
     - tmp_conf
     - nodoc
   args:
@@ -4943,6 +4966,7 @@ conf_vault_pass:
     - "@preset:misc.new_vault_pass"
 conf_vault_pass_update:
   tags:
+    - vault
     - tmp_conf
     - nodoc
   args:
@@ -4952,19 +4976,22 @@ conf_vault_pass_update:
     - GLOBAL
     - vault_password
     - "@preset:misc.new_vault_pass"
-conf_vault_list:
+conf_vault_ids:
+  description: vault ids returns labels only after password change
   depends_on:
     - conf_vault_pass_update
   tags:
+    - vault
     - tmp_conf
   args:
     - config
     - vault
-    - list
+    - ids
 conf_vault_delete_label:
   depends_on:
-    - conf_vault_list
+    - conf_vault_ids
   tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4975,6 +5002,7 @@ conf_echo_vault:
   depends_on:
     - conf_preset_secure
   tags:
+    - vault
     - tmp_conf
   args:
     - config
@@ -4983,6 +5011,7 @@ conf_echo_vault:
 conf_echo_fail_vault_format:
   description: "Wrong @vault: format, missing dot separator"
   tags:
+    - vault
     - must_fail
     - tmp_conf
     - nodoc
@@ -4994,6 +5023,7 @@ conf_echo_fail_vault_format:
 conf_echo_fail_vault_label:
   description: "Correct @vault: format but label does not exist"
   tags:
+    - vault
     - must_fail
     - tmp_conf
     - nodoc
@@ -5004,6 +5034,7 @@ conf_echo_fail_vault_label:
     - "@vault:bad.password"
 conf_echo_fail_file_not_found:
   tags:
+    - vault
     - must_fail
     - tmp_conf
     - nodoc
@@ -5310,6 +5341,7 @@ conf_echo_picture_jpg:
 conf_echo_fail_vault_entry:
   description: "Wrong @file: reference, file does not exist"
   tags:
+    - vault
     - must_fail
     - nodoc
   expect: No such file or directory

@@ -10,7 +10,7 @@ unless defined?(MCP::Tool)
   begin
     require 'mcp'
   rescue LoadError
-    raise Cli::Error, "The 'mcp' gem is required. Install it with: gem install mcp"
+    raise Cli::Error, "The 'mcp' and 'rack' gems are required. Install them with: gem install mcp rack"
   end
 end
 

@@ -29,7 +29,7 @@ module Aspera
         }
       end
 
-      def list
+      def all
         metadata_path = STORE_PATH.sub('/data/', '/metadata/')
         return Vault.logical.list(metadata_path).filter_map do |label|
           get(label: label).merge(label: label)

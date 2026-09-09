@@ -3,14 +3,17 @@
 require 'aspera/cli/error'
 require 'aspera/log'
 require 'aspera/assert'
+require 'json'
 
 module Aspera
   module Cli
     # Mixin providing vault/keychain functionality to Plugin::Config.
     # Depends on `options` and `context.main_folder` being available in the including class.
     module VaultManager
-      def action_vault_show(label:, **)
-        Result::SingleObject.new(vault_required.get(label: label))
+      def action_vault_show(label:, id: nil, **)
+        v = vault_required
+        kwargs = id && v.method(:get).parameters.any?{ |_t, n| n == :id} ? {id: id} : {}
+        Result::SingleObject.new(v.get(label: label, **kwargs))
       end
 
       def action_vault_create(info:, **)
@@ -18,8 +21,20 @@ module Aspera
         Result::Status.new('Secret added')
       end
 
-      def action_vault_delete(label:, **)
-        vault_required.delete(label: label)
+      # Import secrets from a JSON array; skips entries missing :label
+      def action_vault_import(secrets:, **)
+        is_bulk = options.get_option(:bulk)
+        bfail   = options.get_option(:bfail)
+        Result.bulk(secrets, is_bulk: is_bulk, command: :import, id_result: 'label', bfail: bfail) do |entry|
+          vault_required.set(entry.symbolize_keys)
+          {'label' => entry['label'] || entry[:label]}
+        end
+      end
+
+      def action_vault_delete(label:, id: nil, **)
+        v = vault_required
+        kwargs = id && v.method(:delete).parameters.any?{ |_t, n| n == :id} ? {id: id} : {}
+        v.delete(label: label, **kwargs)
         Result::Status.new("Secret deleted: #{label}")
       end
 

@@ -206,16 +206,20 @@ module Aspera
         commands_under(:vault) do
           command :info,     description: 'Display vault information',
             action: ->(**){Result::SingleObject.new(vault.info)}
-          command :list,     description: 'List secrets in the vault',
-            action: ->(**){Result::ObjectList.new(vault.list)}
-          command :show,     description: 'Show a secret by label',
-            arguments: [{name: :label, type: String}]
+          command :ids,      description: 'List secret labels in the vault',
+            action: ->(**){Result::ObjectList.new(vault_required.ids)}
+          command :list,     description: 'List all secrets with full details',
+            action: ->(**){Result::ObjectList.new(vault_required.all)}
+          command :show,     description: 'Show a secret by label (or id)',
+            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
           command :create,   description: 'Add a new secret to the vault',
-            arguments: [{name: :info, type: Hash}]
-          command :delete,   description: 'Delete a secret by label',
-            arguments: [{name: :label, type: String}]
+            arguments: [{name: :info, type: Hash, schema: Schema::Registry::VAULT_SECRET}]
+          command :delete,   description: 'Delete a secret by label (or id)',
+            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
           command :password, description: 'Change the vault password',
             arguments: [{name: :new_password, type: String}]
+          command :import,   description: 'Import secrets from a JSON array (supports --bulk)',
+            arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
         end
         command :commands, description: 'List all available commands across all plugins'
         command :options, description: 'List all options available for a plugin',

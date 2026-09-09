@@ -79,6 +79,7 @@ module Aspera
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions"
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions"
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
+      VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret"
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
       PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions"
 

@@ -4,6 +4,13 @@ module Aspera
   module Keychain
     class Base
       CONTENT_KEYS = %i[label username password url description].freeze
+
+      # Returns a lightweight list: one Hash per secret with :label (and :id if the backend has one).
+      # Override in subclasses that can provide this cheaply without fetching full item details.
+      def ids
+        all.map{ |s| s.slice(:id, :label).compact}
+      end
+
       def validate_set(options)
         Aspera.assert_type(options, Hash){'options'}
         unsupported = options.keys - CONTENT_KEYS

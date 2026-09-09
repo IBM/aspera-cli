@@ -2,9 +2,9 @@
 
 module Aspera
   module Keychain
-    # Manage secrets in a Hashicorp Vault
+    # Factory to create vault/keychain instances
     class Factory
-      LIST = %i[file system vault].freeze
+      LIST = %i[file system vault 1password].freeze
       class << self
         # Create a vault instance
         # @param info     [Hash]   vault options
@@ -37,6 +37,18 @@ module Aspera
             require 'aspera/keychain/hashicorp_vault'
             info[:token] ||= password
             Keychain::HashicorpVault.new(**info)
+          when '1password'
+            source = info.delete(:source) || 'api'
+            Aspera.assert_values(source, %w[api cli]){'vault.source'}
+            case source
+            when 'api'
+              require 'aspera/keychain/one_password_api'
+              info[:token] ||= password
+              Keychain::OnePasswordApi.new(**info)
+            when 'cli'
+              require 'aspera/keychain/one_password_cli'
+              Keychain::OnePasswordCli.new(**info)
+            end
           else Aspera.error_unexpected_value(vault_type)
           end
         end

@@ -417,6 +417,38 @@ components:
         name:
           type: string
           description: Name of the keychain to use.
+    VaultOnePasswordOptions:
+      type: object
+      description: 1Password secret store (Connect REST API or CLI).
+      required:
+        - type
+        - source
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [1password]
+        source:
+          type: string
+          description: Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.
+          enum: [api, cli]
+          default: api
+        url:
+          type: string
+          description: Base URL of the 1Password Connect server (required when `source` is `api`).
+          example: "http://localhost:8080"
+        vault_id:
+          type: string
+          description: ID of the 1Password vault to use (required when `source` is `api`).
+        token:
+          type: string
+          description: Bearer token for the Connect API (required when `source` is `api`). Defaults to the value of `vault_password`.
+        vault:
+          type: string
+          description: Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted.
+        account:
+          type: string
+          description: Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted.
     VaultFileOptions:
       type: object
       description: Encrypted file secret store.
@@ -433,6 +465,27 @@ components:
             Path to the encrypted vault file.
             Relative paths are resolved from the configuration folder.
           default: vault.bin
+    VaultSecret:
+      type: object
+      description: Secret entry in the vault
+      required:
+        - label
+      properties:
+        label:
+          type: string
+          description: Unique identifier for this secret entry
+        username:
+          type: string
+          description: Username associated with the secret
+        password:
+          type: string
+          description: Secret value
+        url:
+          type: string
+          description: URL associated with the secret
+        description:
+          type: string
+          description: Human-readable description of this secret
     VaultOptions:
       title: Secret vault configuration
       description: Secret vault configuration. Set `type` to select the vault backend.
@@ -440,12 +493,14 @@ components:
         - $ref: "#/components/schemas/VaultHashicorpOptions"
         - $ref: "#/components/schemas/VaultSystemOptions"
         - $ref: "#/components/schemas/VaultFileOptions"
+        - $ref: "#/components/schemas/VaultOnePasswordOptions"
       discriminator:
         propertyName: type
         mapping:
-          vault:  "#/components/schemas/VaultHashicorpOptions"
-          system: "#/components/schemas/VaultSystemOptions"
-          file:   "#/components/schemas/VaultFileOptions"
+          vault:      "#/components/schemas/VaultHashicorpOptions"
+          system:     "#/components/schemas/VaultSystemOptions"
+          file:       "#/components/schemas/VaultFileOptions"
+          1password:  "#/components/schemas/VaultOnePasswordOptions"
     ImageOptions:
       type: object
       description: Options for displaying images and thumbnails in the terminal.
