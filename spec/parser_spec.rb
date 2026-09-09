@@ -174,7 +174,7 @@ module Aspera
       describe 'args_as_extended (@:)' do
         # The @: extended value handler is normally registered by Runner, so we register it here for unit tests.
         before do
-          ExtendedValue.instance.on(:'') { |v| @opts.args_as_extended(v) }
+          ExtendedValue.instance.on(:''){ |v| @opts.args_as_extended(v)}
         end
 
         it 'collects key=value args after the option using @: (no leading positional args)' do
@@ -202,7 +202,7 @@ module Aspera
           opts = build_parser(['--level'])
           opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
           # nil is passed to assign_value when no argument follows; type validation raises BadArgument
-          expect { opts.parse_options! }.to(raise_error(BadArgument))
+          expect{opts.parse_options!}.to(raise_error(BadArgument))
         end
 
         it 'returns nil for an untyped (String) short option at end of line with no following value' do

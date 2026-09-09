@@ -49,10 +49,7 @@ module Aspera
       end
 
       # @return [:yes, :no]
-      def to_sym(enum)
-        Aspera.assert_values(enum, ALL){'boolean'}
-        TRUE_VALUES.include?(enum) ? YES_SYM : NO_SYM
-      end
+      def to_sym(enum) = true?(enum) ? YES_SYM : NO_SYM
 
       # @return [Boolean] `true` if value is a value for `true` or `false` in ALL
       def symbol?(sym)
@@ -123,61 +120,75 @@ module Aspera
         bind_handler(handler) unless handler.nil?
         @types = nil
         @values = nil
-        # Derive allowed type from schema when not explicitly provided
-        if (allowed.nil? || allowed.eql?(Type::STRING)) && schema
-          schema_reader = Schema::Registry.instance.reader(schema) rescue nil
-          schema_node   = schema_reader&.current
-          if schema_node
-            case schema_node['type']
-            when 'object' then allowed = Hash
-            when 'array'  then allowed = Array
-            else
-              # No top-level type: inspect oneOf/anyOf branches; if all resolve to 'object', infer Hash
-              composite_key = (%w[oneOf anyOf] & schema_node.keys).first
-              if composite_key
-                branch_types = schema_node[composite_key].map do |branch|
-                  resolved = branch['$ref'] ? schema_reader.resolve_ref(branch['$ref']).current : branch
-                  resolved['type']
-                end
-                if branch_types.all?('object')
-                  allowed = Hash
-                else
-                  Aspera.assert(
-                    !allowed.nil? && !allowed.eql?(Type::STRING),
-                    "option :#{option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly"
-                  )
-                end
-              end
-            end
-          end
-        end
-        if !allowed.nil?
-          allowed = [allowed] if allowed.is_a?(Class)
-          Aspera.assert_type(allowed, Array)
-          if allowed.take(Type::SYMBOL_ARRAY.length) == Type::SYMBOL_ARRAY
-            # Special case: array of defined symbol values
-            @types = Type::SYMBOL_ARRAY
-            @values = allowed[Type::SYMBOL_ARRAY.length..]
-            # Default value for symbol array when no value has been set yet
-            assign_value([], where: 'array default', warn_deprecation: false) if value(log: false).nil?
-          elsif allowed.all?(Class)
-            @types = allowed
-            @values = BoolValue::ALL if allowed.eql?(Type::BOOLEAN)
-            # Default value for array/hash when no value has been set yet
-            if @types.first.eql?(Array) && !@types.include?(NilClass) && value(log: false).nil?
-              assign_value([], where: 'array default', warn_deprecation: false)
-            elsif @types.first.eql?(Hash) && !@types.include?(NilClass) && value(log: false).nil?
-              assign_value({}, where: 'hash default', warn_deprecation: false)
-            end
-          elsif allowed.all?(Symbol)
-            @types = Type::ENUM
-            @values = allowed
-          else
-            Aspera.error_unexpected_value(allowed)
-          end
-        end
+        allowed = infer_allowed_from_schema(schema, allowed) if schema
+        apply_allowed(allowed) unless allowed.nil?
         Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
       end
+
+      private
+
+      # Derive the `allowed:` value from the schema when not explicitly provided.
+      # Returns `allowed` unchanged when the schema provides no usable type information.
+      # @param schema  [String] schema identifier
+      # @param allowed [Object] caller-supplied allowed value (may be nil or Type::STRING)
+      # @return [Object] resolved allowed (Hash, Array, or the original value)
+      def infer_allowed_from_schema(schema, allowed)
+        return allowed unless allowed.nil? || allowed.eql?(Type::STRING)
+
+        schema_reader = Schema::Registry.instance.reader(schema) rescue nil
+        schema_node   = schema_reader&.current
+        return allowed unless schema_node
+
+        case schema_node['type']
+        when 'object' then return Hash
+        when 'array'  then return Array
+        end
+        # No top-level type: inspect oneOf/anyOf branches; if all resolve to 'object', infer Hash
+        composite_key = (%w[oneOf anyOf] & schema_node.keys).first
+        return allowed unless composite_key
+
+        branch_types = schema_node[composite_key].map do |branch|
+          resolved = branch['$ref'] ? schema_reader.resolve_ref(branch['$ref']).current : branch
+          resolved['type']
+        end
+        if branch_types.all?('object')
+          Hash
+        else
+          Aspera.assert(
+            !allowed.nil? && !allowed.eql?(Type::STRING),
+            "option :#{@option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly"
+          )
+          allowed
+        end
+      end
+
+      # Initialise @types and @values from the resolved `allowed` specifier.
+      # @param allowed [Class, Array<Class>, Array<Symbol>] resolved allowed value (never nil)
+      def apply_allowed(allowed)
+        allowed = [allowed] if allowed.is_a?(Class)
+        Aspera.assert_type(allowed, Array)
+        if allowed.take(Type::SYMBOL_ARRAY.length) == Type::SYMBOL_ARRAY
+          # Special case: array of defined symbol values
+          @types = Type::SYMBOL_ARRAY
+          @values = allowed[Type::SYMBOL_ARRAY.length..]
+          assign_value([], where: 'array default', warn_deprecation: false) if value(log: false).nil?
+        elsif allowed.all?(Class)
+          @types = allowed
+          @values = BoolValue::ALL if allowed.eql?(Type::BOOLEAN)
+          if @types.first.eql?(Array) && !@types.include?(NilClass) && value(log: false).nil?
+            assign_value([], where: 'array default', warn_deprecation: false)
+          elsif @types.first.eql?(Hash) && !@types.include?(NilClass) && value(log: false).nil?
+            assign_value({}, where: 'hash default', warn_deprecation: false)
+          end
+        elsif allowed.all?(Symbol)
+          @types = Type::ENUM
+          @values = allowed
+        else
+          Aspera.error_unexpected_value(allowed)
+        end
+      end
+
+      public
 
       # Wire (or re-wire) the getter/setter delegation for this option.
       # Safe to call after construction - used by Parser#set_handler to bind a composed
@@ -193,9 +204,9 @@ module Aspera
         @read_method  = handler[:m]
         @write_method = "#{@read_method}=".to_sym
         @access = if @object.respond_to?(@write_method)
-          :write
+          :attr   # delegation via attr_accessor-style m / m=
         else
-          :setter
+          :custom # delegation via generic 3-arg method m(sym, :get/:set, val)
         end
         Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{@read_method}"}
         Log.log.trace1{"bind_handler: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
@@ -220,9 +231,9 @@ module Aspera
       def value(log: true)
         current_value =
           case @access
-          when :local then @object
-          when :write then @object.send(@read_method)
-          when :setter then @object.send(@read_method, @option, :get)
+          when :local  then @object
+          when :attr   then @object.send(@read_method)
+          when :custom then @object.send(@read_method, @option, :get)
           end
         Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"} if log
         current_value
@@ -283,8 +294,8 @@ module Aspera
       def store(new_value)
         case @access
         when :local  then @object = new_value
-        when :write  then @object.send(@write_method, new_value)
-        when :setter then @object.send(@read_method, @option, :set, new_value)
+        when :attr   then @object.send(@write_method, new_value)
+        when :custom then @object.send(@read_method, @option, :set, new_value)
         end
       end
     end
@@ -377,7 +388,7 @@ module Aspera
       VALUE_SEP = '='
       # Long-option prefix (e.g. `--opt`)
       PREFIX = '--'
-      private_constant :NAME_SEP_LINE, :NAME_SEP_SYMBOL, :VALUE_SEP, :PREFIX
+      # (public: shared with Parser)
     end
 
     # parse command line options
@@ -408,21 +419,30 @@ module Aspera
         end
 
         # Generates error message with list of allowed values
-        # @param error_msg [String] Error message
+        # @param error_msg   [String] Error message
         # @param accept_list [Array<Symbol>] List of allowed values
-        def multi_choice_assert_msg(error_msg, accept_list)
-          [error_msg, 'Use:', *accept_list.map{ |choice| "- #{choice}"}.sort].join("\n")
+        # @param aliases     [Hash{Symbol=>Symbol}, nil] alias→id map; used to annotate entries with their aliases
+        def multi_choice_assert_msg(error_msg, accept_list, aliases: nil)
+          # Build reverse map: id → [alias, ...] for annotation
+          reverse = aliases&.each_with_object({}) do |(ali, id), h|
+            (h[id] ||= []) << ali
+          end
+          lines = accept_list.map do |choice|
+            suffix = reverse&.key?(choice) ? " (alias: #{reverse[choice].join(', ')})" : ''
+            "- #{choice}#{suffix}"
+          end
+          [error_msg, 'Use:', *lines.sort].join("\n")
         end
 
         # Change option name with dash to name with underscore
         # @param name [String] option name with dash separators
         # @return [String] option name with underscore separators
         def option_line_to_name(name)
-          name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
+          name.gsub(Option::NAME_SEP_LINE, Option::NAME_SEP_SYMBOL)
         end
 
         def option_name_to_line(name)
-          "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
+          "#{Option::PREFIX}#{name.to_s.gsub(Option::NAME_SEP_SYMBOL, Option::NAME_SEP_LINE)}"
         end
 
         # @return [Hash{Symbol => String}, nil] `{field:,value:}` if identifier is a percent selector, else `nil`
@@ -461,27 +481,21 @@ module Aspera
         @short_options = {}
         # Current help section group name, set by #group
         @current_group = 'global'
-        env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
+        env_prefix = program_name.upcase + Option::NAME_SEP_SYMBOL
         ENV.each do |k, v|
           @option_pairs_env[k.delete_prefix(env_prefix).downcase.to_sym] = v if k.start_with?(env_prefix)
         end
         Log.dump(:env, @option_pairs_env)
         # Ordered list of all CLI tokens after `--` splitting.
-        # Each entry is a two-element array: [:option, token] or [:argument, token].
-        # This is the single source of truth for CLI parsing; @unprocessed_cmd_line_options and
-        # @unprocessed_cmd_line_arguments are derived views that stay in sync during parse_options!.
-        # @type [Array<Array(Symbol, String)>]
+        # Single source of truth for CLI parsing — pending_arguments and pending_options are derived views.
+        # @type [Array<Option, Argument>]
         @argv_tokens = []
         # Frozen snapshot of @argv_tokens used by unprocessed_options_with_value.
         @initial_argv_tokens = [].freeze
-        # command line values starting with at least one '-'
-        @unprocessed_cmd_line_options = []
-        # command line values *not* starting with '-'
-        @unprocessed_cmd_line_arguments = []
-        # a copy of all initial options (for unprocessed_options_with_value)
-        @initial_cli_options = []
         # Number of original positional args before the option currently being parsed (nil = positional context).
         @current_option_args_offset = nil
+        # Current index in @argv_tokens during parse_options! loop (used by shift_next_argument_token).
+        @current_parse_idx = nil
         return if argv.nil?
         # true until `--` is found (stop options)
         process_options = true
@@ -491,20 +505,15 @@ module Aspera
             if value.eql?(OPTIONS_STOP)
               process_options = false
             else
-              token = value.start_with?(OPTION_PREFIX) ? Option.from_long(value) : Option.from_short(value)
-              @argv_tokens.push(token)
-              @unprocessed_cmd_line_options.push(value)
+              @argv_tokens.push(value.start_with?(Option::PREFIX) ? Option.from_long(value) : Option.from_short(value))
             end
           else
             Log.log.trace1{"arg: #{value}"}
-            token = Argument.new(value)
-            @argv_tokens.push(token)
-            @unprocessed_cmd_line_arguments.push(value)
+            @argv_tokens.push(Argument.new(value))
           end
         end
         @initial_argv_tokens = @argv_tokens.dup.freeze
-        @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
-        Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
+        Log.log.trace1{"add_cmd_line_options:arguments=#{pending_arguments},options=#{pending_options}".red}
         declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
         declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_optional})
         # do not parse options yet, let's wait for option `-h` to be overridden
@@ -600,22 +609,8 @@ module Aspera
         Aspera.assert_array_all(validation, Class){'validation'} unless validation.nil?
         descr = "#{descr}#{add_types_info(validation)}"
         result =
-          if !@unprocessed_cmd_line_arguments.empty?
-            case multiple
-            when true
-              values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
-            when false
-              values = [@unprocessed_cmd_line_arguments.shift]
-            when String
-              index = @unprocessed_cmd_line_arguments.index(multiple)
-              if index
-                values = @unprocessed_cmd_line_arguments.shift(index)
-                @unprocessed_cmd_line_arguments.shift # remove end marker
-              else
-                values = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length)
-              end
-            else Aspera.error_unexpected_value(multiple){'multiple'}
-            end
+          if !pending_arguments.empty?
+            values = extract_argument_tokens(multiple)
             values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation)}
             # If expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
@@ -626,25 +621,21 @@ module Aspera
             end
             multiple ? values : values.first
           elsif !default.nil? then default
-            # no value provided, either get value interactively, or exception
-          elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, schema: schema)
+          elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, aliases: aliases, schema: schema)
           end
+        Log.log.trace1{"#{descr}=#{result}"}
+        result = aliases[result] if aliases&.key?(result)
+        # if value comes from JSON/YAML, it may come as Integer
+        result = result.to_s if result.is_a?(Integer) && validation&.eql?(Type::STRING)
+        # Integer coercion: a String argument for an INTEGER option must be parseable
         if result.is_a?(String) && validation&.eql?(Type::INTEGER)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
         end
-        Log.log.trace1{"#{descr}=#{result}"}
-        result = aliases[result] if aliases&.key?(result)
-        # if value comes from JSON/YAML, it may come as Integer
-        result = result.to_s if result.is_a?(Integer) && validation&.eql?(Type::STRING)
         if validation && (mandatory || !result.nil?)
           value_list = multiple ? result : [result]
-          value_list.each do |value|
-            raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(HELP)
-            raise Cli::BadArgument,
-              "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" unless validation.any?{ |t| value.is_a?(t)}
-          end
+          value_list.each{ |value| validate_argument(value, validation: validation, descr: descr, schema: schema)}
         end
         result
       end
@@ -765,19 +756,19 @@ module Aspera
 
       # Allows a plugin to add an argument as next argument to process
       def unshift_next_argument(argument)
-        @unprocessed_cmd_line_arguments.unshift(argument)
+        @argv_tokens.unshift(Argument.new(argument))
       end
 
       # Check if there were unprocessed values to generate error
       def command_or_arg_empty?
-        @unprocessed_cmd_line_arguments.empty?
+        pending_arguments.empty?
       end
 
       # Unprocessed options or arguments ?
       def final_errors
         result = []
-        result.push("unprocessed options: #{@unprocessed_cmd_line_options}") unless @unprocessed_cmd_line_options.empty?
-        result.push("unprocessed values: #{@unprocessed_cmd_line_arguments}") unless @unprocessed_cmd_line_arguments.empty?
+        result.push("unprocessed options: #{pending_options}") unless pending_options.empty?
+        result.push("unprocessed values: #{pending_arguments}") unless pending_arguments.empty?
         result
       end
 
@@ -795,7 +786,7 @@ module Aspera
           Log.log.debug{"option #{name}=#{value}"}
           path = [tok.name, *(tok.dot_path || [])]
           DotContainer.dotted_to_container(path, smart_convert(value), result)
-          @unprocessed_cmd_line_options.delete(tok.raw)
+          @argv_tokens.reject!{ |t| t.is_a?(Option) && t.raw.eql?(tok.raw)}
         end
         result
       end
@@ -828,18 +819,21 @@ module Aspera
         deferred_tokens = []
         Log.log.trace1('Before parse')
         Log.dump(:argv_tokens, @argv_tokens, level: :trace1)
-        until @argv_tokens.empty?
-          tok = @argv_tokens.shift
+        # Iterate with an index so that Argument tokens stay in @argv_tokens (not shifted).
+        # Only Option tokens are removed; Arguments remain until consumed by extract_argument_tokens.
+        @current_parse_idx = 0
+        while @current_parse_idx < @argv_tokens.length
+          tok = @argv_tokens[@current_parse_idx]
           if tok.is_a?(Argument)
-            # Positional arg: not consumed by any option — leave in @unprocessed_cmd_line_arguments as-is.
+            @current_parse_idx += 1
             next
           end
-          # tok is an Option
-          # @current_option_args_offset = number of positional args in @unprocessed_cmd_line_arguments
-          # that appear BEFORE this option in the original argv order.
+          # tok is an Option — remove it from @argv_tokens
+          @argv_tokens.delete_at(@current_parse_idx)
+          # @current_option_args_offset = number of positional Argument tokens that appear BEFORE
+          # this option in @argv_tokens (i.e. at indices 0...@current_parse_idx after the delete).
           # Used by args_as_extended to skip those leading args when collecting @: values.
-          args_still_in_tokens = @argv_tokens.count{ |t| t.is_a?(Argument)}
-          @current_option_args_offset = @unprocessed_cmd_line_arguments.length - args_still_in_tokens
+          @current_option_args_offset = @argv_tokens[0...@current_parse_idx].count{ |t| t.is_a?(Argument)}
           if tok.short_char
             # Short option: -X or -Xvalue
             option_sym = @short_options[tok.short_char]
@@ -855,11 +849,18 @@ module Aspera
           elsif tok.dot_path
             # Dotted notation: --a.b.c=val or --a.b.c val (always takes priority over plain option lookup)
             Log.log.trace1{"Dotted option: #{tok.raw}".red}
-            raw_value = tok.has_value ? tok.value : shift_next_argument_token
+            if tok.has_value
+              raw_value = tok.value
+              value_from_next_token = false
+            else
+              raw_value = shift_next_argument_token
+              value_from_next_token = true
+            end
             if @declared_options.key?(tok.name.to_sym)
               set_option(tok.name.to_sym, DotContainer.dotted_to_container(tok.dot_path, smart_convert(raw_value), get_option(tok.name.to_sym)), where: 'dotted')
             else
-              @argv_tokens.unshift(Argument.new(raw_value)) if raw_value
+              # Only re-inject if value was space-separated (consumed from next token); inline values stay in tok.value
+              @argv_tokens.unshift(Argument.new(raw_value)) if raw_value && value_from_next_token
               deferred_tokens.push(tok)
             end
           elsif (resolved_sym = self.class.match_prefix(tok.name.to_sym, @declared_options.keys))
@@ -875,25 +876,62 @@ module Aspera
           end
         end
         @current_option_args_offset = nil
+        @current_parse_idx = nil
         Log.log.trace1('After parse')
         Log.log.trace1{"deferred: #{deferred_tokens}"}
-        # Rebuild @argv_tokens for the next round by filtering @initial_argv_tokens:
-        # keep only deferred option tokens and argument tokens still in @unprocessed_cmd_line_arguments.
-        # This preserves the original interleaved order for correct @current_option_args_offset computation.
-        deferred_raws = deferred_tokens.map(&:raw)
-        remaining_args = @unprocessed_cmd_line_arguments.dup
-        @argv_tokens = @initial_argv_tokens.filter_map do |t|
-          if t.is_a?(Option) && deferred_raws.include?(t.raw)
-            deferred_raws.delete_at(deferred_raws.index(t.raw))
-            t
-          elsif t.is_a?(Argument) && remaining_args.include?(t.value)
-            remaining_args.delete_at(remaining_args.index(t.value))
-            t
-          end
+        # @argv_tokens now contains only: remaining Arguments + deferred Options (already in correct order).
+        # Re-insert deferred Options at their original positions by rebuilding from @initial_argv_tokens.
+        deferred_ids = deferred_tokens.map(&:object_id).to_set
+        remaining_arg_ids = @argv_tokens.grep(Argument).map(&:object_id).to_set
+        injected = @argv_tokens.grep(Argument).reject{ |t| @initial_argv_tokens.include?(t)}
+        @argv_tokens = @initial_argv_tokens.select do |t|
+          (t.is_a?(Option) && deferred_ids.include?(t.object_id)) ||
+            (t.is_a?(Argument) && remaining_arg_ids.include?(t.object_id))
         end
-        # Append any arguments injected at runtime (e.g. via unshift_next_argument) not in @initial_argv_tokens.
-        remaining_args.each{ |a| @argv_tokens.unshift(Argument.new(a))}
-        @unprocessed_cmd_line_options = @argv_tokens.filter_map{ |t| t.raw if t.is_a?(Option)}
+        # Prepend arguments injected at runtime (e.g. via unshift_next_argument) not in @initial_argv_tokens.
+        @argv_tokens.unshift(*injected)
+      end
+
+      # Extract raw string tokens from @argv_tokens (Argument objects) according to `multiple`.
+      # Consumed Argument tokens are removed from @argv_tokens.
+      # @param multiple [false, true, String] consumption mode:
+      #   false  — consume exactly one token
+      #   true   — consume all remaining tokens
+      #   String — consume up to (but not including) the marker token, or all if absent
+      # @return [Array<String>] consumed raw token strings
+      def extract_argument_tokens(multiple)
+        arg_tokens = @argv_tokens.grep(Argument)
+        case multiple
+        when false
+          tok = arg_tokens.first
+          @argv_tokens.delete(tok)
+          [tok.value]
+        when true
+          arg_tokens.each{ |t| @argv_tokens.delete(t)}
+          arg_tokens.map(&:value)
+        when String
+          idx = arg_tokens.index{ |t| t.value.eql?(multiple)}
+          consumed = idx ? arg_tokens[0, idx] : arg_tokens
+          marker   = idx ? arg_tokens[idx] : nil
+          (consumed + [marker].compact).each{ |t| @argv_tokens.delete(t)}
+          consumed.map(&:value)
+        else Aspera.error_unexpected_value(multiple){'multiple'}
+        end
+      end
+
+      # Validate and coerce a single argument value.
+      # Raises SchemaRequest when the value is 'help' and validation includes Hash.
+      # Raises BadArgument when the value is an Integer on a STRING validation (coerced upstream).
+      # Raises BadArgument when the value's type is not in the validation list.
+      # @param value      [Object]        the value to validate
+      # @param validation [Array<Class>]  accepted types
+      # @param descr      [String]        argument description (for error messages)
+      # @param schema     [String, nil]   schema path for SchemaRequest
+      def validate_argument(value, validation:, descr:, schema:)
+        raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(HELP)
+        raise Cli::BadArgument,
+          "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" \
+          unless validation.any?{ |t| value.is_a?(t)}
       end
 
       def prompt_user_input(prompt, sensitive: false)
@@ -925,13 +963,13 @@ module Aspera
       # @param multiple     [Boolean, String] `true` if multiple values expected
       # @param accept_list  [Array<Symbol>,NilClass] List of expected values
       # @return [String] user input
-      def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, schema: nil)
+      def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, aliases: nil, schema: nil)
         option_attrs = @declared_options[descr.to_sym]
         what = option_attrs ? 'option' : 'argument'
         default_prompt = "#{what}: #{descr}"
         if !@ask_missing_mandatory
           message = "Missing #{default_prompt}"
-          message = self.class.multi_choice_assert_msg(message, accept_list) if accept_list
+          message = self.class.multi_choice_assert_msg(message, accept_list, aliases: aliases) if accept_list
           message += "\n#{TerminalFormatter::HINT}Give `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
           raise Cli::MissingArgument, message
         end
@@ -962,16 +1000,20 @@ module Aspera
         # @current_option_args_offset is set by parse_options! to the number of args in
         # @unprocessed_cmd_line_arguments that preceded this option; nil when called from a positional context.
         skip_count = @current_option_args_offset || 0
-        skipped = skip_count.positive? ? @unprocessed_cmd_line_arguments.shift(skip_count) : []
-        Log.log.trace1{"args_as_extended: skipping #{skipped.length} args before option: #{skipped}"} unless skipped.empty?
+        # Skip leading positional args that precede this option in original argv order.
+        # Grab the first `skip_count` Argument tokens and temporarily remove them.
+        arg_tokens = @argv_tokens.grep(Argument)
+        skipped_tokens = skip_count.positive? ? arg_tokens.first(skip_count) : []
+        skipped_tokens.each{ |t| @argv_tokens.delete(t)}
+        Log.log.trace1{"args_as_extended: skipping #{skipped_tokens.length} args before option: #{skipped_tokens.map(&:value)}"} unless skipped_tokens.empty?
         result = nil
         get_next_argument('args', multiple: end_marker).each do |argument|
-          Aspera.assert(argument.include?(OPTION_VALUE_SEPARATOR)){"Positional argument: #{argument} does not include #{OPTION_VALUE_SEPARATOR}"}
-          path, value = argument.split(OPTION_VALUE_SEPARATOR, 2)
+          Aspera.assert(argument.include?(Option::VALUE_SEP)){"Positional argument: #{argument} does not include #{Option::VALUE_SEP}"}
+          path, value = argument.split(Option::VALUE_SEP, 2)
           result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
         end
-        # Restore skipped args so they remain available for command dispatching
-        @unprocessed_cmd_line_arguments.unshift(*skipped) unless skipped.empty?
+        # Restore skipped tokens so they remain available for command dispatching
+        skipped_tokens.reverse_each{ |t| @argv_tokens.unshift(t)}
         result
       end
 
@@ -1012,15 +1054,11 @@ module Aspera
       # @return [String, nil] placeholder shown in flag column: 'ENUM', 'HASH', 'INT', 'LIST', 'VALUE', or nil for flag switches
       def option_display_value(opt)
         case opt.types
-        when Type::NONE then nil
+        when Type::NONE    then nil
         when Type::BOOLEAN then 'yes|no'
         when Type::INTEGER then 'INT'
         when Type::ENUM
-          if opt.values&.any? && opt.values.length <= 4
-            opt.values.join('|')
-          else
-            'ENUM'
-          end
+          opt.values&.any? && opt.values.length <= 4 ? opt.values.join('|') : 'ENUM'
         else
           if opt.types&.include?(Hash) || !opt.schema.nil?
             'HASH'
@@ -1043,10 +1081,9 @@ module Aspera
           set_option(sym, raw_value, where: SOURCE_USER)
           # Track options explicitly cleared from CLI (e.g. --opt=@none:) so that
           # subsequent preset injection does not silently restore the value.
-          # Note: for Hash options, @none: evaluates to nil which is then coerced to {}
-          # by assign_value, so we also check the raw evaluated value before coercion.
-          cleared = get_option(sym).nil?
-          cleared ||= raw_value.is_a?(String) && ExtendedValue.instance.evaluate(raw_value, context: 'explicitly_cleared check').nil?
+          # @none: always evaluates to nil; detect it by checking the raw token directly
+          # to avoid re-evaluating side-effectful extended values (e.g. @: consumes positional args).
+          cleared = get_option(sym).nil? || raw_value.eql?('@none:')
           @explicitly_cleared[sym] = true if cleared
         end
       end
@@ -1067,9 +1104,8 @@ module Aspera
 
       # generate command line option from option symbol
       def symbol_to_option(symbol, opt_val = nil)
-        result = [OPTION_PREFIX, symbol.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)].join
-        result = [result, OPTION_VALUE_SEPARATOR, opt_val].join unless opt_val.nil?
-        result
+        result = self.class.option_name_to_line(symbol)
+        opt_val.nil? ? result : "#{result}#{Option::VALUE_SEP}#{opt_val}"
       end
 
       # TODO: use formatter
@@ -1109,26 +1145,27 @@ module Aspera
         remaining
       end
 
-      # Consume the next Argument token from @argv_tokens (space-separated option value).
-      # Also removes it from @unprocessed_cmd_line_arguments to keep both in sync.
+      # Consume the Argument token immediately following the current option in @argv_tokens.
+      # After delete_at(@current_parse_idx), the next token is at @argv_tokens[@current_parse_idx].
       # @return [String, nil] the consumed argument value, or nil if the next token is not an Argument
       def shift_next_argument_token
-        return unless @argv_tokens.first&.is_a?(Argument)
+        pos = @current_parse_idx || 0
+        return unless @argv_tokens[pos]&.is_a?(Argument)
 
-        tok = @argv_tokens.shift
-        @unprocessed_cmd_line_arguments.delete_at(@unprocessed_cmd_line_arguments.index(tok.value))
-        tok.value
+        @argv_tokens.delete_at(pos).value
       end
 
-      # Option name separator on command line, e.g. in --option-blah, third "-"
-      OPTION_SEP_LINE = '-'
-      # Option name separator in code (symbol), e.g. in :option_blah, the "_"
-      OPTION_SEP_SYMBOL = '_'
-      # Option value separator on command line, e.g. in --option-blah=foo, the "="
-      OPTION_VALUE_SEPARATOR = '='
-      # Starts an option, e.g. in --option-blah, the two first "--"
-      OPTION_PREFIX = '--'
-      # when this is alone, this stops option processing
+      # @return [Array<String>] values of all pending positional Argument tokens
+      def pending_arguments
+        @argv_tokens.grep(Argument).map(&:value)
+      end
+
+      # @return [Array<String>] raw strings of all pending Option tokens
+      def pending_options
+        @argv_tokens.grep(Option).map(&:raw)
+      end
+
+      # when this is alone, this stops option processing (same characters as Option::PREFIX but distinct semantics)
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
       # Percent selector: select by this field for this value
@@ -1136,7 +1173,7 @@ module Aspera
       # Ask for schema of Extended value
       HELP = 'help'
 
-      private_constant :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :OPTION_VALUE_SEPARATOR, :OPTION_PREFIX, :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD, :HELP_BORDER
+      private_constant :OPTIONS_STOP, :SOURCE_USER, :REGEX_LOOKUP_ID_BY_FIELD, :HELP_BORDER
     end
   end
 end
