@@ -88,25 +88,6 @@ module Aspera
             return
           end
 
-          # Called by non-Node plugins (Ats, Cos, Aoc) to declare Node options on their
-          # own options object. The DSL registry is walked so descriptions stay in one place.
-          def declare_options(options)
-            return if options.option_declared?(:root_id)
-            command_registry.option_specs.each_value do |spec|
-              next if options.option_declared?(spec.name)
-              options.declare(
-                spec.name,
-                description: spec.description,
-                short:       spec.short,
-                allowed:     spec.allowed,
-                default:     spec.default,
-                handler:     spec.handler,
-                schema:      spec.schema
-              )
-            end
-            options.parse_options!
-          end
-
           # Using /files/browse: is it a folder (node and shares)
           def gen3_entry_folder?(entry)
             FOLDER_TYPES.include?(entry['type'])
@@ -114,7 +95,7 @@ module Aspera
         end
 
         # DSL option declarations - at class level, picked up by Base#initialize via ancestor chain.
-        # Also exposed via Node.declare_options for non-Node plugins (Ats, Cos, Aoc).
+        # Included by other plugins (Ats, Cos, Aoc) via `use_options Node`.
         option :validator,        description: 'Identifier of validator (optional for central)'
         option :asperabrowserurl, description: 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
         option :node_api,         description: 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
@@ -179,7 +160,6 @@ module Aspera
         def initialize(context:, api: nil, prefix_path: nil)
           @node_path_prefix = prefix_path ? NodePathPrefix.new(prefix_path) : nil
           super(context: context, basic_options: api.nil?)
-          Node.declare_options(options)
           return if context.only_manual?
           @api_node =
             if !api.nil?

@@ -27,12 +27,13 @@ module Aspera
         option :cloud,       description: 'Cloud provider'
         option :region,      description: 'Cloud region'
 
+        use_options Node
+
         def initialize(api: nil, **base_args)
           super(**base_args)
           @ats_api_open = Api::Ats.new
           @ats_api_auth = api
           options.parse_options!
-          Node.declare_options(options)
         end
 
         # --- DSL ---

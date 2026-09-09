@@ -30,7 +30,7 @@ module Aspera
       end
 
       def action_preset_lookup(**)
-        Plugins::BasicAuth.declare_options(options)
+        Plugins::BasicAuth.declare_options(options, parse: true)
         url = options.get_option(:url, mandatory: true)
         user = options.get_option(:username, mandatory: true)
         result = presets.lookup_preset(url: url, username: user)
@@ -61,7 +61,7 @@ module Aspera
       # @param preset_name [String] name used as base for the vault label
       # @param option_name [String] option key to inspect
       def secure_preset_option(preset, preset_name, option_name)
-        return unless SECRET_KEYWORDS.any? { |kw| option_name.end_with?(kw) }
+        return unless SECRET_KEYWORDS.any?{ |kw| option_name.end_with?(kw)}
         # Never auto-secure the global preset: it holds vault credentials themselves
         return if preset_name.eql?(presets.global_default_preset)
         return if vault.nil?
@@ -139,7 +139,7 @@ module Aspera
         cp = presets.config_presets
         cp[name] ||= {}
         cp[name].merge!(unprocessed_options)
-        unprocessed_options.each_key { |k| secure_preset_option(cp[name], name, k) }
+        unprocessed_options.each_key{ |k| secure_preset_option(cp[name], name, k)}
         Result::Status.new("Updated: #{name}")
       end
 

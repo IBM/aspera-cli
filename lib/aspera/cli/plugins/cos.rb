@@ -27,10 +27,11 @@ module Aspera
         option :region,              description: 'Storage region'
         option :identity,            description: "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL
 
+        use_options Node
+
         def initialize(**_)
           super
           options.parse_options!
-          Node.declare_options(options)
         end
 
         # Build the COS Node API and plugin from CLI options.

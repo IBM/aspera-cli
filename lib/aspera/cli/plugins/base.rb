@@ -5,6 +5,7 @@ require 'aspera/cli/parser'
 require 'aspera/assert'
 require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
+require 'aspera/cli/option_declarator'
 require 'aspera/schema/registry'
 
 module Aspera
@@ -25,6 +26,16 @@ module Aspera
         class << self
           # Per-class DSL registry (not inherited: each subclass gets its own instance).
           # @return [CommandRegistry]
+          def used_option_sources
+            @used_option_sources ||= []
+          end
+
+          # Include options from another plugin or OptionDeclarator module.
+          # @param source [Class, Module]
+          def use_options(source)
+            used_option_sources << source unless used_option_sources.include?(source)
+          end
+
           def command_registry
             @command_registry ||= CommandRegistry.new
           end
@@ -114,6 +125,47 @@ module Aspera
             )
           end
 
+          # Declare all options registered on this plugin class onto a Parser instance.
+          # Walks inherited options and any sources added via `use_options`.
+          # @param options [Aspera::Cli::Parser]
+          # @param parse [Boolean] whether to call parse_options! after declaring
+          def declare_options(options, parse: false)
+            sources = []
+            ancestors.each do |klass|
+              next unless klass.is_a?(Class) && klass <= Base
+              sources << klass if klass.instance_variable_defined?(:@command_registry)
+              sources.concat(klass.used_option_sources) if klass.respond_to?(:used_option_sources)
+            end
+            sources.uniq.each do |src|
+              specs =
+                if src.respond_to?(:command_registry)
+                  src.command_registry.option_specs
+                elsif src.respond_to?(:option_specs)
+                  src.option_specs
+                else
+                  {}
+                end
+              specs.each_value do |spec|
+                next if options.option_declared?(spec.name)
+                resolved_handler =
+                  case spec.handler
+                  when Hash then spec.handler
+                  end
+                options.declare(
+                  spec.name,
+                  description: spec.description,
+                  short:       spec.short,
+                  allowed:     spec.allowed,
+                  default:     spec.default,
+                  handler:     resolved_handler,
+                  deprecation: spec.deprecation,
+                  schema:      spec.schema
+                )
+              end
+            end
+            options.parse_options! if parse
+          end
+
           # DSL class method: declare a setup method to run once before root dispatch.
           # The method is called before any command is consumed, and its return value
           # (a Hash) is merged into the initial ctx. This is useful when conditions
@@ -138,8 +190,8 @@ module Aspera
         end
 
         option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
-        option :bulk,  description: 'Bulk operation (only some)',                            allowed: Allowed::TYPES_BOOLEAN, default: false
-        option :bfail, description: 'Bulk operation error handling',                         allowed: Allowed::TYPES_BOOLEAN, default: true
+        option :bulk,  description: 'Bulk operation (only some)',                            allowed: Type::BOOLEAN, default: false
+        option :bfail, description: 'Bulk operation error handling',                         allowed: Type::BOOLEAN, default: true
 
         def initialize(context:)
           Aspera.assert_type(context, Context){'context'}
@@ -158,9 +210,22 @@ module Aspera
           # handler: shorthand:
           #   Symbol handler: {o: self, m: <symbol>}  (Category B - plugin instance methods)
           #   Hash handler:   used as-is              (Category A - singletons / class constants)
+          sources = []
           self.class.ancestors.each do |klass|
-            next unless klass.is_a?(Class) && klass <= Base && klass.instance_variable_defined?(:@command_registry)
-            klass.command_registry.option_specs.each_value do |spec|
+            next unless klass.is_a?(Class) && klass <= Base
+            sources << klass if klass.instance_variable_defined?(:@command_registry)
+            sources.concat(klass.used_option_sources) if klass.respond_to?(:used_option_sources)
+          end
+          sources.uniq.each do |src|
+            specs =
+              if src.respond_to?(:command_registry)
+                src.command_registry.option_specs
+              elsif src.respond_to?(:option_specs)
+                src.option_specs
+              else
+                {}
+              end
+            specs.each_value do |spec|
               next if options.option_declared?(spec.name)
               resolved_handler =
                 case spec.handler

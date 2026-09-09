@@ -29,11 +29,29 @@ module Aspera
           expect(opts.get_option(:xenon)).to(eq('world'))
         end
 
+        it 'parses -X value when value is a space-separated token (-X value)' do
+          opts = build_parser(['-X', 'hello'])
+          opts.declare(:xenon, description: 'Xenon option', short: 'X')
+          opts.parse_options!
+          expect(opts.get_option(:xenon)).to(eq('hello'))
+          expect(opts.final_errors).to(be_empty)
+        end
+
         it 'treats -X alone (no glued value) as nil' do
           opts = build_parser(['-X'])
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
           opts.parse_options!
           expect(opts.get_option(:xenon)).to(be_nil)
+        end
+
+        it 'does not consume the next token for flag options (TYPES_NONE) with -N syntax' do
+          opts = build_parser(['-N', 'myarg'])
+          opts.declare(:no_default, description: 'No default flag', short: 'N', allowed: Type::NONE) do
+            # flag callback — no-op
+          end
+          opts.parse_options!
+          # The positional arg must still be available
+          expect(opts.get_next_argument('arg')).to(eq('myarg'))
         end
 
         context 'with a handler (like --preset / -P)' do
@@ -50,6 +68,105 @@ module Aspera
             )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
+          end
+
+          it 'passes the space-separated value to the handler when using -P value syntax' do
+            received = nil
+            target = Object.new
+            target.define_singleton_method(:my_preset=){ |v| received = v}
+            target.define_singleton_method(:my_preset){received}
+
+            opts = build_parser(['-P', 'mypreset'])
+            opts.declare(
+              :my_preset, description: 'Load preset', short: 'P',
+              handler: {o: target, m: :my_preset}
+            )
+            opts.parse_options!
+            expect(received).to(eq('mypreset'))
+          end
+        end
+      end
+
+      describe 'long option parsing' do
+        it 'parses --option=value (inline = form)' do
+          opts = build_parser(['--log-level=debug'])
+          opts.declare(:log_level, description: 'Log level', allowed: %i[debug info warn error])
+          opts.parse_options!
+          expect(opts.get_option(:log_level)).to(eq(:debug))
+        end
+
+        it 'parses --option value (space-separated form)' do
+          opts = build_parser(['--log-level', 'debug'])
+          opts.declare(:log_level, description: 'Log level', allowed: %i[debug info warn error])
+          opts.parse_options!
+          expect(opts.get_option(:log_level)).to(eq(:debug))
+          expect(opts.final_errors).to(be_empty)
+        end
+
+        it 'parses --query=@json:{"a":1} (inline = form, JSON value via extended value)' do
+          opts = build_parser(['--query=@json:{"a":1}'])
+          opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
+          opts.parse_options!
+          expect(opts.get_option(:query)).to(eq({'a' => 1}))
+        end
+
+        it 'parses --query @json:{"a":1} (space-separated form, JSON value via extended value)' do
+          opts = build_parser(['--query', '@json:{"a":1}'])
+          opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
+          opts.parse_options!
+          expect(opts.get_option(:query)).to(eq({'a' => 1}))
+          expect(opts.final_errors).to(be_empty)
+        end
+
+        it 'does not consume next token for TYPES_NONE flags (--show-config style)' do
+          opts = build_parser(['--no-flag', 'myarg'])
+          opts.declare(:no_flag, description: 'No flag', allowed: Type::NONE) do
+            # flag callback — no-op
+          end
+          opts.parse_options!
+          expect(opts.get_next_argument('arg')).to(eq('myarg'))
+        end
+
+        it 'leaves positional args intact when option has inline value' do
+          opts = build_parser(['--level=info', 'cmd'])
+          opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
+          opts.parse_options!
+          expect(opts.get_option(:level)).to(eq(:info))
+          expect(opts.get_next_argument('cmd')).to(eq('cmd'))
+        end
+
+        it 'leaves remaining positional args intact when option uses space-separated value' do
+          opts = build_parser(['--level', 'info', 'cmd'])
+          opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
+          opts.parse_options!
+          expect(opts.get_option(:level)).to(eq(:info))
+          expect(opts.get_next_argument('cmd')).to(eq('cmd'))
+        end
+
+        it 'respects -- stop marker: token after -- is not consumed as option value' do
+          opts = build_parser(['--', '--level', 'info'])
+          opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
+          opts.parse_options!
+          expect(opts.get_option(:level)).to(be_nil)
+          # Both tokens after -- are positional args
+          expect(opts.get_next_argument('a')).to(eq('--level'))
+          expect(opts.get_next_argument('b')).to(eq('info'))
+        end
+
+        describe 'dotted notation' do
+          it 'supports --a.b.c=val (inline)' do
+            opts = build_parser(['--custom.field=42'])
+            opts.declare(:custom, description: 'Custom object', allowed: [Hash, NilClass])
+            opts.parse_options!
+            expect(opts.get_option(:custom)).to(eq({'field' => 42}))
+          end
+
+          it 'supports --a.b.c val (space-separated)' do
+            opts = build_parser(['--custom.field', '42'])
+            opts.declare(:custom, description: 'Custom object', allowed: [Hash, NilClass])
+            opts.parse_options!
+            expect(opts.get_option(:custom)).to(eq({'field' => 42}))
+            expect(opts.final_errors).to(be_empty)
           end
         end
       end
@@ -110,11 +227,11 @@ module Aspera
       describe '#help_text' do
         it 'displays semantic placeholders based on option type and schema' do
           opts = build_parser([])
-          opts.declare(:bool_opt, description: 'Boolean option', allowed: Allowed::TYPES_BOOLEAN)
+          opts.declare(:bool_opt, description: 'Boolean option', allowed: Type::BOOLEAN)
           opts.declare(:enum_opt, description: 'Enum option', allowed: %i[alpha beta])
-          opts.declare(:int_opt, description: 'Integer option', allowed: Allowed::TYPES_INTEGER)
+          opts.declare(:int_opt, description: 'Integer option', allowed: Type::INTEGER)
           opts.declare(:object_opt, description: 'Object option', allowed: Hash)
-          opts.declare(:list_opt, description: 'List option', allowed: Allowed::TYPES_STRING_ARRAY)
+          opts.declare(:list_opt, description: 'List option', allowed: Type::STRING_ARRAY)
           opts.declare(:str_opt, description: 'String option')
           help = opts.help_text
           expect(help).to(include('--bool-opt=yes|no'))

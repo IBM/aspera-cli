@@ -1604,7 +1604,9 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
   Option name in config file use underscores (`_`) as word separators.
   Example: `--log-level=debug` is `log_level` in config file.
 - **Values**:
-  An option’s value is assigned using `=` (for example, `--log-level=debug`).
+  An option's value is assigned using `=` (for example, `--log-level=debug`).
+  Alternatively, the value can be provided as a separate, space-separated token (for example, `--log-level debug`).
+  Both forms are equivalent.
 - **Prefix Usage**:
   Options support prefix matching (see [Enumerations](#enumerations)), though full names are recommended.
 - **Optionality**:
@@ -1617,7 +1619,7 @@ Exceptions and Special Cases:
 - **Short Forms**
 
   Some options have short forms.
-  For example, `-Ptoto` is equivalent to `--preset=toto`.
+  For example, `-Ptoto` and `-P toto` are both equivalent to `--preset=toto` and `--preset toto`.
   See the manual or `-h` for details.
 - **Flags**
 
@@ -9768,13 +9770,15 @@ trevents --once-only=yes --skip-types=office --log-level=info
 ## Plugin: `mcp`: Model Context Protocol server
 
 > [!WARNING]
-> This plugin is **experimental**. The interface, options, and behaviour may change in future releases without notice.
+> This plugin is **experimental**.
+> The interface, options, and behavior may change in future releases without notice.
 
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes `ascli` to AI assistants and LLM-based tools.
 The server registers a single tool, `execute_ascli_command`, which executes any `ascli` command in-process and returns the result as text.
 
 > [!IMPORTANT]
 > The `mcp` and `rack` gems are required.
+> Check section [Installing Optional Gems](#installing-optional-gems)
 > Install them with the following command:
 
 ```shell

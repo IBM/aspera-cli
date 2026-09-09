@@ -113,6 +113,71 @@ module Aspera
             end
             File.join(destination_folder, folder)
           end
+
+          # @return [String] AoC REST path for an admin resource type
+          def aoc_res_path(res)
+            cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            return cfg[:path] if cfg[:path]
+            "#{res}s".gsub(/ys$/, 'ies')
+          end
+
+          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:, query_component:}
+          def aoc_res_cfg(res)
+            cfg    = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            path   = aoc_res_path(res)
+            ops    = cfg[:ops] || (Base::Operations::ALL + (cfg[:extra_ops] || []))
+            schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
+            {
+              path:            path,
+              ops:             ops,
+              id_result:       cfg[:id_result] || 'id',
+              require_ws_id:   cfg[:require_ws_id] || false,
+              list_fields:     cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
+              schema:          schema,
+              query_component: Schema::Registry::AOC
+            }
+          end
+
+          # DSL helper: register the 5 short_link leaf commands under the given parent path
+          # and define the corresponding action methods on `base`.
+          # @param base        [Class]         the plugin class
+          # @param parent_path [Array<Symbol>] full path ending with :short_link
+          def register_short_link_commands(base, parent_path)
+            base.commands_under(parent_path) do
+              base.command(
+                :create, description: 'Create',
+                arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+              )
+              base.command(
+                :modify, description: 'Modify',
+                arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
+              )
+              base.command(:list, description: 'List short links')
+              base.command(
+                :show, description: 'Show a short link',
+                arguments: [{name: :short_link_id, type: :identifier}]
+              )
+              base.command(
+                :delete, description: 'Delete a short link',
+                arguments: [{name: :short_link_id, type: :identifier}]
+              )
+            end
+            base.define_action_method(parent_path + [:create]) do |custom_data: {}, **ctx|
+              sl_exec_create(custom_data, **ctx)
+            end
+            base.define_action_method(parent_path + [:list]) do |**ctx|
+              sl_exec_list(**sl_fetch_list(**ctx))
+            end
+            base.define_action_method(parent_path + [:show]) do |**ctx|
+              sl_exec_show(**sl_fetch_list(**ctx))
+            end
+            base.define_action_method(parent_path + [:delete]) do |**ctx|
+              sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+            end
+            base.define_action_method(parent_path + [:modify]) do |custom_data: {}, **ctx|
+              sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
+            end
+          end
         end
 
         # @param wizard  [Wizard] The wizard object
@@ -133,7 +198,7 @@ module Aspera
               test_args:    'organization'
             }
           end
-          options.declare(:use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id', allowed: Allowed::TYPES_BOOLEAN, default: Api::AoC.saas_url?(app_url))
+          options.declare(:use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id', allowed: Type::BOOLEAN, default: Api::AoC.saas_url?(app_url))
           options.parse_options!
           # make username mandatory for jwt, this triggers interactive input
           wiz_username = options.get_option(:username, mandatory: true)
@@ -203,8 +268,10 @@ module Aspera
 
         option :workspace,         description: 'Name of workspace', allowed: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE
         option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: [Hash, NilClass]
-        option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Allowed::TYPES_BOOLEAN, default: true
+        option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Type::BOOLEAN, default: true
         option :package_folder,    schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
+
+        use_options Node
 
         def initialize(**_)
           super
@@ -213,8 +280,6 @@ module Aspera
           @cache_api_aoc = nil
           @scope = Api::AoC::Scope::USER
           options.parse_options!
-          # add node plugin options (for manual)
-          Node.declare_options(options)
         end
 
         # Change API scope for subsequent calls, re-instantiate API object
@@ -439,73 +504,6 @@ module Aspera
           workspace_membership:      {list_fields: %w[id workspace_id member_type member_id]}
         }.freeze
         private_constant :ADMIN_OBJECT_CONFIG
-
-        class << self
-          # @return [String] AoC REST path for an admin resource type
-          def aoc_res_path(res)
-            cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
-            return cfg[:path] if cfg[:path]
-            "#{res}s".gsub(/ys$/, 'ies')
-          end
-
-          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:, query_component:}
-          def aoc_res_cfg(res)
-            cfg    = ADMIN_OBJECT_CONFIG.fetch(res, {})
-            path   = aoc_res_path(res)
-            ops    = cfg[:ops] || (Base::Operations::ALL + (cfg[:extra_ops] || []))
-            schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(Schema::Registry::AOC, "#{path}.post")
-            {
-              path:            path,
-              ops:             ops,
-              id_result:       cfg[:id_result] || 'id',
-              require_ws_id:   cfg[:require_ws_id] || false,
-              list_fields:     cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
-              schema:          schema,
-              query_component: Schema::Registry::AOC
-            }
-          end
-
-          # DSL helper: register the 5 short_link leaf commands under the given parent path
-          # and define the corresponding action methods on `base`.
-          # @param base        [Class]         the plugin class
-          # @param parent_path [Array<Symbol>] full path ending with :short_link
-          def register_short_link_commands(base, parent_path)
-            base.commands_under(parent_path) do
-              base.command(
-                :create, description: 'Create',
-                arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
-              )
-              base.command(
-                :modify, description: 'Modify',
-                arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
-              )
-              base.command(:list, description: 'List short links')
-              base.command(
-                :show, description: 'Show a short link',
-                arguments: [{name: :short_link_id, type: :identifier}]
-              )
-              base.command(
-                :delete, description: 'Delete a short link',
-                arguments: [{name: :short_link_id, type: :identifier}]
-              )
-            end
-            base.define_action_method(parent_path + [:create]) do |custom_data: {}, **ctx|
-              sl_exec_create(custom_data, **ctx)
-            end
-            base.define_action_method(parent_path + [:list]) do |**ctx|
-              sl_exec_list(**sl_fetch_list(**ctx))
-            end
-            base.define_action_method(parent_path + [:show]) do |**ctx|
-              sl_exec_show(**sl_fetch_list(**ctx))
-            end
-            base.define_action_method(parent_path + [:delete]) do |**ctx|
-              sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
-            end
-            base.define_action_method(parent_path + [:modify]) do |custom_data: {}, **ctx|
-              sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
-            end
-          end
-        end
 
         # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg without self.class.
         def aoc_res_path(res) = self.class.aoc_res_path(res)

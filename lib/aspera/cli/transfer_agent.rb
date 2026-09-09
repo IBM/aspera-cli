@@ -2,6 +2,7 @@
 
 require 'aspera/agent/factory'
 require 'aspera/schema/registry'
+require 'aspera/cli/option_declarator'
 require 'aspera/transfer/result'
 require 'aspera/transfer/spec'
 require 'aspera/cli/info'
@@ -35,18 +36,14 @@ module Aspera
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
 
-      class << self
-        # Declare all transfer CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Parser]
-        def declare_options(options)
-          options.declare(:ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC)
-          options.declare(:to_folder,     description: 'Destination folder for transferred files')
-          options.declare(:sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS)
-          options.declare(:src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list)
-          options.declare(:transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
-          options.declare(:transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS)
-        end
-      end
+      extend OptionDeclarator
+
+      option :ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC
+      option :to_folder,     description: 'Destination folder for transferred files'
+      option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
+      option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
+      option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
+      option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
 
       # @param context [Context] Application context
       def initialize(context)

@@ -60,25 +60,26 @@ module Aspera
       module_function :true?, :to_sym, :symbol?
     end
 
-    # Constants to be used as parameter `allowed:` for `OptionValue`.
-    # Public API: TYPES_STRING_ARRAY, TYPES_SYMBOL_ARRAY, TYPES_INTEGER, TYPES_BOOLEAN, TYPES_NONE.
+    # Type specifiers for the `allowed:` parameter of option declarations.
+    # Public API: STRING_ARRAY, SYMBOL_ARRAY, INTEGER, BOOLEAN, NONE.
     # Internal (do not pass as `allowed:`):
-    #   TYPES_ENUM   - derived internally when `allowed:` is an Array<Symbol> (enum list)
-    #   TYPES_STRING - the implicit default; equivalent to omitting `allowed:` entirely
-    module Allowed
-      # This option can be set to a single string or array, multiple times, and gives Array of String
-      TYPES_STRING_ARRAY = [Array, String].freeze
-      # A list of symbols with constrained values; use as prefix: TYPES_SYMBOL_ARRAY + [:val1, :val2]
-      TYPES_SYMBOL_ARRAY = [Array, Symbol].freeze
-      # Value will be coerced to int
-      TYPES_INTEGER = [Integer].freeze
-      TYPES_BOOLEAN = BoolValue::TYPES
-      # No value at all for the option, it's a switch, like `-N`
-      TYPES_NONE = [].freeze
+    #   ENUM   - derived internally when `allowed:` is an Array<Symbol> (enum list)
+    #   STRING - the implicit default; equivalent to omitting `allowed:` entirely
+    module Type
+      # Option value is a String or Array of Strings (cumulative)
+      STRING_ARRAY = [Array, String].freeze
+      # Option value is a Symbol from a constrained list; use as prefix: SYMBOL_ARRAY + [:val1, :val2]
+      SYMBOL_ARRAY = [Array, Symbol].freeze
+      # Option value is coerced to Integer
+      INTEGER = [Integer].freeze
+      # Option value is a Boolean
+      BOOLEAN = BoolValue::TYPES
+      # Option has no value — it is a flag switch (e.g. `-N`, `--help`)
+      NONE = [].freeze
       # Internal: derived when allowed: is an Array<Symbol>; do not pass directly
-      TYPES_ENUM   = [Symbol].freeze
+      ENUM   = [Symbol].freeze
       # Internal: implicit default (String); equivalent to omitting allowed: entirely
-      TYPES_STRING = [String].freeze
+      STRING = [String].freeze
     end
 
     # Description of option, how to manage
@@ -103,7 +104,7 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Allowed::TYPES_STRING, handler: nil, deprecation: nil, schema: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, handler: nil, deprecation: nil, schema: nil)
         Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
         @option = option
         @description = description
@@ -122,7 +123,7 @@ module Aspera
         @types = nil
         @values = nil
         # Derive allowed type from schema when not explicitly provided
-        if (allowed.nil? || allowed.eql?(Allowed::TYPES_STRING)) && schema
+        if (allowed.nil? || allowed.eql?(Type::STRING)) && schema
           schema_reader = Schema::Registry.instance.reader(schema) rescue nil
           schema_node   = schema_reader&.current
           if schema_node
@@ -140,8 +141,10 @@ module Aspera
                 if branch_types.all?('object')
                   allowed = Hash
                 else
-                  Aspera.assert(!allowed.nil? && !allowed.eql?(Allowed::TYPES_STRING),
-                    "option :#{option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly")
+                  Aspera.assert(
+                    !allowed.nil? && !allowed.eql?(Type::STRING),
+                    "option :#{option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly"
+                  )
                 end
               end
             end
@@ -150,15 +153,15 @@ module Aspera
         if !allowed.nil?
           allowed = [allowed] if allowed.is_a?(Class)
           Aspera.assert_type(allowed, Array)
-          if allowed.take(Allowed::TYPES_SYMBOL_ARRAY.length) == Allowed::TYPES_SYMBOL_ARRAY
+          if allowed.take(Type::SYMBOL_ARRAY.length) == Type::SYMBOL_ARRAY
             # Special case: array of defined symbol values
-            @types = Allowed::TYPES_SYMBOL_ARRAY
-            @values = allowed[Allowed::TYPES_SYMBOL_ARRAY.length..]
+            @types = Type::SYMBOL_ARRAY
+            @values = allowed[Type::SYMBOL_ARRAY.length..]
             # Default value for symbol array when no value has been set yet
             assign_value([], where: 'array default', warn_deprecation: false) if value(log: false).nil?
           elsif allowed.all?(Class)
             @types = allowed
-            @values = BoolValue::ALL if allowed.eql?(Allowed::TYPES_BOOLEAN)
+            @values = BoolValue::ALL if allowed.eql?(Type::BOOLEAN)
             # Default value for array/hash when no value has been set yet
             if @types.first.eql?(Array) && !@types.include?(NilClass) && value(log: false).nil?
               assign_value([], where: 'array default', warn_deprecation: false)
@@ -166,7 +169,7 @@ module Aspera
               assign_value({}, where: 'hash default', warn_deprecation: false)
             end
           elsif allowed.all?(Symbol)
-            @types = Allowed::TYPES_ENUM
+            @types = Type::ENUM
             @values = allowed
           else
             Aspera.error_unexpected_value(allowed)
@@ -237,16 +240,16 @@ module Aspera
         # Per-type coercion: String input from CLI/env/preset is normalized to the expected type.
         # Centralized here so all sources (CLI dispatch, preset, env) go through the same path.
         case @types
-        when Allowed::TYPES_ENUM
+        when Type::ENUM
           new_value = Parser.get_from_list(new_value, @option, @values) if new_value.is_a?(String)
-        when Allowed::TYPES_BOOLEAN
+        when Type::BOOLEAN
           new_value = Parser.get_from_list(new_value, @option, BoolValue::ALL) if new_value.is_a?(String)
           new_value = BoolValue.true?(new_value)
-        when Allowed::TYPES_INTEGER
+        when Type::INTEGER
           new_value = Integer(new_value)
-        when Allowed::TYPES_STRING_ARRAY
+        when Type::STRING_ARRAY
           new_value = [new_value] if new_value.is_a?(String)
-        when Allowed::TYPES_SYMBOL_ARRAY
+        when Type::SYMBOL_ARRAY
           new_value = [new_value] if new_value.is_a?(String)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
           new_value = new_value.map{ |v| Parser.get_from_list(v, @option, @values)}
@@ -283,6 +286,97 @@ module Aspera
         when :setter then @object.send(@read_method, @option, :set, new_value)
         end
       end
+    end
+
+    # Represents a positional (non-option) CLI argument token.
+    class Argument
+      # @return [String] the raw argument value
+      attr_reader :value
+
+      def initialize(value)
+        @value = value
+      end
+
+      def to_s = @value
+    end
+
+    # Represents a parsed CLI option token (long or short form).
+    # Pre-computed at argv-scan time; resolution against @declared_options happens later in parse_options!
+    class Option
+      # @return [String] raw token as it appeared in argv (e.g. "--log-level=debug", "-Pval")
+      attr_reader :raw
+      # @return [String, nil] option name with underscores (e.g. "log_level", "custom"); nil for short options
+      attr_reader :name
+      # @return [String, nil] single-char short option letter (e.g. "P"), nil for long options
+      attr_reader :short_char
+      # @return [Array<String>, nil] sub-keys for dot-path notation (e.g. ["field"] for --custom.field),
+      #                              nil when name is the full option name (no dot)
+      attr_reader :dot_path
+      # @return [String, nil] inline value string, or nil if no value was provided inline
+      attr_reader :value
+      # @return [Boolean] true if `=` (long) or glued value (short) was present in the raw token;
+      #                   false means no inline separator — value may come from the next argv token
+      attr_reader :has_value
+
+      # @param raw        [String] full raw token
+      # @param name       [String, nil] option name (underscored, no prefix)
+      # @param short_char [String, nil] single-char short letter
+      # @param dot_path   [Array<String>, nil] dot-path sub-keys, or nil
+      # @param value      [String, nil] inline value
+      # @param has_value  [Boolean] whether an inline value separator was present
+      def initialize(raw:, name:, short_char:, dot_path:, value:, has_value:)
+        @raw        = raw
+        @name       = name
+        @short_char = short_char
+        @dot_path   = dot_path
+        @value      = value
+        @has_value  = has_value
+      end
+
+      def to_s = @raw
+
+      class << self
+        # Build an Option from a raw long-option token (starts with `--`)
+        # @param raw [String] e.g. "--log-level=debug" or "--custom.field" or "--log-level"
+        def from_long(raw)
+          without_prefix = raw.delete_prefix(PREFIX)
+          eq_idx = without_prefix.index(VALUE_SEP)
+          if eq_idx
+            name_raw  = without_prefix[0, eq_idx]
+            value     = without_prefix[eq_idx + 1..]
+            has_value = true
+          else
+            name_raw  = without_prefix
+            value     = nil
+            has_value = false
+          end
+          parts    = name_raw.split(DotContainer::SEPARATOR)
+          root     = parts.shift.gsub(NAME_SEP_LINE, NAME_SEP_SYMBOL)
+          dot_path = parts.empty? ? nil : parts
+          new(raw: raw, name: root, short_char: nil, dot_path: dot_path, value: value, has_value: has_value)
+        end
+
+        # Build an Option from a raw short-option token (starts with `-` but not `--`)
+        # @param raw [String] e.g. "-P", "-Pval", "-h"
+        def from_short(raw)
+          short_char = raw[1]
+          if raw.length > 2
+            new(raw: raw, name: nil, short_char: short_char, dot_path: nil, value: raw[2..], has_value: true)
+          else
+            new(raw: raw, name: nil, short_char: short_char, dot_path: nil, value: nil, has_value: false)
+          end
+        end
+      end
+
+      # Option name separator on command line (e.g. `--option-name`, the `-` between words)
+      NAME_SEP_LINE   = '-'
+      # Option name separator in code/symbol (e.g. `:option_name`, the `_` between words)
+      NAME_SEP_SYMBOL = '_'
+      # Separator between option name and its inline value (e.g. `--opt=val`, the `=`)
+      VALUE_SEP = '='
+      # Long-option prefix (e.g. `--opt`)
+      PREFIX = '--'
+      private_constant :NAME_SEP_LINE, :NAME_SEP_SYMBOL, :VALUE_SEP, :PREFIX
     end
 
     # parse command line options
@@ -371,43 +465,47 @@ module Aspera
           @option_pairs_env[k.delete_prefix(env_prefix).downcase.to_sym] = v if k.start_with?(env_prefix)
         end
         Log.dump(:env, @option_pairs_env)
+        # Ordered list of all CLI tokens after `--` splitting.
+        # Each entry is a two-element array: [:option, token] or [:argument, token].
+        # This is the single source of truth for CLI parsing; @unprocessed_cmd_line_options and
+        # @unprocessed_cmd_line_arguments are derived views that stay in sync during parse_options!.
+        # @type [Array<Array(Symbol, String)>]
+        @argv_tokens = []
+        # Frozen snapshot of @argv_tokens used by unprocessed_options_with_value.
+        @initial_argv_tokens = [].freeze
         # command line values starting with at least one '-'
         @unprocessed_cmd_line_options = []
         # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
-        # a copy of all initial options
+        # a copy of all initial options (for unprocessed_options_with_value)
         @initial_cli_options = []
-        # For each option string: list (one entry per occurrence) of the number of positional args
-        # that appear before it in original argv. Used by `@:` in option values to skip preceding args.
-        # @type [Hash{String => Array<Integer>}]
-        @args_before_option = {}
+        # Number of original positional args before the option currently being parsed (nil = positional context).
+        @current_option_args_offset = nil
         return if argv.nil?
         # true until `--` is found (stop options)
         process_options = true
-        arg_count = 0
         argv.each do |value|
           if process_options && value.start_with?('-')
             Log.log.trace1{"opt: #{value}"}
             if value.eql?(OPTIONS_STOP)
               process_options = false
             else
+              token = value.start_with?(OPTION_PREFIX) ? Option.from_long(value) : Option.from_short(value)
+              @argv_tokens.push(token)
               @unprocessed_cmd_line_options.push(value)
-              (@args_before_option[value] ||= []).push(arg_count)
             end
           else
             Log.log.trace1{"arg: #{value}"}
+            token = Argument.new(value)
+            @argv_tokens.push(token)
             @unprocessed_cmd_line_arguments.push(value)
-            arg_count += 1
           end
         end
-        # Total positional args at parse time - used in args_as_extended to compute how many to skip.
-        @arg_total_count = @unprocessed_cmd_line_arguments.length
-        # Number of original positional args before the option currently being parsed (nil = positional context).
-        @current_option_args_offset = nil
+        @initial_argv_tokens = @argv_tokens.dup.freeze
         @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
         Log.log.trace1{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
-        declare(:interactive, description: 'Use interactive input of missing params', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
-        declare(:ask_options, description: 'Ask even optional options', allowed: Allowed::TYPES_BOOLEAN, handler: {o: self, m: :ask_missing_optional})
+        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
+        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_optional})
         # do not parse options yet, let's wait for option `-h` to be overridden
       end
 
@@ -415,7 +513,7 @@ module Aspera
       # @param types [Array<Class>] types to add
       # @return [String] Types if relevant
       def add_types_info(types)
-        return '' if !types || types.empty? || types.eql?(Allowed::TYPES_ENUM) || types.eql?(Allowed::TYPES_BOOLEAN) || types.eql?(Allowed::TYPES_STRING)
+        return '' if !types || types.empty? || types.eql?(Type::ENUM) || types.eql?(Type::BOOLEAN) || types.eql?(Type::STRING)
         " (#{types.map(&:name).join(', ')})"
       end
 
@@ -455,10 +553,10 @@ module Aspera
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
         set_option(option_symbol, default, where: 'default') unless default.nil?
         case option_attrs.types
-        when Allowed::TYPES_ENUM, Allowed::TYPES_BOOLEAN
+        when Type::ENUM, Type::BOOLEAN
           # This option value must be a symbol (or array of symbols)
           set_option(option_symbol, BoolValue.true?(default), where: 'default') if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
-        when Allowed::TYPES_NONE
+        when Type::NONE
           Aspera.assert_type(block, Proc){"missing execution block for #{option_symbol}"}
           option_attrs.block = block
         end
@@ -493,7 +591,7 @@ module Aspera
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
       # @return [Object, Array, nil] one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Allowed::TYPES_STRING, aliases: nil, default: nil, schema: nil)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil)
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
         validation = Symbol unless accept_list.nil?
@@ -530,7 +628,7 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, schema: schema)
           end
-        if result.is_a?(String) && validation&.eql?(Allowed::TYPES_INTEGER)
+        if result.is_a?(String) && validation&.eql?(Type::INTEGER)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
@@ -538,7 +636,7 @@ module Aspera
         Log.log.trace1{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
-        result = result.to_s if result.is_a?(Integer) && validation&.eql?(Allowed::TYPES_STRING)
+        result = result.to_s if result.is_a?(Integer) && validation&.eql?(Type::STRING)
         if validation && (mandatory || !result.nil?)
           value_list = multiple ? result : [result]
           value_list.each do |value|
@@ -686,17 +784,17 @@ module Aspera
       # @return [Hash] options as taken from config file and command line just before command execution
       def unprocessed_options_with_value
         result = {}
-        @initial_cli_options.each do |option_argument|
-          # ignore short options
-          next unless option_argument.start_with?(OPTION_PREFIX)
-          name, value = option_argument.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
+        @initial_argv_tokens.each_with_index do |tok, idx|
+          next unless tok.is_a?(Option) && tok.short_char.nil?
+          # For space-separated form: value is the immediately following :argument token (if any)
+          value = tok.value || @initial_argv_tokens[idx + 1]&.then{ |t| t.value if t.is_a?(Argument)}
           # ignore options without value
           next if value.nil?
+          name = tok.dot_path ? [tok.name, *tok.dot_path].join(DotContainer::SEPARATOR) : tok.name
           Log.log.debug{"option #{name}=#{value}"}
-          path = name.split(DotContainer::SEPARATOR)
-          path[0] = self.class.option_line_to_name(path[0])
+          path = [tok.name, *(tok.dot_path || [])]
           DotContainer.dotted_to_container(path, smart_convert(value), result)
-          @unprocessed_cmd_line_options.delete(option_argument)
+          @unprocessed_cmd_line_options.delete(tok.raw)
         end
         result
       end
@@ -721,52 +819,80 @@ module Aspera
         @option_pairs_batch = consume_option_pairs(@option_pairs_batch, 'set')
         # Then, env var (to override)
         @option_pairs_env = consume_option_pairs(@option_pairs_env, 'env')
-        # Then, command line override: process one option at a time so that @current_option_args_offset
-        # can be set before each option is evaluated (used by `@:` extended value in option values).
-        unknown_options = []
+        # Then, command line override.
+        # Iterate @argv_tokens in order so that --opt val and -s val can consume the next argument
+        # token directly, without any secondary index.
+        # Process one option at a time so that @current_option_args_offset can be set before each
+        # option is evaluated (used by `@:` extended value).
+        deferred_tokens = []
         Log.log.trace1('Before parse')
-        Log.dump(:unprocessed_cmd_line_options, @unprocessed_cmd_line_options, level: :trace1)
-        until @unprocessed_cmd_line_options.empty?
-          opt = @unprocessed_cmd_line_options.shift
-          # Expose args_before for this option so `args_as_extended` can skip args preceding it.
-          # Peek (first) without consuming - consumed only if this option is processed (not deferred).
-          @current_option_args_offset = @args_before_option[opt]&.first
-          if opt.start_with?(OPTION_PREFIX)
-            # Long option: --name or --name=value
-            name_raw, raw_value = opt.delete_prefix(OPTION_PREFIX).split(OPTION_VALUE_SEPARATOR, 2)
-            option_sym = self.class.option_line_to_name(name_raw).to_sym
-            resolved_sym = self.class.match_prefix(option_sym, @declared_options.keys)
-            if resolved_sym
-              dispatch_option(resolved_sym, raw_value)
-              @args_before_option[opt]&.shift # consumed: advance to next occurrence
+        Log.dump(:argv_tokens, @argv_tokens, level: :trace1)
+        until @argv_tokens.empty?
+          tok = @argv_tokens.shift
+          if tok.is_a?(Argument)
+            # Positional arg: not consumed by any option — leave in @unprocessed_cmd_line_arguments as-is.
+            next
+          end
+          # tok is an Option
+          # @current_option_args_offset = number of positional args in @unprocessed_cmd_line_arguments
+          # that appear BEFORE this option in the original argv order.
+          # Used by args_as_extended to skip those leading args when collecting @: values.
+          args_still_in_tokens = @argv_tokens.count{ |t| t.is_a?(Argument)}
+          @current_option_args_offset = @unprocessed_cmd_line_arguments.length - args_still_in_tokens
+          if tok.short_char
+            # Short option: -X or -Xvalue
+            option_sym = @short_options[tok.short_char]
+            if option_sym
+              raw_value = tok.value
+              # No inline value and option expects a value: consume the next :argument token
+              raw_value = shift_next_argument_token \
+                if !tok.has_value && !@declared_options[option_sym].types.eql?(Type::NONE)
+              dispatch_option(option_sym, raw_value)
             else
-              # Dotted notation: --a.b.c=d does: a={"b":{"c":ext_val(d)}}
-              Log.log.trace1{"Unknown long option: #{opt}".red}
-              if !raw_value.nil?
-                path = name_raw.split(DotContainer::SEPARATOR)
-                root_sym = self.class.option_line_to_name(path.shift).to_sym
-                if @declared_options.key?(root_sym)
-                  set_option(root_sym, DotContainer.dotted_to_container(path, smart_convert(raw_value), get_option(root_sym)), where: 'dotted')
-                  @args_before_option[opt]&.shift # consumed: advance to next occurrence
-                  next
-                end
-              end
-              # Unknown option: defer to next parse_options! round, do not consume the recorded offset
-              unknown_options.push(opt)
+              deferred_tokens.push(tok)
             end
-          elsif opt.start_with?('-') && (option_sym = @short_options[opt[1]])
-            # Short option: -h, -v, or -Pvalue (value glued to flag)
-            dispatch_option(option_sym, opt.length > 2 ? opt[2..] : nil)
-            @args_before_option[opt]&.shift # consumed: advance to next occurrence
+          elsif tok.dot_path
+            # Dotted notation: --a.b.c=val or --a.b.c val (always takes priority over plain option lookup)
+            Log.log.trace1{"Dotted option: #{tok.raw}".red}
+            raw_value = tok.has_value ? tok.value : shift_next_argument_token
+            if @declared_options.key?(tok.name.to_sym)
+              set_option(tok.name.to_sym, DotContainer.dotted_to_container(tok.dot_path, smart_convert(raw_value), get_option(tok.name.to_sym)), where: 'dotted')
+            else
+              @argv_tokens.unshift(Argument.new(raw_value)) if raw_value
+              deferred_tokens.push(tok)
+            end
+          elsif (resolved_sym = self.class.match_prefix(tok.name.to_sym, @declared_options.keys))
+            # Known long option (plain, no dot-path)
+            raw_value = tok.value
+            # No inline `=` and option expects a value: consume the next :argument token
+            raw_value = shift_next_argument_token \
+              if !tok.has_value && !@declared_options[resolved_sym].types.eql?(Type::NONE)
+            dispatch_option(resolved_sym, raw_value)
           else
-            unknown_options.push(opt)
+            Log.log.trace1{"Unknown long option: #{tok.raw}".red}
+            deferred_tokens.push(tok)
           end
         end
         @current_option_args_offset = nil
         Log.log.trace1('After parse')
-        Log.log.trace1{"remains: #{unknown_options}"}
-        # Set unprocessed options for next time
-        @unprocessed_cmd_line_options = unknown_options
+        Log.log.trace1{"deferred: #{deferred_tokens}"}
+        # Rebuild @argv_tokens for the next round by filtering @initial_argv_tokens:
+        # keep only deferred option tokens and argument tokens still in @unprocessed_cmd_line_arguments.
+        # This preserves the original interleaved order for correct @current_option_args_offset computation.
+        deferred_raws = deferred_tokens.map(&:raw)
+        remaining_args = @unprocessed_cmd_line_arguments.dup
+        @argv_tokens = @initial_argv_tokens.filter_map do |t|
+          if t.is_a?(Option) && deferred_raws.include?(t.raw)
+            deferred_raws.delete_at(deferred_raws.index(t.raw))
+            t
+          elsif t.is_a?(Argument) && remaining_args.include?(t.value)
+            remaining_args.delete_at(remaining_args.index(t.value))
+            t
+          end
+        end
+        # Append any arguments injected at runtime (e.g. via unshift_next_argument) not in @initial_argv_tokens.
+        remaining_args.each{ |a| @argv_tokens.unshift(Argument.new(a))}
+        @unprocessed_cmd_line_options = @argv_tokens.filter_map{ |t| t.raw if t.is_a?(Option)}
       end
 
       def prompt_user_input(prompt, sensitive: false)
@@ -832,13 +958,9 @@ module Aspera
         # ExtendedValue.assert_no_value(end_marker, :p)
         end_marker = SpecialValues::EOA if end_marker.empty?
         # When called from an option value, skip positional args that appear before the option in argv.
-        # @current_option_args_offset holds the number of original args before the option (nil = positional context).
-        # The number to actually skip = args_before_option - args_already_consumed (clamped to 0).
-        skip_count = if @current_option_args_offset
-          [@current_option_args_offset - (@arg_total_count - @unprocessed_cmd_line_arguments.length), 0].max
-        else
-          0
-        end
+        # @current_option_args_offset is set by parse_options! to the number of args in
+        # @unprocessed_cmd_line_arguments that preceded this option; nil when called from a positional context.
+        skip_count = @current_option_args_offset || 0
         skipped = skip_count.positive? ? @unprocessed_cmd_line_arguments.shift(skip_count) : []
         Log.log.trace1{"args_as_extended: skipping #{skipped.length} args before option: #{skipped}"} unless skipped.empty?
         result = nil
@@ -889,10 +1011,10 @@ module Aspera
       # @return [String, nil] placeholder shown in flag column: 'ENUM', 'HASH', 'INT', 'LIST', 'VALUE', or nil for flag switches
       def option_display_value(opt)
         case opt.types
-        when Allowed::TYPES_NONE then nil
-        when Allowed::TYPES_BOOLEAN then 'yes|no'
-        when Allowed::TYPES_INTEGER then 'INT'
-        when Allowed::TYPES_ENUM
+        when Type::NONE then nil
+        when Type::BOOLEAN then 'yes|no'
+        when Type::INTEGER then 'INT'
+        when Type::ENUM
           if opt.values&.any? && opt.values.length <= 4
             opt.values.join('|')
           else
@@ -914,7 +1036,7 @@ module Aspera
       # @param raw_value [String, nil] raw string value from command line, or nil for flag switches
       def dispatch_option(sym, raw_value)
         opt = @declared_options[sym]
-        if opt.types.eql?(Allowed::TYPES_NONE)
+        if opt.types.eql?(Type::NONE)
           opt.block.call
         else
           set_option(sym, raw_value, where: SOURCE_USER)
@@ -980,6 +1102,17 @@ module Aspera
           end
         end
         remaining
+      end
+
+      # Consume the next Argument token from @argv_tokens (space-separated option value).
+      # Also removes it from @unprocessed_cmd_line_arguments to keep both in sync.
+      # @return [String, nil] the consumed argument value, or nil if the next token is not an Argument
+      def shift_next_argument_token
+        return unless @argv_tokens.first&.is_a?(Argument)
+
+        tok = @argv_tokens.shift
+        @unprocessed_cmd_line_arguments.delete_at(@unprocessed_cmd_line_arguments.index(tok.value))
+        tok.value
       end
 
       # Option name separator on command line, e.g. in --option-blah, third "-"

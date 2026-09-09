@@ -143,7 +143,7 @@ module Aspera
 
       # Declare + parse :progress_bar: sets context.progress_bar
       def setup_progress_bar
-        @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Allowed::TYPES_BOOLEAN, default: Environment.terminal?)
+        @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Type::BOOLEAN, default: Environment.terminal?)
         @context.options.parse_options!
         @context.progress_bar = TransferProgress.new if @context.options.get_option(:progress_bar)
       end

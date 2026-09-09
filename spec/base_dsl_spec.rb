@@ -109,6 +109,52 @@ module Aspera
           end
         end
 
+        describe '.use_options' do
+          it 'includes options from another Base plugin class' do
+            source_klass = Class.new(Base) do
+              option(:source_opt, description: 'From source plugin')
+            end
+            target_klass = Class.new(Base) do
+              use_options source_klass
+              option(:target_opt, description: 'From target plugin')
+            end
+            expect(target_klass.used_option_sources).to(include(source_klass))
+            target_klass.new(context: context)
+            # Both source_opt and target_opt should be declared on options
+            expect(options).to(have_received(:declare).with(:source_opt, hash_including(description: 'From source plugin')))
+            expect(options).to(have_received(:declare).with(:target_opt, hash_including(description: 'From target plugin')))
+          end
+
+          it 'includes options from an OptionDeclarator module' do
+            source_mod = Module.new do
+              extend OptionDeclarator
+
+              option(:mod_opt, description: 'From module')
+            end
+            target_klass = Class.new(Base) do
+              use_options source_mod
+            end
+            target_klass.new(context: context)
+            expect(options).to(have_received(:declare).with(:mod_opt, hash_including(description: 'From module')))
+          end
+        end
+
+        describe '.declare_options' do
+          it 'declares all options on the given parser' do
+            klass = Class.new(Base) do
+              option(:custom_opt, description: 'Custom option')
+            end
+            parser = instance_double(Parser)
+            allow(parser).to(receive(:option_declared?).and_return(false))
+            allow(parser).to(receive(:declare))
+            allow(parser).to(receive(:parse_options!))
+
+            klass.declare_options(parser, parse: true)
+            expect(parser).to(have_received(:declare).with(:custom_opt, hash_including(description: 'Custom option')))
+            expect(parser).to(have_received(:parse_options!))
+          end
+        end
+
         # ------------------------------------------------------------------
         # initialize — DSL path skips legacy assertions
         # ------------------------------------------------------------------

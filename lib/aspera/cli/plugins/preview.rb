@@ -52,13 +52,13 @@ module Aspera
         option :skip_format,        description: 'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
         # TODO: use the same option as in `node` plugin
         option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
-        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Allowed::TYPES_SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
+        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Type::SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
         option :previews_folder,    description: 'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
-        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Allowed::TYPES_STRING_ARRAY, handler: :option_skip_folders
+        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Type::STRING_ARRAY, handler: :option_skip_folders
         option :base,               description: 'Basename of output for for test'
         option :scan_path,          description: 'Subpath in folder id to start scan in (default=/)'
         option :scan_id,            description: 'Folder id in storage to start scan in, default is access key main folder id'
-        option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Type::BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
         option :root_url,           description: "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
         # Generator-specific options (Category C - bound to @gen_options via set_handler in initialize)

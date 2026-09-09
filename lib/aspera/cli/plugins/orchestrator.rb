@@ -57,7 +57,7 @@ module Aspera
         end
 
         option :result,      description: "Specify result value as: 'work_step:parameter'"
-        option :synchronous, description: 'Wait for completion', allowed: Allowed::TYPES_BOOLEAN, default: false
+        option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, default: false
         option :ret_style,   description: 'How return type is requested in api', allowed: %i[header arg ext], default: :arg
         option :auth_style,  description: 'Authentication type', allowed: %i[arg_pass head_basic apikey], default: :head_basic
 

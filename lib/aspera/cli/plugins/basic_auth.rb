@@ -12,18 +12,6 @@ module Aspera
         option :username, description: "User's identifier"
         option :password, description: "User's password"
 
-        # Declare url/username/password on an arbitrary Options object.
-        # Still needed for ad-hoc callers that are not plugin instances
-        # (e.g. PresetActions#action_config_lookup).
-        class << self
-          def declare_options(options)
-            options.declare(:url,      description: 'URL of application, e.g. https://app.example.com/aspera/app') unless options.option_declared?(:url)
-            options.declare(:username, description: "User's identifier") unless options.option_declared?(:username)
-            options.declare(:password, description: "User's password") unless options.option_declared?(:password)
-            options.parse_options!
-          end
-        end
-
         def initialize(context:, basic_options: true)
           super(context: context)
           # DSL options (url, username, password) are auto-declared by Base#initialize

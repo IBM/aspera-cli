@@ -5,6 +5,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/line_logger'
 require 'aspera/schema/registry'
+require 'aspera/cli/option_declarator'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/ssl'
@@ -16,12 +17,21 @@ module Aspera
     # Extracted from Plugins::Config so it can be referenced independently
     # via Context#http_config without coupling to the plugin machinery.
     class Http
+      extend OptionDeclarator
+
       # Certificate file extensions recognized when scanning a folder
       CERT_EXT = %w[crt cer pem der].freeze
       # OpenSSL constant that disables peer verification (VERIFY_NONE)
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
 
       private_constant :CERT_EXT, :SELF_SIGNED_CERT
+
+      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass]
+      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true
+      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY
+      option :http_options,       schema: Schema::Registry::HTTP_OPTIONS
+      option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials'
 
       def initialize
         @insecure              = false
@@ -35,23 +45,6 @@ module Aspera
 
       attr_accessor :insecure, :warn_insecure
       attr_reader   :ignore_cert_host_port, :http_options
-
-      class << self
-        # Declare all HTTP/S CLI options (metadata only - no handler binding yet).
-        # Called once from Config#initialize before this instance is available as a target.
-        # Handlers are bound in a second pass via bind_options once the instance exists.
-        # @param options [Aspera::Cli::Parser] CLI options manager to declare options into
-        # @return [nil]
-        def declare_options(options)
-          options.declare(:insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass])
-          options.declare(:warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Allowed::TYPES_STRING_ARRAY)
-          options.declare(:http_options,       schema: Schema::Registry::HTTP_OPTIONS)
-          options.declare(:http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials')
-          nil
-        end
-      end
 
       # Bind all HTTP options to this instance using set_handler.
       # Called from Config#initialize immediately after Http.new.

@@ -444,12 +444,12 @@ module Aspera
       # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, description: 'Show this message', allowed: Allowed::TYPES_NONE, short: 'h') do
+        @context.options.declare(:help, description: 'Show this message', allowed: Type::NONE, short: 'h') do
           @option_help = true
           @context.options.help_requested = true
         end
-        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Allowed::TYPES_NONE){@option_show_config = true}
-        @context.options.declare(:version, description: 'Display version', allowed: Allowed::TYPES_NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE){@option_show_config = true}
+        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'Method to start browser',
           allowed: USER_INTERFACES,
@@ -463,10 +463,10 @@ module Aspera
         @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
         @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
-        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Allowed::TYPES_INTEGER)
-        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Allowed::TYPES_BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Allowed::TYPES_BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Allowed::TYPES_BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
+        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         @context.options.declare(:temp_folder, description: 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit')
         @context.options.declare(

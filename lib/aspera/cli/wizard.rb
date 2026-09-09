@@ -2,25 +2,22 @@
 
 require 'aspera/oauth/jwt'
 require 'aspera/assert'
+require 'aspera/cli/option_declarator'
 require 'aspera/cli/plugins/factory'
 
 module Aspera
   module Cli
     # The wizard detects applications and generates a config
     class Wizard
+      extend OptionDeclarator
+
       WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
       private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
 
-      class << self
-        # Declare all wizard CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Parser]
-        def declare_options(options)
-          options.declare(:override,  description: 'Wizard: override existing value',                                                    allowed: Allowed::TYPES_BOOLEAN, default: false)
-          options.declare(:default,   description: 'Wizard: set as default configuration for specified plugin (also: update)',           allowed: Allowed::TYPES_BOOLEAN, default: true)
-          options.declare(:key_path,  description: 'Wizard: path to private key for JWT')
-        end
-      end
+      option :override, description: 'Wizard: override existing value',                                          allowed: Type::BOOLEAN, default: false
+      option :default,  description: 'Wizard: set as default configuration for specified plugin (also: update)', allowed: Type::BOOLEAN, default: true
+      option :key_path, description: 'Wizard: path to private key for JWT'
 
       def initialize(parent, main_folder)
         @parent = parent

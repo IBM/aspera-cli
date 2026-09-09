@@ -1556,7 +1556,9 @@ Command-line options, such as `--log-level=debug`, follow these conventions:
   Option name in config file use underscores (`_`) as word separators.
   Example: `--log-level=debug` is `log_level` in config file.
 - **Values**:
-  An option’s value is assigned using `=` (for example, `--log-level=debug`).
+  An option's value is assigned using `=` (for example, `--log-level=debug`).
+  Alternatively, the value can be provided as a separate, space-separated token (for example, `--log-level debug`).
+  Both forms are equivalent.
 - **Prefix Usage**:
   Options support prefix matching (see [Enumerations](#enumerations)), though full names are recommended.
 - **Optionality**:
@@ -1569,7 +1571,7 @@ Exceptions and Special Cases:
 - **Short Forms**
 
   Some options have short forms.
-  For example, `-Ptoto` is equivalent to `--preset=toto`.
+  For example, `-Ptoto` and `-P toto` are both equivalent to `--preset=toto` and `--preset toto`.
   See the manual or `-h` for details.
 - **Flags**
 

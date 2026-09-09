@@ -2,6 +2,7 @@
 
 # cspell:ignore jsonpp
 require 'aspera/schema/registry'
+require 'aspera/cli/option_declarator'
 require 'aspera/cli/special_values'
 require 'aspera/cli/terminal_formatter'
 require 'aspera/preview/terminal'
@@ -22,6 +23,32 @@ module Aspera
   module Cli
     # Take care of CLI output on terminal
     class Formatter
+      extend OptionDeclarator
+
+      # remove a fields from the list
+      FIELDS_LESS = '-'
+      # supported output formats
+      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
+      # user output levels
+      DISPLAY_LEVELS = %i[info data error].freeze
+      # column names for single object display in table
+      SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
+      # Terminal: vertical separator for list of strings.
+      STR_LST_SEP_VERT = "\n"
+
+      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
+
+      option :display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data
+      option :format,       description: 'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table
+      option :output,       description: 'Destination for results'
+      option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
+      option :select,       description: 'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc]
+      option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash]
+      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true
+      option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no
+      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false
+      option :image,        schema: Schema::Registry::IMAGE_OPTIONS
+
       class << self
         # Replace special values with a readable version on terminal
         def replace_specific_for_terminal(input_hash, string_list_separator)
@@ -106,25 +133,6 @@ module Aspera
           action == :success ? @spinner.success : @spinner.error
           @spinner.stop
           @spinner = nil
-        end
-      end
-
-      class << self
-        # Declare all formatter CLI options (metadata only - no handler binding yet).
-        # @param options [Aspera::Cli::Parser]
-        # @return [nil]
-        def declare_options(options)
-          options.declare(:display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data)
-          options.declare(:format,       description: 'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table)
-          options.declare(:output,       description: 'Destination for results')
-          options.declare(:fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF)
-          options.declare(:select,       description: 'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc])
-          options.declare(:table_style,  description: '(Table) Display style',                                                                             allowed: [Hash])
-          options.declare(:flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Allowed::TYPES_BOOLEAN,     default: true)
-          options.declare(:multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single],          default: :no)
-          options.declare(:show_secrets, description: 'Show secrets on command output',                                                                    allowed: Allowed::TYPES_BOOLEAN,     default: false)
-          options.declare(:image,        schema: Schema::Registry::IMAGE_OPTIONS)
-          nil
         end
       end
 
@@ -406,19 +414,6 @@ module Aspera
         end
         nil
       end
-
-      # remove a fields from the list
-      FIELDS_LESS = '-'
-      # supported output formats
-      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
-      # user output levels
-      DISPLAY_LEVELS = %i[info data error].freeze
-      # column names for single object display in table
-      SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
-      # Terminal: vertical separator for list of strings.
-      STR_LST_SEP_VERT = "\n"
-
-      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
     end
   end
 end
