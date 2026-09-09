@@ -8453,7 +8453,7 @@ shared_folders browse %name:my_shared_folder_name
 shared_folders list
 user account
 user account --query.expand=true
-user profile modify @json:'{"preference":{"connect_disabled":false}}'
+user profile modify @: preference.rows_per_page=10
 user profile show
 version
 ```

@@ -5053,7 +5053,7 @@ conf_query_help_faspex5:
   tags:
     - must_fail
     - nodoc
-  expect: 'Schema: option: query'
+  expect: "Schema: option: query"
   args:
     - faspex5
     - --url=https://fake.example.com
@@ -5068,7 +5068,7 @@ conf_query_help_aoc:
   tags:
     - must_fail
     - nodoc
-  expect: 'Schema: option: query'
+  expect: "Schema: option: query"
   args:
     - aoc
     - --url=https://fake.ibmaspera.com
@@ -5986,7 +5986,7 @@ f5_detect_fail:
   args:
     - config
     - detect
-    - https://eudemo.asperademo.com:22
+    - https://eudemo.asperademo.com:33001
     - faspex5
 f5_detect_ok:
   description: Auto-detect without specifying plugin (-N flag)
@@ -6146,9 +6146,6 @@ f5_pack_shbox:
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}'
     - $(PATH_TST_ASC_LCL)
-  post: |
-    puts 'Waiting for package to be available'
-    sleep 30
 f5_pack_shbox_list:
   depends_on:
     - f5_pack_shbox
@@ -6162,6 +6159,7 @@ f5_pack_shbox_list_id:
     - f5_pack_shbox_list
   tags:
     - save_output
+    - wait_value
     - nodoc
   args:
     - faspex5
@@ -6296,6 +6294,7 @@ f5_admin_shared_inboxes:
     - list
 f5_admin_saml_configs:
   args:
+    - --preset=f5_admin
     - faspex5
     - admin
     - saml_configs
@@ -6598,7 +6597,8 @@ f5_user_profile_mod:
     - user
     - profile
     - modify
-    - '@json:{"preference":{"connect_disabled":false}}'
+    - "@:"
+    - preference.rows_per_page=10
 f5_invite_create:
   $comment: public invitation
   args:
