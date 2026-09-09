@@ -130,7 +130,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # Actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download cat sync transport spec]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete ls upload download cat sync transport spec]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -142,7 +142,7 @@ module Aspera
         private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :COMMON_ACTIONS
 
         # used in aoc
-        NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
+        NODE4_READ_ACTIONS = %i[bearer_token_node node_info ls find].freeze
 
         # commands for execute_command_gen4
         COMMANDS_GEN4 = %i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
@@ -341,7 +341,8 @@ module Aspera
           arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]
         command :delete,      description: 'Delete files or folders (Gen3)',
           arguments: [{name: :paths, multiple: true}]
-        command :browse,      description: 'Browse files (Gen3)',
+        command :ls,          description: 'List files (Gen3)',
+          aliases: [:browse],
           arguments: [{name: :path, type: String}],
           action: ->(path:, **){browse_gen3(path)}
         command :upload,      description: 'Upload files (Gen3)',   transfer_paths: :send
@@ -397,13 +398,14 @@ module Aspera
         end
 
         # Commands requiring a single path argument (Gen4)
-        COMMANDS_GEN4_SINGLE_PATH = %i[mkdir mklink browse cat show find thumbnail bearer_token_node node_info].freeze
+        COMMANDS_GEN4_SINGLE_PATH = %i[mkdir mklink ls cat show find thumbnail bearer_token_node node_info].freeze
         private_constant :COMMANDS_GEN4_SINGLE_PATH
 
         commands_under(%i[access_keys do]) do
           COMMANDS_GEN4.each do |cmd|
             next if cmd.eql?(:sync) # sync is an intermediate node declared below
             kwargs = {description: "Gen4 #{cmd} command"}
+            kwargs[:aliases] = [:browse] if cmd.eql?(:ls)
             kwargs[:setup] = :setup_access_key_do_permission if cmd.eql?(:permission)
             kwargs[:arguments] = [{name: :source_path, type: String}, {name: :new_name, type: String}] if cmd.eql?(:rename)
             kwargs[:arguments] = [{name: :paths, type: String, bulk: true}] if cmd.eql?(:delete)
@@ -755,8 +757,8 @@ module Aspera
           {apifid: apifid_from_next_arg(@do_root_file_id)}
         end
 
-        # access_keys > do > browse
-        def action_access_keys_do_browse(path:, do_root_file_id:, **)
+        # access_keys > do > ls
+        def action_access_keys_do_ls(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
           file_info = apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control)
           return Result::ObjectList.new([file_info], fields: GEN4_LS_FIELDS) unless file_info['type'].eql?('folder')

@@ -672,7 +672,7 @@ module Aspera
         end
         # admin > workspace > shared_folder > node sub-tree (FILES_COMMANDS)
         commands_under(%i[admin workspace shared_folder node]) do
-          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize, aliases: c.eql?(:ls) ? [:browse] : nil)}
         end
         commands_under(%i[admin workspace shared_folder member]) do
           command :list, description: 'List members of a shared folder'
@@ -683,7 +683,7 @@ module Aspera
         end
         # admin > node > do sub-tree (FILES_COMMANDS)
         commands_under(%i[admin node do]) do
-          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+          FILES_COMMANDS.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize, aliases: c.eql?(:ls) ? [:browse] : nil)}
         end
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
@@ -872,7 +872,7 @@ module Aspera
             arguments: [{name: :package_id, type: :identifier}]
           command :node_info,         description: 'Show node info for package',
             arguments: [{name: :package_id, type: :identifier}]
-          command :browse,            description: 'Browse package contents',
+          command :ls,                description: 'List package contents', aliases: [:browse],
             arguments: [{name: :package_id, type: :identifier}]
           command :find,              description: 'Find files in package',
             arguments: [{name: :package_id, type: :identifier}]
@@ -921,7 +921,7 @@ module Aspera
           command :v3,               description: 'Legacy v3 commands on files'
           command :bearer_token_node, description: 'Show bearer token for file node'
           command :node_info,         description: 'Show node info for file'
-          command :browse,            description: 'Browse files'
+          command :ls,                description: 'List files', aliases: [:browse]
           command :find,              description: 'Find files'
         end
         # files > short_link sub-commands
@@ -1086,7 +1086,7 @@ module Aspera
           Result::Status.new('modified')
         end
 
-        # packages > bearer_token_node / node_info / browse / find
+        # packages > bearer_token_node / node_info / ls / find
         # (NODE4_READ_ACTIONS dispatched by full path: action_packages_bearer_token_node, etc.)
         Node::NODE4_READ_ACTIONS.each do |action|
           define_action_method([:packages, action]) do |package_id:, **|

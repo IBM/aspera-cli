@@ -299,7 +299,8 @@ module Aspera
 
         commands_under(:files) do
           Node::COMMANDS_SHARES.each do |cmd|
-            command(cmd, description: "Node #{cmd} command")
+            aliases = cmd.eql?(:ls) ? [:browse] : nil
+            command(cmd, description: "Node #{cmd} command", aliases: aliases)
           end
         end
 
