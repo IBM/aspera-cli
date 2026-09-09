@@ -2,6 +2,7 @@
 
 require 'aspera/cli/extended_value'
 require 'aspera/cli/error'
+require 'aspera/cli/special_values'
 require 'aspera/cli/terminal_formatter'
 require 'aspera/colors'
 require 'aspera/secret_hider'
