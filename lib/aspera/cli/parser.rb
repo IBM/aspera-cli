@@ -1043,7 +1043,11 @@ module Aspera
           set_option(sym, raw_value, where: SOURCE_USER)
           # Track options explicitly cleared from CLI (e.g. --opt=@none:) so that
           # subsequent preset injection does not silently restore the value.
-          @explicitly_cleared[sym] = true if get_option(sym).nil?
+          # Note: for Hash options, @none: evaluates to nil which is then coerced to {}
+          # by assign_value, so we also check the raw evaluated value before coercion.
+          cleared = get_option(sym).nil?
+          cleared ||= raw_value.is_a?(String) && ExtendedValue.instance.evaluate(raw_value, context: 'explicitly_cleared check').nil?
+          @explicitly_cleared[sym] = true if cleared
         end
       end
 
