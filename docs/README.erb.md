@@ -2803,6 +2803,54 @@ The vault file is created automatically on first use - no explicit initializatio
 > The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
 > Use an environment variable as described above.
 
+#### Vault: 1Password
+
+Use `type: 1password` with a `source` parameter to select the backend.
+
+##### Source: API (Connect REST API)
+
+<https://developer.1password.com/docs/connect/>
+
+[1Password Connect](https://developer.1password.com/docs/connect/) exposes a local REST API backed by a 1Password vault.
+Deploy the Connect server with Docker, then point `<%=cmd%>` at it:
+
+```shell
+docker run -d --name op-connect \
+  -p 8080:8080 \
+  -v /path/to/1password-credentials.json:/home/opuser/.op/1password-credentials.json \
+  1password/connect-api:latest
+```
+
+```shell
+--vault=@json:'{"type":"1password","source":"api","url":"http://localhost:8080","vault_id":"<%=ph :vault_id%>"}' \
+--vault_password=<%=ph :connect_token%>
+```
+
+> [!TIP]
+> The `vault_id` is the alphanumeric ID shown in the 1Password web app under **Vault Settings**.
+> The `vault_password` holds the Connect bearer token generated when creating the Connect server credentials.
+
+> [!NOTE]
+> The [1Password Service Accounts API](https://developer.1password.com/docs/service-accounts/) is also supported: use `url=https://api.1password.com` with a service account token as `vault_password`.
+> No local server is required in that case.
+
+##### Source: Cli (`op` CLI)
+
+<https://developer.1password.com/docs/cli/>
+
+Requires the `op` CLI to be installed and signed in.
+No server to deploy — authentication is handled by the 1Password desktop app (biometric unlock) or by `op signin`.
+
+```shell
+--vault=@json:'{"type":"1password","source":"cli"}'
+# or, to target a specific vault and account:
+--vault=@json:'{"type":"1password","source":"cli","vault":"<%=ph :vault_name%>","account":"<%=ph :account_shorthand%>"}'
+```
+
+> [!TIP]
+> Install `op` on macOS with `brew install 1password-cli`, then connect it to the desktop app:
+> `op signin`
+
 #### Vault: Operations
 
 Secrets can be manipulated using the `config vault` command:
@@ -2811,12 +2859,37 @@ Secrets can be manipulated using the `config vault` command:
 - `show`
 - `list`
 - `delete`
+- `import`
 
 To add a new password entry in the vault for label `<%=ph :name%>`:
 
 ```shell
 <%=cmd%> config vault create @: label=<%=ph :name%> password=@secret:password description='for this account'
 ```
+
+#### Vault: Migration between vaults
+
+To migrate all secrets from one vault backend to another (for example, from the encrypted file vault to 1Password), use `vault overview` piped into `vault import`.
+
+> [!NOTE]
+> Use `overview` (not `list`) as the source: `list` returns only labels, while `overview` returns the full secret details needed for import.
+
+```shell
+<%=cmd%> config vault overview --format=json --display=data \
+  --vault=@json:'{"type":"file","name":"<%=ph :source_vault_file%>"}' \
+  --vault_password=<%=ph :source_password%> | \
+<%=cmd%> config vault import @json:@stdin: --bulk \
+  --vault=@json:'{"type":"1password","url":"<%=ph :connect_url%>","vault_id":"<%=ph :vault_id%>"}' \
+  --vault_password=<%=ph :connect_token%>
+```
+
+> [!TIP]
+> Use `--display=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+
+The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
+`--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
+On error (for example a duplicate label), the default behavior is to stop (`--bfail=yes`).
+Pass `--bfail=no` to skip failures and continue with the remaining entries.
 
 #### Configuration Finder
 
@@ -8761,12 +8834,58 @@ Start with custom instructions and a specific protocol version:
 
 ### MCP client configuration
 
-To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS Code, Bob), add the following to the client's MCP configuration file:
+#### Streamable HTTP transport
+
+Start the server in a separate terminal first:
+
+```shell
+<%=cmd%> mcp server @: transport=http port=3000
+```
+
+Then register it in the AI client's MCP configuration file.
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), add to `.bob/mcp.json` in your project (or `~/.bob/mcp.json` for global configuration):
 
 ```json
 {
   "mcpServers": {
     "ascli": {
+      "type": "streamable-http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+For other clients (Claude Desktop, VS Code, …):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+> [!NOTE]
+> With `http` transport, the client connects to a running server process.
+> The server must be started and kept running independently before the AI client tries to connect.
+
+#### `stdio` transport
+
+The client launches <%=tool%> directly as a subprocess.
+Add the following to the AI client's MCP configuration file.
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), add to `.bob/mcp.json` in your project (or `~/.bob/mcp.json` for global configuration):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "stdio",
       "command": "/path/to/bin/<%=cmd%>",
       "args": ["mcp", "server"],
       "description": "Aspera CLI MCP server"
@@ -8774,6 +8893,8 @@ To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS 
   }
 }
 ```
+
+For other clients (Claude Desktop, VS Code, …), the configuration is identical.
 
 > [!NOTE]
 > **Development mode** - if the <%=tool%> gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
@@ -8783,6 +8904,7 @@ To register <%=tool%> as an MCP server in an AI client (e.g. Claude Desktop, VS 
 > {
 >   "mcpServers": {
 >     "ascli": {
+>       "type": "stdio",
 >       "command": "/path/to/aspera-cli/bin/<%=cmd%>",
 >       "args": ["mcp", "server"],
 >       "env": {

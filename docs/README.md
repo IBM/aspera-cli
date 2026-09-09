@@ -654,7 +654,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](../Gemfile):
 
 | name | version | comment |
-|----------------------|----------|-------------------------------------------------------------------------------|
+|---------------------|----------|-------------------------------------------------------------------------------|
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
@@ -669,8 +669,6 @@ See [Gemfile](../Gemfile):
 | mcp | ~> 1.2 | for ascli mcp server (MCP protocol support) |
 | rack | ~> 3.0 | for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport) |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
-| symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
-| bigdecimal | ~> 3.1 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 | base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
@@ -697,8 +695,6 @@ gem install solargraph -v '~> 0.48'
 gem install mcp -v '~> 1.2'
 gem install rack -v '~> 3.0'
 gem install grpc -v '~> 1.71'
-gem install symmetric-encryption -v '~> 4.6'
-gem install bigdecimal -v '~> 3.1'
 gem install base64 -v '~> 0.3'
 gem install sqlite3 -v '~> 2.7'
 gem install jdbc-sqlite3 -v '~> 3.46'
@@ -2651,7 +2647,7 @@ preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
 preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
-preset set GLOBAL vault @: type=file file=/secure/vault_file
+preset set GLOBAL vault @: type=file name=/secure/vault_file
 preset set GLOBAL vault_password _simple_one_
 preset set GLOBAL version_check_days 0
 preset set conf_name param value
@@ -2676,6 +2672,7 @@ transferd list
 vault create @: label=my_label password=my_password_here 'description=my secret'
 vault delete foo --vault.type=system
 vault delete my_label
+vault ids
 vault info
 vault list
 vault show my_label
@@ -2953,6 +2950,14 @@ vault server -dev -dev-root-token-id=dev-only-token
 | **type** | `String` | `file`: Encrypted file secret store. |
 | `name` | `String` | Path to the encrypted vault file. Relative paths are resolved from the configuration folder.<br/>Default: `vault.bin`. |
 | `type` | `String` | Vault type selector.<br/>Allowed values: `file`. |
+| **type** | `String` | `1password`: 1Password secret store (Connect REST API or CLI). |
+| `account` | `String` | Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted. |
+| `source` | `String` | Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.<br/>Allowed values: `api`, `cli`.<br/>Default: `api`. |
+| `token` | `String` | Bearer token for the Connect API (required when `source` is `api`). Defaults to the value of `vault_password`. |
+| `type` | `String` | Vault type selector.<br/>Allowed values: `1password`. |
+| `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
+| `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
+| `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
@@ -2989,6 +2994,54 @@ The vault file is created automatically on first use - no explicit initializatio
 > The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
 > Use an environment variable as described above.
 
+#### Vault: 1Password
+
+Use `type: 1password` with a `source` parameter to select the backend.
+
+##### Source: API (Connect REST API)
+
+<https://developer.1password.com/docs/connect/>
+
+[1Password Connect](https://developer.1password.com/docs/connect/) exposes a local REST API backed by a 1Password vault.
+Deploy the Connect server with Docker, then point `ascli` at it:
+
+```shell
+docker run -d --name op-connect \
+  -p 8080:8080 \
+  -v /path/to/1password-credentials.json:/home/opuser/.op/1password-credentials.json \
+  1password/connect-api:latest
+```
+
+```shell
+--vault=@json:'{"type":"1password","source":"api","url":"http://localhost:8080","vault_id":"<VAULT_ID>"}' \
+--vault_password=<CONNECT_TOKEN>
+```
+
+> [!TIP]
+> The `vault_id` is the alphanumeric ID shown in the 1Password web app under **Vault Settings**.
+> The `vault_password` holds the Connect bearer token generated when creating the Connect server credentials.
+
+> [!NOTE]
+> The [1Password Service Accounts API](https://developer.1password.com/docs/service-accounts/) is also supported: use `url=https://api.1password.com` with a service account token as `vault_password`.
+> No local server is required in that case.
+
+##### Source: Cli (`op` CLI)
+
+<https://developer.1password.com/docs/cli/>
+
+Requires the `op` CLI to be installed and signed in.
+No server to deploy — authentication is handled by the 1Password desktop app (biometric unlock) or by `op signin`.
+
+```shell
+--vault=@json:'{"type":"1password","source":"cli"}'
+# or, to target a specific vault and account:
+--vault=@json:'{"type":"1password","source":"cli","vault":"<VAULT_NAME>","account":"<ACCOUNT_SHORTHAND>"}'
+```
+
+> [!TIP]
+> Install `op` on macOS with `brew install 1password-cli`, then connect it to the desktop app:
+> `op signin`
+
 #### Vault: Operations
 
 Secrets can be manipulated using the `config vault` command:
@@ -2997,12 +3050,37 @@ Secrets can be manipulated using the `config vault` command:
 - `show`
 - `list`
 - `delete`
+- `import`
 
 To add a new password entry in the vault for label `<NAME>`:
 
 ```shell
 ascli config vault create @: label=<NAME> password=@secret:password description='for this account'
 ```
+
+#### Vault: Migration between vaults
+
+To migrate all secrets from one vault backend to another (for example, from the encrypted file vault to 1Password), use `vault overview` piped into `vault import`.
+
+> [!NOTE]
+> Use `overview` (not `list`) as the source: `list` returns only labels, while `overview` returns the full secret details needed for import.
+
+```shell
+ascli config vault overview --format=json --display=data \
+  --vault=@json:'{"type":"file","name":"<SOURCE_VAULT_FILE>"}' \
+  --vault_password=<SOURCE_PASSWORD> | \
+ascli config vault import @json:@stdin: --bulk \
+  --vault=@json:'{"type":"1password","url":"<CONNECT_URL>","vault_id":"<VAULT_ID>"}' \
+  --vault_password=<CONNECT_TOKEN>
+```
+
+> [!TIP]
+> Use `--display=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+
+The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
+`--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
+On error (for example a duplicate label), the default behavior is to stop (`--bfail=yes`).
+Pass `--bfail=no` to skip failures and continue with the remaining entries.
 
 #### Configuration Finder
 
@@ -9771,12 +9849,58 @@ ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2
 
 ### MCP client configuration
 
-To register `ascli` as an MCP server in an AI client (e.g. Claude Desktop, VS Code, Bob), add the following to the client's MCP configuration file:
+#### Streamable HTTP transport
+
+Start the server in a separate terminal first:
+
+```shell
+ascli mcp server @: transport=http port=3000
+```
+
+Then register it in the AI client's MCP configuration file.
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), add to `.bob/mcp.json` in your project (or `~/.bob/mcp.json` for global configuration):
 
 ```json
 {
   "mcpServers": {
     "ascli": {
+      "type": "streamable-http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+For other clients (Claude Desktop, VS Code, …):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+> [!NOTE]
+> With `http` transport, the client connects to a running server process.
+> The server must be started and kept running independently before the AI client tries to connect.
+
+#### `stdio` transport
+
+The client launches `ascli` directly as a subprocess.
+Add the following to the AI client's MCP configuration file.
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), add to `.bob/mcp.json` in your project (or `~/.bob/mcp.json` for global configuration):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "stdio",
       "command": "/path/to/bin/ascli",
       "args": ["mcp", "server"],
       "description": "Aspera CLI MCP server"
@@ -9784,6 +9908,8 @@ To register `ascli` as an MCP server in an AI client (e.g. Claude Desktop, VS Co
   }
 }
 ```
+
+For other clients (Claude Desktop, VS Code, …), the configuration is identical.
 
 > [!NOTE]
 > **Development mode** - if the `ascli` gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
@@ -9793,6 +9919,7 @@ To register `ascli` as an MCP server in an AI client (e.g. Claude Desktop, VS Co
 > {
 >   "mcpServers": {
 >     "ascli": {
+>       "type": "stdio",
 >       "command": "/path/to/aspera-cli/bin/ascli",
 >       "args": ["mcp", "server"],
 >       "env": {
