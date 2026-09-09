@@ -1076,9 +1076,7 @@ module Aspera
 
         # packages > delete
         def action_packages_delete(package_id:, **)
-          is_bulk = options.get_option(:bulk)
-          items = package_id.is_a?(Array) ? package_id : [package_id]
-          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
+          bulk_result(package_id, command: :delete) do |one_id|
             Aspera.assert_type(one_id, String, Integer){'identifier'}
             aoc_api.delete("packages/#{one_id}")
           end
@@ -1428,8 +1426,7 @@ module Aspera
             # Special case: client_registration_token has a different creation URL
             path = 'admin/client_registration/token' if path.eql?('admin/client_registration_tokens')
             workspace_id = aoc_api.workspace_info[:id] if c[:require_ws_id]
-            is_bulk = options.get_option(:bulk)
-            Result.bulk(data, is_bulk: is_bulk, command: :create, id_result: c[:id_result], bfail: options.get_option(:bfail)) do |params|
+            bulk_result(data, command: :create, id_result: c[:id_result]) do |params|
               params['workspace_id'] = workspace_id if c[:require_ws_id] && workspace_id && !params.key?('workspace_id')
               aoc_api.create(path, params)
             end
@@ -1452,9 +1449,7 @@ module Aspera
         end.each do |res|
           define_action_method([:admin, res, :delete]) do |res_id:, **|
             c = aoc_res_cfg(res)
-            is_bulk = options.get_option(:bulk)
-            items = res_id.is_a?(Array) ? res_id : [res_id]
-            Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
+            bulk_result(res_id, command: :delete) do |one_id|
               aoc_api.delete("#{c[:path]}/#{one_id}")
               {'id' => one_id}
             end

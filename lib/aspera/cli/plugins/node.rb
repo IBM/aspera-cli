@@ -823,8 +823,7 @@ module Aspera
 
         # access_keys > do > delete
         def action_access_keys_do_delete(paths:, do_root_file_id:, **)
-          is_bulk = options.get_option(:bulk)
-          Result.bulk(paths, is_bulk: is_bulk, command: :delete, id_result: 'path', bfail: options.get_option(:bfail)) do |l_path|
+          bulk_result(paths, command: :delete, id_result: 'path') do |l_path|
             apifid = if (m = Parser.percent_selector(l_path))
               Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
               Api::NodeFileId.new(@api_node, m[:value])
@@ -964,9 +963,7 @@ module Aspera
         end
 
         def action_access_keys_do_permission_delete(perm_id:, apifid:, **)
-          is_bulk = options.get_option(:bulk)
-          items = perm_id.is_a?(Array) ? perm_id : [perm_id]
-          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
+          bulk_result(perm_id, command: :delete) do |one_id|
             apifid.node_api.delete("permissions/#{one_id}")
             the_app = apifid.node_api.app_info
             the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])
@@ -1055,9 +1052,7 @@ module Aspera
         end
 
         def action_ssync_delete(ssync_id:, **)
-          is_bulk = options.get_option(:bulk)
-          items = ssync_id.is_a?(Array) ? ssync_id : [ssync_id]
-          Result.bulk(items, is_bulk: is_bulk, command: :delete, bfail: options.get_option(:bfail)) do |one_id|
+          bulk_result(ssync_id, command: :delete) do |one_id|
             @api_node.delete("asyncs/#{one_id}", query_read_delete)
             {'id' => one_id}
           end

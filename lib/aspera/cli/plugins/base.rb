@@ -480,6 +480,31 @@ module Aspera
           end
         end
 
+        # Convenience wrapper: reads :bulk and :bfail from options, normalises +items+
+        # to an Array, then delegates to Result.bulk.
+        # Use this in action methods instead of the three-line boilerplate:
+        #   is_bulk = options.get_option(:bulk)
+        #   items   = x.is_a?(Array) ? x : [x]
+        #   Result.bulk(items, is_bulk: is_bulk, ...)
+        # @param items     [Object, Array]  Single item or Array; wrapped in Array when needed
+        # @param command   [Symbol]         Operation name (:create, :delete, ...)
+        # @param id_result [String]         Key used as item identifier in the result row
+        # @param fields    [Object]         Fields hint passed to Result constructor (non-bulk only)
+        # @yieldparam item [Object]         Each item in +items+
+        # @return [Result::ObjectList, Result::SingleObject]
+        def bulk_result(items, command:, id_result: 'id', fields: :default, &block)
+          items = items.is_a?(Array) ? items : [items]
+          Result.bulk(
+            items,
+            is_bulk:   options.get_option(:bulk),
+            command:   command,
+            id_result: id_result,
+            fields:    fields,
+            bfail:     options.get_option(:bfail),
+            &block
+          )
+        end
+
         # Operations: Create, Delete, Show, List, Modify
         # @param api [Aspera::Rest] API to use
         # @param entity [String] Sub path in URL to resource relative to base url
@@ -498,8 +523,6 @@ module Aspera
         #   When nil, data is read from the CLI.
         # @param res_id [String, Array, nil] Pre-resolved resource identifier(s) for instance commands.
         #   When nil, identifier is read from the CLI.
-        # @param is_bulk [Boolean] Whether operation runs in bulk mode (used when data: is provided)
-        # @param bfail [Boolean] When false, errors are captured as status strings instead of re-raised
         # @yieldparam value [String] Value to search for identifier (lookup block)
         # @yieldreturn [String] The identifier
         # @return [Hash] Result suitable for CLI result
@@ -517,8 +540,6 @@ module Aspera
           query_component: nil,
           input_data: nil,
           res_id: nil,
-          is_bulk: false,
-          bfail: true,
           &block
         )
           Aspera.assert_type(command, Symbol)
@@ -547,13 +568,11 @@ module Aspera
             Aspera.assert(!is_singleton, type: BadArgument){'cannot create singleton'}
             unless input_data
               # No pre-resolved data: read from CLI
-              cli_is_bulk = options.get_option(:bulk)
-              raw = options.get_next_argument('data', validation: cli_is_bulk ? Array : Hash, schema: schema)
-              input_data = cli_is_bulk ? raw : [raw]
-              is_bulk  = cli_is_bulk
-              bfail    = options.get_option(:bfail)
+              is_bulk = options.get_option(:bulk)
+              raw = options.get_next_argument('data', validation: is_bulk ? Array : Hash, schema: schema)
+              input_data = is_bulk ? raw : [raw]
             end
-            return Result.bulk(input_data, is_bulk: is_bulk, command: command, fields: display_fields, bfail: bfail) do |params|
+            return bulk_result(input_data, command: command, fields: display_fields) do |params|
               api.create(entity, params)
             end
           when :delete
@@ -569,8 +588,7 @@ module Aspera
               )
               return Result::Status.new('deleted')
             end
-            items = one_res_id.is_a?(Array) ? one_res_id : [one_res_id]
-            return Result.bulk(items, is_bulk: is_bulk, command: command, bfail: bfail) do |one_id|
+            return bulk_result(one_res_id, command: command) do |one_id|
               api.delete("#{entity}/#{one_id}", query_read_delete(schema: qs_path))
               {'id' => one_id}
             end

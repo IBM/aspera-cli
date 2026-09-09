@@ -718,10 +718,8 @@ module Aspera
           CRUD_NO_LIST.each do |op|
             define_action_method([:admin, res, op]) do |input_data: nil, res_id: nil, **|
               args = res_exec_args(res)
-              is_bulk = options.get_option(:bulk)
-              items = input_data
-              items = [items] if items && !items.is_a?(Array)
-              entity_execute(command: op, input_data: items, res_id: res_id, is_bulk: is_bulk, bfail: options.get_option(:bfail), **args){ |f, v| res_lookup_id(res, f, v)}
+              items = input_data.is_a?(Array) ? input_data : [input_data] if input_data
+              entity_execute(command: op, input_data: items, res_id: res_id, **args){ |f, v| res_lookup_id(res, f, v)}
             end
           end
         end
@@ -928,8 +926,7 @@ module Aspera
         end
 
         def action_invitations_create(input_data:, **)
-          is_bulk = options.get_option(:bulk)
-          Result.bulk(input_data, is_bulk: is_bulk, command: :create, bfail: options.get_option(:bfail)) do |params|
+          bulk_result(input_data, command: :create) do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
             @api_v5.create(endpoint, params)
           end

@@ -23,9 +23,7 @@ module Aspera
 
       # Import secrets from a JSON array; skips entries missing :label
       def action_vault_import(secrets:, **)
-        is_bulk = options.get_option(:bulk)
-        bfail   = options.get_option(:bfail)
-        Result.bulk(secrets, is_bulk: is_bulk, command: :import, id_result: 'label', bfail: bfail) do |entry|
+        bulk_result(secrets, command: :import, id_result: 'label') do |entry|
           vault_required.set(entry.symbolize_keys)
           {'label' => entry['label'] || entry[:label]}
         end
