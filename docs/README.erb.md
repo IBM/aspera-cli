@@ -427,17 +427,19 @@ brew install ruby
 > Do not use it.
 > Use the required version of Ruby.
 
-This installs a recent Ruby suitable for <%=tool%>.
+This installs a recent Ruby version suitable for <%=tool%>.
 
-To add Ruby to your `PATH` on Apple Silicon, add the following lines to your shell configuration file (that is, `~/.zshrc` if you are using `zsh`, or `~/.bash_profile` for `bash`):
+After installation, Homebrew's Ruby is not on the `PATH` by default (this is shown at the end of the `brew install ruby` output and by `brew info ruby`).
+Add it to your shell configuration file:
 
-```shell
-PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"
-```
+- **zsh** (default shell on macOS — run this once in a terminal):
 
-> [!NOTE]
-> This is what is displayed at the end of the installation of the ruby tap,
-> same as the message from: `brew info ruby`
+  ```shell
+  echo 'PATH="$(brew --prefix ruby)/bin:$($(brew --prefix ruby)/bin/gem env gemdir)/bin:$PATH"' >> ~/.zprofile
+  source ~/.zprofile
+  ```
+
+- **bash** — replace `~/.zprofile` with `~/.bash_profile` in the commands above.
 
 #### Linux: Package
 
