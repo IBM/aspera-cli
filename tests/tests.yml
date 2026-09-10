@@ -519,6 +519,7 @@ serv_upload_multi_session:
     - --transfer=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
     - --progress-bar=yes
 serv_upload_multi_test:
+  $comment: Previously had --transfer.multi_incr_udp=true
   tags:
     - nodoc
   depends_on:
@@ -529,8 +530,9 @@ serv_upload_multi_test:
     - faux:///serv_upload_multi_test?1k
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":2,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
-    - --transfer.multi_incr_udp=true
+    - --transfer.multi_incr_udp=false
 serv_upload_multi_session_cancel:
+  $comment: Previously had --transfer.multi_incr_udp=true
   tags:
     - nodoc
     - noblock
@@ -542,7 +544,7 @@ serv_upload_multi_session_cancel:
     - faux:///serv_upload_multi_session_cancel?100k
     - --to-folder=@preset:server.inside_folder
     - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100}
-    - --transfer.multi_incr_udp=true
+    - --transfer.multi_incr_udp=false
   post: |
     sleep 2
     pid = t.pid_of_test('serv_upload_multi_session_cancel')
