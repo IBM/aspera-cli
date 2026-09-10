@@ -36,10 +36,12 @@ module Aspera
           Element 0 : plugin name (aoc, faspex5, node, server, config, …).
           Elements 1+: sub-commands, then --option=value flags in any order.
           Passing structured values: use an extended-value prefix on the relevant element:
-            "@json:{...}"   — inline JSON object or array (use for Hash/Array arguments)
+            "@json:{...}"   — inline JSON object or array (preferred for LLMs: no shell quoting, natural JSON)
             "@preset:name"  — expand a saved credential preset
             "@env:VAR"      — read value from environment variable
             "@file:/path"   — read value from a file
+          Note: the dot-path form (@: key=value ...) is designed for humans typing in a terminal shell.
+          Prefer @json: when building args programmatically or as an LLM.
 
         AUTOMATIC FLAGS
           The server automatically prepends extra_args to every call (default:

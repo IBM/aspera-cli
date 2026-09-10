@@ -4,9 +4,10 @@ EDITING GUIDELINES (developers and AI):
 - This file is the source template for the generated README.md. Edit this file, not README.md.
 - Do not use Unicode characters unless strictly necessary (e.g. wizard menu labels that must
   match the actual on-screen UI text). Use plain ASCII equivalents instead:
-    apostrophe : ' (not curly ' or ')
-    dash       : - or -- (not en-dash - or em-dash -)
-    ellipsis   : ... (not the Unicode character ...)
+    apostrophe : ' (not ' or ')
+    dash       : - (not en-dash U+2013, not em-dash U+2014, not --)
+    ellipsis   : ... (not U+2026)
+- Emphasis style: use **bold** (double asterisks) only. Do not use *single asterisk italic*, _underscore_, or __double underscore__ style.
 <%=doc_warn('Yes edit this file!')%>
 PANDOC_DEFAULTS_BEGIN
 metadata:
@@ -1964,8 +1965,10 @@ Option `select` applies the filter after a possible "flattening" with option: `f
 
 ### Extended Value Syntax
 
+An **Extended Value** is a structured value - typically a `Hash` (key/value dictionary) or `Array`, potentially nested - that is passed on the command line wherever a simple string is not sufficient.
+
 Most options and arguments are specified by a simple string (for example, `username` or `url`).
-However, some situations require more:
+However, some situations require a complex structure:
 
 - An option expects a **structured value** (`Hash`, `Array`) rather than a plain string.
 - The value is too long or complex to type inline (for example, a PEM private key, a JSON body).
@@ -1973,7 +1976,7 @@ However, some situations require more:
 - The value needs **type coercion**: for example, an integer `1` instead of the string `"1"`, or a boolean `true`.
 
 The **Extended Value** syntax addresses all of these needs with a uniform, composable mechanism.
-It lets you specify *what the value is* and *how to obtain or decode it*, entirely on the command line.
+It lets you specify **what the value is** and **how to obtain or decode it**, entirely on the command line.
 
 #### Syntax and Decoders
 
@@ -2093,16 +2096,20 @@ some_command @: a=1 b=two END
 
 #### Which Syntax to Choose?
 
+**When in doubt: start with dot-path** (`--opt.key=value` for options, `@: key=value` for positional arguments).
+It requires no quoting, auto-converts types, and reads naturally on the command line.
+Switch to `@json:` when you already have a JSON payload from an API doc or external tool.
+
 | Context | Recommended syntax | Reason |
 |---------|--------------------|--------|
-| Interactive CLI, simple values | dot-path `key.subkey=value` via `@:` | No quoting needed, readable |
+| Interactive CLI, simple values | dot-path `key.subkey=value` via `@:` or `--opt.key=value` | No quoting needed, auto-typed, readable |
 | Shell scripts, API payloads | `@json:` | Standard, portable, easy to copy from API docs |
 | Multi-line or nested structures in scripts | `@yaml:` + `@stdin:` heredoc | Readable, no escaping |
 | Dynamic values, lambdas, file reads | `@ruby:` | Full Ruby expressiveness |
 
 #### Common Usage Examples
 
-Example: Create a `Hash` value — for a small structure, the dot-path `key.subkey=value` form (via `@:`) is simpler; for larger or API-sourced structures, use `@json:`:
+Example: Create a `Hash` value - for a small structure, the dot-path `key.subkey=value` form (via `@:`) is simpler; for larger or API-sourced structures, use `@json:`:
 
 ```shell
 <%=cmd%> config echo @: key1=value1 key2=value2
