@@ -1965,10 +1965,15 @@ Option `select` applies the filter after a possible "flattening" with option: `f
 ### Extended Value Syntax
 
 Most options and arguments are specified by a simple string (for example, `username` or `url`).
-Sometimes it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
-Some options expect a more complex value such as `Hash` or `Array`.
+However, some situations require more:
 
-The [Extended Value](#extended-value-syntax) Syntax allows specifying such values and even reading values from other sources than the command line itself.
+- An option expects a **structured value** (`Hash`, `Array`) rather than a plain string.
+- The value is too long or complex to type inline (for example, a PEM private key, a JSON body).
+- The value must be **read from a file, an environment variable, or a URL** at runtime rather than embedded in the command.
+- The value needs **type coercion**: for example, an integer `1` instead of the string `"1"`, or a boolean `true`.
+
+The **Extended Value** syntax addresses all of these needs with a uniform, composable mechanism.
+It lets you specify *what the value is* and *how to obtain or decode it*, entirely on the command line.
 
 #### Syntax and Decoders
 
@@ -2010,7 +2015,7 @@ The following decoders are supported:
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. for example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | The empty modifier, resulting as argument `@:`, parses remaining positional arguments as a `Hash` or `Array` using [dot-path](#dot-path-notation) notation.<%=br%>Use `END` to stop collection when further positional arguments must follow. |
+| `<empty>`| None     | Any      | The **dot-path** modifier: argument `@:` collects the following positional arguments as `key.subkey=value` assignments and builds a `Hash` or `Array` using [dot-path](#dot-path-notation) notation. Shell-friendly alternative to `@json:` for structured values.<%=br%>See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path) for full syntax. Use `END` to stop collection when further positional arguments must follow. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
@@ -2026,11 +2031,81 @@ It expects a `@` to close the embedded [Extended Value](#extended-value-syntax) 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
 
-#### Common Usage Examples
+#### Syntax Equivalences
 
-Example: Create a `Hash` value with the convenient `@json:` decoder:
+There are four main ways to express a structured value (for example, a `Hash` with two keys).
+They are all equivalent and produce the same result:
+
+| Syntax | Example | Best for |
+|--------|---------|----------|
+| `@json:` | `@json:'{"name":"alice","age":30}'` | Scripts, API payloads, copy-paste from docs |
+| `@yaml:` | `@yaml:@stdin:` + here-doc | Multi-line or deeply nested structures |
+| `@ruby:` | `@ruby:'{"name"=>"alice","age"=>30}'` | Advanced use: lambdas, file reads, logic |
+| dot-path (`key.subkey=value`) via `@:` | `@: name=alice age=30` | Interactive CLI, simple structures, no quoting |
+
+All four examples above produce the same `Hash`: `{"name" => "alice", "age" => 30}`.
 
 ```shell
+<%=cmd%> config echo @json:'{"name":"alice","age":30}' --format=json
+<%=cmd%> config echo @ruby:'{"name"=>"alice","age"=>30}' --format=json
+<%=cmd%> config echo @: name=alice age=30 --format=json
+```
+
+```json
+{"name":"alice","age":30}
+```
+
+> [!NOTE]
+> The dot-path form (`key.subkey=value` assignments via `@:`) does **not** need quotes for simple string values and is the most shell-friendly.
+> The `@json:` form requires enclosing in single quotes to protect `"` from the shell.
+> The `@ruby:` form accepts both single and double quotes and supports arbitrary Ruby expressions.
+> The `@yaml:` form is most convenient when combined with a shell **here-document** (`<<EOF`).
+
+##### Equivalences: Positional Parameter vs Option
+
+The same `Hash` value `{"a":1,"b":"two"}` can be expressed differently depending on whether it is supplied as a **positional parameter** or as an **option**.
+
+**As a positional parameter** (argument to a command):
+
+```shell
+# JSON form
+some_command @json:'{"a":1,"b":"two"}'
+# Dot-path form (END is optional when no positional argument follows)
+some_command @: a=1 b=two
+some_command @: a=1 b=two END
+```
+
+**As an option** named `opt`:
+
+```shell
+# JSON form
+--opt=@json:'{"a":1,"b":"two"}'
+# Dot-path form via option name (each key as a separate option flag)
+--opt.a=1 --opt.b=two
+# Dot-path form via option value (consumes following positional arguments)
+--opt=@: a=1 b=two END
+```
+
+> [!NOTE]
+> `--opt.a=1 --opt.b=two` and `--opt=@json:'{"a":1,"b":"two"}'` and `--opt=@: a=1 b=two` all produce the same `Hash` assigned to option `opt`.
+> The `--opt.key=value` form is the most concise when only a few keys need to be set.
+> Use `END` with `@:` when further positional arguments follow on the command line; it is optional otherwise.
+
+#### Which Syntax to Choose?
+
+| Context | Recommended syntax | Reason |
+|---------|--------------------|--------|
+| Interactive CLI, simple values | dot-path `key.subkey=value` via `@:` | No quoting needed, readable |
+| Shell scripts, API payloads | `@json:` | Standard, portable, easy to copy from API docs |
+| Multi-line or nested structures in scripts | `@yaml:` + `@stdin:` heredoc | Readable, no escaping |
+| Dynamic values, lambdas, file reads | `@ruby:` | Full Ruby expressiveness |
+
+#### Common Usage Examples
+
+Example: Create a `Hash` value — for a small structure, the dot-path `key.subkey=value` form (via `@:`) is simpler; for larger or API-sourced structures, use `@json:`:
+
+```shell
+<%=cmd%> config echo @: key1=value1 key2=value2
 <%=cmd%> config echo @json:'{"key1":"value1","key2":"value2"}'
 ```
 
@@ -2172,12 +2247,31 @@ This works for any `Hash` option or positional parameter that has a defined sche
 
 #### Testing Extended Value
 
-In case of doubt of argument values after parsing, one can test using command `config echo`.
-`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax.
+Two complementary commands help verify that a value is parsed as expected:
+
+| What to check | Tool | How |
+|---|---|---|
+| Value of a **positional parameter** | `config echo` | Pass the expression as the sole argument |
+| Value of an **option** | `--show-config` | Append `--show-config` to any command line |
+
+**Checking a positional parameter with `config echo`**:
+
+`config echo` takes exactly **one** argument which can use the [Extended Value](#extended-value-syntax) syntax, and displays its parsed value.
 Unprocessed command line arguments are shown in the error message.
 
-Example:
-The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+```shell
+<%=cmd%> config echo @json:'{"a":1,"b":"two"}' --format=json
+<%=cmd%> config echo @: a=1 b=two --format=json
+```
+
+```json
+{"a":1,"b":"two"}
+```
+
+> [!NOTE]
+> The value is shown after both shell command-line parsing and <%=tool%> [Extended Value](#extended-value-syntax) parsing.
+
+Example: the shell parses three arguments (`1`, `2`, `3`), but `config echo` only processes the first:
 
 ```shell
 <%=cmd%> config echo 1 2 3
@@ -2188,10 +2282,19 @@ The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additio
 ERROR: Argument: unprocessed values: ["2", "3"]
 ```
 
-`config echo` displays the value of the **first** argument using the current output `format`.
+**Checking an option value with `--show-config`**:
 
-> [!NOTE]
-> It gets its value after shell command-line parsing and <%=tool%> [Extended Value](#extended-value-syntax) parsing.
+Adding `--show-config` to any command line performs a dry run and displays the resolved value of all options that would be used, without executing the command.
+
+To display a specific option, add `--fields=<option_name>`.
+Add `--flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
+
+```shell
+<%=cmd%> --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --flat=no
+<%=cmd%> --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --flat=no
+```
+
+Both lines above display the same resolved value for option `opt`.
 
 In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all examples, most special character handling is not specific to <%=tool%>:
@@ -4914,10 +5017,9 @@ $var="v"
 
 Some values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Value](#extended-value-syntax), that is, not a simple `String`, but a composite structure (`Hash`, `Array`).
 
-Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) value.
-JSON itself has some special syntax: for example `"` is used to enclose a `String` which may be difficult to specify in shells for whom it is a special character.
-
-The [dot-path](#dot-path-notation) can also be used and can be easier to use because it does usually not require special characters.
+For small structures with a few keys, the [dot-path](#dot-path-notation) `key.subkey=value` notation (using `@:` to collect positional arguments, or `--opt.key=value` directly for options) is often the most convenient: it requires no quoting and reads naturally on the command line.
+For larger or more complex structures (deep nesting, arrays of hashes, values copied from API documentation), the `@json:` modifier is typically a better fit.
+`@json:` expects a [JSON](https://www.json.org/) value; note that `"` is used to enclose a `String` in JSON, which may be difficult to specify in shells — enclose the whole argument in single quotes to avoid this.
 
 Any option or **Command Parameter** expecting a `Hash` value accepts the special value `help` to display its schema.
 See [Schema Discovery with `help`](#schema-discovery-with-help).
@@ -5445,7 +5547,9 @@ The command `aoc admin <%=ph :type%> list` lists all entities of given type.
 It uses paging and multiple requests if necessary.
 
 The option `query` can be optionally used.
-It expects a `Hash` using [Extended Value](#extended-value-syntax) syntax, generally provided using: `--query=@json:{...}`.
+It expects a `Hash` using [Extended Value](#extended-value-syntax) syntax.
+For a single filter key, the dot-path option form is the most direct (for example, `--query.sort=name`).
+For multiple keys or values copied from API documentation, `--query=@json:{...}` is more suitable.
 Values are directly sent to the API call and used as a filter on server side.
 
 The following parameters are supported:
@@ -7616,7 +7720,8 @@ Use this token as password and use `--auth=boot`.
 
 Most commands correspond directly to REST API calls.
 Parameters to commands are carried through option `query`, as [Extended Value](#extended-value-syntax), for `list`, or through **Command Parameter** for creation.
-One can conveniently use the JSON format with prefix `@json:`.
+For a single parameter, the dot-path option form is the most direct (for example, `--query.status=completed`).
+For multiple parameters or when copying directly from API documentation, `@json:` is more suitable.
 
 > [!TIP]
 > The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
@@ -7819,7 +7924,7 @@ Option `--once-only=yes` can be used, for "cargo-like" behavior.
 Special package ID `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
 
 Special package ID `ALL` selects all packages (of the selected box).
-In this case, typically, only `completed` packages should be downloaded, so use option `--query=@json:'{"status":"completed"}'`.
+In this case, typically, only `completed` packages should be downloaded, so use option `--query.status=completed` (or equivalently `--query=@json:'{"status":"completed"}'`).
 
 If a package is password protected, then the content protection password is asked interactively.
 To keep the content encrypted, use option: `--ts=@json:'{"content_protection":null}'`, or provide the password instead of `null`.
