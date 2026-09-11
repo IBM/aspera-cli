@@ -22,30 +22,6 @@ module Aspera
       class Node < BasicAuth
         include SyncActions
 
-        # Processing of paths in arguments and results
-        # Used only by Faspex4 to browse packages
-        class NodePathPrefix
-          def initialize(path)
-            @root = path
-          end
-
-          # get next path argument from command line, and add prefix
-          def add_to_path(path_arg)
-            File.join(@root, path_arg)
-          end
-
-          # get remaining path arguments from command line, and add prefix
-          def add_to_paths!(path_args)
-            path_args.map!{ |p| add_to_path(p)}
-          end
-
-          def remove_in_object_list!(obj_list)
-            obj_list.each do |item|
-              item['path'] = item['path'].delete_prefix(@root) if item['path'].start_with?(@root)
-            end
-          end
-        end
-
         application_name 'HSTS Node API'
 
         SESSION_TIME_FIELDS = %i[start end].freeze
@@ -201,15 +177,11 @@ module Aspera
         # commands supported in ATS for COS
         COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
-        COMMANDS_FASPEX = COMMON_ACTIONS
-
         # `browse` display fields for gen4
         GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
 
         # @param api [Rest] an existing API object for the Node API
-        # @param prefix_path [String,nil] for Faspex 4, allows browsing a package without full path in node (removes storage prefix)
-        def initialize(context:, api: nil, prefix_path: nil)
-          @node_path_prefix = prefix_path ? NodePathPrefix.new(prefix_path) : nil
+        def initialize(context:, api: nil)
           super(context: context, basic_options: api.nil?)
           return if context.only_manual?
           @api_node =
@@ -238,7 +210,7 @@ module Aspera
         # Gen3 API
         # @param path [String] starting path
         def browse_gen3(path)
-          folders_to_process = @node_path_prefix.nil? ? path : @node_path_prefix.add_to_path(path)
+          folders_to_process = path
           folders_to_process = [folders_to_process]
           query = options.get_option(:query) || {}
           # special parameter: max number of entries in result
@@ -263,7 +235,6 @@ module Aspera
               response = @api_node.create('files/browse', query)
               # 'file','symbolic_link'
               if !Node.gen3_entry_folder?(response['self']) || only_path
-                @node_path_prefix&.remove_in_object_list!([response['self']])
                 return Result::SingleObject.new(response['self'])
               end
               items = response['items']
@@ -285,7 +256,6 @@ module Aspera
             end
             query.delete('skip')
           end
-          @node_path_prefix&.remove_in_object_list!(all_items)
           return Result::ObjectList.new(all_items)
         ensure
           RestParameters.instance.spinner_cb.call(action: :success)
@@ -592,13 +562,11 @@ module Aspera
         def action_delete(paths:, **)
           # TODO: add query for recursive
           paths_to_delete = Array(paths)
-          @node_path_prefix&.add_to_paths!(paths_to_delete)
           resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
           cli_result_from_paths_response(resp, 'file deleted')
         end
 
         def action_search(search_root:, **)
-          search_root = @node_path_prefix.nil? ? search_root : @node_path_prefix.add_to_path(search_root)
           parameters = {'path' => search_root}
           other_options = options.get_option(:query)
           parameters.merge!(other_options) unless other_options.nil?
@@ -607,34 +575,29 @@ module Aspera
           fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
           formatter.display_item_count(resp['item_count'], resp['total_count'])
           formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
-          @node_path_prefix&.remove_in_object_list!(resp['items'])
           Result::ObjectList.new(resp['items'], fields: fields)
         end
 
         def action_space(path_list:, **)
           path_list = Array(path_list)
-          @node_path_prefix&.add_to_paths!(path_list)
           resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
-          @node_path_prefix&.remove_in_object_list!(resp['paths'])
           Result::ObjectList.new(resp['paths'])
         end
 
         def action_mkdir(path_list:, **)
           path_list = Array(path_list)
-          @node_path_prefix&.add_to_paths!(path_list)
           resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
           cli_result_from_paths_response(resp, 'folder created')
         end
 
         def action_mklink(target:, link_path:, **)
-          target    = @node_path_prefix.nil? ? target : @node_path_prefix.add_to_path(target)
-          one_path  = @node_path_prefix.nil? ? link_path : @node_path_prefix.add_to_path(link_path)
+          one_path  = link_path
           resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
           cli_result_from_paths_response(resp, 'link created')
         end
 
         def action_mkfile(file_path:, contents:, **)
-          one_path = @node_path_prefix.nil? ? file_path : @node_path_prefix.add_to_path(file_path)
+          one_path = file_path
           contents64 = contents.nil? ? '' : Base64.strict_encode64(contents)
           resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
           cli_result_from_paths_response(resp, 'file created')
@@ -642,9 +605,6 @@ module Aspera
 
         def action_rename(path_base:, path_src:, path_dst:, **)
           # TODO: multiple ?
-          path_base = @node_path_prefix.nil? ? path_base : @node_path_prefix.add_to_path(path_base)
-          path_src  = @node_path_prefix.nil? ? path_src  : @node_path_prefix.add_to_path(path_src)
-          path_dst  = @node_path_prefix.nil? ? path_dst  : @node_path_prefix.add_to_path(path_dst)
           resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
           cli_result_from_paths_response(resp, 'entry moved')
         end
@@ -696,7 +656,6 @@ module Aspera
         end
 
         def action_cat(remote_path:, **)
-          remote_path = @node_path_prefix.nil? ? remote_path : @node_path_prefix.add_to_path(remote_path)
           http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
           Result::Text.new(http.body)
         end
@@ -1331,7 +1290,6 @@ module Aspera
         # Translates paths results into CLI result, and removes prefix
         def cli_result_from_paths_response(response, success_msg)
           obj_list = response_to_result(response, success_msg)
-          @node_path_prefix&.remove_in_object_list!(obj_list)
           return Result::ObjectList.new(obj_list, fields: %w[path result])
         end
       end

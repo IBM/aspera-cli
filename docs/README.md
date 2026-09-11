@@ -33,7 +33,7 @@ Designed for automation, scripting, and integration scenarios, `ascli` enables o
 ### Key Features
 
 **Multi-Product Integration**
-: Unified interface supporting Aspera on Cloud, Faspex (v4 and v5), Shares, Node API, Console, Orchestrator, and High-Speed Transfer Server (HSTS).
+: Unified interface supporting Aspera on Cloud, Faspex 5, Shares, Node API, Console, Orchestrator, and High-Speed Transfer Server (HSTS).
 
 **Flexible Authentication**
 : Support for OAuth 2.0, JWT, Basic Authentication, and SSH key-based authentication across different Aspera products.
@@ -86,7 +86,7 @@ Internally, `ascli` integrates several components:
 For programmatic integration with languages such as C/C++, Go, Python, NodeJS, and others, it is recommended to use the [Aspera APIs](https://ibm.biz/aspera_api) directly.
 These include:
 
-- REST APIs for products like Aspera on Cloud (AoC), Faspex, and Node
+- REST APIs for products like Aspera on Cloud (AoC), Faspex 5, and Node
 - The Transfer Daemon with gRPC interfaces and language-specific stubs (C/C++, Python, .NET/C#, Java, Go, Ruby, Rust, and so on)
 
 These APIs are generally more suitable for long-term development and maintenance.
@@ -2791,7 +2791,6 @@ vault info
 vault list
 vault show my_label
 wizard https://console.example.com/path console
-wizard https://faspex4.example.com/path faspex --username=test --password=test
 wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
@@ -2952,7 +2951,7 @@ The user is told where to place the associated public key PEM in the application
 
 #### Example of configuration for a plugin
 
-For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
+For Faspex 5, Shares, Node (including ATS, Aspera Transfer Service), Console,
 only username/password and URL are required (either on command line, or from configuration file).
 Those can be usually provided on the command line:
 
@@ -3241,7 +3240,7 @@ To disable this behavior for a single command, pass `--vault=@none:`.
 Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
 
 - For SSH: Server
-- For OAuth JWT: AoC, Faspex5, Faspex, Shares
+- For OAuth JWT: AoC, Faspex5, Shares
 
 It consists in using a pair of associated keys: a private key and a public key.
 The same pair can be used for multiple applications.
@@ -4161,7 +4160,7 @@ Parameters provided in option `transfer` are:
 Example:
 
 ```shell
-ascli faspex package recv 323 --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy --transfer=httpgw
+ascli faspex5 packages recv 323 --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy --transfer=httpgw
 ```
 
 > [!NOTE]
@@ -5192,7 +5191,6 @@ PLUGINS
     ats             Aspera Transfer Service
     console         Console
     cos             IBM Cloud Object Storage
-    faspex          Faspex v4
     faspex5         Faspex v5
     faspio          faspio Gateway
     httpgw          HTTP Gateway
@@ -5236,8 +5234,6 @@ For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=
 `ascli` uses a plugin mechanism.
 The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command.
 Each plugin usually represents commands sent to a specific application.
-For instance, the plugin `faspex` allows operations on **Aspera Faspex**.
-
 Available plugins can be found using command:
 
 ```shell
@@ -5256,7 +5252,7 @@ ascli config plugin list
 
 Most plugins will take the URL option: `url` to identify their location.
 
-REST APIs of Aspera legacy applications (Aspera Node, Faspex 4, Shares, Console, Orchestrator) use simple username/password authentication: HTTP Basic Authentication using options: `username` and `password`.
+REST APIs of Aspera legacy applications (Aspera Node, Shares, Console, Orchestrator) use simple username/password authentication: HTTP Basic Authentication using options: `username` and `password`.
 
 Aspera on Cloud and Faspex 5 rely on OAuth.
 
@@ -9017,210 +9013,6 @@ If a command is missing, then it is still possible to execute command by calling
 
 ```shell
 curl -H "Authorization: $(ascli ascli bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
-```
-
-## Plugin: `faspex`: IBM Aspera Faspex v4
-
-> [!WARNING]
-> Faspex v4 is end of support since September 30th, 2024.
-> So this plugin for Faspex v4 is deprecated.
-> If you still need to use Faspex4, then use `ascli` version 4.19.0 or earlier.
-
-> [!NOTE]
-> For full details on Faspex API, refer to:
-> [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
-
-This plugin uses APIs versions 3 Faspex v4.
-The `v4` command requires the use of API v4, refer to the Faspex Admin manual on how to activate.
-
-### Listing Packages
-
-Command: `faspex package list`
-
-#### Option `box`
-
-By default, it looks in box `inbox`, but the following boxes are also supported: `archive` and `sent`, selected with option `box`.
-
-#### Option `recipient`
-
-A user can receive a package because the recipient is:
-
-- The user himself (default)
-- The user is member of a dropbox/workgroup: filter using option `recipient` set with value `*<name of dropbox/workgroup>`
-
-#### Option `query`
-
-As inboxes may be large, it is possible to use the following query parameters:
-
-| Parameter    | Evaluation | Description                                                          |
-|--------------|------------|----------------------------------------------------------------------|
-| `count`      | API        | Number of items in one API call result (default=0, equivalent to 10) |
-| `page`       | API        | ID of page in call (default=0) |
-| `startIndex` | API        | Index of item to start (default=0) |
-| `max`        | `ascli`  | Maximum number of items |
-| `pmax`       | `ascli`  | Maximum number of pages |
-
-(SQL query is `LIMIT <STARTINDEX>, <COUNT>`)
-
-The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under **Services (API v.3)**.
-
-If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which results in paged API calls (using parameters: `count` and `page`).
-By default, `count` is `0` (`10`), it can be increased to issue less HTTP calls.
-
-#### Example: List packages in dropbox
-
-```shell
-ascli faspex package list --box=inbox --recipient='*<DROPBOX>' --query=@json:'{"max":20,"pmax":2,"count":20}'
-```
-
-List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*<DROPBOX>`.
-
-### Receiving a Package
-
-The command is `package recv`, possible methods are:
-
-- Provide a package ID with option `id`
-- Provide a public link with option `link`
-- Provide a `faspe:` URI with option `link`
-
-```shell
-ascli faspex package recv 12345
-ascli faspex package recv --link=faspe://...
-```
-
-If the package is in a specific **dropbox**/**workgroup**, add option `recipient` for both the `list` and `recv` commands.
-
-```shell
-ascli faspex package list --recipient='*dropbox_name'
-ascli faspex package recv 125 --recipient='*dropbox_name'
-```
-
-If `id` is set to `ALL`, then all packages are downloaded, and if option `once_only` is used, a persistency file is created to keep track of already downloaded packages.
-
-### Sending a Package
-
-The command is `faspex package send`.
-Package information (title, note, metadata, options) is provided in option `delivery_info`.
-The content of `delivery_info` is directly the contents of the `send` v3 [API of Faspex 4](https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/API%20v.3:%20Send%20Packages).
-
-Example:
-
-```shell
-ascli faspex package send --delivery-info=@json:'{"title":"<TITLE>","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
-```
-
-If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
-`"recipients":["*MyDropboxName"]`
-
-Additional optional parameters in mandatory option `delivery_info`:
-
-- Package Note: : `"note":"note this and that"`
-- Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
-
-It is possible to send from a remote source using option `remote_source`, providing either the numerical ID, or the name of the remote source using percent selector: `%name:<NAME>`.
-
-Remote source can be browsed if option `storage` is provided.
-`storage` is a `Hash` [Extended Value](#extended-value-syntax).
-The key is the storage name, as listed in `source list` command.
-The value is a `Hash` with the following keys:
-
-- `node` is a `Hash` with keys: `url`, `username`, `password`
-- `path` is the sub-path inside the node, as configured in Faspex
-
-### Email notification on transfer
-
-Like for any transfer, a notification can be sent by email using options: `notify_to` and `notify_template`.
-
-Example:
-
-```shell
-ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notify-to=aspera.user1@gmail.com --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
-```
-
-In this example the notification template is directly provided on command line.
-Package information placed in the message are directly taken from the tags in transfer spec.
-The template can be placed in a file using modifier: `@file:`
-
-### Operations on dropbox
-
-Example:
-
-```shell
-ascli faspex v4 dropbox create @json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
-ascli faspex v4 dropbox list
-ascli faspex v4 dropbox delete 36
-```
-
-### Remote sources
-
-Faspex lacks an API to list the contents of a remote source (available in web UI).
-To work around this, the Node API is used, for this it is required to set option: `storage` that links a storage name to a node configuration and sub path.
-
-Example:
-
-```yaml
-my_faspex_conf:
-  url: https://10.25.0.3/aspera/faspex
-  username: admin
-  password: MyUserPassword
-  storage:
-    my_storage:
-      node: "@preset:my_faspex_node"
-      path: /mydir
-my_faspex_node:
-  url: https://10.25.0.3:9092
-  username: node_faspex
-  password: MyNodePassword
-```
-
-In this example, a Faspex storage named `my_storage` exists in Faspex, and is located
-under the docroot in `/mydir` (this must be the same as configured in Faspex).
-The node configuration name is `my_faspex_node` here.
-
-> [!NOTE]
-> The v4 API provides an API for nodes and shares.
-
-### Automated package download (cargo)
-
-It is possible to tell `ascli` to download newly received packages, much like the official cargo client, or drive.
-See the [same section](#receive-new-packages-only-cargo) in the Aspera on Cloud plugin:
-
-```shell
-ascli faspex packages recv ALL --once-only=yes --lock-port=12345
-```
-
-### Tested commands for `faspex`
-
-> [!NOTE]
-> Add `ascli faspex` in front of the following commands:
-
-```shell
-address_book
-dropbox list --recipient='*my_dbx'
-health
-login_methods
-me
-package list --query.max=5
-package receive <id> --recipient='*my_dbx' --to-folder=.
-package receive <id> --recipient='*my_wkg' --to-folder=.
-package receive <id> --to-folder=.
-package receive <id> --to-folder=. --box=sent
-package receive ALL --once-only=yes --to-folder=. --query.max=10
-package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal","my_username"]}' test_file.bin
-package send --delivery-info=@json:'{"title":"package title","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
-package send --delivery-info=@json:'{"title":"package title","recipients":[*my_dbx]}' test_file.bin
-package send --delivery-info=@json:'{"title":"package title","recipients":[*my_wkg]}' test_file.bin
-package send --link=https://app.example.com/send_to_dropbox_path --delivery-info.title='package title' test_file.bin
-package send --link=https://app.example.com/send_to_user_path --delivery-info.title='package title' test_file.bin
-source info %name:my_src --storage=@preset:faspex4_storage
-source list
-source node %name:my_src br / --storage=@preset:faspex4_storage
-v4 dmembership list
-v4 dropbox list
-v4 metadata_profile list
-v4 user list
-v4 wmembership list
-v4 workgroup list
 ```
 
 ## Plugin: `shares`: IBM Aspera Shares v1

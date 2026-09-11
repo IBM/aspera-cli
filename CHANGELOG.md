@@ -22,6 +22,8 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `faspex`: **Plugin removed** - Faspex v4 is end of support since September 30th, 2024. Use `ascli` version 4.19.0 or earlier if still needed.
+
 ## 4.27.0
 
 Released: 2026-09-03
