@@ -89,7 +89,7 @@ module Aspera
     # @param action_sym [Symbol] one of OPERATIONS
     # @param arguments  [Array]  parameters for "as" command
     # @return [Boolean,Array,Hash] result of command, type depends on command
-    def execute_single(action_sym, arguments, version: 1, host: nil)
+    def execute_single(action_sym, arguments, version: 2, host: nil)
       arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
       Aspera.assert_type(action_sym, Symbol)
