@@ -630,7 +630,7 @@ module Aspera
             if body_component
               case command
               when :create then Schema::Registry.req_body(body_component, "#{entity}.post")
-              when :modify then Schema::Registry.req_body(body_component, "#{entity}.put")
+              when :modify then Schema::Registry.req_body(body_component, "#{entity}/{id}.put")
               end
             end
 
