@@ -70,8 +70,8 @@ module Aspera
 
     # Assert value is Hash, keys have type, and Values have type
     # @param hash        [Hash]             The hash to check
-    # @param key_class   [Class]            The expected type of keys (or nil)
-    # @param value_class [Class]            The expected type of values (or nil)
+    # @param key_class   [Class]            The expected type of keys (or nil for no check)
+    # @param value_class [Class]            The expected type of values (or nil for no check)
     # @param type        [Exception,Symbol] Exception to raise, or Symbol for Log.log
     # @yieldreturn [String] Additional description to prepend to the error message
     def assert_hash_all(hash, key_class, value_class, type: AssertError)
