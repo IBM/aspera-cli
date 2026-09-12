@@ -132,8 +132,10 @@ module Aspera
 
           # all: list/show/delete only (no create, no modify — users/groups/:all has no update route)
           commands_under([:admin, entity_type, :all]) do
+            lookup_method = :"lookup_shares_#{entity_type}_all_id"
             (Operations::ALL - %i[create modify]).each do |op|
-              command(op, description: "#{op.capitalize} #{entity_type}s")
+              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier, lookup: lookup_method}]}
+              command(op, description: "#{op.capitalize} #{entity_type}s", **id_args)
             end
             USR_GRP_SETTINGS.each do |setting|
               # share_permissions: Rails only exposes index+show (read-only)
@@ -164,8 +166,10 @@ module Aspera
 
           # local: full CRUD only — no nested settings (Rails does not nest transfer_settings/app_authorizations/share_permissions under local_users/local_groups)
           commands_under([:admin, entity_type, :local]) do
+            lookup_method = :"lookup_shares_#{entity_type}_local_id"
             Operations::ALL.each do |op|
-              command(op, description: "#{op.capitalize} #{entity_type}s")
+              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier, lookup: lookup_method}]}
+              command(op, description: "#{op.capitalize} #{entity_type}s", **id_args)
             end
             if entity_type.eql?(:group)
               command(
@@ -371,13 +375,14 @@ module Aspera
                 action_admin_entity_crud(entity_type, location, op)
               end
             end
-            next if location.eql?(:local)
-            USR_GRP_SETTINGS.each do |setting|
-              # share_permissions: Rails only exposes index+show (read-only)
-              setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
-              setting_ops.each do |op|
-                define_action_method([:admin, entity_type, location, setting, op]) do |entity_id:, **|
-                  action_admin_entity_setting(entity_type, location, setting, op, entity_id: entity_id)
+            unless location.eql?(:local)
+              USR_GRP_SETTINGS.each do |setting|
+                # share_permissions: Rails only exposes index+show (read-only)
+                setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
+                setting_ops.each do |op|
+                  define_action_method([:admin, entity_type, location, setting, op]) do |entity_id:, **|
+                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: entity_id)
+                  end
                 end
               end
             end
