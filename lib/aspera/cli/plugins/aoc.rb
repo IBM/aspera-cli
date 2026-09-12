@@ -617,7 +617,7 @@ module Aspera
             op_setup       = cfg[:op_setup] || {}
             extra_op_args  = cfg[:extra_op_args] || {}
             is_singleton   = cfg[:singleton]
-            id_arg_spec    = is_singleton ? [] : [{name: :res_id, type: :identifier, lookup: :"lookup_aoc_#{res}_id"}]
+            id_arg_spec    = is_singleton ? [] : [{name: :"#{res}_id", type: :identifier, lookup: :"lookup_aoc_#{res}_id"}]
             ops            = if cfg[:ops]
               cfg[:ops]
             elsif is_singleton
@@ -766,9 +766,9 @@ module Aspera
             command(app_type, description: "Show or modify a #{app_type} instance")
             commands_under(APP_INSTANCE_PATH + [app_type]) do
               command :show,   description: "Show a #{app_type} instance",
-                arguments: [{name: :res_id, type: :identifier}]
+                arguments: [{name: :"#{app_type}_id", type: :identifier}]
               command :modify, description: "Modify a #{app_type} instance",
-                arguments: [{name: :res_id, type: :identifier}, {name: :properties, type: Hash}]
+                arguments: [{name: :"#{app_type}_id", type: :identifier}, {name: :properties, type: Hash}]
             end
           end
         end
@@ -776,9 +776,9 @@ module Aspera
           command :list, description: 'List app memberships',
             action: ->{result_list('apps/app_memberships')}
           command :show,   description: 'Show an app membership',
-            arguments: [{name: :res_id, type: :identifier}]
+            arguments: [{name: :membership_id, type: :identifier}]
           command :delete, description: 'Delete an app membership',
-            arguments: [{name: :res_id, type: :identifier}]
+            arguments: [{name: :membership_id, type: :identifier}]
           command :create, description: 'Create an app membership',
             arguments: [{name: :membership, type: Hash}]
         end
@@ -927,9 +927,9 @@ module Aspera
         commands_under(%i[automation workflows]) do
           command :create,  description: 'Create a workflow'
           command :list,    description: 'List workflows'
-          command :show,    description: 'Show a workflow',   arguments: [{name: :res_id, type: :identifier}]
-          command :modify,  description: 'Modify a workflow', arguments: [{name: :res_id, type: :identifier}]
-          command :delete,  description: 'Delete a workflow', arguments: [{name: :res_id, type: :identifier}]
+          command :show,    description: 'Show a workflow',   arguments: [{name: :workflow_id, type: :identifier}]
+          command :modify,  description: 'Modify a workflow', arguments: [{name: :workflow_id, type: :identifier}]
+          command :delete,  description: 'Delete a workflow', arguments: [{name: :workflow_id, type: :identifier}]
           command :launch, description: 'Launch a workflow',
             arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
@@ -1267,12 +1267,14 @@ module Aspera
 
         # admin > application > instance > <type> > show|modify
         APP_TYPES.each do |app_type|
-          define_action_method([:admin, :application, :instance, app_type, :show]) do |res_id:, **|
-            Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{res_id}", query_read_delete))
+          define_action_method([:admin, :application, :instance, app_type, :show]) do |**kwargs|
+            app_id = kwargs[:"#{app_type}_id"]
+            Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{app_id}", query_read_delete))
           end
 
-          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties:, res_id:, **|
-            aoc_api.update("admin/apps_new/#{app_type}/#{res_id}", properties)
+          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties:, **kwargs|
+            app_id = kwargs[:"#{app_type}_id"]
+            aoc_api.update("admin/apps_new/#{app_type}/#{app_id}", properties)
             Result::Status.new('modified')
           end
         end
@@ -1286,12 +1288,12 @@ module Aspera
         end
 
         # admin > application > membership > show|delete
-        def action_admin_application_membership_show(res_id:, **)
-          Result::SingleObject.new(aoc_api.read("apps/app_memberships/#{res_id}", query_read_delete))
+        def action_admin_application_membership_show(membership_id:, **)
+          Result::SingleObject.new(aoc_api.read("apps/app_memberships/#{membership_id}", query_read_delete))
         end
 
-        def action_admin_application_membership_delete(res_id:, **)
-          aoc_api.delete("apps/app_memberships/#{res_id}")
+        def action_admin_application_membership_delete(membership_id:, **)
+          aoc_api.delete("apps/app_memberships/#{membership_id}")
           Result::Status.new('deleted')
         end
 
@@ -1394,7 +1396,8 @@ module Aspera
 
         # admin > <res> > show
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
-          define_action_method([:admin, res, :show]) do |res_id:, **|
+          define_action_method([:admin, res, :show]) do |**kwargs|
+            res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
             Result::SingleObject.new(aoc_api.read("#{c[:path]}/#{res_id}", query_read_delete), fields: Formatter.all_but('certificate'))
           end
@@ -1424,7 +1427,8 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
-          define_action_method([:admin, res, :modify]) do |data:, res_id:, **|
+          define_action_method([:admin, res, :modify]) do |data:, **kwargs|
+            res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
             aoc_api.update("#{c[:path]}/#{res_id}", data)
             Result::Status.new('modified')
@@ -1436,7 +1440,8 @@ module Aspera
           cfg = ADMIN_OBJECT_CONFIG.fetch(r, {})
           cfg[:singleton] || (cfg[:ops] && !cfg[:ops].include?(:delete))
         end.each do |res|
-          define_action_method([:admin, res, :delete]) do |res_id:, **|
+          define_action_method([:admin, res, :delete]) do |**kwargs|
+            res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
             bulk_result(res_id, command: :delete) do |one_id|
               aoc_api.delete("#{c[:path]}/#{one_id}")
@@ -1453,10 +1458,10 @@ module Aspera
         end
 
         # admin > client > set_pub_key
-        def action_admin_client_set_pub_key(private_key_pem:, res_id:, **)
+        def action_admin_client_set_pub_key(private_key_pem:, client_id:, **)
           c = aoc_res_cfg(:client)
           the_public_key = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
-          aoc_api.update("#{c[:path]}/#{res_id}", {jwt_grant_enabled: true, public_key: the_public_key})
+          aoc_api.update("#{c[:path]}/#{client_id}", {jwt_grant_enabled: true, public_key: the_public_key})
           Result::Success.new
         end
 
@@ -1476,21 +1481,21 @@ module Aspera
 
         # admin > node > do > <FILES_COMMAND>
         FILES_COMMANDS.each do |cmd|
-          define_action_method([:admin, :node, :do, cmd]) do |res_id:, **ctx|
-            execute_nodegen4_command(cmd, res_id, scope: Api::Node::Scope::ADMIN, **ctx)
+          define_action_method([:admin, :node, :do, cmd]) do |node_id:, **ctx|
+            execute_nodegen4_command(cmd, node_id, scope: Api::Node::Scope::ADMIN, **ctx)
           end
         end
 
         # admin > node > bearer_token
-        def action_admin_node_bearer_token(scope:, res_id:, **)
+        def action_admin_node_bearer_token(scope:, node_id:, **)
           scope ||= Api::Node::Scope::ADMIN
-          node_api = aoc_api.node_api_from(node_id: res_id, scope: scope)
+          node_api = aoc_api.node_api_from(node_id: node_id, scope: scope)
           Result::Text.new(node_api.oauth.authorization)
         end
 
         # admin > workspace > dropbox — res_id: already in ctx via arguments:(:identifier)
-        def setup_admin_workspace_dropbox(res_id:, **)
-          {ws_res_id: res_id}
+        def setup_admin_workspace_dropbox(workspace_id:, **)
+          {ws_res_id: workspace_id}
         end
 
         # admin > workspace > dropbox > list
@@ -1500,11 +1505,11 @@ module Aspera
         end
 
         # admin > workspace > shared_folder — res_id: already in ctx via arguments:(:identifier)
-        def setup_admin_workspace_shared_folder(res_id:, **)
-          resource_instance_path = "#{aoc_res_path(:workspace)}/#{res_id}"
-          query = options.get_option(:query) || Api::AoC.workspace_access(res_id).merge({'admin' => true})
+        def setup_admin_workspace_shared_folder(workspace_id:, **)
+          resource_instance_path = "#{aoc_res_path(:workspace)}/#{workspace_id}"
+          query = options.get_option(:query) || Api::AoC.workspace_access(workspace_id).merge({'admin' => true})
           shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
-          {ws_res_id: res_id, shared_folders: shared_folders}
+          {ws_res_id: workspace_id, shared_folders: shared_folders}
         end
 
         # admin > workspace > shared_folder > list
@@ -1557,11 +1562,11 @@ module Aspera
         # (setup_admin_user_instance is auto-generated, providing res_id:)
         %i[preferences notifications].each do |pref|
           pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
-          define_action_method([:admin, :user, pref, :show]) do |res_id:, **|
-            Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}"))
+          define_action_method([:admin, :user, pref, :show]) do |user_id:, **|
+            Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}"))
           end
-          define_action_method([:admin, :user, pref, :modify]) do |properties:, res_id:, **|
-            aoc_api.update("#{aoc_res_path(:user)}/#{res_id}/#{pref_path}", properties)
+          define_action_method([:admin, :user, pref, :modify]) do |properties:, user_id:, **|
+            aoc_api.update("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}", properties)
             Result::Status.new('modified')
           end
         end

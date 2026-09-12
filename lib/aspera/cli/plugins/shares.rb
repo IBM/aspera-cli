@@ -134,7 +134,7 @@ module Aspera
           commands_under([:admin, entity_type, :all]) do
             lookup_method = :"lookup_shares_#{entity_type}_all_id"
             (Operations::ALL - %i[create modify]).each do |op|
-              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier, lookup: lookup_method}]}
+              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method}]}
               command(op, description: "#{op.capitalize} #{entity_type}s", **id_args)
             end
             USR_GRP_SETTINGS.each do |setting|
@@ -147,7 +147,12 @@ module Aspera
               )
               commands_under([:admin, entity_type, :all, setting]) do
                 setting_ops.each do |op|
-                  command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}")
+                  # share_permissions > show needs a permission identifier (list does not)
+                  perm_id_arg = (setting.eql?(:share_permissions) && op.eql?(:show)) \
+                    ? [{name: :permission_id, type: :identifier}] \
+                    : []
+                  command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}",
+                    arguments: perm_id_arg.empty? ? nil : perm_id_arg)
                 end
               end
             end
@@ -168,7 +173,7 @@ module Aspera
           commands_under([:admin, entity_type, :local]) do
             lookup_method = :"lookup_shares_#{entity_type}_local_id"
             Operations::ALL.each do |op|
-              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier, lookup: lookup_method}]}
+              id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method}]}
               command(op, description: "#{op.capitalize} #{entity_type}s", **id_args)
             end
             if entity_type.eql?(:group)
@@ -345,14 +350,15 @@ module Aspera
         # @param location    [Symbol] :all or :local
         # @param setting     [Symbol] one of USR_GRP_SETTINGS
         # @param op          [Symbol] CRUD operation
-        # entity_id: resolved by Phase A via arguments:(:identifier) on the setting node
-        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, **)
+        # entity_id: resolved via arguments:(:identifier) on each setting leaf command
+        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, **)
           path = admin_entity_path(entity_type, location)
           entity_execute(
             api:          @api_shares_admin,
             entity:       "#{path}/#{entity_id}/#{setting}",
             command:      op,
-            is_singleton: !setting.eql?(:share_permissions)
+            is_singleton: !setting.eql?(:share_permissions),
+            res_id:       permission_id
           ){ |f, v| lookup_share_id(f, v)}
         end
 

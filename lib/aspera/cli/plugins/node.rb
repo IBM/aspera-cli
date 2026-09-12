@@ -390,7 +390,7 @@ module Aspera
               description:    "#{op.capitalize} access keys",
               command:        op,
               body_component: Schema::Registry::NODE,
-              arguments:      Operations::GLOBAL.include?(op) ? nil : [{name: :res_id, type: :identifier}],
+              arguments:      Operations::GLOBAL.include?(op) ? nil : [{name: :access_key_id, type: :identifier}],
               lookup_block:   ->(field, value) do
                 Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
                 @api_node.read('access_keys/self')['id']
@@ -522,15 +522,15 @@ module Aspera
           command :list,   description: 'List watch folders',
             action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
           command :show,   description: 'Show a watch folder',
-            arguments: [{name: :res_id, type: :identifier}],
-            action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}"))}
+            arguments: [{name: :watch_folder_id, type: :identifier}],
+            action: ->(watch_folder_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}"))}
           command :modify, description: 'Modify a watch folder',
-            arguments: [{name: :res_id, type: :identifier}, {name: :data, type: Hash}]
+            arguments: [{name: :watch_folder_id, type: :identifier}, {name: :data, type: Hash}]
           command :delete, description: 'Delete a watch folder',
-            arguments: [{name: :res_id, type: :identifier}]
+            arguments: [{name: :watch_folder_id, type: :identifier}]
           command :state,  description: 'Show watch folder state',
-            arguments: [{name: :res_id, type: :identifier}],
-            action: ->(res_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{res_id}/state"))}
+            arguments: [{name: :watch_folder_id, type: :identifier}],
+            action: ->(watch_folder_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}/state"))}
         end
         # central
         command :central, description: 'Query Central service'
@@ -699,14 +699,14 @@ module Aspera
           Result::Status.new('Updated')
         end
 
-        def action_watch_folder_modify(data:, res_id:, **)
-          @api_node.update("v3/watchfolders/#{res_id}", data)
-          Result::Status.new("#{res_id} updated")
+        def action_watch_folder_modify(data:, watch_folder_id:, **)
+          @api_node.update("v3/watchfolders/#{watch_folder_id}", data)
+          Result::Status.new("#{watch_folder_id} updated")
         end
 
-        def action_watch_folder_delete(res_id:, **)
-          @api_node.delete("v3/watchfolders/#{res_id}")
-          Result::Status.new("#{res_id} deleted")
+        def action_watch_folder_delete(watch_folder_id:, **)
+          @api_node.delete("v3/watchfolders/#{watch_folder_id}")
+          Result::Status.new("#{watch_folder_id} deleted")
         end
 
         # access_keys > do - setup: resolve access key and root file id

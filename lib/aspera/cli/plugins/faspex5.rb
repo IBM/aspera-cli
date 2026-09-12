@@ -522,7 +522,7 @@ module Aspera
           command :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}]
           Operations::ALL.reject{ |op| op == :create}.each do |op|
-            id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier}]}
+            id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :invitation_id, type: :identifier}]}
             command(op, description: "#{op.capitalize} invitations", **id_args)
           end
         end
@@ -624,13 +624,16 @@ module Aspera
         CRUD_NO_SHOW = %i[create list modify delete].freeze
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
+        RES_SINGULAR = {shared_inboxes: :shared_inbox, workgroups: :workgroup}.freeze
+        private_constant :RES_SINGULAR
+
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
           MEMBER_SUBS.each do |sub|
             commands_under([:admin, res]) do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
-                arguments: [{name: :res_id, type: :identifier, lookup: :"lookup_#{res}_id"}],
+                arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: :"lookup_#{res}_id"}],
                 setup: :"setup_admin_#{res}_instance"
             end
             commands_under([:admin, res, sub]) do
@@ -646,7 +649,7 @@ module Aspera
           end
           commands_under([:admin, res]) do
             command :invite_external_collaborator, description: 'Invite external collaborator',
-              arguments: [{name: :res_id, type: :identifier, lookup: :"lookup_#{res}_id"},
+              arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: :"lookup_#{res}_id"},
                           {name: :input_data, type: Hash}]
           end
         end
@@ -788,7 +791,8 @@ module Aspera
 
         # admin > shared_inboxes|workgroups — res_id: already in ctx via arguments: on the :members|:saml_groups command
         %i[shared_inboxes workgroups].each do |res|
-          define_method(:"setup_admin_#{res}_instance") do |res_id:, **|
+          define_method(:"setup_admin_#{res}_instance") do |**kwargs|
+            res_id = kwargs[:"#{RES_SINGULAR[res]}_id"]
             {res_instance_path: "#{res}/#{res_id}"}
           end
         end
@@ -836,8 +840,8 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data:, res_id:, **|
-            res_instance_path = "#{res}/#{res_id}"
+          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data:, **kwargs|
+            res_instance_path = "#{res}/#{kwargs[:"#{RES_SINGULAR[res]}_id"]}"
             result = @api_v5.create("#{res_instance_path}/external_collaborator", input_data)
             formatter.display_status(result['message'])
             Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: input_data['email_address'], query: {}))

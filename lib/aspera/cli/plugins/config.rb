@@ -518,23 +518,45 @@ module Aspera
           Result::Status.new('Done')
         end
 
+        # Infer implicit positional arguments from an entity_execute shorthand spec.
+        # These are arguments that entity_execute reads directly from the CLI queue
+        # without being declared via arguments: on the CommandSpec.
+        # - non-singleton instance ops (:show/:modify/:delete) read an identifier
+        # - :create/:modify read a body Hash, unless input_data is pre-resolved
+        # Returns an Array of token strings to append to the syntax line.
+        def entity_execute_implicit_args(ee, has_declared_identifier: false)
+          return [] if ee.nil?
+          cmd = ee[:command]
+          tokens = []
+          tokens << '<id>'   if Operations::INSTANCE.include?(cmd) && !ee[:is_singleton] && ee[:res_id].nil? && !has_declared_identifier
+          tokens << '<data>' if %i[create modify].include?(cmd) && ee[:input_data].nil?
+          tokens
+        end
+        private :entity_execute_implicit_args
+
         def action_commands
           commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
             reg.all_paths.reject{ |path| reg.children_of(path).any?}.map do |path|
               spec = reg[path]
-              arg_tokens = spec&.arguments.to_a.map do |a|
-                token =
-                  if a.allowed
-                    a.allowed.join('|')
-                  else
-                    a.name.to_s
-                  end
-                token += '...' if a.multiple
-                a.mandatory ? "<#{token}>" : "[<#{token}>]"
+              # Build syntax by interleaving each path segment with the arguments declared on that node
+              tokens = [name.to_s]
+              has_declared_identifier = false
+              path.each_with_index do |seg, i|
+                tokens << seg.to_s
+                node_args = reg[path[0, i + 1]]&.arguments.to_a
+                node_args.each do |a|
+                  has_declared_identifier = true if a.type.eql?(:identifier)
+                  token = a.allowed ? a.allowed.join('|') : a.name.to_s
+                  token += '...' if a.multiple
+                  tokens << (a.mandatory ? "<#{token}>" : "[<#{token}>]")
+                end
               end
-              syntax = ([name.to_s] + path.map(&:to_s) + arg_tokens).join(' ')
+              # Append implicit args from entity_execute shorthand (e.g. <id> for instance ops, <data> for create/modify)
+              # Skip implicit <id> when an :identifier argument is already declared on the path
+              tokens.concat(entity_execute_implicit_args(spec&.entity_execute, has_declared_identifier: has_declared_identifier))
+              syntax = tokens.join(' ')
               {
                 syntax:      syntax,
                 description: spec&.description.to_s
