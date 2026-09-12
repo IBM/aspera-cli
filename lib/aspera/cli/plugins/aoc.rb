@@ -927,9 +927,9 @@ module Aspera
         commands_under(%i[automation workflows]) do
           command :create,  description: 'Create a workflow'
           command :list,    description: 'List workflows'
-          command :show,    description: 'Show a workflow'
-          command :modify,  description: 'Modify a workflow'
-          command :delete,  description: 'Delete a workflow'
+          command :show,    description: 'Show a workflow',   arguments: [{name: :res_id, type: :identifier}]
+          command :modify,  description: 'Modify a workflow', arguments: [{name: :res_id, type: :identifier}]
+          command :delete,  description: 'Delete a workflow', arguments: [{name: :res_id, type: :identifier}]
           command :launch, description: 'Launch a workflow',
             arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}

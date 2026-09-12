@@ -522,7 +522,8 @@ module Aspera
           command :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}]
           Operations::ALL.reject{ |op| op == :create}.each do |op|
-            command(op, description: "#{op.capitalize} invitations")
+            id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :res_id, type: :identifier}]}
+            command(op, description: "#{op.capitalize} invitations", **id_args)
           end
         end
 

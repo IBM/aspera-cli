@@ -1436,28 +1436,25 @@ Typically, the `create` verb takes a resource creation data as a parameter.
 #### Identifiers
 
 Identifiers uniquely identify a resource.
-They are typically located immediately after a verb, itself placed after the resource type.
-Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the **percent selector**.
+They are typically located immediately after a verb like `show`, `modify` or `delete`, itself placed after the resource type, for example: `user show foobar`.
+Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the [**percent selector**](#percent-selector).
 
 ##### Percent selector
 
-Some resources provide the following capability:
-If the resource can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
-For example, if the name of the user is `john` and a field for this resource named `name` has a value `john`:
-
-```shell
-ascli aoc admin user show %name:john
-```
-
-The percent selector allows identification of a resource by another unique identifier other than the native identifier (typically: `id`).
+The **percent selector** is a special syntax that lets you identify a resource by any unique field, instead of its default identifier (typically a numeric `id`).
 
 Syntax: `%<FIELD>:<VALUE>`
 
-When a command is executed on a resource, the resource is identified by a unique identifier that follows the command.
-For example, in the following command, `<USER_ID>` is the user's identifier:
+- The leading `%` marks the argument as a percent selector (not a plain identifier).
+- `<FIELD>` is the name of the field to match on (e.g. `name`, `email`).
+- `<VALUE>` is the expected value of that field.
+
+The tool then looks up the resource whose `<FIELD>` equals `<VALUE>` and uses its native identifier internally.
+
+For example, to show the user whose `name` field is `john`:
 
 ```shell
-ascli aoc admin user show <USER_ID>
+ascli aoc admin user show %name:john
 ```
 
 #### Command Parameters
@@ -6968,7 +6965,7 @@ ascli aoc files permission --workspace=<WORKSPACE_NAME> <PATH_TO_FOLDER> ...
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-> To use an identifier instead, one can use the percent selector, like `%id:<WS_ID>`.
+> To use an identifier instead, one can use the [percent selector](#percent-selector), like `%id:<WS_ID>`.
 
 ##### Admin Shared Folders
 
@@ -6980,7 +6977,7 @@ ascli aoc admin node do <NODE_ID> permission --workspace=<WORKSPACE_NAME> <PATH_
 
 > [!TIP]
 > The node is identified by identifier.
-> To use a name instead, one can use the percent selector, like `%name:"<NODE_NAME>"`.
+> To use a name instead, one can use the [percent selector](#percent-selector), like `%name:"<NODE_NAME>"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
 > If the ID is left blank: `%id:`, then it means `*`, that is, "all".
 
@@ -8848,7 +8845,7 @@ ascli faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_reci
 ```
 
 > [!TIP]
-> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<FIELD>:<VALUE>`. for example, `--shared-folder=3`
+> The shared folder can be identified by its numerical `id` or by name using [percent selector](#percent-selector): `%<FIELD>:<VALUE>`. for example, `--shared-folder=3`
 
 ### Faspex 5: Receive all packages (cargo)
 
@@ -8926,7 +8923,7 @@ ascli faspex5 admin accounts modify %name:some.user@example.com @json:'{"account
 ```
 
 > [!TIP]
-> This example uses the percent selector, but the numerical ID can be used as well.
+> This example uses the [percent selector](#percent-selector), but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `reset_password` on the `account`.
 

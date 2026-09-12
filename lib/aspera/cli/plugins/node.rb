@@ -385,12 +385,13 @@ module Aspera
           Operations::ALL.each do |op|
             entity_command(
               op,
-              api:         :@api_node,
-              entity:      'access_keys',
-              description: "#{op.capitalize} access keys",
-              command:     op,
+              api:            :@api_node,
+              entity:         'access_keys',
+              description:    "#{op.capitalize} access keys",
+              command:        op,
               body_component: Schema::Registry::NODE,
-              lookup_block: ->(field, value) do
+              arguments:      Operations::GLOBAL.include?(op) ? nil : [{name: :res_id, type: :identifier}],
+              lookup_block:   ->(field, value) do
                 Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
                 @api_node.read('access_keys/self')['id']
               end

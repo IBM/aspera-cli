@@ -1388,28 +1388,25 @@ Typically, the `create` verb takes a resource creation data as a parameter.
 #### Identifiers
 
 Identifiers uniquely identify a resource.
-They are typically located immediately after a verb, itself placed after the resource type.
-Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the **percent selector**.
+They are typically located immediately after a verb like `show`, `modify` or `delete`, itself placed after the resource type, for example: `user show foobar`.
+Some resources accept selection using other unique identifier, other than the native identifier (typically: `id`), using the [**percent selector**](#percent-selector).
 
 ##### Percent selector
 
-Some resources provide the following capability:
-If the resource can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
-For example, if the name of the user is `john` and a field for this resource named `name` has a value `john`:
-
-```shell
-<%=cmd%> aoc admin user show %name:john
-```
-
-The percent selector allows identification of a resource by another unique identifier other than the native identifier (typically: `id`).
+The **percent selector** is a special syntax that lets you identify a resource by any unique field, instead of its default identifier (typically a numeric `id`).
 
 Syntax: `%<%=ph :field%>:<%=ph :value%>`
 
-When a command is executed on a resource, the resource is identified by a unique identifier that follows the command.
-For example, in the following command, `<%=ph :user_id%>` is the user's identifier:
+- The leading `%` marks the argument as a percent selector (not a plain identifier).
+- `<%=ph :field%>` is the name of the field to match on (e.g. `name`, `email`).
+- `<%=ph :value%>` is the expected value of that field.
+
+The tool then looks up the resource whose `<%=ph :field%>` equals `<%=ph :value%>` and uses its native identifier internally.
+
+For example, to show the user whose `name` field is `john`:
 
 ```shell
-<%=cmd%> aoc admin user show <%=ph :user_id%>
+<%=cmd%> aoc admin user show %name:john
 ```
 
 #### Command Parameters
@@ -6507,7 +6504,7 @@ Personal shared folders, created by users in a workspace follow the syntax:
 
 > [!NOTE]
 > The workspace is identified by name, and folder by path, relative to the user's home.
-> To use an identifier instead, one can use the percent selector, like `%id:<%=ph :ws_id%>`.
+> To use an identifier instead, one can use the [percent selector](#percent-selector), like `%id:<%=ph :ws_id%>`.
 
 ##### Admin Shared Folders
 
@@ -6519,7 +6516,7 @@ Admin shared folders, created by administrators in a workspace, follow the synta
 
 > [!TIP]
 > The node is identified by identifier.
-> To use a name instead, one can use the percent selector, like `%name:"<%=ph :node_name%>"`.
+> To use a name instead, one can use the [percent selector](#percent-selector), like `%name:"<%=ph :node_name%>"`.
 > The path is identifier by a path, one can specify a file ID, with `%id:123`.
 > If the ID is left blank: `%id:`, then it means `*`, that is, "all".
 
@@ -8004,7 +8001,7 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 ```
 
 > [!TIP]
-> The shared folder can be identified by its numerical `id` or by name using percent selector: `%<%=ph :field%>:<%=ph :value%>`. for example, `--shared-folder=3`
+> The shared folder can be identified by its numerical `id` or by name using [percent selector](#percent-selector): `%<%=ph :field%>:<%=ph :value%>`. for example, `--shared-folder=3`
 
 ### Faspex 5: Receive all packages (cargo)
 
@@ -8082,7 +8079,7 @@ To unlock a user, you can deactivate and then re-activate the user:
 ```
 
 > [!TIP]
-> This example uses the percent selector, but the numerical ID can be used as well.
+> This example uses the [percent selector](#percent-selector), but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `reset_password` on the `account`.
 
