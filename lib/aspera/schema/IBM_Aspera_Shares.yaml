@@ -292,12 +292,317 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/v1/data/local_groups:
+    get:
+      tags:
+        - Groups
+      summary: List local groups
+      description: Returns a list of local groups
+      operationId: listLocalGroups
+      responses:
+        "200":
+          description: List of local groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LocalGroup"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Groups
+      summary: Create local group
+      description: Creates a new local group
+      operationId: createLocalGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalGroupCreate"
+      responses:
+        "201":
+          description: Local group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalGroup"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/data/local_groups/{id}:
+    get:
+      tags:
+        - Groups
+      summary: Get local group
+      description: Returns details of a specific local group
+      operationId: getLocalGroup
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: Local group details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalGroup"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Groups
+      summary: Update local group
+      description: Updates an existing local group
+      operationId: updateLocalGroup
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalGroupUpdate"
+      responses:
+        "200":
+          description: Local group updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalGroup"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Groups
+      summary: Delete local group
+      description: Deletes a local group
+      operationId: deleteLocalGroup
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "204":
+          description: Local group deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/local_groups/{local_group_id}/local_users:
+    get:
+      tags:
+        - Groups
+      summary: List users of a local group
+      description: Returns all local users belonging to a specific local group
+      operationId: listLocalGroupUsers
+      parameters:
+        - name: local_group_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Local group ID
+      responses:
+        "200":
+          description: List of local users in the group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LocalUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/local_groups/{local_group_id}/local_users/{id}:
+    get:
+      tags:
+        - Groups
+      summary: Get user of a local group
+      operationId: getLocalGroupUser
+      parameters:
+        - name: local_group_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Local group ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: Local user details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Groups
+      summary: Update user of a local group
+      operationId: updateLocalGroupUser
+      parameters:
+        - name: local_group_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Local group ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalUserUpdate"
+      responses:
+        "200":
+          description: Local user updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Groups
+      summary: Remove user from a local group
+      operationId: deleteLocalGroupUser
+      parameters:
+        - name: local_group_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Local group ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "204":
+          description: User removed from group
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/ldap_configs:
+    get:
+      tags:
+        - Users
+      summary: List LDAP configurations
+      operationId: listLdapConfigs
+      responses:
+        "200":
+          description: List of LDAP configurations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LdapConfig"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Users
+      summary: Create LDAP configuration
+      operationId: createLdapConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LdapConfigCreate"
+      responses:
+        "201":
+          description: LDAP configuration created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LdapConfig"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/data/ldap_configs/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get LDAP configuration
+      operationId: getLdapConfig
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: LDAP configuration details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LdapConfig"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Users
+      summary: Update LDAP configuration
+      operationId: updateLdapConfig
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LdapConfigCreate"
+      responses:
+        "200":
+          description: LDAP configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LdapConfig"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Users
+      summary: Delete LDAP configuration
+      operationId: deleteLdapConfig
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "204":
+          description: LDAP configuration deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/data/ldap_users:
     post:
       tags:
         - Users
-      summary: Create LDAP user
-      description: Creates a new local user account
+      summary: Add LDAP user
+      description: Add an LDAP user account
       operationId: createLDAPUser
       requestBody:
         required: true
@@ -312,6 +617,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthorizableUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/data/ldap_groups:
+    post:
+      tags:
+        - Groups
+      summary: Add LDAP group
+      description: Add an LDAP group account
+      operationId: createLDAPGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LDAPUserCreate"
+      responses:
+        "201":
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/data/saml_groups/import:
+    post:
+      tags:
+        - Groups
+      summary: Import SAML group
+      description: Import a SAML group account
+      operationId: importSAMLGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SAMLUserImport"
+      responses:
+        "201":
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -349,7 +706,7 @@ paths:
       tags:
         - Users
       summary: Get All Share Permissions for Specific User
-      description: Get All Share Permissions for Specific User
+      description: Returns all share permissions for a specific user
       operationId: getUserSharePermissions
       parameters:
         - $ref: "#/components/parameters/IntegerIdInPath"
@@ -370,8 +727,8 @@ paths:
     get:
       tags:
         - Users
-      summary: Get One Share Permissions for Specific User
-      description: Get One Share Permissions for Specific User
+      summary: Get User's Specific Share Permission
+      description: Returns a specific share permission for a user
       operationId: getUserSharePermission
       parameters:
         - $ref: "#/components/parameters/IntegerIdInPath"
@@ -383,18 +740,63 @@ paths:
           description: Share ID
       responses:
         "200":
-          description: User details
+          description: Share permission details
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ShareUserPermission"
+                $ref: "#/components/schemas/ShareUserPermission"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
   # Group Endpoints
+  /api/v1/data/users/{id}/app_authorizations:
+    get:
+      tags:
+        - Users
+      summary: Get user app authorizations
+      description: Returns app authorizations for a specific user
+      operationId: getUserAppAuthorizations
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: User app authorizations
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Users
+      summary: Update user app authorizations
+      description: Updates app authorizations for a specific user
+      operationId: updateUserAppAuthorizations
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: User app authorizations updated
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/data/groups:
     get:
       tags:
@@ -411,29 +813,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Group"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    post:
-      tags:
-        - Groups
-      summary: Create group
-      description: Creates a new group
-      operationId: createGroup
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GroupCreate"
-      responses:
-        "201":
-          description: Group created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Group"
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/v1/data/groups/{id}:
@@ -456,33 +835,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-    put:
-      tags:
-        - Groups
-      summary: Update group
-      description: Updates an existing group
-      operationId: updateGroup
-      parameters:
-        - $ref: "#/components/parameters/IntegerIdInPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GroupUpdate"
-      responses:
-        "200":
-          description: Group updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Group"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
     delete:
       tags:
         - Groups
@@ -499,6 +851,200 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
   # Share Endpoints
+  /api/v1/data/groups/{id}/app_authorizations:
+    get:
+      tags:
+        - Groups
+      summary: Get group app authorizations
+      description: Returns app authorizations for a specific group
+      operationId: getGroupAppAuthorizations
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: Group app authorizations
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Groups
+      summary: Update group app authorizations
+      description: Updates app authorizations for a specific group
+      operationId: updateGroupAppAuthorizations
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Group app authorizations updated
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/groups/{id}/users:
+    get:
+      tags:
+        - Groups
+      summary: List users of a group
+      description: Returns all authorizable users belonging to a specific group
+      operationId: listGroupUsers
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: List of users in the group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthorizableUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/groups/{id}/users/{user_id}:
+    get:
+      tags:
+        - Groups
+      summary: Get user of a group
+      operationId: getGroupUser
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: User ID
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizableUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Groups
+      summary: Update user of a group
+      operationId: updateGroupUser
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Group user updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizableUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Groups
+      summary: Remove user from a group
+      operationId: deleteGroupUser
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: User ID
+      responses:
+        "204":
+          description: User removed from group
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/groups/{id}/share_permissions:
+    get:
+      tags:
+        - Groups
+      summary: Get all share permissions for a group
+      description: Returns all share permissions for a specific group
+      operationId: getGroupSharePermissions
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: List of share permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/groups/{id}/share_permissions/{share_id}:
+    get:
+      tags:
+        - Groups
+      summary: Get group's specific share permission
+      description: Returns a specific share permission for a group
+      operationId: getGroupSharePermission
+      parameters:
+        - $ref: "#/components/parameters/IntegerIdInPath"
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      responses:
+        "200":
+          description: Share permission details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/data/shares:
     get:
       tags:
@@ -598,6 +1144,271 @@ paths:
       responses:
         "204":
           description: Share deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  # Shares nested permissions
+  /api/v1/data/shares/{share_id}/user_permissions:
+    get:
+      tags:
+        - Shares
+      summary: List user permissions for a share
+      operationId: listShareUserPermissions
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      responses:
+        "200":
+          description: List of user permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags:
+        - Shares
+      summary: Create user permission for a share
+      operationId: createShareUserPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharePermissionCreate"
+      responses:
+        "201":
+          description: User permission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/data/shares/{share_id}/user_permissions/{id}:
+    get:
+      tags:
+        - Shares
+      summary: Get user permission for a share
+      operationId: getShareUserPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: User permission details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Shares
+      summary: Update user permission for a share
+      operationId: updateShareUserPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharePermissionCreate"
+      responses:
+        "200":
+          description: User permission updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Shares
+      summary: Delete user permission for a share
+      operationId: deleteShareUserPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "204":
+          description: User permission deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/data/shares/{share_id}/group_permissions:
+    get:
+      tags:
+        - Shares
+      summary: List group permissions for a share
+      operationId: listShareGroupPermissions
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      responses:
+        "200":
+          description: List of group permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags:
+        - Shares
+      summary: Create group permission for a share
+      operationId: createShareGroupPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharePermissionCreate"
+      responses:
+        "201":
+          description: Group permission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/data/shares/{share_id}/group_permissions/{id}:
+    get:
+      tags:
+        - Shares
+      summary: Get group permission for a share
+      operationId: getShareGroupPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "200":
+          description: Group permission details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Shares
+      summary: Update group permission for a share
+      operationId: updateShareGroupPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharePermissionCreate"
+      responses:
+        "200":
+          description: Group permission updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareUserPermission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Shares
+      summary: Delete group permission for a share
+      operationId: deleteShareGroupPermission
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+        - $ref: "#/components/parameters/IntegerIdInPath"
+      responses:
+        "204":
+          description: Group permission deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -707,24 +1518,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
   # SMTP Server Endpoints
-  /api/v1/data/smtp_servers:
+  /api/v1/data/smtp_server:
     get:
       tags:
         - SMTP Servers
-      summary: List SMTP servers
-      description: Returns a list of configured SMTP servers
-      operationId: listSmtpServers
+      summary: Get SMTP server
+      description: Returns the configured SMTP server
+      operationId: getSmtpServer
       responses:
         "200":
-          description: List of SMTP servers
+          description: SMTP server details
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SmtpServer"
+                $ref: "#/components/schemas/SmtpServer"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags:
         - SMTP Servers
@@ -748,34 +1559,12 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/v1/data/smtp_servers/{id}:
-    get:
-      tags:
-        - SMTP Servers
-      summary: Get SMTP server
-      description: Returns details of a specific SMTP server
-      operationId: getSmtpServer
-      parameters:
-        - $ref: "#/components/parameters/IntegerIdInPath"
-      responses:
-        "200":
-          description: SMTP server details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SmtpServer"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
     put:
       tags:
         - SMTP Servers
       summary: Update SMTP server
-      description: Updates an existing SMTP server configuration
+      description: Updates the SMTP server configuration
       operationId: updateSmtpServer
-      parameters:
-        - $ref: "#/components/parameters/IntegerIdInPath"
       requestBody:
         required: true
         content:
@@ -791,21 +1580,6 @@ paths:
                 $ref: "#/components/schemas/SmtpServer"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    delete:
-      tags:
-        - SMTP Servers
-      summary: Delete SMTP server
-      description: Removes an SMTP server configuration
-      operationId: deleteSmtpServer
-      parameters:
-        - $ref: "#/components/parameters/IntegerIdInPath"
-      responses:
-        "204":
-          description: SMTP server deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1690,6 +2464,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/error"
+  /node_api/files/sync_setup:
+    post:
+      tags:
+        - Files
+      summary: Create a sync setup
+      description: Returns a transfer specification for sync operations
+      operationId: setupSync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Sync setup response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad Request
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /node_api/files/download_setup:
     post:
       tags:
@@ -2370,6 +3168,117 @@ components:
           format: int32
           example: 24
       additionalProperties: false
+    SharePermissionCreate:
+      type: object
+      description: Fields to set when creating or updating a share permission
+      properties:
+        user_id:
+          type: integer
+          format: int32
+          description: User ID (for user permissions)
+        group_id:
+          type: integer
+          format: int32
+          description: Group ID (for group permissions)
+        browse_permission:
+          type: boolean
+        download_permission:
+          type: boolean
+        upload_permission:
+          type: boolean
+        delete_permission:
+          type: boolean
+        mkdir_permission:
+          type: boolean
+        rename_permission:
+          type: boolean
+        manage_permission:
+          type: boolean
+        content_availability_permission:
+          type: boolean
+    LocalGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 10
+        name:
+          type: string
+          example: engineers
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    LocalGroupCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: engineers
+        description:
+          type: string
+    LocalGroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: engineers
+        description:
+          type: string
+    LdapConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        host:
+          type: string
+        port:
+          type: integer
+        base_dn:
+          type: string
+        bind_dn:
+          type: string
+        ssl:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    LdapConfigCreate:
+      type: object
+      required:
+        - host
+        - base_dn
+      properties:
+        host:
+          type: string
+          example: ldap.example.com
+        port:
+          type: integer
+          example: 389
+        base_dn:
+          type: string
+          example: dc=example,dc=com
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+          format: password
+        ssl:
+          type: boolean
+          default: false
     NodeCreate:
       type: object
       required:
