@@ -149,7 +149,7 @@ module Aspera
                 setting_ops.each do |op|
                   # share_permissions > show needs a permission identifier (list does not)
                   perm_id_arg = (setting.eql?(:share_permissions) && op.eql?(:show)) \
-                    ? [{name: :permission_id, type: :identifier}] \
+                    ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] \
                     : []
                   command(op, description: "#{op.capitalize} #{setting} for a #{entity_type}",
                     arguments: perm_id_arg.empty? ? nil : perm_id_arg)
@@ -159,7 +159,7 @@ module Aspera
             if entity_type.eql?(:group)
               command(
                 :users, description: 'Manage users of a group',
-                arguments: [{name: :group_id, type: :identifier}]
+                arguments: [{name: :group_id, type: :identifier, lookup: :"lookup_shares_group_all_id"}]
               )
               commands_under([:admin, entity_type, :all, :users]) do
                 GROUP_USERS_OPS.each do |op|
@@ -179,7 +179,7 @@ module Aspera
             if entity_type.eql?(:group)
               command(
                 :users, description: 'Manage users of a group',
-                arguments: [{name: :group_id, type: :identifier}]
+                arguments: [{name: :group_id, type: :identifier, lookup: :"lookup_shares_group_local_id"}]
               )
               commands_under([:admin, entity_type, :local, :users]) do
                 GROUP_USERS_OPS.each do |op|
@@ -387,7 +387,7 @@ module Aspera
                 setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
-                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"])
+                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id])
                   end
                 end
               end
