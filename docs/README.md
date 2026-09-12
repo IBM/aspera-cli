@@ -9808,6 +9808,8 @@ For other clients (Claude Desktop, VS Code, …):
 The client launches `ascli` directly as a subprocess.
 Add the following to the AI client's MCP configuration file.
 
+##### IBM Bob `stdio`
+
 For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), add to `.bob/mcp.json` in your project (or `~/.bob/mcp.json` for global configuration):
 
 ```json
@@ -9825,24 +9827,43 @@ For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), ad
 
 For other clients (Claude Desktop, VS Code, …), the configuration is identical.
 
-> [!NOTE]
-> **Development mode** - if the `ascli` gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
-> Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the project:
->
-> ```json
-> {
->   "mcpServers": {
->     "ascli": {
->       "type": "stdio",
->       "command": "/path/to/aspera-cli/bin/ascli",
->       "args": ["mcp", "server"],
->       "env": {
->         "RUBYLIB": "/path/to/aspera-cli/lib"
->       }
->     }
->   }
-> }
-> ```
+##### Claude Desktop `stdio`
+
+Find the configuration file as specified in [Claude Desktop Documentation](https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers).
+
+place this section in `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "command": "ascli",
+      "args": ["mcp", "server"]
+    }
+  },
+...
+}
+```
+
+##### Development mode for `stdio`
+
+If the `ascli` gem is not installed and you are running directly from the source tree, Ruby will not find the `lib/` directory automatically.
+Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the project:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "stdio",
+      "command": "/path/to/aspera-cli/bin/ascli",
+      "args": ["mcp", "server"],
+      "env": {
+        "RUBYLIB": "/path/to/aspera-cli/lib"
+      }
+    }
+  }
+}
+```
 
 ### Tested commands for `mcp`
 
