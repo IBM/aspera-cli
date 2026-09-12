@@ -143,7 +143,7 @@ module Aspera
               lookup_method = :"lookup_shares_#{entity_type}_all_id"
               command(
                 setting, description: "Manage #{setting} for a #{entity_type}",
-                arguments: [{name: :entity_id, type: :identifier, lookup: lookup_method}]
+                arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method}]
               )
               commands_under([:admin, entity_type, :all, setting]) do
                 setting_ops.each do |op|
@@ -380,8 +380,8 @@ module Aspera
                 # share_permissions: Rails only exposes index+show (read-only)
                 setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                 setting_ops.each do |op|
-                  define_action_method([:admin, entity_type, location, setting, op]) do |entity_id:, **|
-                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: entity_id)
+                  define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
+                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"])
                   end
                 end
               end

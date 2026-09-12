@@ -58,9 +58,11 @@ module Aspera
           # @param entity      [String]        API sub-path (e.g. 'admin/dropboxes')
           # @param description [String, nil]   User-facing help text; derived from entity when nil
           # @param kwargs      [Hash]          Any other entity_execute params (display_fields:, command:, is_singleton:, etc.)
-          def entity_command(id, api:, entity:, description: nil, **kwargs)
+          def entity_command(id, api:, entity:, description: nil, arguments: nil, **kwargs)
             description ||= "Manage #{entity.split('/').last}"
-            command(id, description: description, entity_execute: {api: api, entity: entity, **kwargs})
+            cmd_attrs = {description: description, entity_execute: {api: api, entity: entity, **kwargs}}
+            cmd_attrs[:arguments] = arguments if arguments
+            command(id, **cmd_attrs)
           end
 
           # DSL class method: define an instance method whose name is derived from a path array.
