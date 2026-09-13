@@ -4606,8 +4606,8 @@ conf_pset_lookup:
     - config
     - preset
     - lookup
-    - --url=@preset:faspex5_user.url
-    - --username=@preset:faspex5_user.username
+    - --url=@preset:f5_user.url
+    - --username=@preset:f5_user.username
 conf_pset_show:
   tags:
     - tmp_conf
@@ -5915,7 +5915,7 @@ f5_health:
     - -N
     - faspex5
     - health
-    - --url=@preset:faspex5_user.url
+    - --url=@preset:f5_user.url
 f5_health_bad:
   tags:
     - nodoc
@@ -5941,7 +5941,7 @@ f5_detect:
   args:
     - config
     - detect
-    - "@preset:faspex5_user.url"
+    - "@preset:f5_user.url"
     - faspex5
 f5_wizard:
   tags:
@@ -5949,10 +5949,10 @@ f5_wizard:
   args:
     - config
     - wizard
-    - "@preset:faspex5_user.url"
+    - "@preset:f5_user.url"
     - faspex5
     - --key-path=@preset:file.private_key
-    - --preset=faspex5_user
+    - --preset=f5_user
 f5_wizard_show_secrets:
   tags:
     - faspex5
@@ -5960,7 +5960,7 @@ f5_wizard_show_secrets:
   args:
     - config
     - wizard
-    - "@preset:faspex5_user.url"
+    - "@preset:f5_user.url"
     - faspex5
     - --key-path=@preset:file.private_key
     - --url=
@@ -5996,13 +5996,13 @@ f5_detect_ok:
     - -N
     - config
     - detect
-    - "@preset:faspex5_user.url"
+    - "@preset:f5_user.url"
 f5_detect_ok_faspex5:
   description: Auto-detect with explicit faspex5 plugin hint
   args:
     - config
     - detect
-    - "@preset:faspex5_user.url"
+    - "@preset:f5_user.url"
 f5_version:
   args:
     - faspex5
@@ -6019,7 +6019,11 @@ f5_pack_send:
     - faspex5
     - packages
     - send
-    - '@json:@extend:{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}'
+    - "@:"
+    - title=test title
+    - recipients.0.name=@preset:f5_user.username
+    #    - metadata=@preset:f5_misc.meta
+    - END
     - $(PATH_TST_ASC_LCL)
     - --ts.content_protection_password=my_secret_here
 f5_pack_list:
@@ -6052,8 +6056,9 @@ f5_sh_folder_browse:
     - faspex5
     - shared_folders
     - browse
-    - "@extend:%name:@preset:faspex5.shared_folder_name@"
+    - "@extend:%name:@preset:f5_misc.shared_folder_name@"
 f5_pack_send_shared:
+  description: Send package to normal user
   tags:
     - save_output
     - nodoc
@@ -6061,9 +6066,12 @@ f5_pack_send_shared:
     - faspex5
     - packages
     - send
-    - --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@
-    - '@json:@extend:{"title":"test title","recipients":["@preset:misc.email_internal@"]}'
-    - "@preset:faspex5.shared_folder_file"
+    - --shared-folder=@extend:%name:@preset:f5_misc.shared_folder_name@
+    - "@:"
+    - title=test title
+    - recipients.0=@preset:f5_user.username
+    - END
+    - "@preset:f5_misc.shared_folder_file"
     - --fields=id
     - --display=data
   post: 'puts "Sent package with id: #{t.saved_output :f5_pack_send_shared}"'
@@ -6081,12 +6089,14 @@ f5_pack_id:
     - f5_pack_send_shared
   tags:
     - save_output
+    - wait_value
     - nodoc
   args:
     - faspex5
     - packages
     - list
-    - --query=@json:{"status":"completed","max":1}
+    - --query.status=completed
+    - --query.max=1
     - --fields=id
 f5_pack_show:
   depends_on:
@@ -6141,21 +6151,26 @@ f5_pack_delete:
     - packages
     - delete
     - $(t.saved_output :f5_pack_id)
-f5_pack_shbox:
+f5_pack_shbox_send:
   args:
     - faspex5
     - packages
     - send
-    - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}'
+    - "@:"
+    - title=for shared inbox
+    - recipients.0=@preset:f5_misc.shared_box_name
+    - metadata.Options=Opt1
+    - metadata.TextInput=example text
+    - END
     - $(PATH_TST_ASC_LCL)
 f5_pack_shbox_list:
   depends_on:
-    - f5_pack_shbox
+    - f5_pack_shbox_send
   args:
     - faspex5
     - packages
     - list
-    - --box=@preset:faspex5.shared_box_name
+    - --box=@preset:f5_misc.shared_box_name
 f5_pack_shbox_list_id:
   depends_on:
     - f5_pack_shbox_list
@@ -6167,7 +6182,7 @@ f5_pack_shbox_list_id:
     - faspex5
     - packages
     - list
-    - --box=@preset:faspex5.shared_box_name
+    - --box=@preset:f5_misc.shared_box_name
     - --query=@json:{"status":"completed","limit":1,"max":1}
     - --fields=id
     - --format=csv
@@ -6179,7 +6194,7 @@ f5_pack_shbox_show:
     - faspex5
     - packages
     - show
-    - --box=@preset:faspex5.shared_box_name
+    - --box=@preset:f5_misc.shared_box_name
     - $(t.saved_output :f5_pack_shbox_list_id)
 f5_pack_shbox_recv:
   depends_on:
@@ -6188,7 +6203,7 @@ f5_pack_shbox_recv:
     - faspex5
     - packages
     - receive
-    - --box=@preset:faspex5.shared_box_name
+    - --box=@preset:f5_misc.shared_box_name
     - $(t.saved_output :f5_pack_shbox_list_id)
     - --to-folder=$(TMP)
 f5_pack_shbox_public:
@@ -6197,7 +6212,7 @@ f5_pack_shbox_public:
     - faspex5
     - packages
     - send
-    - --url=@preset:faspex5.public_link_send_shared_box
+    - --url=@preset:f5_misc.public_link_send_shared_box
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_user_public:
@@ -6206,7 +6221,7 @@ f5_pack_user_public:
     - faspex5
     - packages
     - send
-    - --url=@preset:faspex5.public_link_send_f5_user
+    - --url=@preset:f5_misc.public_link_send_f5_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_wrkgrp:
@@ -6214,7 +6229,7 @@ f5_pack_wrkgrp:
     - faspex5
     - packages
     - send
-    - '@json:@extend:{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}'
+    - '@json:@extend:{"title":"test title","recipients":["@preset:f5_misc.workgroup@"]}'
     - $(PATH_TST_ASC_LCL)
   post: sleep TEMPORIZE_CREATE
 f5_pack_wrkgrp_list:
@@ -6224,7 +6239,7 @@ f5_pack_wrkgrp_list:
     - faspex5
     - packages
     - list
-    - --box=@preset:faspex5.workgroup
+    - --box=@preset:f5_misc.workgroup
     - --group-type=workgroups
 f5_workgroup_pack_id:
   depends_on:
@@ -6236,7 +6251,7 @@ f5_workgroup_pack_id:
     - faspex5
     - packages
     - list
-    - --box=@preset:faspex5.workgroup
+    - --box=@preset:f5_misc.workgroup
     - --group-type=workgroups
     - --query=@json:{"status":"completed","limit":1,"max":1}
     - --fields=id
@@ -6247,7 +6262,7 @@ f5_pack_wrkgrp_show:
     - faspex5
     - packages
     - show
-    - --box=@preset:faspex5.workgroup
+    - --box=@preset:f5_misc.workgroup
     - --group-type=workgroups
     - $(t.saved_output :f5_workgroup_pack_id)
 f5_pack_wrkgrp_recv:
@@ -6257,7 +6272,7 @@ f5_pack_wrkgrp_recv:
     - faspex5
     - packages
     - receive
-    - --box=@preset:faspex5.workgroup
+    - --box=@preset:f5_misc.workgroup
     - --group-type=workgroups
     - $(t.saved_output :f5_workgroup_pack_id)
     - --to-folder=$(TMP)
@@ -6468,7 +6483,7 @@ f5_adm_sbx_mem:
     - admin
     - shared_inboxes
     - members
-    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - list
 f5_adm_sbx_cr:
   args:
@@ -6477,7 +6492,7 @@ f5_adm_sbx_cr:
     - admin
     - shared_inboxes
     - members
-    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - create
     - "%name:john@example.com"
     - submit_only
@@ -6490,7 +6505,7 @@ f5_adm_sbx_delete:
     - admin
     - shared_inboxes
     - members
-    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - delete
     - "%name:john@example.com"
 f5_adm_evt_app:
@@ -6516,7 +6531,7 @@ f5_adm_sh_invite:
     - admin
     - shared_inboxes
     - invite
-    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - "@:"
     - email_address=johnny@example.com
   post: sleep 10
@@ -6532,7 +6547,7 @@ f5_adm_shbox_member_delete:
     - admin
     - shared_inboxes
     - members
-    - "@extend:%name:@preset:faspex5.shared_box_name@"
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - delete
     - "%name:johnny@example.com"
 f5_clean_delete:
@@ -6716,7 +6731,7 @@ f5_postproc_test:
     - faspex5
     - packages
     - send
-    - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}'
+    - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:f5_misc.shared_box_name@"]}'
     - faux:///test1?1m
   post: |
     Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
