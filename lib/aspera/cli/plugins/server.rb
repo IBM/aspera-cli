@@ -178,20 +178,25 @@ module Aspera
           @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
           Runner.result_transfer(transfer.start(@server_transfer_spec))
         end)
-        command(:download, description: 'Download files from server', transfer_paths: :receive, action: lambda do
-          @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
-          Runner.result_transfer(transfer.start(@server_transfer_spec))
-        end)
+        command(
+          :download,
+          description: 'Download files from server',
+          transfer_paths: :receive,
+          action: lambda do
+            @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
+            Runner.result_transfer(transfer.start(@server_transfer_spec))
+          end
+        )
         command :sync, description: 'Synchronize files with server'
-        commands_under(:sync) do
+        commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command(dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send)
+            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send
           end
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, %i[sync admin])
         end
 
-        commands_under(:health) do
+        commands_under :health do
           command :transfer, description: 'Check FASP transfer health'
         end
 

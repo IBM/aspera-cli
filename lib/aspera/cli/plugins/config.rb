@@ -113,7 +113,7 @@ module Aspera
 
         # DSL command declarations - replaces ACTIONS + execute_action
         command :preset, description: 'Manage configuration presets'
-        commands_under(:preset) do
+        commands_under :preset do
           command :list,     description: 'List all presets'
           command :overview, description: 'Display all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username'
@@ -127,11 +127,9 @@ module Aspera
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
           command :unset,      description: 'Remove a parameter from a preset',
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
-          command(
-            :set, description: 'Set a parameter in a preset',
+          command :set, description: 'Set a parameter in a preset',
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String},
                         {name: :param_value, type: nil}]
-          )
           command :initialize, description: 'Initialize a preset with a value',
             arguments: [{name: :name, type: :identifier}, {name: :config_value, type: Hash}]
           command :update,     description: 'Update a preset with current option values',
@@ -203,7 +201,7 @@ module Aspera
         command :check_update, description: 'Check if a newer version of the gem is available', action: ->{Result::SingleObject.new(check_gem_version)}
         command :initdemo, description: 'Initialize the demo server preset'
         command :vault, description: 'Manage secrets in the vault'
-        commands_under(:vault) do
+        commands_under :vault do
           command :info,     description: 'Display vault information',
             action: ->(**){Result::SingleObject.new(vault.info)}
           command :ids,      description: 'List secret labels in the vault',
@@ -229,7 +227,7 @@ module Aspera
         command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
-        commands_under(:remote_certificate) do
+        commands_under :remote_certificate do
           command :chain, description: 'Display the full certificate chain as PEM',
             arguments: [{name: :remote_url, type: String}]
           command :only, description: 'Display only the server certificate as PEM',
@@ -239,7 +237,7 @@ module Aspera
         end
 
         # tokens sub-commands
-        commands_under(:tokens) do
+        commands_under :tokens do
           command(
             :flush, description: 'Delete all cached OAuth tokens',
             action: lambda do
@@ -259,7 +257,7 @@ module Aspera
         end
 
         # plugins sub-commands
-        commands_under(:plugins) do
+        commands_under :plugins do
           command :list, description: 'List all available plugins'
           command :create, description: 'Create a new plugin skeleton file',
             arguments: [
@@ -270,7 +268,7 @@ module Aspera
 
         # ascp sub-commands
         command :ascp, description: 'Manage FASP/ascp transfer engine'
-        commands_under(:ascp) do
+        commands_under :ascp do
           command :show,    description: 'Display ascp binary path'
           command :info,    description: 'Display ascp and transfer spec information'
           command :install, description: 'Install the transfer SDK',
@@ -280,14 +278,14 @@ module Aspera
             arguments: [{name: :agent_name, mandatory: false, default: nil}]
           command :errors,   description: 'Display FASP error codes'
           command :products, description: 'Manage installed Aspera products'
-          commands_under(%i[ascp products]) do
+          commands_under %i[ascp products] do
             command :list, description: 'List installed Aspera products'
           end
         end
 
         # agents sub-commands
         command :agents, description: 'Manage transfer agents'
-        commands_under(:agents) do
+        commands_under :agents do
           command :list,       description: 'List all transfer agents'
           command :show,       description: 'Show details for a transfer agent',
             arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
@@ -297,7 +295,7 @@ module Aspera
 
         # transfer async management sub-commands
         command :transfer, description: 'Manage asynchronous transfers'
-        commands_under(:transfer) do
+        commands_under :transfer do
           command :list,    description: 'List all async transfer jobs'
           command :status,  description: 'Show status of an async transfer job',
             arguments: [{name: :job_id, type: String}]
@@ -306,13 +304,13 @@ module Aspera
 
         # transferd sub-commands
         command :transferd, description: 'Manage the transfer daemon (transferd)'
-        commands_under(:transferd) do
+        commands_under :transferd do
           command :install, description: 'Install the transfer daemon'
           command :list,    description: 'List available SDK locations'
         end
 
         # sync sub-commands
-        commands_under(:sync) do
+        commands_under :sync do
           command(
             :spec, description: 'Display the sync configuration schema',
             action: lambda do
@@ -328,14 +326,14 @@ module Aspera
         end
 
         # gem sub-commands
-        commands_under(:gem) do
+        commands_under :gem do
           command :path,    description: 'Display the gem source root path',    action: ->{Result::Text.new(self.class.gem_src_root)}
           command :version, description: 'Display the gem version',             action: ->{Result::Text.new(Cli::VERSION)}
           command :name,    description: 'Display the gem name',                action: ->{Result::Text.new(Info::GEM_NAME)}
         end
 
         # test sub-commands
-        commands_under(:test) do
+        commands_under :test do
           command :throw, description: 'Raise an exception (for testing)',
             arguments: [
               {name: :exception_class_name, type: String},
@@ -345,7 +343,7 @@ module Aspera
         end
 
         # completion sub-commands
-        commands_under(:completion) do
+        commands_under :completion do
           command :bash, description: 'Generate bash completion script',
             arguments: [{name: :words, type: String, multiple: true, mandatory: false}]
         end
@@ -518,22 +516,6 @@ module Aspera
           Result::Status.new('Done')
         end
 
-        # Infer implicit positional arguments from an entity_execute shorthand spec.
-        # These are arguments that entity_execute reads directly from the CLI queue
-        # without being declared via arguments: on the CommandSpec.
-        # - non-singleton instance ops (:show/:modify/:delete) read an identifier
-        # - :create/:modify read a body Hash, unless input_data is pre-resolved
-        # Returns an Array of token strings to append to the syntax line.
-        def entity_execute_implicit_args(ee, has_declared_identifier: false)
-          return [] if ee.nil?
-          cmd = ee[:command]
-          tokens = []
-          tokens << '<id>'   if Operations::INSTANCE.include?(cmd) && !ee[:is_singleton] && ee[:res_id].nil? && !has_declared_identifier
-          tokens << '<data>' if %i[create modify].include?(cmd) && ee[:input_data].nil?
-          tokens
-        end
-        private :entity_execute_implicit_args
-
         def action_commands
           commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
@@ -542,20 +524,15 @@ module Aspera
               spec = reg[path]
               # Build syntax by interleaving each path segment with the arguments declared on that node
               tokens = [name.to_s]
-              has_declared_identifier = false
               path.each_with_index do |seg, i|
                 tokens << seg.to_s
                 node_args = reg[path[0, i + 1]]&.arguments.to_a
                 node_args.each do |a|
-                  has_declared_identifier = true if a.type.eql?(:identifier)
                   token = a.allowed ? a.allowed.join('|') : a.name.to_s
                   token += '...' if a.multiple
                   tokens << (a.mandatory ? "<#{token}>" : "[<#{token}>]")
                 end
               end
-              # Append implicit args from entity_execute shorthand (e.g. <id> for instance ops, <data> for create/modify)
-              # Skip implicit <id> when an :identifier argument is already declared on the path
-              tokens.concat(entity_execute_implicit_args(spec&.entity_execute, has_declared_identifier: has_declared_identifier))
               syntax = tokens.join(' ')
               {
                 syntax:      syntax,

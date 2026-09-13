@@ -38,11 +38,16 @@ module Aspera
         end
 
         command :health, description: 'Check health of faspio Gateway'
-        entity_command :bridges, api: :build_api, entity: 'bridges', body_component: Schema::Registry::FASPIO
+
+        commands_under :bridges do
+          crud_commands entity: 'bridges',
+            api: :build_api,
+            body_component: Schema::Registry::FASPIO
+        end
 
         option :auth,        description: 'OAuth type of authentication', allowed: %i[jwt basic]
         option :client_id,   description: 'OAuth client identifier'
-        option :private_key, description: 'OAuth JWT RSA private key PEM value (prefix file path with @file:)'
+        option :private_key, description: 'OAuth JWT RSA private key PEM **value**'
         option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
 
         def initialize(**_)

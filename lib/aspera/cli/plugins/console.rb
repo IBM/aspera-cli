@@ -76,12 +76,12 @@ module Aspera
         command :health,   description: 'Check Console API health', setup: :setup_api
         command :transfer, description: 'Manage transfers',         setup: :setup_api
 
-        commands_under(:transfer) do
+        commands_under :transfer do
           command :current, description: 'Manage current transfers'
           command :smart,   description: 'Manage smart transfers'
         end
 
-        commands_under(%i[transfer current]) do
+        commands_under %i[transfer current] do
           command :list,          description: 'List current transfers'
           command :show,          description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
@@ -117,7 +117,7 @@ module Aspera
           end
         end
 
-        commands_under(%i[transfer smart]) do
+        commands_under %i[transfer smart] do
           command :list,   description: 'List smart transfers', action: ->(api_console:){Result::ObjectList.new(api_console.read('smart_transfers'))}
           command :submit, description: 'Submit a smart transfer',
             arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash}]

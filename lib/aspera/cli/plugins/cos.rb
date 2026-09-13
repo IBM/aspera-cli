@@ -13,9 +13,9 @@ module Aspera
 
         command :node, description: 'Execute COS node commands', setup: :setup_cos_node
 
-        commands_under(:node) do
+        commands_under :node do
           Node::COMMANDS_COS.each do |cmd|
-            command(cmd, description: "Node #{cmd} command")
+            command cmd, description: "Node #{cmd} command"
           end
         end
 

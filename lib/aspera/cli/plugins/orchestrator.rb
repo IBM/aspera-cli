@@ -112,7 +112,7 @@ module Aspera
         command :workorders, description: 'Manage work orders', setup: :setup_api
         command :workstep,   description: 'Manage work steps',  setup: :setup_api
 
-        commands_under(:workflows) do
+        commands_under :workflows do
           command(:list, description: 'List all workflows', action: lambda do
             Result::ObjectList.new(
               call_ao('workflows_list')['workflows']['workflow'],
@@ -141,7 +141,7 @@ module Aspera
             action: ->(wf_id:, **){Result::ObjectList.new(call_ao("workflow_outputs_spec/#{wf_id}")['workflow_outputs_spec']['output'])}
         end
 
-        commands_under(:workorders) do
+        commands_under :workorders do
           command :status, description: 'Check the status of a work order',
             arguments: [{name: :wo_id, type: :identifier}],
             action: ->(wo_id:, **){Result::SingleObject.new(call_ao("work_order_status/#{wo_id}")['work_order'])}
@@ -156,7 +156,7 @@ module Aspera
             action: ->(wo_id:, **){Result::ObjectList.new(call_ao("work_order_output/#{wo_id}", format: 'xml')['variable'])}
         end
 
-        commands_under(:workstep) do
+        commands_under :workstep do
           command :status, description: 'Check the status of a work step',
             arguments: [{name: :ws_id, type: :identifier}],
             action: ->(ws_id:, **){Result::SingleObject.new(call_ao("work_step_status/#{ws_id}"))}

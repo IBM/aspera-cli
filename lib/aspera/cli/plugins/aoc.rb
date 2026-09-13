@@ -601,7 +601,7 @@ module Aspera
         command :packages,          description: 'Package commands', setup: :setup_workspace_display
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
         command :admin, description: 'Administration commands', setup: :setup_admin_scope
-        commands_under(:admin) do
+        commands_under :admin do
           command :bearer_token,   description: 'Show admin bearer token',
             action: ->{Result::Text.new(aoc_api.oauth.authorization)}
           command :application,    description: 'Manage applications'
@@ -625,7 +625,7 @@ module Aspera
             else
               Operations::ALL + (cfg[:extra_ops] || [])
             end
-            command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+            command res, description: "Manage #{res.to_s.tr('_', ' ')}"
             commands_under([:admin, res]) do
               ops.each do |op|
                 extra_setup = op_setup[op]
@@ -650,13 +650,13 @@ module Aspera
                   c = aoc_res_cfg(res)
                   merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
                 end
-                command(op, description: op.to_s.tr('_', ' ').capitalize, **merged)
+                command op, description: op.to_s.tr('_', ' ').capitalize, **merged
               end
             end
           end
         end
         # admin > workspace > shared_folder sub-tree
-        commands_under(%i[admin workspace shared_folder]) do
+        commands_under %i[admin workspace shared_folder] do
           command :list,   description: 'List shared folders'
           command :node,   description: 'Execute node command on shared folder',
             arguments: [{name: :sf_id, type: :identifier}],
@@ -666,28 +666,28 @@ module Aspera
             setup: :setup_admin_workspace_shared_folder_member
         end
         # admin > workspace > shared_folder > node sub-tree (Gen4 commands)
-        commands_under(%i[admin workspace shared_folder node]) do
+        commands_under %i[admin workspace shared_folder node] do
           command :transfer,   description: 'Transfer files (node-to-node)'
           command :permission, description: 'Manage permissions'
           command :sync,       description: 'Synchronize folders'
           Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec)
+            command cmd, **spec
           end
         end
-        commands_under(%i[admin workspace shared_folder member]) do
+        commands_under %i[admin workspace shared_folder member] do
           command :list, description: 'List members of a shared folder'
         end
         # admin > workspace > dropbox sub-tree
-        commands_under(%i[admin workspace dropbox]) do
+        commands_under %i[admin workspace dropbox] do
           command :list, description: 'List dropboxes in workspace'
         end
         # admin > node > do sub-tree (Gen4 commands)
-        commands_under(%i[admin node do]) do
+        commands_under %i[admin node do] do
           command :transfer,   description: 'Transfer files (node-to-node)'
           command :permission, description: 'Manage permissions'
           command :sync,       description: 'Synchronize folders'
           Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec)
+            command cmd, **spec
           end
         end
         # admin > user > preferences|notifications sub-trees
@@ -698,12 +698,12 @@ module Aspera
               arguments: [{name: :properties, type: Hash}]
           end
         end
-        commands_under(%i[admin auth_providers]) do
+        commands_under %i[admin auth_providers] do
           command :list, description: 'List auth providers',
             action: ->{result_list('admin/auth_providers')}
           command :update, description: 'Update auth provider', action: ->{Aspera.error_not_implemented}
         end
-        commands_under(%i[admin subscription]) do
+        commands_under %i[admin subscription] do
           command :account, description: 'Show subscription account'
           command :usage,   description: 'Show subscription usage',
             arguments: [
@@ -712,7 +712,7 @@ module Aspera
               {name: :end_date,    mandatory: false, default: nil}
             ]
         end
-        commands_under(%i[admin analytics]) do
+        commands_under %i[admin analytics] do
           command :application_events, description: 'List application events'
           command :transfers,          description: 'List transfer events',
             arguments: [
@@ -727,7 +727,7 @@ module Aspera
             ]
         end
         # application sub-commands
-        commands_under(%i[admin application]) do
+        commands_under %i[admin application] do
           command :types,      description: 'List application types',
             action: ->{Result::ObjectList.new(aoc_api.read('admin/apps'))}
           command :settings,   description: 'Manage per-app-type settings'
@@ -737,9 +737,9 @@ module Aspera
         APP_SETTINGS_PATH = %i[admin application settings].freeze
         APP_INSTANCE_PATH = %i[admin application instance].freeze
         private_constant :APP_SETTINGS_PATH, :APP_INSTANCE_PATH
-        commands_under(APP_SETTINGS_PATH) do
+        commands_under APP_SETTINGS_PATH do
           APP_TYPES.each do |app_type|
-            command(app_type, description: "Settings for #{app_type} app")
+            command app_type, description: "Settings for #{app_type} app"
             commands_under(APP_SETTINGS_PATH + [app_type]) do
               command :show, description: "Show #{app_type} settings",
                 action: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
@@ -754,7 +754,7 @@ module Aspera
             end
           end
         end
-        commands_under(APP_INSTANCE_PATH) do
+        commands_under APP_INSTANCE_PATH do
           command(:list, description: 'List app instances', action: lambda do
             result_list(
               'admin/apps_new',
@@ -763,7 +763,7 @@ module Aspera
             )
           end)
           APP_TYPES.each do |app_type|
-            command(app_type, description: "Show or modify a #{app_type} instance")
+            command app_type, description: "Show or modify a #{app_type} instance"
             commands_under(APP_INSTANCE_PATH + [app_type]) do
               command :show,   description: "Show a #{app_type} instance",
                 arguments: [{name: :"#{app_type}_id", type: :identifier}]
@@ -772,7 +772,7 @@ module Aspera
             end
           end
         end
-        commands_under(%i[admin application membership]) do
+        commands_under %i[admin application membership] do
           command :list, description: 'List app memberships',
             action: ->{result_list('apps/app_memberships')}
           command :show,   description: 'Show an app membership',
@@ -787,27 +787,31 @@ module Aspera
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
 
         # user sub-commands
-        commands_under(:user) do
+        commands_under :user do
           command :workspaces,    description: 'Workspace commands'
           command :profile,       description: 'User profile commands'
           command :preferences,   description: 'User interaction preferences'
           command :notifications, description: 'Notification preferences'
           command :contacts,      description: 'Manage contacts'
-          entity_command :settings, api: :aoc_api, entity: 'client_settings', description: 'Manage client settings'
-        end
-        # user > contacts sub-commands (same CRUD as admin > contact)
-        commands_under(%i[user contacts]) do
-          Operations::ALL.each{ |op| command(op, description: op.to_s.capitalize)}
+          command :settings,      description: 'Manage client settings'
         end
 
-        commands_under(%i[user workspaces]) do
+        commands_under %i[user settings] do
+          crud_commands api: :aoc_api, entity: 'client_settings', name: 'client setting'
+        end
+        # user > contacts sub-commands (same CRUD as admin > contact)
+        commands_under %i[user contacts] do
+          Operations::ALL.each{ |op| command op, description: op.to_s.capitalize}
+        end
+
+        commands_under %i[user workspaces] do
           command :list,    description: 'List workspaces',
             action: ->{result_list('workspaces', fields: %w[id name])}
           command :current, description: 'Show current workspace',
             action: ->{Result::SingleObject.new(aoc_api.workspace_info)}
         end
 
-        commands_under(%i[user profile]) do
+        commands_under %i[user profile] do
           command :show, description: 'Show user profile',
             action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
           command(
@@ -820,7 +824,7 @@ module Aspera
           )
         end
 
-        commands_under(%i[user preferences]) do
+        commands_under %i[user preferences] do
           command(
             :show, description: 'Show user preferences',
             action: lambda do
@@ -839,7 +843,7 @@ module Aspera
           )
         end
 
-        commands_under(%i[user notifications]) do
+        commands_under %i[user notifications] do
           command(
             :show, description: 'Show notification preferences',
             action: lambda do
@@ -859,7 +863,7 @@ module Aspera
         end
 
         # packages sub-commands — instance commands consume package_id
-        commands_under(:packages) do
+        commands_under :packages do
           command :shared_inboxes,    description: 'Shared inbox commands'
           command :send,              description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
@@ -883,7 +887,7 @@ module Aspera
             arguments: [{name: :package_id, type: :identifier}]
         end
 
-        commands_under(%i[packages shared_inboxes]) do
+        commands_under %i[packages shared_inboxes] do
           command :list,       description: 'List shared inboxes',
             action: (lambda do
               result_list(
@@ -903,7 +907,7 @@ module Aspera
         register_short_link_commands(self, %i[packages shared_inboxes short_link])
 
         # files sub-commands: AoC-specific commands + all Gen4 commands from COMMANDS_GEN4_SPEC
-        commands_under(:files) do
+        commands_under :files do
           command :short_link, description: 'Manage file short link',
             arguments: [{name: :folder_dest, type: String}, {name: :link_type, allowed: %i[public private]}],
             setup: :setup_files_short_link
@@ -912,37 +916,31 @@ module Aspera
           command :permission, description: 'Manage permissions'
           command :sync,       description: 'Synchronize folders'
           Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec)
+            command cmd, **spec
           end
         end
         # files > short_link sub-commands
         register_short_link_commands(self, %i[files short_link])
 
         # automation sub-commands
-        commands_under(:automation) do
-          entity_command :instances, description: 'Manage workflow instances', api: :aoc_api, entity: 'workflow_instances'
-          command :workflows, description: 'Manage workflows'
-        end
+        commands_under :automation  do
+          commands_under :instances do
+            crud_commands api: :aoc_api, entity: 'workflow_instances', name: 'workflow instance'
+          end
 
-        commands_under(%i[automation workflows]) do
-          command :create,  description: 'Create a workflow'
-          command :list,    description: 'List workflows'
-          command :show,    description: 'Show a workflow',   arguments: [{name: :workflow_id, type: :identifier}]
-          command :modify,  description: 'Modify a workflow', arguments: [{name: :workflow_id, type: :identifier}]
-          command :delete,  description: 'Delete a workflow', arguments: [{name: :workflow_id, type: :identifier}]
-          command :launch, description: 'Launch a workflow',
-            arguments: [{name: :wf_id, type: :identifier}],
-            action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
-          command :action, description: 'Add action to workflow (TODO)'
-        end
-
-        commands_under(%i[automation workflows action]) do
-          command :list,   description: 'List actions (TODO)',
-            arguments: [{name: :wf_id, type: :identifier}]
-          command :create, description: 'Create an action (TODO)',
-            arguments: [{name: :wf_id, type: :identifier}]
-          command :show,   description: 'Show an action (TODO)',
-            arguments: [{name: :wf_id, type: :identifier}]
+          commands_under :workflows do
+            crud_commands api: :@automation_api, entity: 'workflows'
+            command :launch, description: 'Launch a workflow',
+              arguments: [{name: :wf_id, type: :identifier}],
+              action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
+            commands_under :action, description: 'Add action to workflow (TODO)' do
+              %i[list create show].each do |cmd|
+                command cmd,
+                  description: "#{cmd.capitalize} action (TODO)",
+                  arguments:   [{name: :wf_id, type: :identifier}]
+              end
+            end
+          end
         end
 
         # --- setup methods ---
@@ -1568,13 +1566,6 @@ module Aspera
           define_action_method([:admin, :user, pref, :modify]) do |properties:, user_id:, **|
             aoc_api.update("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}", properties)
             Result::Status.new('modified')
-          end
-        end
-
-        # automation > workflows > CRUD operations
-        Operations::ALL.each do |op|
-          define_action_method([:automation, :workflows, op]) do
-            entity_execute(api: @automation_api, entity: 'workflows', command: op)
           end
         end
 

@@ -72,11 +72,11 @@ module Aspera
             arguments: [{name: :access_key_id, type: :identifier}]
         end
 
-        commands_under(%i[access_key node]) do
+        commands_under %i[access_key node] do
           command :permission, description: 'Manage permissions'
           command :sync,       description: 'Synchronize folders'
           Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec)
+            command cmd, **spec
           end
         end
 

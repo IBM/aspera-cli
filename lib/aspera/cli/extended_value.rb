@@ -166,7 +166,7 @@ module Aspera
           value = m[2]
           break if SPECIAL_HANDLERS.include?(handler)
         end
-        Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value}"}
+        Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value.class}:#{value}"}
         handlers_reversed.each do |handler|
           value = @handlers[handler].call(value)
         rescue => e
