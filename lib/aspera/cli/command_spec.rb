@@ -16,7 +16,10 @@ module Aspera
     # @!attribute default     [Object, nil]               Default value when mandatory: false and no argument provided
     # @!attribute schema      [String, nil]               JSON schema name for validation and --help introspection
     # @!attribute bulk        [Boolean]                   When true, wraps read+loop for bulk mode (Array if --bulk yes)
-    # @!attribute lookup      [Symbol, nil]               Instance method name for percent-selector resolution (only used when type: :identifier)
+    # @!attribute lookup      [Symbol, Proc, nil]         Percent-selector resolver (only used when type: :identifier).
+    #                                                     Symbol → resolved via send(lookup, field, value, **ctx).
+    #                                                     Proc/lambda → called via instance_exec(field, value, **ctx, &lookup).
+    #                                                     Style: use Symbol for named methods; ->(){} for 1-liners; lambda do…end for 2–3 statements.
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
     # @!attribute interactive [Boolean]                   When true, sets ask_missing_mandatory before resolving so interactive prompting is triggered when no CLI args are provided
     ArgumentSpec = Struct.new(
@@ -83,7 +86,6 @@ module Aspera
     # @!attribute delegates_to     [Symbol, Array<Symbol>, nil]  Re-enter the command tree at this path
     # @!attribute delegate_instance [Symbol, nil]                Instance method returning a different plugin object
     # @!attribute aliases          [Array<Symbol>, nil] Alternative names accepted for this command (each resolves to this command's id)
-    # @!attribute entity_execute   [Hash, nil]                   Shorthand: expand to Base#entity_execute with these parameters
     # @!attribute transfer_paths   [:send, :receive, nil]        File-list resolution delegated to TransferAgent; mutually exclusive with arguments
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
     # @!attribute query_schema     [String, nil]                 Schema path for --query help; when set, the runner hints `--query=help`
@@ -98,7 +100,6 @@ module Aspera
       :delegates_to,
       :delegate_instance,
       :aliases,
-      :entity_execute,
       :transfer_paths,
       :condition,
       :query_schema,
@@ -134,19 +135,6 @@ module Aspera
       # @return [Symbol]
       def action_method_name
         self.class.action_method(full_path)
-      end
-
-      # Derive the request body schema path from body_component + entity + command.
-      # Returns nil when body_component is absent or command has no body (:show, :list, :delete).
-      # @param cmd [Symbol] e.g. :create, :modify
-      # @return [String, nil]
-      def body_schema_for(cmd)
-        return unless (bc = entity_execute&.[](:body_component))
-        entity_path = entity_execute[:entity].to_s
-        case cmd
-        when :create then Schema::Registry.req_body(bc, "#{entity_path}.post")
-        when :modify then Schema::Registry.req_body(bc, "#{entity_path}.put")
-        end
       end
     end
   end

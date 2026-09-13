@@ -49,20 +49,50 @@ module Aspera
             command_registry.register(CommandSpec.new(id: id, **kwargs))
           end
 
-          # DSL class method: shorthand for a command whose sole action is Base#entity_execute.
-          # The api: value is a Symbol resolved at runtime: if it starts with '@' it is treated
-          # as an instance variable name; otherwise it is sent as a method call.
-          # description: defaults to "Manage <last segment of entity path>" when omitted.
-          # @param id          [Symbol]        Command identifier
-          # @param api         [Symbol]        Method name or :@ivar returning the REST API at runtime
-          # @param entity      [String]        API sub-path (e.g. 'admin/dropboxes')
-          # @param description [String, nil]   User-facing help text; derived from entity when nil
-          # @param kwargs      [Hash]          Any other entity_execute params (display_fields:, command:, is_singleton:, etc.)
-          def entity_command(id, api:, entity:, description: nil, arguments: nil, **kwargs)
-            description ||= "Manage #{entity.split('/').last}"
-            cmd_attrs = {description: description, entity_execute: {api: api, entity: entity, **kwargs}}
-            cmd_attrs[:arguments] = arguments if arguments
-            command(id, **cmd_attrs)
+          # Derive a display name from an entity path:
+          # last segment after '/', underscores replaced by spaces, first letter capitalized.
+          # e.g. 'data/smtp_server' -> 'Smtp server', 'data/transfer_settings' -> 'Transfer settings'
+          def entity_display_name(entity)
+            entity.to_s.split('/').last.tr('_', ' ').capitalize
+          end
+
+          # DSL class method: declare CRUD commands for a REST entity.
+          #
+          # For each verb in operations:, registers one CommandSpec with:
+          #   - description: "#{verb.capitalize} #{name}"
+          #   - arguments:   [{name: :id, type: :identifier, lookup: lookup}] for instance verbs
+          #                  (:show, :modify, :delete) when not a singleton; none for global verbs
+          #   - action:      calls entity_<verb>(api:, entity:, **shared_kwargs, **ctx)
+          #
+          # api: is resolved at runtime: :@ivar -> instance_variable_get, else -> send.
+          # entity: may also be a Symbol — resolved at runtime as a ctx key (e.g. :sf_entity).
+          #   This covers cases where the entity path is injected by a parent setup: method.
+          #
+          # @param api        [Symbol, String] Runtime API ref (:@ivar or method name) or literal string
+          # @param entity     [String, Symbol] REST sub-path, or ctx key Symbol resolved at runtime
+          # @param operations [Array<Symbol>]  Verbs to expose; defaults to Operations::ALL
+          # @param name       [String, nil]    Display name; defaults to last segment of entity (static only)
+          # @param lookup     [Symbol, nil]    Instance method for percent-selector resolution
+          # @param kwargs     [Hash]           Shared params forwarded to every per-verb method
+          def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, **kwargs)
+            name       ||= entity_display_name(entity) unless entity.is_a?(Symbol)
+            operations ||= Operations::ALL
+            operations.each do |verb|
+              id_arg = ([{name: :id, type: :identifier, lookup: lookup}] if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
+              action_proc = lambda do |**ctx|
+                resolved_api =
+                  if api.is_a?(Symbol)
+                    api.to_s.start_with?('@') ? instance_variable_get(api) : send(api)
+                  else
+                    api
+                  end
+                resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
+                send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
+              end
+              cmd_attrs = {description: "#{verb.capitalize} #{name || entity.inspect}", action: action_proc}
+              cmd_attrs[:arguments] = id_arg if id_arg
+              command(verb, **cmd_attrs)
+            end
           end
 
           # DSL class method: define an instance method whose name is derived from a path array.
@@ -75,11 +105,35 @@ module Aspera
 
           # DSL class method: scope block that sets a default parent for nested command() calls.
           # Fully re-entrant: blocks may be nested for multi-level parent paths.
-          # @param parent [Symbol, Array<Symbol>] parent path applied to every command() inside
+          # If the terminal node of `parent` has not been declared yet, it is auto-declared
+          # as an intermediate command with description: "Manage <name>" (or the given description:).
+          #
+          # `parent` is resolved relative to the current scope:
+          #   - Symbol or single-element Array -> appended to @current_parent (relative)
+          #   - Multi-segment Array            -> used as-is (absolute path)
+          #
+          # @param parent      [Symbol, Array<Symbol>] relative segment or absolute path
+          # @param description [String, nil]           Description of entity for the auto-declared node
           # @yieldreturn [void]
-          def commands_under(parent)
+          def commands_under(parent, description: nil)
+            # Resolve path: a single Symbol (or 1-element array) is relative to current scope.
+            path =
+              if parent.is_a?(Symbol) || (parent.is_a?(Array) && parent.length == 1)
+                Array(@current_parent) + [Array(parent).last]
+              else
+                Array(parent)
+              end
+            unless command_registry[path]
+              id = path.last
+              desc = description || "Manage #{entity_display_name(id)}"
+              parent_path = path[0..-2]
+              saved = @current_parent
+              @current_parent = parent_path.empty? ? nil : parent_path
+              command(id, description: desc)
+              @current_parent = saved
+            end
             previous = @current_parent
-            @current_parent = parent
+            @current_parent = path
             yield
           ensure
             @current_parent = previous
@@ -322,11 +376,13 @@ module Aspera
               (spec&.arguments || []).each do |arg_spec|
                 next if ctx.key?(arg_spec.name)
                 if arg_spec.type.eql?(:identifier)
-                  lookup_method = arg_spec.lookup
-                  res_id = if lookup_method
-                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| send(lookup_method, f, v, **ctx)}
-                  else
+                  lookup_cb = arg_spec.lookup
+                  res_id = if lookup_cb.nil?
                     options.instance_identifier(description: arg_spec.name.to_s)
+                  elsif lookup_cb.is_a?(Symbol)
+                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| send(lookup_cb, f, v, **ctx)}
+                  else
+                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| instance_exec(f, v, **ctx, &lookup_cb)}
                   end
                   ctx = ctx.merge(arg_spec.name => res_id)
                 else
@@ -360,7 +416,7 @@ module Aspera
         end
 
         # Phase B, child branch: consume the next command argument, resolve the matching
-        # child spec, handle delegation / entity_execute shorthands, and recurse or execute.
+        # child spec, handle delegation, and recurse or execute.
         # --help is intercepted at two points:
         #   1. Before get_next_command when no positional arg is pending: raises HelpRequest
         #      immediately so the subcommand list with descriptions is shown rather than a
@@ -401,9 +457,6 @@ module Aspera
             return target.dispatch_from_registry(Array(child.delegates_to), {})
           end
           return dispatch_from_registry(Array(child.delegates_to), ctx) if child.delegates_to
-
-          # entity_execute shorthand
-          return run_entity_execute(child, ctx, current_path + [command]) if child.entity_execute
 
           # Both intermediate and leaf: instance_arg + setup are handled by Phase A of the next call
           dispatch_from_registry(current_path + [command], ctx)
@@ -449,52 +502,18 @@ module Aspera
           (spec.arguments || []).each do |arg_spec|
             next if ctx.key?(arg_spec.name)
             if arg_spec.type.eql?(:identifier)
-              lookup_method = arg_spec.lookup
-              block = lookup_method ? ->(f, v){send(lookup_method, f, v, **ctx)} : nil
+              lookup_cb = arg_spec.lookup
+              block =
+                if lookup_cb.nil? then nil
+                elsif lookup_cb.is_a?(Symbol) then ->(f, v){send(lookup_cb, f, v, **ctx)}
+                else ->(f, v){instance_exec(f, v, **ctx, &lookup_cb)}
+                end
               ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
             else
               ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
             end
           end
           invoke_action(a, [], ctx)
-        end
-
-        # Expand an entity_execute shorthand from a CommandSpec.
-        # Calls Base#entity_execute with the parameters from spec.entity_execute merged
-        # with the context hash (context entries are low-priority: spec params win).
-        # @param spec [CommandSpec] the command spec carrying entity_execute: Hash
-        # @param ctx [Hash] accumulated context (e.g. api:, lookup block)
-        # @return [Object]
-        def run_entity_execute(spec, ctx, help_path = nil)
-          ee_params = spec.entity_execute.dup
-          # Resolve api: Symbol at runtime: :@ivar -> instance_variable_get, :method -> send
-          if (api_ref = ee_params[:api]).is_a?(Symbol)
-            ee_params[:api] = if api_ref.to_s.start_with?('@')
-              instance_variable_get(api_ref)
-            else
-              send(api_ref)
-            end
-          end
-          # Merge context into params (spec wins on key collision)
-          merged = ctx.merge(ee_params)
-          # When no command: was declared in entity_execute:, read it from the CLI
-          merged[:command] ||= options.get_next_command(Operations::ALL)
-          # Intercept --help after the command is known
-          if options.help_requested
-            @help_path = help_path ? help_path + [merged[:command]] : [merged[:command]]
-            raise Cli::HelpRequest, self
-          end
-          # Extract lookup_block before passing to entity_execute (it is not a kwarg of entity_execute).
-          # Wrap it with instance_exec so that instance variables (e.g. @api_node) defined on the
-          # CommandSpec's lookup_block lambda resolve against the current plugin instance at call time,
-          # not against the class scope where the lambda was lexically defined.
-          raw_block = merged.delete(:lookup_block)
-          block = raw_block ? ->(*args){instance_exec(*args, &raw_block)} : nil
-          if block
-            entity_execute(**merged, &block)
-          else
-            entity_execute(**merged)
-          end
         end
 
         # Resolve a single positional argument from the CLI argument stream.
@@ -587,121 +606,118 @@ module Aspera
           )
         end
 
-        # Operations: Create, Delete, Show, List, Modify
-        # @param api [Aspera::Rest] API to use
-        # @param entity [String] Sub path in URL to resource relative to base url
-        # @param command [Symbol] Command to execute: :create, :show, :list, :modify, :delete
-        # @param display_fields [Array, nil] Fields to display by default
-        # @param items_key [String, nil] Result is in a sub key of the JSON
-        # @param delete_style [String, nil] If set, the delete operation by array in payload
-        # @param id_as_arg [Boolean, String] If set, the id is provided as url argument ?<id_as_arg>=<id>
-        # @param is_singleton [Boolean] If `true`, entity is the full path to the resource
-        # @param list_query [Hash, nil] Query parameters for list operation
-        # @param body_component [String, nil] Registry component key used to derive the request body schema:
-        #   :create -> `entity.post`, :modify -> `entity.put`
-        # @param query_component [String, nil] Registry component key used to derive the query parameters schema.
-        #   When set, `--query=help` on list/delete commands displays the available filter parameters.
-        # @param input_data [Array, Hash, nil] Pre-resolved data for :create (Array) or :modify (Hash).
-        #   When nil, data is read from the CLI.
-        # @param res_id [String, Array, nil] Pre-resolved resource identifier(s) for instance commands.
-        #   When nil, identifier is read from the CLI.
-        # @yieldparam value [String] Value to search for identifier (lookup block)
-        # @yieldreturn [String] The identifier
-        # @return [Hash] Result suitable for CLI result
-        def entity_execute(
-          api:,
-          entity:,
-          command:,
-          display_fields: nil,
-          items_key: nil,
-          delete_style: nil,
-          id_as_arg: false,
-          is_singleton: false,
-          list_query: nil,
-          body_component: nil,
-          query_component: nil,
-          input_data: nil,
-          res_id: nil,
-          &block
-        )
-          Aspera.assert_type(command, Symbol)
-          # Derive query schema path from query_component + entity
+        # --- Per-verb entity action methods ---
+        # Each method handles exactly one CRUD verb.
+        # The resource id (when needed) is received as `id:` from ctx — it must be
+        # resolved upstream via an ArgumentSpec(type: :identifier) on the command,
+        # NOT read from the CLI queue inside the method.
+
+        # List all instances of an entity.
+        # @param api             [Aspera::Rest]  REST API object
+        # @param entity          [String]        API sub-path
+        # @param display_fields  [Array, nil]    Fields to display
+        # @param items_key       [String, nil]   Sub-key in response containing the array
+        # @param list_query      [Hash, nil]     Default query parameters
+        # @param query_component [String, nil]   Registry key for --query=help schema
+        def entity_list(api:, entity:, display_fields: nil, items_key: nil, list_query: nil, query_component: nil, **)
           qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
-          # Derive request body schema from body_component + entity + HTTP method
-          schema =
-            if body_component
-              case command
-              when :create then Schema::Registry.req_body(body_component, "#{entity}.post")
-              when :modify then Schema::Registry.req_body(body_component, "#{entity}/{id}.put")
-              end
-            end
-
-          if is_singleton
-            one_res_path = entity
-          elsif Operations::INSTANCE.include?(command)
-            # Use pre-resolved identifier if provided; otherwise fall back to CLI read (entity_command shorthand)
-            one_res_id = res_id || options.instance_identifier(&block)
-            one_res_path = "#{entity}/#{one_res_id}"
-            one_res_path = "#{entity}?#{id_as_arg}=#{one_res_id}" if id_as_arg
+          data, http = api.read(entity, query_read_delete(default: list_query, schema: qs_path), ret: :both)
+          return Result::Empty.new if http.code == '204'
+          # TODO: not generic : which application is this for ?
+          if http['Content-Type'].start_with?('application/vnd.api+json')
+            Log.log.debug('is vnd.api')
+            data = data[entity]
           end
-
-          case command
-          when :create
-            Aspera.assert(!is_singleton, type: BadArgument){'cannot create singleton'}
-            unless input_data
-              # No pre-resolved data: read from CLI
-              is_bulk = options.get_option(:bulk)
-              raw = options.get_next_argument('data', validation: is_bulk ? Array : Hash, schema: schema)
-              input_data = is_bulk ? raw : [raw]
-            end
-            return bulk_result(input_data, command: command, fields: display_fields) do |params|
-              api.create(entity, params)
-            end
-          when :delete
-            Aspera.assert(!is_singleton, type: BadArgument){'cannot delete singleton'}
-            if !delete_style.nil?
-              one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
-              Aspera.assert_type(one_res_id, Array, type: Cli::BadArgument)
-              api.delete(
-                entity,
-                nil,
-                content_type: Mime::JSON,
-                body:         {delete_style => one_res_id}
-              )
-              return Result::Status.new('deleted')
-            end
-            return bulk_result(one_res_id, command: command) do |one_id|
-              api.delete("#{entity}/#{one_id}", query_read_delete(schema: qs_path))
-              {'id' => one_id}
-            end
-          when :show
-            return Result::SingleObject.new(api.read(one_res_path), fields: display_fields)
-          when :list
-            data, http = api.read(entity, query_read_delete(default: list_query, schema: qs_path), ret: :both)
-            return Result::Empty.new if http.code == '204'
-            # TODO: not generic : which application is this for ?
-            if http['Content-Type'].start_with?('application/vnd.api+json')
-              Log.log.debug('is vnd.api')
-              data = data[entity]
-            end
-            data = data[items_key] if items_key
-            case data
-            when Hash
-              return Result::SingleObject.new(data, fields: display_fields)
-            when Array
-              return Result::ObjectList.new(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
-              return Result::ValueList.new(data)
-            else
-              Aspera.error_unexpected_value(data.class.name){'list type'}
-            end
-          when :modify
-            # Use pre-resolved data if provided; otherwise read from CLI
-            parameters = input_data || options.get_next_argument('data', validation: Hash, schema: schema)
-            api.update(one_res_path, parameters)
-            return Result::Status.new('modified')
-          else
-            Aspera.error_unexpected_value(command){'command'}
+          data = data[items_key] if items_key
+          case data
+          when Hash then Result::SingleObject.new(data, fields: display_fields)
+          when Array
+            return Result::ObjectList.new(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
+            Result::ValueList.new(data)
+          else Aspera.error_unexpected_value(data.class.name){'list type'}
           end
+        end
+
+        # Show one instance of an entity.
+        # @param api            [Aspera::Rest]    REST API object
+        # @param entity         [String]          API sub-path
+        # @param id             [String, nil]     Resource identifier; nil when is_singleton: true
+        # @param display_fields [Array, nil]      Fields to display
+        # @param is_singleton   [Boolean]         When true, entity is the full path (no id appended)
+        # @param id_as_arg      [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>
+        def entity_show(api:, entity:, id: nil, display_fields: nil, is_singleton: false, id_as_arg: false, **)
+          path = entity_res_path(entity, id, is_singleton: is_singleton, id_as_arg: id_as_arg)
+          Result::SingleObject.new(api.read(path), fields: display_fields)
+        end
+
+        # Create one or more instances of an entity (supports bulk).
+        # @param api            [Aspera::Rest]  REST API object
+        # @param entity         [String]        API sub-path
+        # @param display_fields [Array, nil]    Fields to display
+        # @param body_component [String, nil]   Registry key for request body schema
+        # @param input_data     [Array, nil]    Pre-resolved data; when nil, read from CLI
+        def entity_create(api:, entity:, display_fields: nil, body_component: nil, input_data: nil, **)
+          schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}.post") : nil
+          unless input_data
+            is_bulk = options.get_option(:bulk)
+            raw = options.get_next_argument('data', validation: is_bulk ? Array : Hash, schema: schema)
+            input_data = is_bulk ? raw : [raw]
+          end
+          bulk_result(input_data, command: :create, fields: display_fields) do |params|
+            api.create(entity, params)
+          end
+        end
+
+        # Modify an existing instance of an entity.
+        # @param api            [Aspera::Rest]    REST API object
+        # @param entity         [String]          API sub-path
+        # @param id             [String, nil]     Resource identifier; nil when is_singleton: true
+        # @param is_singleton   [Boolean]         When true, entity is the full path (no id appended)
+        # @param id_as_arg      [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>
+        # @param body_component [String, nil]     Registry key for request body schema
+        # @param input_data     [Hash, nil]       Pre-resolved data; when nil, read from CLI
+        def entity_modify(api:, entity:, id: nil, is_singleton: false, id_as_arg: false, body_component: nil, input_data: nil, **)
+          schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}/{id}.put") : nil
+          path = entity_res_path(entity, id, is_singleton: is_singleton, id_as_arg: id_as_arg)
+          parameters = input_data || options.get_next_argument('data', validation: Hash, schema: schema)
+          api.update(path, parameters)
+          Result::Status.new('modified')
+        end
+
+        # Delete one or more instances of an entity (supports bulk).
+        # @param api             [Aspera::Rest]    REST API object
+        # @param entity          [String]          API sub-path
+        # @param id              [String, Array, nil] Resource identifier(s)
+        # @param id_as_arg       [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>
+        # @param delete_style    [String, nil]     When set, deletes by sending id array in payload
+        # @param query_component [String, nil]     Registry key for --query=help schema
+        def entity_delete(api:, entity:, id: nil, id_as_arg: false, delete_style: nil, query_component: nil, **)
+          qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
+          if !delete_style.nil?
+            ids = id.is_a?(Array) ? id : [id]
+            Aspera.assert_type(ids, Array, type: Cli::BadArgument)
+            api.delete(entity, nil, content_type: Mime::JSON, body: {delete_style => ids})
+            return Result::Status.new('deleted')
+          end
+          bulk_result(id, command: :delete) do |one_id|
+            api.delete(
+              id_as_arg ? "#{entity}?#{id_as_arg}=#{one_id}" : "#{entity}/#{one_id}",
+              query_read_delete(schema: qs_path)
+            )
+            {'id' => one_id}
+          end
+        end
+
+        # Build the resource path for an instance operation.
+        # @param entity       [String]          API sub-path
+        # @param id           [String, nil]     Resource identifier
+        # @param is_singleton [Boolean]         When true, entity IS the full path
+        # @param id_as_arg    [Boolean, String] When set, id appended as ?<id_as_arg>=<id>
+        # @return [String]
+        def entity_res_path(entity, id, is_singleton: false, id_as_arg: false)
+          return entity if is_singleton
+          return "#{entity}?#{id_as_arg}=#{id}" if id_as_arg
+          "#{entity}/#{id}"
         end
 
         # Query parameters in URL suitable for REST: list/`GET` and delete/`DELETE`

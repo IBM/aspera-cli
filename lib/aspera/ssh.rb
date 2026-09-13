@@ -110,9 +110,7 @@ module Aspera
       end
       error_text = error.join
       hint = error_text.include?('Could not chdir to home directory') ? "\nHint: home not created in Windows?" : ''
-      if exit_code&.nonzero?
-        raise Error, "#{cmd}: exit #{exit_code}, #{error_text.chomp}#{hint}"
-      end
+      raise Error, "#{cmd}: exit #{exit_code}, #{error_text.chomp}#{hint}" if exit_code&.nonzero?
       Log.log.error{"#{error_text}#{hint}"} unless error_text.empty?
       # response as single string
       return response.join

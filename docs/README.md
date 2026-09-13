@@ -2703,8 +2703,8 @@ coffee --ui=text --image.text=true
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
 commands
 detect app.example.com
-detect https://faspex5.example.com/path
-detect https://faspex5.example.com/path faspex5
+detect https://f5.example.com/path
+detect https://f5.example.com/path faspex5
 detect https://node.example.com/path
 detect https://server.example.com/path
 detect https://shares.example.com/path shares
@@ -2788,7 +2788,7 @@ vault info
 vault list
 vault show my_label
 wizard https://console.example.com/path console
-wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
+wizard https://f5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
 wizard https://server.example.com/path server --username=my_username --password=my_password
@@ -8526,7 +8526,7 @@ admin smtp test my_email_external
 admin workgroups list
 bearer_token
 gateway @: url=https://localhost:12346/aspera/faspex
-health --url=https://faspex5.example.com/path
+health --url=https://f5.example.com/path
 invitation list
 invitations create @: email_address=aspera.user1+u@gmail.com
 packages browse <id> --query.recursive=true
@@ -8543,9 +8543,9 @@ packages receive ALL --once-only=yes --to-folder=.
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
-packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
+packages send @: 'title=for shared inbox' recipients.0=my_shared_box_name metadata.Options=Opt1 'metadata.TextInput=example text' END test_file.bin
+packages send @: 'title=test title' recipients.0.name=my_username END test_file.bin --ts.content_protection_password=my_secret_here
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
-packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts.content_protection_password=my_secret_here
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
 packages show --box=my_shared_box_name <id>
 packages show --box=my_workgroup --group-type=workgroups <id>

@@ -375,7 +375,7 @@ module Aspera
         end
 
         # Per-resource configuration for admin CRUD sub-trees.
-        # Keys mirror entity_execute kwargs; extra_commands lists additional leaf commands.
+        # Keys mirror entity_list/show/create/modify/delete kwargs; extra_commands lists additional leaf commands.
         # @return [Hash{Symbol => Hash}]
         RESOURCE_CONFIG = {
           accounts:            {
@@ -428,7 +428,7 @@ module Aspera
           v.is_a?(Proc) ? instance_exec(&v) : v
         end
 
-        # Build exec_args hash for entity_execute from RESOURCE_CONFIG for the given resource.
+        # Build args hash from RESOURCE_CONFIG for use with entity_list/show/create/modify/delete.
         def res_exec_args(res_sym)
           cfg = RESOURCE_CONFIG.fetch(res_sym, {})
           {
@@ -484,7 +484,7 @@ module Aspera
         command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: ->{Result::SingleObject.new(@api_v5.read('version'))}
         command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: ->{Result::Text.new(@api_v5.oauth.authorization)}
         command :packages, description: 'Manage packages', setup: :setup_api_v5
-        commands_under(:packages) do
+        commands_under :packages do
           command :list,   description: 'List packages'
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
@@ -494,11 +494,9 @@ module Aspera
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path)}
-          command(
-            :status, description: 'Wait for package status', setup: :setup_package_id,
+          command :status, description: 'Wait for package status', setup: :setup_package_id,
             arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
             action: ->(status_list:, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
-          )
           command :delete, description: 'Delete packages', setup: :setup_package_id
           command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive,
             action: ->(package_id:, **){package_receive(package_id)}
@@ -516,26 +514,28 @@ module Aspera
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
         command :invitations,    description: 'Manage invitations', setup: :setup_api_v5
 
-        commands_under(:invitations) do
+        commands_under :invitations do
           command :create, description: 'Create an invitation',
             arguments: [{name: :input_data, type: Hash, bulk: true}]
           command :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}]
-          Operations::ALL.reject{ |op| op == :create}.each do |op|
-            id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :invitation_id, type: :identifier}]}
-            command(op, description: "#{op.capitalize} invitations", **id_args)
-          end
+          crud_commands entity: 'invitations',
+            api:            :@api_v5,
+            operations:     Operations::ALL - %i[create],
+            items_key:      'invitations',
+            display_fields: %w[id public recipient_type recipient_name email_address]
         end
 
-        commands_under(:user) do
+        commands_under :user do
           command :account, description: 'Show account information', action: ->{Result::SingleObject.new(@api_v5.read('account', query_read_delete))}
           command :profile, description: 'Manage user profile'
         end
 
-        commands_under(%i[user profile]) do
+        commands_under %i[user profile] do
           command :show, description: 'Show user profile', action: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
           command(
-            :modify, description: 'Modify user profile',
+            :modify,
+            description: 'Modify user profile',
             arguments: [{name: :properties, type: Hash}],
             action: lambda do |properties:, **|
               @api_v5.update('account/preferences', properties)
@@ -544,7 +544,7 @@ module Aspera
           )
         end
 
-        commands_under(:shared_folders) do
+        commands_under :shared_folders do
           command :list,   description: 'List shared folders', action: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
@@ -552,7 +552,7 @@ module Aspera
         end
 
         # admin sub-tree: fixed commands + all ADMIN_RESOURCES with their sub-commands
-        commands_under(:admin) do
+        commands_under :admin do
           command :configuration, description: 'Manage Faspex 5 configuration'
           command :smtp,          description: 'Manage SMTP configuration'
           command :events,        description: 'List events'
@@ -566,7 +566,7 @@ module Aspera
             is_singleton = cfg[:is_singleton] || false
             entity_path    = cfg[:entity] || res.to_s
             body_component = cfg[:body_component]
-            command(res, description: "Manage #{res.to_s.tr('_', ' ')}")
+            command res, description: "Manage #{res.to_s.tr('_', ' ')}"
             commands_under([:admin, res]) do
               cmds.each do |c|
                 ia = ia_cmds[c] || {}
@@ -595,32 +595,39 @@ module Aspera
                     query_schema: Schema::Registry.query_params(cfg[:query_component], entity_path)
                   )
                 end
-                command(c, description: c.to_s.tr('_', ' ').capitalize, **spec_kwargs)
+                command c, description: c.to_s.tr('_', ' ').capitalize, **spec_kwargs
               end
             end
           end
         end
 
-        commands_under(%i[admin nodes]) do
+        commands_under %i[admin nodes] do
           command :shared_folders, description: 'Manage shared folders',
             arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id}],
             setup: :setup_admin_nodes_shared_folders
         end
 
         # admin > nodes > shared_folders sub-tree
-        commands_under(%i[admin nodes shared_folders]) do
-          Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+        # entity: :sf_entity is resolved at runtime from ctx (injected by setup_admin_nodes_shared_folders).
+        commands_under %i[admin nodes shared_folders] do
+          crud_commands entity: :sf_entity,
+            api: :@api_v5,
+            name: 'shared folder',
+            lookup: :lookup_sf_id,
+            items_key: 'shared_folders'
           command :user, description: 'Custom access users',
             arguments: [{name: :sf_id, type: :identifier, lookup: :lookup_sf_id}],
             setup: :setup_admin_nodes_shared_folders_user
         end
 
         # admin > nodes > shared_folders > user sub-tree (custom access users)
-        commands_under(%i[admin nodes shared_folders user]) do
-          Operations::ALL.each{ |c| command(c, description: c.to_s.tr('_', ' ').capitalize)}
+        # entity: :user_path is resolved at runtime from ctx (injected by setup_admin_nodes_shared_folders_user).
+        commands_under %i[admin nodes shared_folders user] do
+          crud_commands entity: :user_path, api: :@api_v5, name: 'custom access user', lookup: :lookup_sf_user_id, items_key: 'users'
         end
 
-        MEMBER_SUBS = %i[members saml_groups].freeze
+        # `members` and `saml_groups`
+        MEMBER_SAML_GROUP = %i[members saml_groups].freeze
         CRUD_NO_SHOW = %i[create list modify delete].freeze
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
@@ -630,20 +637,25 @@ module Aspera
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          MEMBER_SUBS.each do |sub|
-            commands_under([:admin, res]) do
+          MEMBER_SAML_GROUP.each do |sub|
+            member_id_sym = sub.eql?(:saml_groups) ? :group_id : :member_id
+            lookup_sym    = :"lookup_#{res}_#{sub}_id"
+            commands_under [:admin, res] do
               command sub, description: sub.to_s.tr('_', ' ').capitalize,
                 arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: :"lookup_#{res}_id"}],
                 setup: :"setup_admin_#{res}_instance"
             end
-            commands_under([:admin, res, sub]) do
+            commands_under [:admin, res, sub] do
               CRUD_NO_SHOW.each do |c|
-                args = if c.eql?(:create) && sub.eql?(:members)
-                  {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
-                else
-                  {}
-                end
-                command(c, description: c.to_s.capitalize, **args)
+                args =
+                  if c.eql?(:create) && sub.eql?(:members)
+                    {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
+                  elsif Operations::INSTANCE.include?(c)
+                    {arguments: [{name: member_id_sym, type: :identifier, lookup: lookup_sym}]}
+                  else
+                    {}
+                  end
+                command c, description: c.to_s.capitalize, **args
               end
             end
           end
@@ -654,44 +666,47 @@ module Aspera
           end
         end
 
-        commands_under(%i[admin configuration]) do
+        commands_under %i[admin configuration] do
           command :show, description: 'Show configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
-          command(
-            :modify, description: 'Modify configuration',
+          command :modify, description: 'Modify configuration',
             arguments: [{name: :input_data, type: Hash}],
             action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration', input_data))}
-          )
         end
 
-        commands_under(%i[admin smtp]) do
+        commands_under %i[admin smtp] do
           command :show, description: 'Show SMTP configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
-          command(
-            :create, description: 'Create SMTP configuration',
+          command :create, description: 'Create SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
             action: ->(input_data:, **){Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data))}
-          )
-          command(
-            :modify, description: 'Modify SMTP configuration',
+          command :modify, description: 'Modify SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
             action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data))}
+          command(
+            :delete, description: 'Delete SMTP configuration',
+            action: lambda do
+              @api_v5.delete('configuration/smtp')
+              Result::Status.new('SMTP configuration deleted')
+            end
           )
-          command(:delete, description: 'Delete SMTP configuration', action: lambda do
-            @api_v5.delete('configuration/smtp')
-            Result::Status.new('SMTP configuration deleted')
-          end)
           command :test, description: 'Test SMTP configuration',
             arguments: [{name: :test_data, type: nil}]
         end
 
-        commands_under(%i[admin events]) do
-          command(:application, description: 'List application events', action: lambda do
-            list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
-            Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
-          end)
-          command(:webhook, description: 'List webhook events', action: lambda do
-            list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete, items_key: 'events')
-            Result::ObjectList.new(list, total: total)
-          end)
+        commands_under %i[admin events] do
+          command(
+            :application, description: 'List application events',
+            action: lambda do
+              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
+              Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
+            end
+          )
+          command(
+            :webhook, description: 'List webhook events',
+            action: lambda do
+              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete, items_key: 'events')
+              Result::ObjectList.new(list, total: total)
+            end
+          )
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
@@ -717,14 +732,30 @@ module Aspera
           end
         end
 
-        # admin > <resource> > create / modify / delete / show
+        # admin > <resource> > create / show / modify / delete
         Api::Faspex::ADMIN_RESOURCES.each do |res|
-          CRUD_NO_LIST.each do |op|
-            define_action_method([:admin, res, op]) do |input_data: nil, res_id: nil, **|
-              args = res_exec_args(res)
-              items = input_data.is_a?(Array) ? input_data : [input_data] if input_data
-              entity_execute(command: op, input_data: items, res_id: res_id, **args){ |f, v| res_lookup_id(res, f, v)}
-            end
+          define_action_method([:admin, res, :create]) do |input_data: nil, **|
+            args = res_exec_args(res)
+            items = input_data.is_a?(Array) ? input_data : [input_data] if input_data
+            entity_create(input_data: items, **args)
+          end
+
+          define_action_method([:admin, res, :show]) do |res_id: nil, **|
+            args = res_exec_args(res)
+            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
+            entity_show(id: id, **args)
+          end
+
+          define_action_method([:admin, res, :modify]) do |input_data: nil, res_id: nil, **|
+            args = res_exec_args(res)
+            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
+            entity_modify(id: id, input_data: input_data, **args)
+          end
+
+          define_action_method([:admin, res, :delete]) do |res_id: nil, **|
+            args = res_exec_args(res)
+            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
+            entity_delete(id: id, **args)
           end
         end
 
@@ -764,29 +795,20 @@ module Aspera
         end
 
         # Lookup shared folder id by field/value within a node's shared_folders entity.
-        # Used as lookup: on the :user command under admin > nodes > shared_folders.
-        # sf_entity is available in ctx because setup_admin_nodes_shared_folders ran first (Phase A of parent).
+        # sf_entity is in ctx from setup_admin_nodes_shared_folders (Phase A of parent).
         def lookup_sf_id(field, value, sf_entity:, **)
           @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: field, value: value)['id']
         end
 
-        # admin > nodes > shared_folders > create/modify/delete/show/list
-        Operations::ALL.each do |op|
-          define_action_method([:admin, :nodes, :shared_folders, op]) do |sf_entity:, **|
-            entity_execute(api: @api_v5, entity: sf_entity, items_key: 'shared_folders', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: f, value: v)['id']}
-          end
+        # Lookup custom access user id by field/value within a shared folder's users entity.
+        # user_path is in ctx from setup_admin_nodes_shared_folders_user (Phase A of parent).
+        def lookup_sf_user_id(field, value, user_path:, **)
+          @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
         end
 
         # admin > nodes > shared_folders > user — sf_id: already in ctx via arguments: on the :user command
         def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
           {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
-        end
-
-        # admin > nodes > shared_folders > user > create/modify/delete/show/list (custom access users)
-        Operations::ALL.each do |op|
-          define_action_method([:admin, :nodes, :shared_folders, :user, op]) do |user_path:, **|
-            entity_execute(api: @api_v5, entity: user_path, items_key: 'users', command: op){ |f, v| @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: f, value: v)['id']}
-          end
         end
 
         # admin > shared_inboxes|workgroups — res_id: already in ctx via arguments: on the :members|:saml_groups command
@@ -811,28 +833,47 @@ module Aspera
           end
         end
 
+        # Lookup methods for members/saml_groups identity resolution (used by arguments: lookup:)
+        # res_instance_path is in ctx from setup_admin_{res}_instance (Phase A of parent).
+        %i[shared_inboxes workgroups].each do |res|
+          define_method(:"lookup_#{res}_members_id") do |field, value, res_instance_path:, **|
+            res_path = "#{res_instance_path}/members"
+            @api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
+          end
+          define_method(:"lookup_#{res}_saml_groups_id") do |field, value, res_instance_path:, **|
+            res_path = "#{res_instance_path}/saml_groups"
+            @api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
+          end
+        end
+
         # admin > shared_inboxes|workgroups > members|saml_groups > create/list/modify/delete
         %i[shared_inboxes workgroups].each do |res|
-          MEMBER_SUBS.each do |sub|
-            CRUD_NO_SHOW.each do |op|
-              if op.eql?(:create) && sub.eql?(:members)
-                define_action_method([:admin, res, sub, op]) do |users:, access:, res_instance_path:, **|
-                  res_path = "#{res_instance_path}/#{sub}"
-                  list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
-                  resolved = resolve_member_user_ids(users)
-                  input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
-                  entity_execute(api: @api_v5, entity: res_path, command: op, input_data: input_data, items_key: list_key) do |f, v|
-                    @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
-                  end
-                end
-              else
-                define_action_method([:admin, res, sub, op]) do |res_instance_path:, **|
-                  res_path = "#{res_instance_path}/#{sub}"
-                  list_key = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
-                  entity_execute(api: @api_v5, entity: res_path, command: op, items_key: list_key) do |f, v|
-                    @api_v5.lookup_entity_by_field(entity: res_path, field: f, value: v, query: Rest.php_style({type: %w[user]}))['user_id']
-                  end
-                end
+          MEMBER_SAML_GROUP.each do |sub|
+            lk  = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
+            mid = sub.eql?(:saml_groups) ? :group_id : :member_id
+
+            define_action_method([:admin, res, sub, :list]) do |res_instance_path:, **|
+              entity_list(api: @api_v5, entity: "#{res_instance_path}/#{sub}", items_key: lk)
+            end
+
+            define_action_method([:admin, res, sub, :modify]) do |res_instance_path:, **kwargs|
+              entity_modify(api: @api_v5, entity: "#{res_instance_path}/#{sub}", id: kwargs[mid])
+            end
+
+            define_action_method([:admin, res, sub, :delete]) do |res_instance_path:, **kwargs|
+              entity_delete(api: @api_v5, entity: "#{res_instance_path}/#{sub}", id: kwargs[mid])
+            end
+
+            if sub.eql?(:members)
+              define_action_method([:admin, res, sub, :create]) do |users:, access:, res_instance_path:, **|
+                res_path = "#{res_instance_path}/#{sub}"
+                resolved = resolve_member_user_ids(users)
+                input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
+                entity_create(api: @api_v5, entity: res_path, input_data: input_data)
+              end
+            else
+              define_action_method([:admin, res, sub, :create]) do |res_instance_path:, **|
+                entity_create(api: @api_v5, entity: "#{res_instance_path}/#{sub}")
               end
             end
           end
@@ -937,21 +978,6 @@ module Aspera
           end
         end
 
-        # CRUD handlers for invitations (list, show, modify, delete)
-        Operations::ALL.reject{ |op| op == :create}.each do |op|
-          define_action_method([:invitations, op]) do
-            entity_execute(
-              api: @api_v5,
-              entity: 'invitations',
-              command: op,
-              items_key: 'invitations',
-              display_fields: %w[id public recipient_type recipient_name email_address]
-            ) do |field, value|
-              @api_v5.lookup_entity_by_field(entity: 'invitations', field: field, value: value, query: {})['id']
-            end
-          end
-        end
-
         def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
@@ -979,7 +1005,7 @@ module Aspera
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
         PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
         private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
-          :MEMBER_SUBS, :CRUD_NO_SHOW, :CRUD_NO_LIST
+          :MEMBER_SAML_GROUP, :CRUD_NO_SHOW, :CRUD_NO_LIST
       end
     end
   end

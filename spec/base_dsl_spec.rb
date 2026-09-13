@@ -450,76 +450,186 @@ module Aspera
         end
 
         # ------------------------------------------------------------------
-        # dispatch_from_registry — entity_execute: shorthand
+        # commands_under auto-declaration
         # ------------------------------------------------------------------
 
-        describe '#dispatch_from_registry with entity_execute:' do
-          it 'calls entity_execute with the spec params when command has entity_execute:' do
-            stub_api_obj = Object.new
+        describe 'commands_under auto-declaration' do
+          it 'auto-declares the terminal node when not yet registered' do
             klass = Class.new(Base)
-            klass.command(
-              :bridges, description: 'Manage bridges',
-              entity_execute: {api: :stub_api, entity: 'bridges'}
-            )
-            klass.define_method(:stub_api){stub_api_obj}
-            allow(options).to(receive(:get_next_command).with([:bridges], aliases: nil).and_return(:bridges))
-            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:show))
-            inst = klass.new(context: context)
-            expect(inst).to(receive(:entity_execute).with(api: stub_api_obj, entity: 'bridges', command: :show).and_return(Result::Status.new('ok')))
-            expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'ok')))
+            klass.commands_under(:things) do
+              klass.command(:list, description: 'List things', action: :handle_list)
+            end
+            klass.define_method(:handle_list){nil}
+            reg = klass.command_registry
+            expect(reg[[:things]]).not_to(be_nil)
+            expect(reg[[:things]].description).to(eq('Manage Things'))
           end
 
-          it 'merges ctx into entity_execute params (spec params win on collision)' do
-            spec_api_obj = Object.new
+          it 'uses description: when provided' do
             klass = Class.new(Base)
-            klass.command(
-              :items, description: 'Manage items',
-              entity_execute: {api: :spec_api, entity: 'items'}
-            )
-            klass.define_method(:spec_api){spec_api_obj}
-            allow(options).to(receive(:get_next_command).with([:items], aliases: nil).and_return(:items))
-            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:list))
-            inst = klass.new(context: context)
-            # ctx carries an api key; spec has its own api — spec should win
-            expect(inst).to(receive(:entity_execute).with(api: spec_api_obj, entity: 'items', command: :list).and_return(Result::Status.new('ok')))
-            inst.dispatch_from_registry([], {api: :ctx_api})
+            klass.commands_under(:things, description: 'Browse things') do
+              klass.command(:list, description: 'List things', action: :handle_list)
+            end
+            klass.define_method(:handle_list){nil}
+            expect(klass.command_registry[[:things]].description).to(eq('Browse things'))
           end
 
-          it 'passes lookup_block from ctx as a block to entity_execute (not as a kwarg)' do
-            api_obj = Object.new
+          it 'does not overwrite an existing command declaration' do
             klass = Class.new(Base)
-            klass.command(:res, description: 'Resource', entity_execute: {api: :a, entity: 'res'})
-            klass.define_method(:a){api_obj}
-            allow(options).to(receive(:get_next_command).with([:res], aliases: nil).and_return(:res))
-            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:show))
-            inst = klass.new(context: context)
-            lookup = proc{'found'}
-            # lookup_block must NOT be forwarded as a kwarg — only as a block (may be wrapped for instance_exec)
-            expect(inst).to(
-              receive(:entity_execute).with(api: api_obj, entity: 'res', command: :show) do |**kwargs, &blk|
-                expect(kwargs).not_to(have_key(:lookup_block))
-                expect(blk).not_to(be_nil)
-                Result::Status.new('ok')
-              end
-            )
-            inst.dispatch_from_registry([], {lookup_block: lookup})
+            klass.command(:things, description: 'My things')
+            klass.commands_under(:things) do
+              klass.command(:list, description: 'List things', action: :handle_list)
+            end
+            klass.define_method(:handle_list){nil}
+            expect(klass.command_registry[[:things]].description).to(eq('My things'))
+          end
+        end
+
+        # ------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # crud_commands DSL + per-verb methods
+        # ------------------------------------------------------------------
+
+        describe 'crud_commands' do
+          let(:api_obj){instance_double(Rest, 'api')}
+
+          def build_klass(extra_kwargs = {})
+            ao = api_obj
+            k = Class.new(Base) do
+              command :res, description: 'Resource', setup: :setup_res
+              define_method(:setup_res){{}}
+              crud_commands(api: :resolve_api, entity: 'things', lookup: :lookup_thing_id, **extra_kwargs)
+              define_method(:resolve_api){ao}
+              define_method(:lookup_thing_id){ |_f, _v, **| 'thing-42'}
+            end
+            k
           end
 
-          it 'works together with setup: to provide api from ctx' do
-            klass = Class.new(Base)
-            klass.command(:root_cmd, description: 'Root', setup: :build_stub_api)
-            klass.command(
-              :bridges, parent: :root_cmd, description: 'Bridges',
-              entity_execute: {entity: 'bridges'}
-            )
-            klass.define_method(:build_stub_api){{api: :ctx_api}}
-            allow(options).to(receive(:get_next_command).with([:root_cmd], aliases: nil).and_return(:root_cmd))
-            allow(options).to(receive(:get_next_command).with([:bridges], aliases: nil).and_return(:bridges))
-            allow(options).to(receive(:get_next_command).with(Base::Operations::ALL).and_return(:list))
+          it 'registers one command per operation with auto description' do
+            klass = build_klass
+            reg   = klass.command_registry
+            Base::Operations::ALL.each do |verb|
+              spec = reg[Array(verb)]
+              expect(spec).not_to(be_nil)
+              expect(spec.description).to(eq("#{verb.capitalize} Things"))
+            end
+          end
+
+          it 'adds id ArgumentSpec for instance verbs and none for global verbs' do
+            klass = build_klass
+            reg   = klass.command_registry
+            Base::Operations::INSTANCE.each do |verb|
+              spec = reg[Array(verb)]
+              expect(spec.arguments).not_to(be_nil)
+              expect(spec.arguments.first.name).to(eq(:id))
+              expect(spec.arguments.first.type).to(eq(:identifier))
+              expect(spec.arguments.first.lookup).to(eq(:lookup_thing_id))
+            end
+            Base::Operations::GLOBAL.each do |verb|
+              spec = reg[Array(verb)]
+              expect(spec.arguments).to(be_nil)
+            end
+          end
+
+          it 'omits id ArgumentSpec for instance verbs when is_singleton: true' do
+            klass = build_klass(is_singleton: true)
+            reg   = klass.command_registry
+            Base::Operations::INSTANCE.each do |verb|
+              spec = reg[Array(verb)]
+              expect(spec.arguments).to(be_nil)
+            end
+          end
+
+          it 'restricts to a given operations: list' do
+            ao = api_obj
+            klass = Class.new(Base) do
+              crud_commands(api: :resolve_api, entity: 'things', operations: %i[show list])
+              define_method(:resolve_api){ao}
+            end
+            reg = klass.command_registry
+            expect(reg[[:show]]).not_to(be_nil)
+            expect(reg[[:list]]).not_to(be_nil)
+            expect(reg[[:create]]).to(be_nil)
+          end
+
+          it 'resolves entity: Symbol as a ctx key at runtime' do
+            ao = api_obj
+            resp = instance_double(Net::HTTPResponse, code: '200', '[]': 'application/json')
+            allow(ao).to(receive(:read).with('nodes/7/things', nil, ret: :both)
+              .and_return([[{'id' => '1'}], resp]))
+            allow(options).to(receive(:get_option).with(:query, schema: nil).and_return(nil))
+            allow(options).to(receive(:get_option).with(:bfail).and_return(false))
+            allow(options).to(receive(:get_next_command).with([:list], aliases: nil).and_return(:list))
+            klass = Class.new(Base) do
+              crud_commands(api: :resolve_api, entity: :dynamic_entity, name: 'thing', operations: %i[list])
+              define_method(:resolve_api){ao}
+            end
             inst = klass.new(context: context)
-            # ctx api comes from setup; spec has no api — ctx api is used
-            expect(inst).to(receive(:entity_execute).with(api: :ctx_api, entity: 'bridges', command: :list).and_return(Result::Status.new('ok')))
-            inst.dispatch_from_registry([])
+            # dynamic_entity: injected into ctx by a parent setup:, then forwarded to dispatch
+            result = inst.dispatch_from_registry([], {dynamic_entity: 'nodes/7/things'})
+            expect(result).to(be_a(Result::ObjectList))
+          end
+        end
+
+        describe 'per-verb entity methods' do
+          let(:api_obj){instance_double(Rest, 'api')}
+
+          before do
+            allow(options).to(receive(:get_option).with(:query, schema: nil).and_return(nil))
+            allow(options).to(receive(:get_option).with(:bfail).and_return(false))
+          end
+
+          it 'entity_list delegates to api.read and returns ObjectList' do
+            inst = Base.new(context: context)
+            resp = instance_double(Net::HTTPResponse, code: '200', '[]': 'application/json')
+            allow(api_obj).to(receive(:read).with('things', nil, ret: :both).and_return([[{'id' => '1'}], resp]))
+            result = inst.entity_list(api: api_obj, entity: 'things')
+            expect(result).to(be_a(Result::ObjectList))
+          end
+
+          it 'entity_list returns Empty when HTTP 204' do
+            inst = Base.new(context: context)
+            resp = instance_double(Net::HTTPResponse, code: '204', '[]': 'application/json')
+            allow(api_obj).to(receive(:read).with('things', nil, ret: :both).and_return([nil, resp]))
+            expect(inst.entity_list(api: api_obj, entity: 'things')).to(be_a(Result::Empty))
+          end
+
+          it 'entity_show reads entity/id and returns SingleObject' do
+            inst = Base.new(context: context)
+            allow(api_obj).to(receive(:read).with('things/42').and_return({'id' => '42'}))
+            result = inst.entity_show(api: api_obj, entity: 'things', id: '42')
+            expect(result).to(be_a(Result::SingleObject))
+          end
+
+          it 'entity_show uses entity path directly when is_singleton: true' do
+            inst = Base.new(context: context)
+            allow(api_obj).to(receive(:read).with('things').and_return({'setting' => 'x'}))
+            inst.entity_show(api: api_obj, entity: 'things', is_singleton: true)
+          end
+
+          it 'entity_create reads data from CLI and calls api.create' do
+            inst = Base.new(context: context)
+            allow(options).to(receive(:get_option).with(:bulk).and_return(false))
+            allow(options).to(receive(:get_next_argument).with('data', validation: Hash, schema: nil).and_return({'name' => 'x'}))
+            allow(api_obj).to(receive(:create).with('things', {'name' => 'x'}).and_return({'id' => '1'}))
+            result = inst.entity_create(api: api_obj, entity: 'things')
+            expect(result).to(be_a(Result::SingleObject))
+          end
+
+          it 'entity_modify calls api.update and returns Status' do
+            inst = Base.new(context: context)
+            allow(options).to(receive(:get_next_argument).with('data', validation: Hash, schema: nil).and_return({'name' => 'y'}))
+            allow(api_obj).to(receive(:update).with('things/42', {'name' => 'y'}))
+            result = inst.entity_modify(api: api_obj, entity: 'things', id: '42')
+            expect(result).to(be_a(Result::Status))
+          end
+
+          it 'entity_delete calls api.delete and returns SingleObject' do
+            inst = Base.new(context: context)
+            allow(options).to(receive(:get_option).with(:bulk).and_return(false))
+            allow(api_obj).to(receive(:delete).with('things/42', nil))
+            result = inst.entity_delete(api: api_obj, entity: 'things', id: '42')
+            expect(result).to(be_a(Result::SingleObject))
           end
         end
 

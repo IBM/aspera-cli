@@ -109,7 +109,7 @@ module Aspera
         COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete ls upload download cat sync transport spec]
 
         # Shared DSL metadata for Gen3 commands (description:, arguments:, transfer_paths:, aliases:).
-        # Consumed by commands_under(:files) in shares.rb and commands_under(%i[source node]) in faspex.rb.
+        # Consumed by commands_under(:files) in shares.rb and commands_under %i[source node]) in faspex.rb.
         # :sync is excluded (intermediate node with sub-commands, handled separately).
         # action: entries are node-specific and intentionally omitted.
         COMMANDS_GEN3_SPEC = {
@@ -151,7 +151,7 @@ module Aspera
         COMMANDS_GEN4 = %i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
 
         # Shared DSL metadata for all Gen4 commands (description:, arguments:, transfer_paths:, aliases:).
-        # Consumed by commands_under(%i[access_keys do]) in node.rb and by aoc.rb.
+        # Consumed by commands_under %i[access_keys do]) in node.rb and by aoc.rb.
         # :sync and :permission are excluded: they are intermediate nodes handled separately.
         SINGLE_PATH_ARG = [{name: :path, type: String}].freeze
         COMMANDS_GEN4_SPEC = {
@@ -234,9 +234,7 @@ module Aspera
               # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
               response = @api_node.create('files/browse', query)
               # 'file','symbolic_link'
-              if !Node.gen3_entry_folder?(response['self']) || only_path
-                return Result::SingleObject.new(response['self'])
-              end
+              return Result::SingleObject.new(response['self']) if !Node.gen3_entry_folder?(response['self']) || only_path
               items = response['items']
               total_count ||= response['total_count']
               all_items.concat(items)
@@ -330,6 +328,15 @@ module Aspera
           return selected['snid']
         end
 
+        # Lookup for access_keys: only supports %id:self selector.
+        # @param field [String] must be 'id'
+        # @param value [String] must be 'self'
+        # @return [String] the resolved access key id
+        def lookup_access_key_self_id(field, value, **)
+          Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
+          @api_node.read('access_keys/self')['id']
+        end
+
         # Search /asyncs by name
         # @param field [String] name of the field to search
         # @param value [String] value of the field to search
@@ -364,56 +371,46 @@ module Aspera
           next if cmd.eql?(:sync)        # intermediate node with sub-commands
           next if cmd.eql?(:access_keys) # intermediate node declared separately below
           action = GEN3_NODE_ACTIONS[cmd]
-          command(cmd, **spec, **(action ? {action: action} : {}))
+          command cmd, **spec, **(action ? {action: action} : {})
         end
         command :sync, description: 'Synchronize folders (Gen3)'
-        commands_under(:sync) do
+        commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command(dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send)
+            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send
           end
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, %i[sync admin])
         end
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
-        commands_under(:access_keys) do
+        commands_under :access_keys do
           command :do, description: 'Execute Gen4 command via access key',
             arguments: [{name: :access_key_id, type: :identifier}],
             setup: :setup_access_key_do
           command :set_bearer_key, description: 'Set bearer key on access key',
             arguments: [{name: :access_key_id}, {name: :bearer_key_pem, type: String}]
-          Operations::ALL.each do |op|
-            entity_command(
-              op,
-              api:            :@api_node,
-              entity:         'access_keys',
-              description:    "#{op.capitalize} access keys",
-              command:        op,
-              body_component: Schema::Registry::NODE,
-              arguments:      Operations::GLOBAL.include?(op) ? nil : [{name: :access_key_id, type: :identifier}],
-              lookup_block:   ->(field, value) do
-                Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
-                @api_node.read('access_keys/self')['id']
-              end
-            )
-          end
+          crud_commands entity: 'access_keys',
+            api:            :@api_node,
+
+            body_component: Schema::Registry::NODE,
+            lookup:         :lookup_access_key_self_id
         end
 
-        commands_under(%i[access_keys do]) do
+        commands_under %i[access_keys do] do
           COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command(cmd, **spec)
+            command cmd, **spec
           end
           command :permission, description: 'Manage permissions', setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders'
-          commands_under(%i[access_keys do sync]) do
+          commands_under %i[access_keys do sync] do
             Sync::Operations::DIRECTIONS.each do |dir|
-              command(dir, description: "#{dir.capitalize}-sync", transfer_paths: :send)
+              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send
             end
             command :admin, description: 'Manage sync database (admin operations)'
             SyncActions.register_sync_admin_commands(self, %i[access_keys do sync admin])
           end
         end
-        commands_under(%i[access_keys do permission]) do
+        commands_under %i[access_keys do permission] do
           command :list,   description: 'List permissions on a file'
           command :show,   description: 'Show a permission',
             arguments: [{name: :perm_id, type: :identifier}],
@@ -426,8 +423,7 @@ module Aspera
             arguments: [{name: :perm_id, bulk: true}]
         end
         # async (legacy /async)
-        command :async, description: 'Manage async operations (legacy /async)'
-        commands_under(:async) do
+        commands_under :async, description: 'synchronization (legacy /async)' do
           command :list,      description: 'List async sync IDs', action: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
           command :show,      description: 'Show async summary',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
@@ -441,41 +437,44 @@ module Aspera
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
         end
         # ssync (/asyncs)
-        command :ssync, description: 'Manage sync operations (/asyncs)'
-        commands_under(:ssync) do
-          command :create,    description: 'Create ssync',         action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :create, items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
-          command :list,      description: 'List ssync',           action: ->{entity_execute(api: @api_node, entity: :asyncs, command: :list,   items_key: 'ids'){ |f, v| ssync_lookup(f, v)}}
-          command :show,      description: 'Show ssync',
+        # command :ssync, description: 'Manage sync operations (/asyncs)'
+        commands_under :ssync, description: 'synchronization (/asyncs)' do
+          crud_commands entity: 'asyncs',
+            api: :@api_node,
+            operations: %i[create list],
+            items_key: 'ids',
+            lookup: :ssync_lookup
+          command :show, description: 'Show ssync',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}"))}
-          command :delete,    description: 'Delete ssync',
+          command :delete, description: 'Delete ssync',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: :action_ssync_delete
-          command :start,     description: 'Start a sync',
+          command :start, description: 'Start a sync',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: :action_ssync_start
-          command :stop,      description: 'Stop a sync',
+          command :stop, description: 'Stop a sync',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: :action_ssync_stop
           command :bandwidth, description: 'Show sync bandwidth',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {}))}
-          command :counters,  description: 'Show sync counters',
+          command :counters, description: 'Show sync counters',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {}))}
-          command :files,     description: 'List sync files',
+          command :files, description: 'List sync files',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {}))}
-          command :state,     description: 'Show sync state',
+          command :state, description: 'Show sync state',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state"))}
-          command :summary,   description: 'Show sync summary',
+          command :summary, description: 'Show sync summary',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/summary"))}
         end
         # stream
         command :stream, description: 'Manage stream operations'
-        commands_under(:stream) do
+        commands_under :stream do
           command :list,   description: 'List streams', action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
           command :create, description: 'Create a stream',
             arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
@@ -492,11 +491,11 @@ module Aspera
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
-        commands_under(:transfer) do
-          command :list,              description: 'List transfers'
-          command :cancel,            description: 'Cancel a transfer',
+        commands_under :transfer do
+          command :list, description: 'List transfers'
+          command :cancel, description: 'Cancel a transfer',
             arguments: [{name: :transfer_id, type: :identifier}]
-          command :show,              description: 'Show a transfer',
+          command :show, description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
           command :modify,            description: 'Modify a transfer',
@@ -506,7 +505,7 @@ module Aspera
         end
         # service
         command :service, description: 'Manage services'
-        commands_under(:service) do
+        commands_under :service do
           command :list,   description: 'List services', action: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
           command :create, description: 'Create a service',
             arguments: [{name: :creation_data, type: Hash}]
@@ -515,7 +514,7 @@ module Aspera
         end
         # watch_folder
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
-        commands_under(:watch_folder) do
+        commands_under :watch_folder do
           command :create, description: 'Create a watch folder',
             arguments: [{name: :data, type: Hash}],
             action: ->(data:, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
@@ -534,15 +533,15 @@ module Aspera
         end
         # central
         command :central, description: 'Query Central service'
-        commands_under(:central) do
+        commands_under :central do
           command :session, description: 'Query sessions'
           command :file,    description: 'Query files'
         end
-        commands_under(%i[central session]) do
+        commands_under %i[central session] do
           command :list, description: 'List sessions',
             arguments: [{name: :request_data, type: Hash, mandatory: false, default: nil}]
         end
-        commands_under(%i[central file]) do
+        commands_under %i[central file] do
           command :list,   description: 'List file transfers',
             arguments: [{name: :request_data, type: Hash, mandatory: false, default: nil}]
           command :modify, description: 'Modify file transfer validation',
@@ -592,15 +591,13 @@ module Aspera
         end
 
         def action_mklink(target:, link_path:, **)
-          one_path  = link_path
-          resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: one_path, target: {path: target}}]})
+          resp = @api_node.create('files/create', {'paths' => [{type: :symbolic_link, path: link_path, target: {path: target}}]})
           cli_result_from_paths_response(resp, 'link created')
         end
 
         def action_mkfile(file_path:, contents:, **)
-          one_path = file_path
           contents64 = contents.nil? ? '' : Base64.strict_encode64(contents)
-          resp = @api_node.create('files/create', {'paths' => [{type: :file, path: one_path, contents: contents64}]})
+          resp = @api_node.create('files/create', {'paths' => [{type: :file, path: file_path, contents: contents64}]})
           cli_result_from_paths_response(resp, 'file created')
         end
 

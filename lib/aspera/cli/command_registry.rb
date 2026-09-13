@@ -118,7 +118,7 @@ module Aspera
           # Rule: leaf commands with no explicit action must have a matching instance method
           next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip
-          next if spec.delegates_to || spec.entity_execute # delegated: skip
+          next if spec.delegates_to # delegated: skip
           next unless plugin_class
           implicit_method = CommandSpec.action_method(path)
           unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
