@@ -302,15 +302,37 @@ module Aspera
 
         commands_under :files do
           Node::COMMANDS_SHARES.each do |cmd|
+            next if cmd.eql?(:sync) # intermediate node with sub-commands, declared separately below
             spec = Node::COMMANDS_GEN3_SPEC[cmd] || {description: "Node #{cmd} command"}
             command cmd, **spec
           end
+          command :sync, description: 'Synchronize folders (Gen3)'
+          commands_under :sync do
+            Sync::Operations::DIRECTIONS.each do |dir|
+              command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
+            end
+            command :admin, description: 'Manage sync database (admin operations)'
+            SyncActions.register_sync_admin_commands(self, %i[files sync admin])
+          end
         end
 
-        # One handler per COMMANDS_SHARES command.
-        Node::COMMANDS_SHARES.each do |cmd|
+        # One handler per COMMANDS_SHARES command (except :sync which is an intermediate node).
+        Node::COMMANDS_SHARES.reject{ |cmd| cmd.eql?(:sync)}.each do |cmd|
           define_action_method([:files, cmd]) do |shares_node_plugin:, **ctx|
             shares_node_plugin.dispatch_v3_command(cmd, **ctx)
+          end
+        end
+
+        # Handlers for files > sync > <direction>: delegate to Node's [:sync, dir] leaf.
+        Sync::Operations::DIRECTIONS.each do |dir|
+          define_action_method([:files, :sync, dir]) do |shares_node_plugin:, **ctx|
+            shares_node_plugin.dispatch_from_registry([:sync, dir], ctx, skip_setup: true)
+          end
+        end
+        # Handlers for files > sync > admin > <op>: delegate to Node's [:sync, :admin, op] leaf.
+        SyncActions::ADMIN_COMMANDS.each do |op|
+          define_action_method([:files, :sync, :admin, op]) do |shares_node_plugin:, **ctx|
+            shares_node_plugin.dispatch_from_registry([:sync, :admin, op], ctx, skip_setup: true)
           end
         end
 

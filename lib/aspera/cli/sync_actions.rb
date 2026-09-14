@@ -17,6 +17,8 @@ module Aspera
         (23..24).map{ |i| "P(#{i})"}).freeze
       # Positional arguments shared by sync transfer commands (push/pull/bidi) and sync admin commands.
       PATH_AND_INFO_ARGS = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
+      # Names of the leaf commands registered under any `sync admin` node.
+      ADMIN_COMMANDS = %i[find status meta counters file_info overview query].freeze
       # When a plugin class includes SyncActions, register the :sql option
       # in that class's DSL registry so Base#initialize auto-declares it.
       class << self
