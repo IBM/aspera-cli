@@ -6246,6 +6246,7 @@ f5_workgroup_pack_id:
     - f5_pack_wrkgrp
   tags:
     - save_output
+    - wait_value
     - nodoc
   args:
     - faspex5
@@ -6286,7 +6287,7 @@ f5_shared_browse:
     - faspex5
     - shared
     - browse
-    - "%name:@preset:faspex4.src"
+    - "%name:@preset:f5_misc.shared_folder_name"
 f5_user_bearer:
   args:
     - faspex5
