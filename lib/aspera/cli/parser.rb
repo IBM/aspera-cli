@@ -224,10 +224,15 @@ module Aspera
         first_line.end_with?('.') ? first_line[0..-2] : first_line
       end
 
+      # Reset stored value to nil
+      # @return [nil]
       def clear
         @object = nil
       end
 
+      # Get current option value
+      # @param log [Boolean] whether to log the value retrieval
+      # @return [Object] current value
       def value(log: true)
         current_value =
           case @access
@@ -291,6 +296,9 @@ module Aspera
 
       private
 
+      # Store value according to access mode
+      # @param new_value [Object] value to store
+      # @return [Object] stored value
       def store(new_value)
         case @access
         when :local  then @object = new_value
@@ -397,6 +405,10 @@ module Aspera
     class Parser
       class << self
         # Find shortened string value in allowed symbol list
+        # @param short_value   [String] value or prefix to find
+        # @param descr         [String] description for error messages
+        # @param allowed_values [Array] list of allowed values
+        # @return [Symbol, Boolean] matched symbol or boolean value
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
           # we accept shortcuts
@@ -441,10 +453,15 @@ module Aspera
           name.gsub(Option::NAME_SEP_LINE, Option::NAME_SEP_SYMBOL)
         end
 
+        # Convert option symbol to CLI line flag format
+        # @param name [Symbol, String] option name
+        # @return [String] option flag (e.g. "--option-name")
         def option_name_to_line(name)
           "#{Option::PREFIX}#{name.to_s.gsub(Option::NAME_SEP_SYMBOL, Option::NAME_SEP_LINE)}"
         end
 
+        # Parse percent-selector string into field name and value (extended value is parsed in value)
+        # @param identifier [String] identifier to parse
         # @return [Hash{Symbol => String}, nil] `{field:,value:}` if identifier is a percent selector, else `nil`
         def percent_selector(identifier)
           Aspera.assert_type(identifier, String)
@@ -658,6 +675,10 @@ module Aspera
         res_id
       end
 
+      # Get next positional command argument from accepted list
+      # @param command_list [Array<Symbol>] accepted command names
+      # @param aliases      [Hash, nil] command aliases
+      # @return [Symbol] selected command
       def get_next_command(command_list, aliases: nil); get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
       # Check whether an option has already been declared in this manager
@@ -722,6 +743,8 @@ module Aspera
       end
 
       # Set option to `nil`
+      # @param option_symbol [Symbol] option name
+      # @return [nil]
       def clear_option(option_symbol)
         Aspera.assert_type(option_symbol, Symbol)
         option_def(option_symbol).clear
@@ -755,16 +778,20 @@ module Aspera
       end
 
       # Allows a plugin to add an argument as next argument to process
+      # @param argument [String] argument value to prepend
+      # @return [Array<Option, Argument>] updated tokens list
       def unshift_next_argument(argument)
         @argv_tokens.unshift(Argument.new(argument))
       end
 
-      # Check if there were unprocessed values to generate error
+      # Check if there are no pending positional arguments
+      # @return [Boolean] true if no pending positional arguments
       def command_or_arg_empty?
         pending_arguments.empty?
       end
 
-      # Unprocessed options or arguments ?
+      # Check for unprocessed options or arguments error messages
+      # @return [Array<String>] list of error messages for unprocessed tokens
       def final_errors
         result = []
         result.push("unprocessed options: #{pending_options}") unless pending_options.empty?
@@ -934,6 +961,10 @@ module Aspera
           unless validation.any?{ |t| value.is_a?(t)}
       end
 
+      # Prompt user for console input
+      # @param prompt    [String]  prompt string to display
+      # @param sensitive [Boolean] whether to hide typed input
+      # @return [String] user input stripped of trailing newline
       def prompt_user_input(prompt, sensitive: false)
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
@@ -1102,7 +1133,10 @@ module Aspera
         end
       end
 
-      # generate command line option from option symbol
+      # Generate command line option string from option symbol
+      # @param symbol  [Symbol]      option name
+      # @param opt_val [String, nil] optional value placeholder
+      # @return [String] formatted option string (e.g. "--option=VALUE")
       def symbol_to_option(symbol, opt_val = nil)
         result = self.class.option_name_to_line(symbol)
         opt_val.nil? ? result : "#{result}#{Option::VALUE_SEP}#{opt_val}"
