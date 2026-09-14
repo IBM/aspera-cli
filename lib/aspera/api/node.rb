@@ -43,14 +43,11 @@ module Aspera
         SEPARATOR = ':'
         NODE_PREFIX = 'node.'
       end
-      # Accepted types in `file_matcher`
-      MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
       # Delimiter in decoded node token
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       # Default validity when generating a bearer token "manually"
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
-      private_constant :MATCH_TYPES,
-        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT
+      private_constant :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT
       # Node API permissions: delete list mkdir preview read rename write
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       # Special HTTP Headers
@@ -127,23 +124,17 @@ module Aspera
           return parameters
         end
 
-        # For access keys: provide expression to match entry in folder
-        # @param match_expression [Proc, Regexp, String] one of supported types
-        # @return [Proc] lambda function
+        # Build a filter lambda from a match expression (String glob, Regexp, Proc, or nil).
+        # @param match_expression [String, Regexp, Proc, NilClass]
+        # @return [Proc] lambda(entry) -> Boolean
         def file_matcher(match_expression)
           case match_expression
-          when Proc then return match_expression
-          when Regexp then return ->(f){f['name'].match?(match_expression)}
-          when String
-            return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
+          when Proc    then return match_expression
+          when Regexp  then return ->(f){f['name'].match?(match_expression)}
+          when String  then return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
           when NilClass then return ->(_){true}
           else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
           end
-        end
-
-        # @return [Proc] lambda from provided CLI options
-        def file_matcher_from_argument(options)
-          return file_matcher(options.get_next_argument('filter', validation: MATCH_TYPES, mandatory: false))
         end
 
         # Split path into folder + filename

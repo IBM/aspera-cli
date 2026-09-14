@@ -160,7 +160,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir){@server_transfer_spec}}
+          define_method(:"action_sync_#{dir}"){ |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info){@server_transfer_spec}}
         end
 
         # --- DSL ---
@@ -190,7 +190,7 @@ module Aspera
         command :sync, description: 'Synchronize files with server'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send
+            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
           end
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, %i[sync admin])

@@ -169,7 +169,7 @@ module Aspera
           bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
           node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
           ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
-          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG},
+          find:              {description: 'Find files',                     arguments: [SINGLE_PATH_ARG.first, {name: :filter, mandatory: false, default: nil}]},
           v3:                {description: 'Legacy v3 commands on files'}
         }.freeze
         private_constant :SINGLE_PATH_ARG
@@ -376,7 +376,7 @@ module Aspera
         command :sync, description: 'Synchronize folders (Gen3)'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send
+            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
           end
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, %i[sync admin])
@@ -404,7 +404,7 @@ module Aspera
           command :sync, description: 'Synchronize folders'
           commands_under %i[access_keys do sync] do
             Sync::Operations::DIRECTIONS.each do |dir|
-              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send
+              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
             end
             command :admin, description: 'Manage sync database (admin operations)'
             SyncActions.register_sync_admin_commands(self, %i[access_keys do sync admin])
@@ -623,7 +623,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |**| run_sync_transfer(dir, &sync_gen3_block)}
+          define_method(:"action_sync_#{dir}"){ |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block)}
         end
 
         def action_upload
@@ -740,9 +740,9 @@ module Aspera
         end
 
         # access_keys > do > find
-        def action_access_keys_do_find(path:, do_root_file_id:, **)
+        def action_access_keys_do_find(path:, filter: nil, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
-          Result::ObjectList.new(@api_node.find_files(apifid.file_id, Api::Node.file_matcher_from_argument(options)), fields: ['path'])
+          Result::ObjectList.new(@api_node.find_files(apifid.file_id, Api::Node.file_matcher(filter)), fields: ['path'])
         end
 
         # access_keys > do > cat
@@ -801,8 +801,8 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_access_keys_do_sync_#{dir}") do |do_root_file_id:, **|
-            run_sync_transfer(dir, &sync_gen4_block(do_root_file_id))
+          define_method(:"action_access_keys_do_sync_#{dir}") do |path:, sync_info: {}, do_root_file_id:, **|
+            run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen4_block(do_root_file_id))
           end
         end
 

@@ -401,11 +401,14 @@ module Aspera
 
         # --- DSL ---
 
-        # Commands that connect to the Node API share a common setup.
-        # :check, :test and :show work without Node API authentication.
-        command :scan,     description: 'Scan all files and generate previews', setup: :setup_node_api
-        command :events,   description: 'Process file events and generate previews', setup: :setup_node_api
-        command :trevents, description: 'Process transfer events and generate previews', setup: :setup_node_api
+        # Optional positional filter argument shared by scan/events/trevents.
+        FILTER_ARG = [{name: :filter, mandatory: false, default: nil}].freeze
+        private_constant :FILTER_ARG
+        # scan, events and trevents connect to the Node API (setup: :setup_node_api).
+        # `check`, `test` and `show` work without Node API authentication.
+        command :scan,     description: 'Scan all files and generate previews',             setup: :setup_node_api, arguments: FILTER_ARG
+        command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, arguments: FILTER_ARG
+        command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, arguments: FILTER_ARG
         command :check,    description: 'Check required tools are installed'
         command :test,     description: 'Test preview generation for a source file',
           arguments: [{name: :source_file, type: String}, {name: :format, allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}]
@@ -459,7 +462,7 @@ module Aspera
 
         # --- handlers ---
 
-        def action_scan
+        def action_scan(filter: nil, **)
           check_tools_and_mimemagic
           scan_path = options.get_option(:scan_path)
           scan_id = options.get_option(:scan_id)
@@ -474,23 +477,23 @@ module Aspera
             else
               @api_node.read("files/#{scan_id}")
             end
-          @filter_block = Api::Node.file_matcher_from_argument(options)
+          @filter_block = Api::Node.file_matcher(filter)
           scan_folder_files(folder_info, scan_path)
           Result::Status.new('scan finished')
         ensure
           cleanup_tmp_folder
         end
 
-        def action_events
+        def action_events(filter: nil, **)
           check_tools_and_mimemagic
-          run_event_loop(:events)
+          run_event_loop(:events, filter: filter)
         ensure
           cleanup_tmp_folder
         end
 
-        def action_trevents
+        def action_trevents(filter: nil, **)
           check_tools_and_mimemagic
-          run_event_loop(:trevents)
+          run_event_loop(:trevents, filter: filter)
         ensure
           cleanup_tmp_folder
         end
@@ -513,12 +516,9 @@ module Aspera
 
         def action_show(source_file:, **)
           check_tools_and_mimemagic
-          # terminal_options = options.get_next_argument('options', validation: Hash, default: {}).symbolize_keys
           generated_file_path = preview_filename(:png, options.get_option(:base))
           Aspera::Preview::Generator.new(source_file, generated_file_path, @gen_options, @tmp_folder).generate
           formatter.display_status("generated: #{generated_file_path}")
-          # formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
-          # Result::Status.new("generated: #{generated_file_path}")
           Result::Image.new(UriReader.file_url(generated_file_path))
         ensure
           cleanup_tmp_folder
@@ -540,8 +540,9 @@ module Aspera
 
         # Shared event-loop body for :events and :trevents.
         # @param command [:events, :trevents]
-        def run_event_loop(command)
-          @filter_block = Api::Node.file_matcher_from_argument(options)
+        # @param filter  [String, Regexp, Proc, nil] optional filter expression
+        def run_event_loop(command, filter: nil)
+          @filter_block = Api::Node.file_matcher(filter)
           iteration_persistency = nil
           if options.get_option(:once_only, mandatory: true)
             iteration_persistency = PersistencyActionOnce.new(

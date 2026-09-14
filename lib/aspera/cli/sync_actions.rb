@@ -7,13 +7,16 @@ require 'pathname'
 
 module Aspera
   module Cli
-    # Manage command line arguments to provide to Sync::Operations and Sync::Database
+    # Helpers shared by plugins that expose Aspera Sync (async) operations.
+    # Provides DSL registration, argument-to-sync-info conversion, and action methods.
     module SyncActions
       # Translate state id (int) to string
       STATE_STR = (['Nil'] +
         (1..18).map{ |i| "P(#{i})"} +
         %w[Syncd Error Confl Pconf] +
         (23..24).map{ |i| "P(#{i})"}).freeze
+      # Positional arguments shared by sync transfer commands (push/pull/bidi) and sync admin commands.
+      PATH_AND_INFO_ARGS = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
       # When a plugin class includes SyncActions, register the :sql option
       # in that class's DSL registry so Base#initialize auto-declares it.
       class << self
@@ -26,15 +29,14 @@ module Aspera
         # @param base        [Class]          the plugin class (receiver of DSL methods)
         # @param admin_path  [Symbol, Array<Symbol>]  full parent path, e.g. %i[sync admin]
         def register_sync_admin_commands(base, admin_path)
-          path_and_info_args = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}]
           base.commands_under(admin_path) do
-            base.command(:status,    description: 'Show sync session status',     arguments: path_and_info_args, action: :action_sync_admin_status)
             base.command(:find,      description: 'Find sync database files',     arguments: [{name: :path, type: String}], action: :action_sync_admin_find)
-            base.command(:meta,      description: 'Show sync session metadata',   arguments: path_and_info_args, action: :action_sync_admin_meta)
-            base.command(:counters,  description: 'Show sync counters',           arguments: path_and_info_args, action: :action_sync_admin_counters)
-            base.command(:file_info, description: 'Show per-file sync state',     arguments: path_and_info_args, action: :action_sync_admin_file_info)
-            base.command(:overview,  description: 'Show sync database overview',  arguments: path_and_info_args, action: :action_sync_admin_overview)
-            base.command(:query,     description: 'Execute a raw SQL query',      arguments: path_and_info_args, action: :action_sync_admin_query)
+            base.command(:status,    description: 'Show sync session status',     arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_status)
+            base.command(:meta,      description: 'Show sync session metadata',   arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_meta)
+            base.command(:counters,  description: 'Show sync counters',           arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_counters)
+            base.command(:file_info, description: 'Show per-file sync state',     arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
+            base.command(:overview,  description: 'Show sync database overview',  arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_overview)
+            base.command(:query,     description: 'Execute a raw SQL query',      arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_query)
           end
         end
       end
@@ -43,16 +45,11 @@ module Aspera
       # The resulting sync_info has `args` format only if it contains one of the `sessions` or `instance` keys.
       # It has the `conf` format (default) otherwise.
       # If the `conf` format is detected, then both `local` and `remote` keys are set.
-      # @param path      [String,NilClass]  local/remote path; when nil, read from CLI
-      # @param sync_info [Hash,NilClass]    extra sync info; when nil, read from CLI
-      # @param direction [Symbol,NilClass]  one of DIRECTIONS, or nil for admin commands
+      # @param path      [String]          local/remote path
+      # @param sync_info [Hash]            extra sync info (may be empty)
+      # @param direction [Symbol,NilClass] one of DIRECTIONS, or nil for admin commands
       # @return [Hash] sync info
-      def async_info_from_args(path: nil, sync_info: nil, direction: nil)
-        if path.nil?
-          path = options.get_next_argument('path')
-          sync_info = options.get_next_argument('sync info', mandatory: false, validation: Hash, default: {}, schema: Schema::Registry::SYNC_CONF)
-        end
-        sync_info ||= {}
+      def async_info_from_args(path:, sync_info: {}, direction: nil)
         # is the positional path a remote path ?
         path_is_remote = direction.eql?(:pull)
         if sync_info.key?('sessions') || sync_info.key?('instance')
@@ -105,9 +102,9 @@ module Aspera
       end
 
       # Provide database object from path + sync_info for admin ops
-      # @param path [String,NilClass] when nil, read from CLI
-      # @param sync_info [Hash,NilClass] when nil, read from CLI
-      def db_from_args(path: nil, sync_info: nil)
+      # @param path      [String] local path
+      # @param sync_info [Hash]   extra sync info (may be empty)
+      def db_from_args(path:, sync_info: {})
         sync_info = async_info_from_args(path: path, sync_info: sync_info)
         session = sync_info.key?('sessions') ? sync_info['sessions'].first : sync_info
         # if name not provided, check in db folder if there is only one name
@@ -159,10 +156,12 @@ module Aspera
       end
 
       # Execute a sync transfer for a given direction.
-      # @param direction [Symbol] one of Sync::Operations::DIRECTIONS (:push, :pull, :bidi)
+      # @param direction [Symbol]    one of Sync::Operations::DIRECTIONS (:push, :pull, :bidi)
+      # @param path      [String]    local or remote path (depends on direction)
+      # @param sync_info [Hash]      extra sync configuration (may be empty)
       # @param block     [Proc, nil] block to generate transfer spec; receives (direction, local_dir, remote_dir)
-      def run_sync_transfer(direction, &block)
-        Sync::Operations.start(async_info_from_args(direction: direction), transfer.user_transfer_spec, &block)
+      def run_sync_transfer(direction, path:, sync_info: {}, &block)
+        Sync::Operations.start(async_info_from_args(path: path, sync_info: sync_info, direction: direction), transfer.user_transfer_spec, &block)
         Result::Success.new
       end
     end

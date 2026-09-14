@@ -168,8 +168,10 @@ module Aspera
         end
 
         # list all packages with optional filter
-        def list_packages_with_filter(query: {})
-          filter = options.get_next_argument('filter', mandatory: false, validation: Proc, default: ->(_x){true})
+        # @param filter [Proc, nil] optional filter lambda applied to each package entry
+        # @param query  [Hash]      additional query parameters forwarded to the API
+        def list_packages_with_filter(filter: nil, query: {})
+          filter ||= ->(_x){true}
           box = options.get_option(:box)
           # Translate box name to API prefix (with ending slash)
           entity =
@@ -214,12 +216,12 @@ module Aspera
           case package_ids
           when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency, 'Only with option once_only')
-            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']})
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']}) # no filter: all packages
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
-            packages = list_packages_with_filter(query: {'status' => 'completed'}).first
+            packages = list_packages_with_filter(query: {'status' => 'completed'}).first # no filter: all completed packages
             Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
             Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
             packages.reject!{ |p| skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
@@ -485,7 +487,8 @@ module Aspera
         command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: ->{Result::Text.new(@api_v5.oauth.authorization)}
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under :packages do
-          command :list,   description: 'List packages'
+          command :list,   description: 'List packages',
+            arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(data:, **){package_send(data)}
@@ -908,8 +911,8 @@ module Aspera
           {package_id: package_id}
         end
 
-        def action_packages_list
-          list, total = list_packages_with_filter
+        def action_packages_list(filter: nil, **)
+          list, total = list_packages_with_filter(filter: filter)
           fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
           fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
           fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))
