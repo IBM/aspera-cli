@@ -515,7 +515,7 @@ module Aspera
         # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
         APP_TYPES = %i[activity automation files packages].freeze
 
-        ADMIN_ACTIONS = %i[bearer_token application ats usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
+        ADMIN_ACTIONS = (%i[bearer_token application ats usage_reports analytics subscription auth_providers] + ADMIN_OBJECTS).freeze
 
         # Build analytics REST API (shared by action_admin_analytics_*)
         def build_analytics_api

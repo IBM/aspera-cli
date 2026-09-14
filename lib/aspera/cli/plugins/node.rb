@@ -135,12 +135,12 @@ module Aspera
           access_keys: {description: 'Manage access keys'}
         }.freeze
 
-        BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
+        BASE_ACTIONS = (%i[api_details] + COMMANDS_GEN3).freeze
 
         SPECIAL_ACTIONS = %i[health events info slash license].freeze
 
         # commands for : `execute_simple_common`: actions used commonly when a node is involved
-        COMMON_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+        COMMON_ACTIONS = (%i[access_keys] + BASE_ACTIONS + SPECIAL_ACTIONS).freeze
 
         private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :COMMON_ACTIONS
 
@@ -148,7 +148,7 @@ module Aspera
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info ls find].freeze
 
         # commands for execute_command_gen4
-        COMMANDS_GEN4 = %i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
+        COMMANDS_GEN4 = (%i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3] + NODE4_READ_ACTIONS).freeze
 
         # Shared DSL metadata for all Gen4 commands (description:, arguments:, transfer_paths:, aliases:).
         # Consumed by commands_under %i[access_keys do]) in node.rb and by aoc.rb.

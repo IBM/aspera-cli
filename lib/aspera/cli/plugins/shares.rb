@@ -95,7 +95,7 @@ module Aspera
         end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
-        SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
+        SAML_IMPORT_ALLOWED = (%w[email given_name surname] + SAML_IMPORT_MANDATORY).freeze
 
         # common to users and groups
         USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze

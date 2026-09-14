@@ -426,7 +426,7 @@ module Aspera
       # all executable files from SDK
       EXE_FILES = %i[ascp ascp4 async transferd].freeze
       # IDs of files present in SDK
-      SDK_FILES = %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
+      SDK_FILES = (EXE_FILES + %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key]).freeze
       TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
       # filename for ascp with optional extension (Windows)
       private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
