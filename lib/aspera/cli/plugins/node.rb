@@ -441,15 +441,9 @@ module Aspera
         commands_under :ssync, description: 'synchronization (/asyncs)' do
           crud_commands entity: 'asyncs',
             api: :@api_node,
-            operations: %i[create list],
+            operations: %i[create list show delete],
             items_key: 'ids',
             lookup: :ssync_lookup
-          command :show, description: 'Show ssync',
-            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}"))}
-          command :delete, description: 'Delete ssync',
-            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: :action_ssync_delete
           command :start, description: 'Start a sync',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: :action_ssync_start
@@ -1005,13 +999,6 @@ module Aspera
           resp = @api_node.create('async/counters', {'syncs' => [async_id]})['sync_counters'].first[async_id].last
           return Result::Empty.new if resp.nil?
           Result::SingleObject.new(resp)
-        end
-
-        def action_ssync_delete(ssync_id:, **)
-          bulk_result(ssync_id, command: :delete) do |one_id|
-            @api_node.delete("asyncs/#{one_id}", query_read_delete)
-            {'id' => one_id}
-          end
         end
 
         def action_ssync_start(ssync_id:, **)
