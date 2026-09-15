@@ -780,7 +780,12 @@ If installation from a local file is preferred (air-gapped installation) instead
 <%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
-The format is: `file:///<%=ph :path%>`, where `<%=ph :path%>` can be either a relative path (not starting with `/`), or an absolute path.
+The format is: `file:///<%=ph :path%>` (canonical form) or `file:<%=ph :path%>` (short form), where `<%=ph :path%>` can be either a relative path (not starting with `/`), or an absolute path (starting with `/`).
+
+| Form | Relative example | Absolute example |
+|------|-----------------|-----------------|
+| Canonical | `file:///mydir/archive.zip` | `file:////home/user/archive.zip` |
+| Short | `file:mydir/archive.zip` | `file:/home/user/archive.zip` |
 
 Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
@@ -2011,7 +2016,7 @@ The following decoders are supported:
 | `s`      | Any      | `String` | Converts argument to `String`. |
 | `secret` | `String` | `String` | Ask password interactively (hides input). Argument is the prompt. |
 | `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
-| `uri`    | `String` | `String` | Read value from specified URL. for example, `--fpac=@uri:http://serv/f.pac` |
+| `uri`    | `String` | `String` | Read value from specified URL. Supported schemes: `http:`, `https:`, `data:`, `file:`. for example, `--fpac=@uri:http://serv/f.pac` or `--key=@uri:file:/path/to/key.pem` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. for example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |

@@ -10,24 +10,30 @@ module Aspera
   # Read content from a URI; supported schemes: file:, http:, https:, data:
   #
   # == file: URL convention
-  # The prefix is always +file:///+ (three slashes, no host part).
-  # The characters after the prefix are interpreted as a file path:
+  # Two equivalent forms are accepted:
+  #
   #   file:///relative/path    -> relative path "relative/path"
   #   file:////absolute/path   -> absolute path "/absolute/path"
   #
-  # This mirrors shell behaviour: a bare filename needs no leading slash,
-  # while an absolute path carries its own leading slash after the prefix.
+  # A shorter form is also accepted (no authority component):
+  #
+  #   file:relative/path       -> relative path "relative/path"
+  #   file:/absolute/path      -> absolute path "/absolute/path"
+  #
+  # The short form is consistent with RFC 8089 (file:///<path> = absolute,
+  # file:<path> = relative).  Both forms are handled identically by this module.
+  # The canonical form built by {file_url} uses the +file:///+ prefix.
   module UriReader
     SCHEME_FILE = 'file'
     SCHEME_FILE_PFX1 = "#{SCHEME_FILE}:"
-    # Fixed prefix for file: URLs (no host, three slashes).
+    # Canonical prefix for file: URLs (no host, three slashes).
     # What follows is the literal path: relative or absolute (starting with a second slash).
     SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
     private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2
     class << self
       # @return [Boolean] true if +url+ uses the file: scheme recognised by this module
       def file?(url)
-        url.start_with?(SCHEME_FILE_PFX2)
+        url.start_with?(SCHEME_FILE_PFX1)
       end
 
       # Build a file: URL from +path+.
@@ -39,13 +45,15 @@ module Aspera
       end
 
       # Extract the file-system path from a file: URL.
-      # Reverses {file_url}: strips the +file:///+ prefix and returns the literal path
-      # (relative or absolute) without any working-directory expansion.
-      # @param url [String] a file: URL produced by {file_url}
+      # Accepts both the canonical +file:///+ form and the short +file:+ form.
+      # Returns the literal path (relative or absolute) without working-directory expansion.
+      # @param url [String] a file: URL (canonical or short form)
       # @return [String] the literal path encoded in the URL
       def file_path(url)
         Aspera.assert(file?(url)){"use format: #{file_url('<path>')}"}
-        return url.delete_prefix(SCHEME_FILE_PFX2)
+        # Strip canonical prefix "file:///" first (covers relative and absolute canonical forms).
+        # If absent, strip only the short "file:" prefix.
+        return url.start_with?(SCHEME_FILE_PFX2) ? url.delete_prefix(SCHEME_FILE_PFX2) : url.delete_prefix(SCHEME_FILE_PFX1)
       end
 
       # Read content from a URI and return it as a String.
