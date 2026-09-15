@@ -773,14 +773,10 @@ module Aspera
           end
         end
         commands_under %i[admin application membership] do
-          command :list, description: 'List app memberships',
-            action: ->{result_list('apps/app_memberships')}
-          command :show,   description: 'Show an app membership',
-            arguments: [{name: :membership_id, type: :identifier}]
-          command :delete, description: 'Delete an app membership',
-            arguments: [{name: :membership_id, type: :identifier}]
-          command :create, description: 'Create an app membership',
-            arguments: [{name: :membership, type: Hash}]
+          command :list, description: 'List app memberships', action: ->{result_list('apps/app_memberships')}
+          command :show,   description: 'Show an app membership', arguments: [{name: :membership_id, type: :identifier}]
+          command :delete, description: 'Delete an app membership', arguments: [{name: :membership_id, type: :identifier}]
+          command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
         end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway',
@@ -788,40 +784,33 @@ module Aspera
 
         # user sub-commands
         commands_under :user do
-          command :workspaces,    description: 'Workspace commands'
-          command :profile,       description: 'User profile commands'
+          commands_under :workspaces, description: "User's workspaces" do
+            command :list,    description: 'List workspaces', action: ->{result_list('workspaces', fields: %w[id name])}
+            command :current, description: 'Show current workspace', action: ->{Result::SingleObject.new(aoc_api.workspace_info)}
+          end
+          # command :profile, description: 'User profile commands'
+          commands_under :profile, description: "Manager user's profile" do
+            command :show, description: 'Show user profile', action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
+            command(
+              :modify, description: 'Modify user profile',
+              arguments: [{name: :properties, type: Hash}],
+              action: lambda do |properties:, **|
+                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", properties)
+                Result::Status.new('modified')
+              end
+            )
+          end
           command :preferences,   description: 'User interaction preferences'
           command :notifications, description: 'Notification preferences'
           command :contacts,      description: 'Manage contacts'
-          command :settings,      description: 'Manage client settings'
-        end
-
-        commands_under %i[user settings] do
-          crud_commands api: :aoc_api, entity: 'client_settings', name: 'client setting'
-        end
-        # user > contacts sub-commands (same CRUD as admin > contact)
-        commands_under %i[user contacts] do
-          Operations::ALL.each{ |op| command op, description: op.to_s.capitalize}
-        end
-
-        commands_under %i[user workspaces] do
-          command :list,    description: 'List workspaces',
-            action: ->{result_list('workspaces', fields: %w[id name])}
-          command :current, description: 'Show current workspace',
-            action: ->{Result::SingleObject.new(aoc_api.workspace_info)}
-        end
-
-        commands_under %i[user profile] do
-          command :show, description: 'Show user profile',
-            action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
-          command(
-            :modify, description: 'Modify user profile',
-            arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties:, **|
-              aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", properties)
-              Result::Status.new('modified')
-            end
-          )
+          # user > contacts sub-commands (same CRUD as admin > contact)
+          commands_under %i[contacts] do
+            Operations::ALL.each{ |op| command op, description: op.to_s.capitalize}
+          end
+          command :settings, description: 'Manage client settings'
+          commands_under %i[settings] do
+            crud_commands api: :aoc_api, entity: 'client_settings', name: 'client setting'
+          end
         end
 
         commands_under %i[user preferences] do
@@ -864,17 +853,17 @@ module Aspera
 
         # packages sub-commands — instance commands consume package_id
         commands_under :packages do
-          command :shared_inboxes,    description: 'Shared inbox commands'
-          command :send,              description: 'Send a package', transfer_paths: :send,
+          command :shared_inboxes, description: 'Shared inbox commands'
+          command :send, description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
-          command :receive,           description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
+          command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
             arguments: [{name: :package_id, type: :identifier}]
-          command :list,              description: 'List packages'
-          command :show,              description: 'Show a package',
+          command :list, description: 'List packages'
+          command :show, description: 'Show a package',
             arguments: [{name: :package_id, type: :identifier}]
-          command :delete,            description: 'Delete packages',
+          command :delete, description: 'Delete packages',
             arguments: [{name: :package_id, type: :identifier}]
-          command :modify,            description: 'Modify a package',
+          command :modify, description: 'Modify a package',
             arguments: [{name: :package_id, type: :identifier}, {name: :data, type: Hash}]
           # Node Gen4 read-only actions on packages
           command :bearer_token_node, description: 'Show bearer token for package node',
@@ -1324,14 +1313,12 @@ module Aspera
 
         # admin > analytics > application_events
         def action_admin_analytics_application_events
-          analytics_api = build_analytics_api
-          events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/application_events")['application_events']
+          events = build_analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/application_events")['application_events']
           Result::ObjectList.new(events)
         end
 
         # admin > analytics > transfers
         def action_admin_analytics_transfers(event_resource_type:, event_resource_id:, **)
-          analytics_api = build_analytics_api
           event_resource_id ||=
             case event_resource_type
             when :organizations then aoc_api.current_user_info['organization_id']
@@ -1354,7 +1341,7 @@ module Aspera
             filter['start_time'] = start_date_time unless start_date_time.nil?
             filter['stop_time']  = stop_date_time
           end
-          events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers", filter)['transfers']
+          events = build_analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers", filter)['transfers']
           start_date_persistency&.save
           events.each{ |tr_event| context.mailer.send_email_template(values: {ev: tr_event})} if !options.get_option(:notify_to).nil?
           Result::ObjectList.new(events)
@@ -1362,7 +1349,6 @@ module Aspera
 
         # admin > analytics > files
         def action_admin_analytics_files(event_resource_type:, event_resource_id:, event_uuid:, **)
-          analytics_api = build_analytics_api
           event_resource_id =
             case event_resource_type
             when :organizations then aoc_api.current_user_info['organization_id']
@@ -1372,7 +1358,7 @@ module Aspera
             end if event_resource_id.to_s.empty?
           filter = query_read_delete(default: {})
           filter['limit'] ||= 100
-          events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/files", filter)['files']
+          events = build_analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/files", filter)['files']
           Result::ObjectList.new(events)
         end
 
