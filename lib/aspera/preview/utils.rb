@@ -20,9 +20,22 @@ module Aspera
         '-y', # overwrite output without asking
         '-loglevel', 'error' # show only errors and up
       ].freeze
-      private_constant :EXTERNAL_TOOLS, :TEMP_FORMAT, :FFMPEG_DEFAULT_PARAMS
+      # Preferred H.264 encoders in order: best quality/compatibility first.
+      H264_ENCODER_PREFERENCE = %w[libx264 libopenh264 h264_nvenc h264_amf h264_qsv h264_vaapi h264_v4l2m2m].freeze
+      private_constant :EXTERNAL_TOOLS, :TEMP_FORMAT, :FFMPEG_DEFAULT_PARAMS, :H264_ENCODER_PREFERENCE
 
       class << self
+        # Return the first H.264 encoder available in the local ffmpeg installation.
+        # Result is memoized after the first call.
+        # @return [String] encoder name (e.g. 'libx264', 'libopenh264')
+        # @raise [RuntimeError] if no supported H.264 encoder is found
+        def available_h264_encoder
+          return @available_h264_encoder if defined?(@available_h264_encoder)
+          stdout, = execute(:ffmpeg, '-encoders', mode: :capture, exception: false)
+          @available_h264_encoder = H264_ENCODER_PREFERENCE.find{|enc| stdout.include?(enc)} ||
+            raise("No supported H.264 encoder found in ffmpeg. Available: #{stdout.lines.grep(/h264/i).map(&:strip).join(', ')}")
+        end
+
         # Check that external tools can be executed
         # @param skip_types [Array<Symbol>] list of tools to skip
         # @return [nil]
@@ -48,20 +61,23 @@ module Aspera
           Environment.secure_execute(*args, **kwargs)
         end
 
-        # Execute external command silently
+        # Execute external command, capturing and discarding output unless it fails.
+        # On failure the captured stderr is included in the raised exception message.
         # @return [nil]
         def silent_execute(*args)
-          execute(*args, out: File::NULL, err: File::NULL)
+          execute(*args, mode: :capture)
           nil
         end
 
-        # Execute `ffmpeg`
+        # Execute `ffmpeg`, capturing output.
+        # On failure, the ffmpeg stderr is logged at debug level and re-raised.
         # @return [nil]
         def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)
           Aspera.assert_type(gl_p, Array)
           Aspera.assert_type(in_p, Array)
           Aspera.assert_type(out_p, Array)
-          silent_execute(:ffmpeg, *gl_p, *in_p, '-i', in_f, *out_p, out_f)
+          execute(:ffmpeg, *gl_p, *in_p, '-i', in_f, *out_p, out_f, mode: :capture)
+          nil
         end
 
         # @return [Float] duration in seconds

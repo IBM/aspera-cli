@@ -181,13 +181,14 @@ module Aspera
           Aspera.assert_values(k, FFMPEG_OPTIONS_LIST){'key'}
           Aspera.assert_type(v, Array){k}
         end
+        codec = @options.video_codec || Utils.available_h264_encoder
         Utils.ffmpeg(
           in_f: @source,
           in_p: options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9],
           out_f: @destination,
           out_p: options['out'] || [
             '-t', 60,
-            '-codec:v', 'libx264',
+            '-codec:v', codec,
             '-profile:v', 'high',
             '-pix_fmt', 'yuv420p',
             '-preset', 'slow',
