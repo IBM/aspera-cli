@@ -17,7 +17,7 @@ Released: [Place date of release here]
 
 * `faspex5`: Wizard was incorrectly nesting `client_id` and `client_secret` under a `params:` sub-key in the generated preset, instead of placing them at the top level.
 * **global**: Assigning `@none:` to a `Hash`-typed option now correctly resets it to `nil` instead of being stored as a literal value.
-* `config`: Vault: removed `symmetric-encryption` gem dependency, use `openssl`. encrypted hash may not be compatible, so, first export, and then import if in this case.
+* `config`: Vault: removed `symmetric-encryption` gem dependency, replaced with `openssl`. Existing encrypted data may not be compatible — export your vault contents first, then re-import after upgrading.
 * `config`: Vault: fixed macOS Keychain API compatibility.
 * **global**: Option type `Hash` is now automatically inferred when the option schema uses `oneOf`/`anyOf` with all-object branches; no need to specify `allowed: Hash` explicitly.
 
