@@ -169,7 +169,7 @@ module Aspera
           bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
           node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
           ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
-          find:              {description: 'Find files',                     arguments: [SINGLE_PATH_ARG.first, {name: :filter, mandatory: false, default: nil}]},
+          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS},
           v3:                {description: 'Legacy v3 commands on files'}
         }.freeze
         private_constant :SINGLE_PATH_ARG

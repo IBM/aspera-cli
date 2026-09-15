@@ -259,6 +259,11 @@ module Aspera
           end
         end
 
+        # Shared positional argument for commands that accept an optional file name filter.
+        # Accepted types: String (shell glob matched against entry name) or Regexp.
+        # Used by node files find, and preview scan/events/trevents.
+        FILTER_ARGS = [{name: :filter, type: [String, Regexp], description: 'File name filter: String (glob) or Regexp', mandatory: false, default: nil}].freeze
+
         option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
         option :bulk,  description: 'Bulk operation (only some)',                            allowed: Type::BOOLEAN, default: false
         option :bfail, description: 'Bulk operation error handling',                         allowed: Type::BOOLEAN, default: true

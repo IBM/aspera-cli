@@ -401,14 +401,11 @@ module Aspera
 
         # --- DSL ---
 
-        # Optional positional filter argument shared by scan/events/trevents.
-        FILTER_ARG = [{name: :filter, mandatory: false, default: nil}].freeze
-        private_constant :FILTER_ARG
         # scan, events and trevents connect to the Node API (setup: :setup_node_api).
         # `check`, `test` and `show` work without Node API authentication.
-        command :scan,     description: 'Scan all files and generate previews',             setup: :setup_node_api, arguments: FILTER_ARG
-        command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, arguments: FILTER_ARG
-        command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, arguments: FILTER_ARG
+        command :scan,     description: 'Scan all files and generate previews',             setup: :setup_node_api, arguments: FILTER_ARGS
+        command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, arguments: FILTER_ARGS
+        command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, arguments: FILTER_ARGS
         command :check,    description: 'Check required tools are installed'
         command :test,     description: 'Test preview generation for a source file',
           arguments: [{name: :source_file, type: String}, {name: :format, allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}]
