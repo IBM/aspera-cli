@@ -59,7 +59,7 @@ module Aspera
         option :filter, description: 'File name filter: String (glob), Regexp, or Proc', allowed: [String, Regexp, Proc, NilClass]
         option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Type::BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
-        option :root_url,           description: "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
+        option :root_url,           description: "How to read and write files on storage (#{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: REMOTE_ACCESS
         # Generator-specific options (Category C - bound to @gen_options via set_handler in initialize)
         Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
           values = if opt.key?(:values)
@@ -428,7 +428,7 @@ module Aspera
           Log.log.debug{"root: #{node_info['docroot']}"}
           # Default storage url to local file if not provided
           option_root_url = options.get_option(:root_url, mandatory: true)
-          option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.empty? && @access_key_self['storage']['type'].eql?('local')
+          option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.eql?(REMOTE_ACCESS) && @access_key_self['storage']['type'].eql?('local')
           @access_remote = !UriReader.file?(option_root_url)
           Log.log.debug{"remote: #{@access_remote}"}
           # TODO: can the `previews` folder parameter be read from Node API ?

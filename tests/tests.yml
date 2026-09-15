@@ -5778,30 +5778,44 @@ prev_events:
     - --once-only=yes
     - --skip-types=office
     - --log-level=info
-prev_scana:
+prev_scan_skip:
   args:
     - preview
     - scan
     - --skip-types=office
     - --log-level=info
-    - --skip-folder=/special/folder
-prev_scanb:
+    - --skip-folders=/special/folder
+prev_scan_skip_folders_multi:
   tags:
     - nodoc
   args:
     - preview
     - scan
-    - --skip-folder=foo
-    - --skip-folder=bar
-    - --skip-folder=@list:,1,2
+    - --skip-folders=foo
+    - --skip-folders=bar
+    - --skip-folders=@list:,1,2
+prev_scan_filter_glob:
+  tags:
+    - nodoc
+  args:
+    - preview
+    - scan
+    - --filter=*.mxf
+prev_scan_filter_regex:
+  tags:
+    - nodoc
+  args:
+    - preview
+    - scan
+    - --filter=@ruby:/\.mxf$/
 prev_folder:
   args:
     - preview
     - scan
-    - --scan-id=1
+    - "%id:1"
     - --skip-types=office
     - --log-level=info
-    - --file-access=aspera:
+    - "--root-url=aspera:"
     - --ts.target_rate_kbps=1000000
 serv_hot_prep:
   tags:
