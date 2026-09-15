@@ -127,10 +127,12 @@ module Aspera
           current_index = last_keyframe + 1 + @options.blend_transframes
         end
         Utils.ffmpeg(
-          in_f: Utils.ffmpeg_fmt(this_tmpdir),
-          in_p: ['-framerate', @options.blend_fps],
-          out_f: @destination,
-          out_p: [
+          in:  [
+            Utils.ffmpeg_fmt(this_tmpdir),
+            '-framerate', @options.blend_fps
+          ],
+          out: [
+            @destination,
             '-filter:v', "scale='trunc(iw/2)*2:trunc(ih/2)*2'",
             '-codec:v', 'libx264',
             '-r', frame_rate_hz,
@@ -149,10 +151,12 @@ module Aspera
             offset_seconds = get_offset(p_duration, @options.video_start_sec.to_i, @options.clips_count.to_i, i)
             tmp_file_name = format('clip%04d.mp4', i)
             Utils.ffmpeg(
-              in_f: @source,
-              in_p: ['-ss', offset_seconds * 0.9],
-              out_f: File.join(this_tmpdir, tmp_file_name),
-              out_p: [
+              in:  [
+                @source,
+                '-ss', offset_seconds * 0.9
+              ],
+              out: [
+                File.join(this_tmpdir, tmp_file_name),
                 '-ss', offset_seconds * 0.1,
                 '-t', @options.clips_length,
                 '-filter:v', "scale='#{@options.video_scale}'",
@@ -164,10 +168,8 @@ module Aspera
         end
         # Concat clips.
         Utils.ffmpeg(
-          in_f: file_list_file,
-          in_p: ['-f', 'concat'],
-          out_f: @destination,
-          out_p: ['-codec', 'copy']
+          in:  [file_list_file, '-f', 'concat'],
+          out: [@destination, '-codec', 'copy']
         )
         File.delete(file_list_file)
       end
@@ -182,26 +184,26 @@ module Aspera
           Aspera.assert_type(v, Array){k}
         end
         codec = @options.video_codec || Utils.available_h264_encoder
+        in_opts = options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9]
+        out_opts = options['out'] || [
+          '-t', 60,
+          '-codec:v', codec,
+          '-profile:v', 'high',
+          '-pix_fmt', 'yuv420p',
+          '-preset', 'slow',
+          '-b:v', '500k',
+          '-maxrate', '500k',
+          '-bufsize', '1000k',
+          '-filter:v', "scale='#{@options.video_scale}'",
+          '-threads', '0',
+          '-codec:a', 'libmp3lame',
+          '-ac', '2',
+          '-b:a', '128k',
+          '-movflags', 'faststart'
+        ]
         Utils.ffmpeg(
-          in_f: @source,
-          in_p: options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9],
-          out_f: @destination,
-          out_p: options['out'] || [
-            '-t', 60,
-            '-codec:v', codec,
-            '-profile:v', 'high',
-            '-pix_fmt', 'yuv420p',
-            '-preset', 'slow',
-            '-b:v', '500k',
-            '-maxrate', '500k',
-            '-bufsize', '1000k',
-            '-filter:v', "scale='#{@options.video_scale}'",
-            '-threads', '0',
-            '-codec:a', 'libmp3lame',
-            '-ac', '2',
-            '-b:a', '128k',
-            '-movflags', 'faststart'
-          ]
+          in:  [@source, *in_opts],
+          out: [@destination, *out_opts]
         )
       end
 
@@ -229,13 +231,13 @@ module Aspera
           p_max_duration = p_duration
         end
         Utils.ffmpeg(
-          in_f: @source,
-          in_p: [
+          in:  [
+            @source,
             '-ss', p_start_offset,
             '-t', p_max_duration
           ],
-          out_f: @destination,
-          out_p: [
+          out: [
+            @destination,
             '-vf', 'fps=5,scale=120:-1:flags=lanczos',
             '-plays', 0, # Loop forever (0 = infinite loop for APNG).
             '-f', 'apng'

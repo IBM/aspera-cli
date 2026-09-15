@@ -32,12 +32,13 @@ module Aspera
         def available_h264_encoder
           return @available_h264_encoder if defined?(@available_h264_encoder)
           stdout, = execute(:ffmpeg, '-encoders', mode: :capture, exception: false)
-          @available_h264_encoder = H264_ENCODER_PREFERENCE.find{|enc| stdout.include?(enc)} ||
+          @available_h264_encoder = H264_ENCODER_PREFERENCE.find{ |enc| stdout.include?(enc)} ||
             raise("No supported H.264 encoder found in ffmpeg. Available: #{stdout.lines.grep(/h264/i).map(&:strip).join(', ')}")
         end
 
-        # Check that external tools can be executed
+        # Check that external tools can be executed.
         # @param skip_types [Array<Symbol>] list of tools to skip
+        # @raise [RuntimeError] if a required tool binary is missing
         # @return [nil]
         def check_tools(skip_types = [])
           tools_to_check = EXTERNAL_TOOLS.dup
@@ -55,14 +56,19 @@ module Aspera
           end
         end
 
-        # Execute external command, verify it is in the supported list
+        # Execute external command, verify it is in the supported list.
+        # @param args [Array] command name followed by CLI arguments
+        # @param kwargs [Hash] execution options passed to {Environment.secure_execute}
+        # @raise [Aspera::AssertError] if the command is not in {EXTERNAL_TOOLS}
+        # @return [Array<String>] captured stdout and stderr lines depending on mode
         def execute(*args, **kwargs)
           Aspera.assert_values(args.first, EXTERNAL_TOOLS){'command'}
           Environment.secure_execute(*args, **kwargs)
         end
 
         # Execute external command, capturing and discarding output unless it fails.
-        # On failure the captured stderr is included in the raised exception message.
+        # On failure, the captured stderr is included in the raised exception message.
+        # @param args [Array] command name followed by CLI arguments
         # @return [nil]
         def silent_execute(*args)
           execute(*args, mode: :capture)
@@ -71,15 +77,25 @@ module Aspera
 
         # Execute `ffmpeg`, capturing output.
         # On failure, the ffmpeg stderr is logged at debug level and re-raised.
+        # @param in [Array] input file path followed by input options
+        # @param out [Array] output file path followed by output options
+        # @param global [Array<String>] global options for ffmpeg
         # @return [nil]
-        def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)
-          Aspera.assert_type(gl_p, Array)
-          Aspera.assert_type(in_p, Array)
-          Aspera.assert_type(out_p, Array)
-          execute(:ffmpeg, *gl_p, *in_p, '-i', in_f, *out_p, out_f, mode: :capture)
+        def ffmpeg(in:, out:, global: FFMPEG_DEFAULT_PARAMS)
+          Aspera.assert_type(global, Array)
+          # NOTE: cannot use just "in", as it is a reserved word in ruby
+          in_args = binding.local_variable_get(:in).dup
+          out_args = out.dup
+          Aspera.assert_type(in_args, Array)
+          Aspera.assert_type(out_args, Array)
+          in_file = in_args.shift
+          out_file = out_args.shift
+          execute(:ffmpeg, *global, *in_args, '-i', in_file, *out_args, out_file, mode: :capture)
           nil
         end
 
+        # Get duration of a video file using `ffprobe`.
+        # @param input_file [String] path to video file
         # @return [Float] duration in seconds
         def video_get_duration(input_file)
           return execute(
@@ -92,23 +108,39 @@ module Aspera
           ).first.to_f
         end
 
-        # File output format, including temp folder
+        # File output pattern for ffmpeg, including temp folder.
+        # @param temp_folder [String] path to temp folder
+        # @return [String] file path pattern
         def ffmpeg_fmt(temp_folder)
           return File.join(temp_folder, TEMP_FORMAT)
         end
 
+        # Get numbered temporary file path.
+        # @param temp_folder [String] path to temp folder
+        # @param file_number [Integer] frame index
+        # @return [String] file path
         def get_tmp_num_filepath(temp_folder, file_number)
-          # Format using {Kernel.format}
           return File.join(temp_folder, format(TEMP_FORMAT, file_number))
         end
 
+        # Duplicate a video frame by creating symlinks.
+        # @param temp_folder [String] path to temp folder
+        # @param index [Integer] frame index to duplicate
+        # @param count [Integer] number of duplicate frames to create
+        # @return [nil]
         def video_dupe_frame(temp_folder, index, count)
           input_file = get_tmp_num_filepath(temp_folder, index)
           1.upto(count) do |i|
             FileUtils.ln_s(input_file, get_tmp_num_filepath(temp_folder, index + i))
           end
+          nil
         end
 
+        # Blend transition frames between two keyframes using ImageMagick.
+        # @param temp_folder [String] path to temp folder
+        # @param index_begin [Integer] starting frame index
+        # @param index_end [Integer] ending frame index
+        # @return [nil]
         def video_blend_frames(temp_folder, index_begin, index_end)
           img1 = get_tmp_num_filepath(temp_folder, index_begin)
           img2 = get_tmp_num_filepath(temp_folder, index_end)
@@ -118,6 +150,7 @@ module Aspera
             filename = get_tmp_num_filepath(temp_folder, index_begin + i)
             silent_execute(:magick, 'composite', '-blend', percent, img2, img1, filename)
           end
+          nil
         end
 
         # Dump a frame from a video file
@@ -128,10 +161,8 @@ module Aspera
         # @return [nil]
         def video_dump_frame(input_file, offset_seconds, scale, output_file)
           ffmpeg(
-            in_f: input_file,
-            in_p: ['-ss', offset_seconds],
-            out_f: output_file,
-            out_p: ['-frames:v', 1, '-filter:v', "scale='#{scale}'"]
+            in:  [input_file, '-ss', offset_seconds],
+            out: [output_file, '-frames:v', 1, '-filter:v', "scale='#{scale}'"]
           )
         end
 
