@@ -78,11 +78,31 @@ module Aspera
             name       ||= entity_display_name(entity) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
             operations.each do |verb|
-              id_arg = ([{name: :id, type: :identifier, lookup: lookup}] if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
+              id_arg = ({name: :id, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
+              schema_val =
+                if kwargs[:body_component] && entity.is_a?(String)
+                  case verb
+                  when :create then Schema::Registry.req_body(kwargs[:body_component], "#{entity}.post")
+                  when :modify then Schema::Registry.req_body(kwargs[:body_component], "#{entity}/{id}.put")
+                  end
+                end
+              args =
+                case verb
+                when :create
+                  [{name: :data, type: Hash, bulk: true, schema: schema_val}]
+                when :modify
+                  [id_arg, {name: :data, type: Hash, schema: schema_val}].compact
+                when :delete
+                  id_arg ? [id_arg.merge(bulk: true)] : nil
+                else
+                  id_arg ? [id_arg] : nil
+                end
               action_proc = lambda do |**ctx|
                 resolved_api =
                   if api.is_a?(Symbol)
                     api.to_s.start_with?('@') ? instance_variable_get(api) : send(api)
+                  elsif api.is_a?(Proc)
+                    instance_exec(&api)
                   else
                     api
                   end
@@ -90,7 +110,7 @@ module Aspera
                 send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: "#{verb.capitalize} #{name || entity.inspect}", action: action_proc}
-              cmd_attrs[:arguments] = id_arg if id_arg
+              cmd_attrs[:arguments] = args if args
               command(verb, **cmd_attrs)
             end
           end
@@ -108,21 +128,15 @@ module Aspera
           # If the terminal node of `parent` has not been declared yet, it is auto-declared
           # as an intermediate command with description: "Manage <name>" (or the given description:).
           #
-          # `parent` is resolved relative to the current scope:
-          #   - Symbol or single-element Array -> appended to @current_parent (relative)
-          #   - Multi-segment Array            -> used as-is (absolute path)
+          # `parent` is always resolved relative to the current scope:
+          #   Array(@current_parent) + Array(parent)
           #
-          # @param parent      [Symbol, Array<Symbol>] relative segment or absolute path
+          # @param parent      [Symbol, Array<Symbol>] one or more path segments, relative to current scope
           # @param description [String, nil]           Description of entity for the auto-declared node
           # @yieldreturn [void]
           def commands_under(parent, description: nil)
-            # Resolve path: a single Symbol (or 1-element array) is relative to current scope.
-            path =
-              if parent.is_a?(Symbol) || (parent.is_a?(Array) && parent.length == 1)
-                Array(@current_parent) + [Array(parent).last]
-              else
-                Array(parent)
-              end
+            # Always relative: append the given segments to the current scope.
+            path = Array(@current_parent) + Array(parent)
             unless command_registry[path]
               id = path.last
               desc = description || "Manage #{entity_display_name(id)}"
@@ -656,13 +670,15 @@ module Aspera
         # @param display_fields [Array, nil]    Fields to display
         # @param body_component [String, nil]   Registry key for request body schema
         # @param input_data     [Array, nil]    Pre-resolved data; when nil, read from CLI
-        def entity_create(api:, entity:, display_fields: nil, body_component: nil, input_data: nil, **)
+        def entity_create(api:, entity:, display_fields: nil, body_component: nil, input_data: nil, data: nil, **)
           schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}.post") : nil
+          input_data ||= data
           unless input_data
             is_bulk = options.get_option(:bulk)
             raw = options.get_next_argument('data', validation: is_bulk ? Array : Hash, schema: schema)
             input_data = is_bulk ? raw : [raw]
           end
+          input_data = [input_data] unless input_data.is_a?(Array)
           bulk_result(input_data, command: :create, fields: display_fields) do |params|
             api.create(entity, params)
           end
@@ -676,10 +692,10 @@ module Aspera
         # @param id_as_arg      [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>
         # @param body_component [String, nil]     Registry key for request body schema
         # @param input_data     [Hash, nil]       Pre-resolved data; when nil, read from CLI
-        def entity_modify(api:, entity:, id: nil, is_singleton: false, id_as_arg: false, body_component: nil, input_data: nil, **)
+        def entity_modify(api:, entity:, id: nil, is_singleton: false, id_as_arg: false, body_component: nil, input_data: nil, data: nil, **)
           schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}/{id}.put") : nil
           path = entity_res_path(entity, id, is_singleton: is_singleton, id_as_arg: id_as_arg)
-          parameters = input_data || options.get_next_argument('data', validation: Hash, schema: schema)
+          parameters = input_data || data || options.get_next_argument('data', validation: Hash, schema: schema)
           api.update(path, parameters)
           Result::Status.new('modified')
         end

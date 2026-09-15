@@ -383,7 +383,7 @@ module Aspera
           accounts:            {
             display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: :lookup_accounts_id}]}},
+            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: ->(field, value, **){res_lookup_id(:accounts, field, value)}}]}},
             query_component:       Schema::Registry::FASPEX,
             body_component:        Schema::Registry::FASPEX
           },
@@ -447,26 +447,9 @@ module Aspera
           }.compact
         end
 
-        # Lookup methods for arguments: + lookup: on specific nodes
-
         # admin > nodes — lookup node id by field/value
         def lookup_node_id(field, value, **)
           @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
-        end
-
-        # admin > shared_inboxes — lookup id by field/value
-        def lookup_shared_inboxes_id(field, value, **)
-          @api_v5.lookup_entity_by_field(entity: 'shared_inboxes', field: field, value: value, query: {'all': true})['id']
-        end
-
-        # admin > workgroups — lookup id by field/value
-        def lookup_workgroups_id(field, value, **)
-          @api_v5.lookup_entity_by_field(entity: 'workgroups', field: field, value: value, query: {'all': true})['id']
-        end
-
-        # admin > accounts — lookup id by field/value (used for reset_password arguments:)
-        def lookup_accounts_id(field, value, **)
-          res_lookup_id(:accounts, field, value)
         end
 
         # Lookup id for a RESOURCE_CONFIG resource by field/value.
@@ -476,6 +459,13 @@ module Aspera
           items_key   = resource_config_value(cfg, :items_key)
           res_id_query = resource_config_value(cfg, :res_id_query) || :default
           @api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
+        end
+
+        # Dynamically define lookup methods for admin resources (used by crud_commands)
+        Api::Faspex::ADMIN_RESOURCES.each do |res|
+          define_method(:"lookup_admin_#{res}_id") do |field, value, **|
+            res_lookup_id(res, field, value)
+          end
         end
 
         # --- DSL ---
@@ -564,41 +554,37 @@ module Aspera
           Api::Faspex::ADMIN_RESOURCES.each do |res|
             cfg          = RESOURCE_CONFIG.fetch(res, {})
             extra        = cfg[:extra_commands] || []
-            cmds         = cfg[:commands] || (Operations::ALL + extra)
             ia_cmds      = cfg[:instance_arg_commands] || {}
             is_singleton = cfg[:is_singleton] || false
-            entity_path    = cfg[:entity] || res.to_s
-            body_component = cfg[:body_component]
+            entity_path  = cfg[:entity] || res.to_s
+            crud_ops     = ((cfg[:commands] || Operations::ALL) - %i[list]) & Operations::ALL
+
             command res, description: "Manage #{res.to_s.tr('_', ' ')}"
-            commands_under([:admin, res]) do
-              cmds.each do |c|
+            commands_under(res) do
+              # List is handled with Faspex 5 pagination (item_list_with_total)
+              unless is_singleton
+                list_kwargs = {description: 'List'}
+                list_kwargs[:query_schema] = Schema::Registry.query_params(cfg[:query_component], entity_path) if cfg[:query_component]
+                command :list, **list_kwargs
+              end
+
+              # Standard CRUD operations handled via crud_commands
+              crud_commands(
+                api:            ->{res_exec_args(res)[:api]},
+                entity:         entity_path,
+                operations:     crud_ops,
+                lookup:         :"lookup_admin_#{res}_id",
+                is_singleton:   is_singleton,
+                body_component: cfg[:body_component],
+                display_fields: cfg[:display_fields],
+                delete_style:   cfg[:delete_style],
+                id_as_arg:      cfg[:id_as_arg] || false
+              )
+
+              # Extra commands (e.g. browse, reset_password, next)
+              extra.each do |c|
                 ia = ia_cmds[c] || {}
-                schema_val =
-                  if body_component
-                    case c
-                    when :create then Schema::Registry.req_body(body_component, "#{entity_path}.post")
-                    when :modify then Schema::Registry.req_body(body_component, "#{entity_path}.put")
-                    end
-                  end
-                extra_args =
-                  if !is_singleton && c.eql?(:create)
-                    [{name: :input_data, type: Hash, bulk: true, schema: schema_val}]
-                  elsif c.eql?(:modify)
-                    [{name: :input_data, type: Hash, schema: schema_val}]
-                  else
-                    []
-                  end
-                # Merge arguments: from ia (e.g. identifier spec) with extra_args for this operation
-                merged_args = Array(ia[:arguments]) + extra_args
-                spec_kwargs = merged_args.empty? ? ia.except(:arguments) : ia.except(:arguments).merge(arguments: merged_args)
-                # Attach query_schema (full path) to :list/:delete CommandSpec so --help shows the tip.
-                # cfg[:query_component] is always a String constant so direct read is safe here (no Proc).
-                if QUERY_SCHEMA_COMMANDS.include?(c) && cfg[:query_component]
-                  spec_kwargs = spec_kwargs.merge(
-                    query_schema: Schema::Registry.query_params(cfg[:query_component], entity_path)
-                  )
-                end
-                command c, description: c.to_s.tr('_', ' ').capitalize, **spec_kwargs
+                command c, description: c.to_s.tr('_', ' ').capitalize, **ia
               end
             end
           end
@@ -630,7 +616,6 @@ module Aspera
         end
 
         # `members` and `saml_groups`
-        MEMBER_SAML_GROUP = %i[members saml_groups].freeze
         CRUD_NO_SHOW = %i[create list modify delete].freeze
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
@@ -640,32 +625,40 @@ module Aspera
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          MEMBER_SAML_GROUP.each do |sub|
-            member_id_sym = sub.eql?(:saml_groups) ? :group_id : :member_id
-            lookup_sym    = :"lookup_#{res}_#{sub}_id"
-            commands_under [:admin, res] do
-              command sub, description: sub.to_s.tr('_', ' ').capitalize,
-                arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: :"lookup_#{res}_id"}],
-                setup: :"setup_admin_#{res}_instance"
-            end
-            commands_under [:admin, res, sub] do
-              CRUD_NO_SHOW.each do |c|
-                args =
-                  if c.eql?(:create) && sub.eql?(:members)
-                    {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
-                  elsif Operations::INSTANCE.include?(c)
-                    {arguments: [{name: member_id_sym, type: :identifier, lookup: lookup_sym}]}
-                  else
-                    {}
-                  end
-                command c, description: c.to_s.capitalize, **args
-              end
+          lookup_res_id = ->(field, value, **){@api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id']}
+          commands_under [:admin, res] do
+            command :members, description: 'Members',
+              arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
+              setup: :"setup_admin_#{res}_instance"
+            command :saml_groups, description: 'Saml groups',
+              arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
+              setup: :"setup_admin_#{res}_instance"
+            command :invite_external_collaborator, description: 'Invite external collaborator',
+              arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id},
+                          {name: :input_data, type: Hash}]
+          end
+
+          commands_under [:admin, res, :members] do
+            CRUD_NO_SHOW.each do |c|
+              args =
+                if c.eql?(:create)
+                  {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
+                elsif Operations::INSTANCE.include?(c)
+                  {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}]}
+                else
+                  {}
+                end
+              command c, description: c.to_s.capitalize, **args
             end
           end
-          commands_under([:admin, res]) do
-            command :invite_external_collaborator, description: 'Invite external collaborator',
-              arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: :"lookup_#{res}_id"},
-                          {name: :input_data, type: Hash}]
+
+          commands_under [:admin, res, :saml_groups] do
+            crud_commands entity: :saml_groups_path,
+              api: :@api_v5,
+              name: 'SAML group',
+              operations: CRUD_NO_SHOW,
+              lookup: :"lookup_#{res}_saml_groups_id",
+              items_key: 'groups'
           end
         end
 
@@ -735,33 +728,6 @@ module Aspera
           end
         end
 
-        # admin > <resource> > create / show / modify / delete
-        Api::Faspex::ADMIN_RESOURCES.each do |res|
-          define_action_method([:admin, res, :create]) do |input_data: nil, **|
-            args = res_exec_args(res)
-            items = input_data.is_a?(Array) ? input_data : [input_data] if input_data
-            entity_create(input_data: items, **args)
-          end
-
-          define_action_method([:admin, res, :show]) do |res_id: nil, **|
-            args = res_exec_args(res)
-            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
-            entity_show(id: id, **args)
-          end
-
-          define_action_method([:admin, res, :modify]) do |input_data: nil, res_id: nil, **|
-            args = res_exec_args(res)
-            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
-            entity_modify(id: id, input_data: input_data, **args)
-          end
-
-          define_action_method([:admin, res, :delete]) do |res_id: nil, **|
-            args = res_exec_args(res)
-            id = res_id || options.instance_identifier{ |f, v| res_lookup_id(res, f, v)}
-            entity_delete(id: id, **args)
-          end
-        end
-
         def action_admin_smtp_test(test_data:, **)
           test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
           creation = @api_v5.create('configuration/smtp/test', test_data)
@@ -818,7 +784,10 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           define_method(:"setup_admin_#{res}_instance") do |**kwargs|
             res_id = kwargs[:"#{RES_SINGULAR[res]}_id"]
-            {res_instance_path: "#{res}/#{res_id}"}
+            {
+              res_instance_path: "#{res}/#{res_id}",
+              saml_groups_path:  "#{res}/#{res_id}/saml_groups"
+            }
           end
         end
 
@@ -849,36 +818,26 @@ module Aspera
           end
         end
 
-        # admin > shared_inboxes|workgroups > members|saml_groups > create/list/modify/delete
+        # admin > shared_inboxes|workgroups > members > create/list/modify/delete
+        # (saml_groups CRUD is handled by crud_commands)
         %i[shared_inboxes workgroups].each do |res|
-          MEMBER_SAML_GROUP.each do |sub|
-            lk  = sub.eql?(:saml_groups) ? 'groups' : sub.to_s
-            mid = sub.eql?(:saml_groups) ? :group_id : :member_id
+          define_action_method([:admin, res, :members, :list]) do |res_instance_path:, **|
+            entity_list(api: @api_v5, entity: "#{res_instance_path}/members", items_key: 'members')
+          end
 
-            define_action_method([:admin, res, sub, :list]) do |res_instance_path:, **|
-              entity_list(api: @api_v5, entity: "#{res_instance_path}/#{sub}", items_key: lk)
-            end
+          define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, **kwargs|
+            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: kwargs[:member_id])
+          end
 
-            define_action_method([:admin, res, sub, :modify]) do |res_instance_path:, **kwargs|
-              entity_modify(api: @api_v5, entity: "#{res_instance_path}/#{sub}", id: kwargs[mid])
-            end
+          define_action_method([:admin, res, :members, :delete]) do |res_instance_path:, **kwargs|
+            entity_delete(api: @api_v5, entity: "#{res_instance_path}/members", id: kwargs[:member_id])
+          end
 
-            define_action_method([:admin, res, sub, :delete]) do |res_instance_path:, **kwargs|
-              entity_delete(api: @api_v5, entity: "#{res_instance_path}/#{sub}", id: kwargs[mid])
-            end
-
-            if sub.eql?(:members)
-              define_action_method([:admin, res, sub, :create]) do |users:, access:, res_instance_path:, **|
-                res_path = "#{res_instance_path}/#{sub}"
-                resolved = resolve_member_user_ids(users)
-                input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
-                entity_create(api: @api_v5, entity: res_path, input_data: input_data)
-              end
-            else
-              define_action_method([:admin, res, sub, :create]) do |res_instance_path:, **|
-                entity_create(api: @api_v5, entity: "#{res_instance_path}/#{sub}")
-              end
-            end
+          define_action_method([:admin, res, :members, :create]) do |users:, access:, res_instance_path:, **|
+            res_path = "#{res_instance_path}/members"
+            resolved = resolve_member_user_ids(users)
+            input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
+            entity_create(api: @api_v5, entity: res_path, input_data: input_data)
           end
         end
 
@@ -1008,7 +967,7 @@ module Aspera
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
         PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
         private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
-          :MEMBER_SAML_GROUP, :CRUD_NO_SHOW, :CRUD_NO_LIST
+          :CRUD_NO_SHOW, :CRUD_NO_LIST
       end
     end
   end
