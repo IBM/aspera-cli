@@ -2559,7 +2559,8 @@ aoc_files_thumbnail_text_double:
     - files
     - thumbnail
     - "@extend:@preset:awa.test_folder@/video_file.mpg"
-    - --query=@json:{"text":true,"double":true}
+    - --query.text=true
+    - --query.double=true
 aoc_files_thumbnail_text_single:
   tags:
     - nodoc
@@ -2571,7 +2572,8 @@ aoc_files_thumbnail_text_single:
     - files
     - thumbnail
     - "@extend:@preset:awa.test_folder@/video_file.mpg"
-    - --query=@json:{"text":true,"double":false}
+    - --query.text=true
+    - --query.double=false
 aoc_files_thumbnail_video_no_term:
   env:
     TERM_PROGRAM: null
@@ -5674,7 +5676,8 @@ prev_mxf_blend:
     - mp4
     - --base=$(TMP / 'prev_mxf_blend')
     - --video-conversion=blend
-    - --query=@json:{"text":true,"double":true}
+    - --query.text=true
+    - --query.double=true
 prev_pdf:
   args:
     - preview
