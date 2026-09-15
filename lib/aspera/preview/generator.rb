@@ -155,7 +155,7 @@ module Aspera
               out_p: [
                 '-ss', offset_seconds * 0.1,
                 '-t', @options.clips_length,
-                '-filter:v', "scale=#{@options.video_scale}",
+                '-filter:v', "scale='#{@options.video_scale}'",
                 '-codec:a', 'libmp3lame'
               ]
             )
@@ -195,7 +195,7 @@ module Aspera
             '-b:v', '500k',
             '-maxrate', '500k',
             '-bufsize', '1000k',
-            '-filter:v', "scale=#{@options.video_scale}",
+            '-filter:v', "scale='#{@options.video_scale}'",
             '-threads', '0',
             '-codec:a', 'libmp3lame',
             '-ac', '2',

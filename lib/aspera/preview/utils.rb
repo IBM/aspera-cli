@@ -131,7 +131,7 @@ module Aspera
             in_f: input_file,
             in_p: ['-ss', offset_seconds],
             out_f: output_file,
-            out_p: ['-frames:v', 1, '-filter:v', "scale=#{scale}"]
+            out_p: ['-frames:v', 1, '-filter:v', "scale='#{scale}'"]
           )
         end
 
