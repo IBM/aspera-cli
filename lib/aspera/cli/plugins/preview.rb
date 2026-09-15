@@ -327,7 +327,7 @@ module Aspera
             Log.log.error{"Ignoring: #{e.class} #{e.message}"}
             Log.log.debug(e.backtrace.join("\n").red)
             # in case of any error, place a standard error image
-            FileUtils.cp(gen_info[:generator].error_asset, @destination_file_path)
+            FileUtils.cp(gen_info[:generator].error_asset, gen_info[:dst])
           end
           if @access_remote
             # upload
