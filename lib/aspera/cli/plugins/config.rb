@@ -278,7 +278,7 @@ module Aspera
             arguments: [{name: :agent_name, mandatory: false, default: nil}]
           command :errors,   description: 'Display FASP error codes'
           command :products, description: 'Manage installed Aspera products'
-          commands_under %i[ascp products] do
+          commands_under :products do
             command :list, description: 'List installed Aspera products'
           end
         end
