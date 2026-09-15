@@ -126,6 +126,7 @@ bundle exec rake doc:prep
 Add one bullet under `### New Features` (or `### Issues Fixed` / `### Breaking Changes`) in the current `.pre` section at the top of `CHANGELOG.md`.
 
 Style rules:
+
 - Plugin name in backticks: `` `config` ``, `` `aoc` ``, or `**global**` for cross-cutting changes.
 - Command path and argument names in backticks.
 - One sentence per bullet; end without a period.
@@ -404,10 +405,3 @@ bundle exec rake release_tag
 This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
 
 - Update `version.rb` to the next `.pre` development version.
-
-## Future Improvements
-
-- Evaluate replacing custom REST and OAuth implementations with standard gems:
-  - [rest-client](https://github.com/rest-client/rest-client)
-  - [oauth2](https://github.com/oauth-xx/oauth2)
-- Explore [Traveling Ruby](https://github.com/phusion/traveling-ruby) for distribution, or [truby Traveling Ruby](https://github.com/trubygems/traveling-ruby).
