@@ -314,6 +314,8 @@ module Aspera
               result = res if res.is_a?(Hash)
               # TODO: remove when faspio gw api fixes this
               result = res.first if res.is_a?(Array) && res.first.is_a?(Hash)
+              # Ensure the id_result key is always present even when the API response uses a different key name
+              result[id_result] = item unless result.key?(id_result)
               result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
             rescue StandardError => e
               raise e if bfail
