@@ -84,6 +84,32 @@ module Aspera
           end
         end
 
+        describe '.file_matcher' do
+          it 'returns a matching lambda for a glob' do
+            matcher = described_class.file_matcher('*.mp4')
+
+            expect(matcher.call({'name' => 'movie.mp4'})).to(be(true))
+            expect(matcher.call({'name' => 'movie.mov'})).to(be(false))
+          end
+
+          it 'returns a matching lambda for a regular expression' do
+            matcher = described_class.file_matcher(/\.mp4\z/)
+
+            expect(matcher.call({'name' => 'movie.mp4'})).to(be(true))
+            expect(matcher.call({'name' => 'movie.mov'})).to(be(false))
+          end
+
+          it 'returns the supplied Proc unchanged' do
+            matcher = ->(entry){entry['size'] > 0}
+
+            expect(described_class.file_matcher(matcher)).to(be(matcher))
+          end
+
+          it 'matches every entry when no filter is supplied' do
+            expect(described_class.file_matcher(nil).call({'name' => 'any'})).to(be(true))
+          end
+        end
+
         describe '.command' do
           it 'registers a CommandSpec in the registry' do
             klass = Class.new(Base)

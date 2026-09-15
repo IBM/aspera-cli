@@ -11,6 +11,7 @@ Released: [Place date of release here]
 * `config`: Preset secrets (passwords, keys) are now automatically moved to the vault when a preset is saved and a vault is used.
 * `httpgw`: Added asynchronous transfer mode — `last_job_id` is now exposed so a transfer can be submitted and its status queried later.
 * `direct`: Added asynchronous transfer mode — `last_job_id` is now exposed so a transfer can be submitted and its status queried later.
+* `preview`: `scan` now accepts an optional path or `%id:<file_id>` selector, allowing preview generation for one file or a subtree. Added the `--filter` option, supporting glob strings, regular expressions, and `@ruby:` Proc expressions.
 
 ### Issues Fixed
 
@@ -22,6 +23,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `preview`: Options `--scan-id` and `--scan-path` are deprecated; use the optional `scan [path]` argument instead.
 * `faspex`: **Plugin removed** - Faspex v4 is end of support since September 30th, 2024. Use `ascli` version 4.19.0 or earlier if still needed.
 
 ## 4.27.0

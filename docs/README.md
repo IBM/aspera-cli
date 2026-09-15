@@ -7346,7 +7346,7 @@ files show testdst/test_file.bin
 files sync admin status /data/local_sync
 files sync pull /testdst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
 files thumbnail my_test_folder/video_file.mpg
-files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
+files thumbnail my_test_folder/video_file.mpg --query.text=true --query.double=true
 files transfer push /testsrc --to-folder=/testdst test_file.bin
 files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 files upload --to-folder=/testsrc test_file.bin
@@ -8553,7 +8553,7 @@ packages show <id>
 packages status <f5_pack_send_shared> @list:,failed,completed
 packages status <id>
 postprocessing @json:'{"url":"https://localhost:8553/asclihook","script_folder":"/path/to/scripts","cert":".../localhost.p12","key":"changeit"}'
-shared browse %name:my_src
+shared browse %name:my_shared_folder_name
 shared list
 shared_folders browse %name:my_shared_folder_name
 shared_folders list
@@ -9571,8 +9571,16 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 
 - `trevents` : only recently uploaded files will be tested (transfer events)
 - `events` : only recently uploaded files will be tested (file events: not working)
-- `scan` : recursively scan all files under the access key&apos;s **storage root**
+- `scan [path]` : generate previews for a file or recursively scan a folder. The default path is the access key&apos;s **storage root**. A file or folder can also be selected with `%id:<file_id>`.
 - `test` : test using a local file
+
+Use `--filter` with `scan`, `events`, or `trevents` to select files by name. It accepts a glob string, a regular expression using `@re:`, or a Proc using `@ruby:`. For example:
+
+```shell
+ascli preview scan /videos --filter='*.mp4'
+ascli preview scan %id:<file_id>
+ascli preview scan /videos --filter='@ruby:->(f){f["name"].end_with?(".mp4")}'
+```
 
 Once candidate are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated using one of three values for the `overwrite` option:
 
@@ -9590,8 +9598,6 @@ ascli preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
-
-When scanning the option `query` has the same behavior as for the `node access_keys do self find` command.
 
 See the following section for details.
 
@@ -9666,7 +9672,7 @@ test my_dcm --base=test --mimemagic=yes
 test my_jpg_unk --base=test --mimemagic=yes
 test my_mpg mp4 --base=test --video-conversion=clips
 test my_mpg mp4 --base=test --video-conversion=reencode
-test my_mxf mp4 --base=test --video-conversion=blend --query=@json:'{"text":true,"double":true}'
+test my_mxf mp4 --base=test --video-conversion=blend --query.text=true --query.double=true
 trevents --once-only=yes --skip-types=office --log-level=info
 ```
 

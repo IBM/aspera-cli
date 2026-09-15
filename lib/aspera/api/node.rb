@@ -124,19 +124,6 @@ module Aspera
           return parameters
         end
 
-        # Build a filter lambda from a match expression (String glob, Regexp, Proc, or nil).
-        # @param match_expression [String, Regexp, Proc, NilClass]
-        # @return [Proc] lambda(entry) -> Boolean
-        def file_matcher(match_expression)
-          case match_expression
-          when Proc    then return match_expression
-          when Regexp  then return ->(f){f['name'].match?(match_expression)}
-          when String  then return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
-          when NilClass then return ->(_){true}
-          else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
-          end
-        end
-
         # Split path into folder + filename
         # @param path [String] file path to split
         # @return [Array(String, String)] containing folder + inside folder/file

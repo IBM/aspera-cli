@@ -8614,8 +8614,16 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 
 - `trevents` : only recently uploaded files will be tested (transfer events)
 - `events` : only recently uploaded files will be tested (file events: not working)
-- `scan` : recursively scan all files under the access key&apos;s **storage root**
+- `scan [path]` : generate previews for a file or recursively scan a folder. The default path is the access key&apos;s **storage root**. A file or folder can also be selected with `%id:<file_id>`.
 - `test` : test using a local file
+
+Use `--filter` with `scan`, `events`, or `trevents` to select files by name. It accepts a glob string, a regular expression using `@re:`, or a Proc using `@ruby:`. For example:
+
+```shell
+<%=cmd%> preview scan /videos --filter='*.mp4'
+<%=cmd%> preview scan %id:<file_id>
+<%=cmd%> preview scan /videos --filter='@ruby:->(f){f["name"].end_with?(".mp4")}'
+```
 
 Once candidate are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated using one of three values for the `overwrite` option:
 
@@ -8633,8 +8641,6 @@ It expects a list of path relative to the storage root (docroot) starting with s
 ```
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
-
-When scanning the option `query` has the same behavior as for the `node access_keys do self find` command.
 
 See the following section for details.
 

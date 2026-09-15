@@ -56,8 +56,7 @@ module Aspera
         option :previews_folder,    description: 'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
         option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Type::STRING_ARRAY, handler: :option_skip_folders
         option :base,               description: 'Basename of output for for test'
-        option :scan_path,          description: 'Subpath in folder id to start scan in (default=/)'
-        option :scan_id,            description: 'Folder id in storage to start scan in, default is access key main folder id'
+        option :filter, description: 'File name filter: String (glob), Regexp, or Proc', allowed: [String, Regexp, Proc, NilClass]
         option :mimemagic,          description: 'Use Mime type detection of gem mimemagic',                                                                                      allowed: Type::BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file',                                                                                                 allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
         option :root_url,           description: "How to read and write files on storage (<empty>, #{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: ''
@@ -403,14 +402,16 @@ module Aspera
 
         # scan, events and trevents connect to the Node API (setup: :setup_node_api).
         # `check`, `test` and `show` work without Node API authentication.
-        command :scan,     description: 'Scan all files and generate previews',             setup: :setup_node_api, arguments: FILTER_ARGS
-        command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, arguments: FILTER_ARGS
-        command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, arguments: FILTER_ARGS
+        command :scan,     description: 'Scan a file or folder and generate previews',      setup: :setup_node_api, arguments: [{name: :path, type: String, description: 'File or folder from which to start scanning', mandatory: false, default: '/'}]
+        command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api
+        command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api
         command :check,    description: 'Check required tools are installed'
+        command :show,     description: 'Generate and display preview of a source file', arguments: [{name: :source_file, type: String, description: 'Local file to preview'}]
         command :test,     description: 'Test preview generation for a source file',
-          arguments: [{name: :source_file, type: String}, {name: :format, allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}]
-        command :show,     description: 'Generate and display preview of a source file',
-          arguments: [{name: :source_file, type: String}]
+          arguments: [
+            {name: :source_file, type: String, description: 'Local file to preview'},
+            {name: :format, description: 'Preview output format', allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}
+          ]
 
         # --- setup ---
 
@@ -459,38 +460,32 @@ module Aspera
 
         # --- handlers ---
 
-        def action_scan(filter: nil, **)
+        def action_scan(path:, **)
           check_tools_and_mimemagic
-          scan_path = options.get_option(:scan_path)
-          scan_id = options.get_option(:scan_id)
-          folder_info =
-            if scan_id.nil?
-              {
-                'id'   => @access_key_self['root_file_id'],
-                'name' => '/',
-                'type' => 'folder',
-                'path' => '/'
-              }
+          apifid =
+            if (selector = Parser.percent_selector(path))
+              Aspera.assert_values(selector[:field], ['id'], type: BadArgument){'file id'}
+              Api::NodeFileId.new(@api_node, selector[:value].to_s.empty? ? @access_key_self['root_file_id'] : selector[:value])
             else
-              @api_node.read("files/#{scan_id}")
+              @api_node.resolve_api_fid(@access_key_self['root_file_id'], path)
             end
-          @filter_block = Api::Node.file_matcher(filter)
-          scan_folder_files(folder_info, scan_path)
+          @filter_block = Base.file_matcher(options.get_option(:filter))
+          scan_folder_files(@api_node.read("files/#{apifid.file_id}"))
           Result::Status.new('scan finished')
         ensure
           cleanup_tmp_folder
         end
 
-        def action_events(filter: nil, **)
+        def action_events(**)
           check_tools_and_mimemagic
-          run_event_loop(:events, filter: filter)
+          run_event_loop(:events, filter: options.get_option(:filter))
         ensure
           cleanup_tmp_folder
         end
 
-        def action_trevents(filter: nil, **)
+        def action_trevents(**)
           check_tools_and_mimemagic
-          run_event_loop(:trevents, filter: filter)
+          run_event_loop(:trevents, filter: options.get_option(:filter))
         ensure
           cleanup_tmp_folder
         end
@@ -539,7 +534,7 @@ module Aspera
         # @param command [:events, :trevents]
         # @param filter  [String, Regexp, Proc, nil] optional filter expression
         def run_event_loop(command, filter: nil)
-          @filter_block = Api::Node.file_matcher(filter)
+          @filter_block = Base.file_matcher(filter)
           iteration_persistency = nil
           if options.get_option(:once_only, mandatory: true)
             iteration_persistency = PersistencyActionOnce.new(

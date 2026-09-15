@@ -257,12 +257,25 @@ module Aspera
             @application_name = name unless name.nil?
             @application_name || self.name.split('::').last
           end
+
+          # Build a filter lambda from a match expression (String glob, Regexp, Proc, or nil).
+          # @param match_expression [String, Regexp, Proc, NilClass] as in FILTER_ARGS
+          # @return [Proc] lambda(entry) -> Boolean
+          def file_matcher(match_expression)
+            case match_expression
+            when Proc    then match_expression
+            when Regexp  then ->(f){f['name'].match?(match_expression)}
+            when String  then ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
+            when NilClass then ->(_){true}
+            else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
+            end
+          end
         end
 
         # Shared positional argument for commands that accept an optional file name filter.
-        # Accepted types: String (shell glob matched against entry name) or Regexp.
+        # Accepted types: String (shell glob matched against entry name), Regexp, or Proc.
         # Used by node files find, and preview scan/events/trevents.
-        FILTER_ARGS = [{name: :filter, type: [String, Regexp], description: 'File name filter: String (glob) or Regexp', mandatory: false, default: nil}].freeze
+        FILTER_ARGS = [{name: :filter, type: [String, Regexp, Proc], description: 'File name filter: String (glob), Regexp, or Proc', mandatory: false, default: nil}].freeze
 
         option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
         option :bulk,  description: 'Bulk operation (only some)',                            allowed: Type::BOOLEAN, default: false

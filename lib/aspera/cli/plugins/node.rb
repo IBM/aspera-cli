@@ -736,7 +736,7 @@ module Aspera
         # access_keys > do > find
         def action_access_keys_do_find(path:, filter: nil, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
-          Result::ObjectList.new(@api_node.find_files(apifid.file_id, Api::Node.file_matcher(filter)), fields: ['path'])
+          Result::ObjectList.new(@api_node.find_files(apifid.file_id, Base.file_matcher(filter)), fields: ['path'])
         end
 
         # access_keys > do > cat
