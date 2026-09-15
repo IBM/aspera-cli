@@ -319,7 +319,7 @@ module Aspera
             end
           )
           command :admin, description: 'Manage sync database (admin operations)'
-          SyncActions.register_sync_admin_commands(self, %i[sync admin])
+          SyncActions.register_sync_admin_commands(self, :admin)
           command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [{name: :async_arguments, type: String, multiple: true}],
             action: ->(async_arguments:, **){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}

@@ -29,7 +29,7 @@ module Aspera
         # DSL helper: register the 7 `sync admin` leaf commands under the given parent path.
         # Called at class-load time from any plugin that includes SyncActions.
         # @param base        [Class]          the plugin class (receiver of DSL methods)
-        # @param admin_path  [Symbol, Array<Symbol>]  full parent path, e.g. %i[sync admin]
+        # @param admin_path  [Symbol, Array<Symbol>]  path relative to current scope, e.g. :admin
         def register_sync_admin_commands(base, admin_path)
           base.commands_under(admin_path) do
             base.command(:find,      description: 'Find sync database files',     arguments: [{name: :path, type: String}], action: :action_sync_admin_find)

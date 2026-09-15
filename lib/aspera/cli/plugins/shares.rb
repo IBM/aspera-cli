@@ -312,7 +312,7 @@ module Aspera
               command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
             end
             command :admin, description: 'Manage sync database (admin operations)'
-            SyncActions.register_sync_admin_commands(self, %i[files sync admin])
+            SyncActions.register_sync_admin_commands(self, :admin)
           end
         end
 

@@ -626,7 +626,7 @@ module Aspera
               Operations::ALL + (cfg[:extra_ops] || [])
             end
             command res, description: "Manage #{res.to_s.tr('_', ' ')}"
-            commands_under([:admin, res]) do
+            commands_under res do
               ops.each do |op|
                 extra_setup = op_setup[op]
                 base_attrs = extra_setup ? {setup: extra_setup} : {}
@@ -740,7 +740,7 @@ module Aspera
         commands_under APP_SETTINGS_PATH do
           APP_TYPES.each do |app_type|
             command app_type, description: "Settings for #{app_type} app"
-            commands_under(APP_SETTINGS_PATH + [app_type]) do
+            commands_under app_type do
               command :show, description: "Show #{app_type} settings",
                 action: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
               command(
@@ -764,7 +764,7 @@ module Aspera
           end)
           APP_TYPES.each do |app_type|
             command app_type, description: "Show or modify a #{app_type} instance"
-            commands_under(APP_INSTANCE_PATH + [app_type]) do
+            commands_under app_type do
               command :show,   description: "Show a #{app_type} instance",
                 arguments: [{name: :"#{app_type}_id", type: :identifier}]
               command :modify, description: "Modify a #{app_type} instance",

@@ -379,7 +379,7 @@ module Aspera
             command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
           end
           command :admin, description: 'Manage sync database (admin operations)'
-          SyncActions.register_sync_admin_commands(self, %i[sync admin])
+          SyncActions.register_sync_admin_commands(self, :admin)
         end
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
@@ -402,12 +402,12 @@ module Aspera
           end
           command :permission, description: 'Manage permissions', setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders'
-          commands_under %i[access_keys do sync] do
+          commands_under :sync do
             Sync::Operations::DIRECTIONS.each do |dir|
               command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
             end
             command :admin, description: 'Manage sync database (admin operations)'
-            SyncActions.register_sync_admin_commands(self, %i[access_keys do sync admin])
+            SyncActions.register_sync_admin_commands(self, :admin)
           end
         end
         commands_under %i[access_keys do permission] do
