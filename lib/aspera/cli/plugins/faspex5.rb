@@ -187,7 +187,9 @@ module Aspera
               group_type = options.get_option(:group_type)
               "#{group_type}/#{@api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
             end
-          merged_query = query_read_delete(default: query, schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages'))
+          # Merge default query with user-provided query: user values take precedence, but defaults are preserved
+          user_query = query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages'))
+          merged_query = user_query.nil? ? query.dup : query.merge(user_query)
           # Extract `max` before the API call so callers can apply it after post-API filtering
           max_items = merged_query.delete(RestList::MAX_ITEMS)&.to_i
           list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: merged_query)
