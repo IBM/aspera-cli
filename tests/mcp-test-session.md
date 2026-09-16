@@ -11,6 +11,18 @@
    - the MCP tool call(s) you made, with the exact arguments,
    - the result you received,
    - whether the task succeeded or was skipped (and why).
+5. Throughout the session, keep a running log of every problem encountered that led
+   to an incorrect, failed, or outdated command. For each problem record:
+   - the task number and the exact command attempted,
+   - the error or unexpected behaviour observed,
+   - the root cause (wrong argument, obsolete syntax, missing introspection step,
+     misleading MCP prompt / description, gap in the README, etc.),
+   - a suggested improvement (MCP tool description, `help` output, README section,
+     preset discovery, or command schema).
+   At the end of all tasks, produce a consolidated **Improvement Report** that groups
+   the logged problems by category (MCP prompt wording, introspection gaps, manual /
+   README gaps, command schema issues, other) and lists concrete, actionable
+   recommendations for each category.
 
 **Before starting the tasks**, use `["config", "preset", "list"]` to discover which
 presets are configured. If a given plugin has a default preset in the default section, just do not specify url or credentials, as it will use the default ones.
