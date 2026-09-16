@@ -2744,6 +2744,7 @@ aoc_pack_recv_all:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
+    - --query.max=5
     - --lock-port=50101
     - --package-folder.fld.0=name
     - --package-folder.fld.1=id
@@ -2848,6 +2849,7 @@ aoc_pack_recv_shbx:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
+    - --query.max=5
     - --lock-port=50101
     - --query=@json:@extend:{"dropbox_name":"@preset:awa.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}
     - --ts=@json:{"resume_policy":"sparse_csum","target_rate_kbps":50000}
@@ -6160,6 +6162,7 @@ f5_pack_recv_all:
     - ALL
     - --once-only=yes
     - --to-folder=$(TMP)
+    - --query.max=5
 f5_pack_delete:
   depends_on:
     - f5_pack_recv_all

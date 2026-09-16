@@ -168,9 +168,13 @@ module Aspera
           return result
         end
 
-        # list all packages with optional filter
+        # List all packages with optional filter.
+        # The special `max` key is extracted *before* the API call and returned separately,
+        # so callers that apply a post-API filter (e.g. once_only) can enforce the limit
+        # after filtering rather than before.
         # @param filter [Proc, nil] optional filter lambda applied to each package entry
         # @param query  [Hash]      additional query parameters forwarded to the API
+        # @return [Array(Array, Integer|nil, Integer|nil)] [filtered list, max (or nil), total count]
         def list_packages_with_filter(filter: nil, query: {})
           filter ||= ->(_x) { true }
           box = options.get_option(:box)
@@ -183,8 +187,11 @@ module Aspera
               group_type = options.get_option(:group_type)
               "#{group_type}/#{@api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
             end
-          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: query_read_delete(default: query, schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages')))
-          return list.select(&filter), total
+          merged_query = query_read_delete(default: query, schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages'))
+          # Extract `max` before the API call so callers can apply it after post-API filtering
+          max_items = merged_query.delete(RestList::MAX_ITEMS)&.to_i
+          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: merged_query)
+          return list.select(&filter), max_items, total
         end
 
         # Build query to get package recipients based on package info in case of shared inbox or workgroup recipient
@@ -217,15 +224,17 @@ module Aspera
           case package_ids
           when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency, 'Only with option once_only')
-            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map { |p| p['id'] }) # no filter: all packages
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map { |p| p['id'] }) # no filter: all packages, max ignored
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
-            packages = list_packages_with_filter(query: {'status' => 'completed'}).first # no filter: all completed packages
+            packages, max_items = list_packages_with_filter(query: {'status' => 'completed'}) # no filter: all completed packages
             Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
             Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
             packages.reject! { |p| skip_ids_persistency.data.include?(p['id']) } if skip_ids_persistency
+            # Apply `max` after once_only filtering so we get the N first not-yet-downloaded packages
+            packages = packages[0, max_items] if max_items
             Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
           else
             # a single id was provided, or a list of ids
@@ -872,7 +881,8 @@ module Aspera
         end
 
         def action_packages_list(filter: nil, **)
-          list, total = list_packages_with_filter(filter: filter)
+          list, max_items, total = list_packages_with_filter(filter: filter)
+          list = list[0, max_items] if max_items
           fields = %w[id title status sender.name recipients.0.name release_date total_bytes total_files]
           fields.delete('recipients.0.name') if %w[inbox inbox_history].include?(options.get_option(:box))
           fields.delete('sender.name') if %w[outbox outbox_history].include?(options.get_option(:box))

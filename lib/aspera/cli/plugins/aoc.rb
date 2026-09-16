@@ -398,14 +398,19 @@ module Aspera
           query['exclude_dropbox_packages'] = !query.key?('dropbox_id') unless query.key?('exclude_dropbox_packages')
         end
 
-        # List all packages according to `query` option.
-        # @return [Hash] {items,total} with all packages according to combination of user's query and default query
+        # List all packages from the API using the current `--query` option.
+        # The special `max` key is extracted *before* the API call and returned separately,
+        # so callers that apply a post-API filter (e.g. once_only) can enforce the limit
+        # after filtering rather than before.
+        # @return [Array(Hash, Integer, nil)] [{items:,total:} paging result, max (or nil)]
         def list_all_packages_with_query
           query = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::AOC, 'packages'))
           Aspera.assert_type(query, Hash) { 'query' }
           PACKAGE_RECEIVED_BASE_QUERY.each { |k, v| query[k] = v unless query.key?(k) }
           resolve_dropbox_name_default_ws_id(query)
-          return aoc_api.read_with_paging('packages', query.compact)
+          # Extract `max` before paging so callers can apply it after post-API filtering
+          max_items = query.delete(RestList::MAX_ITEMS)&.to_i
+          return aoc_api.read_with_paging('packages', query.compact), max_items
         end
 
         FILES_COMMANDS = (Node::COMMANDS_GEN4 + %i[transfer]).freeze
@@ -991,15 +996,16 @@ module Aspera
           skip_ids_persistency = package_persistency
           case ids_to_download
           when SpecialValues::INIT
-            all_packages = list_all_packages_with_query[:items]
+            all_packages, = list_all_packages_with_query
             Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
-            skip_ids_persistency.data.clear.concat(all_packages.map { |e| e['id'] })
+            skip_ids_persistency.data.clear.concat(all_packages[:items].map { |e| e['id'] })
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
-            all_packages = list_all_packages_with_query[:items]
-            reject_packages_from_persistency(all_packages, skip_ids_persistency)
-            ids_to_download = all_packages.map { |e| e['id'] }
+            all_packages, max_items = list_all_packages_with_query
+            reject_packages_from_persistency(all_packages[:items], skip_ids_persistency)
+            all_packages[:items] = all_packages[:items][0, max_items] if max_items
+            ids_to_download = all_packages[:items].map { |e| e['id'] }
             formatter.display_status("Found #{ids_to_download.length} package(s).")
           else
             ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
@@ -1037,9 +1043,10 @@ module Aspera
 
         # packages > list
         def action_packages_list
-          result = list_all_packages_with_query
+          result, max_items = list_all_packages_with_query
           skip_ids_persistency = package_persistency
           reject_packages_from_persistency(result[:items], skip_ids_persistency)
+          result[:items] = result[:items][0, max_items] if max_items
           display_fields = PACKAGE_LIST_DEFAULT_FIELDS
           display_fields += ['workspace_id'] if aoc_api.workspace_info[:id].nil?
           Result::ObjectList.new(result[:items], fields: display_fields, total: result[:total])
