@@ -6216,6 +6216,12 @@ See [File list](#list-of-files-for-transfers).
 
 The Aspera on Cloud **Packages** app lets you assemble copies of any number of files and folders into a digital "package" and send the package to others, pretty much like a web-mail application.
 
+> [!NOTE]
+> All `aoc packages` commands operate in a workspace context. The workspace is inferred
+> automatically when a default workspace is configured in the application. If no default is
+> set, provide one explicitly with `--workspace=NAME`. List available workspaces with
+> `<%=cmd%> aoc user workspaces list`.
+
 #### Send a Package
 
 General syntax:
@@ -6429,6 +6435,10 @@ The Files application presents a **Home** folder to users in a given workspace.
 Files located here are either user's files, or shared folders.
 
 > [!NOTE]
+> All `aoc files` commands operate in a workspace context. The workspace is inferred
+> automatically when a default workspace is configured in the application. If no default is
+> set, provide one explicitly with `--workspace=NAME`. List available workspaces with
+> `<%=cmd%> aoc user workspaces list`.
 > All commands under `files` are the same as under `access_keys do self` for plugin `node`, that is, **gen4/access key** operations.
 
 #### Download Files
@@ -7940,6 +7950,10 @@ To keep the content encrypted, use option: `--ts=@json:'{"content_protection":nu
 
 ### Faspex 5: List all shared inboxes and work groups
 
+> [!NOTE]
+> **Shared inboxes** (`faspex5 admin shared_inboxes`) are package recipients (dropboxes), accessible under the **Packages** app.
+> They are distinct from **shared folders** (`faspex5 shared_folders`), which are node-based storage access points accessible under the **Files** app.
+
 If you are a regular user, to list work groups you belong to:
 
 ```shell
@@ -7984,6 +7998,10 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 ```
 
 ### Faspex 5: List content in Shared folder and send package from remote source
+
+> [!NOTE]
+> **Shared folders** (`faspex5 shared_folders`) provide node-based storage access, accessible under the **Files** app.
+> They are distinct from **shared inboxes** (`faspex5 admin shared_inboxes`), which are package recipients (dropboxes) accessible under the **Packages** app.
 
 ```shell
 <%=cmd%> faspex5 shared_folders list --fields=id,name
@@ -8902,6 +8920,74 @@ VS Code Copilot, or any MCP-capable client).
 It covers tool visibility, self-discovery, Hash schema introspection, option listing,
 documentation retrieval, live transfer tasks, truncation handling, error handling, and
 credential safety.
+
+### MCP usage patterns for AI
+
+> [!TIP]
+> This section is for AI assistants using the MCP server. Follow these patterns to avoid
+> common first-call failures and unnecessary retries.
+
+#### Session bootstrap
+
+Always start a session with two discovery calls before doing anything else:
+
+```
+["config", "preset", "list"]
+["config", "preset", "show", "default"]
+```
+
+The second call returns the `plugin → preset_name` mapping so you know which credentials
+are active for each plugin.
+
+#### Command discovery
+
+Always use `["config", "commands"]` to enumerate every available command and its syntax.
+Never guess command names from training data — names like `shared_folders` vs
+`shared_inboxes` are easily confused.
+
+#### Schema introspection for Hash arguments
+
+Whenever a command syntax shows a `<data>` argument, call `help` **before** the real call:
+
+```json
+["<plugin>", "<cmd>", ..., "help"]
+```
+
+This returns a table of field names, types, and descriptions. Never infer field names from
+server error messages.
+
+#### Async transfers and cross-call status tracking
+
+The `direct` agent keeps transfer state in-memory. A job started in one MCP call **cannot**
+be monitored in a subsequent call — the in-memory agent is gone between calls.
+
+Use the `transferd` agent when you need to check transfer status in a later call:
+
+```json
+["server", "upload", "--transfer=transferd", "--to-folder=/dst", "/local/file"]
+```
+
+The `desktop` agent is also unaffected because it runs in an external process.
+
+#### Workspace context for AoC
+
+`aoc files` and `aoc packages` commands require a workspace context. If no default
+workspace is configured in the preset, always add `--workspace=NAME`:
+
+```
+["aoc", "files", "ls", "/", "--workspace=MyWorkspace"]
+```
+
+List available workspaces with `["aoc", "user", "workspaces", "list"]`.
+
+#### Admin operations and privilege checks
+
+Before calling any `admin` sub-command, verify that the active preset has admin rights.
+`access_denied` typically means the wrong preset is active, not a syntax error. Check with:
+
+```
+["config", "preset", "show", "<preset_name>"]
+```
 
 ## Operational Utilities
 

@@ -47,7 +47,7 @@ module Aspera
 
         AUTOMATIC FLAGS
           The server automatically prepends extra_args to every call (default:
-          --interactive=no and --transfer.asynchronous=true).
+          #{DEFAULT_EXTRA_ARGS.join(' ')}).
           Do NOT repeat these flags in your args array — they are already injected.
           If you explicitly need to override one (e.g. --interactive=yes), include it
           in your args; your value will take precedence because it appears after the
@@ -191,12 +191,21 @@ module Aspera
         rescue SystemExit => e
           MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
         rescue => e
-          MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
+          MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{dedupe_lines(e.message)}"}], error: true)
         end
 
         # Delegate to Schema::Reader#to_rows — semantic fields, no ANSI, MCP/JSON-ready.
         def schema_to_rows(reader)
           reader.to_rows
+        end
+
+        # Collapse consecutive duplicate lines in a multi-line message.
+        # Each run of identical lines is replaced by one line + "(×N)" suffix when N > 1.
+        def dedupe_lines(msg)
+          return msg unless msg.include?("\n")
+          msg.split("\n").chunk_while { |a, b| a == b }.map do |group|
+            group.size > 1 ? "#{group.first} (×#{group.size})" : group.first
+          end.join("\n")
         end
 
         # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
