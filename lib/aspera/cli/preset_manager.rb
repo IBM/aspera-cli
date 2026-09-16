@@ -17,10 +17,12 @@ module Aspera
     class PresetManager
       # Reserved keys in the YAML config file
       module Key
-        CONFIG   = 'config'
-        VERSION  = 'version'
-        DEFAULTS = 'default'
-        GLOBAL   = 'global_common_defaults'
+        CONFIG      = 'config'
+        VERSION     = 'version'
+        DEFAULTS    = 'default'
+        GLOBAL      = 'global_common_defaults'
+        # Prefix for comment/meta keys ignored during preset parsing (e.g. _comment)
+        META_PREFIX = '_'
       end
 
       GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
@@ -134,6 +136,7 @@ module Aspera
           Aspera.assert(!current.nil?, type: Cli::Error){"Unknown config preset: #{include_path}"}
         end
         current = self.class.deep_clone(current) unless current.is_a?(String)
+        current.delete_if { |k, _| k.to_s.start_with?(Key::META_PREFIX) } if current.is_a?(Hash)
         ExtendedValue.instance.evaluate(current, context: 'preset')
       end
 

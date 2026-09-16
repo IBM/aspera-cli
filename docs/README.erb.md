@@ -2505,6 +2505,20 @@ A list of [Option Preset](#option-preset) can be displayed using:
 <%=cmd%> config preset list
 ```
 
+Any key starting with `_` (underscore) in a preset is treated as a comment and is ignored when the preset is applied.
+This is useful to annotate presets directly in the configuration file:
+
+```yaml
+demo_server:
+  _comment: "Demo server - public credentials"
+  url: ssh://demo.asperasoft.com:33001
+  username: asperaweb
+  password: demoaspera
+```
+
+> [!NOTE]
+> Comment keys are preserved and visible in `config preset overview` for inspection, but are never injected as CLI options.
+
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be opened in a text editor with:
 

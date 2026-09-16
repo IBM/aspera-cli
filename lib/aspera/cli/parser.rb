@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/preset_manager'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/error'
 require 'aspera/cli/special_values'
@@ -770,6 +771,8 @@ module Aspera
         Aspera.assert_type(preset_hash, Hash)
         Log.log.debug{"add_option_preset: #{preset_hash}, #{where}, #{override}"}
         preset_hash.each do |k, v|
+          # Ignore comment/meta keys (e.g. _comment, _description)
+          next if k.to_s.start_with?(PresetManager::Key::META_PREFIX)
           option_symbol = k.to_sym
           # Never restore an option that was explicitly cleared from the CLI (e.g. --opt=@none:)
           next if @explicitly_cleared.key?(option_symbol)
