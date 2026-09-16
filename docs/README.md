@@ -1299,7 +1299,7 @@ ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 To download that certificate store:
 
 ```shell
-ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --out.file=/tmp/cacert.pem
 ```
 
 Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
@@ -1307,7 +1307,7 @@ Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_F
 To trust a specific certificate (for example, self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```shell
-ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=<SERVER_PRESET_NAME>.pem
+ascli config remote_certificate chain https://localhost:9092 --insecure=yes --out.file=<SERVER_PRESET_NAME>.pem
 ```
 
 > [!NOTE]
@@ -1759,16 +1759,16 @@ The style of output can be set using the `format` option:
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
-#### Option: `table_style`
+#### Option: `--out.table`
 
-The way `format`: `table` and `csv` are generated can be customized with option: `table_style` which expects a `Hash`.
+The way `format`: `table` and `csv` are generated can be customized with option `--out.table` which expects a `Hash`.
 
 For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
 
 For example, to display a table with thick Unicode borders:
 
 ```shell
-ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
+ascli config preset over --out.table=@ruby:'{border: :unicode_thick_edge}'
 ```
 
 > [!NOTE]
@@ -1785,10 +1785,10 @@ For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/cs
 For example, to display a CSV with headers and quotes:
 
 ```shell
-ascli config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
+ascli config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --out.table=@json:'{"headers":true,"force_quotes":true}'
 ```
 
-#### Option: `flat_hash`: Single level `Hash`
+#### Option: `--out.flat`: Single level `Hash`
 
 This option controls how object fields are displayed for complex objects.
 
@@ -1822,7 +1822,7 @@ ascli config echo @json:'{"A":"a","B":[{"name":"B1","value":"b1"},{"name":"B2","
 ╰────────┴───────╯
 ```
 
-For the same command, adding option `--flat=no`:
+For the same command, adding option `--out.flat=no`:
 
 ```text
 ╭───────┬────────────────────────────────────────────────────────────────────────╮
@@ -1835,7 +1835,7 @@ For the same command, adding option `--flat=no`:
 ╰───────┴────────────────────────────────────────────────────────────────────────╯
 ```
 
-#### Option: `multi_single`
+#### Option: `--out.table.pivot`
 
 This option controls how result fields are displayed as columns or lines, when option `format` is set to `table`.
 Default is `no`.
@@ -1863,7 +1863,7 @@ The display of result is as follows:
 This parameter can be set as a global default with:
 
 ```shell
-ascli config preset set GLOBAL multi_single single
+ascli config preset set GLOBAL out.table.pivot single
 ```
 
 Examples:
@@ -1871,7 +1871,7 @@ Examples:
 Simulate a result by executing this command:
 
 ```shell
-ascli config echo @json:'<JSON_VALUE>' --multi-single=<no|yes|single>
+ascli config echo @json:'<JSON_VALUE>' --out.table.pivot=<no|yes|single>
 ```
 
 Example 1: A list of one object
@@ -1936,7 +1936,7 @@ Display with `yes` (multiple Simple):
 ╰───────┴───────╯
 ```
 
-#### Option: `display`: Verbosity of output
+#### Option: `--out.level`: Verbosity of output
 
 Output messages are categorized in 3 types:
 
@@ -1944,17 +1944,17 @@ Output messages are categorized in 3 types:
 - `data` output contains the actual output of the command (object, or list of objects)
 - `error` output contains error messages
 
-The option `display` controls the level of output:
+The option `--out.level` controls the level of output:
 
 - `info` displays all messages: `info`, `data`, and `error`
 - `data` display `data` and `error` messages
 - `error` display only error messages.
 
-#### Option: `show_secrets`: Hide or show secrets in results
+#### Option: `--out.secrets`: Hide or show secrets in results
 
 - If value is `no` (default), then secrets are redacted from command results.
 - If value is `yes`, then secrets shown in clear in results.
-- If `display` is `data`, secrets are included to allow piping results.
+- If `--out.level` is `data`, secrets are included to allow piping results.
 
 #### Option: `fields`: Selection of output object fields
 
@@ -2011,7 +2011,7 @@ In the above example, the same result is obtained with option:
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
-Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
+Option `select` applies the filter after a possible "flattening" with option `--out.flat`.
 
 ### Extended Value Syntax
 
@@ -2541,6 +2541,22 @@ Example:
 ascli config preset set demo_server password <PASSWORD>
 ```
 
+The parameter name supports **dot-notation** to set nested hash options.
+If an intermediate hash already exists, the new value is **deep-merged** into it (existing sibling keys are preserved).
+
+```shell
+ascli config preset set GLOBAL out.table.pivot single
+ascli config preset set GLOBAL out.level data
+```
+
+The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`false`) are stored as native YAML types rather than strings.
+
+To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
+
+```shell
+ascli config preset set GLOBAL out.table.pivot @none:
+```
+
 A full terminal based overview of the configuration can be displayed using:
 
 ```shell
@@ -2718,8 +2734,8 @@ check_update
 coffee
 coffee --log-level=trace2 --log-format=caller
 coffee --ui=text
-coffee --ui=text --image.text=true
-coffee --ui=text --image=@json:'{"text":true,"double":false}'
+coffee --ui=text --out.img.text=true
+coffee --ui=text --out.img=@json:'{"text":true,"double":false}'
 commands
 detect app.example.com
 detect https://f5.example.com/path
@@ -2734,13 +2750,13 @@ doc
 doc github transfer-parameters
 doc local quick-start --ui=text
 doc toc
-echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>' --format=image --image.text=true
+echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>' --format=image --out.img.text=true
 echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
 echo @csvt:@stdin:
 echo @env:USER
-echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=single
-echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
+echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=single
+echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
 echo @secret:
@@ -3028,7 +3044,7 @@ For security reasons, those secrets shall not be exposed in clear, either:
 
 Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
-Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
+Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
@@ -3195,7 +3211,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 > Use `overview` (not `list`) as the source: `list` returns only labels, while `overview` returns the full secret details needed for import.
 
 ```shell
-ascli config vault overview --format=json --display=data \
+ascli config vault overview --format=json --out.level=data \
   --vault=@json:'{"type":"file","name":"<SOURCE_VAULT_FILE>"}' \
   --vault_password=<SOURCE_PASSWORD> | \
 ascli config vault import @json:@stdin: --bulk \
@@ -3204,7 +3220,7 @@ ascli config vault import @json:@stdin: --bulk \
 ```
 
 > [!TIP]
-> Use `--display=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+> Use `--out.level=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
 
 The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
@@ -3392,7 +3408,7 @@ Examples:
 - Display image as colorized text (requires `rmagick`)
 
 ```shell
-ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image.text=true
+ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --out.img.text=true
 ```
 
 - Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
@@ -4259,7 +4275,7 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 > Default transfer spec values can be displayed with command:
 
 ```shell
-ascli config ascp info --fields=ts --flat-hash=no
+ascli config ascp info --fields=ts --out.flat=no
 ```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer` option parameter: `ascp_args`.
@@ -4741,7 +4757,7 @@ Define a name for the server, for example: `ascli_job` as `<NAME>` below.
 
     [Service]
     Type=oneshot
-    ExecStart=/home/xfer/bin/ascli_tool preview scan --logger=syslog --display=error
+    ExecStart=/home/xfer/bin/ascli_tool preview scan --logger=syslog --out.level=error
     User=xfer
     Group=xfer
     ```
@@ -4794,8 +4810,8 @@ Example of `crontab` for user `xfer`.
 
 ```shell
 crontab<<EOF
-0    * * * *  /home/xfer/bin/ascli_tool preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/bin/ascli_tool preview trev --logger=syslog --display=error
+0    * * * *  /home/xfer/bin/ascli_tool preview scan --logger=syslog --out.level=error
+2-59 * * * *  /home/xfer/bin/ascli_tool preview trev --logger=syslog --out.level=error
 EOF
 ```
 
@@ -5136,16 +5152,17 @@ ARGS
 OPTIONS: global
     --interactive=yes|no           Use interactive input of missing params
     --ask-options=yes|no           Ask even optional options
-    --display=info|data|error      Output only some information
-    --format=ENUM                  Output format
-    --output=VALUE                 Destination for results
-    --fields=LIST                  Comma separated list of: fields, or ALL, or DEF
-    --select=HASH                  Select only some items in lists: column, value
-    --table-style=HASH             (Table) Display style
-    --flat-hash=yes|no             (Table) Display deep values as additional keys
-    --multi-single=no|yes|single   (Table) Control how object list is displayed as single table, or multiple objects
-    --show-secrets=yes|no          Show secrets on command output
-    --image=HASH                   Options for displaying images and thumbnails in the terminal
+    --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)
+    --display=info|data|error      Output only some information (deprecated: use --out.level)
+    --format=ENUM                  Output format (also: --out.format)
+    --output=VALUE                 Destination for results (deprecated: use --out.file)
+    --fields=LIST                  Comma separated list of: fields, or ALL, or DEF (also: --out.fields)
+    --select=HASH                  Select only some items in lists: column, value (also: --out.select)
+    --table-style=HASH             (Table) Display style (deprecated: use --out.table)
+    --flat-hash=yes|no             (Table) Display deep values as additional keys (deprecated: use --out.flat)
+    --multi-single=no|yes|single   (Table) Control how object list is displayed as single table, or multiple objects (deprecated: use --out.table.pivot)
+    --show-secrets=yes|no          Show secrets on command output (deprecated: use --out.secrets)
+    --image=HASH                   Options for displaying images and thumbnails in the terminal (deprecated: use --out.img)
 -h, --help                         Show this message
     --show-config                  Display parameters used for the provided action
 -v, --version                      Display version
@@ -5199,7 +5216,7 @@ OPTIONS: global
     --sources=VALUE                How list of transferred files is provided (@args,@ts,Array)
     --src-type=list|pair           Type of file list
     --transfer=HASH                Transfer agent type, or agent parameters with optional agent key
-    --transfer-info=HASH           Parameters for transfer agent
+    --transfer-info=HASH           Parameters for transfer agent (deprecated: use --transfer instead)
 
 PLUGINS
     alee            Aspera License Entitlement Engine
@@ -6257,7 +6274,7 @@ ascli aoc admin user list --query.q=dummyuser --fields=id,email
 ```
 
 ```shell
-ascli aoc admin user list --query.q=dummyuser --fields=id --display=data --format=csv | ascli aoc admin user delete @lines:@stdin: --bulk=yes
+ascli aoc admin user list --query.q=dummyuser --fields=id --out.level=data --format=csv | ascli aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
 ```text
@@ -6387,7 +6404,7 @@ WS2ID=$(ascli aoc admin workspace list --query=@json:'{"q":"'"$WS2"'"}' --select
 c- Extract membership information
 
 ```shell
-ascli aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
+ascli aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --out.file=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
@@ -6462,7 +6479,7 @@ ascli aoc admin workspace_membership create @json:'{"workspace_id":<WORKSPACE_ID
 - Get a user's ID
 
 ```shell
-ascli aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
+ascli aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --out.level=data
 ```
 
 User: <USER_ID>
@@ -6543,13 +6560,13 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
   This key remains constant for the lifetime of your Organization.
 
 ```shell
-ascli aoc admin organization show --fields=oauth_token_verification_key --show-secrets=yes --output=mypubkey.pem
+ascli aoc admin organization show --fields=oauth_token_verification_key --out.secrets=yes --out.file=mypubkey.pem
 ```
 
   It can also be retrieved from an existing node:
 
 ```shell
-ascli aoc admin node do %name:'<NODE_NAME>' v3 access_keys show self --fields=token_verification_key --show-secrets=yes --output=mypubkey.pem
+ascli aoc admin node do %name:'<NODE_NAME>' v3 access_keys show self --fields=token_verification_key --out.secrets=yes --out.file=mypubkey.pem
 ```
 
 - Create an Access Key on the Self-Managed HSTS
@@ -6559,7 +6576,7 @@ ascli aoc admin node do %name:'<NODE_NAME>' v3 access_keys show self --fields=to
 > [!TIP]
 > In this command, "master node credentials" allowing access key creation are used.
 > The `id` and `secret` parameters are optional.
-> If you omit them, you must add `--show-secrets=yes` to the command.
+> If you omit them, you must add `--out.secrets=yes` to the command.
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
@@ -6604,7 +6621,7 @@ ascli node access_key do self permission / create @: access_type=user access_id=
 The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
 
 ```shell
-ascli aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
+ascli aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --out.secrets=yes
 ```
 
 #### Example: Create an ATS Node
@@ -6665,7 +6682,7 @@ This is a two-steps procedure:
    Or, alternatively:
 
    ```shell
-   ascli aoc admin application instance list --query.aspera_app_type=packages --query.workspace_id=<WORKSPACE_ID> --fields=id --display=data
+   ascli aoc admin application instance list --query.aspera_app_type=packages --query.workspace_id=<WORKSPACE_ID> --fields=id --out.level=data
    ```
 
    This displays the <APP_ID>.
@@ -6762,7 +6779,7 @@ ascli aoc files browse /src_folder
 To send a package with the file `10M.dat` from subfolder /src_folder:
 
 ```shell
-ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
+ascli aoc files node_info /src_folder --format=json --out.level=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
 ```
 
 #### Receive packages
@@ -6852,7 +6869,7 @@ Use command `find` to list recursively.
 For advanced users, it is also possible to pipe node information for the package and use node operations:
 
 ```shell
-ascli aoc package node_info <PACKAGE_ID> / --format=json --show-secrets=yes --display=data | ascli node -N --preset=@json:@stdin: access_key do self browse /
+ascli aoc package node_info <PACKAGE_ID> / --format=json --out.secrets=yes --out.level=data | ascli node -N --preset=@json:@stdin: access_key do self browse /
 ```
 
 #### List packages
@@ -6897,7 +6914,7 @@ ascli aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archiv
 Using shared inbox identifier: first retrieve the ID of the shared inbox, and then list packages with the appropriate filter.
 
 ```shell
-shared_box_id=$(ascli aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id)
+shared_box_id=$(ascli aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --out.level=data --fields=id)
 ```
 
 ```shell
@@ -7235,7 +7252,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-ascli -Porg1 aoc files node_info <DEST_FOLDER> --format=json --display=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --transfer=@json:@stdin:
+ascli -Porg1 aoc files node_info <DEST_FOLDER> --format=json --out.level=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --transfer=@json:@stdin:
 ```
 
 Explanation:
@@ -7245,7 +7262,7 @@ Explanation:
 - `aoc` uses the Aspera on Cloud plugin
 - `files node_info /<DEST_FOLDER>` generates transfer information including the Node API credential and root ID, suitable for the next command
 - `--format=json` formats the output as JSON (instead of the default text table)
-- `--display=data` displays only the result, removing other information such as workspace name
+- `--out.level=data` displays only the result, removing other information such as workspace name
 - `|` pipes the standard output of the first command into the second one
 - `-Porg2 aoc` uses the Aspera on Cloud plugin and loads credentials for `org2`
 - `files upload <SOURCE_FILE>` uploads the file named `<SOURCE_FILE>` (located in `org2`) to `org1`
@@ -7288,7 +7305,7 @@ admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
 admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 admin auth_providers list
-admin bearer_token --display=data
+admin bearer_token --out.level=data
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
@@ -7343,7 +7360,7 @@ automation workflow delete <id>
 automation workflow list
 automation workflow list --query.show_org_workflows=@val:true
 automation workflow list --select.name=test_workflow --fields=id
-bearer_token --display=data
+bearer_token --out.level=data
 files bearer /
 files bearer_token_node / --cache-tokens=no
 files browse /
@@ -7390,8 +7407,8 @@ packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 packages receive <id> --to-folder=.
 packages receive <id> --to-folder=. /
-packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
-packages receive ALL --once-only=yes --to-folder=. --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
+packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
@@ -8030,7 +8047,7 @@ ascli node access_key create @json:'{"id":"<ACCESS_KEY>","secret":"<SECRET>","st
 > [!TIP]
 > The `id` and `secret` fields are optional.
 > If not provided, they will be generated and returned into the result.
-> In that case, provide option `--show-secrets=yes` to get the generated secret.
+> In that case, provide option `--out.secrets=yes` to get the generated secret.
 
 Access keys support extra overriding parameters using parameter: `configuration` and sub keys `transfer` and `server`.
 For example, an access key can be modified or created with the following options:
@@ -8162,7 +8179,7 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 - Create a Bearer token for the user:
 
   ```shell
-  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
+  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.file=bearer.txt
   ```
 
 > [!NOTE]
@@ -8409,7 +8426,7 @@ For more information on the JWT method, refer to the section below.
 If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
 
 ```shell
-ascli faspex5 --show-config --show-secrets=yes --fields=private_key | ascli config pubkey @stdin: --show-secrets=yes
+ascli faspex5 --show-config --out.secrets=yes --fields=private_key | ascli config pubkey @stdin: --out.secrets=yes
 ```
 
 ### Faspex 5 JWT authentication
@@ -8568,7 +8585,7 @@ packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
 packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
-packages receive ALL --once-only=yes --to-folder=.
+packages receive ALL --once-only=yes --to-folder=. --query.max=5
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
@@ -10526,14 +10543,14 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 #### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```shell
-ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --out.level=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > [!NOTE]
 > Option `delete_before_transfer` will delete files locally, if they are not present on remote side.
 
 > [!NOTE]
-> Options `progress` and `display` limit output for headless operation (for example, cron job)
+> Options `progress` and `--out.level` limit output for headless operation (for example, cron job)
 
 ### Health check and Nagios
 
@@ -10948,7 +10965,7 @@ Enjoy a coffee on me:
 ```shell
 ascli config coffee
 ascli config coffee --ui=text
-ascli config coffee --ui=text --image.text=true
+ascli config coffee --ui=text --out.img.text=true
 ```
 
 ### References
