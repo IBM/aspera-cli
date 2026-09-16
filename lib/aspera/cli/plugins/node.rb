@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
+require 'aspera/schema/registry'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/special_values'
@@ -361,7 +362,7 @@ module Aspera
           transport:   ->(**){Result::SingleObject.new(@api_node.transport_params)},
           spec:        ->(**){Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))},
           api_details: ->(**){Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))},
-          events:      ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete), fields: ->(f){!f.start_with?('data')})},
+          events:      ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'events'))), fields: ->(f){!f.start_with?('data')})},
           info:        ->(**){Result::SingleObject.new(@api_node.read('info'))},
           slash:       ->(**){Result::SingleObject.new(@api_node.read(''))},
           license:     ->(**){Result::SingleObject.new(@api_node.read('license'))}
@@ -1013,7 +1014,7 @@ module Aspera
 
         # transfer sub-commands
         def action_transfer_list
-          transfer_filter = query_read_delete(default: {})
+          transfer_filter = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers'))
           iteration_persistency = nil
           if options.get_option(:once_only, mandatory: true)
             iteration_persistency = PersistencyActionOnce.new(
@@ -1035,7 +1036,7 @@ module Aspera
         end
 
         def action_transfer_sessions
-          transfers_data = @api_node.read('ops/transfers', query_read_delete)
+          transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
           sessions = transfers_data.flat_map{ |t| t['sessions']}
           sessions.each do |session|
             SESSION_TIME_FIELDS.each do |what|
@@ -1056,7 +1057,7 @@ module Aspera
         end
 
         def action_transfer_bandwidth_average
-          transfers_data = @api_node.read('ops/transfers', query_read_delete)
+          transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
           bandwidth_period = {}
           dir_info = %i[avg_kbps sessions].freeze
           transfers_data.each do |t|

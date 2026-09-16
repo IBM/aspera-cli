@@ -2,6 +2,7 @@
 
 # spellchecker: ignore workgroups mypackages passcode
 
+require 'aspera/schema/registry'
 require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/extended_value'
 require 'aspera/transfer/result'
@@ -182,7 +183,7 @@ module Aspera
               group_type = options.get_option(:group_type)
               "#{group_type}/#{@api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
             end
-          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: query_read_delete(default: query))
+          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: query_read_delete(default: query, schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages')))
           return list.select(&filter), total
         end
 
@@ -692,14 +693,14 @@ module Aspera
           command(
             :application, description: 'List application events',
             action: lambda do
-              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete)
+              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'application_events')))
               Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
             end
           )
           command(
             :webhook, description: 'List webhook events',
             action: lambda do
-              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete, items_key: 'events')
+              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'all_webhooks_events')), items_key: 'events')
               Result::ObjectList.new(list, total: total)
             end
           )

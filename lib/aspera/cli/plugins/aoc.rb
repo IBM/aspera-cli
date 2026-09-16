@@ -401,7 +401,7 @@ module Aspera
         # List all packages according to `query` option.
         # @return [Hash] {items,total} with all packages according to combination of user's query and default query
         def list_all_packages_with_query
-          query = query_read_delete(default: {})
+          query = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::AOC, 'packages'))
           Aspera.assert_type(query, Hash){'query'}
           PACKAGE_RECEIVED_BASE_QUERY.each{ |k, v| query[k] = v unless query.key?(k)}
           resolve_dropbox_name_default_ws_id(query)
