@@ -2,7 +2,9 @@
 
 require_relative '../build/lib/build_tools'
 require 'aspera/uri_reader'
+require 'aspera/rest'
 require 'aspera/assert'
+require 'json'
 require 'yaml'
 include BuildTools
 include Paths
@@ -103,5 +105,50 @@ namespace :tools do
       end
     end
     log.info('All OpenAPI schemas downloaded successfully')
+  end
+
+  desc 'Update Ruby version in GitHub Actions workflows to the latest stable release'
+  task :update_ruby do
+    # Source of truth: the version list used by ruby/setup-ruby itself.
+    # Only plain "X.Y.Z" entries are considered stable (no -preview, -rc, etc.).
+    versions_url = 'https://raw.githubusercontent.com/ruby/setup-ruby/refs/heads/master/ruby-builder-versions.json'
+    log.info("Fetching Ruby versions from: #{versions_url}")
+    raw = Aspera::Rest.new(base_url: versions_url, redirect_max: 3).read(nil)
+    data = raw.is_a?(String) ? JSON.parse(raw) : raw
+
+    stable_versions = data['ruby']
+      .filter_map do |v|
+        m = v.match(/\A(\d+)\.(\d+)\.(\d+)\z/)
+        m ? [m[1].to_i, m[2].to_i, m[3].to_i] : nil
+      end
+
+    raise 'No stable Ruby versions found' if stable_versions.empty?
+
+    latest = stable_versions.max
+    latest_str = latest.join('.')
+    log.info("Latest stable Ruby version: #{latest_str}")
+
+    # Update every workflow file that contains a hard-coded ruby-version string.
+    workflows_dir = TOP / '.github' / 'workflows'
+    updated = []
+    workflows_dir.glob('*.yml').sort.each do |workflow_file|
+      content = workflow_file.read
+      # Match:  ruby-version: "X.Y.Z"  (quoted) or  ruby-version: 'X.Y.Z'  (single-quoted)
+      new_content = content.gsub(/(?<=ruby-version:\s)(["'])\d+\.\d+\.\d+\1/) do |_match|
+        quote = Regexp.last_match(1)
+        "#{quote}#{latest_str}#{quote}"
+      end
+      if new_content != content
+        workflow_file.write(new_content)
+        updated << workflow_file.basename.to_s
+        log.info("Updated: #{workflow_file.relative_path_from(TOP)}")
+      end
+    end
+
+    if updated.empty?
+      log.info('All workflow files already use the latest Ruby version — nothing to update.')
+    else
+      log.info("Updated #{updated.size} workflow file(s): #{updated.join(', ')}")
+    end
   end
 end
