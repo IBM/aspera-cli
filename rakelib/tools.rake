@@ -156,9 +156,17 @@ namespace :tools do
         "#{Regexp.last_match(1)}#{latest_str}#{Regexp.last_match(1)}"
       end
 
-      # 2. Matrix list in test.yml:  ruby: ["X.Y", ..., "jruby"]
-      new_content.gsub!(/(?<=ruby: )\["[\d.]+"(?:, "(?:[\d.]+|jruby)")*\]/) do
-        "[#{test_matrix.map { |v| %Q("#{v}") }.join(', ')}]"
+      # 2. Matrix list in the `unit` job of test.yml:  ruby: ["X.Y", ..., "jruby"]
+      # The pattern matches the list only when it follows the `unit:` job block
+      # (i.e. before the `test:` job block starts).
+      new_content.gsub!(/(^unit:.*?ruby: )\["[\d.]+"(?:, "(?:[\d.]+|jruby)")*\]/m) do
+        "#{Regexp.last_match(1)}[#{test_matrix.map { |v| %Q("#{v}") }.join(', ')}]"
+      end
+
+      # 3. Fixed ruby-version: "X.Y" in the `test` job of test.yml (latest minor line only).
+      latest_minor = minor_lines.last
+      new_content.gsub!(/(^  test:.*?ruby-version:\s)(["'])\d+\.\d+\2/m) do
+        "#{Regexp.last_match(1)}#{Regexp.last_match(2)}#{latest_minor}#{Regexp.last_match(2)}"
       end
 
       if new_content != content
