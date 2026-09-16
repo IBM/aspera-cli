@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/extended_value'
+require 'aspera/dot_container'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/log'
@@ -141,6 +142,8 @@ module Aspera
       end
 
       # Set a single key in a preset hash (creates the preset if absent).
+      # If param_name contains dots, it is treated as a dot-path and deep-merged into the preset.
+      # If param_value is nil, the key is deleted instead.
       def set_key(preset, param_name, param_value)
         Aspera.assert_type(param_name, String, Symbol){'parameter'}
         param_name = param_name.to_s
@@ -150,15 +153,36 @@ module Aspera
           selected = @config_presets[preset] = {}
         end
         Aspera.assert_type(selected, Hash){"#{preset}.#{param_name}"}
-        if selected.key?(param_name)
-          if selected[param_name].eql?(param_value)
-            Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
-            return
+        if param_name.include?(DotContainer::SEPARATOR)
+          keys = param_name.split(DotContainer::SEPARATOR)
+          # Navigate to the parent hash
+          parent = keys[0..-2].reduce(selected) do |h, k|
+            break nil unless h.is_a?(Hash)
+            h[k]
           end
-          Log.log.warn{"overwriting value for #{param_name}: #{selected[param_name]}"}
+          if param_value.nil?
+            parent&.delete(keys.last)
+            Log.log.info("Deleted: #{preset}: #{param_name}")
+          else
+            # dot-path: build nested hash and deep-merge into existing preset
+            nested = DotContainer.dotted_to_container(keys, param_value)
+            self.class.deep_merge!(selected, nested)
+            Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
+          end
+        elsif param_value.nil?
+          selected.delete(param_name)
+          Log.log.info("Deleted: #{preset}: #{param_name}")
+        else
+          if selected.key?(param_name)
+            if selected[param_name].eql?(param_value)
+              Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
+              return
+            end
+            Log.log.warn{"overwriting value for #{param_name}: #{selected[param_name]}"}
+          end
+          selected[param_name] = param_value
+          Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
         end
-        selected[param_name] = param_value
-        Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
         nil
       end
 
@@ -211,6 +235,21 @@ module Aspera
       class << self
         def deep_clone(val)
           Marshal.load(Marshal.dump(val))
+        end
+
+        # Recursively merge src into dst in place (dst wins on scalar conflicts).
+        # @param dst [Hash] destination (modified in place)
+        # @param src [Hash] source
+        # @return [Hash] dst
+        def deep_merge!(dst, src)
+          src.each do |k, v|
+            if dst.key?(k) && dst[k].is_a?(Hash) && v.is_a?(Hash)
+              deep_merge!(dst[k], v)
+            else
+              dst[k] = v
+            end
+          end
+          dst
         end
       end
 

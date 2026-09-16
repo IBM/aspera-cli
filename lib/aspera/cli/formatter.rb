@@ -38,16 +38,17 @@ module Aspera
 
       private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
 
-      option :display,      description: 'Output only some information',                                                                      allowed: DISPLAY_LEVELS,             default: :data
-      option :format,       description: 'Output format',                                                                                     allowed: DISPLAY_FORMATS,            default: :table
-      option :output,       description: 'Destination for results'
-      option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
-      option :select,       description: 'Select only some items in lists: column, value',                                                    allowed: [Hash, Proc]
-      option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash]
-      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true
-      option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no
-      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false
-      option :image,        schema: Schema::Registry::IMAGE_OPTIONS
+      option :out,          description: 'Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)', schema: Schema::Registry::OUT_OPTIONS
+      option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: 'use --out.level'
+      option :format,       description: 'Output format (also: --out.format)', allowed: DISPLAY_FORMATS, default: :table
+      option :output,       description: 'Destination for results', deprecation: 'use --out.file'
+      option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF} (also: --out.fields)", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
+      option :select,       description: 'Select only some items in lists: column, value (also: --out.select)', allowed: [Hash, Proc]
+      option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash], deprecation: 'use --out.table'
+      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true,                    deprecation: 'use --out.flat'
+      option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no,                 deprecation: 'use --out.table.pivot'
+      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false,                   deprecation: 'use --out.secrets'
+      option :image,        schema: Schema::Registry::IMAGE_OPTIONS, deprecation: 'use --out.img'
 
       class << self
         # Replace special values with a readable version on terminal
@@ -141,14 +142,15 @@ module Aspera
       # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
-        %i[display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
+        @parser = options
+        %i[out display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
           options.set_handler(opt, object: self, method: :option_handler)
         end
         nil
       end
 
       # Getter/setter handler called by the option manager for all formatter options
-      # @param option_symbol [Symbol]       Option name (one of :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
+      # @param option_symbol [Symbol]       Option name (one of :out, :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
       # @param operation     [Symbol]       :get or :set
       # @param value         [Object, nil]  Value to set (only used when operation is :set)
       # @return [Object, nil] Current option value when operation is :get; nil otherwise
@@ -156,6 +158,29 @@ module Aspera
         Aspera.assert_values(operation, %i[set get])
         case operation
         when :set
+          # --out is a composite hash: dispatch each sub-key through the parser (validation included)
+          if option_symbol.eql?(:out)
+            Aspera.assert_type(value, Hash)
+            value.each do |k, v|
+              case k.to_sym
+              when :format   then @parser.set_option(:format,       v, warn_deprecation: false)
+              when :level    then @parser.set_option(:display,      v, warn_deprecation: false)
+              when :file     then @parser.set_option(:output,       v, warn_deprecation: false)
+              when :fields   then @parser.set_option(:fields,       v, warn_deprecation: false)
+              when :select   then @parser.set_option(:select,       v, warn_deprecation: false)
+              when :table
+                Aspera.assert_type(v, Hash)
+                table_hash = v.transform_keys(&:to_sym)
+                @parser.set_option(:multi_single, table_hash.delete(:pivot).to_s, warn_deprecation: false) if table_hash.key?(:pivot)
+                @parser.set_option(:table_style,  table_hash, warn_deprecation: false) unless table_hash.empty?
+              when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
+              when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
+              when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
+              else Aspera.error_unexpected_value(k){'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)'}
+              end
+            end
+            return
+          end
           @options[option_symbol] = value
           # special handling of some options
           case option_symbol
@@ -174,7 +199,9 @@ module Aspera
             unknown_options = value.keys.map(&:to_sym) - allowed_options
             Aspera.assert(unknown_options.empty?){"Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}"}
           end
-        when :get then return @options[option_symbol]
+        when :get
+          return if option_symbol.eql?(:out)
+          return @options[option_symbol]
         else Aspera.error_unreachable_line
         end
         nil

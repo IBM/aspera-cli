@@ -1251,7 +1251,7 @@ An up-to-date version of the certificate bundle can also be retrieved with:
 To download that certificate store:
 
 ```shell
-<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
+<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --out.file=/tmp/cacert.pem
 ```
 
 Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
@@ -1259,7 +1259,7 @@ Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_F
 To trust a specific certificate (for example, self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```shell
-<%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --output=<%=ph :server_preset_name%>.pem
+<%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --out.file=<%=ph :server_preset_name%>.pem
 ```
 
 > [!NOTE]
@@ -1711,16 +1711,16 @@ The style of output can be set using the `format` option:
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
-#### Option: `table_style`
+#### Option: `--out.table`
 
-The way `format`: `table` and `csv` are generated can be customized with option: `table_style` which expects a `Hash`.
+The way `format`: `table` and `csv` are generated can be customized with option `--out.table` which expects a `Hash`.
 
 For `format=table`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
 
 For example, to display a table with thick Unicode borders:
 
 ```shell
-<%=cmd%> config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
+<%=cmd%> config preset over --out.table=@ruby:'{border: :unicode_thick_edge}'
 ```
 
 > [!NOTE]
@@ -1737,10 +1737,10 @@ For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/cs
 For example, to display a CSV with headers and quotes:
 
 ```shell
-<%=cmd%> config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --table=@json:'{"headers":true,"force_quotes":true}'
+<%=cmd%> config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format=csv --out.table=@json:'{"headers":true,"force_quotes":true}'
 ```
 
-#### Option: `flat_hash`: Single level `Hash`
+#### Option: `--out.flat`: Single level `Hash`
 
 This option controls how object fields are displayed for complex objects.
 
@@ -1774,7 +1774,7 @@ Example: Result of command is a list of objects with a single object:
 ╰────────┴───────╯
 ```
 
-For the same command, adding option `--flat=no`:
+For the same command, adding option `--out.flat=no`:
 
 ```text
 ╭───────┬────────────────────────────────────────────────────────────────────────╮
@@ -1787,7 +1787,7 @@ For the same command, adding option `--flat=no`:
 ╰───────┴────────────────────────────────────────────────────────────────────────╯
 ```
 
-#### Option: `multi_single`
+#### Option: `--out.table.pivot`
 
 This option controls how result fields are displayed as columns or lines, when option `format` is set to `table`.
 Default is `no`.
@@ -1815,7 +1815,7 @@ The display of result is as follows:
 This parameter can be set as a global default with:
 
 ```shell
-<%=cmd%> config preset set GLOBAL multi_single single
+<%=cmd%> config preset set GLOBAL out.table.pivot single
 ```
 
 Examples:
@@ -1823,7 +1823,7 @@ Examples:
 Simulate a result by executing this command:
 
 ```shell
-<%=cmd%> config echo @json:'<%=ph :json_value%>' --multi-single=<no|yes|single>
+<%=cmd%> config echo @json:'<%=ph :json_value%>' --out.table.pivot=<no|yes|single>
 ```
 
 Example 1: A list of one object
@@ -1888,7 +1888,7 @@ Display with `yes` (multiple Simple):
 ╰───────┴───────╯
 ```
 
-#### Option: `display`: Verbosity of output
+#### Option: `--out.level`: Verbosity of output
 
 Output messages are categorized in 3 types:
 
@@ -1896,17 +1896,17 @@ Output messages are categorized in 3 types:
 - `data` output contains the actual output of the command (object, or list of objects)
 - `error` output contains error messages
 
-The option `display` controls the level of output:
+The option `--out.level` controls the level of output:
 
 - `info` displays all messages: `info`, `data`, and `error`
 - `data` display `data` and `error` messages
 - `error` display only error messages.
 
-#### Option: `show_secrets`: Hide or show secrets in results
+#### Option: `--out.secrets`: Hide or show secrets in results
 
 - If value is `no` (default), then secrets are redacted from command results.
 - If value is `yes`, then secrets shown in clear in results.
-- If `display` is `data`, secrets are included to allow piping results.
+- If `--out.level` is `data`, secrets are included to allow piping results.
 
 #### Option: `fields`: Selection of output object fields
 
@@ -1963,7 +1963,7 @@ In the above example, the same result is obtained with option:
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
-Option `select` applies the filter after a possible "flattening" with option: `flat_hash`.
+Option `select` applies the filter after a possible "flattening" with option `--out.flat`.
 
 ### Extended Value Syntax
 
@@ -2493,6 +2493,22 @@ Example:
 <%=cmd%> config preset set demo_server password <%=ph :password%>
 ```
 
+The parameter name supports **dot-notation** to set nested hash options.
+If an intermediate hash already exists, the new value is **deep-merged** into it (existing sibling keys are preserved).
+
+```shell
+<%=cmd%> config preset set GLOBAL out.table.pivot single
+<%=cmd%> config preset set GLOBAL out.level data
+```
+
+The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`false`) are stored as native YAML types rather than strings.
+
+To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
+
+```shell
+<%=cmd%> config preset set GLOBAL out.table.pivot @none:
+```
+
 A full terminal based overview of the configuration can be displayed using:
 
 ```shell
@@ -2857,7 +2873,7 @@ For security reasons, those secrets shall not be exposed in clear, either:
 
 Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
-Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
+Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
@@ -3005,7 +3021,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 > Use `overview` (not `list`) as the source: `list` returns only labels, while `overview` returns the full secret details needed for import.
 
 ```shell
-<%=cmd%> config vault overview --format=json --display=data \
+<%=cmd%> config vault overview --format=json --out.level=data \
   --vault=@json:'{"type":"file","name":"<%=ph :source_vault_file%>"}' \
   --vault_password=<%=ph :source_password%> | \
 <%=cmd%> config vault import @json:@stdin: --bulk \
@@ -3014,7 +3030,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 ```
 
 > [!TIP]
-> Use `--display=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+> Use `--out.level=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
 
 The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
@@ -3197,7 +3213,7 @@ Examples:
 - Display image as colorized text (requires `rmagick`)
 
 ```shell
-<%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image.text=true
+<%=cmd%> config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --out.img.text=true
 ```
 
 - Display image from byte stream as image in terminal (requires iTerm2-compatible terminal)
@@ -4014,7 +4030,7 @@ To remove a (deep) key from transfer spec, set the value to `null`.
 > Default transfer spec values can be displayed with command:
 
 ```shell
-<%=cmd%> config ascp info --fields=ts --flat-hash=no
+<%=cmd%> config ascp info --fields=ts --out.flat=no
 ```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer` option parameter: `ascp_args`.
@@ -4397,7 +4413,7 @@ Define a name for the server, for example: `<%=cmd%>_job` as `<%=ph :name%>` bel
 
     [Service]
     Type=oneshot
-    ExecStart=/home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --display=error
+    ExecStart=/home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --out.level=error
     User=xfer
     Group=xfer
     ```
@@ -4450,8 +4466,8 @@ Example of `crontab` for user `xfer`.
 
 ```shell
 crontab<<EOF
-0    * * * *  /home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/bin/<%=cmd%>_tool preview trev --logger=syslog --display=error
+0    * * * *  /home/xfer/bin/<%=cmd%>_tool preview scan --logger=syslog --out.level=error
+2-59 * * * *  /home/xfer/bin/<%=cmd%>_tool preview trev --logger=syslog --out.level=error
 EOF
 ```
 
@@ -5801,7 +5817,7 @@ Current Workspace: Default (default)
 ```
 
 ```shell
-<%=cmd%> aoc admin user list --query.q=dummyuser --fields=id --display=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
+<%=cmd%> aoc admin user list --query.q=dummyuser --fields=id --out.level=data --format=csv | <%=cmd%> aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
 ```text
@@ -5931,7 +5947,7 @@ WS2ID=$(<%=cmd%> aoc admin workspace list --query=@json:'{"q":"'"$WS2"'"}' --sel
 c- Extract membership information
 
 ```shell
-<%=cmd%> aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
+<%=cmd%> aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --out.file=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
@@ -6006,7 +6022,7 @@ Workspace: <%=ph :workspace_id%>
 - Get a user's ID
 
 ```shell
-<%=cmd%> aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
+<%=cmd%> aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --out.level=data
 ```
 
 User: <%=ph :user_id%>
@@ -6087,13 +6103,13 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
   This key remains constant for the lifetime of your Organization.
 
 ```shell
-<%=cmd%> aoc admin organization show --fields=oauth_token_verification_key --show-secrets=yes --output=mypubkey.pem
+<%=cmd%> aoc admin organization show --fields=oauth_token_verification_key --out.secrets=yes --out.file=mypubkey.pem
 ```
 
   It can also be retrieved from an existing node:
 
 ```shell
-<%=cmd%> aoc admin node do %name:'<%=ph :node_name%>' v3 access_keys show self --fields=token_verification_key --show-secrets=yes --output=mypubkey.pem
+<%=cmd%> aoc admin node do %name:'<%=ph :node_name%>' v3 access_keys show self --fields=token_verification_key --out.secrets=yes --out.file=mypubkey.pem
 ```
 
 - Create an Access Key on the Self-Managed HSTS
@@ -6103,7 +6119,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 > [!TIP]
 > In this command, "master node credentials" allowing access key creation are used.
 > The `id` and `secret` parameters are optional.
-> If you omit them, you must add `--show-secrets=yes` to the command.
+> If you omit them, you must add `--out.secrets=yes` to the command.
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
@@ -6148,7 +6164,7 @@ Follow these steps to configure a new HSTS and link it to your existing Aspera o
 The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
 
 ```shell
-<%=cmd%> aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
+<%=cmd%> aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --out.secrets=yes
 ```
 
 #### Example: Create an ATS Node
@@ -6209,7 +6225,7 @@ This is a two-steps procedure:
    Or, alternatively:
 
    ```shell
-   <%=cmd%> aoc admin application instance list --query.aspera_app_type=packages --query.workspace_id=<%=ph :workspace_id%> --fields=id --display=data
+   <%=cmd%> aoc admin application instance list --query.aspera_app_type=packages --query.workspace_id=<%=ph :workspace_id%> --fields=id --out.level=data
    ```
 
    This displays the <%=ph :app_id%>.
@@ -6306,7 +6322,7 @@ Find files in Files app:
 To send a package with the file `10M.dat` from subfolder /src_folder:
 
 ```shell
-<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
+<%=cmd%> aoc files node_info /src_folder --format=json --out.level=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin:
 ```
 
 #### Receive packages
@@ -6391,7 +6407,7 @@ Use command `find` to list recursively.
 For advanced users, it is also possible to pipe node information for the package and use node operations:
 
 ```shell
-<%=cmd%> aoc package node_info <%=ph :package_id%> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
+<%=cmd%> aoc package node_info <%=ph :package_id%> / --format=json --out.secrets=yes --out.level=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
 ```
 
 #### List packages
@@ -6436,7 +6452,7 @@ Using shared inbox name:
 Using shared inbox identifier: first retrieve the ID of the shared inbox, and then list packages with the appropriate filter.
 
 ```shell
-shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id)
+shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --out.level=data --fields=id)
 ```
 
 ```shell
@@ -6774,7 +6790,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-<%=cmd%> -Porg1 aoc files node_info <%=ph :dest_folder%> --format=json --display=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --transfer=@json:@stdin:
+<%=cmd%> -Porg1 aoc files node_info <%=ph :dest_folder%> --format=json --out.level=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --transfer=@json:@stdin:
 ```
 
 Explanation:
@@ -6784,7 +6800,7 @@ Explanation:
 - `aoc` uses the Aspera on Cloud plugin
 - `files node_info /<%=ph :dest_folder%>` generates transfer information including the Node API credential and root ID, suitable for the next command
 - `--format=json` formats the output as JSON (instead of the default text table)
-- `--display=data` displays only the result, removing other information such as workspace name
+- `--out.level=data` displays only the result, removing other information such as workspace name
 - `|` pipes the standard output of the first command into the second one
 - `-Porg2 aoc` uses the Aspera on Cloud plugin and loads credentials for `org2`
 - `files upload <%=ph :source_file%>` uploads the file named `<%=ph :source_file%>` (located in `org2`) to `org1`
@@ -7358,7 +7374,7 @@ Previews are mainly used in AoC, this also works with AoC:
 > [!TIP]
 > The `id` and `secret` fields are optional.
 > If not provided, they will be generated and returned into the result.
-> In that case, provide option `--show-secrets=yes` to get the generated secret.
+> In that case, provide option `--out.secrets=yes` to get the generated secret.
 
 Access keys support extra overriding parameters using parameter: `configuration` and sub keys `transfer` and `server`.
 For example, an access key can be modified or created with the following options:
@@ -7490,7 +7506,7 @@ Alternatively, use the following equivalent command, as <%=tool%> kindly extract
 - Create a Bearer token for the user:
 
   ```shell
-  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
+  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.file=bearer.txt
   ```
 
 > [!NOTE]
@@ -7645,7 +7661,7 @@ For more information on the JWT method, refer to the section below.
 If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
 
 ```shell
-<%=cmd%> faspex5 --show-config --show-secrets=yes --fields=private_key | <%=cmd%> config pubkey @stdin: --show-secrets=yes
+<%=cmd%> faspex5 --show-config --out.secrets=yes --fields=private_key | <%=cmd%> config pubkey @stdin: --out.secrets=yes
 ```
 
 ### Faspex 5 JWT authentication
@@ -9298,14 +9314,14 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 #### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```shell
-<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --out.level=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > [!NOTE]
 > Option `delete_before_transfer` will delete files locally, if they are not present on remote side.
 
 > [!NOTE]
-> Options `progress` and `display` limit output for headless operation (for example, cron job)
+> Options `progress` and `--out.level` limit output for headless operation (for example, cron job)
 
 ### Health check and Nagios
 
@@ -9685,7 +9701,7 @@ Enjoy a coffee on me:
 ```shell
 <%=cmd%> config coffee
 <%=cmd%> config coffee --ui=text
-<%=cmd%> config coffee --ui=text --image.text=true
+<%=cmd%> config coffee --ui=text --out.img.text=true
 ```
 
 ### References

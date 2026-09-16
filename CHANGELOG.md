@@ -13,6 +13,8 @@ Released: [Place date of release here]
 * `direct`: Added asynchronous transfer mode — `last_job_id` is now exposed so a transfer can be submitted and its status queried later.
 * `preview`: `scan` now accepts an optional path or `%id:<file_id>` selector, allowing preview generation for one file or a subtree. Added the `--filter` option, supporting glob strings, regular expressions, and `@ruby:` Proc expressions.
 * `config`: Preset keys starting with `_` (e.g. `_comment`) are now ignored when a preset is applied as CLI options, allowing inline annotations in `config.yaml`.
+* **global**: New composite option `--out` groups all output rendering options with dot-notation sub-keys: `format`, `level`, `file`, `fields`, `select`, `table[.pivot]`, `flat`, `secrets`, `img`. Individual options preserved with deprecation warnings.
+* `config`: `preset set` now supports dot-notation keys with deep-merge and automatic type coercion.
 
 ### Issues Fixed
 

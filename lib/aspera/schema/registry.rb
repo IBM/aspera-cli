@@ -81,6 +81,7 @@ module Aspera
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
       VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret"
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
+      OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions"
       PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions"
 
       REQ_BODY = '.requestBody.content.application/json.schema'

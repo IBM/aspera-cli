@@ -661,3 +661,49 @@ components:
             Value sent in the `x-instana-host` header.
             Defaults to the local machine's hostname.
           example: hsts-prod-01
+    TableOptions:
+      type: object
+      description: Terminal table rendering options.
+      properties:
+        pivot:
+          type: string
+          description: Control how an object list is displayed (no/yes/single).
+          enum: ['no', 'yes', 'single']
+          default: 'no'
+    OutOptions:
+      type: object
+      description: Output rendering options (dot-notation sub-properties).
+      properties:
+        format:
+          type: string
+          description: Output format.
+          enum: [text, nagios, ruby, json, jsonpp, yaml, table, csv, image]
+          default: table
+        level:
+          type: string
+          description: Output verbosity level (which information to display).
+          enum: [info, data, error]
+          default: data
+        file:
+          type: string
+          description: Destination file for results (use `-` for stdout).
+        fields:
+          description: >-
+            Comma-separated list of fields to display, or a special value:
+            `ALL` for all fields, `DEF` for default fields.
+            Prefix a field name with `-` to exclude it.
+        select:
+          type: object
+          description: Select only matching items from a list (field/value filter or lambda).
+        table:
+          $ref: "#/components/schemas/TableOptions"
+        flat:
+          type: boolean
+          description: Display deep hash values as additional top-level keys.
+          default: true
+        secrets:
+          type: boolean
+          description: Show secrets in command output.
+          default: false
+        img:
+          $ref: "#/components/schemas/ImageOptions"

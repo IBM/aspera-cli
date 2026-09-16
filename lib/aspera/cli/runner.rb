@@ -185,7 +185,14 @@ module Aspera
               Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
             else
               reader = Schema::Registry.instance.reader(schema_path)
-              rows   = reader.to_rows
+              rows   = reader.to_rows.map do |row|
+                if row.key?('enum')
+                  row = row.dup
+                  row['type'] = 'enum'
+                  row['description'] = "#{row['description']}\nAllowed: #{row['enum'].join(', ')}"
+                end
+                row
+              end
               @context.formatter.display_results(Result::ObjectList.new(rows, fields: %w[name type required description]))
             end
           end

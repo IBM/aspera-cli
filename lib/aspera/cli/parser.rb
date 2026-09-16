@@ -579,11 +579,11 @@ module Aspera
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
         Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
-        set_option(option_symbol, default, where: 'default') unless default.nil?
+        set_option(option_symbol, default, where: 'default', warn_deprecation: false) unless default.nil?
         case option_attrs.types
         when Type::ENUM, Type::BOOLEAN
           # This option value must be a symbol (or array of symbols)
-          set_option(option_symbol, BoolValue.true?(default), where: 'default') if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
+          set_option(option_symbol, BoolValue.true?(default), where: 'default', warn_deprecation: false) if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
         when Type::NONE
           Aspera.assert_type(block, Proc){"missing execution block for #{option_symbol}"}
           option_attrs.block = block
@@ -733,14 +733,14 @@ module Aspera
       # @param option_symbol [Symbol] option name
       # @param value [String] Value to set
       # @param where [String] Where the value comes from
-      def set_option(option_symbol, value, where: 'code override')
+      def set_option(option_symbol, value, where: 'code override', warn_deprecation: true)
         Aspera.assert_type(option_symbol, Symbol)
         option = option_def(option_symbol)
         # Raise immediately only when the option has a static schema: the schema is known at parse time.
         # When schema is nil (e.g. --query), 'help' is stored as-is and SchemaRequest is raised later
         # in get_option() with the contextual schema provided by the calling command.
         raise SchemaRequest.new(:option, option.option, option.schema) if option.types&.include?(Hash) && value.eql?(HELP) && option.schema
-        option.assign_value(value, where: where)
+        option.assign_value(value, where: where, warn_deprecation: warn_deprecation)
       end
 
       # Set option to `nil`
@@ -1065,7 +1065,8 @@ module Aspera
           short_char = @short_options.key(sym)
           short_part = short_char ? "-#{short_char}, " : '    '
           flag = "#{short_part}#{symbol_to_option(sym, option_display_value(opt))}"
-          rows << [flag, opt.description]
+          desc = opt.deprecation ? "#{opt.description} (deprecated: #{opt.deprecation})" : opt.description
+          rows << [flag, desc]
         end
         table = Terminal::Table.new(rows: rows, style: {border: HELP_BORDER, padding_left: 0, padding_right: 2})
         banner.nil? ? table.to_s : "#{banner}\n#{table}"
@@ -1126,6 +1127,10 @@ module Aspera
       # @param value [String] The value to convert to appropriate type
       # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
       def smart_convert(value)
+        self.class.smart_convert(value)
+      end
+
+      public_class_method def self.smart_convert(value)
         case value
         when 'true'  then true
         when 'false' then false

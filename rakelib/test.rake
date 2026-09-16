@@ -316,8 +316,8 @@ namespace TEST_CASE_NS do
         PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
       command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
-      command_line += ["--output=#{t.out_file}"] if tags[:save_output]
-      command_line += ['--format=csv', '--display=data'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=')}
+      command_line += ["--out.file=#{t.out_file}"] if tags[:save_output]
+      command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=') || i.start_with?('--out.format=')}
       run_options = {}
       if tags[:noblock]
         run_options[:mode] = :background

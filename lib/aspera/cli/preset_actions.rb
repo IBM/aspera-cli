@@ -119,7 +119,7 @@ module Aspera
       def action_preset_set(name:, param_name:, param_value:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         param_name = Parser.option_line_to_name(param_name)
-        presets.set_key(name, param_name, param_value)
+        presets.set_key(name, param_name, Parser.smart_convert(param_value))
         secure_preset_option(presets.config_presets[name], name, param_name)
         Result::Nothing.new
       end

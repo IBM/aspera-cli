@@ -2028,14 +2028,14 @@ awa_bearer:
   template: awa_user_suite
   args:
     - bearer_token
-    - --display=data
+    - --out.level=data
 awa_admin_bearer:
   template: awa_user_suite
   args:
     - --preset=aoc_admin
     - admin
     - bearer_token
-    - --display=data
+    - --out.level=data
 awa_org:
   template: awa_user_suite
   args:
@@ -2315,7 +2315,7 @@ aoc_files_node_info:
     - node_info
     - /testdst
     - --format=json
-    - --display=data
+    - --out.level=data
 aoc_files_upload_other_ws:
   tags:
     - nodoc
@@ -2454,7 +2454,7 @@ aoc_file_browse_id:
     - testdst/$(FILENAME_ASCII)
     - --fields=id
     - --format=csv
-    - --display=data
+    - --out.level=data
 aoc_file_show_by_id:
   depends_on:
     - aoc_files_transfer
@@ -2706,7 +2706,7 @@ aoc_pack_recv_id:
     - list
     - --format=csv
     - --fields=id
-    - --display=data
+    - --out.level=data
     - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
 aoc_pack_recv:
   depends_on:
@@ -3443,7 +3443,7 @@ aoc_clt_reg_id:
     - client_registration_token
     - list
     - --fields=id
-    - --display=data
+    - --out.level=data
     - --query.max=1
 aoc_clt_reg_tok_delete:
   depends_on:
@@ -4330,7 +4330,7 @@ conf_sync_trans:
     - sync
     - translate
     - --format=jsonpp
-    - --show-secrets=yes
+    - --out.secrets=yes
     - --
     - -L
     - /optlogs/
@@ -4531,7 +4531,7 @@ conf_async_node_upload:
     - --transfer.asynchronous=true
     - --fields=job_id
     - --format=csv
-    - --display=data
+    - --out.level=data
 conf_async_transfer_status:
   description: Re-query the status of an async transfer by job_id.
   depends_on:
@@ -5105,13 +5105,13 @@ conf_coffee_text_image:
     - config
     - coffee
     - --ui=text
-    - --image.text=true
+    - --out.img.text=true
 conf_coffee_text_image_single:
   args:
     - config
     - coffee
     - --ui=text
-    - --image=@json:{"text":true,"double":false}
+    - --out.img=@json:{"text":true,"double":false}
 conf_image:
   tags:
     - rmagick
@@ -5310,20 +5310,20 @@ conf_echo_json_multi_yes:
     - config
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
-    - --multi-single=yes
+    - --out.table.pivot=yes
 conf_echo_json_multi_single:
   args:
     - config
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
-    - --multi-single=single
+    - --out.table.pivot=single
 conf_echo_picture_svg:
   args:
     - config
     - echo
     - <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#069"/></svg>
     - --format=image
-    - --image.text=true
+    - --out.img.text=true
 conf_echo_picture_png:
   tags:
     - nodoc
@@ -5332,7 +5332,7 @@ conf_echo_picture_png:
     - echo
     - "@base64:iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
     - --format=image
-    - --image.text=true
+    - --out.img.text=true
 conf_echo_picture_jpg:
   tags:
     - nodoc
@@ -5341,7 +5341,7 @@ conf_echo_picture_jpg:
     - echo
     - "@base64:/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k="
     - --format=image
-    - --image.text=true
+    - --out.img.text=true
 conf_echo_fail_vault_entry:
   description: "Wrong @file: reference, file does not exist"
   tags:
@@ -5993,7 +5993,7 @@ f5_wizard_no_key:
     - faspex5
     - --username=admin@ibm.com
     - --key-path=
-    - --show-secrets=yes
+    - --out.secrets=yes
     - --client-id=abc
     - --client-secret=abc
 f5_detect_fail:
@@ -6090,7 +6090,7 @@ f5_pack_send_shared:
     - END
     - "@preset:f5_misc.shared_folder_file"
     - --fields=id
-    - --display=data
+    - --out.level=data
   post: 'puts "Sent package with id: #{t.saved_output :f5_pack_send_shared}"'
 f5_pack_send_shared_status:
   depends_on:
@@ -6203,7 +6203,7 @@ f5_pack_shbox_list_id:
     - --query=@json:{"status":"completed","limit":1,"max":1}
     - --fields=id
     - --format=csv
-    - --display=data
+    - --out.level=data
 f5_pack_shbox_show:
   depends_on:
     - f5_pack_shbox_list_id

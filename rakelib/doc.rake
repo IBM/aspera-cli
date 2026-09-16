@@ -68,7 +68,7 @@ namespace :doc do
 
   file Paths::TSPEC_JSON_SCHEMA => [Paths::TSPEC_YAML_SCHEMA] do
     Aspera::Log.log.info{"Generating: #{Paths::TSPEC_JSON_SCHEMA}"}
-    run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--output=#{Paths::TSPEC_JSON_SCHEMA}")
+    run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--out.file=#{Paths::TSPEC_JSON_SCHEMA}")
   end
 
   desc 'Generate XSD for aspera.conf'
