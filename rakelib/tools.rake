@@ -116,28 +116,51 @@ namespace :tools do
     raw = Aspera::Rest.new(base_url: versions_url, redirect_max: 3).read(nil)
     data = raw.is_a?(String) ? JSON.parse(raw) : raw
 
+    # All stable CRuby releases as [major, minor, patch] integer tuples.
     stable_versions = data['ruby']
       .filter_map do |v|
         m = v.match(/\A(\d+)\.(\d+)\.(\d+)\z/)
         m ? [m[1].to_i, m[2].to_i, m[3].to_i] : nil
       end
-
     raise 'No stable Ruby versions found' if stable_versions.empty?
 
-    latest = stable_versions.max
-    latest_str = latest.join('.')
+    # Minimum supported version from the gemspec (e.g. ">= 3.1" → [3, 1]).
+    gemspec_min = Paths::GEMSPEC.read[/required_ruby_version\s*=\s*['"]>=\s*(\d+\.\d+)['"]/, 1]
+    raise 'Could not read required_ruby_version from gemspec' unless gemspec_min
+    min_ver = gemspec_min.split('.').map(&:to_i)
+    log.info("Minimum Ruby version (from gemspec): #{gemspec_min}")
+
+    # Latest overall release — used by fixed ruby-version: "X.Y.Z" fields.
+    latest_str = stable_versions.max.join('.')
     log.info("Latest stable Ruby version: #{latest_str}")
 
-    # Update every workflow file that contains a hard-coded ruby-version string.
+    # One "X.Y" entry per minor line, from min_ver up to latest, plus jruby.
+    # setup-ruby resolves "X.Y" to the latest patch automatically.
+    minor_lines = stable_versions
+      .map{ |maj, min, _patch| [maj, min] }
+      .uniq
+      .sort
+      .select{ |ver| (ver <=> min_ver) >= 0 }
+      .map{ |maj, min| "#{maj}.#{min}" }
+    test_matrix = minor_lines + ['jruby']
+    log.info("Test matrix: #{test_matrix.inspect}")
+
     workflows_dir = TOP / '.github' / 'workflows'
     updated = []
     workflows_dir.glob('*.yml').sort.each do |workflow_file|
       content = workflow_file.read
-      # Match:  ruby-version: "X.Y.Z"  (quoted) or  ruby-version: 'X.Y.Z'  (single-quoted)
-      new_content = content.gsub(/(?<=ruby-version:\s)(["'])\d+\.\d+\.\d+\1/) do |_match|
-        quote = Regexp.last_match(1)
-        "#{quote}#{latest_str}#{quote}"
+      new_content = content.dup
+
+      # 1. Fixed ruby-version: "X.Y.Z" fields (deploy, release, cert-renew, yank).
+      new_content.gsub!(/(?<=ruby-version:\s)(["'])\d+\.\d+\.\d+\1/) do
+        "#{Regexp.last_match(1)}#{latest_str}#{Regexp.last_match(1)}"
       end
+
+      # 2. Matrix list in test.yml:  ruby: ["X.Y", ..., "jruby"]
+      new_content.gsub!(/(?<=ruby: )\["[\d.]+"(?:, "(?:[\d.]+|jruby)")*\]/) do
+        '[' + test_matrix.map{ |v| %("#{v}") }.join(', ') + ']'
+      end
+
       if new_content != content
         workflow_file.write(new_content)
         updated << workflow_file.basename.to_s
