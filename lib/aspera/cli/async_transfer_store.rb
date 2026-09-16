@@ -27,9 +27,35 @@ module Aspera
       CATEGORY = 'async_transfer_'
       private_constant :CATEGORY
 
+      # Class-level registry of in-process agent references, keyed by job_id.
+      # Shared across all AsyncTransferStore instances within the same Ruby process,
+      # so that a reference registered in one Runner call is visible in the next
+      # (e.g. MCP server mode where each tool call creates a fresh Runner/Context).
+      # Never persisted to disk.
+      @agent_refs = {}
+      class << self
+        attr_reader :agent_refs
+      end
+
       # @param persistency [PersistencyFolder]
       def initialize(persistency)
         @persistency = persistency
+      end
+
+      # Register an in-process agent reference for a job.
+      # Called by TransferAgent immediately after start_transfer (async mode).
+      # The reference is only available while the same Ruby process is alive.
+      # @param job_id    [String] the ascli-generated UUID
+      # @param agent_ref [Object] live agent instance (responds to sessions_by_job)
+      def register_agent_ref(job_id, agent_ref)
+        self.class.agent_refs[job_id] = agent_ref
+      end
+
+      # Retrieve a previously registered in-process agent reference.
+      # @param job_id [String]
+      # @return [Object, nil] the live agent instance, or nil if not registered / process restarted
+      def agent_ref(job_id)
+        self.class.agent_refs[job_id]
       end
 
       # Persist (create or update) an async transfer entry.

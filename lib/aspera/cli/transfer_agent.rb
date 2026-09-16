@@ -280,10 +280,11 @@ module Aspera
           when 'transferd'
             agent_params['url'] = agent_instance.daemon_endpoint
           end
-          # '_agent_ref' is an in-process reference so direct/httpgw can be re-queried
-          # while the process lives (e.g. MCP mode). AsyncTransferStore strips '_*' keys
-          # before persisting, so this never reaches the file system.
-          agent_params['_agent_ref'] = agent_instance
+          # Register an in-process agent reference for direct/httpgw agents so that
+          # config transfer status can re-query them while the same process is alive
+          # (e.g. MCP server mode). The ref is stored in AsyncTransferStore's memory map,
+          # never on disk.
+          async_store.register_agent_ref(job_id, agent_instance) if %w[direct httpgw].include?(agent_type)
           # transfer_id: in-process agents use job_id; daemon agents expose @transfer_id
           transfer_id =
             if %w[direct httpgw].include?(agent_type)
@@ -316,12 +317,12 @@ module Aspera
         @agent.shutdown if @agent.respond_to?(:shutdown)
       end
 
-      private
-
-      # Lazy accessor for the async transfer store (only created when needed)
+      # Lazy accessor for the async transfer store (shared with TransferActions via context.transfer).
       def async_store
         @async_store ||= AsyncTransferStore.new(@context.persistency)
       end
+
+      private
     end
   end
 end

@@ -130,6 +130,69 @@ module Aspera
           property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['allOf']
         end
       end
+
+      # Convert this schema to a flat array of field descriptors.
+      # Returns raw semantic fields with no ANSI or formatting, suitable for
+      # JSON/YAML output or MCP consumption. An AI or script can use the result
+      # directly to build a valid payload.
+      #
+      # Each Hash entry contains:
+      #   name        [String]  dot/bracket-path of the field (e.g. "recipients[].name")
+      #   type        [String]  JSON type string (e.g. "string", "boolean", "Array[object]")
+      #   required    [Boolean] true when the field is in its immediate parent's required list
+      #   description [String]  human description (may contain Markdown **bold** / `code`)
+      #   default     [Object]  (optional) default value as native Ruby type
+      #   enum        [Array]   (optional) list of allowed string values
+      #
+      # @return [Array<Hash>]
+      def to_rows
+        rows = []
+        collect_rows(rows, self, '')
+        rows
+      end
+
+      private
+
+      # Recursively collect rows from a schema node, passing each property's own
+      # parent `required` array so that only direct-parent membership is checked.
+      def collect_rows(rows, reader, prefix)
+        return unless reader.current.key?('properties')
+        parent_required = Set.new(Array(reader.current['required']))
+        props_reader = reader.dig('properties')
+        props_reader.current.each_key do |name|
+          prop_reader  = props_reader.dig(name)
+          node         = prop_reader.current
+          full_name    = "#{prefix}#{name}"
+          type_val =
+            if node['type'].is_a?(Array)
+              node['type'].join(', ')
+            elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
+              "Array[#{node.dig('items', 'type')}]"
+            else
+              node['type'].to_s
+            end
+          row = {
+            'name'        => full_name,
+            'type'        => type_val,
+            'required'    => parent_required.include?(name),
+            'description' => node['description'].to_s
+          }
+          row['default'] = node['default'] if node.key?('default')
+          row['enum']    = node['enum']    if node.key?('enum')
+          rows << row
+          # Recurse into nested object or array-of-objects
+          case node['type']
+          when 'object'
+            collect_rows(rows, prop_reader, "#{full_name}.") if node['properties']
+          when 'array'
+            if node['items']
+              item_reader = prop_reader.dig('items')
+              collect_rows(rows, item_reader, "#{full_name}[].") if item_reader.current['properties']
+            end
+          end
+          collect_rows(rows, prop_reader, "#{full_name}.") if node['allOf']
+        end
+      end
     end
   end
 end

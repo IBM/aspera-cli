@@ -25,6 +25,9 @@ module Aspera
         store = async_transfer_store
         entry = store.read(job_id)
         Aspera.assert(!entry.nil?, type: Cli::BadArgument){"Unknown job_id: #{job_id}"}
+        # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
+        ref = store.agent_ref(job_id)
+        entry['agent_params']['_agent_ref'] = ref if ref
         live = query_live_status(entry)
         if live
           entry.merge!(live)
@@ -57,8 +60,10 @@ module Aspera
       private
 
       # Lazy accessor - requires context.persistency (available in all Base sub-classes).
+      # Delegate to the TransferAgent's store so that the in-memory agent-ref
+      # registry is shared between the two components in the same process.
       def async_transfer_store
-        @async_transfer_store ||= AsyncTransferStore.new(persistency)
+        context.transfer.async_store
       end
 
       # Delegate to the appropriate agent class method.

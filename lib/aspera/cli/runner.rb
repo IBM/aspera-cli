@@ -184,8 +184,9 @@ module Aspera
             if schema_path.nil?
               Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
             else
-              builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path)).build
-              @context.formatter.display_results(Result::ObjectList.new(builder.rows, fields: builder.columns))
+              reader = Schema::Registry.instance.reader(schema_path)
+              rows   = reader.to_rows
+              @context.formatter.display_results(Result::ObjectList.new(rows, fields: %w[name type required description]))
             end
           end
         end

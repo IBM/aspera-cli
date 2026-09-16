@@ -194,34 +194,9 @@ module Aspera
           MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
         end
 
-        # Convert a Schema::Reader to a flat array of field descriptors for MCP.
-        # Returns raw semantic fields — no ANSI, no formatting — so an AI can directly
-        # use the result to construct a valid @json:{} payload.
-        # Each entry has: name, type, required (bool), description, and optionally default/enum.
+        # Delegate to Schema::Reader#to_rows — semantic fields, no ANSI, MCP/JSON-ready.
         def schema_to_rows(reader)
-          required_set = Set.new(Array(reader.current['required']))
-          rows = []
-          reader.each_property do |prop_reader, _name, full_name|
-            node = prop_reader.current
-            type_val =
-              if node['type'].is_a?(Array)
-                node['type'].join(', ')
-              elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
-                "Array[#{node.dig('items', 'type')}]"
-              else
-                node['type'].to_s
-              end
-            row = {
-              'name'        => full_name,
-              'type'        => type_val,
-              'required'    => required_set.include?(full_name.split('.').first),
-              'description' => node['description'].to_s
-            }
-            row['default'] = node['default'] if node.key?('default')
-            row['enum']    = node['enum']    if node.key?('enum')
-            rows << row
-          end
-          rows
+          reader.to_rows
         end
 
         # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
