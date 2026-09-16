@@ -29,9 +29,12 @@ module Aspera
         super()
         Aspera.assert_type(file, String) { 'path to vault file' }
         @path = file
+        Log.dump(:vault_file, @path)
         @all_secrets = {}
         @cipher_name = DEFAULT_CIPHER_NAME
         @kdf_params = nil
+        # true when the vault was created by v4.26.0 (password padded with zeros, no KDF)
+        @legacy_key = false
         vault_encrypted_data = nil
         Log.dump(:vault_file, File.expand_path(@path))
         if File.exist?(@path)
@@ -39,13 +42,16 @@ module Aspera
           if vault_file.start_with?('---')
             vault_info = YAML.parse(vault_file).to_ruby
             sorted_keys = vault_info.keys.sort
-            Aspera.assert(sorted_keys == FILE_KEYS || sorted_keys == FILE_KEYS_KDF, 'Invalid vault file')
+            Aspera.assert(sorted_keys == FILE_KEYS || sorted_keys == FILE_KEYS_KDF) { "Invalid vault file: #{@path}: #{sorted_keys}" }
             @cipher_name = vault_info['cipher']
             @kdf_params  = vault_info['kdf']
+            # vault created before PBKDF2 was introduced (v4.26.0 format: no kdf field)
+            @legacy_key = @kdf_params.nil?
             vault_encrypted_data = vault_info['data']
           else
-            # legacy vault file
+            # legacy vault file (binary, pre-YAML format)
             @cipher_name = LEGACY_CIPHER_NAME
+            @legacy_key = true
             vault_encrypted_data = File.read(@path, mode: 'rb')
           end
         end
@@ -133,36 +139,43 @@ module Aspera
       end
 
       # Derive an AES key from +new_password+.
-      # When @kdf_params is nil (new vault or password change) a fresh PBKDF2 salt
-      # is generated and stored in @kdf_params so it is persisted with the vault.
-      # When @kdf_params is already set (existing vault being opened) it is reused.
+      # @legacy_key is true for vaults created by v4.26.0 or earlier (no kdf field):
+      #   key = password truncated/zero-padded to key_bytes (same as symmetric-encryption did).
+      # Otherwise PBKDF2 is used. When @kdf_params is nil (new vault or password change)
+      # a fresh salt is generated; when already set (existing vault) it is reused.
       def cipher(new_password)
         key_bytes = @cipher_name.split('-')[1].to_i / Environment::BITS_PER_BYTE
-        if @kdf_params.nil?
-          # New vault or password change: generate a fresh salt
-          salt = OpenSSL::Random.random_bytes(KDF_SALT_BYTES)
-          @kdf_params = {
-            'algo'       => 'PBKDF2',
-            'digest'     => KDF_DIGEST,
-            'iterations' => KDF_ITERATIONS,
-            'salt'       => [salt].pack('m0') # base64, no newlines
-          }
-        end
-        salt = @kdf_params['salt'].unpack1('m0')
-        key  = OpenSSL::KDF.pbkdf2_hmac(
-          new_password,
-          salt:       salt,
-          iterations: @kdf_params['iterations'],
-          length:     key_bytes,
-          hash:       @kdf_params['digest']
-        )
+        key =
+          if @legacy_key
+            # Replicate the v4.26.0 key derivation: password + NUL padding, truncated to key_bytes
+            (new_password + ("\x00" * key_bytes))[0, key_bytes]
+          else
+            if @kdf_params.nil?
+              # New vault or password change: generate a fresh salt
+              salt = OpenSSL::Random.random_bytes(KDF_SALT_BYTES)
+              @kdf_params = {
+                'algo'       => 'PBKDF2',
+                'digest'     => KDF_DIGEST,
+                'iterations' => KDF_ITERATIONS,
+                'salt'       => [salt].pack('m0') # base64, no newlines
+              }
+            end
+            salt = @kdf_params['salt'].unpack1('m0')
+            OpenSSL::KDF.pbkdf2_hmac(
+              new_password,
+              salt:       salt,
+              iterations: @kdf_params['iterations'],
+              length:     key_bytes,
+              hash:       @kdf_params['digest']
+            )
+          end
         OsslCipher.new(@cipher_name, key)
       end
 
       # save current data to file with format
       def save
         vault_info = {
-          'version' => '1.0.0',
+          'version' => '1.1.0',
           'type'    => FILE_TYPE,
           'cipher'  => @cipher_name,
           'kdf'     => @kdf_params,

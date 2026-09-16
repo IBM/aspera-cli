@@ -203,7 +203,7 @@ module Aspera
         command :vault, description: 'Manage secrets in the vault'
         commands_under :vault do
           command :info,     description: 'Display vault information',
-            action: ->(**) { Result::SingleObject.new(vault.info) }
+            action: ->(**) { Result::SingleObject.new(vault_required.info) }
           command :ids,      description: 'List secret labels in the vault',
             action: ->(**) { Result::ObjectList.new(vault_required.ids) }
           command :list,     description: 'List all secrets with full details',

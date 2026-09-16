@@ -34,9 +34,9 @@ module Aspera
     end
 
     # Assert that a condition is true, else raise exception
-    # @param assertion [TrueClass, FalseClass]       Must be true
-    # @param info      [String,nil] Fixed message in case assert fails, else use block
-    # @param type      [Exception,Symbol] Exception to raise, or Symbol for Log.log
+    # @param assertion [Boolean] Must be true
+    # @param info [String,nil] Fixed message in case assert fails, else use block
+    # @param type [Exception,Symbol] Exception to raise, or Symbol for Log.log level
     # @yieldreturn [String] A string that describes the problem for complex messages
     # The block is executed in the context of the Aspera module
     def assert(assertion, info = nil, type: AssertError)
@@ -45,7 +45,6 @@ module Aspera
       message = 'assertion failed'
       info = yield if block_given?
       message = type.eql?(AssertError) ? "#{message}: #{info}" : info if info
-      # message = "#{message}: #{caller.find{ |call| !call.start_with?(__FILE__)}}"
       report_error(type, message)
     end
 
