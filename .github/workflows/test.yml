@@ -42,19 +42,7 @@ jobs:
 
       - name: Run unit tests (no server required)
         run: |
-          bundle exec rspec \
-            spec/base_dsl_spec.rb \
-            spec/command_registry_spec.rb \
-            spec/mcp_tool_spec.rb \
-            spec/aoc_registry_spec.rb \
-            spec/transfer_uri_spec.rb \
-            spec/assert_spec.rb \
-            spec/version_spec.rb \
-            spec/proxy_auto_config_spec.rb \
-            spec/rest_spec.rb \
-            spec/hash_ext_spec.rb \
-            spec/uri_reader_spec.rb \
-            spec/environment_spec.rb
+          bundle exec rspec spec/ --exclude-pattern "spec/**/*_integration_spec.rb"
 
   test:
     runs-on: ubuntu-latest
