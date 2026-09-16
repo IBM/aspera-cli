@@ -144,9 +144,16 @@ end
 
 RSpec.describe(Aspera::Ssh) do
   it 'catches aspshell error in exception' do
-    Aspera::Ssh.disable_ecd_sha2_algorithms
+    ssh_opts = {
+      password:        RSpec.configuration.password,
+      port:            ssh_url.port,
+      use_agent:       false,
+      host_key:        %w[rsa-sha2-512 rsa-sha2-256 ssh-rsa],
+      verify_host_key: :never
+    }
+    executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, ssh_opts)
     expect do
-      demo_executor.execute('foo')
+      executor.execute('foo')
     end.to(raise_error(Aspera::Ssh::Error, /Command not accepted: foo/))
   end
 end
