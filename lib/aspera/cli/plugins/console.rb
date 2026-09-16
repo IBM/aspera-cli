@@ -42,7 +42,7 @@ module Aspera
               }
             rescue StandardError => e
               error = e
-              Log.log.debug{"detect error: #{e}"}
+              Log.log.debug { "detect error: #{e}" }
             end
             raise error if error
             return
@@ -85,7 +85,7 @@ module Aspera
           command :list,          description: 'List current transfers'
           command :show,          description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
-            action: ->(api_console:, transfer_id:, **){Result::SingleObject.new(api_console.read("transfers/#{transfer_id}"))}
+            action: ->(api_console:, transfer_id:, **) { Result::SingleObject.new(api_console.read("transfers/#{transfer_id}")) }
           command :files,         description: 'List files in a transfer',
             arguments: [{name: :transfer_id, type: :identifier}]
           command :start,         description: 'Start a transfer',
@@ -118,7 +118,7 @@ module Aspera
         end
 
         commands_under %i[transfer smart] do
-          command :list,   description: 'List smart transfers', action: ->(api_console:){Result::ObjectList.new(api_console.read('smart_transfers'))}
+          command :list,   description: 'List smart transfers', action: ->(api_console:) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
             arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash}]
         end
@@ -175,10 +175,10 @@ module Aspera
         private
 
         def parse_extended_filter(filter, query)
-          Aspera.assert(filter.start_with?('(') && filter.end_with?(')'), type: BadArgument){"Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..."}
+          Aspera.assert(filter.start_with?('(') && filter.end_with?(')'), type: BadArgument) { "Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..." }
           filter[1..-2].split(')and(').each_with_index do |expr, i|
             m = expr.match(EXPR_RE)
-            Aspera.assert(m, type: BadArgument){"Invalid expression: #{expr}, shall be: <field> <op> <val>"}
+            Aspera.assert(m, type: BadArgument) { "Invalid expression: #{expr}, shall be: <field> <op> <val>" }
             t = m.captures
             i += 1
             query["filter#{i}"] = t[0]

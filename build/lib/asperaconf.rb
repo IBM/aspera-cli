@@ -269,7 +269,7 @@ module Aspera
       def restriction_enum(values)
         line('<xs:restriction base="xs:string">')
         @depth += 1
-        values.each{ |v| line("<xs:enumeration value=\"#{escape(v)}\"/>")}
+        values.each { |v| line("<xs:enumeration value=\"#{escape(v)}\"/>") }
         @depth -= 1
         line('</xs:restriction>')
       end
@@ -311,7 +311,7 @@ module Aspera
 
       def initialize(xml_string)
         require 'nokogiri'
-        @doc     = Nokogiri::XML(xml_string){ |c| c.default_xml.noblanks}
+        @doc     = Nokogiri::XML(xml_string) { |c| c.default_xml.noblanks }
         @version = extract_version
         @xsd     = XSDWriter.new
       end
@@ -375,7 +375,7 @@ module Aspera
 
       # Has any element child that can repeat (affects xs:all vs xs:sequence choice)
       def has_repeating_children?(elem)
-        elem.element_children.any?{ |c| repeating?(c)}
+        elem.element_children.any? { |c| repeating?(c) }
       end
 
       # An element with attributes in the source XML needs mixed content handling
@@ -502,11 +502,11 @@ module Aspera
         # Use sequence only when a child must repeat.
         if has_repeating_children?(parent)
           @xsd.open_sequence
-          children.each{ |child| process_element(child)}
+          children.each { |child| process_element(child) }
           @xsd.close_sequence
         else
           @xsd.open_all
-          children.each{ |child| process_element(child)}
+          children.each { |child| process_element(child) }
           @xsd.close_all
         end
       end

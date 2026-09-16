@@ -190,7 +190,7 @@ module TestEnv
       end
     end
     normalized_tests.each_value do |properties|
-      plugin_sym = properties[:args].find{ |s| !s.start_with?('-', '@')}&.to_sym
+      plugin_sym = properties[:args].find { |s| !s.start_with?('-', '@') }&.to_sym
       raise "Plugin name must match #{PLUGIN_NAME_PATTERN}: #{plugin_sym}" unless plugin_sym.nil? || plugin_sym.to_s.match?(PLUGIN_NAME_PATTERN)
       properties[:plugin] = plugin_sym unless plugin_sym.nil?
       properties[:tags].unshift(plugin_sym) unless plugin_sym.nil? || properties[:tags].include?(plugin_sym)

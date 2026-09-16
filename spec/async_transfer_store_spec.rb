@@ -9,13 +9,13 @@ module Aspera
   module Cli
     RSpec.describe(AsyncTransferStore) do
       # Use a real PersistencyFolder backed by a temp directory
-      let(:tmpdir){Dir.mktmpdir('async_store_spec')}
-      let(:persistency){Aspera::PersistencyFolder.new(tmpdir)}
-      let(:store){described_class.new(persistency)}
+      let(:tmpdir) { Dir.mktmpdir('async_store_spec') }
+      let(:persistency) { Aspera::PersistencyFolder.new(tmpdir) }
+      let(:store) { described_class.new(persistency) }
 
-      after{FileUtils.rm_rf(tmpdir)}
+      after { FileUtils.rm_rf(tmpdir) }
 
-      let(:job_id){'aaaaaaaa-0000-0000-0000-000000000001'}
+      let(:job_id) { 'aaaaaaaa-0000-0000-0000-000000000001' }
       let(:entry) do
         {
           'job_id'            => job_id,
@@ -63,7 +63,7 @@ module Aspera
           store.write(id2, entry.merge('job_id' => id2, 'agent_type' => 'desktop'))
           listed = store.list
           expect(listed.size).to(eq(2))
-          types = listed.map{ |e| e['agent_type']}.sort
+          types = listed.map { |e| e['agent_type'] }.sort
           expect(types).to(eq(%w[desktop node]))
         end
       end
@@ -77,7 +77,7 @@ module Aspera
         end
 
         it 'does not raise when deleting a non-existent entry' do
-          expect{store.delete('no-such-id')}.not_to(raise_error)
+          expect { store.delete('no-such-id') }.not_to(raise_error)
         end
       end
     end

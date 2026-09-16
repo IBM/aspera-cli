@@ -36,10 +36,10 @@ module Aspera
         cache_ids: [],
         **base_params
       )
-        Aspera.assert_type(private_key_obj, OpenSSL::PKey::RSA){'private_key_obj'}
-        Aspera.assert_type(payload, Hash){'payload'}
-        Aspera.assert_type(headers, Hash){'headers'}
-        Aspera.assert_type(cache_ids, Array){'cache ids'}
+        Aspera.assert_type(private_key_obj, OpenSSL::PKey::RSA) { 'private_key_obj' }
+        Aspera.assert_type(payload, Hash) { 'payload' }
+        Aspera.assert_type(headers, Hash) { 'headers' }
+        Aspera.assert_type(cache_ids, Array) { 'cache ids' }
         new_cache_ids = cache_ids.clone.push(payload[:sub])
         super(**base_params, cache_ids: new_cache_ids)
         @private_key_obj = private_key_obj
@@ -50,7 +50,7 @@ module Aspera
       def create_token
         require 'jwt'
         seconds_since_epoch = Time.now.to_i
-        Log.log.debug{"seconds_since_epoch=#{seconds_since_epoch}"}
+        Log.log.debug { "seconds_since_epoch=#{seconds_since_epoch}" }
         jwt_payload = {
           exp: seconds_since_epoch + OAuth::Factory.instance.parameters[:jwt_expiry_offset_sec], # expiration time
           nbf: seconds_since_epoch - OAuth::Factory.instance.parameters[:jwt_accepted_offset_sec], # not before

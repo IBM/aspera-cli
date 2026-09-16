@@ -124,13 +124,13 @@ module Aspera
           require 'aspera/cli/mcp_tool'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
-          Aspera.assert(unknown.empty?, type: Cli::BadArgument){"Unknown MCP option(s): #{unknown.join(', ')}"}
+          Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::McpTool.extra_args     = mcp_options.delete(:extra_args)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)
-          Log.log.info{"Starting MCP server (transport=#{transport})..."}
+          Log.log.info { "Starting MCP server (transport=#{transport})..." }
           start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
           Result::Nothing.new
         end
@@ -199,7 +199,7 @@ module Aspera
                 env = rack_env_from_webrick(req)
                 status, headers, rack_body = @app.call(env)
                 res.status = status
-                headers.each{ |k, v| res[k] = v}
+                headers.each { |k, v| res[k] = v }
                 if rack_body.respond_to?(:call)
                   # Rack streaming body (SSE): wrap the WEBrick socket in a stream object
                   # that exposes write/flush/close, then hand off a Proc to WEBrick so it
@@ -208,14 +208,14 @@ module Aspera
                   res.chunked = true
                   res.body = proc do |socket|
                     stream = Object.new
-                    stream.define_singleton_method(:write){ |data| socket.write(data)}
-                    stream.define_singleton_method(:flush){socket.flush rescue nil}
-                    stream.define_singleton_method(:close){socket.close rescue nil}
+                    stream.define_singleton_method(:write) { |data| socket.write(data) }
+                    stream.define_singleton_method(:flush) { socket.flush rescue nil }
+                    stream.define_singleton_method(:close) { socket.close rescue nil }
                     rack_proc.call(stream)
                   end
                 else
                   buf = +''
-                  rack_body.each{ |chunk| buf << chunk}
+                  rack_body.each { |chunk| buf << chunk }
                   rack_body.close if rack_body.respond_to?(:close)
                   res.body = buf
                 end
@@ -268,9 +268,9 @@ module Aspera
             description: server.description
           }
           webrick.mount('/', rack_servlet, app, server_info)
-          Log.log.info{"MCP HTTP server listening on http://#{bind}:#{port}/"}
-          trap('INT'){webrick.shutdown}
-          trap('TERM'){webrick.shutdown}
+          Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
+          trap('INT') { webrick.shutdown }
+          trap('TERM') { webrick.shutdown }
           webrick.start
         end
       end

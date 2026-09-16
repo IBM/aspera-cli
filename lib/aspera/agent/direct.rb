@@ -31,8 +31,8 @@ module Aspera
           return {'status' => 'unknown', 'note' => 'direct agent not available (different process?)'} if agent.nil?
           sessions = agent.sessions_by_job(transfer_id)
           return {'status' => 'unknown', 'note' => "no sessions found for job #{transfer_id}"} if sessions.empty?
-          errors  = sessions.filter_map{ |s| s[:error]}
-          running = sessions.any?{ |s| s[:thread]&.alive?}
+          errors  = sessions.filter_map { |s| s[:error] }
+          running = sessions.any? { |s| s[:thread]&.alive? }
           if errors.any?
             {'status' => 'failed', 'error' => errors.first.message}
           elsif running
@@ -99,7 +99,7 @@ module Aspera
         @multi_incr_udp = multi_incr_udp.nil? ? Environment.instance.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
         @monitor = monitor
         @management_cb = management_cb
-        Aspera.assert_type(resume, Hash){'resume'}
+        Aspera.assert_type(resume, Hash) { 'resume' }
         @resume_policy = Transfer::Resumer.new(**resume.symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
@@ -125,7 +125,7 @@ module Aspera
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
           transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
-          Log.log.debug{"xfer id=#{transfer_spec['xfer_id']}"}
+          Log.log.debug { "xfer id=#{transfer_spec['xfer_id']}" }
           # TODO: useful ? node only ? seems to be a timeout for retry in node
           transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
@@ -139,7 +139,7 @@ module Aspera
             count: transfer_spec.delete('multi_session').to_i
           }
           if multi_session_info[:count].negative?
-            Log.log.error{"multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0"}
+            Log.log.error { "multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0" }
             multi_session_info = nil
           elsif multi_session_info[:count].eql?(0)
             Log.log.debug('multi_session count is zero: no multi session')
@@ -169,7 +169,7 @@ module Aspera
         if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
-          session[:thread] = Thread.new{transfer_thread_entry(session)}
+          session[:thread] = Thread.new { transfer_thread_entry(session) }
           @sessions.push(session)
         else
           Log.log.debug('Starting multi session threads')
@@ -185,7 +185,7 @@ module Aspera
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             exec_spec.args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
-            this_session[:thread] = Thread.new{transfer_thread_entry(this_session)}
+            this_session[:thread] = Thread.new { transfer_thread_entry(this_session) }
             @sessions.push(this_session)
           end
         end
@@ -204,7 +204,7 @@ module Aspera
         # set to non-nil to exit loop
         result = []
         @sessions.each do |session|
-          Log.log.debug{"join #{session[:thread]}"}
+          Log.log.debug { "join #{session[:thread]}" }
           session[:thread].join
           result.push(session[:error] || :success)
         end
@@ -223,7 +223,7 @@ module Aspera
       # @param id [String] Transfer session identifier
       # @return [Array] list of sessions for a job
       def sessions_by_job(id)
-        @sessions.select{ |session| session[:job_id].eql?(id)}
+        @sessions.select { |session| session[:job_id].eql?(id) }
       end
 
       # Send command to management port of command (used in `asession).
@@ -253,7 +253,7 @@ module Aspera
         begin
           # set name for logging
           Thread.current[:name] = 'transfer'
-          Log.log.debug{"ENTER (#{Thread.current[:name]})"}
+          Log.log.debug { "ENTER (#{Thread.current[:name]})" }
           # start transfer with selected resumer policy
           @resume_policy.execute_with_resume do
             start_and_monitor_process(session: session, exec_spec: session[:exec_spec])
@@ -263,7 +263,7 @@ module Aspera
           session[:error] = e
           raise if Log.log.debug? || !e.is_a?(Transfer::Error)
         end
-        Log.log.debug{"EXIT (#{Thread.current[:name]})"}
+        Log.log.debug { "EXIT (#{Thread.current[:name]})" }
       end
 
       public
@@ -322,7 +322,7 @@ module Aspera
           return unless @monitor
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           # So we use select to detect that anything happens on the socket (connection)
-          Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
+          Log.log.debug { "before select, timeout: #{@spawn_timeout_sec}" }
           readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
           Log.log.debug('after select, before accept')
           Aspera.assert(readable, 'timeout waiting mgt port connect (select not readable)', type: Transfer::Error)
@@ -351,17 +351,17 @@ module Aspera
               commands = JSON.parse(File.read(@command_file))
               send_command(commands)
             rescue => e
-              Log.log.error{e.to_s}
+              Log.log.error { e.to_s }
             end
             File.delete(@command_file)
           end
           Log.log.debug('management io closed')
           # check that last status was received before process exit
           last_event = processor.last_event
-          Aspera.assert_type(last_event, Hash, type: Transfer::Error){'management event'}
+          Aspera.assert_type(last_event, Hash, type: Transfer::Error) { 'management event' }
           case last_event['Type']
           when 'DONE'
-            Log.log.trace1{'Graceful shutdown, DONE message received'}
+            Log.log.trace1 { 'Graceful shutdown, DONE message received' }
           when 'ERROR'
             if /bearer token/i.match?(last_event['Description']) &&
                 session[:token_regenerator].respond_to?(:refreshed_transfer_token)
@@ -371,7 +371,7 @@ module Aspera
               env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
             raise Transfer::Error.new(last_event['Description'], code: last_event['Code'].to_i)
-          else Aspera.error_unexpected_value(last_event['Type'], :error){'last event type'}
+          else Aspera.error_unexpected_value(last_event['Type'], :error) { 'last event type' }
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
@@ -390,11 +390,11 @@ module Aspera
               # process stderr of ascp
               stderr_flag = false
               stderr_r.each_line do |line|
-                Log.log.error{"BEGIN stderr #{exec}"} unless stderr_flag
-                Log.log.error{line.chomp}
+                Log.log.error { "BEGIN stderr #{exec}" } unless stderr_flag
+                Log.log.error { line.chomp }
                 stderr_flag = true
               end
-              Log.log.error{"END stderr #{exec}"} if stderr_flag
+              Log.log.error { "END stderr #{exec}" } if stderr_flag
               stderr_r.close
             end
             # status is nil if an exception occurred before starting command
@@ -441,12 +441,12 @@ module Aspera
         when 'SESSION'
         when 'ARGSTOP'
         when 'FILEERROR'
-          Log.log.error{"#{event['Type']} #{event['Description']}"}
+          Log.log.error { "#{event['Type']} #{event['Description']}" }
         when 'STOP'
           # cspell:enable
           # stop event when one file is completed
         else
-          Log.log.debug{"Unknown event type for progress: #{event['Type']}"}
+          Log.log.debug { "Unknown event type for progress: #{event['Type']}" }
         end
       end
     end

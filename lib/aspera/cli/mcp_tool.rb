@@ -204,7 +204,7 @@ module Aspera
         def dedupe_lines(msg)
           return msg unless msg.include?("\n")
           msg.split("\n").chunk_while { |a, b| a == b }.map do |group|
-            group.size > 1 ? "#{group.first} (×#{group.size})" : group.first
+            group.size > 1 ? "#{group.first} (x#{group.size})" : group.first
           end.join("\n")
         end
 

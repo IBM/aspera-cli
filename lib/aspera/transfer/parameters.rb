@@ -43,7 +43,7 @@ module Aspera
         # @param ascp_args [Array, nil] `ascp` arguments
         # @return [Boolean] true if a file list option is present
         def ascp_args_file_list?(ascp_args)
-          ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
+          ascp_args&.any? { |i| FILE_LIST_OPTIONS.include?(i) }
         end
       end
 
@@ -68,12 +68,12 @@ module Aspera
         @job_spec = job_spec
         Aspera.assert_type(@job_spec, Hash)
         @ascp_args = ascp_args.nil? ? [] : ascp_args
-        Aspera.assert_array_all(@ascp_args, String){'ascp_args'}
+        Aspera.assert_array_all(@ascp_args, String) { 'ascp_args' }
         @wss = wss
         @quiet = quiet
         @file_list = file_list
         @trusted_certs = trusted_certs.nil? ? [] : trusted_certs
-        Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
+        Aspera.assert_type(@trusted_certs, Array) { 'trusted_certs' }
         @client_ssh_key = client_ssh_key.nil? ? :rsa : client_ssh_key.to_sym
         Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
         @check_ignore_cb = check_ignore_cb
@@ -92,27 +92,27 @@ module Aspera
         # transfer spec contains paths ?
         if !ts_paths_array.nil?
           Aspera.assert(!ascp_file_list_provided, 'file list provided both in transfer spec and ascp file list. Remove one of them.')
-          Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}, "All elements of paths must have a 'source' key")
-          is_pair_list = ts_paths_array.any?{ |i| i.key?('destination')}
-          Aspera.assert(!(is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')})){"All elements of paths must be consistent with 'destination' key"}
+          Aspera.assert(ts_paths_array.all? { |i| i.key?('source') }, "All elements of paths must have a 'source' key")
+          is_pair_list = ts_paths_array.any? { |i| i.key?('destination') }
+          Aspera.assert(!(is_pair_list && !ts_paths_array.all? { |i| i.key?('destination') })) { "All elements of paths must be consistent with 'destination' key" }
           if !@file_list || self.class.file_list_folder.nil?
             Aspera.assert(!is_pair_list, 'file pair list is not supported when file list folder is not set')
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug('placing source file list on command line (no file list file)')
-            @builder.add_command_line_options(ts_paths_array.map{ |i| i['source']})
+            @builder.add_command_line_options(ts_paths_array.map { |i| i['source'] })
           else
             # safer option: generate a file list file if there is storage defined for it
             if is_pair_list
               file_list_option = '--file-pair-list'
-              lines = ts_paths_array.each_with_object([]){ |e, m| m.push(e['source'], e['destination'])}
+              lines = ts_paths_array.each_with_object([]) { |e, m| m.push(e['source'], e['destination']) }
             else
               file_list_option = '--file-list'
-              lines = ts_paths_array.map{ |i| i['source']}
+              lines = ts_paths_array.map { |i| i['source'] }
             end
             file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
             Log.dump(:file_list, lines)
             File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
-            Log.log.debug{"#{file_list_option}=\n#{File.read(file_list_file)}".red}
+            Log.log.debug { "#{file_list_option}=\n#{File.read(file_list_file)}".red }
           end
         end
         @builder.add_command_line_options("#{file_list_option}=#{file_list_file}") unless file_list_option.nil?
@@ -172,11 +172,11 @@ module Aspera
 
         case (delete_source = @builder.read_param('delete_source'))
         when true
-          DELETE_EQUIV.each{ |i| @job_spec[i] = true}
+          DELETE_EQUIV.each { |i| @job_spec[i] = true }
         when false
-          DELETE_EQUIV.each{ |i| @job_spec.delete(i)}
+          DELETE_EQUIV.each { |i| @job_spec.delete(i) }
         when nil
-        else Aspera.error_unexpected_value(delete_source){'delete_source'}
+        else Aspera.error_unexpected_value(delete_source) { 'delete_source' }
         end
 
         # process parameters as specified in table
@@ -211,7 +211,7 @@ module Aspera
         end
         # disable redis in client, only for ascp, this makes ascp4 fail
         exec_spec.env['ASPERA_TEST_REDIS_DISABLE'] = 'true' if exec_spec.exec.eql?(:ascp)
-        Log.log.debug{"ascp args: #{exec_spec}"}
+        Log.log.debug { "ascp args: #{exec_spec}" }
         return exec_spec
       end
       DELETE_EQUIV = %w[remove_after_transfer remove_empty_directories remove_empty_source_directory]

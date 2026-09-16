@@ -39,7 +39,7 @@ module Aspera
       end
 
       def check_email(email)
-        Aspera.assert(email =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i, type: ParameterError){"Username shall be an email: #{email}"}
+        Aspera.assert(email =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i, type: ParameterError) { "Username shall be an email: #{email}" }
       end
 
       # Find a plugin, and issue the "require"
@@ -59,14 +59,14 @@ module Aspera
           next unless plugin_klass.respond_to?(:detect)
           detection_info = nil
           begin
-            Log.log.debug{"detecting #{plugin_name_sym} at #{app_url}"}
+            Log.log.debug { "detecting #{plugin_name_sym} at #{app_url}" }
             RestParameters.instance.spinner_cb.call(plugin_name_sym.to_s)
             detection_info = plugin_klass.detect(app_url)
           rescue OpenSSL::SSL::SSLError => e
             Log.log.warn(e.message)
             Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
           rescue StandardError => e
-            Log.log.debug{"detect error: [#{e.class}] #{e}"}
+            Log.log.debug { "detect error: [#{e.class}] #{e}" }
             next
           end
           next if detection_info.nil?
@@ -77,8 +77,8 @@ module Aspera
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
         RestParameters.instance.spinner_cb.call(action: :success)
-        Aspera.assert(!found_apps.empty?){"No known application found at #{app_url}"}
-        Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)}, 'all app info keys must be symbols')
+        Aspera.assert(!found_apps.empty?) { "No known application found at #{app_url}" }
+        Aspera.assert(found_apps.all? { |a| a.keys.all?(Symbol) }, 'all app info keys must be symbols')
         return found_apps
       end
 
@@ -122,14 +122,14 @@ module Aspera
       # @param apps [Array] list of detected apps
       def find(apps, preset_name: '')
         identification = if apps.length.eql?(1)
-          Log.log.debug{"Detected: #{identification}"}
+          Log.log.debug { "Detected: #{identification}" }
           apps.first
         else
           formatter.display_status('Multiple applications detected, please select from:')
           require 'aspera/cli/result'
           formatter.display_results(Result::ObjectList.new(apps, fields: %w[product url version]))
-          answer = options.prompt_user_input_in_list('product', apps.map{ |a| a[:product]})
-          apps.find{ |a| a[:product].eql?(answer)}
+          answer = options.prompt_user_input_in_list('product', apps.map { |a| a[:product] })
+          apps.find { |a| a[:product].eql?(answer) }
         end
         wiz_preset_name = preset_name
         Log.dump(:identification, identification)
@@ -139,11 +139,11 @@ module Aspera
         options.add_option_preset({url: wiz_url}, 'wizard')
         # Instantiate plugin: command line options will be known, e.g. private_key, and wizard can be called
         plugin_instance = Plugins::Factory.instance.plugin_class(identification[:product]).new(context: @parent.context)
-        Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument){"Detected: #{identification[:product]}, but this application has no wizard"}
+        Aspera.assert(plugin_instance.respond_to?(:wizard), type: Cli::BadArgument) { "Detected: #{identification[:product]}, but this application has no wizard" }
         # Call the wizard
         wizard_result = plugin_instance.wizard(self, wiz_url)
-        Log.log.debug{"wizard result: #{wizard_result}"}
-        Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
+        Log.log.debug { "wizard result: #{wizard_result}" }
+        Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)) { "missing or extra keys in wizard result: #{wizard_result.keys}" }
         # Get preset name from user or default
         if wiz_preset_name.empty?
           elements = [

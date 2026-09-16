@@ -17,12 +17,12 @@ module Aspera
           [{
             app_root: sdk_directory,
             sub_bin:  ''
-          }].map{ |i| i.merge({expected: APP_NAME})}
+          }].map { |i| i.merge({expected: APP_NAME}) }
         end
 
         # location of SDK files
         def sdk_directory=(folder)
-          Log.log.debug{"sdk_directory=#{folder}"}
+          Log.log.debug { "sdk_directory=#{folder}" }
           @sdk_dir = folder
           sdk_directory
         end
@@ -53,7 +53,7 @@ module Aspera
             end
           end
           Aspera.assert(!result.nil?, 'Port not found in daemon logs')
-          Log.log.debug{"Got port #{result} from log"}
+          Log.log.debug { "Got port #{result} from log" }
           return result
         end
       end

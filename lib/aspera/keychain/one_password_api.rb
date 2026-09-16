@@ -37,7 +37,7 @@ module Aspera
       end
 
       def ids
-        @api.read("v1/vaults/#{@vault_id}/items").map{ |item| {id: item['id'], label: item['title']}}
+        @api.read("v1/vaults/#{@vault_id}/items").map { |item| {id: item['id'], label: item['title']} }
       end
 
       def set(options)

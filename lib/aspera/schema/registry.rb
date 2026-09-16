@@ -103,7 +103,7 @@ module Aspera
       def reader(name_path)
         name, path = name_path.split(':', 2)
         sym = name.to_sym
-        Aspera.assert(Registry.known?(sym)){"schema: #{sym}"}
+        Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
         spec_file = File.join(@main_folder, LOCATIONS[sym])
         @cache[sym] = Yaml.safe_load(File.read(spec_file)) if spec_file.end_with?('.yaml') && !@cache.key?(sym)
         @cache[sym] = JSON.parse(File.read(spec_file)) if spec_file.end_with?('.json') && !@cache.key?(sym)

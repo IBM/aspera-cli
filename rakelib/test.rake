@@ -130,7 +130,7 @@ end
 
 # @param pathname [Pathname] Folder
 def ls_l(pathname)
-  puts pathname.children.map{ |p| format('%10d %s %s', p.lstat.size, p.lstat.mtime.strftime('%b %e %H:%M'), p.basename)}
+  puts pathname.children.map { |p| format('%10d %s %s', p.lstat.size, p.lstat.mtime.strftime('%b %e %H:%M'), p.basename) }
 end
 
 ASPERA_LOG_PATH = '/Library/Logs/Aspera'
@@ -185,23 +185,23 @@ def select_test_cases(selection)
     ALL_TESTS.keys
   elsif list.first.eql?('next')
     count = list[1]&.match?(/\A\d+\z/) ? list[1].to_i : 1
-    ALL_TESTS.keys.reject{ |name| SKIP_STATES.include?(STATES[name])}.first(count)
+    ALL_TESTS.keys.reject { |name| SKIP_STATES.include?(STATES[name]) }.first(count)
   elsif list.first.eql?('tag')
     list.shift
     list.map!(&:to_sym)
-    unknown = list - ALL_TESTS.each_with_object(Set.new){ |(_, i), m| m.merge(i[:tags])}.to_a
-    Aspera.assert(unknown.empty?){"Unknown tag: #{unknown.join(', ')}".red}
-    ALL_TESTS.filter_map{ |name, info| name if info[:tags].intersect?(list)}
+    unknown = list - ALL_TESTS.each_with_object(Set.new) { |(_, i), m| m.merge(i[:tags]) }.to_a
+    Aspera.assert(unknown.empty?) { "Unknown tag: #{unknown.join(', ')}".red }
+    ALL_TESTS.filter_map { |name, info| name if info[:tags].intersect?(list) }
   else
     unknown = list - ALL_TESTS.keys
-    Aspera.assert(unknown.empty?){"Unknown test: #{unknown.join(', ')}".red}
+    Aspera.assert(unknown.empty?) { "Unknown test: #{unknown.join(', ')}".red }
     list
   end
 end
 
 # @return [Integer] Percentage of completed tests
 def percent_completed
-  completed = STATES.count{ |_, v| SKIP_STATES.include?(v)}
+  completed = STATES.count { |_, v| SKIP_STATES.include?(v) }
   ((completed * 100.0) / ALL_TESTS.size).round(1)
 end
 
@@ -260,9 +260,9 @@ namespace :test do
 
   desc 'Show test status: passed, failed, not run'
   task :status do
-    passed  = STATES.count{ |_, v| v == 'passed'}
-    failed  = STATES.count{ |_, v| v == 'failed'}
-    skipped = STATES.count{ |_, v| v == 'skipped'}
+    passed  = STATES.count { |_, v| v == 'passed' }
+    failed  = STATES.count { |_, v| v == 'failed' }
+    skipped = STATES.count { |_, v| v == 'skipped' }
     not_run = ALL_TESTS.size - STATES.size
     log.info("Total  : #{ALL_TESTS.size}")
     log.info("Passed : #{passed}")
@@ -278,7 +278,7 @@ namespace TEST_CASE_NS do
     # desc info[:description] || '-'
     deps = info[:depends_on] || []
     Aspera.assert_array_all(deps, String)
-    task name => deps.map{ |d| "#{TEST_CASE_NS}:#{d}"} do
+    task name => deps.map { |d| "#{TEST_CASE_NS}:#{d}" } do
       if SKIP_STATES.include?(STATES[name]) && !ENV['FORCE']
         # log.info "[SKIP] #{name}"
         next
@@ -288,14 +288,14 @@ namespace TEST_CASE_NS do
       log.info("[EXEC] #{info[:args]&.join(' ')}")
       exec_binding = binding
       t = TestEnv::Context.new(name, info[:instance_prefix])
-      (info[:vars] || {}).each{ |k, v| exec_binding.local_variable_set(k.to_sym, v)}
+      (info[:vars] || {}).each { |k, v| exec_binding.local_variable_set(k.to_sym, v) }
       if info[:pre]
         Aspera.assert_type(info[:pre], String)
         log.info("Pre: Executing: #{info[:pre]}")
         Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
       end
       # [Hash{Symbol => Boolean}] key=special tag, value=true if present
-      tags = SPECIAL_TAGS.to_h{ |s| [s, info[:tags].include?(s)]}
+      tags = SPECIAL_TAGS.to_h { |s| [s, info[:tags].include?(s)] }
       tags[:save_output] ||= info[:expect] unless tags[:must_fail]
       if info[:command].nil?
         log.info("[OK]   #{name} (no command)")
@@ -315,9 +315,9 @@ namespace TEST_CASE_NS do
       else
         PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
-      command_line += info[:args].map{ |i| eval_macro(i.to_s, exec_binding)}
+      command_line += info[:args].map { |i| eval_macro(i.to_s, exec_binding) }
       command_line += ["--out.file=#{t.out_file}"] if tags[:save_output]
-      command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find{ |i| i.start_with?('--format=') || i.start_with?('--out.format=')}
+      command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find { |i| i.start_with?('--format=', '--out.format=') }
       run_options = {}
       if tags[:noblock]
         run_options[:mode] = :background
@@ -375,7 +375,7 @@ namespace TEST_CASE_NS do
         break
       rescue RuntimeError => e
         STATES[name] = 'failed'
-        expected_fails = EXPECTED_FAIL.select{ |tag| tags[tag]}
+        expected_fails = EXPECTED_FAIL.select { |tag| tags[tag] }
         if expected_fails.empty?
           log.error("[FAIL] #{name} : #{e.message}")
           raise

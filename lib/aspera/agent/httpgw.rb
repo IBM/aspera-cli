@@ -45,7 +45,7 @@ module Aspera
           api_version:       api_version,
           upload_chunk_size: upload_chunk_size,
           synchronous:       synchronous,
-          notify_cb:         ->(*pa, **ka){notify_progress(*pa, **ka)}
+          notify_cb:         ->(*pa, **ka) { notify_progress(*pa, **ka) }
         )
         @last_job_id = nil
         @transfer_thread = nil
@@ -58,13 +58,13 @@ module Aspera
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         Aspera.assert(!@gw_api.nil?, 'GW URL must be set')
-        Aspera.assert_type(transfer_spec['paths'], Array){'paths'}
-        Aspera.assert_type(transfer_spec['token'], String){'only token based transfer is supported in GW'}
+        Aspera.assert_type(transfer_spec['paths'], Array) { 'paths' }
+        Aspera.assert_type(transfer_spec['token'], String) { 'only token based transfer is supported in GW' }
         Log.dump(:user_spec, transfer_spec)
         transfer_spec['authentication'] ||= 'token'
         @last_job_id     = SecureRandom.uuid
         @transfer_error  = nil
-        @transfer_thread = Thread.new{run_transfer(transfer_spec)}
+        @transfer_thread = Thread.new { run_transfer(transfer_spec) }
         @last_job_id
       end
 
@@ -87,11 +87,11 @@ module Aspera
           @gw_api.upload(transfer_spec)
         when Transfer::Spec::DIRECTION_RECEIVE
           @gw_api.download(transfer_spec)
-        else Aspera.error_unexpected_value(transfer_spec['direction']){'direction'}
+        else Aspera.error_unexpected_value(transfer_spec['direction']) { 'direction' }
         end
       rescue => e
         @transfer_error = e
-        Log.log.error{"httpgw transfer thread error: #{e}"}
+        Log.log.error { "httpgw transfer thread error: #{e}" }
       end
     end
   end

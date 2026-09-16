@@ -60,7 +60,7 @@ module Aspera
       HEADER_X_TOTAL_COUNT = 'X-Total-Count'
 
       # Register node special token decoder
-      OAuth::Factory.instance.register_decoder(lambda{ |token| Node.decode_bearer_token(token)})
+      OAuth::Factory.instance.register_decoder(lambda { |token| Node.decode_bearer_token(token) })
 
       # Class instance variable, access with accessors on class
       @api_options = {
@@ -79,8 +79,8 @@ module Aspera
         def api_options=(options_hash)
           Aspera.assert_type(options_hash, Hash)
           options_hash.each do |key, val|
-            Aspera.assert(@api_options.key?(key.to_sym)){"unknown api option: #{key} (#{OPTIONS.join(', ')})"}
-            Aspera.assert_type(val, TrueClass, FalseClass){"api options value for #{key} should be boolean"}
+            Aspera.assert(@api_options.key?(key.to_sym)) { "unknown api option: #{key} (#{OPTIONS.join(', ')})" }
+            Aspera.assert_type(val, TrueClass, FalseClass) { "api options value for #{key} should be boolean" }
             @api_options[key.to_sym] = val
           end
         end
@@ -144,8 +144,8 @@ module Aspera
         # @return [Hash] decoded scope with access key and scope parts
         def decode_scope(scope)
           items = scope.split(Scope::SEPARATOR, 2)
-          Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
-          Aspera.assert(items[0].start_with?(Scope::NODE_PREFIX)){"invalid scope: #{scope}"}
+          Aspera.assert(items.length.eql?(2)) { "invalid scope: #{scope}" }
+          Aspera.assert(items[0].start_with?(Scope::NODE_PREFIX)) { "invalid scope: #{scope}" }
           return {access_key: items[0].delete_prefix(Scope::NODE_PREFIX), scope: items[1]}
         end
 
@@ -231,10 +231,10 @@ module Aspera
             workspace_name: @app_info.workspace_name
           )
         end
-        Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
+        Log.log.warn { "Cannot resolve link with node id #{node_id}, no resolver" }
         return
       rescue RestCallError => e
-        Log.log.warn{"Cannot resolve link with node id #{node_id}: #{e.message}"}
+        Log.log.warn { "Cannot resolve link with node id #{node_id}: #{e.message}" }
         return
       end
 
@@ -249,7 +249,7 @@ module Aspera
           entry['target_id'] = link_entry['target_id']
         end
         return true unless entry['target_node_id'].nil? || entry['target_id'].nil?
-        Log.log.warn{"Missing target information for link: #{entry['name']}"}
+        Log.log.warn { "Missing target information for link: #{entry['name']}" }
         return false
       end
 
@@ -301,8 +301,8 @@ module Aspera
           end
         rescue StandardError => e
           raise e if exception
-          Log.log.warn{"#{path || file_id}: #{e.class} #{e.message}"}
-          Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
+          Log.log.warn { "#{path || file_id}: #{e.class} #{e.message}" }
+          Log.log.debug { (['Backtrace:'] + e.backtrace).join("\n") }
         ensure
           RestParameters.instance.spinner_cb.call(folder_items.count, action: :success)
         end
@@ -319,14 +319,14 @@ module Aspera
       # @para query [Hash, nil] optional query for `read`
       def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
         Aspera.assert(!top_file_path.nil?, 'top_file_path not set')
-        Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info.node_info['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
+        Log.log.debug { "process_folder_tree: node=#{@app_info ? @app_info.node_info['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}" }
         # Start at top folder
         folders_to_explore = [{id: top_file_id, path: top_file_path}]
         Log.dump(:folders_to_explore, folders_to_explore)
         until folders_to_explore.empty?
           # Consume first in job list
           current_item = folders_to_explore.shift
-          Log.log.debug{"Exploring #{current_item[:path]}".bg_green}
+          Log.log.debug { "Exploring #{current_item[:path]}".bg_green }
           # Get folder content
           folder_contents = read_folder_content(current_item[:id], query, exception: false, path: current_item[:path])
           Log.dump(:folder_contents, folder_contents)
@@ -336,7 +336,7 @@ module Aspera
               next
             end
             current_path = File.join(current_item[:path], entry['name'])
-            Log.log.debug{"process_folder_tree: checking #{current_path}"}
+            Log.log.debug { "process_folder_tree: checking #{current_path}" }
             # Call block, continue only if method returns true
             next unless send(method_sym, entry, current_path, state)
             # Entry type is file, folder or link
@@ -371,8 +371,8 @@ module Aspera
         return NodeFileId.new(self, top_file_id) if path_elements.empty?
         resolve_state = {path: path_elements, consumed: [], result: nil, process_last_link: process_last_link}
         process_folder_tree(method_sym: :process_api_fid, state: resolve_state, top_file_id: top_file_id)
-        Aspera.assert(!resolve_state[:result].nil?, type: ParameterError){"Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}"}
-        Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result].node_api.base_url} #{resolve_state[:result].file_id}"}
+        Aspera.assert(!resolve_state[:result].nil?, type: ParameterError) { "Entry not found: #{resolve_state[:path].first} in /#{resolve_state[:consumed].join(PATH_SEPARATOR)}" }
+        Log.log.debug { "resolve_api_fid: #{path} -> #{resolve_state[:result].node_api.base_url} #{resolve_state[:result].file_id}" }
         return resolve_state[:result]
       end
 
@@ -387,10 +387,10 @@ module Aspera
       def resolve_api_fid_paths(top_file_id, paths)
         Aspera.assert_type(paths, Array)
         Aspera.assert(paths.size.positive?, 'paths must not be empty')
-        split_sources = paths.map{ |p| Pathname(p['source']).each_filename.to_a}
+        split_sources = paths.map { |p| Pathname(p['source']).each_filename.to_a }
         root = []
         split_sources.map(&:size).min.times do |i|
-          parts = split_sources.map{ |s| s[i]}
+          parts = split_sources.map { |s| s[i] }
           break unless parts.uniq.size == 1
           root << parts.first
         end
@@ -418,7 +418,7 @@ module Aspera
               # Single source is 'folder' or 'link'
               # TODO: add this ? , 'destination'=>file_info['name']
               [{'source' => '.'}]
-            else Aspera.error_unexpected_value(file_info['type']){'source type'}
+            else Aspera.error_unexpected_value(file_info['type']) { 'source type' }
             end
         end
         [apifid, source_paths]
@@ -428,7 +428,7 @@ module Aspera
       # @param top_file_id [String] Search root
       # @param test_lambda [Proc] Test function
       def find_files(top_file_id, test_lambda)
-        Log.log.debug{"find_files: file id=#{top_file_id}"}
+        Log.log.debug { "find_files: file id=#{top_file_id}" }
         find_state = {found: [], test_lambda: test_lambda}
         process_folder_tree(method_sym: :process_find_files, state: find_state, top_file_id: top_file_id)
         return find_state[:found]
@@ -513,7 +513,7 @@ module Aspera
           # Get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
           # Get settings from name.value array to hash key.value
-          settings = info['settings']&.to_h{ |i| [i['name'], i['value']]}
+          settings = info['settings']&.to_h { |i| [i['name'], i['value']] }
           # Check WSS ports
           Transfer::Spec::WSS_FIELDS.each do |i|
             transfer_spec[i] = settings[i] if settings.key?(i)
@@ -521,7 +521,7 @@ module Aspera
         else
           transfer_spec.merge!(transport_params)
         end
-        Aspera.assert_values(transfer_spec['remote_user'], [Transfer::Spec::ACCESS_KEY_TRANSFER_USER], type: :warn){'transfer user'}
+        Aspera.assert_values(transfer_spec['remote_user'], [Transfer::Spec::ACCESS_KEY_TRANSFER_USER], type: :warn) { 'transfer user' }
         return transfer_spec
       end
 
@@ -530,8 +530,8 @@ module Aspera
       # @param call_args [Hash]    additional arguments to pass to `Rest.call`
       # @return [Array] list of items returned by the API call
       def read_with_paging(subpath, query = nil, iteration: nil, **call_args)
-        Aspera.assert_type(iteration, Array, NilClass){'iteration'}
-        Aspera.assert_type(query, Hash, NilClass){'query'}
+        Aspera.assert_type(iteration, Array, NilClass) { 'iteration' }
+        Aspera.assert_type(query, Hash, NilClass) { 'query' }
         Aspera.assert(!call_args.key?(:query), ':query must not be in call_args (use query parameter)')
         query = {} if query.nil?
         query[:iteration_token] = iteration[0] unless iteration.nil? || iteration[0].nil?
@@ -541,7 +541,7 @@ module Aspera
         item_list = []
         loop do
           data, http = read(subpath, query, **call_args, ret: :both)
-          Aspera.assert_type(data, Array){"Expected data to be an Array, got: #{data.class}"}
+          Aspera.assert_type(data, Array) { "Expected data to be an Array, got: #{data.class}" }
           # no data
           break if data.empty?
           item_list.concat(data)
@@ -561,7 +561,7 @@ module Aspera
               query_params = Rest.query_to_h(parsed_uri.query) if parsed_uri.query
               next_iteration_token = query_params['iteration_token'] if query_params
             rescue URI::InvalidURIError => e
-              Log.log.warn{"Invalid URI in Link header: #{next_url} - #{e.message}"}
+              Log.log.warn { "Invalid URI in Link header: #{next_url} - #{e.message}" }
             end
           end
           # Stop if no next token
@@ -600,8 +600,8 @@ module Aspera
           query['page'] += 1
         end
       rescue StandardError => e
-        Log.log.warn{"#{e.class} #{e.message}"}
-        Log.log.debug{(['Backtrace:'] + e.backtrace).join("\n")}
+        Log.log.warn { "#{e.class} #{e.message}" }
+        Log.log.debug { (['Backtrace:'] + e.backtrace).join("\n") }
       ensure
         RestParameters.instance.spinner_cb.call(items.count, action: :success)
         return items # rubocop:disable Lint/EnsureReturn
@@ -622,7 +622,7 @@ module Aspera
           # File must be terminal
           raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless path_fully_consumed
           # It's terminal, we found it
-          Log.log.debug{"process_api_fid: found #{path} -> #{entry['id']}"}
+          Log.log.debug { "process_api_fid: found #{path} -> #{entry['id']}" }
           state[:result] = NodeFileId.new(self, entry['id'])
           return false
         when 'folder'
@@ -637,7 +637,7 @@ module Aspera
               # We found it
               other_node = nil
               other_node = node_id_to_node(entry['target_node_id']) if entry_has_link_information(entry)
-              Aspera.assert(!other_node.nil?, type: Error){'Cannot resolve link'}
+              Aspera.assert(!other_node.nil?, type: Error) { 'Cannot resolve link' }
               state[:result] = NodeFileId.new(other_node, entry['target_id'])
             else
               # We found it but we do not process the link
@@ -645,7 +645,7 @@ module Aspera
             end
             return false
           end
-        else Aspera.error_unexpected_value(entry['type'], type: :warn){'folder entry type'}
+        else Aspera.error_unexpected_value(entry['type'], type: :warn) { 'folder entry type' }
         end
         # Continue to dig folder
         return true

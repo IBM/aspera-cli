@@ -2,13 +2,13 @@
 include:
   - "**/*.rb"
 exclude:
-  - spec/**/*
+  #  - spec/**/*
   - tests/**/*
   - ".bundle/**/*"
   - ".ruby-lsp/**/*"
   - ".tmp-openapi-venv/**/*"
-  - "build/**/*"
-  - "rakelib/**/*"
+#  - "build/**/*"
+#  - "rakelib/**/*"
 require: []
 domains: []
 reporters:

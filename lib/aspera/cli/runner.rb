@@ -126,18 +126,18 @@ module Aspera
         lock_port = @context.options.get_option(:lock_port)
         if !lock_port.nil?
           begin
-            Log.log.debug{"Opening lock port #{lock_port}"}
+            Log.log.debug { "Opening lock port #{lock_port}" }
             @tcp_server = TCPServer.new('127.0.0.1', lock_port)
           rescue StandardError => e
             execute_command = false
-            Log.log.warn{"Another instance is already running (#{e.message})."}
+            Log.log.warn { "Another instance is already running (#{e.message})." }
           end
         end
         pid_file = @context.options.get_option(:pid_file)
         if !pid_file.nil?
           File.write(pid_file, Process.pid)
-          Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
-          at_exit{File.delete(pid_file)}
+          Log.log.debug { "Wrote pid #{Process.pid} to #{pid_file}" }
+          at_exit { File.delete(pid_file) }
         end
         begin
           result = command_plugin.execute_action if execute_command
@@ -174,15 +174,15 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          Log.log.error{"#{exception_info[:t]}: #{exception_info[:e].message}"} unless exception_info[:e].is_a?(Cli::SchemaRequest)
-          Log.log.debug{(['Backtrace:'] + exception_info[:e].backtrace).join("\n")} if exception_info[:debug]
+          Log.log.error { "#{exception_info[:t]}: #{exception_info[:e].message}" } unless exception_info[:e].is_a?(Cli::SchemaRequest)
+          Log.log.debug { (['Backtrace:'] + exception_info[:e].backtrace).join("\n") } if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           Hints.hint_for(exception_info[:e], @context.formatter)
           if exception_info[:e].is_a?(Cli::SchemaRequest)
-            Log.log.info{"#{exception_info[:t]}: #{exception_info[:e].message}"}
+            Log.log.info { "#{exception_info[:t]}: #{exception_info[:e].message}" }
             schema_path = exception_info[:e].path
             if schema_path.nil?
-              Log.log.warn{'Sorry, no schema provided yet. Please refer to the manual or API.'}
+              Log.log.warn { 'Sorry, no schema provided yet. Please refer to the manual or API.' }
             else
               reader = Schema::Registry.instance.reader(schema_path)
               rows   = reader.to_rows.map do |row|
@@ -200,7 +200,7 @@ module Aspera
         # 2- processing of unprocessed arguments (skip when help was displayed: sub-commands are not consumed)
         unless @option_help
           @context.options&.final_errors&.each do |msg|
-            Log.log.error{"Argument: #{msg}"}
+            Log.log.error { "Argument: #{msg}" }
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end
         end
@@ -244,7 +244,7 @@ module Aspera
             when :type    then Log.instance.logger_type = v.to_sym
             when :format  then Log.instance.formatter = v
             when :secrets then SecretHider.instance.log_secrets = BoolValue.true?(v)
-            else Aspera.error_unexpected_value(k){'log sub-option (level, type, format, secrets)'}
+            else Aspera.error_unexpected_value(k) { 'log sub-option (level, type, format, secrets)' }
             end
           end
         when :get
@@ -267,9 +267,9 @@ module Aspera
         lines = [@context.options.help_text(banner: app_banner)]
         if plugin.nil?
           # Top-level: list all available plugins
-          plugin_names = Plugins::Factory.instance.plugin_list.reject{ |s| s.eql?(COMMAND_CONFIG)}.sort
+          plugin_names = Plugins::Factory.instance.plugin_list.reject { |s| s.eql?(COMMAND_CONFIG) }.sort
           lines << "\nPLUGINS"
-          col_w = plugin_names.map{ |n| n.to_s.length}.max + 2
+          col_w = plugin_names.map { |n| n.to_s.length }.max + 2
           plugin_names.each do |name|
             app = Plugins::Factory.instance.plugin_class(name).application_name
             lines << "    #{name.to_s.ljust(col_w)}  #{app}"
@@ -305,7 +305,7 @@ module Aspera
             node_spec = path.empty? ? nil : registry[path]
             lines << "  #{node_spec.description}" if node_spec&.description
             lines << "\n  SUBCOMMANDS:"
-            col_w = cmds.keys.map{ |k| k.to_s.length}.max + 2
+            col_w = cmds.keys.map { |k| k.to_s.length }.max + 2
             cmds.each do |id, spec|
               lines << "    #{id.to_s.ljust(col_w)}  #{spec.description}"
             end
@@ -326,7 +326,7 @@ module Aspera
             end
             if display_args.any?
               lines << "\nARGUMENTS:"
-              col_w = display_args.map{ |a| a.name.to_s.length}.max + 2
+              col_w = display_args.map { |a| a.name.to_s.length }.max + 2
               display_args.each do |arg|
                 flag  = arg.mandatory ? arg.name.to_s : "[#{arg.name}]"
                 flag += '...' if arg.multiple
@@ -352,13 +352,13 @@ module Aspera
       # @return [Array<String>]
       def schema_help_lines(arg)
         builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(arg.schema)).build
-        rows = builder.rows.reject{ |row| row['type'].eql?('&nbsp;')}.map do |row|
-          builder.columns.map{ |column| row[column].to_s}
+        rows = builder.rows.reject { |row| row['type'].eql?('&nbsp;') }.map do |row|
+          builder.columns.map { |column| row[column].to_s }
         end
         style = {}
         style[:border] = :unicode_round if Environment.terminal_supports_unicode?
         table = Terminal::Table.new(headings: builder.columns, rows: rows, style: style).to_s
-        ["\n    SCHEMA: #{arg.name}", table.lines.map{ |line| "    #{line.chomp}"}.join("\n")]
+        ["\n    SCHEMA: #{arg.name}", table.lines.map { |line| "    #{line.chomp}" }.join("\n")]
       end
 
       # Initialize agents and options
@@ -371,13 +371,13 @@ module Aspera
         @context.formatter = Formatter.new
         # Create command line manager with arguments
         @context.options = Parser.new(Info::CMD_NAME, @argv)
-        ExtendedValue.instance.on(EXTEND_ARGS){ |v| @context.options.args_as_extended(v)}
+        ExtendedValue.instance.on(EXTEND_ARGS) { |v| @context.options.args_as_extended(v) }
         # Formatter: declare metadata (class method), then bind to the instance
         Formatter.declare_options(@context.options)
         @context.formatter.bind_options(@context.options)
         # Compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn){"Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'"}
+        Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn) { "Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'" }
         # Declare and parse global options
         declare_global_options
         # Bootstrap: populate context services (main_folder, persistency, presets, http_config,
@@ -387,7 +387,7 @@ module Aspera
         @bootstrapper = Bootstrapper.new(@context)
         @bootstrapper.run(
           gem_plugins_folder: Plugins::Config.gem_plugins_folder,
-          vault_value_cb:     ->(v){@context.config.vault_value(v)}
+          vault_value_cb:     ->(v) { @context.config.vault_value(v) }
         )
         # Do not display config commands if help is asked
         @context.man_header = false
@@ -452,8 +452,8 @@ module Aspera
           @option_help = true
           @context.options.help_requested = true
         end
-        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE){@option_show_config = true}
-        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v'){@context.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon
+        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
+        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'Method to start browser',
           allowed: USER_INTERFACES,
@@ -488,10 +488,10 @@ module Aspera
       # @param plugin_name_sym [Symbol] symbol for plugin name
       # @return [Plugins::Base] the plugin instance
       def get_plugin_instance_with_options(plugin_name_sym)
-        Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
+        Log.log.debug { "get_plugin_instance_with_options(#{plugin_name_sym})" }
         # Load default preset options for this plugin from config file
         default_config_name = @context.presets.plugin_default_name(plugin_name_sym)
-        Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
+        Log.log.debug { "add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}" }
         @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
         command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin

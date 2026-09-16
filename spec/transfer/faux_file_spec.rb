@@ -20,11 +20,11 @@ module Aspera
 
         context 'when the URI is malformed' do
           it 'raises when the size part is missing' do
-            expect{described_class.create('faux:///file.bin')}.to(raise_error(Aspera::Transfer::Error))
+            expect { described_class.create('faux:///file.bin') }.to(raise_error(Aspera::Transfer::Error))
           end
 
           it 'raises when the unit is unknown' do
-            expect{described_class.create('faux:///file.bin?42x')}.to(raise_error(Aspera::Transfer::Error))
+            expect { described_class.create('faux:///file.bin?42x') }.to(raise_error(Aspera::Transfer::Error))
           end
         end
 
@@ -69,7 +69,7 @@ module Aspera
       end
 
       describe '#read' do
-        let(:ff){described_class.new('file.bin', 100)}
+        let(:ff) { described_class.new('file.bin', 100) }
 
         it 'returns a string of the requested size when enough bytes remain' do
           expect(ff.read(10).bytesize).to(eq(10))
@@ -110,7 +110,7 @@ module Aspera
 
       describe '#close' do
         it 'does not raise' do
-          expect{described_class.new('f', 10).close}.not_to(raise_error)
+          expect { described_class.new('f', 10).close }.not_to(raise_error)
         end
       end
     end

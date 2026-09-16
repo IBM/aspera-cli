@@ -17,8 +17,8 @@ module Aspera
     # @param query [Hash] Optional additional search query parameters
     # @return [Hash] A single entity matching the search, or an exception if not found or multiple found
     def lookup_with_q(entity, value:, field: 'name', query: {})
-      Aspera.assert_type(query, Hash){'query'}
-      Aspera.assert_type(field, String){'field'}
+      Aspera.assert_type(query, Hash) { 'query' }
+      Aspera.assert_type(field, String) { 'field' }
       # returns entities matching the query (it matches against several fields in case insensitive way)
       # We don't do paging, as anyway, we look for only one match
       matching_items = read(entity, query.merge({'q' => value}))
@@ -32,11 +32,11 @@ module Aspera
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive field value)
-        value_matches = matching_items.select{ |i| i[field].casecmp?(value)}
+        value_matches = matching_items.select { |i| i[field].casecmp?(value) }
         case value_matches.length
         when 1 then return value_matches.first
-        when 0 then raise Error, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map{ |i| i[field]}.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
-        else raise Error, "Two entities cannot have the same case insensitive #{field}: #{value_matches.map{ |i| i[field]}}"
+        when 0 then raise Error, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map { |i| i[field] }.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
+        else raise Error, "Two entities cannot have the same case insensitive #{field}: #{value_matches.map { |i| i[field] }}"
         end
       end
     end
@@ -60,7 +60,7 @@ module Aspera
       Aspera.assert_type(entity, String)
       Aspera.assert_type(items_key, String)
       Aspera.assert_type(query, Hash)
-      Log.log.debug{"list_entities t=#{entity} k=#{items_key}"}
+      Log.log.debug { "list_entities t=#{entity} k=#{items_key}" }
       Log.dump(:query, query)
       result = []
       offset = 0
@@ -105,10 +105,10 @@ module Aspera
     # @param query     [Hash]   Additional query parameters (Default: `:default`)
     def lookup_entity_by_field(entity:, value:, field: 'name', items_key: nil, query: :default)
       if query.eql?(:default)
-        Aspera.assert_values(field, ['name']){'Default query field'}
+        Aspera.assert_values(field, ['name']) { 'Default query field' }
         query = {'q'=> value}
       end
-      lookup_entity_generic(entity: entity, field: field, value: value){list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first}
+      lookup_entity_generic(entity: entity, field: field, value: value) { list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first }
     end
 
     # Lookup entity by field and value.
@@ -124,7 +124,7 @@ module Aspera
       Aspera.assert(block_given?, 'block required for lookup_entity_generic')
       found = yield
       Aspera.assert_array_all(found, Hash)
-      found = found.select{ |i| i[field].eql?(value)}
+      found = found.select { |i| i[field].eql?(value) }
       return found.first if found.length.eql?(1)
       raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)
     end

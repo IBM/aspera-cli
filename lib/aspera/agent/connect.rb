@@ -66,12 +66,12 @@ module Aspera
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
-        Aspera.assert(Environment.instance.graphical?, type: Error){'Using connect requires a graphical environment'}
+        Aspera.assert(Environment.instance.graphical?, type: Error) { 'Using connect requires a graphical environment' }
         method_index = 0
         begin
           # raise exception if connect not started and file does not exist
           connect_url = self.class.connect_api_url
-          Log.log.debug{"found: #{connect_url}"}
+          Log.log.debug { "found: #{connect_url}" }
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
             headers: {'Origin' => RestParameters.instance.user_agent}
@@ -80,11 +80,11 @@ module Aspera
           Log.log.debug('Connect was reached') if method_index > 0
           Log.dump(:connect_version, connect_info)
         rescue StandardError => e # Errno::ECONNREFUSED
-          Log.log.debug{"Exception: #{e}"}
+          Log.log.debug { "Exception: #{e}" }
           start_url = CONNECT_START_URIS[method_index]
           method_index += 1
-          Aspera.assert(!start_url.nil?){"Unable to start connect #{method_index} times"}
-          Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
+          Aspera.assert(!start_url.nil?) { "Unable to start connect #{method_index} times" }
+          Log.log.warn { "Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..." }
           Environment.instance.open_uri_graphical(start_url)
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
@@ -99,7 +99,7 @@ module Aspera
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         if transfer_spec['direction'] == 'send'
-          Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
+          Log.log.warn { "Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red }
           transfer_spec.delete('paths')
           selection = @connect_api.create('windows/select-open-file-dialog/', {
             'aspera_connect_settings' => @connect_settings,
@@ -108,7 +108,7 @@ module Aspera
             'allowMultipleSelection'  => true,
             'allowedFileTypes'        => ''
           })
-          transfer_spec['paths'] = selection['dataTransfer']['files'].map{ |i| {'source' => i['name']}}
+          transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']} }
         end
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password

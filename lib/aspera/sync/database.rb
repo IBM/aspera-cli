@@ -25,7 +25,7 @@ class SqLite3Wrapper
     end
   else
     def execute(sql)
-      db = SQLite3::Database.new(@db_path).tap{ |d| d.results_as_hash = true}
+      db = SQLite3::Database.new(@db_path).tap { |d| d.results_as_hash = true }
       begin
         normalize_rows(db.execute(sql))
       ensure
@@ -46,7 +46,7 @@ class SqLite3Wrapper
   private
 
   def normalize_rows(rows)
-    rows.map{ |r| r.transform_keys(&:to_s)}
+    rows.map { |r| r.transform_keys(&:to_s) }
   end
 end
 

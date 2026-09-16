@@ -15,19 +15,19 @@ module Aspera
     def initialize(folder)
       @cache = {}
       @folder = folder
-      Log.log.debug{"persistency folder: #{@folder}"}
+      Log.log.debug { "persistency folder: #{@folder}" }
     end
 
     # Get value of persisted item
     # @param object_id [String] Identifier of persisted item
     # @return [String, nil] Persisted value, or nil if not found
     def get(object_id)
-      Log.log.debug{"persistency get: #{object_id}"}
+      Log.log.debug { "persistency get: #{object_id}" }
       if @cache.key?(object_id)
         Log.log.debug('got from memory cache')
       else
         persist_filepath = id_to_filepath(object_id)
-        Log.log.debug{"persistency = #{persist_filepath}"}
+        Log.log.debug { "persistency = #{persist_filepath}" }
         if File.exist?(persist_filepath)
           Log.log.debug('got from file cache')
           @cache[object_id] = File.read(persist_filepath)
@@ -43,7 +43,7 @@ module Aspera
     def put(object_id, value)
       Aspera.assert_type(value, String)
       persist_filepath = id_to_filepath(object_id)
-      Log.log.debug{"persistency saving: #{persist_filepath}"}
+      Log.log.debug { "persistency saving: #{persist_filepath}" }
       FileUtils.rm_f(persist_filepath)
       File.write(persist_filepath, value)
       Environment.restrict_file_access(persist_filepath)
@@ -55,7 +55,7 @@ module Aspera
     # @param object_id [String] Identifier of persisted item
     def delete(object_id)
       persist_filepath = id_to_filepath(object_id)
-      Log.log.debug{"persistency deleting: #{persist_filepath}"}
+      Log.log.debug { "persistency deleting: #{persist_filepath}" }
       FileUtils.rm_f(persist_filepath)
       @cache.delete(object_id)
     end
@@ -68,11 +68,11 @@ module Aspera
       garbage_files = current_files(persist_category)
       if !max_age_seconds.nil?
         current_time = Time.now
-        garbage_files.select!{ |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}
+        garbage_files.select! { |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds }
       end
       garbage_files.each do |filepath|
         File.delete(filepath)
-        Log.log.debug{"persistency deleted expired: #{filepath}"}
+        Log.log.debug { "persistency deleted expired: #{filepath}" }
       end
       @cache.clear
       return garbage_files
@@ -86,7 +86,7 @@ module Aspera
     end
 
     def current_items(persist_category)
-      current_files(persist_category).to_h{ |i| [File.basename(i, FILE_SUFFIX), File.read(i)]}
+      current_files(persist_category).to_h { |i| [File.basename(i, FILE_SUFFIX), File.read(i)] }
     end
 
     private

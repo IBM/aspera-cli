@@ -264,9 +264,9 @@ module Aspera
           def file_matcher(match_expression)
             case match_expression
             when Proc    then match_expression
-            when Regexp  then ->(f){f['name'].match?(match_expression)}
-            when String  then ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
-            when NilClass then ->(_){true}
+            when Regexp  then ->(f) { f['name'].match?(match_expression) }
+            when String  then ->(f) { File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH) }
+            when NilClass then ->(_) { true }
             else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
             end
           end
@@ -282,8 +282,8 @@ module Aspera
         option :bfail, description: 'Bulk operation error handling',                         allowed: Type::BOOLEAN, default: true
 
         def initialize(context:)
-          Aspera.assert_type(context, Context){'context'}
-          Aspera.assert_type(context.man_header, TrueClass, FalseClass){'context.man_header'}
+          Aspera.assert_type(context, Context) { 'context' }
+          Aspera.assert_type(context.man_header, TrueClass, FalseClass) { 'context.man_header' }
           @context = context
           # Switch to the plugin-specific options group so that all options declared
           # below (DSL-registered and imperative) appear under the plugin section in
@@ -412,9 +412,9 @@ module Aspera
                   res_id = if lookup_cb.nil?
                     options.instance_identifier(description: arg_spec.name.to_s)
                   elsif lookup_cb.is_a?(Symbol)
-                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| send(lookup_cb, f, v, **ctx)}
+                    options.instance_identifier(description: arg_spec.name.to_s) { |f, v| send(lookup_cb, f, v, **ctx) }
                   else
-                    options.instance_identifier(description: arg_spec.name.to_s){ |f, v| instance_exec(f, v, **ctx, &lookup_cb)}
+                    options.instance_identifier(description: arg_spec.name.to_s) { |f, v| instance_exec(f, v, **ctx, &lookup_cb) }
                   end
                   ctx = ctx.merge(arg_spec.name => res_id)
                 else
@@ -461,9 +461,9 @@ module Aspera
         # @return [Object]
         def dispatch_child(current_path, registry, ctx)
           children  = registry.children_of(current_path)
-          available = children.reject{ |_, c| c.condition && !send(c.condition)}
+          available = children.reject { |_, c| c.condition && !send(c.condition) }
           aliases   = children.values.each_with_object({}) do |c, h|
-            Array(c.aliases).each{ |a| h[a] = c.id} if c.aliases
+            Array(c.aliases).each { |a| h[a] = c.id } if c.aliases
           end
 
           # Intercept --help before consuming the command token when no arg is pending.
@@ -537,8 +537,8 @@ module Aspera
               lookup_cb = arg_spec.lookup
               block =
                 if lookup_cb.nil? then nil
-                elsif lookup_cb.is_a?(Symbol) then ->(f, v){send(lookup_cb, f, v, **ctx)}
-                else ->(f, v){instance_exec(f, v, **ctx, &lookup_cb)}
+                elsif lookup_cb.is_a?(Symbol) then ->(f, v) { send(lookup_cb, f, v, **ctx) }
+                else ->(f, v) { instance_exec(f, v, **ctx, &lookup_cb) }
                 end
               ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
             else
@@ -570,7 +570,7 @@ module Aspera
                 schema:    arg_spec.schema
               )
               if is_bulk
-                Aspera.assert_array_all(val, arg_spec.type, type: Cli::BadArgument){'type'} unless arg_spec.type.nil?
+                Aspera.assert_array_all(val, arg_spec.type, type: Cli::BadArgument) { 'type' } unless arg_spec.type.nil?
               end
             end
             # Always return an Array when bulk: true
@@ -666,7 +666,7 @@ module Aspera
           when Array
             return Result::ObjectList.new(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
             Result::ValueList.new(data)
-          else Aspera.error_unexpected_value(data.class.name){'list type'}
+          else Aspera.error_unexpected_value(data.class.name) { 'list type' }
           end
         end
 

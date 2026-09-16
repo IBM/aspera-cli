@@ -15,7 +15,7 @@ module Aspera
       return duplicate_keys unless node.respond_to?(:children)
       if node.is_a?(Psych::Nodes::Mapping)
         counts = Hash.new(0)
-        key_nodes = Hash.new{ |h, k| h[k] = []}
+        key_nodes = Hash.new { |h, k| h[k] = [] }
         node.children.each_slice(2) do |key_node, value_node|
           if key_node&.value
             counts[key_node.value] += 1
@@ -26,11 +26,11 @@ module Aspera
         counts.each do |key_str, count|
           next if count <= 1
           path = (parent_path + [key_str]).join('.')
-          occurrences = key_nodes[key_str].map{ |kn| kn.start_line ? kn.start_line + 1 : 'unknown'}.join(', ')
+          occurrences = key_nodes[key_str].map { |kn| kn.start_line ? kn.start_line + 1 : 'unknown' }.join(', ')
           duplicate_keys << "#{path}: #{occurrences}"
         end
       else
-        node.children.to_a.each{ |child| find_duplicate_keys(child, parent_path, duplicate_keys)}
+        node.children.to_a.each { |child| find_duplicate_keys(child, parent_path, duplicate_keys) }
       end
       duplicate_keys
     end
@@ -43,7 +43,7 @@ module Aspera
     # @raise [RuntimeError] If duplicate keys are found
     def safe_load(yaml)
       duplicate_keys = find_duplicate_keys(Psych.parse_stream(yaml))
-      Aspera.assert(duplicate_keys.empty?){"Duplicate keys: #{duplicate_keys.join('; ')}"}
+      Aspera.assert(duplicate_keys.empty?) { "Duplicate keys: #{duplicate_keys.join('; ')}" }
       YAML.safe_load(yaml, permitted_classes: [Time, Date, Symbol])
     end
 

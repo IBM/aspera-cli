@@ -13,15 +13,15 @@ module Aspera
       attr_reader :extra_options
 
       def option_list=(options)
-        Aspera.assert_type(options, Array){'ssl_options'}
+        Aspera.assert_type(options, Array) { 'ssl_options' }
         options.each do |opt|
-          Aspera.assert_type(opt, String, Integer){'Expected String or Integer in ssl_options'}
+          Aspera.assert_type(opt, String, Integer) { 'Expected String or Integer in ssl_options' }
           case opt
           when Integer
             @extra_options = opt
           when String
             name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
-            Aspera.assert(OpenSSL::SSL.const_defined?(name), type: Cli::BadArgument){"Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}"}
+            Aspera.assert(OpenSSL::SSL.const_defined?(name), type: Cli::BadArgument) { "Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map { |c| c.to_s.sub(/^OP_/, '') }.join(', ')}" }
             if opt.start_with?('-')
               @extra_options &= ~OpenSSL::SSL.const_get(name)
             else

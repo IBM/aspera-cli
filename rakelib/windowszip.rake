@@ -34,8 +34,8 @@ end
 # @param zip_path      [Pathname] Target zip file path
 # @return [nil]
 def zip_directory(source_folder, zip_path)
-  Aspera.assert(source_folder.exist?){"Source directory not found: #{source_folder}"}
-  Aspera.assert(source_folder.directory?){"Expecting directory: #{source_folder}"}
+  Aspera.assert(source_folder.exist?) { "Source directory not found: #{source_folder}" }
+  Aspera.assert(source_folder.directory?) { "Expecting directory: #{source_folder}" }
   source_folder = source_folder.expand_path
   zip_path.delete if zip_path.exist?
   Zip::File.open(zip_path, create: true) do |zipfile|

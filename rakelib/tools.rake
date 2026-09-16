@@ -44,7 +44,7 @@ namespace :tools do
     if Dir.exist?(gems_dir) && !Dir.empty?(gems_dir)
       gem_names =
         Dir.children(gems_dir)
-          .map{ |d| d.sub(/-[0-9].*$/, '')}
+          .map { |d| d.sub(/-[0-9].*$/, '') }
           .uniq
           .sort
       run('gem', 'uninstall', '-a', '-x', '-I', *gem_names)
@@ -73,7 +73,7 @@ namespace :tools do
 
   desc 'Prepare beta version'
   task :version_override, [:version] do |_t, args|
-    Aspera.assert(!args[:version].to_s.empty?){'Version argument is required for beta task'}
+    Aspera.assert(!args[:version].to_s.empty?) { 'Version argument is required for beta task' }
     OVERRIDE_VERSION_FILE.write(args[:version])
     puts("Beta version set to: #{BuildTools.build_version}")
   end
@@ -137,11 +137,11 @@ namespace :tools do
     # One "X.Y" entry per minor line, from min_ver up to latest, plus jruby.
     # setup-ruby resolves "X.Y" to the latest patch automatically.
     minor_lines = stable_versions
-      .map{ |maj, min, _patch| [maj, min]}
+      .map { |maj, min, _patch| [maj, min] }
       .uniq
       .sort
-      .select{ |ver| (ver <=> min_ver) >= 0}
-      .map{ |maj, min| "#{maj}.#{min}"}
+      .select { |ver| (ver <=> min_ver) >= 0 }
+      .map { |maj, min| "#{maj}.#{min}" }
     test_matrix = minor_lines + ['jruby']
     log.info("Test matrix: #{test_matrix.inspect}")
 
@@ -158,7 +158,7 @@ namespace :tools do
 
       # 2. Matrix list in test.yml:  ruby: ["X.Y", ..., "jruby"]
       new_content.gsub!(/(?<=ruby: )\["[\d.]+"(?:, "(?:[\d.]+|jruby)")*\]/) do
-        "[#{test_matrix.map{ |v| %Q("#{v}")}.join(', ')}]"
+        "[#{test_matrix.map { |v| %Q("#{v}") }.join(', ')}]"
       end
 
       if new_content != content

@@ -43,7 +43,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
     f
   end
 
-  let(:context_stub){instance_double(Aspera::Cli::Context, formatter: formatter_stub)}
+  let(:context_stub) { instance_double(Aspera::Cli::Context, formatter: formatter_stub) }
 
   # Helper: stub Runner so McpTool.call never spawns a real CLI execution.
   # @param result [Aspera::Cli::Result] the result to return from run_with_result
@@ -53,7 +53,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
     described_class.call(args: %w[config gem version])
   end
 
-  before{described_class.max_text_bytes = nil} # reset between examples
+  before { described_class.max_text_bytes = nil } # reset between examples
 
   # -----------------------------------------------------------------------
   # Result::Nothing / Result::Empty  →  empty text content, no structured
@@ -106,8 +106,8 @@ RSpec.describe(Aspera::Cli::McpTool) do
   describe 'Result::ObjectList above byte limit' do
     # Each item serializes to ~10 bytes: {"n":1} = 7 bytes + separator.
     # Setting max_text_bytes to 20 fits at most 2 items.
-    let(:data){[{'n' => 1}, {'n' => 2}, {'n' => 3}, {'n' => 4}]}
-    before{described_class.max_text_bytes = 20}
+    let(:data) { [{'n' => 1}, {'n' => 2}, {'n' => 3}, {'n' => 4}] }
+    before { described_class.max_text_bytes = 20 }
 
     it 'returns two content blocks' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
@@ -138,13 +138,13 @@ RSpec.describe(Aspera::Cli::McpTool) do
   # --select filter applied before truncation
   # -----------------------------------------------------------------------
   describe '--select filter applied before byte truncation' do
-    let(:data){[{'n' => 1, 'keep' => true}, {'n' => 2, 'keep' => false}, {'n' => 3, 'keep' => true}]}
+    let(:data) { [{'n' => 1, 'keep' => true}, {'n' => 2, 'keep' => false}, {'n' => 3, 'keep' => true}] }
 
     # Override formatter_stub to apply a keep=true filter for this describe block.
     let(:formatter_stub) do
       f = Object.new
       f.define_singleton_method(:filter_columns_on_select) do |arr|
-        arr.select!{ |i| i['keep']}
+        arr.select! { |i| i['keep'] }
       end
       f
     end
@@ -152,14 +152,14 @@ RSpec.describe(Aspera::Cli::McpTool) do
     it 'only matching items appear in text content' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       parsed = JSON.parse(resp.content.first[:text])
-      expect(parsed.all?{ |i| i['keep']}).to(be(true))
+      expect(parsed.all? { |i| i['keep'] }).to(be(true))
       expect(parsed.size).to(eq(2))
     end
 
     it 'structuredContent also contains only the filtered items' do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.structured_content[:items].size).to(eq(2))
-      expect(resp.structured_content[:items].all?{ |i| i['keep']}).to(be(true))
+      expect(resp.structured_content[:items].all? { |i| i['keep'] }).to(be(true))
     end
   end
 

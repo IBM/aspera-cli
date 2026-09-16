@@ -45,7 +45,7 @@ module Aspera
       SYMBOLS = [NO_SYM, YES_SYM].freeze
       # @return [Boolean] `true` if value is a value for `true` in ALL
       def true?(enum)
-        Aspera.assert_values(enum, ALL){'boolean'}
+        Aspera.assert_values(enum, ALL) { 'boolean' }
         TRUE_VALUES.include?(enum)
       end
 
@@ -104,7 +104,7 @@ module Aspera
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
       def initialize(option:, description: nil, allowed: Type::STRING, handler: nil, deprecation: nil, schema: nil)
-        Log.log.trace1{"option: #{option}, allowed: #{allowed}"}
+        Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
         @group = nil
@@ -123,7 +123,7 @@ module Aspera
         @values = nil
         allowed = infer_allowed_from_schema(schema, allowed) if schema
         apply_allowed(allowed) unless allowed.nil?
-        Log.log.trace1{"declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
+        Log.log.trace1 { "declare: #{@option}: #{@access} #{@object.class}.#{@read_method}".green }
       end
 
       private
@@ -197,7 +197,7 @@ module Aspera
       # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
       # @return [nil]
       def bind_handler(handler)
-        Aspera.assert_type(handler, Hash){'handler'}
+        Aspera.assert_type(handler, Hash) { 'handler' }
         # Capture any value already stored locally before switching to delegated storage.
         # This transfers defaults (and any preset values already applied) to the new target.
         pending_value = @access.eql?(:local) ? @object : nil
@@ -209,8 +209,8 @@ module Aspera
         else
           :custom # delegation via generic 3-arg method m(sym, :get/:set, val)
         end
-        Aspera.assert(@object.respond_to?(@read_method)){"#{@object} does not respond to #{@read_method}"}
-        Log.log.trace1{"bind_handler: #{@option}: #{@access} #{@object.class}.#{@read_method}".green}
+        Aspera.assert(@object.respond_to?(@read_method)) { "#{@object} does not respond to #{@read_method}" }
+        Log.log.trace1 { "bind_handler: #{@option}: #{@access} #{@object.class}.#{@read_method}".green }
         # Push the pending local value to the new target if one was stored
         assign_value(pending_value, where: 'bind_handler', warn_deprecation: false) unless pending_value.nil?
         nil
@@ -241,7 +241,7 @@ module Aspera
           when :attr   then @object.send(@read_method)
           when :custom then @object.send(@read_method, @option, :get)
           end
-        Log.log.trace1{"#{@option} -> (#{current_value.class})#{current_value}"} if log
+        Log.log.trace1 { "#{@option} -> (#{current_value.class})#{current_value}" } if log
         current_value
       end
 
@@ -252,9 +252,9 @@ module Aspera
       # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
       # @return [nil]
       def assign_value(value, where:, warn_deprecation: true)
-        Aspera.assert(!@deprecation, type: :warn){"Option #{@option} is deprecated: #{@deprecation}"} if warn_deprecation
+        Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is deprecated: #{@deprecation}" } if warn_deprecation
         new_value = ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types)
-        Log.log.trace1{"#{where}: #{@option} <- (#{new_value.class})#{new_value}"}
+        Log.log.trace1 { "#{where}: #{@option} <- (#{new_value.class})#{new_value}" }
         # Per-type coercion: String input from CLI/env/preset is normalized to the expected type.
         # Centralized here so all sources (CLI dispatch, preset, env) go through the same path.
         case @types
@@ -270,7 +270,7 @@ module Aspera
         when Type::SYMBOL_ARRAY
           new_value = [new_value] if new_value.is_a?(String)
           Aspera.assert_array_all(new_value, String, type: BadArgument)
-          new_value = new_value.map{ |v| Parser.get_from_list(v, @option, @values)}
+          new_value = new_value.map { |v| Parser.get_from_list(v, @option, @values) }
         else
           # nil (setting nil on a Hash/Array option resets to empty container)
           new_value = {} if new_value.nil? && @types&.first.eql?(Hash)
@@ -284,14 +284,14 @@ module Aspera
           store(new_value)
           return
         end
-        Aspera.assert_type(new_value, *@types, type: BadArgument){"Option #{@option}"} if @types
+        Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
         if new_value.is_a?(Hash) || new_value.is_a?(Array)
           current_value = value(log: false)
           new_value = current_value.deep_merge(new_value) if new_value.is_a?(Hash) && current_value.is_a?(Hash) && !current_value.empty?
           new_value = current_value + new_value if new_value.is_a?(Array) && current_value.is_a?(Array) && !current_value.empty?
         end
         store(new_value)
-        Log.log.trace1{v = value(log: false); "#{@option} <- (#{v.class})#{v}"} # rubocop:disable Style/Semicolon
+        Log.log.trace1 { v = value(log: false); "#{@option} <- (#{v.class})#{v}" } # rubocop:disable Style/Semicolon
         nil
       end
 
@@ -413,9 +413,9 @@ module Aspera
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
           # we accept shortcuts
-          matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
+          matching_exact = allowed_values.select { |i| i.to_s.eql?(short_value) }
           return matching_exact.first if matching_exact.length == 1
-          matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
+          matching = allowed_values.select { |i| i.to_s.start_with?(short_value) }
           raise BadArgument, "Identifier '#{short_value}' used where a #{descr} is expected: place the identifier after the command" if matching.empty? && short_value.match?(REGEX_LOOKUP_ID_BY_FIELD)
           Aspera.assert(!matching.empty?, multi_choice_assert_msg("unknown value for #{descr}: #{short_value}", allowed_values), type: BadArgument)
           Aspera.assert(matching.length.eql?(1), multi_choice_assert_msg("ambiguous shortcut for #{descr}: #{short_value}", matching), type: BadArgument)
@@ -427,7 +427,7 @@ module Aspera
         # @return [Object, nil] the matching key, or nil if none or ambiguous
         def match_prefix(short_value, allowed_values)
           return short_value if allowed_values.include?(short_value)
-          matches = allowed_values.select{ |k| k.to_s.start_with?(short_value.to_s)}
+          matches = allowed_values.select { |k| k.to_s.start_with?(short_value.to_s) }
           matches.length == 1 ? matches.first : nil
         end
 
@@ -470,6 +470,20 @@ module Aspera
             return {field: m[1], value: ExtendedValue.instance.evaluate(m[2], context: "percent selector: #{m[1]}")}
           end
           nil
+        end
+
+        # Using dotted hash notation, convert value to bool, int, float or extended value
+        # @param value [String] The value to convert to appropriate type
+        # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
+        def smart_convert(value)
+          case value
+          when 'true'  then true
+          when 'false' then false
+          else
+            Integer(value, exception: false) ||
+              Float(value, exception: false) ||
+              ExtendedValue.instance.evaluate(value, context: 'dotted expression')
+          end
         end
       end
 
@@ -519,19 +533,19 @@ module Aspera
         process_options = true
         argv.each do |value|
           if process_options && value.start_with?('-')
-            Log.log.trace1{"opt: #{value}"}
+            Log.log.trace1 { "opt: #{value}" }
             if value.eql?(OPTIONS_STOP)
               process_options = false
             else
               @argv_tokens.push(value.start_with?(Option::PREFIX) ? Option.from_long(value) : Option.from_short(value))
             end
           else
-            Log.log.trace1{"arg: #{value}"}
+            Log.log.trace1 { "arg: #{value}" }
             @argv_tokens.push(Argument.new(value))
           end
         end
         @initial_argv_tokens = @argv_tokens.dup.freeze
-        Log.log.trace1{"add_cmd_line_options:arguments=#{pending_arguments},options=#{pending_options}".red}
+        Log.log.trace1 { "add_cmd_line_options:arguments=#{pending_arguments},options=#{pending_options}".red }
         declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
         declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_optional})
         # do not parse options yet, let's wait for option `-h` to be overridden
@@ -562,7 +576,7 @@ module Aspera
       # @param block [Proc] Block to execute when option is found
       def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
-        Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
+        Aspera.assert(!@declared_options.key?(option_symbol)) { "#{option_symbol} already declared" }
         Aspera.assert_type(handler, Hash) if handler
         Aspera.assert(handler.keys.sort.eql?(%i[m o]), 'handler must have keys :m and :o') if handler
         option_attrs = @declared_options[option_symbol] = OptionValue.new(
@@ -575,21 +589,21 @@ module Aspera
         )
         option_attrs.group = @current_group
         description = option_attrs.description
-        Aspera.assert(!description.nil?){"#{option_symbol}: no description and no schema to derive one from"}
-        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
-        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with an uppercase"}
-        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :allowed instead of hash/extended value in option description"}
+        Aspera.assert(!description.nil?) { "#{option_symbol}: no description and no schema to derive one from" }
+        Aspera.assert(description[-1] != '.') { "#{option_symbol} ends with dot" }
+        Aspera.assert(description[0] == description[0].upcase) { "#{option_symbol} description does not start with an uppercase" }
+        Aspera.assert(!['hash', 'extended value'].any? { |s| description.downcase.include?(s) }) { "#{option_symbol} shall use :allowed instead of hash/extended value in option description" }
         set_option(option_symbol, default, where: 'default', warn_deprecation: false) unless default.nil?
         case option_attrs.types
         when Type::ENUM, Type::BOOLEAN
           # This option value must be a symbol (or array of symbols)
           set_option(option_symbol, BoolValue.true?(default), where: 'default', warn_deprecation: false) if option_attrs.values.eql?(BoolValue::ALL) && !default.nil?
         when Type::NONE
-          Aspera.assert_type(block, Proc){"missing execution block for #{option_symbol}"}
+          Aspera.assert_type(block, Proc) { "missing execution block for #{option_symbol}" }
           option_attrs.block = block
         end
         @short_options[short] = option_symbol unless short.nil?
-        Log.log.trace1{"declare: #{option_symbol}, group: #{@current_group}, short: #{short}"}
+        Log.log.trace1 { "declare: #{option_symbol}, group: #{@current_group}, short: #{short}" }
       end
 
       # Set the current help section group name for subsequent declarations
@@ -603,7 +617,7 @@ module Aspera
       # declares its options before its group name is known (e.g. Plugins::Config).
       # @param name [String] new group name
       def rename_current_group(name)
-        @declared_options.each_value{ |opt| opt.group = name if opt.group.eql?(@current_group)}
+        @declared_options.each_value { |opt| opt.group = name if opt.group.eql?(@current_group) }
         @current_group = name
       end
 
@@ -624,24 +638,24 @@ module Aspera
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
         validation = Symbol unless accept_list.nil?
         validation = [validation] unless validation.is_a?(Array) || validation.nil?
-        Aspera.assert_array_all(validation, Class){'validation'} unless validation.nil?
+        Aspera.assert_array_all(validation, Class) { 'validation' } unless validation.nil?
         descr = "#{descr}#{add_types_info(validation)}"
         result =
           if !pending_arguments.empty?
             values = extract_argument_tokens(multiple)
-            values = values.map{ |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation)}
+            values = values.map { |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation) }
             # If expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
               allowed_values = [].concat(accept_list)
               allowed_values.concat(aliases.keys) unless aliases.nil?
-              values = values.map{ |v| self.class.get_from_list(v, descr, allowed_values)}
+              values = values.map { |v| self.class.get_from_list(v, descr, allowed_values) }
             end
             multiple ? values : values.first
           elsif !default.nil? then default
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, aliases: aliases, schema: schema)
           end
-        Log.log.trace1{"#{descr}=#{result}"}
+        Log.log.trace1 { "#{descr}=#{result}" }
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
         result = result.to_s if result.is_a?(Integer) && validation&.eql?(Type::STRING)
@@ -653,7 +667,7 @@ module Aspera
         end
         if validation && (mandatory || !result.nil?)
           value_list = multiple ? result : [result]
-          value_list.each{ |value| validate_argument(value, validation: validation, descr: descr, schema: schema)}
+          value_list.each { |value| validate_argument(value, validation: validation, descr: descr, schema: schema) }
         end
         result
       end
@@ -670,7 +684,7 @@ module Aspera
         res_id = get_next_argument(description, multiple: get_option(:bulk))
         # Can be an Array
         if res_id.is_a?(String) && (m = Parser.percent_selector(res_id))
-          Aspera.assert(block_given?, type: Cli::BadArgument){"Percent syntax for #{description} not supported in this context"}
+          Aspera.assert(block_given?, type: Cli::BadArgument) { "Percent syntax for #{description} not supported in this context" }
           res_id = yield(m[:field], m[:value])
         end
         res_id
@@ -697,7 +711,7 @@ module Aspera
       # @return [OptionValue] Option definition
       # @raise [Cli::BadArgument] if option not found
       def option_def(option_symbol)
-        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument){"Unknown option: #{option_symbol}"}
+        Aspera.assert(@declared_options.key?(option_symbol), type: Cli::BadArgument) { "Unknown option: #{option_symbol}" }
         @declared_options[option_symbol]
       end
 
@@ -718,7 +732,7 @@ module Aspera
         return :skip_missing_mandatory if result.nil? && mandatory && !@fail_on_missing_mandatory
         if result.nil?
           if !@ask_missing_mandatory
-            Aspera.assert(!mandatory, type: Cli::BadArgument){"Missing mandatory option: #{option_symbol}"}
+            Aspera.assert(!mandatory, type: Cli::BadArgument) { "Missing mandatory option: #{option_symbol}" }
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
             result = get_interactive(option_symbol.to_s, check_option: true, accept_list: option_attrs.values, schema: option_attrs.schema)
@@ -769,7 +783,7 @@ module Aspera
       # @param override    [Boolean] Override if already present
       def add_option_preset(preset_hash, where, override: true)
         Aspera.assert_type(preset_hash, Hash)
-        Log.log.debug{"add_option_preset: #{preset_hash}, #{where}, #{override}"}
+        Log.log.debug { "add_option_preset: #{preset_hash}, #{where}, #{override}" }
         preset_hash.each do |k, v|
           # Ignore comment/meta keys (e.g. _comment, _description)
           next if k.to_s.start_with?(PresetManager::Key::META_PREFIX)
@@ -809,14 +823,14 @@ module Aspera
         @initial_argv_tokens.each_with_index do |tok, idx|
           next unless tok.is_a?(Option) && tok.short_char.nil?
           # For space-separated form: value is the immediately following :argument token (if any)
-          value = tok.value || @initial_argv_tokens[idx + 1]&.then{ |t| t.value if t.is_a?(Argument)}
+          value = tok.value || @initial_argv_tokens[idx + 1]&.then { |t| t.value if t.is_a?(Argument) }
           # ignore options without value
           next if value.nil?
           name = tok.dot_path ? [tok.name, *tok.dot_path].join(DotContainer::SEPARATOR) : tok.name
-          Log.log.debug{"option #{name}=#{value}"}
+          Log.log.debug { "option #{name}=#{value}" }
           path = [tok.name, *(tok.dot_path || [])]
-          DotContainer.dotted_to_container(path, smart_convert(value), result)
-          @argv_tokens.reject!{ |t| t.is_a?(Option) && t.raw.eql?(tok.raw)}
+          DotContainer.dotted_to_container(path, Parser.smart_convert(value), result)
+          @argv_tokens.reject! { |t| t.is_a?(Option) && t.raw.eql?(tok.raw) }
         end
         result
       end
@@ -863,7 +877,7 @@ module Aspera
           # @current_option_args_offset = number of positional Argument tokens that appear BEFORE
           # this option in @argv_tokens (i.e. at indices 0...@current_parse_idx after the delete).
           # Used by args_as_extended to skip those leading args when collecting @: values.
-          @current_option_args_offset = @argv_tokens[0...@current_parse_idx].count{ |t| t.is_a?(Argument)}
+          @current_option_args_offset = @argv_tokens[0...@current_parse_idx].count { |t| t.is_a?(Argument) }
           if tok.short_char
             # Short option: -X or -Xvalue
             option_sym = @short_options[tok.short_char]
@@ -878,7 +892,7 @@ module Aspera
             end
           elsif tok.dot_path
             # Dotted notation: --a.b.c=val or --a.b.c val (always takes priority over plain option lookup)
-            Log.log.trace1{"Dotted option: #{tok.raw}".red}
+            Log.log.trace1 { "Dotted option: #{tok.raw}".red }
             if tok.has_value
               raw_value = tok.value
               value_from_next_token = false
@@ -887,7 +901,7 @@ module Aspera
               value_from_next_token = true
             end
             if @declared_options.key?(tok.name.to_sym)
-              set_option(tok.name.to_sym, DotContainer.dotted_to_container(tok.dot_path, smart_convert(raw_value), get_option(tok.name.to_sym)), where: 'dotted')
+              set_option(tok.name.to_sym, DotContainer.dotted_to_container(tok.dot_path, Parser.smart_convert(raw_value), get_option(tok.name.to_sym)), where: 'dotted')
             else
               # Only re-inject if value was space-separated (consumed from next token); inline values stay in tok.value
               @argv_tokens.unshift(Argument.new(raw_value)) if raw_value && value_from_next_token
@@ -901,19 +915,19 @@ module Aspera
               if !tok.has_value && !@declared_options[resolved_sym].types.eql?(Type::NONE)
             dispatch_option(resolved_sym, raw_value)
           else
-            Log.log.trace1{"Unknown long option: #{tok.raw}".red}
+            Log.log.trace1 { "Unknown long option: #{tok.raw}".red }
             deferred_tokens.push(tok)
           end
         end
         @current_option_args_offset = nil
         @current_parse_idx = nil
         Log.log.trace1('After parse')
-        Log.log.trace1{"deferred: #{deferred_tokens}"}
+        Log.log.trace1 { "deferred: #{deferred_tokens}" }
         # @argv_tokens now contains only: remaining Arguments + deferred Options (already in correct order).
         # Re-insert deferred Options at their original positions by rebuilding from @initial_argv_tokens.
         deferred_ids = deferred_tokens.map(&:object_id).to_set
         remaining_arg_ids = @argv_tokens.grep(Argument).map(&:object_id).to_set
-        injected = @argv_tokens.grep(Argument).reject{ |t| @initial_argv_tokens.include?(t)}
+        injected = @argv_tokens.grep(Argument).reject { |t| @initial_argv_tokens.include?(t) }
         @argv_tokens = @initial_argv_tokens.select do |t|
           (t.is_a?(Option) && deferred_ids.include?(t.object_id)) ||
             (t.is_a?(Argument) && remaining_arg_ids.include?(t.object_id))
@@ -937,15 +951,15 @@ module Aspera
           @argv_tokens.delete(tok)
           [tok.value]
         when true
-          arg_tokens.each{ |t| @argv_tokens.delete(t)}
+          arg_tokens.each { |t| @argv_tokens.delete(t) }
           arg_tokens.map(&:value)
         when String
-          idx = arg_tokens.index{ |t| t.value.eql?(multiple)}
+          idx = arg_tokens.index { |t| t.value.eql?(multiple) }
           consumed = idx ? arg_tokens[0, idx] : arg_tokens
           marker   = idx ? arg_tokens[idx] : nil
-          (consumed + [marker].compact).each{ |t| @argv_tokens.delete(t)}
+          (consumed + [marker].compact).each { |t| @argv_tokens.delete(t) }
           consumed.map(&:value)
-        else Aspera.error_unexpected_value(multiple){'multiple'}
+        else Aspera.error_unexpected_value(multiple) { 'multiple' }
         end
       end
 
@@ -961,7 +975,7 @@ module Aspera
         raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(HELP)
         raise Cli::BadArgument,
           "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" \
-          unless validation.any?{ |t| value.is_a?(t)}
+          unless validation.any? { |t| value.is_a?(t) }
       end
 
       # Prompt user for console input
@@ -972,7 +986,7 @@ module Aspera
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         line = $stdin.gets
-        Aspera.assert_type(line, String){'Unexpected end of standard input'}
+        Aspera.assert_type(line, String) { 'Unexpected end of standard input' }
         line.chomp
       end
 
@@ -983,7 +997,7 @@ module Aspera
       def prompt_user_input_in_list(prompt, sym_list)
         loop do
           input = prompt_user_input(prompt).to_sym
-          if sym_list.any?{ |a| a.eql?(input)}
+          if sym_list.any? { |a| a.eql?(input) }
             return input
           else
             $stderr.puts("No such #{prompt}: #{input}, select one of: #{sym_list.join(', ')}") # rubocop:disable Style/StderrPuts
@@ -1038,16 +1052,16 @@ module Aspera
         # Grab the first `skip_count` Argument tokens and temporarily remove them.
         arg_tokens = @argv_tokens.grep(Argument)
         skipped_tokens = skip_count.positive? ? arg_tokens.first(skip_count) : []
-        skipped_tokens.each{ |t| @argv_tokens.delete(t)}
-        Log.log.trace1{"args_as_extended: skipping #{skipped_tokens.length} args before option: #{skipped_tokens.map(&:value)}"} unless skipped_tokens.empty?
+        skipped_tokens.each { |t| @argv_tokens.delete(t) }
+        Log.log.trace1 { "args_as_extended: skipping #{skipped_tokens.length} args before option: #{skipped_tokens.map(&:value)}" } unless skipped_tokens.empty?
         result = nil
         get_next_argument('args', multiple: end_marker).each do |argument|
-          Aspera.assert(argument.include?(Option::VALUE_SEP)){"Positional argument: #{argument} does not include #{Option::VALUE_SEP}"}
+          Aspera.assert(argument.include?(Option::VALUE_SEP)) { "Positional argument: #{argument} does not include #{Option::VALUE_SEP}" }
           path, value = argument.split(Option::VALUE_SEP, 2)
-          result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), smart_convert(value), result)
+          result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), Parser.smart_convert(value), result)
         end
         # Restore skipped tokens so they remain available for command dispatching
-        skipped_tokens.reverse_each{ |t| @argv_tokens.unshift(t)}
+        skipped_tokens.reverse_each { |t| @argv_tokens.unshift(t) }
         result
       end
 
@@ -1123,24 +1137,6 @@ module Aspera
         end
       end
 
-      # Using dotted hash notation, convert value to bool, int, float or extended value
-      # @param value [String] The value to convert to appropriate type
-      # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
-      def smart_convert(value)
-        self.class.smart_convert(value)
-      end
-
-      public_class_method def self.smart_convert(value)
-        case value
-        when 'true'  then true
-        when 'false' then false
-        else
-          Integer(value, exception: false) ||
-            Float(value, exception: false) ||
-            ExtendedValue.instance.evaluate(value, context: 'dotted expression')
-        end
-      end
-
       # Generate command line option string from option symbol
       # @param symbol  [Symbol]      option name
       # @param opt_val [String, nil] optional value placeholder
@@ -1174,13 +1170,13 @@ module Aspera
       # @param where [String] label used in log messages and error context
       # @return [Hash{Symbol => Object}] pairs whose keys were not yet declared (deferred to next round)
       def consume_option_pairs(option_pairs, where)
-        Log.log.trace1{"consume_option_pairs: #{where}"}
+        Log.log.trace1 { "consume_option_pairs: #{where}" }
         remaining = {}
         option_pairs.each do |k, v|
           if @declared_options.key?(k)
             set_option(k, v, where: where)
           else
-            Log.log.trace1{"unprocessed: #{k}: #{v}"}
+            Log.log.trace1 { "unprocessed: #{k}: #{v}" }
             remaining[k] = v
           end
         end

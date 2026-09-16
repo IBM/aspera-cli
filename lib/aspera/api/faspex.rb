@@ -170,7 +170,7 @@ module Aspera
             Log.dump(:final_url, final_url, level: :trace1)
             # Get context from query
             encoded_context = Rest.query_to_h(URI.parse(final_url).query)['context']
-            Aspera.assert(!encoded_context.nil?, type: ParameterError){'Bad faspex5 public link, missing context in query'}
+            Aspera.assert(!encoded_context.nil?, type: ParameterError) { 'Bad faspex5 public link, missing context in query' }
             # public link information (contains passcode and allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.dump(:pub_link_context, @pub_link_context, level: :trace1)
@@ -238,7 +238,7 @@ module Aspera
                 headers:         {typ: 'JWT'}
               }
             }
-          else Aspera.error_unexpected_value(auth, type: ParameterError){'auth'}
+          else Aspera.error_unexpected_value(auth, type: ParameterError) { 'auth' }
           end
         )
       end

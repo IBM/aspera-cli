@@ -24,9 +24,9 @@ module Aspera
       # Available agents: :long : Capitalized name string, :short : single character symbol
       ALL =
         Dir.children(File.dirname(File.expand_path(__FILE__)))
-          .select{ |file| file.end_with?(Environment::RB_EXT)}
-          .map{ |file| File.basename(file, Environment::RB_EXT).to_sym}
-          .reject{ |item| IGNORED_ITEMS.include?(item)}.to_h do |agent_sym|
+          .select { |file| file.end_with?(Environment::RB_EXT) }
+          .map { |file| File.basename(file, Environment::RB_EXT).to_sym }
+          .reject { |item| IGNORED_ITEMS.include?(item) }.to_h do |agent_sym|
           [agent_sym, {
             long:  agent_sym.to_s.capitalize,
             short: agent_sym.eql?(:direct) ? :a : agent_sym.to_s[0].to_sym

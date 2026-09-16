@@ -57,19 +57,19 @@ module Aspera
 
         context 'with invalid input' do
           it 'raises on a non-numeric string' do
-            expect{described_class.rate_string_to_kbps('fast')}.to(raise_error(Aspera::AssertError))
+            expect { described_class.rate_string_to_kbps('fast') }.to(raise_error(Aspera::AssertError))
           end
 
           it 'raises on an unknown suffix' do
-            expect{described_class.rate_string_to_kbps('100x')}.to(raise_error(Aspera::AssertError))
+            expect { described_class.rate_string_to_kbps('100x') }.to(raise_error(Aspera::AssertError))
           end
 
           it 'raises on a float value' do
-            expect{described_class.rate_string_to_kbps('1.5m')}.to(raise_error(Aspera::AssertError))
+            expect { described_class.rate_string_to_kbps('1.5m') }.to(raise_error(Aspera::AssertError))
           end
 
           it 'raises on an empty string' do
-            expect{described_class.rate_string_to_kbps('')}.to(raise_error(Aspera::AssertError))
+            expect { described_class.rate_string_to_kbps('') }.to(raise_error(Aspera::AssertError))
           end
         end
       end

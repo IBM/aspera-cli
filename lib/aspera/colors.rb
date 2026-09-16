@@ -52,9 +52,9 @@ class String
           0 # by default reset all
         end
       )
-      define_method(name){"#{begin_seq}#{self}#{end_seq}"}
+      define_method(name) { "#{begin_seq}#{self}#{end_seq}" }
     else
-      define_method(name){self}
+      define_method(name) { self }
     end
   end
 
@@ -62,7 +62,7 @@ class String
   # @param colors [Array<Symbol>] List of decorations.
   # @return [String] Enhanced String.
   def apply(*colors)
-    colors.reduce(self){ |s, c| s.public_send(c)}
+    colors.reduce(self) { |s, c| s.public_send(c) }
   end
 
   # Transform capitalized to snake case

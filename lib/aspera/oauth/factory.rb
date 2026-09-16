@@ -41,7 +41,7 @@ module Aspera
         # @param authorization [String] The authorization header value
         # @return [String] The bearer token without the scheme prefix
         def bearer_token(authorization)
-          Aspera.assert(bearer_auth?(authorization)){'not a bearer token, wrong prefix scheme'}
+          Aspera.assert(bearer_auth?(authorization)) { 'not a bearer token, wrong prefix scheme' }
           return authorization.delete_prefix(SPACE_BEARER_AUTH_SCHEME)
         end
 
@@ -178,7 +178,7 @@ module Aspera
       def register_token_creator(creator_class)
         Aspera.assert_type(creator_class, Class)
         id = Factory.class_to_id(creator_class)
-        Log.log.debug{"registering creator for #{id}"}
+        Log.log.debug { "registering creator for #{id}" }
         @token_type_classes[id] = creator_class
         nil
       end
@@ -189,12 +189,12 @@ module Aspera
       def create(**parameters)
         Aspera.assert_type(parameters, Hash)
         id = parameters[:grant_method]
-        Aspera.assert(@token_type_classes.key?(id)){"token grant method unknown: '#{id}'"}
-        create_parameters = parameters.reject{ |k, _v| k.eql?(:grant_method)}
+        Aspera.assert(@token_type_classes.key?(id)) { "token grant method unknown: '#{id}'" }
+        create_parameters = parameters.reject { |k, _v| k.eql?(:grant_method) }
         @token_type_classes[id].new(**create_parameters)
       end
     end
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    Factory.instance.register_decoder(lambda{ |token| parts = token.split('.'); Aspera.assert_values(parts.length, [3]){'JWS token parts'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon
+    Factory.instance.register_decoder(lambda { |token| parts = token.split('.'); Aspera.assert_values(parts.length, [3]) { 'JWS token parts' }; JSON.parse(Base64.decode64(parts[1])) }) # rubocop:disable Style/Semicolon
   end
 end

@@ -27,7 +27,7 @@ def linux_architecture
   case Aspera::Environment.instance.cpu
   when Aspera::Environment::CPU_X86_64 then 'x86_64'
   when Aspera::Environment::CPU_ARM64 then 'aarch64'
-  else Aspera.error_unexpected_value(Aspera::Environment.instance.cpu){'architecture'}
+  else Aspera.error_unexpected_value(Aspera::Environment.instance.cpu) { 'architecture' }
   end
 end
 
@@ -99,7 +99,7 @@ namespace :appimage do
 
       log.info('Creating container build script')
       # Copy the build.sh script to the temporary directory
-      Aspera.assert((APP_IMAGE_SRC / 'build.sh').exist?){"Build script not found at #{APP_IMAGE_SRC / 'build.sh'}"}
+      Aspera.assert((APP_IMAGE_SRC / 'build.sh').exist?) { "Build script not found at #{APP_IMAGE_SRC / 'build.sh'}" }
       build_script_path.write((APP_IMAGE_SRC / 'build.sh').read)
       build_script_path.chmod(0o755)
 
@@ -107,7 +107,7 @@ namespace :appimage do
       run(*build_in_container(build_script_path, app_dir, output_file))
 
       # Verify the build was successful
-      Aspera.assert(output_file.exist?){"AppImage build failed: #{output_file} not found"}
+      Aspera.assert(output_file.exist?) { "AppImage build failed: #{output_file} not found" }
 
       log.info('Build complete!')
       log.info("Output: #{output_file}")
@@ -121,7 +121,7 @@ namespace :appimage do
     gem_version_build = args[:version] || build_version
     appimage_path = built_appimage_path(gem_version_build)
 
-    Aspera.assert(appimage_path.exist?){"AppImage not found: #{appimage_path}"}
+    Aspera.assert(appimage_path.exist?) { "AppImage not found: #{appimage_path}" }
 
     log.info("Testing AppImage: #{appimage_path}")
     run(appimage_path, '-v')
@@ -132,7 +132,7 @@ namespace :appimage do
   task :release, [:version] do |_t, args|
     version = args[:version] || build_version
     asset_path = built_appimage_path(version)
-    Aspera.assert(asset_path.exist?){"AppImage not found: #{asset_path}"}
+    Aspera.assert(asset_path.exist?) { "AppImage not found: #{asset_path}" }
     run('gh', 'release', 'upload', "v#{version}", asset_path)
   end
 end

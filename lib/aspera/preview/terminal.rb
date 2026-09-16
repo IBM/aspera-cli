@@ -58,7 +58,7 @@ module Aspera
           pixel_colors = []
           @image.scale(*terminal_scaling(@image.rows, @image.columns)).each_pixel do |pixel, col, row|
             pixel_rgb = [pixel.red, pixel.green, pixel.blue]
-            pixel_rgb = pixel_rgb.map{ |color| color >> shift_for_8_bit} unless shift_for_8_bit.eql?(0)
+            pixel_rgb = pixel_rgb.map { |color| color >> shift_for_8_bit } unless shift_for_8_bit.eql?(0)
             # Initialize the destination 2D pixel matrix row by row.
             pixel_colors[row] ||= []
             pixel_colors[row][col] = pixel_rgb
@@ -87,7 +87,7 @@ module Aspera
           dst_w, dst_h = terminal_scaling(src_h, src_w)
           dst_w = [dst_w, 1].max
           dst_h = [dst_h, 1].max
-          pixel_colors = Array.new(dst_h){Array.new(dst_w)}
+          pixel_colors = Array.new(dst_h) { Array.new(dst_w) }
           x_ratio = src_w.to_f / dst_w
           y_ratio = src_h.to_f / dst_h
           dst_h.times do |dy|
@@ -98,7 +98,7 @@ module Aspera
               sx = src_w - 1 if sx >= src_w
               rgba = @png.get_pixel(sx, sy)
               # ChunkyPNG stores pixels as 0xRRGGBBAA; extract 8-bit RGB channels.
-              pixel_colors[dy][dx] = %i[r g b].map{ |i| ::ChunkyPNG::Color.send(i, rgba)}
+              pixel_colors[dy][dx] = %i[r g b].map { |i| ::ChunkyPNG::Color.send(i, rgba) }
             end
           end
           pixel_colors
@@ -178,7 +178,7 @@ module Aspera
             size:                blob.length
             # width:               image.columns,
             # height:              image.rows
-          }.map{ |k, v| "#{k}=#{v}"}.join(';')
+          }.map { |k, v| "#{k}=#{v}" }.join(';')
           # `\a` is BEL and `\e` is ESC.
           # See: https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
           # Return the full escape sequence expected by iTerm2-compatible terminals.
@@ -190,7 +190,7 @@ module Aspera
         # @return [Boolean] `true` when the current terminal advertises iTerm2 image support
         def iterm_supported?
           TERM_ENV_VARS.each do |env_var|
-            return true if ITERM_NAMES.any?{ |term| ENV[env_var]&.include?(term)}
+            return true if ITERM_NAMES.any? { |term| ENV[env_var]&.include?(term) }
           end
           false
         end

@@ -47,7 +47,7 @@ module Aspera
               }
             rescue StandardError => e
               error = e
-              Log.log.debug{"detect error: #{e}"}
+              Log.log.debug { "detect error: #{e}" }
             end
             raise error if error
             return
@@ -107,7 +107,7 @@ module Aspera
         def normalize_recipients(parameters, type)
           type = type.to_s
           return unless parameters.key?(type)
-          Aspera.assert_type(parameters[type], Array){type}
+          Aspera.assert_type(parameters[type], Array) { type }
           recipient_types = Api::Faspex::RECIPIENT_TYPES
           if parameters.key?('recipient_types')
             recipient_types = parameters['recipient_types']
@@ -172,7 +172,7 @@ module Aspera
         # @param filter [Proc, nil] optional filter lambda applied to each package entry
         # @param query  [Hash]      additional query parameters forwarded to the API
         def list_packages_with_filter(filter: nil, query: {})
-          filter ||= ->(_x){true}
+          filter ||= ->(_x) { true }
           box = options.get_option(:box)
           # Translate box name to API prefix (with ending slash)
           entity =
@@ -217,22 +217,22 @@ module Aspera
           case package_ids
           when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency, 'Only with option once_only')
-            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map{ |p| p['id']}) # no filter: all packages
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map { |p| p['id'] }) # no filter: all packages
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
             packages = list_packages_with_filter(query: {'status' => 'completed'}).first # no filter: all completed packages
-            Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
+            Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
             Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
-            packages.reject!{ |p| skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
-            Log.dump(:package_ids, level: :trace1){packages.map{ |p| p['id']}}
+            packages.reject! { |p| skip_ids_persistency.data.include?(p['id']) } if skip_ids_persistency
+            Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
           else
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)
-            Aspera.assert_array_all(package_ids, String){'Package id(s)'}
+            Aspera.assert_array_all(package_ids, String) { 'Package id(s)' }
             # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")}
-            packages = package_ids.map{ |pkg_id| {'id'=>pkg_id}}
+            packages = package_ids.map { |pkg_id| {'id'=>pkg_id} }
           end
           result_transfer = []
           param_file_list = {}
@@ -280,7 +280,7 @@ module Aspera
               recipient_type: @api_v5.pub_link_context['recipient_type']
             }]
           end
-          PACKAGE_RECIPIENT_TYPES.each{ |type| normalize_recipients(parameters, type)}
+          PACKAGE_RECIPIENT_TYPES.each { |type| normalize_recipients(parameters, type) }
           # User specified content prot in tspec, but faspex requires in package creation
           # `transfer_spec/upload` will set `content_protection`
           if transfer.user_transfer_spec['content_protection'] && !parameters.key?('ear_enabled')
@@ -326,13 +326,13 @@ module Aspera
         def browse_folder(browse_endpoint, base_query = {}, folder_path: '/')
           folders_to_process = [folder_path]
           query = base_query.merge(query_read_delete(default: {}))
-          filters = query.delete('filters'){{}}
+          filters = query.delete('filters') { {} }
           Aspera.assert_type(filters, Hash)
           filters['basenames'] ||= []
-          Aspera.assert_type(filters, Hash){'filters'}
+          Aspera.assert_type(filters, Hash) { 'filters' }
           max_items = query.delete(RestList::MAX_ITEMS)
           recursive = query.delete('recursive')
-          use_paging = query.delete('paging'){true}
+          use_paging = query.delete('paging') { true }
           if use_paging
             browse_endpoint = "#{browse_endpoint}/page"
             query['per_page'] ||= 500
@@ -359,7 +359,7 @@ module Aspera
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
               end
-              folders_to_process.concat(data['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']}) if recursive
+              folders_to_process.concat(data['items'].select { |i| i['type'].eql?('directory') }.map { |i| i['path'] }) if recursive
               if use_paging
                 iteration_token = http[Api::Faspex::HEADER_X_NEXT_ITER_TOKEN]
                 break if iteration_token.nil? || iteration_token.empty?
@@ -382,9 +382,9 @@ module Aspera
         # @return [Hash{Symbol => Hash}]
         RESOURCE_CONFIG = {
           accounts:            {
-            display_fields:        ->{Formatter.all_but('user_profile_data_attributes')},
+            display_fields:        -> { Formatter.all_but('user_profile_data_attributes') },
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: ->(field, value, **){res_lookup_id(:accounts, field, value)}}]}},
+            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
             query_component:       Schema::Registry::FASPEX,
             body_component:        Schema::Registry::FASPEX
           },
@@ -411,8 +411,8 @@ module Aspera
             body_component:        Schema::Registry::FASPEX
           },
           oauth_clients:       {
-            display_fields:  ->{Formatter.all_but('public_key')},
-            api:             ->{Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options))},
+            display_fields:  -> { Formatter.all_but('public_key') },
+            api:             -> { Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options)) },
             list_query:      {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
             query_component: Schema::Registry::FASPEX,
             body_component:  Schema::Registry::FASPEX
@@ -474,26 +474,26 @@ module Aspera
         # Commands that need @api_v5 carry setup: :setup_api_v5.
         # :health and :postprocessing work without authentication, so they have no setup.
         command :health,         description: 'Check Faspex 5 health'
-        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: ->{Result::SingleObject.new(@api_v5.read('version'))}
-        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: ->{Result::Text.new(@api_v5.oauth.authorization)}
+        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: -> { Result::SingleObject.new(@api_v5.read('version')) }
+        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: -> { Result::Text.new(@api_v5.oauth.authorization) }
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under :packages do
           command :list,   description: 'List packages',
             arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
-            action: ->(data:, **){package_send(data)}
+            action: ->(data:, **) { package_send(data) }
           command :show,   description: 'Show a package', setup: :setup_package_id,
-            action: ->(package_id:, **){Result::SingleObject.new(@api_v5.read("packages/#{package_id}"))}
+            action: ->(package_id:, **) { Result::SingleObject.new(@api_v5.read("packages/#{package_id}")) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}],
-            action: ->(folder_path:, package_id:, **){browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path)}
+            action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
           command :status, description: 'Wait for package status', setup: :setup_package_id,
             arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
-            action: ->(status_list:, package_id:, **){Result::SingleObject.new(wait_package_status(package_id, status_list: status_list))}
+            action: ->(status_list:, package_id:, **) { Result::SingleObject.new(wait_package_status(package_id, status_list: status_list)) }
           command :delete, description: 'Delete packages', setup: :setup_package_id
           command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive,
-            action: ->(package_id:, **){package_receive(package_id)}
+            action: ->(package_id:, **) { package_receive(package_id) }
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)
@@ -521,12 +521,12 @@ module Aspera
         end
 
         commands_under :user do
-          command :account, description: 'Show account information', action: ->{Result::SingleObject.new(@api_v5.read('account', query_read_delete))}
+          command :account, description: 'Show account information', action: -> { Result::SingleObject.new(@api_v5.read('account', query_read_delete)) }
           command :profile, description: 'Manage user profile'
         end
 
         commands_under %i[user profile] do
-          command :show, description: 'Show user profile', action: ->{Result::SingleObject.new(@api_v5.read('account/preferences'))}
+          command :show, description: 'Show user profile', action: -> { Result::SingleObject.new(@api_v5.read('account/preferences')) }
           command(
             :modify,
             description: 'Modify user profile',
@@ -539,7 +539,7 @@ module Aspera
         end
 
         commands_under :shared_folders do
-          command :list,   description: 'List shared folders', action: ->{Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders'])}
+          command :list,   description: 'List shared folders', action: -> { Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders']) }
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
                         {name: :folder_path, type: String, mandatory: false, default: '/'}]
@@ -571,7 +571,7 @@ module Aspera
 
               # Standard CRUD operations handled via crud_commands
               crud_commands(
-                api:            ->{res_exec_args(res)[:api]},
+                api:            -> { res_exec_args(res)[:api] },
                 entity:         entity_path,
                 operations:     crud_ops,
                 lookup:         :"lookup_admin_#{res}_id",
@@ -626,7 +626,7 @@ module Aspera
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          lookup_res_id = ->(field, value, **){@api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id']}
+          lookup_res_id = ->(field, value, **) { @api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id'] }
           commands_under [:admin, res] do
             command :members, description: 'Members',
               arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
@@ -664,20 +664,20 @@ module Aspera
         end
 
         commands_under %i[admin configuration] do
-          command :show, description: 'Show configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration'))}
+          command :show, description: 'Show configuration', action: -> { Result::SingleObject.new(@api_v5.read('configuration')) }
           command :modify, description: 'Modify configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration', input_data))}
+            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.update('configuration', input_data)) }
         end
 
         commands_under %i[admin smtp] do
-          command :show, description: 'Show SMTP configuration', action: ->{Result::SingleObject.new(@api_v5.read('configuration/smtp'))}
+          command :show, description: 'Show SMTP configuration', action: -> { Result::SingleObject.new(@api_v5.read('configuration/smtp')) }
           command :create, description: 'Create SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data))}
+            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data)) }
           command :modify, description: 'Modify SMTP configuration',
             arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **){Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data))}
+            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data)) }
           command(
             :delete, description: 'Delete SMTP configuration',
             action: lambda do
@@ -837,7 +837,7 @@ module Aspera
           define_action_method([:admin, res, :members, :create]) do |users:, access:, res_instance_path:, **|
             res_path = "#{res_instance_path}/members"
             resolved = resolve_member_user_ids(users)
-            input_data = [{user: resolved.map{ |u| {id: u, access: access}}}]
+            input_data = [{user: resolved.map { |u| {id: u, access: access} }}]
             entity_create(api: @api_v5, entity: res_path, input_data: input_data)
           end
         end
@@ -860,7 +860,7 @@ module Aspera
           return {} if @api_v5
           @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
           # in case user wants to use HTTPGW tell transfer agent how to get address
-          transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
+          transfer.httpgw_url_cb = lambda { @api_v5.read('account')['gateway_url'] }
           {}
         end
 
@@ -881,7 +881,7 @@ module Aspera
 
         def action_packages_delete(package_id:, **)
           ids = package_id.is_a?(Array) ? package_id : [package_id]
-          Aspera.assert_array_all(ids, String){'Package id(s)'}
+          Aspera.assert_array_all(ids, String) { 'Package id(s)' }
           # API returns 204, empty on success
           @api_v5.call(
             operation:    'DELETE',
@@ -914,16 +914,16 @@ module Aspera
         # Called via lookup: :lookup_shared_folder_id on the shared_folders > browse command.
         def lookup_shared_folder_id(field, value, **)
           all = @api_v5.read('shared_folders')['shared_folders']
-          matches = all.select{ |i| i[field].eql?(value)}
-          Aspera.assert(!matches.empty?){"no match for #{field} = #{value}"}
-          Aspera.assert(matches.length == 1){"multiple matches for #{field} = #{value}"}
+          matches = all.select { |i| i[field].eql?(value) }
+          Aspera.assert(!matches.empty?) { "no match for #{field} = #{value}" }
+          Aspera.assert(matches.length == 1) { "multiple matches for #{field} = #{value}" }
           matches.first['id']
         end
 
         def action_shared_folders_browse(folder_path:, shared_folder_id:, **)
           all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
-          node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
-          Aspera.assert(!node.nil?){"No such shared folder id #{shared_folder_id}"}
+          node = all_shared_folders.find { |i| i['id'].eql?(shared_folder_id) }
+          Aspera.assert(!node.nil?) { "No such shared folder id #{shared_folder_id}" }
           browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse", {}, folder_path: folder_path)
         end
 
@@ -944,9 +944,9 @@ module Aspera
         def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
+          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?) { "unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}" }
           server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
           server.start
           Result::Status.new('Gateway terminated')
@@ -955,7 +955,7 @@ module Aspera
         def action_postprocessing(parameters: {}, **)
           require 'aspera/faspex_postproc' # cspell:disable-line
           parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
           parameters[:root] = uri.path
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           server.mount(uri.path, Faspex4PostProcServlet, parameters.except(*WebServerSimple::PARAMS))

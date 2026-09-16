@@ -40,7 +40,7 @@ module Aspera
       # Initialize all members to nil, so that they are defined and can be validated later
       # @return [nil]
       def initialize
-        MEMBERS.each{ |i| instance_variable_set(:"@#{i}", nil)}
+        MEMBERS.each { |i| instance_variable_set(:"@#{i}", nil) }
         @progress_bar = nil
         @pac_executor = nil
       end
@@ -50,8 +50,8 @@ module Aspera
       # @return [nil]
       def validate
         MEMBERS.each do |i|
-          Aspera.assert(instance_variable_defined?(:"@#{i}")){"context member @#{i} is not defined"}
-          Aspera.assert(!instance_variable_get(:"@#{i}").nil?){"context member @#{i} is nil"}
+          Aspera.assert(instance_variable_defined?(:"@#{i}")) { "context member @#{i} is not defined" }
+          Aspera.assert(!instance_variable_get(:"@#{i}").nil?) { "context member @#{i} is nil" }
         end
       end
 

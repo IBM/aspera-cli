@@ -102,8 +102,8 @@ module Aspera
           # @param destination_folder [String] Base folder
           # @param fld                [Array]  List of fields of package
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
-            Aspera.assert_array_all(fld, String, type: BadArgument){'fld'}
-            Aspera.assert_values(fld.length, [1, 2]){'fld length'}
+            Aspera.assert_array_all(fld, String, type: BadArgument) { 'fld' }
+            Aspera.assert_values(fld.length, [1, 2]) { 'fld length' }
             folder = Environment.instance.sanitized_filename(package_info[fld[0]])
             if seq
               folder = next_available_folder(folder, always: !opt)
@@ -309,7 +309,7 @@ module Aspera
             case m[:field]
             when 'name' then api.ws_ids[:name] = m[:value]
             when 'id' then api.ws_ids[:id] = m[:value]
-            else Aspera.error_unexpected_value(m[:field]){'workspace selector: only `name` or `id`'}
+            else Aspera.error_unexpected_value(m[:field]) { 'workspace selector: only `name` or `id`' }
             end
           else
             api.ws_ids[:name] = workspace
@@ -357,7 +357,7 @@ module Aspera
         # @return [String] identifier
         def get_resource_id_from_args(resource_class_path)
           return options.instance_identifier do |field, value|
-            Aspera.assert_values(field, ['name'], type: BadArgument){'selector field'}
+            Aspera.assert_values(field, ['name'], type: BadArgument) { 'selector field' }
             aoc_api.lookup_with_q(resource_class_path, value: value)['id']
           end
         end
@@ -389,7 +389,7 @@ module Aspera
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
-            Aspera.assert(!query.key?('dropbox_id'), type: BadArgument){'Use field dropbox_name or dropbox_id, not both'}
+            Aspera.assert(!query.key?('dropbox_id'), type: BadArgument) { 'Use field dropbox_name or dropbox_id, not both' }
             # TODO : craft a query that looks for dropbox only in current workspace
             query['dropbox_id'] = aoc_api.lookup_with_q('dropboxes', value: query.delete('dropbox_name'))['id']
           end
@@ -402,8 +402,8 @@ module Aspera
         # @return [Hash] {items,total} with all packages according to combination of user's query and default query
         def list_all_packages_with_query
           query = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::AOC, 'packages'))
-          Aspera.assert_type(query, Hash){'query'}
-          PACKAGE_RECEIVED_BASE_QUERY.each{ |k, v| query[k] = v unless query.key?(k)}
+          Aspera.assert_type(query, Hash) { 'query' }
+          PACKAGE_RECEIVED_BASE_QUERY.each { |k, v| query[k] = v unless query.key?(k) }
           resolve_dropbox_name_default_ws_id(query)
           return aoc_api.read_with_paging('packages', query.compact)
         end
@@ -471,7 +471,7 @@ module Aspera
               client_direction,
               add_ts
             )))
-          else Aspera.error_unexpected_value(command_repo){'command'}
+          else Aspera.error_unexpected_value(command_repo) { 'command' }
           end
           Aspera.error_unreachable_line
         end
@@ -576,8 +576,8 @@ module Aspera
 
         def reject_packages_from_persistency(all_packages, skip_ids_persistency)
           return if skip_ids_persistency.nil?
-          skip_package = skip_ids_persistency.data.to_h{ |i| [i, true]}
-          all_packages.reject!{ |pkg| skip_package[pkg['id']]}
+          skip_package = skip_ids_persistency.data.to_h { |i| [i, true] }
+          all_packages.reject! { |pkg| skip_package[pkg['id']] }
         end
 
         # --- DSL command declarations ---
@@ -592,23 +592,23 @@ module Aspera
           end
         )
         command :bearer_token,      description: 'Display bearer token',
-          action: ->{Result::Text.new(aoc_api.oauth.authorization)}
+          action: -> { Result::Text.new(aoc_api.oauth.authorization) }
         command :organization,      description: 'Show organization info',
-          action: ->{Result::SingleObject.new(aoc_api.read('organization'))}
+          action: -> { Result::SingleObject.new(aoc_api.read('organization')) }
         command :tier_restrictions, description: 'Show tier restrictions',
-          action: ->{Result::SingleObject.new(aoc_api.read('tier_restrictions'))}
+          action: -> { Result::SingleObject.new(aoc_api.read('tier_restrictions')) }
         command :user,              description: 'User commands'
         command :packages,          description: 'Package commands', setup: :setup_workspace_display
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display
         command :admin, description: 'Administration commands', setup: :setup_admin_scope
         commands_under :admin do
           command :bearer_token,   description: 'Show admin bearer token',
-            action: ->{Result::Text.new(aoc_api.oauth.authorization)}
+            action: -> { Result::Text.new(aoc_api.oauth.authorization) }
           command :application,    description: 'Manage applications'
           command :ats, description: 'Manage ATS (Aspera Transfer Service)',
             delegate_instance: :build_ats_plugin, delegates_to: []
           command :usage_reports,  description: 'List usage reports',
-            action: ->{result_list('usage_reports', base_query: workspace_id_hash)}
+            action: -> { result_list('usage_reports', base_query: workspace_id_hash) }
           command :auth_providers, description: 'Manage auth providers'
           command :subscription,   description: 'Show subscription info'
           command :analytics,      description: 'Query analytics'
@@ -700,8 +700,8 @@ module Aspera
         end
         commands_under %i[admin auth_providers] do
           command :list, description: 'List auth providers',
-            action: ->{result_list('admin/auth_providers')}
-          command :update, description: 'Update auth provider', action: ->{Aspera.error_not_implemented}
+            action: -> { result_list('admin/auth_providers') }
+          command :update, description: 'Update auth provider', action: -> { Aspera.error_not_implemented }
         end
         commands_under %i[admin subscription] do
           command :account, description: 'Show subscription account'
@@ -729,7 +729,7 @@ module Aspera
         # application sub-commands
         commands_under %i[admin application] do
           command :types,      description: 'List application types',
-            action: ->{Result::ObjectList.new(aoc_api.read('admin/apps'))}
+            action: -> { Result::ObjectList.new(aoc_api.read('admin/apps')) }
           command :settings,   description: 'Manage per-app-type settings'
           command :instance,   description: 'Manage app instances'
           command :membership, description: 'Manage app memberships'
@@ -742,7 +742,7 @@ module Aspera
             command app_type, description: "Settings for #{app_type} app"
             commands_under app_type do
               command :show, description: "Show #{app_type} settings",
-                action: ->{Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings"))}
+                action: -> { Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings")) }
               command(
                 :modify, description: "Modify #{app_type} settings",
                 arguments: [{name: :properties, type: Hash}],
@@ -773,7 +773,7 @@ module Aspera
           end
         end
         commands_under %i[admin application membership] do
-          command :list, description: 'List app memberships', action: ->{result_list('apps/app_memberships')}
+          command :list, description: 'List app memberships', action: -> { result_list('apps/app_memberships') }
           command :show,   description: 'Show an app membership', arguments: [{name: :membership_id, type: :identifier}]
           command :delete, description: 'Delete an app membership', arguments: [{name: :membership_id, type: :identifier}]
           command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
@@ -785,12 +785,12 @@ module Aspera
         # user sub-commands
         commands_under :user do
           commands_under :workspaces, description: "User's workspaces" do
-            command :list,    description: 'List workspaces', action: ->{result_list('workspaces', fields: %w[id name])}
-            command :current, description: 'Show current workspace', action: ->{Result::SingleObject.new(aoc_api.workspace_info)}
+            command :list,    description: 'List workspaces', action: -> { result_list('workspaces', fields: %w[id name]) }
+            command :current, description: 'Show current workspace', action: -> { Result::SingleObject.new(aoc_api.workspace_info) }
           end
           # command :profile, description: 'User profile commands'
           commands_under :profile, description: "Manager user's profile" do
-            command :show, description: 'Show user profile', action: ->{Result::SingleObject.new(aoc_api.current_user_info(exception: true))}
+            command :show, description: 'Show user profile', action: -> { Result::SingleObject.new(aoc_api.current_user_info(exception: true)) }
             command(
               :modify, description: 'Modify user profile',
               arguments: [{name: :properties, type: Hash}],
@@ -805,7 +805,7 @@ module Aspera
           command :contacts,      description: 'Manage contacts'
           # user > contacts sub-commands (same CRUD as admin > contact)
           commands_under %i[contacts] do
-            Operations::ALL.each{ |op| command op, description: op.to_s.capitalize}
+            Operations::ALL.each { |op| command op, description: op.to_s.capitalize }
           end
           command :settings, description: 'Manage client settings'
           commands_under %i[settings] do
@@ -887,7 +887,7 @@ module Aspera
             end)
           command :show,       description: 'Show a shared inbox',
             arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
-            action: ->(dropbox_id:, **){Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}"))}
+            action: ->(dropbox_id:, **) { Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}")) }
           command :short_link, description: 'Manage shared inbox short links',
             arguments: [{name: :link_type, allowed: %i[public private]}],
             setup: :setup_packages_short_link
@@ -921,7 +921,7 @@ module Aspera
             crud_commands api: :@automation_api, entity: 'workflows'
             command :launch, description: 'Launch a workflow',
               arguments: [{name: :wf_id, type: :identifier}],
-              action: ->(wf_id:, **){Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {}))}
+              action: ->(wf_id:, **) { Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {})) }
             commands_under :action, description: 'Add action to workflow (TODO)' do
               %i[list create show].each do |cmd|
                 command cmd,
@@ -993,13 +993,13 @@ module Aspera
           when SpecialValues::INIT
             all_packages = list_all_packages_with_query[:items]
             Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
-            skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
+            skip_ids_persistency.data.clear.concat(all_packages.map { |e| e['id'] })
             skip_ids_persistency.save
             return Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             all_packages = list_all_packages_with_query[:items]
             reject_packages_from_persistency(all_packages, skip_ids_persistency)
-            ids_to_download = all_packages.map{ |e| e['id']}
+            ids_to_download = all_packages.map { |e| e['id'] }
             formatter.display_status("Found #{ids_to_download.length} package(s).")
           else
             ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
@@ -1053,7 +1053,7 @@ module Aspera
         # packages > delete
         def action_packages_delete(package_id:, **)
           bulk_result(package_id, command: :delete) do |one_id|
-            Aspera.assert_type(one_id, String, Integer){'identifier'}
+            Aspera.assert_type(one_id, String, Integer) { 'identifier' }
             aoc_api.delete("packages/#{one_id}")
           end
         end
@@ -1108,12 +1108,12 @@ module Aspera
               created_data = shared_apifid.node_api.create('permissions', perm_data)
               aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
             when :update
-              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find{ |i| i['access_id'].eql?(id)}
-              Aspera.assert(!found.nil?, type: Error){"Short link not found: #{id}"}
+              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find { |i| i['access_id'].eql?(id) }
+              Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
               shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
             when :delete
               found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
-              Aspera.assert(!found.nil?, type: Error){"Short link not found: #{id}"}
+              Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
               shared_apifid.node_api.delete("permissions/#{found['id']}")
             else Aspera.error_unexpected_value(op)
             end
@@ -1190,7 +1190,7 @@ module Aspera
         def sl_exec_delete(sl_shared_data_ws:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
           one_id = short_link_id
           if sl_link_type.eql?(:public)
-            found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+            found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
             raise BadIdentifier.new('Short link', one_id) if found.nil?
             sl_perm_block&.call(:delete, found['resource_id'], nil)
           end
@@ -1206,14 +1206,14 @@ module Aspera
         # Shared implementation for short_link > show
         def sl_exec_show(sl_short_list:, short_link_id: nil, **)
           one_id = short_link_id
-          found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+          found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
           raise BadIdentifier.new('Short link', one_id) if found.nil?
           Result::SingleObject.new(found, fields: Formatter.all_but('data'))
         end
 
         # Shared implementation for short_link > modify
         def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
-          Aspera.assert_values(sl_link_type, [:public], type: Cli::BadArgument){'link_type'}
+          Aspera.assert_values(sl_link_type, [:public], type: Cli::BadArgument) { 'link_type' }
           one_id = short_link_id
           node_file = sl_shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}
@@ -1225,7 +1225,7 @@ module Aspera
             modify_payload[:password_enabled] = false
           end
           if custom_data.delete('access_levels')
-            found = sl_short_list[:items].find{ |item| item['id'].eql?(one_id)}
+            found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
             raise BadIdentifier.new('Short link', one_id) if found.nil?
             sl_perm_block&.call(:update, found['resource_id'], nil)
           end
@@ -1246,7 +1246,7 @@ module Aspera
         end
 
         # files > FILES_COMMANDS (all Gen4 node commands except :transfer, handled above)
-        FILES_COMMANDS.reject{ |a| a.eql?(:transfer)}.each do |action|
+        FILES_COMMANDS.reject { |a| a.eql?(:transfer) }.each do |action|
           define_action_method([:files, action]) do |**ctx|
             execute_nodegen4_command(action, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, **ctx)
           end
@@ -1269,8 +1269,8 @@ module Aspera
         def action_admin_application_membership_create(membership:, **)
           data = membership.dup
           app_type = data.delete('app_type')
-          Aspera.assert_type(app_type, String){'app_type'}
-          Aspera.assert_values(app_type.to_sym, APP_TYPES){'app_type'}
+          Aspera.assert_type(app_type, String) { 'app_type' }
+          Aspera.assert_values(app_type.to_sym, APP_TYPES) { 'app_type' }
           Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
         end
 
@@ -1343,7 +1343,7 @@ module Aspera
           end
           events = build_analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers", filter)['transfers']
           start_date_persistency&.save
-          events.each{ |tr_event| context.mailer.send_email_template(values: {ev: tr_event})} if !options.get_option(:notify_to).nil?
+          events.each { |tr_event| context.mailer.send_email_template(values: {ev: tr_event}) } if !options.get_option(:notify_to).nil?
           Result::ObjectList.new(events)
         end
 
@@ -1364,7 +1364,7 @@ module Aspera
 
         # Lookup methods for arguments:(:identifier) + lookup: on admin resources.
         # One method per non-singleton resource; each delegates to get_resource_id_from_args.
-        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+        ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
           define_method(:"lookup_aoc_#{res}_id") do |_field, value, **|
             aoc_api.lookup_with_q(aoc_res_path(res), value: value)['id']
           end
@@ -1379,7 +1379,7 @@ module Aspera
         end
 
         # admin > <res> > show
-        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+        ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
           define_action_method([:admin, res, :show]) do |**kwargs|
             res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
@@ -1395,7 +1395,7 @@ module Aspera
         end
 
         # admin > <res> > create
-        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton)}.each do |res|
+        ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
           define_action_method([:admin, res, :create]) do |data:, **|
             c = aoc_res_cfg(res)
             path = c[:path]
@@ -1410,7 +1410,7 @@ module Aspera
         end
 
         # admin > <res> > modify
-        ADMIN_OBJECTS.reject{ |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then{ |o| !o.include?(:modify)}}.each do |res|
+        ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then { |o| !o.include?(:modify) } }.each do |res|
           define_action_method([:admin, res, :modify]) do |data:, **kwargs|
             res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
@@ -1503,7 +1503,7 @@ module Aspera
 
         # admin > workspace > shared_folder > node|member — sf_id: already in ctx via arguments:(:identifier)
         def resolve_sf_item(shared_folders:, sf_id:, **)
-          sf_item = shared_folders.find{ |i| i['id'].eql?(sf_id)}
+          sf_item = shared_folders.find { |i| i['id'].eql?(sf_id) }
           Aspera.assert(sf_item, 'shared folder not found')
           {sf_item: sf_item}
         end
@@ -1558,7 +1558,7 @@ module Aspera
         # automation > workflows > action > * (TODO: not fully implemented)
         %i[list create show].each do |cmd|
           define_action_method([:automation, :workflows, :action, cmd]) do |wf_id:, **|
-            Log.log.warn{"Not implemented: #{cmd}"}
+            Log.log.warn { "Not implemented: #{cmd}" }
             step = @automation_api.create('steps', {'workflow_id' => wf_id})
             @automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
             action = @automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
@@ -1570,9 +1570,9 @@ module Aspera
         def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?){"unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}"}
+          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?) { "unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}" }
           server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace_info[:id])
           server.start
           return Result::Status.new('Gateway terminated')

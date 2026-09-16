@@ -92,7 +92,7 @@ module Aspera
           @preview_formats_to_generate.delete(skip) if skip
           @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
-          Log.log.debug{"tmpdir: #{@tmp_folder}"}
+          Log.log.debug { "tmpdir: #{@tmp_folder}" }
         end
 
         # Process legacy transfer events and trigger preview generation for completed downloads.
@@ -110,7 +110,7 @@ module Aspera
             events = @api_node.read('events', events_filter)
           rescue RestCallError => e
             if e.message.include?('Invalid iteration_token')
-              Log.log.warn{"Retrying without iteration token: #{e}"}
+              Log.log.warn { "Retrying without iteration token: #{e}" }
               events_filter.delete('iteration_token')
               retry
             end
@@ -131,7 +131,7 @@ module Aspera
             end
             # Periodically log progress and persist the latest processed event.
             next unless @periodic.trigger? || event.equal?(events.last)
-            Log.log.debug{"Processed event #{event['id']}"}
+            Log.log.debug { "Processed event #{event['id']}" }
             # Save a checkpoint to avoid replaying the full batch after a failure.
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
@@ -160,7 +160,7 @@ module Aspera
             if event.dig('data', 'type').eql?('file')
               file_entry = @api_node.read("files/#{event['data']['id']}") rescue nil
               if !file_entry.nil? &&
-                  @option_skip_folders.none?{ |d| file_entry['path'].start_with?(d)}
+                  @option_skip_folders.none? { |d| file_entry['path'].start_with?(d) }
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
                 Log.log.error('TODO'.red) if event['types'].include?('file.deleted')
                 generate_preview(file_entry) if event['types'].include?('file.deleted')
@@ -168,7 +168,7 @@ module Aspera
             end
             # Periodically log progress and persist the latest processed event.
             next unless @periodic.trigger? || event.equal?(events.last)
-            Log.log.debug{"Processing event #{event['id']}"}
+            Log.log.debug { "Processing event #{event['id']}" }
             # Save a checkpoint to avoid replaying the full batch after a failure.
             if !iteration_persistency.nil?
               iteration_persistency.data[0] = event['id'].to_s
@@ -206,7 +206,7 @@ module Aspera
           # Resolve to a real path and ensure it stays within the storage root (prevents path traversal via API response)
           candidate = File.expand_path(File.join(@local_storage_root, entry['path']))
           resolved_root = File.realpath(@local_storage_root)
-          Aspera.assert(candidate.start_with?("#{resolved_root}/")){'Preview entry path traversal attempt detected'}
+          Aspera.assert(candidate.start_with?("#{resolved_root}/")) { 'Preview entry path traversal attempt detected' }
           local_original_filepath = candidate
           original_mtime = File.mtime(local_original_filepath)
           # Output directory for previews generated from the local source file.
@@ -319,11 +319,11 @@ module Aspera
             #  download original file to temp folder
             do_transfer(Transfer::Spec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end
-          Log.log.debug{"source: #{entry['id']}: #{entry['path']}"}
+          Log.log.debug { "source: #{entry['id']}: #{entry['path']}" }
           gen_infos.each do |gen_info|
             gen_info[:generator].generate
           rescue => e
-            Log.log.error{"Ignoring: #{e.class} #{e.message}"}
+            Log.log.error { "Ignoring: #{e.class} #{e.message}" }
             Log.log.debug(e.backtrace.join("\n").red)
             # in case of any error, place a standard error image
             FileUtils.cp(gen_info[:generator].error_asset, gen_info[:dst])
@@ -338,7 +338,7 @@ module Aspera
           # force read file updated previews
           @api_node.read("files/#{entry['id']}") if @option_folder_reset_cache.eql?(:read)
         rescue StandardError => e
-          Log.log.error{"Ignore: #{e.message}"}
+          Log.log.error { "Ignore: #{e.message}" }
           Log.log.debug(e.backtrace.join("\n").red)
         end
 
@@ -350,20 +350,20 @@ module Aspera
             # canonical path: start with / and ends with /
             top_path = "/#{top_path.split('/').reject(&:empty?).join('/')}/"
           end
-          Log.log.debug{"scan: #{top_entry} : #{top_path}".green}
+          Log.log.debug { "scan: #{top_entry} : #{top_path}".green }
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
           until entries_to_process.empty?
             entry = entries_to_process.shift
             # process this entry only if it is within the top_path
             entry_path_with_slash = entry['path']
-            Log.log.debug{"processing entry #{entry_path_with_slash}"} if @periodic.trigger?
+            Log.log.debug { "processing entry #{entry_path_with_slash}" } if @periodic.trigger?
             entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
             if !top_path.nil? && !top_path.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(top_path)
-              Log.log.debug{"#{entry['path']} folder (skip start)".bg_red}
+              Log.log.debug { "#{entry['path']} folder (skip start)".bg_red }
               next
             end
-            Log.log.debug{"item:#{entry}"}
+            Log.log.debug { "item:#{entry}" }
             begin
               case entry['type']
               when 'file'
@@ -376,9 +376,9 @@ module Aspera
                 Log.log.debug('Ignoring link.')
               when 'folder'
                 if @option_skip_folders.include?(entry['path'])
-                  Log.log.debug{"#{entry['path']} folder (skip list)".bg_red}
+                  Log.log.debug { "#{entry['path']} folder (skip list)".bg_red }
                 else
-                  Log.log.debug{"#{entry['path']} folder".green}
+                  Log.log.debug { "#{entry['path']} folder".green }
                   # get folder content
                   folder_entries = @api_node.read_folder_content(entry['id'])
                   # process all items in current folder
@@ -390,10 +390,10 @@ module Aspera
                   end
                 end
               else
-                Log.log.warn{"unknown entry type: #{entry['type']}"}
+                Log.log.warn { "unknown entry type: #{entry['type']}" }
               end
             rescue StandardError => e
-              Log.log.warn{"An error occurred: #{e}, ignoring"}
+              Log.log.warn { "An error occurred: #{e}, ignoring" }
             end
           end
         end
@@ -425,12 +425,12 @@ module Aspera
           # TODO: check events is activated here:
           # note that docroot is good to look at as well
           node_info = @api_node.read('info')
-          Log.log.debug{"root: #{node_info['docroot']}"}
+          Log.log.debug { "root: #{node_info['docroot']}" }
           # Default storage url to local file if not provided
           option_root_url = options.get_option(:root_url, mandatory: true)
           option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.eql?(REMOTE_ACCESS) && @access_key_self['storage']['type'].eql?('local')
           @access_remote = !UriReader.file?(option_root_url)
-          Log.log.debug{"remote: #{@access_remote}"}
+          Log.log.debug { "remote: #{@access_remote}" }
           # TODO: can the `previews` folder parameter be read from Node API ?
           @option_skip_folders.push("/#{@option_previews_folder}")
           if @access_remote
@@ -441,16 +441,16 @@ module Aspera
           else
             @local_storage_root = UriReader.file_path(option_root_url)
             # TODO: Windows could have "C:" ?
-            Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
-            Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
+            Aspera.assert(@local_storage_root.start_with?('/')) { "not local storage: #{@local_storage_root}" }
+            Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error) { "Local storage root folder #{@local_storage_root} does not exist." }
             @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
-            Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error){"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name."}
+            Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error) { "Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." }
             # Protection to avoid clash of file id for two different access keys
             marker_file = File.join(@local_preview_folder, AK_MARKER_FILE)
-            Log.log.debug{"marker file: #{marker_file}"}
+            Log.log.debug { "marker file: #{marker_file}" }
             if File.exist?(marker_file)
               ak = File.read(marker_file).chomp
-              Aspera.assert(@access_key_self['id'].eql?(ak)){"mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}"}
+              Aspera.assert(@access_key_self['id'].eql?(ak)) { "mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}" }
             else
               File.write(marker_file, @access_key_self['id'])
             end
@@ -464,7 +464,7 @@ module Aspera
           check_tools_and_mimemagic
           apifid =
             if (selector = Parser.percent_selector(path))
-              Aspera.assert_values(selector[:field], ['id'], type: BadArgument){'file id'}
+              Aspera.assert_values(selector[:field], ['id'], type: BadArgument) { 'file id' }
               Api::NodeFileId.new(@api_node, selector[:value].to_s.empty? ? @access_key_self['root_file_id'] : selector[:value])
             else
               @api_node.resolve_api_fid(@access_key_self['root_file_id'], path)
@@ -526,7 +526,7 @@ module Aspera
 
         # Clean up the temporary folder after each command.
         def cleanup_tmp_folder
-          Log.log.debug{"cleaning up temp folder #{@tmp_folder}"}
+          Log.log.debug { "cleaning up temp folder #{@tmp_folder}" }
           FileUtils.rm_rf(@tmp_folder)
         end
 

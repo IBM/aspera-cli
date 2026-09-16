@@ -22,9 +22,9 @@ module Aspera
         @redirect_uri = redirect_uri
         @path_authorize = path_authorize
         uri = URI.parse(@redirect_uri)
-        Aspera.assert_values(uri.scheme, %w[http https]){'redirect_uri scheme must be http or https'}
+        Aspera.assert_values(uri.scheme, %w[http https]) { 'redirect_uri scheme must be http or https' }
         Aspera.assert(!uri.port.nil?, 'redirect_uri must have a port')
-        Aspera.assert(%w[127.0.0.1 ::1 localhost].include?(uri.host)){'redirect_uri host must be localhost or loopback address'}
+        Aspera.assert(%w[127.0.0.1 ::1 localhost].include?(uri.host)) { 'redirect_uri host must be localhost or loopback address' }
       end
 
       def create_token
@@ -35,14 +35,14 @@ module Aspera
           base_params.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state)
         )
         # here, we need a human to authorize on a web page
-        Log.log.debug{"login_page_url=#{login_page_url}"}
+        Log.log.debug { "login_page_url=#{login_page_url}" }
         # start a web server to receive request code
         web_server = WebAuth.new(@redirect_uri, self.class.additional_info)
         # start browser on login page
         Environment.instance.open_uri(login_page_url)
         # wait for code in request
         received_params = web_server.received_request
-        Aspera.assert(random_state.eql?(received_params['state'])){'wrong received state'}
+        Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }
         # exchange code for token
         return create_token_call(base_params(add_secret: true).merge(
           grant_type:   'authorization_code',

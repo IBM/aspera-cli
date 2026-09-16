@@ -84,7 +84,7 @@ namespace :binary do
     Paths::RELEASE.mkpath
     # Temp folders
     PATH_WORKDIR.rmtree
-    [TBK_PREFIX_DIRNAME, TBK_ROOT_DIRNAME].each{ |sub| (PATH_WORKDIR / sub).mkpath}
+    [TBK_PREFIX_DIRNAME, TBK_ROOT_DIRNAME].each { |sub| (PATH_WORKDIR / sub).mkpath }
     ENV['TMPDIR'] = PATH_WORKDIR.realpath.to_s
 
     log.info('Installing gems into staging area')
@@ -113,7 +113,7 @@ namespace :binary do
         [
           File.join(%x(brew --prefix flex).strip, 'bin'),
           File.join(%x(brew --prefix bison).strip, 'bin'),
-          ENV['PATH'].split(':').reject{ |p| p.include?('binutils')}
+          ENV['PATH'].split(':').reject { |p| p.include?('binutils') }
         ].join(':')
       run('gem', 'install', "tebako:#{TEBAKO_VERSION}")
     when Aspera::Environment::OS_LINUX

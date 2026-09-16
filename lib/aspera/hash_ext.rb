@@ -5,14 +5,14 @@ class ::Hash
   # @param second [Hash] Hash to merge into self
   # @return [Hash] New merged hash
   def deep_merge(second)
-    merge(second){ |_key, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.deep_merge(v2) : v2}
+    merge(second) { |_key, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.deep_merge(v2) : v2 }
   end
 
   # Recursively merge another hash in-place, with nested hashes merged deeply
   # @param second [Hash] Hash to merge into self
   # @return [Hash] self
   def deep_merge!(second)
-    merge!(second){ |_key, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.deep_merge!(v2) : v2}
+    merge!(second) { |_key, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.deep_merge!(v2) : v2 }
   end
 
   # Recursively iterate through hash and execute block on leaf values

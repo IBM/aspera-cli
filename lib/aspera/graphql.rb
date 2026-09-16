@@ -21,7 +21,7 @@ module Aspera
         query = load_query(name)
         response = rest.create(nil, {query: query, variables: variables})
         errors = response['errors']
-        raise RestCallError, errors.map{ |e| e['message']}.join("\n") if errors.is_a?(Array) && !errors.empty?
+        raise RestCallError, errors.map { |e| e['message'] }.join("\n") if errors.is_a?(Array) && !errors.empty?
         response['data']
       end
 
@@ -29,7 +29,7 @@ module Aspera
 
       def load_query(name)
         candidate = File.realpath(File.join(QUERIES_FOLDER, "#{name}.graphql"))
-        Aspera.assert(candidate.start_with?("#{QUERIES_FOLDER}/")){"Invalid GraphQL query name: #{name}"}
+        Aspera.assert(candidate.start_with?("#{QUERIES_FOLDER}/")) { "Invalid GraphQL query name: #{name}" }
         File.read(candidate)
       end
     end

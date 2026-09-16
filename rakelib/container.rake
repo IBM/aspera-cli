@@ -14,7 +14,7 @@ CONTAINER_TOOL = ENV['CONTAINER_TOOL'] || 'podman'
 
 # Extract optional gems
 def optional_gems
-  gems_in_group(Paths::GEMFILE, :optional).map{ |i| "'#{i}'"}.join(' ')
+  gems_in_group(Paths::GEMFILE, :optional).map { |i| "'#{i}'" }.join(' ')
 end
 
 # Template processing (Makefile PROCESS_TEMPLATE)

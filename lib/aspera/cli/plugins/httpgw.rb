@@ -48,7 +48,7 @@ module Aspera
         end)
 
         command :info, description: 'Show HTTP Gateway information',
-          action: ->{Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info)}
+          action: -> { Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info) }
 
         option :url, description: 'URL of application, e.g. https://app.example.com/aspera/app'
 

@@ -41,11 +41,11 @@ module Aspera
         command :cluster,    description: 'Display general ATS cluster information (public API, no auth)'
         command :access_key, description: 'Manage ATS access keys'
         command :api_key,    description: 'Manage credential to access ATS API', condition: :api_key_available?
-        command :aws_trust_policy, description: 'Show AWS trust policy', action: lambda{Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)}))}
+        command :aws_trust_policy, description: 'Show AWS trust policy', action: lambda { Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})) }
 
         commands_under(:cluster) do
-          command :clouds, description: 'List cloud providers', action: lambda{Result::ObjectList.new(@ats_api_open.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})}
-          command :list,   description: 'List ATS servers',     action: lambda{Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region])}
+          command :clouds, description: 'List cloud providers', action: lambda { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
+          command :list,   description: 'List ATS servers',     action: lambda { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
           command :show,   description: 'Show a specific server'
         end
 
@@ -58,7 +58,7 @@ module Aspera
           end)
           command :show,        description: 'Show an access key',
             arguments: [{name: :access_key_id, type: :identifier}],
-            action: ->(access_key_id:, **){Result::SingleObject.new(ats_api.read("access_keys/#{access_key_id}"))}
+            action: ->(access_key_id:, **) { Result::SingleObject.new(ats_api.read("access_keys/#{access_key_id}")) }
           command :modify,      description: 'Modify an access key',
             arguments: [{name: :access_key_id, type: :identifier}, {name: :params, type: Hash}]
           command :delete,      description: 'Delete an access key',
@@ -83,16 +83,16 @@ module Aspera
         commands_under(:api_key) do
           command(:instances, description: 'List ATS instances in IBM Cloud', action: lambda do
             instances = ats_api_v2_auth_ibm.read('instances')
-            Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
+            Log.log.warn { "more instances remaining: #{instances['remaining']}" } unless instances['remaining'].to_i.eql?(0)
             Result::ValueList.new(instances['data'], name: 'instance')
           end)
           command :create, description: 'Create an ATS API key',
             arguments: [{name: :params, type: Hash, mandatory: false, default: {}}],
-            action: ->(params:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params))}
-          command :list,   description: 'List ATS API keys', action: lambda{Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id')}
+            action: ->(params:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params)) }
+          command :list,   description: 'List ATS API keys', action: lambda { Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id') }
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
-            action: ->(api_key_id:, **){Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}"))}
+            action: ->(api_key_id:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}")) }
           command :delete, description: 'Delete an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}]
         end
@@ -149,7 +149,7 @@ module Aspera
             server_data = server_by_cloud_region
           else
             server_id = options.instance_identifier
-            server_data = @ats_api_open.all_servers.find{ |i| i['id'].eql?(server_id)}
+            server_data = @ats_api_open.all_servers.find { |i| i['id'].eql?(server_id) }
             raise BadIdentifier.new('server', server_id) if server_data.nil?
           end
           Result::SingleObject.new(server_data)
@@ -162,14 +162,14 @@ module Aspera
             server_data = server_by_cloud_region
             params['transfer_server_id'] = server_data['id']
           end
-          Log.log.debug{"using params: #{params}".bg_red.gray}
+          Log.log.debug { "using params: #{params}".bg_red.gray }
           if params.key?('storage')
             case params['storage']['type']
             # here we need somehow to map storage type to field to get for auth end point
             when 'ibm-s3'
               server_data2 = nil
               if server_data.nil?
-                server_data2 = @ats_api_open.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
+                server_data2 = @ats_api_open.all_servers.find { |s| s['id'].eql?(params['transfer_server_id']) }
                 raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
               else
                 server_data2 = @ats_api_open.all_servers.find do |s|
@@ -211,8 +211,8 @@ module Aspera
         # @return [Hash] context hash containing :ak_node_plugin and :ak_root_file_id
         def setup_ak_node(access_key_id:, **)
           ak_data = ats_api.read("access_keys/#{access_key_id}")
-          server_data = @ats_api_open.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
-          Aspera.assert(!server_data.nil?, type: Cli::Error){'no such server found'}
+          server_data = @ats_api_open.all_servers.find { |i| i['id'].start_with?(ak_data['transfer_server_id']) }
+          Aspera.assert(!server_data.nil?, type: Cli::Error) { 'no such server found' }
           node_url = server_data['transfer_setup_url']
           api_node = Api::Node.new(
             base_url: node_url,
@@ -241,7 +241,7 @@ module Aspera
 
         def action_api_key_instances
           instances = ats_api_v2_auth_ibm.read('instances')
-          Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
+          Log.log.warn { "more instances remaining: #{instances['remaining']}" } unless instances['remaining'].to_i.eql?(0)
           Result::ValueList.new(instances['data'], name: 'instance')
         end
 

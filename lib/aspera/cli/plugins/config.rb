@@ -68,7 +68,7 @@ module Aspera
           # @return [String] product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
-            Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
+            Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error) { "Home folder does not exist: #{user_home_folder}. Check your user environment." }
             return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
           end
 
@@ -100,7 +100,7 @@ module Aspera
           @sdk_default_location = false
           @option_cache_tokens = true
           # :no_default uses a &block callback - must stay imperative
-          options.declare(:no_default, description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N'){presets.use_plugin_defaults = false}
+          options.declare(:no_default, description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N') { presets.use_plugin_defaults = false }
           # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
           options.parse_options!
@@ -157,11 +157,11 @@ module Aspera
           ]
         command :pubkey, description: 'Display the public key of an RSA private key',
           arguments: [{name: :private_key_pem, type: String}],
-          action: ->(private_key_pem:, **){Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)}
+          action: ->(private_key_pem:, **) { Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s) }
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo, description: 'Display the value of a given argument',
           arguments: [{name: :value, type: nil}],
-          action: ->(value:, **){Result.auto(value)}
+          action: ->(value:, **) { Result.auto(value) }
         command :download, description: 'Download a file from a URL',
           arguments: [
             {name: :file_url,  type: String},
@@ -174,14 +174,14 @@ module Aspera
         command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
           arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
                       {name: :preset_name, mandatory: false, default: ''}]
-        command :coffee, description: 'Display a coffee image', action: ->{Result::Image.new(COFFEE_IMAGE_URL)}
+        command :coffee, description: 'Display a coffee image', action: -> { Result::Image.new(COFFEE_IMAGE_URL) }
         command :image, description: 'Display an image',
           arguments: [{name: :image_uri, type: nil}],
-          action: ->(image_uri:, **){Result::Image.new(image_uri)}
+          action: ->(image_uri:, **) { Result::Image.new(image_uri) }
         command :sync, description: 'Manage Aspera Sync operations'
         command :gem, description: 'Display gem information'
-        command :folder, description: 'Display the configuration folder path', action: ->{Result::Text.new(context.main_folder)}
-        command :file, description: 'Display the configuration file path', action: ->{Result::Text.new(context.presets.config_file)}
+        command :folder, description: 'Display the configuration folder path', action: -> { Result::Text.new(context.main_folder) }
+        command :file, description: 'Display the configuration file path', action: -> { Result::Text.new(context.presets.config_file) }
         command(
           :email_test, description: 'Send a test email',
           action: lambda do
@@ -189,25 +189,25 @@ module Aspera
             Result::Nothing.new
           end
         )
-        command :smtp_settings, description: 'Display the current SMTP settings', action: ->{Result::SingleObject.new(context.mailer.email_settings)}
+        command :smtp_settings, description: 'Display the current SMTP settings', action: -> { Result::SingleObject.new(context.mailer.email_settings) }
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [{name: :server_url, type: String}],
           action: lambda do |server_url:, **|
-            Aspera.assert(!context.pac_executor.nil?, type: Cli::BadArgument){'No PAC script configured, use --fpac'}
+            Aspera.assert(!context.pac_executor.nil?, type: Cli::BadArgument) { 'No PAC script configured, use --fpac' }
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
           end
         )
-        command :check_update, description: 'Check if a newer version of the gem is available', action: ->{Result::SingleObject.new(check_gem_version)}
+        command :check_update, description: 'Check if a newer version of the gem is available', action: -> { Result::SingleObject.new(check_gem_version) }
         command :initdemo, description: 'Initialize the demo server preset'
         command :vault, description: 'Manage secrets in the vault'
         commands_under :vault do
           command :info,     description: 'Display vault information',
-            action: ->(**){Result::SingleObject.new(vault.info)}
+            action: ->(**) { Result::SingleObject.new(vault.info) }
           command :ids,      description: 'List secret labels in the vault',
-            action: ->(**){Result::ObjectList.new(vault_required.ids)}
+            action: ->(**) { Result::ObjectList.new(vault_required.ids) }
           command :list,     description: 'List all secrets with full details',
-            action: ->(**){Result::ObjectList.new(vault_required.all)}
+            action: ->(**) { Result::ObjectList.new(vault_required.all) }
           command :show,     description: 'Show a secret by label (or id)',
             arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
           command :create,   description: 'Add a new secret to the vault',
@@ -223,7 +223,7 @@ module Aspera
         command :options, description: 'List all options available for a plugin',
           arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
-        command :platform, description: 'Display the current platform/architecture', action: ->{Result::Text.new(Environment.instance.architecture)}
+        command :platform, description: 'Display the current platform/architecture', action: -> { Result::Text.new(Environment.instance.architecture) }
         command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
@@ -322,14 +322,14 @@ module Aspera
           SyncActions.register_sync_admin_commands(self, :admin)
           command :translate, description: 'Translate async-style arguments to sync config format',
             arguments: [{name: :async_arguments, type: String, multiple: true}],
-            action: ->(async_arguments:, **){Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments))}
+            action: ->(async_arguments:, **) { Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments)) }
         end
 
         # gem sub-commands
         commands_under :gem do
-          command :path,    description: 'Display the gem source root path',    action: ->{Result::Text.new(self.class.gem_src_root)}
-          command :version, description: 'Display the gem version',             action: ->{Result::Text.new(Cli::VERSION)}
-          command :name,    description: 'Display the gem name',                action: ->{Result::Text.new(Info::GEM_NAME)}
+          command :path,    description: 'Display the gem source root path',    action: -> { Result::Text.new(self.class.gem_src_root) }
+          command :version, description: 'Display the gem version',             action: -> { Result::Text.new(Cli::VERSION) }
+          command :name,    description: 'Display the gem name',                action: -> { Result::Text.new(Info::GEM_NAME) }
         end
 
         # test sub-commands
@@ -354,8 +354,8 @@ module Aspera
 
         def option_plugin_folder=(value)
           value = [value] unless value.is_a?(Array)
-          Aspera.assert_array_all(value, String){'plugin folder(s)'}
-          value.each{ |f| Plugins::Factory.instance.add_lookup_folder(f)}
+          Aspera.assert_array_all(value, String) { 'plugin folder(s)' }
+          value.each { |f| Plugins::Factory.instance.add_lookup_folder(f) }
         end
 
         def option_plugin_folder
@@ -386,7 +386,7 @@ module Aspera
           when :toc, :local
             require 'aspera/markdown'
             local_doc = File.join(self.class.gem_src_root, '..', 'docs', 'README.md')
-            Aspera.assert(File.exist?(local_doc), type: Cli::Error){"Local documentation not found: #{local_doc}"}
+            Aspera.assert(File.exist?(local_doc), type: Cli::Error) { "Local documentation not found: #{local_doc}" }
             content = File.read(local_doc)
             if location == :toc
               entries = Markdown.toc(content)
@@ -395,7 +395,7 @@ module Aspera
             # :local
             if section
               text = Markdown.extract_section(content, section)
-              Aspera.assert(!text.nil?, type: Cli::Error){"Section not found: #{section}"}
+              Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{section}" }
               return Result::Text.new(text)
             end
             if Environment.instance.url_method.eql?(:graphical)
@@ -413,20 +413,20 @@ module Aspera
 
         def action_remote_certificate_chain(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
+          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
           Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
         end
 
         def action_remote_certificate_only(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
+          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
           Result::Text.new(remote_chain.first.to_pem)
         end
 
         def action_remote_certificate_name(remote_url:, **)
           remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first){"No certificate found for #{remote_url}"}
-          Result::Text.new(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
+          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+          Result::Text.new(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
         end
 
         def action_download(file_url:, file_dest: nil, **)
@@ -440,7 +440,7 @@ module Aspera
         def action_tokens_show(token_id:, **)
           require 'aspera/api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
-          Aspera.assert(!data.nil?, type: Cli::Error){'Unknown identifier'}
+          Aspera.assert(!data.nil?, type: Cli::Error) { 'Unknown identifier' }
           Result::SingleObject.new(data)
         end
 
@@ -495,9 +495,9 @@ module Aspera
         def action_initdemo
           cp = presets.config_presets
           if cp.key?(DEMO_PRESET)
-            Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
+            Log.log.warn { "Demo server preset already present: #{DEMO_PRESET}" }
           else
-            Log.log.info{"Creating Demo server preset: #{DEMO_PRESET}"}
+            Log.log.info { "Creating Demo server preset: #{DEMO_PRESET}" }
             cp[DEMO_PRESET] = {
               'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
               'username'                               => ASPERA,
@@ -506,12 +506,12 @@ module Aspera
           end
           cp[PresetManager::Key::DEFAULTS] ||= {}
           if cp[PresetManager::Key::DEFAULTS].key?(SERVER_COMMAND)
-            Log.log.warn{"Server default preset already set to: #{cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND]}"}
-            Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
+            Log.log.warn { "Server default preset already set to: #{cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND]}" }
+            Log.log.warn { "Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}" } unless
               DEMO_PRESET.eql?(cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND])
           else
             cp[PresetManager::Key::DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
-            Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
+            Log.log.info { "Setting server default preset to : #{DEMO_PRESET}" }
           end
           Result::Status.new('Done')
         end
@@ -520,7 +520,7 @@ module Aspera
           commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
-            reg.all_paths.reject{ |path| reg.children_of(path).any?}.map do |path|
+            reg.all_paths.reject { |path| reg.children_of(path).any? }.map do |path|
               spec = reg[path]
               # Build syntax by interleaving each path segment with the arguments declared on that node
               tokens = [name.to_s]
@@ -560,14 +560,14 @@ module Aspera
 
         def action_test_throw(exception_class_name:, exception_text:, **)
           type = Object.const_get(exception_class_name)
-          Aspera.assert(type <= Exception){"#{type} is not an exception: #{type.class}"}
+          Aspera.assert(type <= Exception) { "#{type} is not an exception: #{type.class}" }
           raise type, exception_text
         end
 
         def action_completion_bash(words: nil, **)
           if words.nil? || words.empty?
             # Level 0: propose plugin names
-            Plugins::Factory.instance.plugin_list.each{ |p| puts p}
+            Plugins::Factory.instance.plugin_list.each { |p| puts p }
           else
             plugin_sym = words.first.to_sym
             plugin_class = begin
@@ -577,7 +577,7 @@ module Aspera
             end
             # Navigate into the registry using remaining words as path
             path = words[1..].map(&:to_sym)
-            plugin_class.command_registry.children_of(path).each_key{ |k| puts k}
+            plugin_class.command_registry.children_of(path).each_key { |k| puts k }
           end
           Process.exit(0)
         end

@@ -47,8 +47,8 @@ module Aspera
 
       # @param context [Context] Application context
       def initialize(context)
-        Aspera.assert_type(context, Context){'context'}
-        Aspera.assert_type(context.options, Parser){'context.options'}
+        Aspera.assert_type(context, Context) { 'context' }
+        Aspera.assert_type(context.options, Parser) { 'context.options' }
         @context = context
         # Command line can override transfer spec
         @user_transfer_spec = {
@@ -117,13 +117,13 @@ module Aspera
         when :node
           if !agent_options.key?(:url)
             param_set_name = @context.presets.plugin_default_name(:node)
-            Aspera.assert(!param_set_name.nil?, type: Cli::BadArgument){"No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}"}
+            Aspera.assert(!param_set_name.nil?, type: Cli::BadArgument) { "No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}" }
             agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
           # by default do not display ascp native progress bar
           agent_options[:quiet] = true unless agent_options.key?(:quiet)
-          agent_options[:check_ignore_cb] = ->(host, port){@context.http_config.ignore_cert?(host, port)}
+          agent_options[:check_ignore_cb] = ->(host, port) { @context.http_config.ignore_cert?(host, port) }
           # JRuby
           agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
         when :httpgw
@@ -134,7 +134,7 @@ module Aspera
         end
         # get agent instance
         self.agent_instance = Agent::Factory.instance.create(agent_type, agent_options)
-        Log.log.debug{"transfer agent is a #{@agent.class}"}
+        Log.log.debug { "transfer agent is a #{@agent.class}" }
         return @agent
       end
 
@@ -165,7 +165,7 @@ module Aspera
 
       # @param httpgw_url_proc [Proc]
       def httpgw_url_cb=(httpgw_url_proc)
-        Aspera.assert_type(httpgw_url_proc, Proc){'httpgw_url_cb'}
+        Aspera.assert_type(httpgw_url_proc, Proc) { 'httpgw_url_cb' }
         @httpgw_url_lambda = httpgw_url_proc
       end
 
@@ -177,10 +177,10 @@ module Aspera
           case source_type
           when :list
             # when providing a list, just specify source
-            file_list.map{ |i| {'source' => i}}
+            file_list.map { |i| {'source' => i} }
           when :pair
-            Aspera.assert(file_list.length.even?, type: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
-            file_list.each_slice(2).map{ |s, d| {'source' => s, 'destination' => d}}
+            Aspera.assert(file_list.length.even?, type: Cli::BadArgument) { "When using pair, provide an even number of paths: #{file_list.length}" }
+            file_list.each_slice(2).map { |s, d| {'source' => s, 'destination' => d} }
           else Aspera.error_unexpected_value(source_type)
           end
       end
@@ -212,14 +212,14 @@ module Aspera
             special_case_direct_with_list =
               (@transfer_options['agent'] || :direct).to_sym.eql?(:direct) &&
               Transfer::Parameters.ascp_args_file_list?(@transfer_options['ascp_args'])
-            Aspera.assert(!@transfer_paths.nil? || special_case_direct_with_list, type: Cli::BadArgument){'transfer spec on command line must have sources'}
+            Aspera.assert(!@transfer_paths.nil? || special_case_direct_with_list, type: Cli::BadArgument) { 'transfer spec on command line must have sources' }
             # can be nil
             @transfer_paths
           when Array
             Log.log.debug('getting file list as extended value')
-            Aspera.assert_array_all(sources, String, type: Cli::BadArgument){'sources must be a Array of String'}
+            Aspera.assert_array_all(sources, String, type: Cli::BadArgument) { 'sources must be a Array of String' }
             list_to_paths(sources)
-          else Aspera.error_unexpected_value(sources){'sources'}
+          else Aspera.error_unexpected_value(sources) { 'sources' }
           end
         Log.dump(:paths, @transfer_paths)
         return @transfer_paths
@@ -230,7 +230,7 @@ module Aspera
       # @param rest_token    [Rest, nil] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
-        Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}
+        Aspera.assert_type(transfer_spec, Hash) { 'transfer_spec' }
         raise "Wrong remote host: #{CP4I_REMOTE_HOST_LB}" if transfer_spec['remote_host'].eql?(CP4I_REMOTE_HOST_LB)
         # process :src option
         case transfer_spec['direction']
@@ -258,7 +258,7 @@ module Aspera
         # resolve pseudo-parameter: target_rate -> target_rate_kbps (overrides target_rate_kbps if both are present)
         transfer_spec['target_rate_kbps'] = Transfer::Spec.rate_string_to_kbps(transfer_spec.delete('target_rate')) if transfer_spec.key?('target_rate')
         # recursively remove values that are nil (user wants to delete)
-        transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
+        transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil? }
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
         transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # create transfer agent
@@ -303,7 +303,7 @@ module Aspera
             'ended_at'          => nil,
             'error'             => nil
           })
-          Log.log.info{"Async transfer started: job_id=#{job_id}, agent=#{agent_type}"}
+          Log.log.info { "Async transfer started: job_id=#{job_id}, agent=#{agent_type}" }
           return Transfer::Result.async(job_id: job_id)
         end
         # --- synchronous mode (default) ---
@@ -321,8 +321,6 @@ module Aspera
       def async_store
         @async_store ||= AsyncTransferStore.new(@context.persistency)
       end
-
-      private
     end
   end
 end

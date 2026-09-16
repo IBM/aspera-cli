@@ -16,17 +16,17 @@ module Aspera
       @parameters = parameters.symbolize_keys
       Log.dump(:post_proc_parameters, @parameters)
       not_allowed = @parameters.keys - ALLOWED_PARAMETERS
-      Aspera.assert(not_allowed.empty?){"unsupported parameters: #{not_allowed.join(', ')}"}
+      Aspera.assert(not_allowed.empty?) { "unsupported parameters: #{not_allowed.join(', ')}" }
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
       super(server)
-      Log.log.debug{'Faspex4PostProcServlet initialized'}
+      Log.log.debug { 'Faspex4PostProcServlet initialized' }
     end
 
     # :reek:UncommunicativeMethodName
     def do_POST(request, response)
-      Log.log.debug{"request=#{request.path}"}
+      Log.log.debug { "request=#{request.path}" }
       Log.dump(:query, request.query)
       begin
         # Only accept requests on the root
@@ -44,14 +44,14 @@ module Aspera
         end
         # build script path by removing domain and adding script folder
         script_file = request.path[@parameters[:root].size..]
-        Log.log.debug{"script file=#{script_file}"}
+        Log.log.debug { "script file=#{script_file}" }
         script_path = File.join(@parameters[:script_folder], script_file)
         # Resolve the real path and ensure it stays within script_folder (prevents path traversal)
         resolved_script_folder = File.realpath(@parameters[:script_folder])
         resolved_script_path = File.realpath(script_path)
-        Aspera.assert(resolved_script_path.start_with?("#{resolved_script_folder}/")){'Script path traversal attempt detected'}
+        Aspera.assert(resolved_script_path.start_with?("#{resolved_script_folder}/")) { 'Script path traversal attempt detected' }
         script_path = resolved_script_path
-        Log.log.debug{"script=#{script_path}"}
+        Log.log.debug { "script=#{script_path}" }
         webhook_parameters = JSON.parse(request.body)
         Log.dump(:webhook_parameters, webhook_parameters)
         process_status = nil
@@ -60,7 +60,7 @@ module Aspera
           Environment.secure_eval(File.read(script_path), __FILE__, __LINE__).call(webhook_parameters)
         else
           # env expects only strings
-          environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
+          environment = webhook_parameters.each_with_object({}) { |(k, v), h| h[k] = v.to_s }
           post_proc_pid = Environment.secure_execute(script_path, mode: :background, env: environment)
           Timeout.timeout(@parameters[:timeout_seconds]) do
             # "wait" for process to avoid zombie
@@ -68,12 +68,12 @@ module Aspera
             post_proc_pid = nil
           end
           process_status = $CHILD_STATUS
-          Aspera.assert(process_status.success? || !@parameters[:fail_on_error]){"script #{script_path} failed with code #{process_status.exitstatus}"}
+          Aspera.assert(process_status.success? || !@parameters[:fail_on_error]) { "script #{script_path} failed with code #{process_status.exitstatus}" }
         end
         response.status = 200
         response.content_type = Mime::JSON
         response.body = JSON.generate({status: 'success', script: script_path, exit_code: process_status&.exitstatus})
-        Log.log.debug{'Script executed successfully'}
+        Log.log.debug { 'Script executed successfully' }
       rescue => e
         Log.log.error("Script failed: #{e.class}:#{e.message}")
         if !post_proc_pid.nil?

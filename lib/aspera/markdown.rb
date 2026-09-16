@@ -80,12 +80,12 @@ module Aspera
       def table(table)
         # get max width of each columns
         col_widths = table.transpose.map do |col|
-          [col.flat_map{ |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size)}.max, COL_WIDTH].min
+          [col.flat_map { |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size) }.max, COL_WIDTH].min
         end
         headings = table.shift
-        table.unshift(col_widths.map{ |col_width| '-' * col_width})
+        table.unshift(col_widths.map { |col_width| '-' * col_width })
         table.unshift(headings)
-        lines = table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|')}.join(' | ')} |\n"}
+        lines = table.map { |line| "| #{line.map { |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|') }.join(' | ')} |\n" }
         lines[1] = lines[1].tr(' ', '-')
         return lines.join.chomp
       end
@@ -94,7 +94,7 @@ module Aspera
       # @param items [Array<String>] list of items
       # @return [String] markdown unordered list
       def list(items)
-        items.map{ |i| "- #{i}"}.join("\n")
+        items.map { |i| "- #{i}" }.join("\n")
       end
 
       # Generate a markdown heading
@@ -110,7 +110,7 @@ module Aspera
       # @param type [String] admonition type: NOTE, CAUTION, WARNING, IMPORTANT, TIP, INFO
       # @return [String] markdown admonition block
       def admonition(lines, type: 'INFO')
-        "> [!#{type}]\n#{lines.map{ |l| "> #{l}"}.join("\n")}\n\n"
+        "> [!#{type}]\n#{lines.map { |l| "> #{l}" }.join("\n")}\n\n"
       end
 
       # Generate a fenced code block

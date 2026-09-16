@@ -44,14 +44,14 @@ module Aspera
               uri = URI.parse(url)
               Aspera.assert(uri.scheme.eql?('https'), 'only https')
               options[:protocol] = 'htps' # cspell: disable-line
-              Aspera.assert(!uri.host.nil?, type: Error){'host required in URL'}
+              Aspera.assert(!uri.host.nil?, type: Error) { 'host required in URL' }
               options[:server] = uri.host
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
             command_args = [SECURITY_UTILITY, command]
             options&.each do |k, v|
-              Aspera.assert(supported.key?(k)){"unknown option: #{k}"}
+              Aspera.assert(supported.key?(k)) { "unknown option: #{k}" }
               next if v.nil?
               command_args.push("-#{supported[k]}")
               command_args.push(v.shellescape) unless v.empty?
@@ -61,7 +61,7 @@ module Aspera
           end
 
           def key_chains(output)
-            output.split("\n").collect{ |line| new(line.strip.gsub(/^"|"$/, ''))}
+            output.split("\n").collect { |line| new(line.strip.gsub(/^"|"$/, '')) }
           end
 
           def default
@@ -73,12 +73,12 @@ module Aspera
           end
 
           def list(options = {})
-            Aspera.assert_values(options[:domain], DOMAINS, type: ParameterError){'domain'} unless options[:domain].nil?
+            Aspera.assert_values(options[:domain], DOMAINS, type: ParameterError) { 'domain' } unless options[:domain].nil?
             key_chains(execute('list-keychains', options, LIST_OPTIONS))
           end
 
           def by_name(name)
-            list.find{ |kc| kc.path.end_with?("/#{name}.keychain-db")}
+            list.find { |kc| kc.path.end_with?("/#{name}.keychain-db") }
           end
         end
         attr_reader :path
@@ -92,11 +92,11 @@ module Aspera
         end
 
         def password(operation, pass_type, options)
-          Aspera.assert_values(operation, %i[add find delete]){'operation'}
-          Aspera.assert_values(pass_type, %i[generic internet]){'pass_type'}
+          Aspera.assert_values(operation, %i[add find delete]) { 'operation' }
+          Aspera.assert_values(pass_type, %i[generic internet]) { 'pass_type' }
           Aspera.assert_type(options, Hash)
           missing = (operation.eql?(:add) ? %i[account service password] : %i[label]) - options.keys
-          Aspera.assert(missing.empty?){"missing options: #{missing}"}
+          Aspera.assert(missing.empty?) { "missing options: #{missing}" }
           options[:getpass] = '' if operation.eql?(:find)
           output = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path)
           raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
@@ -128,7 +128,7 @@ module Aspera
         super()
         @keychain_name = name.nil? ? 'default keychain' : name
         @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
-        Aspera.assert(!@keychain.nil?){"no such keychain #{name}"}
+        Aspera.assert(!@keychain.nil?) { "no such keychain #{name}" }
       end
 
       def info

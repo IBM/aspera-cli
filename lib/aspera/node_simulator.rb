@@ -10,7 +10,7 @@ require 'json'
 module Aspera
   class NodeSimulator
     def initialize
-      @agent = Agent::Direct.new(management_cb: ->(event){process_event(event)})
+      @agent = Agent::Direct.new(management_cb: ->(event) { process_event(event) })
       @sessions = {}
     end
 
@@ -19,7 +19,7 @@ module Aspera
     end
 
     def all_sessions
-      @agent.sessions.map{ |session| session[:job_id]}.uniq.each.map{ |job_id| job_to_transfer(job_id)}
+      @agent.sessions.map { |session| session[:job_id] }.uniq.each.map { |job_id| job_to_transfer(job_id) }
     end
 
     # status: ('waiting', 'partially_completed', 'unknown', 'waiting(read error)',] 'running', 'completed', 'failed'
@@ -131,27 +131,27 @@ module Aspera
     def process_event(event)
       # Code duplicated on purpose, as implementation goes, blocks will be replaced
       case event['Type']
-      when 'NOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'NOP' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
       # rubocop:disable Lint/DuplicateBranch
-      when 'START' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'QUERY' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'QUERYRSP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'STATS' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'STOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'ERROR' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'CANCEL' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'DONE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'RATE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'FILEERROR' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'SESSION' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'NOTIFICATION' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'INIT' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'VLINK' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'PUT' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'WRITE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'CLOSE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'SKIP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
-      when 'ARGSTOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'START' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'QUERY' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'QUERYRSP' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'STATS' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'STOP' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'ERROR' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'CANCEL' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'DONE' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'RATE' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'FILEERROR' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'SESSION' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'NOTIFICATION' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'INIT' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'VLINK' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'PUT' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'WRITE' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'CLOSE' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'SKIP' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
+      when 'ARGSTOP' then Aspera.Log.debug { "event not managed: #{event['Type']}" }
       # rubocop:enable Lint/DuplicateBranch
       else Aspera.error_unreachable_line
       end
@@ -180,8 +180,8 @@ module Aspera
     def folder_to_structure(folder_path)
       # Resolve and confine to browse_root (prevents path traversal via client-supplied path)
       resolved = File.realpath(folder_path)
-      Aspera.assert(resolved.start_with?("#{@browse_root}/") || resolved.eql?(@browse_root)){'Browse path traversal attempt detected'}
-      Aspera.assert(Dir.exist?(resolved)){"Path does not exist or is not a directory: #{resolved}"}
+      Aspera.assert(resolved.start_with?("#{@browse_root}/") || resolved.eql?(@browse_root)) { 'Browse path traversal attempt detected' }
+      Aspera.assert(Dir.exist?(resolved)) { "Path does not exist or is not a directory: #{resolved}" }
       folder_path = resolved
 
       # Build self structure
@@ -338,7 +338,7 @@ module Aspera
       response.status = code
       response['Content-Type'] = Mime::JSON
       response.body = json.to_json
-      Log.log.trace1{Log.obj_dump("response for #{request.request_method} #{request.path}", json)}
+      Log.log.trace1 { Log.obj_dump("response for #{request.request_method} #{request.path}", json) }
     end
   end
 end

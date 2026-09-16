@@ -27,7 +27,7 @@ module Aspera
 
       def initialize(file:, password:)
         super()
-        Aspera.assert_type(file, String){'path to vault file'}
+        Aspera.assert_type(file, String) { 'path to vault file' }
         @path = file
         @all_secrets = {}
         @cipher_name = DEFAULT_CIPHER_NAME
@@ -65,7 +65,7 @@ module Aspera
         @all_secrets.each do |label, values|
           normal = values.symbolize_keys
           normal[:label] = label
-          CONTENT_KEYS.each{ |k| normal[k] = '' unless normal.key?(k)}
+          CONTENT_KEYS.each { |k| normal[k] = '' unless normal.key?(k) }
           result.push(normal)
         end
         return result
@@ -76,13 +76,13 @@ module Aspera
       def set(options)
         validate_set(options)
         label = options.delete(:label)
-        Aspera.assert(!@all_secrets.key?(label)){"secret #{label} already exist, delete first"}
+        Aspera.assert(!@all_secrets.key?(label)) { "secret #{label} already exist, delete first" }
         @all_secrets[label] = options.symbolize_keys
         save
       end
 
       def get(label:, exception: true)
-        Aspera.assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
+        Aspera.assert(@all_secrets.key?(label)) { "Label not found: #{label}" } if exception
         result = @all_secrets[label].clone
         result[:label] = label if result.is_a?(Hash)
         return result

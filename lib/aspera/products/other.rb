@@ -63,9 +63,9 @@ module Aspera
           found = scan_locations.select do |item|
             product_names.push(item[:expected]) unless product_names.include?(item[:expected])
             # skip if not main folder
-            Log.log.trace1{"Checking #{item[:app_root]}"}
+            Log.log.trace1 { "Checking #{item[:app_root]}" }
             next false unless Dir.exist?(item[:app_root])
-            Log.log.debug{"Found #{item[:expected]}"}
+            Log.log.debug { "Found #{item[:expected]}" }
             sub_bin = item[:sub_bin] || 'bin'
             item[:ascp_path] = File.join(item[:app_root], sub_bin, Environment.instance.exe_file('ascp'))
             # skip if no ascp

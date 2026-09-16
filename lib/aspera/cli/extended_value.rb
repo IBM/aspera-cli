@@ -68,7 +68,7 @@ module Aspera
         # @param value [String] The value as parameter
         # @param ext_type [Symbol] The method of extended value
         def assert_no_value(value, ext_type)
-          Aspera.assert(value.empty?, type: BadArgument){"no value allowed for extended value type: #{ext_type}"}
+          Aspera.assert(value.empty?, type: BadArgument) { "no value allowed for extended value type: #{ext_type}" }
         end
 
         def read_stdin(mode)
@@ -89,25 +89,25 @@ module Aspera
         # e.g. `preset` is reader in config plugin
         # @type [Hash{Symbol => Proc}]
         @handlers = {
-          val:    lambda{ |i| i},
-          base64: lambda{ |i| Base64.decode64(i)},
-          csvt:   lambda{ |i| ExtendedValue.decode_csvt(i)},
-          env:    lambda{ |i| ENV.fetch(i, nil)},
-          file:   lambda{ |i| File.read(File.expand_path(i))},
-          uri:    lambda{ |i| UriReader.read(i)},
-          json:   lambda{ |i| ExtendedValue.JSON_parse(i)},
-          lines:  lambda{ |i| i.split("\n")},
-          list:   lambda{ |i| i[1..].split(i[0])},
-          none:   lambda{ |i| ExtendedValue.assert_no_value(i, :none); nil}, # rubocop:disable Style/Semicolon
-          path:   lambda{ |i| File.expand_path(i)},
-          re:     lambda{ |i| Regexp.new(i, Regexp::MULTILINE)},
-          ruby:   lambda{ |i| Environment.secure_eval(i, __FILE__, __LINE__)},
+          val:    lambda { |i| i },
+          base64: lambda { |i| Base64.decode64(i) },
+          csvt:   lambda { |i| ExtendedValue.decode_csvt(i) },
+          env:    lambda { |i| ENV.fetch(i, nil) },
+          file:   lambda { |i| File.read(File.expand_path(i)) },
+          uri:    lambda { |i| UriReader.read(i) },
+          json:   lambda { |i| ExtendedValue.JSON_parse(i) },
+          lines:  lambda { |i| i.split("\n") },
+          list:   lambda { |i| i[1..].split(i[0]) },
+          none:   lambda { |i| ExtendedValue.assert_no_value(i, :none); nil }, # rubocop:disable Style/Semicolon
+          path:   lambda { |i| File.expand_path(i) },
+          re:     lambda { |i| Regexp.new(i, Regexp::MULTILINE) },
+          ruby:   lambda { |i| Environment.secure_eval(i, __FILE__, __LINE__) },
           s:      lambda(&:to_s),
-          secret: lambda{ |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
-          stdin:  lambda{ |i| ExtendedValue.read_stdin(i)},
-          yaml:   lambda{ |i| YAML.safe_load(i)},
-          zlib:   lambda{ |i| Zlib::Inflate.inflate(i)},
-          extend: lambda{ |i| ExtendedValue.instance.evaluate_extend(i)}
+          secret: lambda { |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ") }, # rubocop:disable Style/Semicolon
+          stdin:  lambda { |i| ExtendedValue.read_stdin(i) },
+          yaml:   lambda { |i| YAML.safe_load(i) },
+          zlib:   lambda { |i| Zlib::Inflate.inflate(i) },
+          extend: lambda { |i| ExtendedValue.instance.evaluate_extend(i) }
         }
         @regex_single = nil
         @regex_extend = nil
@@ -127,7 +127,7 @@ module Aspera
       attr_reader :default_decoder
 
       def default_decoder=(value)
-        Log.log.debug{"Setting default decoder to (#{value.class}) #{value}"}
+        Log.log.debug { "Setting default decoder to (#{value.class}) #{value}" }
         Aspera.assert_values(value, DEFAULT_DECODERS)
         value = nil if value.eql?(:none)
         @default_decoder = value
@@ -138,9 +138,9 @@ module Aspera
 
       # Add a new handler
       def on(name, &block)
-        Aspera.assert_type(name, Symbol){'name'}
-        Aspera.assert(block){"block required when registering handler for #{name}"}
-        Log.log.debug{"Setting handler for #{name}"}
+        Aspera.assert_type(name, Symbol) { 'name' }
+        Aspera.assert(block) { "block required when registering handler for #{name}" }
+        Log.log.debug { "Setting handler for #{name}" }
         @handlers[name] = block
         update_regex
       end
@@ -156,7 +156,7 @@ module Aspera
         return value unless value.is_a?(String)
         Aspera.assert_array_all(allowed, Class) unless allowed.nil?
         # use default decoder if not an extended value and expect complex types
-        using_default_decoder = allowed&.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)} && !@regex_single.match?(value) && !@default_decoder.nil?
+        using_default_decoder = allowed&.all? { |t| DEFAULT_PARSER_TYPES.include?(t) } && !@regex_single.match?(value) && !@default_decoder.nil?
         value = [MARKER_START, @default_decoder, MARKER_END, value].join if using_default_decoder
         # First determine decoders, in reversed order
         handlers_reversed = []
@@ -166,7 +166,7 @@ module Aspera
           value = m[2]
           break if SPECIAL_HANDLERS.include?(handler)
         end
-        Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value.class}:#{value}"}
+        Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{value}" }
         handlers_reversed.each do |handler|
           value = @handlers[handler].call(value)
         rescue => e
@@ -180,7 +180,7 @@ module Aspera
       def evaluate_extend(value)
         while (m = value.match(@regex_extend))
           sub_value = "@#{m[2]}:#{m[3]}"
-          Log.log.debug{"evaluating #{sub_value}"}
+          Log.log.debug { "evaluating #{sub_value}" }
           value = "#{m[1]}#{evaluate(sub_value, context: 'composite extended value')}#{m[4]}"
         end
         return value

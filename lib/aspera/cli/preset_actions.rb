@@ -34,7 +34,7 @@ module Aspera
         url = options.get_option(:url, mandatory: true)
         user = options.get_option(:username, mandatory: true)
         result = presets.lookup_preset(url: url, username: user)
-        Aspera.assert(!result.nil?, type: Error){'no such config found'}
+        Aspera.assert(!result.nil?, type: Error) { 'no such config found' }
         Result::SingleObject.new(result)
       end
 
@@ -61,7 +61,7 @@ module Aspera
       # @param preset_name [String] name used as base for the vault label
       # @param option_name [String] option key to inspect
       def secure_preset_option(preset, preset_name, option_name)
-        return unless SECRET_KEYWORDS.any?{ |kw| option_name.end_with?(kw)}
+        return unless SECRET_KEYWORDS.any? { |kw| option_name.end_with?(kw) }
         # Never auto-secure the global preset: it holds vault credentials themselves
         return if preset_name.eql?(presets.global_default_preset)
         return if vault.nil?
@@ -74,7 +74,7 @@ module Aspera
           vault_label = "#{preset_name}#{incr}"
           incr += 1
         end
-        Log.log.info{"Securing #{preset_name}.#{option_name} -> vault label: #{vault_label}"}
+        Log.log.info { "Securing #{preset_name}.#{option_name} -> vault label: #{vault_label}" }
         vault.set({label: vault_label, password: value})
         preset[option_name] = "@vault:#{vault_label}.password"
       end
@@ -127,7 +127,7 @@ module Aspera
       def action_preset_initialize(name:, config_value:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         cp = presets.config_presets
-        Log.log.warn{"configuration already exists: #{name}, overwriting"} if cp.key?(name)
+        Log.log.warn { "configuration already exists: #{name}, overwriting" } if cp.key?(name)
         cp[name] = config_value
         Result::Status.new("Modified: #{@option_config_file}")
       end
@@ -139,7 +139,7 @@ module Aspera
         cp = presets.config_presets
         cp[name] ||= {}
         cp[name].merge!(unprocessed_options)
-        unprocessed_options.each_key{ |k| secure_preset_option(cp[name], name, k)}
+        unprocessed_options.each_key { |k| secure_preset_option(cp[name], name, k) }
         Result::Status.new("Updated: #{name}")
       end
 

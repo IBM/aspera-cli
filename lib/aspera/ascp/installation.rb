@@ -47,7 +47,7 @@ module Aspera
       def sdk_locations
         location_url = @transferd_urls
         transferd_locations = UriReader.read(location_url)
-        Log.log.debug{"Retrieving SDK locations from #{location_url}"}
+        Log.log.debug { "Retrieving SDK locations from #{location_url}" }
         begin
           return Yaml.safe_load(transferd_locations)
         rescue Psych::SyntaxError
@@ -61,23 +61,23 @@ module Aspera
       # - "product:PRODUCT_NAME" to use ascp from named product
       # - "product:FIRST" to use ascp from first found product
       def sdk_folder=(ascp_location)
-        Aspera.assert_type(ascp_location, String){'ascp_location'}
+        Aspera.assert_type(ascp_location, String) { 'ascp_location' }
         Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file')
         folder =
           if ascp_location.start_with?(USE_PRODUCT_PREFIX)
             product_name = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
             if product_name.eql?(FIRST_FOUND)
               pl = installed_products.first
-              Aspera.assert(!pl.nil?){"No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install"}
+              Aspera.assert(!pl.nil?) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install" }
             else
-              pl = installed_products.find{ |i| i[:name].eql?(product_name)}
-              Aspera.assert(!pl.nil?){"No such product installed: #{product_name}"}
+              pl = installed_products.find { |i| i[:name].eql?(product_name) }
+              Aspera.assert(!pl.nil?) { "No such product installed: #{product_name}" }
             end
             File.dirname(pl[:ascp_path])
           else
             ascp_location.include?('/ascp') ? File.dirname(ascp_location) : ascp_location
           end
-        Log.log.debug{"ascp_folder=#{folder}"}
+        Log.log.debug { "ascp_folder=#{folder}" }
         Products::Transferd.sdk_directory = folder
         nil
       end
@@ -119,11 +119,11 @@ module Aspera
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = file_type.to_s[-3..].to_sym
-          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem"){DataRepository.instance.item(type)}
+          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem") { DataRepository.instance.item(type) }
         when :aspera_license
-          file = check_or_create_sdk_file('aspera-license'){DataRepository.instance.item(:license)}
+          file = check_or_create_sdk_file('aspera-license') { DataRepository.instance.item(:license) }
         when :aspera_conf
-          file = check_or_create_sdk_file('aspera.conf'){DEFAULT_ASPERA_CONF}
+          file = check_or_create_sdk_file('aspera.conf') { DEFAULT_ASPERA_CONF }
         when :fallback_certificate, :fallback_private_key
           file_key = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert_private_key.pem')
           file_cert = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert.pem')
@@ -132,14 +132,14 @@ module Aspera
             # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(4096)
             cert = WebServerSimple.self_signed_cert(private_key)
-            check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true){private_key.to_pem}
-            check_or_create_sdk_file('aspera_fallback_cert.pem', force: true){cert.to_pem}
+            check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true) { private_key.to_pem }
+            check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) { cert.to_pem }
           end
           file = file_type.eql?(:fallback_certificate) ? file_cert : file_key
         else Aspera.error_unexpected_value(file_type)
         end
         return unless file_is_required || File.exist?(file)
-        Aspera.assert(File.exist?(file), type: Errno::ENOENT){"#{file_type} not found (#{file})"}
+        Aspera.assert(File.exist?(file), type: Errno::ENOENT) { "#{file_type} not found (#{file})" }
         return file
       end
 
@@ -156,7 +156,7 @@ module Aspera
         Aspera.assert_values(types, CLIENT_SSH_KEY_OPTIONS)
         return case types
                when :dsa_rsa, :rsa
-                 types.to_s.split('_').map{ |i| Installation.instance.path("ssh_private_#{i}".to_sym)}
+                 types.to_s.split('_').map { |i| Installation.instance.path("ssh_private_#{i}".to_sym) }
                when :per_client
                  Aspera.error_not_implemented
                end
@@ -238,11 +238,11 @@ module Aspera
       def sdk_url_for_platform(platform: nil, version: nil)
         all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
-        locations = all_locations.select{ |l| l['platform'].eql?(platform)}
-        Aspera.assert(!locations.empty?){"No SDK for platform: #{platform}, available: #{all_locations.map{ |i| i['platform']}.uniq}"}
-        version = locations.max_by{ |entry| Gem::Version.new(entry['version'])}['version'] if version.nil?
-        info = locations.select{ |entry| entry['version'].eql?(version)}
-        Aspera.assert(!info.empty?){"No such version: #{version} for #{platform}"}
+        locations = all_locations.select { |l| l['platform'].eql?(platform) }
+        Aspera.assert(!locations.empty?) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
+        version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
+        info = locations.select { |entry| entry['version'].eql?(version) }
+        Aspera.assert(!info.empty?) { "No such version: #{version} for #{platform}" }
         return info.first['url']
       end
 
@@ -314,7 +314,7 @@ module Aspera
             yield(entry_name)
           else
             # default files to extract directly to main folder if in selected source folders
-            Products::Transferd::RUNTIME_FOLDERS.any?{ |i| entry_name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
+            Products::Transferd::RUNTIME_FOLDERS.any? { |i| entry_name.match?(%r{^[^/]*/#{i}/}) } ? '/' : nil
           end
           next if dest_folder.nil?
           dest_folder = File.join(folder, dest_folder)
@@ -327,7 +327,7 @@ module Aspera
           # Security: Detect basename collisions that could overwrite symlinks
           file_basename = File.basename(dest_file)
           if extracted_files.key?(file_basename)
-            Log.log.warn{"Rejecting file with duplicate basename: #{entry_name} (basename: #{file_basename}, previous: #{extracted_files[file_basename]})"}
+            Log.log.warn { "Rejecting file with duplicate basename: #{entry_name} (basename: #{file_basename}, previous: #{extracted_files[file_basename]})" }
             next
           end
           extracted_files[file_basename] = entry_name
@@ -335,7 +335,7 @@ module Aspera
           if link_target.nil?
             # Security: Check if destination already exists
             if File.exist?(dest_file)
-              Log.log.warn{"Rejecting write to existing file or link: #{dest_file}"}
+              Log.log.warn { "Rejecting write to existing file or link: #{dest_file}" }
               next
             end
             # Security: Verify the resolved path stays within installation boundary
@@ -345,17 +345,17 @@ module Aspera
               # Check where the file would resolve to (handles existing symlinks in path)
               resolved_dest = File.realpath(File.dirname(dest_file))
               unless resolved_dest.start_with?(install_boundary)
-                Log.log.warn{"Rejecting file outside installation directory: #{dest_file} resolves to #{resolved_dest}"}
+                Log.log.warn { "Rejecting file outside installation directory: #{dest_file} resolves to #{resolved_dest}" }
                 next
               end
             rescue Errno::ENOENT
               # Directory doesn't exist yet, verify the intended path
               unless dest_file.start_with?(folder)
-                Log.log.warn{"Rejecting file with path outside installation directory: #{dest_file}"}
+                Log.log.warn { "Rejecting file with path outside installation directory: #{dest_file}" }
                 next
               end
             end
-            File.open(dest_file, 'wb'){ |output_stream| IO.copy_stream(entry_stream, output_stream)}
+            File.open(dest_file, 'wb') { |output_stream| IO.copy_stream(entry_stream, output_stream) }
           else
             # Security: Validate symlink target stays within installation boundary
             # Resolve the symlink target relative to its location
@@ -369,7 +369,7 @@ module Aspera
             end
             # Check if resolved target would be outside installation directory
             unless resolved_target.start_with?(install_boundary)
-              Log.log.warn{"Rejecting symlink pointing outside installation directory: #{entry_name} -> #{link_target} (resolves to #{resolved_target})"}
+              Log.log.warn { "Rejecting symlink pointing outside installation directory: #{entry_name} -> #{link_target} (resolves to #{resolved_target})" }
               next
             end
             File.symlink(link_target, dest_file)

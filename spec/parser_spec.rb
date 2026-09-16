@@ -58,8 +58,8 @@ module Aspera
           it 'passes the glued value to the handler when using -Pvalue syntax' do
             received = nil
             target = Object.new
-            target.define_singleton_method(:my_preset=){ |v| received = v}
-            target.define_singleton_method(:my_preset){received}
+            target.define_singleton_method(:my_preset=) { |v| received = v }
+            target.define_singleton_method(:my_preset) { received }
 
             opts = build_parser(['-Pmypreset'])
             opts.declare(
@@ -73,8 +73,8 @@ module Aspera
           it 'passes the space-separated value to the handler when using -P value syntax' do
             received = nil
             target = Object.new
-            target.define_singleton_method(:my_preset=){ |v| received = v}
-            target.define_singleton_method(:my_preset){received}
+            target.define_singleton_method(:my_preset=) { |v| received = v }
+            target.define_singleton_method(:my_preset) { received }
 
             opts = build_parser(['-P', 'mypreset'])
             opts.declare(
@@ -174,7 +174,7 @@ module Aspera
       describe 'args_as_extended (@:)' do
         # The @: extended value handler is normally registered by Runner, so we register it here for unit tests.
         before do
-          ExtendedValue.instance.on(:''){ |v| @opts.args_as_extended(v)}
+          ExtendedValue.instance.on(:'') { |v| @opts.args_as_extended(v) }
         end
 
         it 'collects key=value args after the option using @: (no leading positional args)' do
@@ -202,7 +202,7 @@ module Aspera
           opts = build_parser(['--level'])
           opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
           # nil is passed to assign_value when no argument follows; type validation raises BadArgument
-          expect{opts.parse_options!}.to(raise_error(BadArgument))
+          expect { opts.parse_options! }.to(raise_error(BadArgument))
         end
 
         it 'returns nil for an untyped (String) short option at end of line with no following value' do
@@ -221,7 +221,7 @@ module Aspera
 
         it 'set_option stores "help" without raising when option has no static schema' do
           opts = build_query_option(build_parser([]))
-          expect{opts.set_option(:query, 'help', where: 'test')}.not_to(raise_error)
+          expect { opts.set_option(:query, 'help', where: 'test') }.not_to(raise_error)
         end
 
         it 'raises SchemaRequest in get_option when value is "help" and schema: is provided' do
@@ -244,7 +244,7 @@ module Aspera
         it 'does not raise SchemaRequest in get_option when schema: is nil and value is "help"' do
           opts = build_query_option(build_parser([]))
           opts.set_option(:query, 'help', where: 'test')
-          expect{opts.get_option(:query)}.not_to(raise_error(SchemaRequest))
+          expect { opts.get_option(:query) }.not_to(raise_error(SchemaRequest))
         end
 
         it 'returns nil normally when schema: is provided but no value is set' do

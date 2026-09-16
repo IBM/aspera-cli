@@ -14,7 +14,7 @@ module Aspera
       def dotted_to_container(path, value, result = nil)
         Aspera.assert_array_all(path, String)
         # Typed keys
-        keys = path.map{ |k| int_or_string(k)}
+        keys = path.map { |k| int_or_string(k) }
         # Create, or re-use first level container
         current = (result ||= new_hash_or_array_from_key(keys.first))
         # walk the path, and create sub-containers if necessary
@@ -73,19 +73,19 @@ module Aspera
             add_elements(path, current)
           when Array
             # Array has no nested structures: list of Strings
-            if current.none?{ |i| i.is_a?(Array) || i.is_a?(Hash)}
+            if current.none? { |i| i.is_a?(Array) || i.is_a?(Hash) }
               to_insert = current.map(&:to_s)
             # Array of Hashes with only 'name' keys: list of Strings
-            elsif current.all?{ |i| i.is_a?(Hash) && i.keys == ['name']}
-              to_insert = current.map{ |i| i['name']}
+            elsif current.all? { |i| i.is_a?(Hash) && i.keys == ['name'] }
+              to_insert = current.map { |i| i['name'] }
             # Array of Hashes with only 'name' and 'value' keys: Hash of key/values
-            elsif current.all?{ |i| i.is_a?(Hash) && i.key?('name') && i.key?('value') && i.length <= 3}
+            elsif current.all? { |i| i.is_a?(Hash) && i.key?('name') && i.key?('value') && i.length <= 3 }
               # if there is an extra key, other than 'name' and 'value', insert that key as is
-              add_elements(path, current.flat_map{ |h| h.except('name', 'value').to_a})
+              add_elements(path, current.flat_map { |h| h.except('name', 'value').to_a })
               # Insert name/value pairs as Hash
-              add_elements(path, current.to_h{ |h| h.values_at('name', 'value')})
+              add_elements(path, current.to_h { |h| h.values_at('name', 'value') })
             else
-              add_elements(path, current.each_with_index.map{ |v, i| [i, v]})
+              add_elements(path, current.each_with_index.map { |v, i| [i, v] })
             end
           else
             to_insert = current

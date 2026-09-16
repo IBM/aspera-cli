@@ -12,10 +12,10 @@ module Aspera
         # @param folder   [String] folder to store the vault (if needed)
         # @param password [String] password to open the vault
         def create(info, name, folder, password)
-          Aspera.assert_hash_all(info, Symbol, String){'vault info shall have only string values'}
+          Aspera.assert_hash_all(info, Symbol, String) { 'vault info shall have only string values' }
           info = info.symbolize_keys
           vault_type = info.delete(:type)
-          Aspera.assert_values(vault_type, LIST.map(&:to_s)){'vault.type'}
+          Aspera.assert_values(vault_type, LIST.map(&:to_s)) { 'vault.type' }
           case vault_type
           when 'file'
             info[:file] = info.delete(:name) || 'vault.bin'
@@ -39,7 +39,7 @@ module Aspera
             Keychain::HashicorpVault.new(**info)
           when '1password'
             source = info.delete(:source) || 'api'
-            Aspera.assert_values(source, %w[api cli]){'vault.source'}
+            Aspera.assert_values(source, %w[api cli]) { 'vault.source' }
             case source
             when 'api'
               require 'aspera/keychain/one_password_api'

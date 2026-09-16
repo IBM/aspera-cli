@@ -29,7 +29,7 @@ module Aspera
         if secret.eql?(PRESET_MAGIC)
           conf = @presets.lookup_preset(url: url, username: username)
           if conf.is_a?(Hash)
-            Log.log.debug{"Found preset #{conf} with URL and username"}
+            Log.log.debug { "Found preset #{conf} with URL and username" }
             secret = conf['password']
           end
         end

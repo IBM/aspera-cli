@@ -19,13 +19,13 @@ module Aspera
           Aspera.assert(username, 'Provide --password (cookie) on first use, or --username for cache lookup', type: ParameterError)
           super(**base_params, cache_ids: [username])
         else
-          cookies = cookie.split('; ').map{ |p| p.split('=', 2)}.to_h
+          cookies = cookie.split('; ').map { |p| p.split('=', 2) }.to_h
           Aspera.assert(cookies.key?('aoc.token'), '--password cookie does not contain aoc.token', type: ParameterError)
           token = cookies['aoc.token']
           decoded = Factory.instance.decode_token(token)
-          Aspera.assert_type(decoded, Hash){'Boot: token is not a decodable JWT'}
+          Aspera.assert_type(decoded, Hash) { 'Boot: token is not a decodable JWT' }
           sub = decoded['sub']
-          Aspera.assert(username.nil? || username.eql?(sub)){"Boot: --username #{username} does not match token subject #{sub}"}
+          Aspera.assert(username.nil? || username.eql?(sub)) { "Boot: --username #{username} does not match token subject #{sub}" }
           super(**base_params, cache_ids: [sub])
           token_data = {Factory::TOKEN_FIELD => token}
           token_data['refresh_token'] = cookies['aoc.refresh'] if cookies.key?('aoc.refresh')

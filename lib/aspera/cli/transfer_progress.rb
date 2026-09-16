@@ -29,12 +29,12 @@ module Aspera
       # @param type [Symbol] one of: sessions_init, session_start, session_size, transfer, session_end and end
       # @param info [Object, nil] optional specific additional info for the given event type
       def event(type, session_id: nil, info: nil)
-        Log.log.trace1{"progress: #{type} #{session_id} #{info}"}
+        Log.log.trace1 { "progress: #{type} #{session_id} #{info}" }
         return if @completed
         if @progress_bar.nil?
           @progress_bar = ProgressBar.create(
             format:      '%t %a %B %p%% %r Mbps %E',
-            rate_scale:  lambda{ |rate| rate / Environment::BYTES_PER_MEBIBIT},
+            rate_scale:  lambda { |rate| rate / Environment::BYTES_PER_MEBIBIT },
             title:       '',
             total:       nil
           )
@@ -50,7 +50,7 @@ module Aspera
         when :session_start
           Aspera.assert_type(session_id, String)
           Aspera.assert(info.nil?, 'info must be nil for :session_start event')
-          Aspera.assert(!@sessions[session_id]){"Session #{session_id} already started"}
+          Aspera.assert(!@sessions[session_id]) { "Session #{session_id} already started" }
           @sessions[session_id] = {
             job_size: 0, # Total size of transfer (pre-calc)
             current:  0,
@@ -83,19 +83,19 @@ module Aspera
           Aspera.assert(session_id.nil?, 'session_id must be nil for :end event')
           Aspera.assert(info.nil?, 'info must be nil for :end event')
           @progress_bar.finish
-        else Aspera.error_unexpected_value(type){'event type'}
+        else Aspera.error_unexpected_value(type) { 'event type' }
         end
-        new_title = @sessions.length < 2 ? @title.to_s : "[#{@sessions.count{ |_i, d| d[:running]}}] #{@title}"
+        new_title = @sessions.length < 2 ? @title.to_s : "[#{@sessions.count { |_i, d| d[:running] }}] #{@title}"
         @progress_bar&.title = new_title unless @progress_bar&.title.eql?(new_title)
         @progress_bar&.increment if !progress_provided && @progress_bar.progress.nil?
       rescue ProgressBar::InvalidProgressError => e
-        Log.log.error{"Progress error: #{e}"}
+        Log.log.error { "Progress error: #{e}" }
       end
 
       private
 
       def total(key)
-        @sessions.values.inject(0){ |m, s| m + s[key]}
+        @sessions.values.inject(0) { |m, s| m + s[key] }
       end
     end
   end

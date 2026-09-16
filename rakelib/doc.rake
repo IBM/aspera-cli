@@ -53,7 +53,7 @@ DOC_FILES = [
 ]
 
 # Source file that contain constants used to generate doc (version, urls)
-CONST_SOURCES = %w[info version].map{ |i| Paths::LIB / "aspera/cli/#{i}.rb"}
+CONST_SOURCES = %w[info version].map { |i| Paths::LIB / "aspera/cli/#{i}.rb" }
 
 namespace :doc do
   rule '.pdf' => '.md' do |t|
@@ -67,7 +67,7 @@ namespace :doc do
   end
 
   file Paths::TSPEC_JSON_SCHEMA => [Paths::TSPEC_YAML_SCHEMA] do
-    Aspera::Log.log.info{"Generating: #{Paths::TSPEC_JSON_SCHEMA}"}
+    Aspera::Log.log.info { "Generating: #{Paths::TSPEC_JSON_SCHEMA}" }
     run(Paths::BIN / Aspera::Cli::Info::CMD_NAME, 'config', 'ascp', 'schema', '--format=jsonpp', "--out.file=#{Paths::TSPEC_JSON_SCHEMA}")
   end
 
@@ -83,7 +83,7 @@ namespace :doc do
 
   desc 'Check links in manual'
   task :check_links do
-    Aspera::Log.log.info{'Checking links in manual'}
+    Aspera::Log.log.info { 'Checking links in manual' }
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).check_links_manual
   end
 
@@ -102,12 +102,12 @@ namespace :doc do
   # UML Diagram : requires tools: graphviz and gem xumlidot
   # on mac: `gem install xumlidot pry` and `brew install graphviz`
   file Paths::UML_PNG => PATH_TMP_DOT do
-    Aspera::Log.log.info{"Generating: #{Paths::UML_PNG}"}
+    Aspera::Log.log.info { "Generating: #{Paths::UML_PNG}" }
     run('dot', '-Tpng', PATH_TMP_DOT, out: Paths::UML_PNG.to_s)
   end
 
   file PATH_TMP_DOT => [] do
-    Aspera::Log.log.info{"Generating: #{PATH_TMP_DOT}"}
+    Aspera::Log.log.info { "Generating: #{PATH_TMP_DOT}" }
     require 'xumlidot'
     capture_stdout_to_file(PATH_TMP_DOT) do
       Xumlidot::Loader.new([Paths::LIB.to_s], Xumlidot::Options.parse(%w[--dot --no-composition --usage])).load

@@ -66,7 +66,7 @@ module Aspera
         @transfer_id = nil
         @stop = stop
         is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
-        Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error){'Cannot set options `stop` or `start` to false with port zero'}
+        Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error) { 'Cannot set options `stop` or `start` to false with port zero' }
         # keep PID for optional shutdown
         @daemon_pid = nil
         @daemon_endpoint = nil
@@ -81,18 +81,18 @@ module Aspera
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
           @daemon_endpoint = daemon_endpoint
-          Log.log.debug{"Daemon info: #{get_info_response}"}
+          Log.log.debug { "Daemon info: #{get_info_response}" }
           Log.log.warn('Attached to existing daemon') unless @daemon_pid || !start || !@stop
-          at_exit{shutdown}
+          at_exit { shutdown }
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
           raise if !start || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
-          Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}"}
+          Aspera.assert(@daemon_pid.nil?) { "Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}" }
           Log.log.warn('no daemon present, starting daemon...') if !start
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
-          Aspera.assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
+          Aspera.assert(daemon_uri.scheme.eql?('ipv4')) { "Invalid scheme daemon URI #{daemon_endpoint}" }
           # create a config file for daemon
           config = {
             address:      daemon_uri.host,
@@ -107,7 +107,7 @@ module Aspera
           }
           # config file and logs are created in same folder
           transferd_base_tmp = TempFileManager.instance.new_file_path_global('transferd')
-          Log.log.debug{"transferd base tmp #{transferd_base_tmp}"}
+          Log.log.debug { "transferd base tmp #{transferd_base_tmp}" }
           conf_file = "#{transferd_base_tmp}.conf"
           log_stdout = "#{transferd_base_tmp}.out"
           log_stderr = "#{transferd_base_tmp}.err"
@@ -128,9 +128,9 @@ module Aspera
           rescue Timeout::Error
             nil
           end
-          Log.log.debug{"Daemon started with pid #{@daemon_pid}"}
+          Log.log.debug { "Daemon started with pid #{@daemon_pid}" }
           Process.detach(@daemon_pid) unless @stop
-          at_exit{shutdown}
+          at_exit { shutdown }
           # update port for next connection attempt (if auto high port was requested)
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
           # local daemon started, try again
@@ -152,10 +152,10 @@ module Aspera
         ) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_response = @transfer_client.start_transfer(transfer_request)
-        Aspera.assert(!start_response.status.eql?(:FAILED), type: Transfer::Error){start_response.error.description}
-        Log.log.debug{"start transfer response #{start_response}"}
+        Aspera.assert(!start_response.status.eql?(:FAILED), type: Transfer::Error) { start_response.error.description }
+        Log.log.debug { "start transfer response #{start_response}" }
         @transfer_id = start_response.transferId
-        Log.log.debug{"transfer started with id #{@transfer_id}"}
+        Log.log.debug { "transfer started with id #{@transfer_id}" }
       end
 
       def wait_for_transfers_completion
@@ -190,7 +190,7 @@ module Aspera
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
             notify_progress(:sessions_init, info: response.status.to_s.downcase)
           else
-            Log.log.error{"unknown status#{response.status}"}
+            Log.log.error { "unknown status#{response.status}" }
           end
         end
         # TODO: return status

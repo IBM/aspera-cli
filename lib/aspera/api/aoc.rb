@@ -65,7 +65,7 @@ module Aspera
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
       # Well-known AoC global client apps
-      GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{ |i| i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
+      GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select { |i| i.to_s.start_with?(CLIENT_ID_PREFIX) }.freeze
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
       # path in URL of public links (warning if not in list)
@@ -123,9 +123,9 @@ module Aspera
         # split host of URL into organization and domain
         def split_org_domain(uri)
           Aspera.assert_type(uri, URI)
-          Aspera.assert(!uri.host.nil?){"No host found in URL. Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}"}
+          Aspera.assert(!uri.host.nil?) { "No host found in URL. Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" }
           parts = uri.host.split('.', 2)
-          Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
+          Aspera.assert(parts.length == 2) { "expecting a public FQDN for #{PRODUCT_NAME}" }
           parts[0] = nil if parts[0].eql?('api')
           return %i{organization domain}.zip(parts).to_h
         end
@@ -146,14 +146,14 @@ module Aspera
           if (m = final_uri.path.match(%r{/oauth2/([^/]+)/login$}))
             org_domain[:organization] = m[1] if org_domain[:organization].nil?
           else
-            Log.log.debug{"path=#{final_uri.path} does not end with /login"}
+            Log.log.debug { "path=#{final_uri.path} does not end with /login" }
           end
           Aspera.assert(!final_uri.query.nil?, 'AoC shall redirect to login page with a query', type: Error)
           query = Rest.query_to_h(final_uri.query)
           Log.dump(:query, query, level: :trace1)
           # is that a public link ?
           if query.key?('token')
-            Log.log.warn{"Unknown pub link path: #{final_uri.path}"} unless PUBLIC_LINK_PATHS.include?(final_uri.path)
+            Log.log.warn { "Unknown pub link path: #{final_uri.path}" } unless PUBLIC_LINK_PATHS.include?(final_uri.path)
             # ok we get it !
             return {
               instance_domain: org_domain[:domain],
@@ -198,7 +198,7 @@ module Aspera
         # @option return [Array<Hash>] :items The list of items
         # @option return [Integer] :total The total number of items
         def call_paging(query: {})
-          Aspera.assert_type(query, Hash){'query'}
+          Aspera.assert_type(query, Hash) { 'query' }
           Aspera.assert(block_given?, 'block required for call_paging')
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           query['per_page'] = 1000 unless query.key?('per_page')
@@ -257,10 +257,10 @@ module Aspera
           when 'download' then %w[list preview read]
           when 'upload' then %w[mkdir write]
           when Array
-            Aspera.assert_array_all(levels, String){'access_levels'}
-            levels.each{ |level| Aspera.assert_values(level, Node::ACCESS_LEVELS){'access_level'}}
+            Aspera.assert_array_all(levels, String) { 'access_levels' }
+            levels.each { |level| Aspera.assert_values(level, Node::ACCESS_LEVELS) { 'access_level' } }
             levels
-          else Aspera.error_unexpected_value(levels){"access_levels must be a list of #{Node::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload"}
+          else Aspera.error_unexpected_value(levels) { "access_levels must be a list of #{Node::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload" }
           end
         end
       end
@@ -352,7 +352,7 @@ module Aspera
         when :none
           auth_params.clear
           auth_params[:type] = :none
-        else Aspera.error_unexpected_value(auth_params[:grant_method]){'auth, use one of: web, jwt, boot'}
+        else Aspera.error_unexpected_value(auth_params[:grant_method]) { 'auth, use one of: web, jwt, boot' }
         end
         super(**base_args)
       end
@@ -369,7 +369,7 @@ module Aspera
 
       # @param expected [Array<String>] Link types
       def assert_public_link_types(expected)
-        Aspera.assert_values(public_link['purpose'], expected){'public link type'}
+        Aspera.assert_values(public_link['purpose'], expected) { 'public link type' }
       end
 
       def additional_persistence_ids
@@ -396,10 +396,10 @@ module Aspera
             read('self')
           rescue Aspera::RestCallError => e
             raise if exception || e.message.include?('invalid_grant')
-            Log.log.debug{"Ignoring error: (#{e.class}) #{e}"}
+            Log.log.debug { "Ignoring error: (#{e.class}) #{e}" }
             {}
           end
-        USER_INFO_FIELDS_MIN.each{ |f| @cache_user_info[f] = nil if @cache_user_info[f].nil?}
+        USER_INFO_FIELDS_MIN.each { |f| @cache_user_info[f] = nil if @cache_user_info[f].nil? }
         return @cache_user_info
       end
 
@@ -488,7 +488,7 @@ module Aspera
         ak_secret = @secret_finder&.lookup(url: node_info['url'], username: node_info['access_key'])
         # If secret is available, or no scope, use basic auth
         if scope.nil? || ak_secret
-          Aspera.assert(ak_secret, type: Error){"Secret not found for access key #{node_info['access_key']}@#{node_info['url']}"}
+          Aspera.assert(ak_secret, type: Error) { "Secret not found for access key #{node_info['access_key']}@#{node_info['url']}" }
           node_params[:auth] = {
             type:     :basic,
             username: node_info['access_key'],
@@ -519,21 +519,21 @@ module Aspera
           Log.log.debug('no metadata in shared inbox')
           return
         end
-        Aspera.assert(pkg_data.key?('metadata')){"package requires metadata: #{meta_schema}"}
+        Aspera.assert(pkg_data.key?('metadata')) { "package requires metadata: #{meta_schema}" }
         pkg_meta = pkg_data['metadata']
-        Aspera.assert_type(pkg_meta, Array){'metadata'}
+        Aspera.assert_type(pkg_meta, Array) { 'metadata' }
         Log.dump(:metadata, pkg_meta)
         pkg_meta.each do |field|
-          Aspera.assert_type(field, Hash){'metadata field'}
+          Aspera.assert_type(field, Hash) { 'metadata field' }
           Aspera.assert(field.key?('name'), 'metadata field must have name')
           Aspera.assert(field.key?('values'), 'metadata field must have values')
-          Aspera.assert_type(field['values'], Array){'metadata field values'}
-          Aspera.assert(meta_schema.any?{ |i| i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
+          Aspera.assert_type(field['values'], Array) { 'metadata field values' }
+          Aspera.assert(meta_schema.any? { |i| i['name'].eql?(field['name']) }) { "unknown metadata field: #{field['name']}" }
         end
         meta_schema.each do |field|
-          provided = pkg_meta.select{ |i| i['name'].eql?(field['name'])}
-          Aspera.assert(provided.count <= 1, type: Error){"only one field with name #{field['name']} allowed"}
-          Aspera.assert(!provided.empty?, type: Error){"missing mandatory field: #{field['name']}"} if field['required']
+          provided = pkg_meta.select { |i| i['name'].eql?(field['name']) }
+          Aspera.assert(provided.count <= 1, type: Error) { "only one field with name #{field['name']} allowed" }
+          Aspera.assert(!provided.empty?, type: Error) { "missing mandatory field: #{field['name']}" } if field['required']
         end
       end
 
@@ -546,16 +546,16 @@ module Aspera
       # @return [nil] `package_data` is modified in place
       def resolve_package_recipients(package_data, rcpt_lst_field, new_user_option)
         return unless package_data.key?(rcpt_lst_field)
-        Aspera.assert_type(package_data[rcpt_lst_field], Array){rcpt_lst_field}
+        Aspera.assert_type(package_data[rcpt_lst_field], Array) { rcpt_lst_field }
         new_user_option = {'package_contact' => true} if new_user_option.nil?
-        Aspera.assert_type(new_user_option, Hash){'new_user_option'}
+        Aspera.assert_type(new_user_option, Hash) { 'new_user_option' }
         ws_id = package_data['workspace_id']
         # list with resolved elements
         resolved_list = []
         package_data[rcpt_lst_field].each do |short_recipient_info|
           case short_recipient_info
           when Hash # native API information, check keys
-            Aspera.assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{rcpt_lst_field} element shall have fields: id and type"}
+            Aspera.assert(short_recipient_info.keys.sort.eql?(%w[id type])) { "#{rcpt_lst_field} element shall have fields: id and type" }
           when String # CLI helper: need to resolve provided name to type/id
             # email: user, else dropbox
             entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
@@ -563,7 +563,7 @@ module Aspera
               full_recipient_info = lookup_with_q(entity_type, value: short_recipient_info, query: {'workspace_id' => ws_id})
             rescue EntityNotFound
               # dropboxes cannot be created on the fly
-              Aspera.assert_values(entity_type, %w[contacts], type: Error){"No such shared inbox in workspace #{ws_id}"}
+              Aspera.assert_values(entity_type, %w[contacts], type: Error) { "No such shared inbox in workspace #{ws_id}" }
               # unknown user: create it as external user
               full_recipient_info = create('contacts', {
                 'current_workspace_id' => ws_id,
@@ -575,7 +575,7 @@ module Aspera
             else
               {'id' => full_recipient_info['source_id'], 'type' => full_recipient_info['source_type']}
             end
-          else Aspera.error_unexpected_value(short_recipient_info.class.name){"#{rcpt_lst_field} item must be a String (email, shared inbox) or Hash (id,type)"}
+          else Aspera.error_unexpected_value(short_recipient_info.class.name) { "#{rcpt_lst_field} item must be a String (email, shared inbox) or Hash (id,type)" }
           end
           # add original or resolved recipient info
           resolved_list.push(short_recipient_info)
@@ -669,7 +669,7 @@ module Aspera
         # Console cookie
         ################
         # we are sure that fields are not nil
-        cookie_elements = [app_info.app, current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{ |e| Base64.strict_encode64(e)}
+        cookie_elements = [app_info.app, current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map { |e| Base64.strict_encode64(e) }
         cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
         transfer_spec['cookie'] = cookie_elements.join(':')
         # Application tags

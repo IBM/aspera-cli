@@ -64,8 +64,8 @@ module Aspera
       # @param job_id [String] the ascli-generated UUID
       # @param data   [Hash]   fields to store (will be JSON-serialised)
       def write(job_id, data)
-        Aspera.assert_type(job_id, String){'job_id'}
-        Aspera.assert_type(data, Hash){'data'}
+        Aspera.assert_type(job_id, String) { 'job_id' }
+        Aspera.assert_type(data, Hash) { 'data' }
         @persistency.put(store_key(job_id), JSON.generate(strip_internal_keys(data)))
         nil
       end
@@ -74,7 +74,7 @@ module Aspera
       # @param job_id [String]
       # @return [Hash, nil] the stored data, or nil if not found
       def read(job_id)
-        Aspera.assert_type(job_id, String){'job_id'}
+        Aspera.assert_type(job_id, String) { 'job_id' }
         raw = @persistency.get(store_key(job_id))
         return if raw.nil?
         JSON.parse(raw)
@@ -93,7 +93,7 @@ module Aspera
       # Delete one entry.
       # @param job_id [String]
       def delete(job_id)
-        Aspera.assert_type(job_id, String){'job_id'}
+        Aspera.assert_type(job_id, String) { 'job_id' }
         @persistency.delete(store_key(job_id))
         nil
       end
@@ -115,7 +115,7 @@ module Aspera
             h[k] = strip_internal_keys(v) unless k.to_s.start_with?('_')
           end
         when Array
-          value.map{ |v| strip_internal_keys(v)}
+          value.map { |v| strip_internal_keys(v) }
         else
           value
         end

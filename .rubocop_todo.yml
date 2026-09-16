@@ -6,10 +6,10 @@ Metrics/AbcSize:
   Enabled: false
 Layout/SpaceBeforeBlockBraces:
   Enabled: true
-  EnforcedStyle: no_space
+  EnforcedStyle: space
 Layout/SpaceInsideBlockBraces:
   Enabled: true
-  EnforcedStyle: no_space
+  EnforcedStyle: space
 Layout/SpaceAroundBlockParameters:
   Enabled: true
   EnforcedStyleInsidePipes: no_space

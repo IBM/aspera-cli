@@ -106,7 +106,7 @@ module Aspera
       def ignore_cert_host_port=(url_list)
         url_list.each do |url|
           uri = URI.parse(url)
-          Aspera.assert(uri.scheme.eql?('https')){"Expecting https scheme: #{url}"}
+          Aspera.assert(uri.scheme.eql?('https')) { "Expecting https scheme: #{url}" }
           @ignore_cert_host_port.push([uri.host, uri.port].freeze)
         end
       end
@@ -119,11 +119,11 @@ module Aspera
         if ignore_cert && @warn_insecure
           base_url = "https://#{address}:#{port}"
           unless @ssl_warned_urls.include?(base_url)
-            Log.log.warn{"Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production."}
+            Log.log.warn { "Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production." }
             @ssl_warned_urls.push(base_url)
           end
         end
-        Log.log.debug{"ignore cert? #{endpoint} -> #{ignore_cert}"}
+        Log.log.debug { "ignore cert? #{endpoint} -> #{ignore_cert}" }
         ignore_cert
       end
 
@@ -135,21 +135,21 @@ module Aspera
       # @param path_list [Array<String>] list of file/folder paths to add to the certificate store
       # @return [nil]
       def trusted_cert_locations=(path_list)
-        Aspera.assert_type(path_list, Array){'cert locations'}
+        Aspera.assert_type(path_list, Array) { 'cert locations' }
         if @certificate_store.nil?
           Log.log.debug('Creating SSL Cert store')
           @certificate_store = OpenSSL::X509::Store.new
           @certificate_paths = []
         end
         path_list.each do |path|
-          Aspera.assert_type(path, String){'Expecting a String for certificate location'}
+          Aspera.assert_type(path, String) { 'Expecting a String for certificate location' }
           paths_to_add = [path]
-          Log.log.debug{"Adding cert location: #{path}"}
+          Log.log.debug { "Adding cert location: #{path}" }
           if path.eql?(SpecialValues::DEF)
             @certificate_store.set_default_paths
             paths_to_add = [OpenSSL::X509::DEFAULT_CERT_DIR]
             paths_to_add.push(OpenSSL::X509::DEFAULT_CERT_FILE) unless defined?(JRUBY_VERSION)
-            paths_to_add.select!{ |f| File.exist?(f)}
+            paths_to_add.select! { |f| File.exist?(f) }
           elsif File.file?(path)
             @certificate_store.add_file(path)
           elsif File.directory?(path)
@@ -161,9 +161,9 @@ module Aspera
             pp = [File.realpath(p)]
             if File.directory?(p)
               pp = Dir.entries(p)
-                .map{ |e| File.realpath(File.join(p, e))}
-                .select{ |entry| File.file?(entry)}
-                .select{ |entry| CERT_EXT.any?{ |ext| entry.end_with?(ext)}}
+                .map { |e| File.realpath(File.join(p, e)) }
+                .select { |entry| File.file?(entry) }
+                .select { |entry| CERT_EXT.any? { |ext| entry.end_with?(ext) } }
             end
             @certificate_paths.concat(pp)
           end
@@ -195,13 +195,13 @@ module Aspera
         http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
         http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
         http_session.cert_store = @certificate_store if @certificate_store
-        Log.log.debug{"Using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
+        Log.log.debug { "Using cert store #{http_session.cert_store} (#{@certificate_store})" } unless http_session.cert_store.nil?
         @http_options.each do |k, v|
           method = "#{k}=".to_sym
           if http_session.respond_to?(method)
             http_session.send(method, v)
           else
-            Log.log.error{"Unknown HTTP session attribute: #{k}"}
+            Log.log.error { "Unknown HTTP session attribute: #{k}" }
           end
         end
         nil

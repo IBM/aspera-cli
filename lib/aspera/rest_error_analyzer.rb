@@ -36,7 +36,7 @@ module Aspera
     # @param data [Object]            the parsed response body
     # @param http [Net::HTTPResponse] the raw HTTP response
     def raise_on_error(req, data, http)
-      Log.log.debug{"raise_on_error #{req.method} #{req.path} #{http.code}"}
+      Log.log.debug { "raise_on_error #{req.method} #{req.path} #{http.code}" }
       context = {
         messages: [],
         request:  req,
@@ -49,7 +49,7 @@ module Aspera
       @error_handlers.each do |handler|
         handler[:block].call(handler[:name], context)
       rescue StandardError => e
-        Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
+        Log.log.error { "ERROR in handler:\n#{e.message}\n#{e.backtrace}" }
       end
       raise RestCallError, context unless context[:messages].empty?
     end
@@ -97,7 +97,7 @@ module Aspera
       # @param message [String] one error message  to add to list
       def add_error(context, type, message)
         context[:messages].push(message)
-        Log.log.trace1{"Found error: #{type}: #{message}"}
+        Log.log.trace1 { "Found error: #{type}: #{message}" }
         log_file = instance.log_file
         # log error for further analysis (file must exist to activate)
         return if log_file.nil? || !File.exist?(log_file)

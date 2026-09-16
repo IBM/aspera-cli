@@ -13,7 +13,7 @@ module Aspera
       # -----------------------------------------------------------------------
       # Test host: includes the mixins and exposes injectable doubles
       # -----------------------------------------------------------------------
-      let(:config_presets){{}}
+      let(:config_presets) { {} }
 
       let(:presets_double) do
         double('presets', config_presets: config_presets, global_default_preset: 'GLOBAL').tap do |d|
@@ -25,7 +25,7 @@ module Aspera
       end
 
       # A simple in-memory vault double
-      let(:vault_store){{}}
+      let(:vault_store) { {} }
       let(:vault_double) do
         double('vault').tap do |v|
           allow(v).to(receive(:get)) do |label:, exception: true| # rubocop:disable Lint/UnusedBlockArgument
@@ -44,7 +44,7 @@ module Aspera
           include PresetActions
           include VaultManager
 
-          define_method(:presets){presets_captured}
+          define_method(:presets) { presets_captured }
 
           # options stub: vault option returns the double directly via a proc so
           # we can toggle it per example
@@ -56,7 +56,7 @@ module Aspera
               o.define_singleton_method(:get_option) do |sym, mandatory: false| # rubocop:disable Lint/UnusedBlockArgument
                 opts_self.vault_option if sym == :vault
               end
-              o.define_singleton_method(:unprocessed_options_with_value){{}}
+              o.define_singleton_method(:unprocessed_options_with_value) { {} }
             end
           end
 
@@ -88,7 +88,7 @@ module Aspera
         end
 
         context 'when vault is configured' do
-          before{host.vault_double_override = vault_double}
+          before { host.vault_double_override = vault_double }
 
           it 'moves a clear-text password into the vault and replaces it with a @vault: reference' do
             config_presets['mypreset'] = {'password' => 'secret123'}
@@ -154,13 +154,13 @@ module Aspera
             include PresetActions
             include VaultManager
 
-            define_method(:presets){presets_captured}
+            define_method(:presets) { presets_captured }
 
             define_method(:options) do
               opts_hash = unprocessed_hash
               Object.new.tap do |o|
-                o.define_singleton_method(:unprocessed_options_with_value){opts_hash}
-                o.define_singleton_method(:get_option){ |*| nil}
+                o.define_singleton_method(:unprocessed_options_with_value) { opts_hash }
+                o.define_singleton_method(:get_option) { |*| nil }
               end
             end
 
@@ -200,10 +200,10 @@ module Aspera
       # action_preset_set — automatic vault migration
       # -----------------------------------------------------------------------
       describe '#action_preset_set' do
-        before{config_presets['p1'] = {}}
+        before { config_presets['p1'] = {} }
 
         context 'with vault' do
-          before{host.vault_double_override = vault_double}
+          before { host.vault_double_override = vault_double }
 
           it 'automatically secures a password set via action_preset_set' do
             host.action_preset_set(name: 'p1', param_name: 'password', param_value: 'abc')
@@ -231,7 +231,7 @@ module Aspera
 
               def options
                 Object.new.tap do |o|
-                  o.define_singleton_method(:get_option){ |*| nil}
+                  o.define_singleton_method(:get_option) { |*| nil }
                 end
               end
             end.new
@@ -248,7 +248,7 @@ module Aspera
 
               def vault; nil; end
             end.new
-            expect{includer.vault_required}.to(raise_error(Aspera::Cli::BadArgument, /vault/))
+            expect { includer.vault_required }.to(raise_error(Aspera::Cli::BadArgument, /vault/))
           end
         end
       end

@@ -305,8 +305,8 @@ module Aspera
         # @param name [String] Field name
         def field_snake_to_native(name)
           field = name.delete('_')
-          result = PARAMETERS.find{ |w| w.casecmp?(field)}
-          Aspera.assert(!result.nil?){"No such field: #{name}"}
+          result = PARAMETERS.find { |w| w.casecmp?(field) }
+          Aspera.assert(!result.nil?) { "No such field: #{name}" }
           result
         end
 
@@ -327,7 +327,7 @@ module Aspera
         # @return [String] frame to send on management port
         def command_to_stream(data)
           data
-            .map{ |key, value| "#{field_snake_to_native(key)}: #{value}"}
+            .map { |key, value| "#{field_snake_to_native(key)}: #{value}" }
             .unshift(MGT_HEADER)
             .push(MGT_FRAME_SEPARATOR, '')
             .join("\n")
@@ -352,15 +352,15 @@ module Aspera
           # begin event
           @event_build = {}
         when /^([^:]+): (.*)$/
-          Aspera.assert_type(@event_build, Hash){'mgt port: unexpected line: data without header'}
+          Aspera.assert_type(@event_build, Hash) { 'mgt port: unexpected line: data without header' }
           # event field
           @event_build[Regexp.last_match(1)] = Regexp.last_match(2)
         when MGT_FRAME_SEPARATOR
-          Aspera.assert_type(@event_build, Hash){'mgt port: unexpected line: end frame without header'}
+          Aspera.assert_type(@event_build, Hash) { 'mgt port: unexpected line: end frame without header' }
           @last_event = @event_build
           @event_build = nil
           return @last_event
-        else Aspera.error_unexpected_value(line){'mgt port'}
+        else Aspera.error_unexpected_value(line) { 'mgt port' }
         end
         return
       end

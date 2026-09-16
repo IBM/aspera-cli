@@ -12,7 +12,7 @@ module Aspera
     module VaultManager
       def action_vault_show(label:, id: nil, **)
         v = vault_required
-        kwargs = id && v.method(:get).parameters.any?{ |_t, n| n == :id} ? {id: id} : {}
+        kwargs = id && v.method(:get).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
         Result::SingleObject.new(v.get(label: label, **kwargs))
       end
 
@@ -31,7 +31,7 @@ module Aspera
 
       def action_vault_delete(label:, id: nil, **)
         v = vault_required
-        kwargs = id && v.method(:delete).parameters.any?{ |_t, n| n == :id} ? {id: id} : {}
+        kwargs = id && v.method(:delete).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
         v.delete(label: label, **kwargs)
         Result::Status.new("Secret deleted: #{label}")
       end
@@ -44,14 +44,14 @@ module Aspera
 
       # @return [Keychain::Base] vault instance, raises if not configured
       def vault_required
-        Aspera.assert(!vault.nil?, type: Cli::BadArgument){'Missing mandatory option: vault'}
+        Aspera.assert(!vault.nil?, type: Cli::BadArgument) { 'Missing mandatory option: vault' }
         vault
       end
 
       # @return [String] value from vault matching <name>.<param>
       def vault_value(name)
         m = name.split('.')
-        Aspera.assert(m.length.eql?(2), type: BadArgument){'vault name shall match <name>.<param>'}
+        Aspera.assert(m.length.eql?(2), type: BadArgument) { 'vault name shall match <name>.<param>' }
         info = vault_required.get(label: m[0])
         value = info[m[1].to_sym]
         raise "no such entry value: #{m[1]}" if value.nil?

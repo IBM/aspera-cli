@@ -28,8 +28,8 @@ module Aspera
         statuses = wait_for_transfers_completion
         @progress&.reset
         Aspera.assert_type(statuses, Array)
-        Aspera.assert(statuses.none?{ |i| !i.eql?(:success) && !i.is_a?(StandardError)}){"bad statuses content: #{statuses}"}
-        errors = statuses.reject{ |i| i.eql?(:success)}
+        Aspera.assert(statuses.none? { |i| !i.eql?(:success) && !i.is_a?(StandardError) }) { "bad statuses content: #{statuses}" }
+        errors = statuses.reject { |i| i.eql?(:success) }
         return errors.empty? ? Transfer::Result.success : Transfer::Result.error(errors.first)
       end
 

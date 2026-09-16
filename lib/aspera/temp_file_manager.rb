@@ -41,7 +41,7 @@ module Aspera
     def delete_file(filepath)
       File.delete(filepath) if @cleanup_on_exit
     rescue => e
-      Log.log.warn{"Problem deleting file: #{filepath}: #{e.message}"}
+      Log.log.warn { "Problem deleting file: #{filepath}: #{e.message}" }
     end
 
     # Call this on process exit
@@ -99,7 +99,7 @@ module Aspera
         age_sec = (Time.now - File.stat(file_path).mtime).to_i
         # check age of file, delete too old
         if File.file?(file_path) && (age_sec > FILE_LIST_AGE_MAX_SEC)
-          Log.log.debug{"garbage collecting #{name}"}
+          Log.log.debug { "garbage collecting #{name}" }
           delete_file(file_path)
         end
       end

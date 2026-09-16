@@ -25,7 +25,7 @@ module Aspera
         $VERBOSE = nil
         Net::SSH::Authentication::Session.class_eval do
           define_method(:default_keys) do
-            %w[.ssh .ssh2].product(%w[rsa dsa ecdsa]).map{"~/#{_1}/id_#{_2}"}.freeze
+            %w[.ssh .ssh2].product(%w[rsa dsa ecdsa]).map { "~/#{_1}/id_#{_2}" }.freeze
           end
           private(:default_keys)
         end
@@ -39,8 +39,8 @@ module Aspera
       def no_ecd_sha2_options
         Log.log.debug('Building SSH options without ecdsa/ecdh-sha2')
         {
-          host_key: Net::SSH::Transport::Algorithms::ALGORITHMS[:host_key].reject{ |a| a.match?(EXCLUDE_ECDSHA2)},
-          kex:      Net::SSH::Transport::Algorithms::ALGORITHMS[:kex].reject{      |a| a.match?(EXCLUDE_ECDSHA2)}
+          host_key: Net::SSH::Transport::Algorithms::ALGORITHMS[:host_key].reject { |a| a.match?(EXCLUDE_ECDSHA2) },
+          kex:      Net::SSH::Transport::Algorithms::ALGORITHMS[:kex].reject {      |a| a.match?(EXCLUDE_ECDSHA2) }
         }
       end
 
@@ -49,8 +49,8 @@ module Aspera
       # @return [void]
       def disable_ecd_sha2_algorithms
         Log.log.debug('Disabling SSH ecdsa (global)')
-        Net::SSH::Transport::Algorithms::ALGORITHMS.each_value{ |a| a.reject!{ |a| a.match?(EXCLUDE_ECDSHA2)}}
-        Net::SSH::KnownHosts::SUPPORTED_TYPE.reject!{ |t| t.match?(EXCLUDE_ECDSHA2)}
+        Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a.match?(EXCLUDE_ECDSHA2) } }
+        Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t.match?(EXCLUDE_ECDSHA2) }
       end
     end
     # @param host        [String]            remote server address
@@ -70,7 +70,7 @@ module Aspera
       @ssh_options[:verbose] = :warn unless @ssh_options.key?(:verbose)
       # @ssh_options[:verbose] = :debug
       @ssh_options[:use_agent] = false unless @ssh_options.key?(:use_agent)
-      Log.log.debug{"ssh:#{@username}@#{@host}"}
+      Log.log.debug { "ssh:#{@username}@#{@host}" }
       Log.dump(:ssh_options, @ssh_options)
     end
 
@@ -81,7 +81,7 @@ module Aspera
     # @raise [Error] if the channel cannot be opened or the remote command exits with a non-zero status
     def execute(cmd, input: nil)
       Aspera.assert_type(cmd, String)
-      Log.log.debug{"cmd=#{cmd}"}
+      Log.log.debug { "cmd=#{cmd}" }
       # @type response [Array<String>]
       response = []
       # @type error [Array<String>]
@@ -92,8 +92,8 @@ module Aspera
         # @param channel [Net::SSH::Connection::Channel]
         session.open_channel do |channel|
           # Register stdout/stderr before exec so no data is missed (e.g. ForceCommand errors)
-          channel.on_data{ |_ch, data| response.push(data)}
-          channel.on_extended_data{ |_ch, type, data| error.push(data) if type.eql?(1)}
+          channel.on_data { |_ch, data| response.push(data) }
+          channel.on_extended_data { |_ch, type, data| error.push(data) if type.eql?(1) }
           # @param data [Net::SSH::Buffer]
           channel.on_request('exit-status') do |_channel, data|
             Log.dump(:data, data, level: :trace1)
@@ -111,7 +111,7 @@ module Aspera
       error_text = error.join
       hint = error_text.include?('Could not chdir to home directory') ? "\nHint: home not created in Windows?" : ''
       raise Error, "#{cmd}: exit #{exit_code}, #{error_text.chomp}#{hint}" if exit_code&.nonzero?
-      Log.log.error{"#{error_text}#{hint}"} unless error_text.empty?
+      Log.log.error { "#{error_text}#{hint}" } unless error_text.empty?
       # response as single string
       return response.join
     end

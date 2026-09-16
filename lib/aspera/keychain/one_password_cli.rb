@@ -37,7 +37,7 @@ module Aspera
       end
 
       def ids
-        op_json('item', 'list', '--categories', ITEM_CATEGORY).map{ |item| {id: item['id'], label: item['title']}}
+        op_json('item', 'list', '--categories', ITEM_CATEGORY).map { |item| {id: item['id'], label: item['title']} }
       end
 
       def set(options)

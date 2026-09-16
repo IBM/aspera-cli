@@ -90,14 +90,14 @@ module Aspera
         def start(sync_info, opt_ts = nil)
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           exec_spec = ExecSpec.new(exec: :async)
           if sync_info.key?('local')
             # `conf` format
-            Aspera.assert_type(sync_info['local'], Hash){'local'}
+            Aspera.assert_type(sync_info['local'], Hash) { 'local' }
             remote = sync_info['remote']
-            Aspera.assert_type(remote, Hash){'remote'}
-            Aspera.assert_type(remote['path'], String){'remote path'}
+            Aspera.assert_type(remote, Hash) { 'remote' }
+            Aspera.assert_type(remote['path'], String) { 'remote path' }
             # get transfer spec if possible, and feed back to new structure
             if block_given?
               transfer_spec = yield(direction_sym(sync_info), sync_info['local']['path'], remote['path'])
@@ -125,8 +125,8 @@ module Aspera
             Aspera.assert_type(sync_info['sessions'].first, Hash)
             if block_given?
               sync_info['sessions'].each do |session|
-                Aspera.assert_type(session['local_dir'], String){'local_dir'}
-                Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
+                Aspera.assert_type(session['local_dir'], String) { 'local_dir' }
+                Aspera.assert_type(session['remote_dir'], String) { 'remote_dir' }
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
                 Log.dump(:auth_ts, transfer_spec)
                 transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
@@ -155,7 +155,7 @@ module Aspera
 
         # Parse output of asyncadmin
         def parse_status(stdout)
-          Log.log.trace1{"stdout=#{stdout}"}
+          Log.log.trace1 { "stdout=#{stdout}" }
           result = {}
           ids = nil
           stdout.split("\n").each do |line|
@@ -175,7 +175,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [Hash] parsed output of asyncadmin
         def admin_status(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           arguments = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
           if sync_info.key?('local')
             # `conf` format
@@ -207,7 +207,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [String, nil] Path to "local DB dir", i.e. folder that contains folders that contain `snap.db`
         def local_db_folder(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           if sync_info.key?('local')
             # `conf` format
             if sync_info.key?('local_db_dir')
@@ -231,7 +231,7 @@ module Aspera
         end
 
         def session_name(sync_info)
-          Aspera.assert(PARAM_KEYS.any?{ |k| sync_info.key?(k)}, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
           if sync_info.key?('local')
             # `conf` format
             return sync_info['name']
@@ -243,7 +243,7 @@ module Aspera
 
         def session_db_file(sync_info)
           db_file = File.join(local_db_folder(sync_info), PRIVATE_FOLDER, session_name(sync_info), ASYNC_DB)
-          Aspera.assert(File.exist?(db_file)){"Database file #{db_file} does not exist"}
+          Aspera.assert(File.exist?(db_file)) { "Database file #{db_file} does not exist" }
           db_file
         end
 
@@ -284,7 +284,7 @@ module Aspera
         # @param option [String] Option to search
         # @return [Array,nil] with path/schema for that option
         def find_option(schema, path, option)
-          if %w[x-cli-option x-cli-short].any?{ |i| schema[i].eql?(option)}
+          if %w[x-cli-option x-cli-short].any? { |i| schema[i].eql?(option) }
             Log.log.debug('Special') if schema['x-cli-special']
             return [path, schema]
           end
@@ -322,7 +322,7 @@ module Aspera
               end
             end
             path, props = find_option(CONF_SCHEMA, [], option)
-            Aspera.assert(!path.nil?){"Option not found: #{option}"}
+            Aspera.assert(!path.nil?) { "Option not found: #{option}" }
             last_key = path.pop
             # navigate in the current result to insert the value
             current = result

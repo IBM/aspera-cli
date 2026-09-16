@@ -142,10 +142,10 @@ module Aspera
                 next unless message.eql?(m)
               when Regexp
                 next unless message.match?(m)
-              else Aspera.error_unexpected_value(m){'hint match'}
+              else Aspera.error_unexpected_value(m) { 'hint match' }
               end
               hint[:remediation].each do |r|
-                Log.log.info{"#{'HINT:'.bg_green.gray.blink.freeze} #{r}"}
+                Log.log.info { "#{'HINT:'.bg_green.gray.blink.freeze} #{r}" }
               end
             end
           end

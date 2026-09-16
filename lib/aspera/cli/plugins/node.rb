@@ -59,7 +59,7 @@ module Aspera
               }
             rescue StandardError => e
               error = e
-              Log.log.debug{"detect error: #{e}"}
+              Log.log.debug { "detect error: #{e}" }
             end
             raise error if error
             return
@@ -224,7 +224,7 @@ module Aspera
           single_call = query.key?('skip')
           # API default is 100, so use 1000 for default
           query['count'] ||= 1000
-          Aspera.assert(!(recursive && single_call), type: Cli::BadArgument){'options `recursive` and `skip` cannot be used together'}
+          Aspera.assert(!(recursive && single_call), type: Cli::BadArgument) { 'options `recursive` and `skip` cannot be used together' }
           all_items = []
           until folders_to_process.empty?
             path = folders_to_process.shift
@@ -243,7 +243,7 @@ module Aspera
                 formatter.display_item_count(response['item_count'], total_count)
                 break
               end
-              folders_to_process.concat(items.select{ |i| Node.gen3_entry_folder?(i)}.map{ |i| i['path']}) if recursive
+              folders_to_process.concat(items.select { |i| Node.gen3_entry_folder?(i) }.map { |i| i['path'] }) if recursive
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
@@ -297,7 +297,7 @@ module Aspera
         # @param path        [String] plain path or %id:<file_id> selector
         def apifid_from_path(top_file_id, path)
           if (m = Parser.percent_selector(path))
-            Aspera.assert_values(m[:field], ['id'], type: BadArgument){'file id'}
+            Aspera.assert_values(m[:field], ['id'], type: BadArgument) { 'file id' }
             val = m[:value]
             return Api::NodeFileId.new(@api_node, val.nil? || val.empty? ? top_file_id : val)
           end
@@ -309,7 +309,7 @@ module Aspera
         # (intermediate nodes whose path cannot yet be injected via execute_leaf).
         def apifid_from_next_arg(top_file_id)
           file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
-            Aspera.assert_values(attribute, ['id'], type: BadArgument){'file id'}
+            Aspera.assert_values(attribute, ['id'], type: BadArgument) { 'file id' }
             return Api::NodeFileId.new(@api_node, value.nil? || value.empty? ? top_file_id : value)
           end
           @api_node.resolve_api_fid(top_file_id, file_path)
@@ -321,10 +321,10 @@ module Aspera
         # @return [Integer] id of the sync
         # @raise [Cli::BadArgument] if no such sync, or not by name
         def async_lookup(field, value)
-          Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'search field'}
+          Aspera.assert_values(field, ['name'], type: Cli::BadArgument) { 'search field' }
           async_ids = @api_node.read('async/list')['sync_ids']
           summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
-          selected = summaries.find{ |s| s['name'].eql?(value)}
+          selected = summaries.find { |s| s['name'].eql?(value) }
           raise Cli::BadIdentifier.new('sync', value, field: field) if selected.nil?
           return selected['snid']
         end
@@ -334,7 +334,7 @@ module Aspera
         # @param value [String] must be 'self'
         # @return [String] the resolved access key id
         def lookup_access_key_self_id(field, value, **)
-          Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument){'only selector: %id:self'}
+          Aspera.assert(field.eql?('id') && value.eql?('self'), type: BadArgument) { 'only selector: %id:self' }
           @api_node.read('access_keys/self')['id']
         end
 
@@ -344,7 +344,7 @@ module Aspera
         # @return [Integer] id of the sync
         # @raise [Cli::BadArgument] if no such sync, or not by name
         def ssync_lookup(field, value)
-          Aspera.assert_values(field, ['name'], type: Cli::BadArgument){'search field'}
+          Aspera.assert_values(field, ['name'], type: Cli::BadArgument) { 'search field' }
           @api_node.read('asyncs')['ids'].each do |id|
             sync_info = @api_node.read("asyncs/#{id}")['configuration']
             # name is unique, so we can return
@@ -358,14 +358,14 @@ module Aspera
         # Gen3 leaf commands — metadata from COMMANDS_GEN3_SPEC; action: added where node-specific.
         # :sync is declared separately (intermediate node with sub-commands).
         GEN3_NODE_ACTIONS = {
-          ls:          ->(path:, **){browse_gen3(path)},
-          transport:   ->(**){Result::SingleObject.new(@api_node.transport_params)},
-          spec:        ->(**){Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC))},
-          api_details: ->(**){Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params))},
-          events:      ->(**){Result::ObjectList.new(@api_node.read('events', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'events'))), fields: ->(f){!f.start_with?('data')})},
-          info:        ->(**){Result::SingleObject.new(@api_node.read('info'))},
-          slash:       ->(**){Result::SingleObject.new(@api_node.read(''))},
-          license:     ->(**){Result::SingleObject.new(@api_node.read('license'))}
+          ls:          ->(path:, **) { browse_gen3(path) },
+          transport:   ->(**) { Result::SingleObject.new(@api_node.transport_params) },
+          spec:        ->(**) { Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC)) },
+          api_details: ->(**) { Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params)) },
+          events:      ->(**) { Result::ObjectList.new(@api_node.read('events', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'events'))), fields: ->(f) { !f.start_with?('data') }) },
+          info:        ->(**) { Result::SingleObject.new(@api_node.read('info')) },
+          slash:       ->(**) { Result::SingleObject.new(@api_node.read('')) },
+          license:     ->(**) { Result::SingleObject.new(@api_node.read('license')) }
         }.freeze
         private_constant :GEN3_NODE_ACTIONS
         COMMANDS_GEN3_SPEC.each do |cmd, spec|
@@ -415,7 +415,7 @@ module Aspera
           command :list,   description: 'List permissions on a file'
           command :show,   description: 'Show a permission',
             arguments: [{name: :perm_id, type: :identifier}],
-            action: ->(apifid:, perm_id:, **){Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}"))}
+            action: ->(apifid:, perm_id:, **) { Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}")) }
           command :create, description: 'Create a permission',
             arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
           command :modify, description: 'Modify a permission',
@@ -425,7 +425,7 @@ module Aspera
         end
         # async (legacy /async)
         commands_under :async, description: 'synchronization (legacy /async)' do
-          command :list,      description: 'List async sync IDs', action: ->{Result::ValueList.new(@api_node.read('async/list')['sync_ids'])}
+          command :list,      description: 'List async sync IDs', action: -> { Result::ValueList.new(@api_node.read('async/list')['sync_ids']) }
           command :show,      description: 'Show async summary',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
           command :delete,    description: 'Delete async',
@@ -453,36 +453,36 @@ module Aspera
             action: :action_ssync_stop
           command :bandwidth, description: 'Show sync bandwidth',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {}))}
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {})) }
           command :counters, description: 'Show sync counters',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {}))}
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {})) }
           command :files, description: 'List sync files',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {}))}
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {})) }
           command :state, description: 'Show sync state',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state"))}
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state")) }
           command :summary, description: 'Show sync summary',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **){Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/summary"))}
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/summary")) }
         end
         # stream
         command :stream, description: 'Manage stream operations'
         commands_under :stream do
-          command :list,   description: 'List streams', action: ->{Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status])}
+          command :list,   description: 'List streams', action: -> { Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status]) }
           command :create, description: 'Create a stream',
             arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
-            action: ->(data:, **){Result::SingleObject.new(@api_node.create('streams', data))}
+            action: ->(data:, **) { Result::SingleObject.new(@api_node.create('streams', data)) }
           command :show,   description: 'Show a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
-            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
+            action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}")) }
           command :modify, description: 'Modify a stream',
             arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.transferPutRequest'}],
-            action: ->(data:, transfer_id:, **){Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data))}
+            action: ->(data:, transfer_id:, **) { Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data)) }
           command :cancel, description: 'Cancel a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
-            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}"))}
+            action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}")) }
         end
         # transfer
         command :transfer, description: 'Manage transfer operations'
@@ -492,7 +492,7 @@ module Aspera
             arguments: [{name: :transfer_id, type: :identifier}]
           command :show, description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
-            action: ->(transfer_id:, **){Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}"))}
+            action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}")) }
           command :modify,            description: 'Modify a transfer',
             arguments: [{name: :transfer_id, type: :identifier}, {name: :update_value, type: Hash, schema: 'node:components.schemas.transferPutRequest'}]
           command :bandwidth_average, description: 'Show average bandwidth per period'
@@ -501,7 +501,7 @@ module Aspera
         # service
         command :service, description: 'Manage services'
         commands_under :service do
-          command :list,   description: 'List services', action: ->{Result::ObjectList.new(@api_node.read('rund/services')['services'])}
+          command :list,   description: 'List services', action: -> { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
           command :create, description: 'Create a service',
             arguments: [{name: :creation_data, type: Hash}]
           command :delete, description: 'Delete a service',
@@ -512,19 +512,19 @@ module Aspera
         commands_under :watch_folder do
           command :create, description: 'Create a watch folder',
             arguments: [{name: :data, type: Hash}],
-            action: ->(data:, **){Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created")}
+            action: ->(data:, **) { Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created") }
           command :list,   description: 'List watch folders',
-            action: ->{Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids'])}
+            action: -> { Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids']) }
           command :show,   description: 'Show a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}],
-            action: ->(watch_folder_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}"))}
+            action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}")) }
           command :modify, description: 'Modify a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}, {name: :data, type: Hash}]
           command :delete, description: 'Delete a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}]
           command :state,  description: 'Show watch folder state',
             arguments: [{name: :watch_folder_id, type: :identifier}],
-            action: ->(watch_folder_id:, **){Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}/state"))}
+            action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}/state")) }
         end
         # central
         command :central, description: 'Query Central service'
@@ -544,7 +544,7 @@ module Aspera
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
-        command :basic_token,   description: 'Generate basic auth token', action: ->{Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))}
+        command :basic_token,   description: 'Generate basic auth token', action: -> { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command :bearer_token, description: 'Generate bearer token',
           arguments: [{name: :private_key_pem, type: String}, {name: :user_group_id, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
         command :simulator,     description: 'Start node simulator',
@@ -557,7 +557,7 @@ module Aspera
         def action_delete(paths:, **)
           # TODO: add query for recursive
           paths_to_delete = Array(paths)
-          resp = @api_node.create('files/delete', {paths: paths_to_delete.map{ |i| {'path' => i.start_with?('/') ? i : "/#{i}"}}})
+          resp = @api_node.create('files/delete', {paths: paths_to_delete.map { |i| {'path' => i.start_with?('/') ? i : "/#{i}"} }})
           cli_result_from_paths_response(resp, 'file deleted')
         end
 
@@ -567,21 +567,21 @@ module Aspera
           parameters.merge!(other_options) unless other_options.nil?
           resp = @api_node.create('files/search', parameters)
           return Result::Empty.new if resp['items'].empty?
-          fields = resp['items'].first.keys.reject{ |i| SEARCH_REMOVE_FIELDS.include?(i)}
+          fields = resp['items'].first.keys.reject { |i| SEARCH_REMOVE_FIELDS.include?(i) }
           formatter.display_item_count(resp['item_count'], resp['total_count'])
-          formatter.display_status("params: #{resp['parameters'].keys.map{ |k| "#{k}:#{resp['parameters'][k]}"}.join(',')}")
+          formatter.display_status("params: #{resp['parameters'].keys.map { |k| "#{k}:#{resp['parameters'][k]}" }.join(',')}")
           Result::ObjectList.new(resp['items'], fields: fields)
         end
 
         def action_space(path_list:, **)
           path_list = Array(path_list)
-          resp = @api_node.create('space', {'paths' => path_list.map{ |i| {path: i}}})
+          resp = @api_node.create('space', {'paths' => path_list.map { |i| {path: i} }})
           Result::ObjectList.new(resp['paths'])
         end
 
         def action_mkdir(path_list:, **)
           path_list = Array(path_list)
-          resp = @api_node.create('files/create', {'paths' => path_list.map{ |i| {type: :directory, path: i}}})
+          resp = @api_node.create('files/create', {'paths' => path_list.map { |i| {type: :directory, path: i} }})
           cli_result_from_paths_response(resp, 'folder created')
         end
 
@@ -611,14 +611,14 @@ module Aspera
               'files/sync_setup',
               {transfer_requests: [{transfer_request: request_transfer_spec}]}
             )['transfer_specs'].first['transfer_spec']
-            transfer_spec.delete_if{ |_k, v| v.nil?}
+            transfer_spec.delete_if { |_k, v| v.nil? }
             Log.dump(:ts, transfer_spec)
             transfer_spec
           end
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block)}
+          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block) }
         end
 
         def action_upload
@@ -710,7 +710,7 @@ module Aspera
             ak_info = @api_node.read("access_keys/#{access_key_id}")
             ak_secret = context.secret_finder.lookup(url: @api_node.base_url, username: ak_info['id'])
             if !access_key_id.eql?('self')
-              Aspera.assert(ak_secret, type: Cli::MissingArgument){"Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}."}
+              Aspera.assert(ak_secret, type: Cli::MissingArgument) { "Please provide secret for #{ak_info['id']} using option: secret or by setting a preset for #{ak_info['id']}@#{@api_node.base_url}." }
               @api_node.auth_params[:username] = ak_info['id']
               @api_node.auth_params[:password] = ak_secret
             end
@@ -837,7 +837,7 @@ module Aspera
           when :oauth2
             result[:username] = apifid.node_api.params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
             result[:password] = apifid.node_api.oauth.authorization
-          else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]){'Node API Auth type'}
+          else Aspera.error_unexpected_value(apifid.node_api.auth_params[:type]) { 'Node API Auth type' }
           end
           [apifid, result]
         end
@@ -850,7 +850,7 @@ module Aspera
         def action_access_keys_do_bearer_token_node(path:, do_root_file_id:, **)
           apifid, result = gen4_apifid_info(do_root_file_id, path)
           Log.dump(:result, result)
-          Aspera.assert(apifid.node_api.auth_params[:type].eql?(:oauth2), type: BadArgument){"Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})"}
+          Aspera.assert(apifid.node_api.auth_params[:type].eql?(:oauth2), type: BadArgument) { "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" }
           Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
           Result::Text.new(result[:password])
         end
@@ -877,8 +877,8 @@ module Aspera
           if check_exists
             folder_content = apifid.node_api.read("files/#{apifid.file_id}/files")
             link_name = ".#{new_item}.asp-lnk"
-            found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
-            Aspera.assert(!found, type: Cli::Error){"A #{found['type']} already exists with name #{new_item}"}
+            found = folder_content.find { |i| i['name'].eql?(new_item) || i['name'].eql?(link_name) }
+            Aspera.assert(!found, type: Cli::Error) { "A #{found['type']} already exists with name #{new_item}" }
           end
           [apifid, payload]
         end
@@ -924,7 +924,7 @@ module Aspera
 
         def action_access_keys_do_permission_create(data:, apifid:, **)
           create_param = data
-          Aspera.assert(!create_param.key?('file_id'), type: Cli::BadArgument){'no file_id'}
+          Aspera.assert(!create_param.key?('file_id'), type: Cli::BadArgument) { 'no file_id' }
           create_param['file_id'] = apifid.file_id
           create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
           the_app = apifid.node_api.app_info
@@ -987,7 +987,7 @@ module Aspera
               data:    iteration_data,
               id:      IdGenerator.from_list('sync_files', options.get_option(:url, mandatory: true), options.get_option(:username, mandatory: true), async_id)
             )
-            data.select!{ |l| l['fnid'].to_i > iteration_data.first} unless iteration_data.first.nil?
+            data.select! { |l| l['fnid'].to_i > iteration_data.first } unless iteration_data.first.nil?
             iteration_data[0] = data.last['fnid'].to_i unless data.empty?
           end
           return Result::Empty.new if data.empty?
@@ -1037,7 +1037,7 @@ module Aspera
 
         def action_transfer_sessions
           transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
-          sessions = transfers_data.flat_map{ |t| t['sessions']}
+          sessions = transfers_data.flat_map { |t| t['sessions'] }
           sessions.each do |session|
             SESSION_TIME_FIELDS.each do |what|
               session["#{what}_time"] = session["#{what}_time_usec"] ? Time.at(session["#{what}_time_usec"] / 1_000_000.0).utc.iso8601(0) : nil
@@ -1071,7 +1071,7 @@ module Aspera
             end_date = all_dates[index + 1]
             break if end_date.nil?
             period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).to_h do |dir|
-              [dir, dir_info.to_h{ |k2| [k2, 0]}]
+              [dir, dir_info.to_h { |k2| [k2, 0] }]
             end
             transfers_data.each do |t|
               next if t['avg_rate_kbps'].zero?
@@ -1080,7 +1080,7 @@ module Aspera
               info[:avg_kbps] += t['avg_rate_kbps']
               info[:sessions] += 1
             end
-            next if Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).all?{ |dir| period_bandwidth[dir][:sessions].zero?}
+            next if Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).all? { |dir| period_bandwidth[dir][:sessions].zero? }
             result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
           end
           Result::ObjectList.new(result)
@@ -1153,7 +1153,7 @@ module Aspera
         def action_simulator(parameters: {}, **)
           require 'aspera/node_simulator'
           parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
+          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
           server.start
@@ -1163,13 +1163,13 @@ module Aspera
         def action_telemetry(parameters: {}, **)
           parameters = parameters.symbolize_keys
           %i[url key].each do |psym|
-            Aspera.assert(parameters.key?(psym), type: Cli::BadArgument){"Missing parameter: #{psym}"}
+            Aspera.assert(parameters.key?(psym), type: Cli::BadArgument) { "Missing parameter: #{psym}" }
           end
           require 'socket'
           parameters[:interval] = 10 unless parameters.key?(:interval)
           parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
           interval = parameters[:interval].to_f
-          Aspera.assert(interval > 0, type: Cli::BadArgument){'Interval must be a positive number in seconds'}
+          Aspera.assert(interval > 0, type: Cli::BadArgument) { 'Interval must be a positive number in seconds' }
           otel_api = Rest.new(
             base_url: "#{parameters[:url]}/v1",
             headers: {
@@ -1247,7 +1247,7 @@ module Aspera
         # @param ctx     [Hash]   pre-resolved context (keyword args forwarded to dispatch)
         # @return [Object] CLI result
         def dispatch_v3_command(command, **ctx)
-          Aspera.assert_values(command, COMMANDS_GEN3 + %i[health events info slash license api_details access_keys transfer]){'v3 command'}
+          Aspera.assert_values(command, COMMANDS_GEN3 + %i[health events info slash license api_details access_keys transfer]) { 'v3 command' }
           dispatch_from_registry([command], ctx)
         end
 
@@ -1262,14 +1262,14 @@ module Aspera
           response['paths'].each do |p|
             result = success_msg
             if p.key?('error')
-              Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
+              Log.log.error { "#{p['error']['user_message']} : #{p['path']}" }
               result = p['error']['user_message']
               errors.push([p['path'], p['error']['user_message']])
             end
             obj_list.push({'path' => p['path'], 'result' => result})
           end
           # one error make all fail
-          raise errors.map{ |i| "#{i.first}: #{i.last}"}.join(', ') unless errors.empty?
+          raise errors.map { |i| "#{i.first}: #{i.last}" }.join(', ') unless errors.empty?
           obj_list
         end
 

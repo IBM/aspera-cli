@@ -32,7 +32,7 @@ module Aspera
         def available_h264_encoder
           return @available_h264_encoder if defined?(@available_h264_encoder)
           stdout, = execute(:ffmpeg, '-encoders', mode: :capture, exception: false)
-          @available_h264_encoder = H264_ENCODER_PREFERENCE.find{ |enc| stdout.include?(enc)} ||
+          @available_h264_encoder = H264_ENCODER_PREFERENCE.find { |enc| stdout.include?(enc) } ||
             raise("No supported H.264 encoder found in ffmpeg. Available: #{stdout.lines.grep(/h264/i).map(&:strip).join(', ')}")
         end
 
@@ -62,7 +62,7 @@ module Aspera
         # @raise [Aspera::AssertError] if the command is not in {EXTERNAL_TOOLS}
         # @return [Array<String>] captured stdout and stderr lines depending on mode
         def execute(*args, **kwargs)
-          Aspera.assert_values(args.first, EXTERNAL_TOOLS){'command'}
+          Aspera.assert_values(args.first, EXTERNAL_TOOLS) { 'command' }
           Environment.secure_execute(*args, **kwargs)
         end
 

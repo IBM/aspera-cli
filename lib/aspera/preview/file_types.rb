@@ -81,15 +81,15 @@ module Aspera
       # @return [Symbol] file type, one of enum CONVERSION_TYPES
       # @raise [RuntimeError] if no conversion type found
       def conversion_type(filepath, mimetype)
-        Log.log.debug{"conversion_type(#{filepath},mime=#{mimetype},magic=#{@use_mimemagic})"}
+        Log.log.debug { "conversion_type(#{filepath},mime=#{mimetype},magic=#{@use_mimemagic})" }
         # Default type or empty means no type
         mimetype = TYPE_NOT_FOUND if mimetype.nil? || (mimetype.is_a?(String) && mimetype.empty?)
         mimetype = Marcel::MimeType.for(Pathname.new(filepath), name: File.basename(filepath), declared_type: mimetype)
         mimetype = 'text/plain' if mimetype.eql?(TYPE_NOT_FOUND) && ascii_text_file?(filepath)
-        Aspera.assert(!mimetype.eql?(TYPE_NOT_FOUND)){"no MIME type found for #{File.basename(filepath)}"}
+        Aspera.assert(!mimetype.eql?(TYPE_NOT_FOUND)) { "no MIME type found for #{File.basename(filepath)}" }
         conversion_type = mime_to_type(mimetype)
-        Aspera.assert(!conversion_type.nil?){"no conversion type found for #{File.basename(filepath)}"}
-        Log.log.trace1{"conversion_type(#{File.basename(filepath)}): #{conversion_type.class.name} [#{conversion_type}]"}
+        Aspera.assert(!conversion_type.nil?) { "no conversion type found for #{File.basename(filepath)}" }
+        Log.log.trace1 { "conversion_type(#{File.basename(filepath)}): #{conversion_type.class.name} [#{conversion_type}]" }
         return conversion_type
       end
 

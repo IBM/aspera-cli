@@ -51,7 +51,7 @@ module Aspera
       # @return [Net::HTTPResponse] raw HTTP response with token
       # @raise [RestCallError] if not 2XX code
       def create_token_call(creation_params)
-        Log.log.debug{'Generating a new token'.bg_green}
+        Log.log.debug { 'Generating a new token'.bg_green }
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
         return @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
       end
@@ -87,7 +87,7 @@ module Aspera
           # `direct` agent is equipped with refresh code
           # an API was already called, but failed, we need to regenerate or refresh
           if refresh || token_info[:expired]
-            Log.log.trace1{"refresh: #{refresh} expired: #{token_info[:expired]}"}
+            Log.log.trace1 { "refresh: #{refresh} expired: #{token_info[:expired]}" }
             refresh_token = nil
             if token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
               # save possible refresh token, before deleting the cache
@@ -107,7 +107,7 @@ module Aspera
                 Factory.instance.persist_mgr.put(@token_cache_id, json_data)
               rescue StandardError => e
                 # Refresh token can fail.
-                Log.log.warn{"Refresh failed: #{e}"}
+                Log.log.warn { "Refresh failed: #{e}" }
               end
             end
           end
@@ -121,7 +121,7 @@ module Aspera
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(@token_cache_id, json_data)
         end
-        Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"} unless token_data.nil?
+        Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" } unless token_data.nil?
         # ok we shall have a token here
         return token_data[@token_field]
       end

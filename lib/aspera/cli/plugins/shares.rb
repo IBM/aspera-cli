@@ -26,7 +26,7 @@ module Aspera
                 login_page = Rest
                   .new(base_url: url, redirect_max: 2)
                   .read('', headers: {'Accept'=>'text/html'})
-                Aspera.assert(login_page.include?('aspera-Shares')){'not Shares'}
+                Aspera.assert(login_page.include?('aspera-Shares')) { 'not Shares' }
                 if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
                   version = m[1]
                   if (m = login_page.match(/Patch level ([0-9]+)/))
@@ -107,7 +107,7 @@ module Aspera
         # --- DSL ---
 
         command :health,   description: 'Check Shares health'
-        command :info,     description: 'Show server information', action: ->{Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'}))}
+        command :info,     description: 'Show server information', action: -> { Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'})) }
         command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node
         command :admin,    description: 'Administer Shares', setup: :setup_admin
 
@@ -221,7 +221,7 @@ module Aspera
             lookup_method = :"lookup_shares_#{entity_type}_#{location}_id"
             define_method(lookup_method) do |field, value, **|
               path = admin_entity_path(entity_type, location)
-              RestList.lookup_entity_generic(entity: entity_type, field: field, value: value){@api_shares_admin.read(path)}['id']
+              RestList.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(path) }['id']
             end
             private lookup_method
           end
@@ -275,7 +275,7 @@ module Aspera
 
         # Lookup a share id by field/value using the admin API.
         def lookup_share_id(field, value, **)
-          RestList.lookup_entity_generic(entity: 'share', field: field, value: value){@api_shares_admin.read('data/shares')}['id']
+          RestList.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
         end
 
         # --- health ---
@@ -317,7 +317,7 @@ module Aspera
         end
 
         # One handler per COMMANDS_SHARES command (except :sync which is an intermediate node).
-        Node::COMMANDS_SHARES.reject{ |cmd| cmd.eql?(:sync)}.each do |cmd|
+        Node::COMMANDS_SHARES.reject { |cmd| cmd.eql?(:sync) }.each do |cmd|
           define_action_method([:files, cmd]) do |shares_node_plugin:, **ctx|
             shares_node_plugin.dispatch_v3_command(cmd, **ctx)
           end
@@ -352,7 +352,7 @@ module Aspera
         # @param op          [Symbol] CRUD operation
         def action_admin_entity_crud(entity_type, location, op)
           path = admin_entity_path(entity_type, location)
-          lookup = ->(f, v){RestList.lookup_entity_generic(entity: entity_type, field: f, value: v){@api_shares_admin.read(path)}['id']}
+          lookup = ->(f, v) { RestList.lookup_entity_generic(entity: entity_type, field: f, value: v) { @api_shares_admin.read(path) }['id'] }
           display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
           display_fields&.push('directory_user') if entity_type.eql?(:user) && location.eql?(:all)
           # :all excludes :create; :local has a documented POST+PUT requestBody for both users and groups
@@ -371,7 +371,7 @@ module Aspera
           path = admin_entity_path(entity_type, location)
           entity_path = "#{path}/#{entity_id}/#{setting}"
           is_singleton = !setting.eql?(:share_permissions)
-          id = permission_id || (Operations::INSTANCE.include?(op) && !is_singleton ? options.instance_identifier{ |f, v| lookup_share_id(f, v)} : nil)
+          id = permission_id || (Operations::INSTANCE.include?(op) && !is_singleton ? options.instance_identifier { |f, v| lookup_share_id(f, v) } : nil)
           send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: id, is_singleton: is_singleton)
         end
 
@@ -427,11 +427,11 @@ module Aspera
           define_action_method([:admin, entity_type, :saml, :import]) do |entity_parameters:, **|
             path = admin_entity_path(entity_type, :saml)
             bulk_result(entity_parameters, command: :import) do |entity_parameters|
-              entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
+              entity_parameters = entity_parameters.transform_keys { |k| k.gsub(/\s+/, '_').downcase }
               Aspera.assert_type(entity_parameters, Hash)
-              SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
+              SAML_IMPORT_MANDATORY.each { |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil? }
               entity_parameters.each_key do |p|
-                Aspera.assert_values(p, SAML_IMPORT_ALLOWED){'SAML field'}
+                Aspera.assert_values(p, SAML_IMPORT_ALLOWED) { 'SAML field' }
               end
               @api_shares_admin.create("#{path}/import", entity_parameters)
             end

@@ -18,7 +18,7 @@ module BuildTools
   # Execute the command line (not in shell)
   # @see `Aspera::Environment#secure_execute`
   def run(*cmd, **kwargs)
-    log.info("Executing: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ').sub(%r{^.*/bin/ascli}, 'ascli')}")
+    log.info("Executing: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s) }.join(' ').sub(%r{^.*/bin/ascli}, 'ascli')}")
     Aspera::Environment.secure_execute(*cmd, **kwargs)
   end
 
@@ -31,7 +31,7 @@ module BuildTools
   # @param git [Symbol] Name of executable
   def drun(*cmd, **kwargs)
     if dry_run?
-      log.info("#{'Would execute'.red}: #{cmd.map{ |i| Aspera::Environment.shell_escape_pretty(i.to_s)}.join(' ')}")
+      log.info("#{'Would execute'.red}: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s) }.join(' ')}")
       return [''] if kwargs[:mode].eql?(:capture)
     else
       run(*cmd, **kwargs)
@@ -68,7 +68,7 @@ module BuildTools
     require 'aspera/cli/transfer_progress'
     Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
     # Retrieve `transfer.proto` from the web
-    Aspera::Ascp::Installation.instance.download_sdk(folder: tmp_proto_folder, backup: false){ |name| name.end_with?('.proto') ? '/' : nil}
+    Aspera::Ascp::Installation.instance.download_sdk(folder: tmp_proto_folder, backup: false) { |name| name.end_with?('.proto') ? '/' : nil }
   end
 
   # Version that is currently being built.
@@ -81,7 +81,7 @@ module BuildTools
 
   # Change version to build
   def use_specific_version(version)
-    Aspera.assert(!version.to_s.empty?){'Version argument is required for beta task'}
+    Aspera.assert(!version.to_s.empty?) { 'Version argument is required for beta task' }
     OVERRIDE_VERSION_FILE.write(version)
     log.info("Version set to: #{BuildTools.build_version}")
   end

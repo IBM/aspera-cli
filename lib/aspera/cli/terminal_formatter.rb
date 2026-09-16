@@ -29,13 +29,13 @@ module Aspera
       # Format special values with colors (dim for empty, reverse for others)
       def special_format(what)
         result = "<#{what}>"
-        return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
+        return %w[null empty].any? { |s| what.include?(s) } ? result.dim : result.reverse_color
       end
 
       # Prepare table row for terminal display (word wrap arrays)
       def check_row(row)
         row.each_key do |k|
-          row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
+          row[k] = row[k].map { |i| WordWrap.ww(i.to_s, 120).chomp }.join("\n") if row[k].is_a?(Array)
         end
       end
 

@@ -47,7 +47,7 @@ module Aspera
             error = nil
             urls.each do |base_url|
               server_uri = URI.parse(base_url)
-              Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
+              Log.log.debug { "URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}" }
               next unless server_uri.scheme.eql?(SSH_SCHEME)
               socket = TCPSocket.new(server_uri.hostname, server_uri.port)
               socket.puts('SSH-2.0-Ascli_0.0')
@@ -55,7 +55,7 @@ module Aspera
               return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url} if version.match?(/^SSH-2.0-/)
             rescue StandardError => e
               error = e
-              Log.log.debug{"detect error: #{e}"}
+              Log.log.debug { "detect error: #{e}" }
             end
             raise error if error
             return
@@ -91,10 +91,10 @@ module Aspera
           url = options.get_option(:url, mandatory: true)
           server_transfer_spec = {}
           server_uri = URI.parse(url)
-          Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
+          Log.log.debug { "URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}" }
           server_transfer_spec['remote_host'] = server_uri.hostname
           unless URI_SCHEMES.include?(server_uri.scheme)
-            Log.log.warn{"Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to #{SSH_SCHEME}."}
+            Log.log.warn { "Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to #{SSH_SCHEME}." }
             server_uri.scheme = SSH_SCHEME
           end
           if server_uri.scheme.eql?(LOCAL_SCHEME)
@@ -115,13 +115,13 @@ module Aspera
             Log.log.warn('URL scheme is https but no token was provided in transfer spec.')
             Log.log.warn("If you want to access the server, not using WSS for session, then use a URL with scheme \"#{SSH_SCHEME}\" and proper SSH port")
             assumed_url = "#{SSH_SCHEME}://#{server_transfer_spec['remote_host']}:#{Transfer::Spec::SSH_PORT}"
-            Log.log.warn{"Assuming proper URL is: #{assumed_url}"}
+            Log.log.warn { "Assuming proper URL is: #{assumed_url}" }
             server_uri = URI.parse(assumed_url)
           end
           # Scheme is SSH
           if options.get_option(:username).nil?
             options.set_option(:username, Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
-            Log.log.info{"No username provided: Assuming default transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}"}
+            Log.log.info { "No username provided: Assuming default transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}" }
           end
           server_transfer_spec['remote_user'] = options.get_option(:username, mandatory: true)
           if !server_uri.port.nil?
@@ -137,14 +137,14 @@ module Aspera
           end
           ssh_key_list = options.get_option(:ssh_keys)
           if !ssh_key_list.nil?
-            Aspera.assert_array_all(ssh_key_list, String){'ssh_keys'}
-            ssh_key_list.map!{ |p| File.expand_path(p)}
+            Aspera.assert_array_all(ssh_key_list, String) { 'ssh_keys' }
+            ssh_key_list.map! { |p| File.expand_path(p) }
             Log.dump(:ssh_keys, ssh_key_list)
             if !ssh_key_list.empty?
               @ssh_opts[:keys] = ssh_key_list
               # PEM as per RFC 7468
               server_transfer_spec['ssh_private_key'] = File.read(ssh_key_list.first).strip
-              Log.log.warn{'Using only first SSH key for transfers'} unless ssh_key_list.length.eql?(1)
+              Log.log.warn { 'Using only first SSH key for transfers' } unless ssh_key_list.length.eql?(1)
               cred_set = true
             end
           end
@@ -160,7 +160,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}"){ |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info){@server_transfer_spec}}
+          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info) { @server_transfer_spec } }
         end
 
         # --- DSL ---
@@ -217,13 +217,13 @@ module Aspera
         # Generate ascmd handlers - convention: action_<op>
         %i[rm mv cp mkdir].each do |op|
           define_action_method([op]) do |command_arguments:, **|
-            execute_ascmd(op, command_arguments){Result::Success.new}
+            execute_ascmd(op, command_arguments) { Result::Success.new }
           end
         end
 
         %i[du md5sum info].each do |op|
           define_action_method([op]) do |command_arguments:, **|
-            execute_ascmd(op, command_arguments){ |r| Result::SingleObject.new(r.stringify_keys)}
+            execute_ascmd(op, command_arguments) { |r| Result::SingleObject.new(r.stringify_keys) }
           end
         end
 
@@ -243,7 +243,7 @@ module Aspera
           when :local then LocalExecutor.new
           when :wss   then nil
           when :ssh   then Ssh.new(@server_transfer_spec['remote_host'], @server_transfer_spec['remote_user'], @ssh_opts)
-          else Aspera.error_unexpected_value(@connection_type){'connection type'}
+          else Aspera.error_unexpected_value(@connection_type) { 'connection type' }
           end
           {}
         end

@@ -18,10 +18,10 @@ module Aspera
     RSpec.describe(TransferAgent) do
       # ── helpers ────────────────────────────────────────────────────────────
 
-      let(:tmpdir){Dir.mktmpdir('transfer_agent_spec')}
-      let(:persistency){Aspera::PersistencyFolder.new(tmpdir)}
+      let(:tmpdir) { Dir.mktmpdir('transfer_agent_spec') }
+      let(:persistency) { Aspera::PersistencyFolder.new(tmpdir) }
 
-      after{FileUtils.rm_rf(tmpdir)}
+      after { FileUtils.rm_rf(tmpdir) }
 
       # Build a TransferAgent with all Context dependencies doubled.
       # We bypass the constructor's option wiring by using instance_variable_set.
@@ -53,7 +53,7 @@ module Aspera
       # ── httpgw async (now supported) ────────────────────────────────────────
 
       describe 'asynchronous: true with httpgw' do
-        let(:job_id){'httpgw-job-uuid'}
+        let(:job_id) { 'httpgw-job-uuid' }
 
         let(:agent_double) do
           d = double('Agent::Httpgw')
@@ -64,7 +64,7 @@ module Aspera
 
         let(:ta) do
           build_agent(agent_type: 'httpgw', extra_transfer_options: {'asynchronous' => true})
-            .tap{ |a| a.agent_instance = agent_double}
+            .tap { |a| a.agent_instance = agent_double }
         end
 
         it 'returns Transfer::Result::Async (no longer raises)' do
@@ -119,7 +119,7 @@ module Aspera
               'username'     => 'u',
               'password'     => 'p'
             }
-          ).tap{ |a| a.agent_instance = agent_double}
+          ).tap { |a| a.agent_instance = agent_double }
         end
 
         it 'returns a Transfer::Result::Async with running status' do
@@ -158,7 +158,7 @@ module Aspera
       # ── direct async ────────────────────────────────────────────────────────
 
       describe 'asynchronous: true with direct' do
-        let(:job_id){'direct-job-uuid'}
+        let(:job_id) { 'direct-job-uuid' }
 
         let(:agent_double) do
           d = double('Agent::Direct')
@@ -169,7 +169,7 @@ module Aspera
 
         let(:ta) do
           build_agent(agent_type: 'direct', extra_transfer_options: {'asynchronous' => true})
-            .tap{ |a| a.agent_instance = agent_double}
+            .tap { |a| a.agent_instance = agent_double }
         end
 
         it 'returns Transfer::Result::Async with the direct job_id' do
@@ -213,7 +213,7 @@ module Aspera
         end
 
         let(:ta) do
-          build_agent(agent_type: 'node').tap{ |a| a.agent_instance = agent_double}
+          build_agent(agent_type: 'node').tap { |a| a.agent_instance = agent_double }
         end
 
         it 'calls wait_for_completion and returns a Transfer::Result::Success' do
@@ -261,7 +261,7 @@ module Aspera
       # ── Agent::Direct.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Direct.transfer_status' do
-        before{require 'aspera/agent/direct'}
+        before { require 'aspera/agent/direct' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Direct.transfer_status('some-job', {})
@@ -269,7 +269,7 @@ module Aspera
         end
 
         it 'returns running when sessions have a live thread' do
-          live_thread = Thread.new{sleep(60)}
+          live_thread = Thread.new { sleep(60) }
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-123').and_return([{thread: live_thread, error: nil}]))
           result = Aspera::Agent::Direct.transfer_status('job-123', {'_agent_ref' => agent})
@@ -301,7 +301,7 @@ module Aspera
       # ── Agent::Httpgw.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Httpgw.transfer_status' do
-        before{require 'aspera/agent/httpgw'}
+        before { require 'aspera/agent/httpgw' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Httpgw.transfer_status('some-job', {})
@@ -316,7 +316,7 @@ module Aspera
         end
 
         it 'returns running when the transfer thread is alive' do
-          live_thread = Thread.new{sleep(60)}
+          live_thread = Thread.new { sleep(60) }
           agent = double('Agent::Httpgw instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(live_thread))
           result = Aspera::Agent::Httpgw.transfer_status('job-2', {'_agent_ref' => agent})
@@ -350,7 +350,7 @@ module Aspera
       # ── Runner.result_transfer with typed Transfer::Result ──────────────────
 
       describe 'Runner.result_transfer' do
-        before{require 'aspera/cli/runner'}
+        before { require 'aspera/cli/runner' }
 
         it 'returns a SingleObject for Transfer::Result::Async' do
           async_result = Aspera::Transfer::Result.async(job_id: 'abc-123')
@@ -366,7 +366,7 @@ module Aspera
 
         it 'raises the exception for Transfer::Result::Error' do
           err = RuntimeError.new('transfer failed')
-          expect{Aspera::Cli::Runner.result_transfer(Aspera::Transfer::Result.error(err))}.to(raise_error(RuntimeError, 'transfer failed'))
+          expect { Aspera::Cli::Runner.result_transfer(Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
         end
       end
     end

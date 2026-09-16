@@ -42,12 +42,12 @@ module Aspera
       def dig(*path)
         current = @current
         path.each do |p|
-          Aspera.assert(current.key?(p)){"schema: #{p} in #{path}"}
+          Aspera.assert(current.key?(p)) { "schema: #{p} in #{path}" }
           current = current[p]
-          Aspera.assert_type(current, Hash){'schema'}
+          Aspera.assert_type(current, Hash) { 'schema' }
           if current.key?('$ref')
             ref = current['$ref']
-            Aspera.assert(ref.start_with?('#/')){"schema $ref must start with '#/': #{ref}"}
+            Aspera.assert(ref.start_with?('#/')) { "schema $ref must start with '#/': #{ref}" }
             current = @root.dig(*ref[2..].split('/'))
           end
         end
@@ -56,7 +56,7 @@ module Aspera
 
       # Resolve a $ref string to a Reader
       def resolve_ref(ref)
-        Aspera.assert(ref.start_with?('#/')){"schema $ref must start with '#/': #{ref}"}
+        Aspera.assert(ref.start_with?('#/')) { "schema $ref must start with '#/': #{ref}" }
         Reader.new(@root, @root.dig(*ref[2..].split('/')))
       end
 

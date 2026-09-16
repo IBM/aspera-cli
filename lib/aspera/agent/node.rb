@@ -95,7 +95,7 @@ module Aspera
         transfer_spec['remote_host'] = '127.0.0.1' if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.base_url).host)
         resp = node_api_.create('ops/transfers', transfer_spec)
         @transfer_id = resp['id']
-        Log.log.debug{"tr_id=#{@transfer_id}"}
+        Log.log.debug { "tr_id=#{@transfer_id}" }
         return @transfer_id
       end
 
@@ -137,7 +137,7 @@ module Aspera
             # Bug in HSTS ? transfer is marked failed, but there is no reason
             break if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
-          else Aspera.error_unexpected_value(transfer_data['status']){"transfer_data -> #{transfer_data}"}
+          else Aspera.error_unexpected_value(transfer_data['status']) { "transfer_data -> #{transfer_data}" }
           end
           sleep(1.0)
         end

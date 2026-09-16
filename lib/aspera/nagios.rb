@@ -17,7 +17,7 @@ module Aspera
     # add methods to add nagios error levels, each take component name and message
     LEVELS.each_index do |code|
       name = "#{ADD_PREFIX}#{LEVELS[code]}".to_sym
-      define_method(name){ |comp, msg| @data.push({code: code, comp: comp, msg: msg})}
+      define_method(name) { |comp, msg| @data.push({code: code, comp: comp, msg: msg}) }
     end
 
     class << self
@@ -26,18 +26,18 @@ module Aspera
         Aspera.assert_type(data, Array)
         Aspera.assert(!data.empty?, 'data is empty')
         %w[status component message].each do |c|
-          Aspera.assert(data.first.key?(c)){"result must have #{c}"}
+          Aspera.assert(data.first.key?(c)) { "result must have #{c}" }
         end
-        res_errors = data.reject{ |s| s['status'].eql?('ok')}
+        res_errors = data.reject { |s| s['status'].eql?('ok') }
         # keep only errors in case of problem, other ok are assumed so
         data = res_errors unless res_errors.empty?
         # first is most critical
-        data.sort!{ |a, b| LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
+        data.sort! { |a, b| LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym) }
         # build message: if multiple components: concatenate
         # message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
         message = data
-          .group_by{ |d| d['component']}
-          .map{ |comp, items| "#{comp}:#{items.map{ |d| d['message']}.join(',')}"}
+          .group_by { |d| d['component'] }
+          .map { |comp, items| "#{comp}:#{items.map { |d| d['message'] }.join(',')}" }
           .join(', ')
           .tr("\n", ' ')
         status = data.first['status'].upcase
@@ -60,7 +60,7 @@ module Aspera
       remote_time = Time.parse(remote_date)
       diff_time = (remote_time - Time.now).abs
       diff_rounded = diff_time.round(-2)
-      Log.log.debug{"DATE: #{remote_date} #{remote_time} diff=#{diff_rounded}"}
+      Log.log.debug { "DATE: #{remote_date} #{remote_time} diff=#{diff_rounded}" }
       msg = "offset #{diff_rounded} sec"
       if diff_time >= DATE_CRIT_OFFSET
         add_critical(component, msg)
@@ -80,7 +80,7 @@ module Aspera
     # @return [Array] of Hash
     def status_list
       Aspera.assert(!@data.empty?, 'missing result')
-      @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}
+      @data.map { |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]} }
     end
   end
 end

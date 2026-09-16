@@ -12,7 +12,7 @@ module Aspera
     DEFAULT_URL = 'http://localhost:8080'
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
     ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
-    PKCS12_EXT = %w[p12 pfx].map{ |i| ".#{i}"}.freeze
+    PKCS12_EXT = %w[p12 pfx].map { |i| ".#{i}" }.freeze
     CLOCK_SKEW_OFFSET_SEC = 5
 
     private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
@@ -42,7 +42,7 @@ module Aspera
 
       # @return [Array<OpenSSL::X509::Certificate>] list of Certificates from chain file
       def read_chain_file(chain)
-        File.read(chain).scan(/-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----/m).map{ |i| OpenSSL::X509::Certificate.new(i)}
+        File.read(chain).scan(/-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----/m).map { |i| OpenSSL::X509::Certificate.new(i) }
       end
     end
 
@@ -75,7 +75,7 @@ module Aspera
         elsif cert && PKCS12_EXT.include?(File.extname(cert).downcase)
           # PKCS12
           Log.log.debug('Using PKCS12 certificate')
-          Aspera.assert(!key.nil?, type: Error){'PKCS12 requires a key (password)'}
+          Aspera.assert(!key.nil?, type: Error) { 'PKCS12 requires a key (password)' }
           pkcs12 = OpenSSL::PKCS12.new(File.read(cert), key)
           webrick_options[:SSLCertificate] = pkcs12.certificate
           webrick_options[:SSLPrivateKey] = pkcs12.key
@@ -93,27 +93,27 @@ module Aspera
             OpenSSL::X509::Certificate.new(File.read(cert))
           end
           webrick_options[:SSLExtraChainCert] = read_chain_file(chain) unless chain.nil?
-          Aspera.assert(webrick_options[:SSLCertificate].public_key.to_der == webrick_options[:SSLPrivateKey].public_key.to_der, type: Error){'key and cert do not match'}
+          Aspera.assert(webrick_options[:SSLCertificate].public_key.to_der == webrick_options[:SSLPrivateKey].public_key.to_der, type: Error) { 'key and cert do not match' }
         end
       end
       # call constructor of parent class, but capture STDERR
       # self signed certificate generates characters on STDERR
       # see create_self_signed_cert in webrick/ssl.rb
-      Log.capture_stderr{super(webrick_options)}
+      Log.capture_stderr { super(webrick_options) }
     end
 
     # blocking
     def start
-      Log.log.info{"Listening on #{@uri}"}
+      Log.log.info { "Listening on #{@uri}" }
       # kill (-TERM) for graceful shutdown
-      handler = proc{shutdown}
-      %i{INT TERM}.each{ |sig| trap(sig, &handler)}
+      handler = proc { shutdown }
+      %i{INT TERM}.each { |sig| trap(sig, &handler) }
       super
     end
 
     # log web server access ( option AccessLog )
     def <<(access_log)
-      Log.log.debug{"webrick log #{access_log.chomp}"}
+      Log.log.debug { "webrick log #{access_log.chomp}" }
     end
   end
 end

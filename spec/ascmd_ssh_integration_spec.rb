@@ -58,13 +58,13 @@ RSpec.describe(Aspera::AsCmd) do
       res = ascmd.execute_single(:ls, [PATH_FOLDER_TINY])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
-      expect(res.map{ |i| i[:name]}).to(include(NAME_FILE1))
+      expect(res.map { |i| i[:name] }).to(include(NAME_FILE1))
     end
     it "works on file #{PATH_FILE_EXIST}" do
       res = ascmd.execute_single(:ls, [PATH_FILE_EXIST])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
-      expect(res.map{ |i| i[:name]}).to(match_array([NAME_FILE1]))
+      expect(res.map { |i| i[:name] }).to(match_array([NAME_FILE1]))
     end
   end
   describe 'mkdir' do

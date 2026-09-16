@@ -16,16 +16,16 @@ module Aspera
       class << self
         def parameters_from_svc_credentials(service_credentials, bucket_region)
           # check necessary contents
-          Aspera.assert_type(service_credentials, Hash){'service_credentials'}
+          Aspera.assert_type(service_credentials, Hash) { 'service_credentials' }
           Log.dump(:service_credentials, service_credentials)
           SERVICE_CREDS_PARAMS.each do |field|
-            Aspera.assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
+            Aspera.assert(service_credentials.key?(field)) { "service_credentials must have a field: #{field}" }
           end
           # read endpoints from service provided in service credentials
           endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')
           Log.dump(:endpoints, endpoints)
           endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
-          Aspera.assert(!endpoint.nil?){"no such region: #{bucket_region}"}
+          Aspera.assert(!endpoint.nil?) { "no such region: #{bucket_region}" }
           return {
             instance_id: service_credentials['resource_instance_id'],
             api_key:     service_credentials['apikey'],
@@ -35,8 +35,8 @@ module Aspera
       end
 
       def initialize(instance_id:, api_key:, endpoint:, bucket:, auth_url: IBM_CLOUD_TOKEN_URL)
-        Aspera.assert_type(instance_id, String){'resource instance id (crn)'}
-        Aspera.assert_type(endpoint, String){'endpoint'}
+        Aspera.assert_type(instance_id, String) { 'resource instance id (crn)' }
+        Aspera.assert_type(endpoint, String) { 'endpoint' }
         endpoint = "https://#{endpoint}" unless endpoint.start_with?('http')
         @auth_url = auth_url
         @api_key = api_key
@@ -62,10 +62,10 @@ module Aspera
           ret:       :resp
         ).body
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
-        Log.dump(:ats_info, ats_info.reject{ |k, _| k == 'AccessKey'})
-        Aspera.assert_hash_all(ats_info, String, nil){'ats_info'}
+        Log.dump(:ats_info, ats_info.reject { |k, _| k == 'AccessKey' })
+        Aspera.assert_hash_all(ats_info, String, nil) { 'ats_info' }
         Aspera.assert((FASP_INFO_KEYS - ats_info.keys).empty?, 'ats_info missing required keys')
-        Aspera.assert_hash_all(ats_info['AccessKey'], String, String){'ats_info'}
+        Aspera.assert_hash_all(ats_info['AccessKey'], String, String) { 'ats_info' }
         @storage_credentials = {
           'type'  => 'token',
           'token' => {TOKEN_FIELD => nil}

@@ -118,11 +118,11 @@ module Aspera
       def secure_execute(*cmd, mode: :execute, **kwargs)
         cmd = cmd.map(&:to_s)
         Aspera.assert(cmd.size.positive?, 'executable must be present', type: ArgumentError)
-        Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError){'mode'}
+        Aspera.assert_values(mode, PROCESS_MODES, type: ArgumentError) { 'mode' }
         Log.log.debug do
           parts = [mode.to_s, 'command:']
-          kwargs[:env]&.each{ |k, v| parts << "#{k}=#{shell_escape_pretty(v.to_s)}"}
-          cmd.each{ |a| parts << shell_escape_pretty(a)}
+          kwargs[:env]&.each { |k, v| parts << "#{k}=#{shell_escape_pretty(v.to_s)}" }
+          cmd.each { |a| parts << shell_escape_pretty(a) }
           parts.join(' ')
         end
         case mode
@@ -142,7 +142,7 @@ module Aspera
           # https://docs.ruby-lang.org/en/master/Open3.html#method-c-capture3
           # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
           argv = [kwargs.delete(:env)].compact + cmd
-          exception = kwargs.delete(:exception){true}
+          exception = kwargs.delete(:exception) { true }
           result = Open3.capture3(*argv, **kwargs)
           Log.dump(:stdout, result[0], level: :trace1)
           Log.dump(:stderr, result[1], level: :trace1)
@@ -182,7 +182,7 @@ module Aspera
           elsif File.directory?(path)
             mode = 0o700
           else
-            Log.log.debug{"No restriction can be set for #{path}"}
+            Log.log.debug { "No restriction can be set for #{path}" }
           end
         end
         File.chmod(mode, path) unless mode.nil?
@@ -198,7 +198,7 @@ module Aspera
 
       # force locale to C so that unicode characters are not used
       def force_terminal_c
-        I18N_VARS.each{ |var| ENV[var] = 'C'}
+        I18N_VARS.each { |var| ENV[var] = 'C' }
       end
 
       # @return [Boolean] true if we can display Unicode characters
@@ -208,7 +208,7 @@ module Aspera
       # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
       def terminal_supports_unicode?
         return false unless terminal?
-        locale_charmap_utf8? || I18N_VARS.any?{ |var| ENV[var]&.include?('UTF-8')}
+        locale_charmap_utf8? || I18N_VARS.any? { |var| ENV[var]&.include?('UTF-8') }
       end
 
       private
@@ -241,7 +241,7 @@ module Aspera
           OS_LINUX
         when /aix/
           OS_AIX
-        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_os']){'host_os'}
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_os']) { 'host_os' }
         end
       @cpu =
         case RbConfig::CONFIG['host_cpu']
@@ -253,7 +253,7 @@ module Aspera
           CPU_S390
         when /arm/, /aarch64/
           CPU_ARM64
-        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']){'host_cpu'}
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']) { 'host_cpu' }
         end
       @executable_extension = @os.eql?(OS_WINDOWS) ? '.exe' : nil
       # :text or :graphical depending on the environment
@@ -289,7 +289,7 @@ module Aspera
     def fix_home
       return unless @os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
       ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
-      Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
+      Log.log.debug { "Windows: set HOME to USERPROFILE: #{Dir.home}" }
       nil
     end
 
@@ -305,7 +305,7 @@ module Aspera
       when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
       when Environment::OS_WINDOWS then self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
       when Environment::OS_LINUX   then self.class.secure_execute('xdg-open', uri.to_s)
-      else Aspera.error_unexpected_value(os){'no graphical open method'}
+      else Aspera.error_unexpected_value(os) { 'no graphical open method' }
       end
       nil
     end
@@ -336,7 +336,7 @@ module Aspera
         else
           puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
         end
-      else Aspera.error_unexpected_value(@url_method){'URL open method'}
+      else Aspera.error_unexpected_value(@url_method) { 'URL open method' }
       end
     end
 

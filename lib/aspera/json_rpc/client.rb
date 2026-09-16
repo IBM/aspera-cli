@@ -44,7 +44,7 @@ module Aspera
           params:  args,
           id:      @request_id += 1
         })
-        Aspera.assert_type(data, Hash){'response'}
+        Aspera.assert_type(data, Hash) { 'response' }
         Aspera.assert(data['jsonrpc'] == VERSION, 'bad version in response')
         Aspera.assert(data.key?('id'), 'missing id in response')
         Aspera.assert(!(data.key?('error') && data.key?('result')), 'both error and response')

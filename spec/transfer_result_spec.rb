@@ -15,7 +15,7 @@ RSpec.describe(Aspera::Transfer::Result) do
   end
 
   describe '.error' do
-    let(:exception){RuntimeError.new('something went wrong')}
+    let(:exception) { RuntimeError.new('something went wrong') }
 
     it 'returns an Error instance' do
       expect(described_class.error(exception)).to(be_a(described_class::Error))

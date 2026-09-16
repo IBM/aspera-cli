@@ -27,7 +27,7 @@ if ENV.key?('ENABLE_COVERAGE')
     # assert usually do not trigger
     add_filter do |source_file|
       source_file.lines.each do |line|
-        line.skipped! if no_cov_functions.any?{ |i| line.src.include?(i)}
+        line.skipped! if no_cov_functions.any? { |i| line.src.include?(i) }
       end
       false
     end

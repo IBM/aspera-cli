@@ -51,7 +51,7 @@ module Aspera
         )
         current_date = Date.today
         last_check_days = (current_date - Date.strptime(last_check_array.first, GEM_CHECK_DATE_FMT)) rescue nil
-        Log.log.debug{"gem check new version: #{delay_days}, #{last_check_days}, #{current_date}, #{last_check_array}"}
+        Log.log.debug { "gem check new version: #{delay_days}, #{last_check_days}, #{current_date}, #{last_check_array}" }
         return if !last_check_days.nil? && last_check_days < delay_days
         last_check_array[0] = current_date.strftime(GEM_CHECK_DATE_FMT)
         check_date_persist.save

@@ -37,7 +37,7 @@ RSpec.describe(Aspera::Schema::Reader) do
       ]
     end
 
-    subject(:reader){described_class.from_query_params(params)}
+    subject(:reader) { described_class.from_query_params(params) }
 
     it 'returns a Reader instance' do
       expect(reader).to(be_a(described_class))
@@ -73,14 +73,14 @@ RSpec.describe(Aspera::Schema::Reader) do
     end
 
     it 'omits the required key when no params are required' do
-      optional_only = params.reject{ |p| p['required']}
+      optional_only = params.reject { |p| p['required'] }
       r = described_class.from_query_params(optional_only)
       expect(r.current).not_to(have_key('required'))
     end
 
     it 'works with each_property (traversable by Schema::Documentation)' do
       names = []
-      reader.each_property{ |_schema, name, _full| names << name}
+      reader.each_property { |_schema, name, _full| names << name }
       expect(names).to(contain_exactly('status', 'per_page', 'mandatory_param'))
     end
 

@@ -15,7 +15,7 @@ module Aspera
           begin
             api = Api::Alee.new(nil, nil, version: 'ping')
             http = api.read(nil, ret: :resp)
-            Aspera.assert(http.body.eql?('pong')){"unexpected response: #{http.body}"}
+            Aspera.assert(http.body.eql?('pong')) { "unexpected response: #{http.body}" }
             nagios.add_ok('api', 'answered ok')
           rescue StandardError => e
             nagios.add_critical('api', e.to_s)

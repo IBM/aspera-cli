@@ -21,9 +21,9 @@ module Aspera
         let(:options) do
           double('Options').tap do |o|
             # Default stubs — tests override as needed
-            allow(o).to(receive(:get_next_command)){raise 'get_next_command not stubbed'}
-            allow(o).to(receive(:get_next_argument)){raise 'get_next_argument not stubbed'}
-            allow(o).to(receive(:instance_identifier)){raise 'instance_identifier not stubbed'}
+            allow(o).to(receive(:get_next_command)) { raise 'get_next_command not stubbed' }
+            allow(o).to(receive(:get_next_argument)) { raise 'get_next_argument not stubbed' }
+            allow(o).to(receive(:instance_identifier)) { raise 'instance_identifier not stubbed' }
             # DSL auto-declare stubs: Base#initialize calls these for every OptionSpec
             # found in the ancestor chain (query, bulk, bfail on Base itself).
             allow(o).to(receive(:option_declared?)).and_return(false)
@@ -55,12 +55,12 @@ module Aspera
           klass.command(:health, description: 'Check health', action: :handle_health)
           klass.command(:info,   description: 'Show info', action: :handle_info)
           # Define handler stubs
-          klass.define_method(:handle_health){Result::Status.new('ok')}
-          klass.define_method(:handle_info){Result::Status.new('info')}
+          klass.define_method(:handle_health) { Result::Status.new('ok') }
+          klass.define_method(:handle_info) { Result::Status.new('info') }
           klass
         end
 
-        let(:plugin){plugin_class.new(context: context)}
+        let(:plugin) { plugin_class.new(context: context) }
 
         # ------------------------------------------------------------------
         # Class-level DSL accessors
@@ -100,7 +100,7 @@ module Aspera
           end
 
           it 'returns the supplied Proc unchanged' do
-            matcher = ->(entry){entry['size'] > 0}
+            matcher = ->(entry) { entry['size'] > 0 }
 
             expect(described_class.file_matcher(matcher)).to(be(matcher))
           end
@@ -189,13 +189,13 @@ module Aspera
           it 'does not raise even without ACTIONS constant' do
             klass = Class.new(Base)
             klass.command(:ping, description: 'Ping', action: :do_ping)
-            expect{klass.new(context: context)}.not_to(raise_error)
+            expect { klass.new(context: context) }.not_to(raise_error)
           end
 
           it 'does not raise even without an execute_action override' do
             klass = Class.new(Base)
             klass.command(:ping, description: 'Ping', action: :do_ping)
-            expect{klass.new(context: context)}.not_to(raise_error)
+            expect { klass.new(context: context) }.not_to(raise_error)
           end
         end
 
@@ -228,7 +228,7 @@ module Aspera
               action:     :handle_greet,
               arguments:   [ArgumentSpec.new(name: :name, type: String)]
             )
-            klass.define_method(:handle_greet){ |name:, **| Result::Status.new("hello #{name}")}
+            klass.define_method(:handle_greet) { |name:, **| Result::Status.new("hello #{name}") }
             allow(options).to(receive(:get_next_command).with([:greet], aliases: nil).and_return(:greet))
             allow(options).to(receive(:get_next_argument).with('name', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil).and_return('world'))
             inst = klass.new(context: context)
@@ -238,7 +238,7 @@ module Aspera
           it 'passes ctx keyword arguments to the handler' do
             klass = Class.new(Base)
             klass.command(:show, description: 'Show', action: :handle_show)
-            klass.define_method(:handle_show){ |api:| Result::Status.new("api=#{api}")}
+            klass.define_method(:handle_show) { |api:| Result::Status.new("api=#{api}") }
             allow(options).to(receive(:get_next_command).with([:show], aliases: nil).and_return(:show))
             inst = klass.new(context: context)
             expect(inst.dispatch_from_registry([], {api: 'my_api'})).to(be_a(Result::Status).and(have_attributes(data: 'api=my_api')))
@@ -248,7 +248,7 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:transfer, description: 'Transfers')
             klass.command(:list, parent: :transfer, description: 'List', action: :handle_list)
-            klass.define_method(:handle_list){Result::Status.new('listed')}
+            klass.define_method(:handle_list) { Result::Status.new('listed') }
             allow(options).to(receive(:get_next_command).with([:transfer], aliases: nil).and_return(:transfer))
             allow(options).to(receive(:get_next_command).with([:list], aliases: nil).and_return(:list))
             inst = klass.new(context: context)
@@ -265,8 +265,8 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:parent_cmd, description: 'Parent', setup: :build_api)
             klass.command(:child_cmd, parent: :parent_cmd, description: 'Child', action: :handle_child)
-            klass.define_method(:build_api){{api: 'built_api'}}
-            klass.define_method(:handle_child){ |api:| Result::Status.new("api=#{api}")}
+            klass.define_method(:build_api) { {api: 'built_api'} }
+            klass.define_method(:handle_child) { |api:| Result::Status.new("api=#{api}") }
             allow(options).to(receive(:get_next_command).with([:parent_cmd], aliases: nil).and_return(:parent_cmd))
             allow(options).to(receive(:get_next_command).with([:child_cmd], aliases: nil).and_return(:child_cmd))
             inst = klass.new(context: context)
@@ -277,8 +277,8 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:root_cmd, description: 'Root', setup: :override_api)
             klass.command(:leaf_cmd, parent: :root_cmd, description: 'Leaf', action: :handle_leaf)
-            klass.define_method(:override_api){ |**| {api: 'new_api'}}
-            klass.define_method(:handle_leaf){ |api:| Result::Status.new("api=#{api}")}
+            klass.define_method(:override_api) { |**| {api: 'new_api'} }
+            klass.define_method(:handle_leaf) { |api:| Result::Status.new("api=#{api}") }
             allow(options).to(receive(:get_next_command).with([:root_cmd], aliases: nil).and_return(:root_cmd))
             allow(options).to(receive(:get_next_command).with([:leaf_cmd], aliases: nil).and_return(:leaf_cmd))
             inst = klass.new(context: context)
@@ -291,8 +291,8 @@ module Aspera
             # (no children in DSL registry). The setup must run before the handler is called.
             klass = Class.new(Base)
             klass.command(:node, description: 'Node commands', setup: :build_node, action: :handle_node)
-            klass.define_method(:build_node){{node_plugin: 'built_plugin'}}
-            klass.define_method(:handle_node){ |node_plugin:| Result::Status.new("plugin=#{node_plugin}")}
+            klass.define_method(:build_node) { {node_plugin: 'built_plugin'} }
+            klass.define_method(:handle_node) { |node_plugin:| Result::Status.new("plugin=#{node_plugin}") }
             allow(options).to(receive(:get_next_command).with([:node], aliases: nil).and_return(:node))
             inst = klass.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'plugin=built_plugin')))
@@ -308,20 +308,20 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:always,   description: 'Always available', action: :handle_always)
             klass.command(:ssh_only, description: 'SSH only',         action: :handle_ssh, condition: :ssh_available?)
-            klass.define_method(:handle_always){Result::Status.new('always')}
-            klass.define_method(:handle_ssh){Result::Status.new('ssh')}
+            klass.define_method(:handle_always) { Result::Status.new('always') }
+            klass.define_method(:handle_ssh) { Result::Status.new('ssh') }
             klass
           end
 
           it 'excludes conditional commands when condition returns false' do
-            conditional_class.define_method(:ssh_available?){false}
+            conditional_class.define_method(:ssh_available?) { false }
             allow(options).to(receive(:get_next_command).with([:always], aliases: nil).and_return(:always))
             inst = conditional_class.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'always')))
           end
 
           it 'includes conditional commands when condition returns true' do
-            conditional_class.define_method(:ssh_available?){true}
+            conditional_class.define_method(:ssh_available?) { true }
             allow(options).to(receive(:get_next_command).with(%i[always ssh_only], aliases: nil).and_return(:ssh_only))
             inst = conditional_class.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'ssh')))
@@ -336,7 +336,7 @@ module Aspera
           it 'forwards aliases to get_next_command' do
             klass = Class.new(Base)
             klass.command(:files, description: 'Files', action: :handle_files, aliases: [:repository])
-            klass.define_method(:handle_files){Result::Status.new('files')}
+            klass.define_method(:handle_files) { Result::Status.new('files') }
             allow(options).to(receive(:get_next_command).with([:files], aliases: {repository: :files}).and_return(:files))
             inst = klass.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'files')))
@@ -352,7 +352,7 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:alias_cmd, description: 'Alias', delegates_to: :real_cmd)
             klass.command(:real_cmd,  description: 'Real',  action: :handle_real)
-            klass.define_method(:handle_real){Result::Status.new('real')}
+            klass.define_method(:handle_real) { Result::Status.new('real') }
             # Only one get_next_command call for the alias, then none for real_cmd (leaf)
             allow(options).to(receive(:get_next_command).with(%i[alias_cmd real_cmd], aliases: nil).and_return(:alias_cmd))
             inst = klass.new(context: context)
@@ -373,8 +373,8 @@ module Aspera
             klass.command(:other, description: 'Delegate', delegate_instance: :build_target, delegates_to: :other_root)
             # register :other_root so validate! would pass (not strictly needed here)
             klass.command(:other_root, description: 'Target root', action: :noop)
-            klass.define_method(:build_target){target}
-            klass.define_method(:noop){nil}
+            klass.define_method(:build_target) { target }
+            klass.define_method(:noop) { nil }
             allow(options).to(receive(:get_next_command).with(%i[other other_root], aliases: nil).and_return(:other))
             inst = klass.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'delegated')))
@@ -389,7 +389,7 @@ module Aspera
           it 'calls the handler with only ctx (no positional args) when transfer_paths is set' do
             klass = Class.new(Base)
             klass.command(:upload, description: 'Upload', action: :handle_upload, transfer_paths: :send)
-            klass.define_method(:handle_upload){ |**ctx| Result::Status.new("upload ctx_keys=#{ctx.keys.sort.inspect}")}
+            klass.define_method(:handle_upload) { |**ctx| Result::Status.new("upload ctx_keys=#{ctx.keys.sort.inspect}") }
             allow(options).to(receive(:get_next_command).with([:upload], aliases: nil).and_return(:upload))
             inst = klass.new(context: context)
             result = inst.dispatch_from_registry([], {api: 'a'})
@@ -451,7 +451,7 @@ module Aspera
             klass = Class.new(Base)
             klass.command(:transfer, description: 'Transfers')
             klass.command(:list, parent: :transfer, description: 'List transfers', action: :handle_list)
-            klass.define_method(:handle_list){nil}
+            klass.define_method(:handle_list) { nil }
             inst = klass.new(context: context)
             result = inst.generate_help
             expect(result[:transfer][:children]).to(have_key(:list))
@@ -460,7 +460,7 @@ module Aspera
           it 'annotates conditional commands with [condition_name]' do
             klass = Class.new(Base)
             klass.command(:ssh_only, description: 'SSH only', action: :handle_ssh, condition: :ssh_available?)
-            klass.define_method(:handle_ssh){nil}
+            klass.define_method(:handle_ssh) { nil }
             inst = klass.new(context: context)
             result = inst.generate_help
             expect(result[:ssh_only][:description]).to(eq('SSH only [ssh_available?]'))
@@ -469,7 +469,7 @@ module Aspera
           it 'sets condition key to the method name symbol for annotated commands' do
             klass = Class.new(Base)
             klass.command(:guarded, description: 'Guarded', action: :handle_guarded, condition: :flag?)
-            klass.define_method(:handle_guarded){nil}
+            klass.define_method(:handle_guarded) { nil }
             inst = klass.new(context: context)
             expect(inst.generate_help[:guarded][:condition]).to(eq(:flag?))
           end
@@ -485,7 +485,7 @@ module Aspera
             klass.commands_under(:things) do
               klass.command(:list, description: 'List things', action: :handle_list)
             end
-            klass.define_method(:handle_list){nil}
+            klass.define_method(:handle_list) { nil }
             reg = klass.command_registry
             expect(reg[[:things]]).not_to(be_nil)
             expect(reg[[:things]].description).to(eq('Manage Things'))
@@ -496,7 +496,7 @@ module Aspera
             klass.commands_under(:things, description: 'Browse things') do
               klass.command(:list, description: 'List things', action: :handle_list)
             end
-            klass.define_method(:handle_list){nil}
+            klass.define_method(:handle_list) { nil }
             expect(klass.command_registry[[:things]].description).to(eq('Browse things'))
           end
 
@@ -506,7 +506,7 @@ module Aspera
             klass.commands_under(:things) do
               klass.command(:list, description: 'List things', action: :handle_list)
             end
-            klass.define_method(:handle_list){nil}
+            klass.define_method(:handle_list) { nil }
             expect(klass.command_registry[[:things]].description).to(eq('My things'))
           end
         end
@@ -517,16 +517,16 @@ module Aspera
         # ------------------------------------------------------------------
 
         describe 'crud_commands' do
-          let(:api_obj){instance_double(Rest, 'api')}
+          let(:api_obj) { instance_double(Rest, 'api') }
 
           def build_klass(extra_kwargs = {})
             ao = api_obj
             k = Class.new(Base) do
               command :res, description: 'Resource', setup: :setup_res
-              define_method(:setup_res){{}}
+              define_method(:setup_res) { {} }
               crud_commands(api: :resolve_api, entity: 'things', lookup: :lookup_thing_id, **extra_kwargs)
-              define_method(:resolve_api){ao}
-              define_method(:lookup_thing_id){ |_f, _v, **| 'thing-42'}
+              define_method(:resolve_api) { ao }
+              define_method(:lookup_thing_id) { |_f, _v, **| 'thing-42' }
             end
             k
           end
@@ -573,7 +573,7 @@ module Aspera
             ao = api_obj
             klass = Class.new(Base) do
               crud_commands(api: :resolve_api, entity: 'things', operations: %i[show list])
-              define_method(:resolve_api){ao}
+              define_method(:resolve_api) { ao }
             end
             reg = klass.command_registry
             expect(reg[[:show]]).not_to(be_nil)
@@ -591,7 +591,7 @@ module Aspera
             allow(options).to(receive(:get_next_command).with([:list], aliases: nil).and_return(:list))
             klass = Class.new(Base) do
               crud_commands(api: :resolve_api, entity: :dynamic_entity, name: 'thing', operations: %i[list])
-              define_method(:resolve_api){ao}
+              define_method(:resolve_api) { ao }
             end
             inst = klass.new(context: context)
             # dynamic_entity: injected into ctx by a parent setup:, then forwarded to dispatch
@@ -601,7 +601,7 @@ module Aspera
         end
 
         describe 'per-verb entity methods' do
-          let(:api_obj){instance_double(Rest, 'api')}
+          let(:api_obj) { instance_double(Rest, 'api') }
 
           before do
             allow(options).to(receive(:get_option).with(:query, schema: nil).and_return(nil))
@@ -667,7 +667,7 @@ module Aspera
         # ------------------------------------------------------------------
 
         describe 'CommandRegistry#register_option' do
-          let(:registry){CommandRegistry.send(:new)}
+          let(:registry) { CommandRegistry.send(:new) }
 
           it 'stores and retrieves an OptionSpec by name' do
             spec = OptionSpec.new(name: :verbose, description: 'Verbose mode')

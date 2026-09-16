@@ -66,7 +66,7 @@ module Aspera
 
       # @param context [Context] the shared context to populate
       def initialize(context)
-        Aspera.assert_type(context, Context){'context'}
+        Aspera.assert_type(context, Context) { 'context' }
         @context = context
         @pac_exec = nil
       end
@@ -101,7 +101,7 @@ module Aspera
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         @context.options.parse_options!
-        Log.log.debug{"#{Info::CMD_NAME} folder: #{@context.main_folder}"}
+        Log.log.debug { "#{Info::CMD_NAME} folder: #{@context.main_folder}" }
       end
 
       # context.persistency + plugin lookup folders
@@ -130,13 +130,13 @@ module Aspera
         @context.options.declare(:vault_password, description: 'Vault password')
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
-        ExtendedValue.instance.on(EXTEND_PRESET){ |v| @context.presets.by_name(v)}
+        ExtendedValue.instance.on(EXTEND_PRESET) { |v| @context.presets.by_name(v) }
         ExtendedValue.instance.on(EXTEND_VAULT, &vault_value_cb)
         @context.options.parse_options!
         # Load global config default preset (equivalent of add_plugin_default_preset(:config))
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)
         unless default_config_name.nil?
-          Log.log.debug{"add_plugin_default_preset:#{CONF_GLOBAL_SYM}:#{default_config_name}"}
+          Log.log.debug { "add_plugin_default_preset:#{CONF_GLOBAL_SYM}:#{default_config_name}" }
           @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false)
         end
       end
@@ -159,7 +159,7 @@ module Aspera
         @context.pac_executor = ProxyAutoConfig.new(pac_script).register_uri_generic
         proxy_user_pass = @context.options.get_option(:proxy_credentials)
         if proxy_user_pass
-          Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
+          Aspera.assert(proxy_user_pass.length.eql?(2), type: Cli::BadArgument) { "proxy_credentials shall have two elements (#{proxy_user_pass.length})" }
           @context.pac_executor.proxy_user = proxy_user_pass[0]
           @context.pac_executor.proxy_pass = proxy_user_pass[1]
         end
@@ -171,8 +171,8 @@ module Aspera
       def setup_rest_and_transfer_runtime
         RestParameters.instance.user_agent    = Info::CMD_NAME
         RestParameters.instance.progress_bar  = @context.progress_bar
-        RestParameters.instance.session_cb    = ->(http_session){@context.http_config.update_session(http_session)}
-        RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin){@context.formatter.long_operation(title, action: action)}
+        RestParameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
+        RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
         Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         RestErrorAnalyzer.instance.log_file   = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
@@ -182,7 +182,7 @@ module Aspera
       # @return [String] ~/.aspera
       def module_family_folder
         user_home_folder = Dir.home
-        Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
+        Aspera.assert(Dir.exist?(user_home_folder), type: Cli::Error) { "Home folder does not exist: #{user_home_folder}. Check your user environment." }
         File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
       end
 

@@ -24,7 +24,7 @@ module Aspera
       def action_transfer_status(job_id:, **)
         store = async_transfer_store
         entry = store.read(job_id)
-        Aspera.assert(!entry.nil?, type: Cli::BadArgument){"Unknown job_id: #{job_id}"}
+        Aspera.assert(!entry.nil?, type: Cli::BadArgument) { "Unknown job_id: #{job_id}" }
         # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
         ref = store.agent_ref(job_id)
         entry['agent_params']['_agent_ref'] = ref if ref
@@ -49,7 +49,7 @@ module Aspera
       def action_transfer_cleanup(**)
         store = async_transfer_store
         deleted = store.list
-          .select{ |e| TERMINAL_STATUSES.include?(e['status'])}
+          .select { |e| TERMINAL_STATUSES.include?(e['status']) }
           .map do |e|
           store.delete(e['job_id'])
           e['job_id']
@@ -82,7 +82,7 @@ module Aspera
         agent_class = Aspera::Agent.const_get(agent_type.capitalize)
         agent_class.transfer_status(transfer_id, agent_params)
       rescue StandardError => e
-        Log.log.warn{"Could not re-query #{entry['agent_type']} agent for job #{entry['job_id']}: #{e}"}
+        Log.log.warn { "Could not re-query #{entry['agent_type']} agent for job #{entry['job_id']}: #{e}" }
         nil
       end
     end

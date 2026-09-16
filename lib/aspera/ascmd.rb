@@ -91,9 +91,9 @@ module Aspera
     # @return [Boolean,Array,Hash] result of command, type depends on command
     def execute_single(action_sym, arguments, version: 2, host: nil)
       arguments = [] if arguments.nil?
-      Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
+      Log.log.debug { "execute_single:#{action_sym}:#{arguments}" }
       Aspera.assert_type(action_sym, Symbol)
-      Aspera.assert_array_all(arguments, String){'arguments'}
+      Aspera.assert_array_all(arguments, String) { 'arguments' }
       remote_cmd = 'ascmd'
       # lines of commands (String's)
       command_lines = []
@@ -117,7 +117,7 @@ module Aspera
         # enclose arguments in double quotes, protect backslash and double quotes
         # ascmd uses space as token separator, and optional quotes ('") or \ to escape
         args.each do |v|
-          command.push(%Q{"#{v.gsub(/["\\]/){ |s| "\\#{s}"}}"})
+          command.push(%Q{"#{v.gsub(/["\\]/) { |s| "\\#{s}" }}"})
         end
         command_lines.push(command.join(' '))
       end
@@ -125,7 +125,7 @@ module Aspera
       command_lines.push('')
       # execute the main command and then exit
       stdin_input = command_lines.join("\n")
-      Log.log.trace1{"execute_single:#{stdin_input}"}
+      Log.log.trace1 { "execute_single:#{stdin_input}" }
       # execute, get binary output
       byte_buffer = @command_executor.execute(remote_cmd, input: stdin_input).unpack('C*')
       Aspera.assert(!byte_buffer.empty?, 'empty answer from server')
@@ -154,7 +154,7 @@ module Aspera
       end
       # raise error as exception
       raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
-        result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{ |i| i[:name]}.sort)
+        result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map { |i| i[:name] }.sort)
       return result
     end
 
@@ -174,7 +174,7 @@ module Aspera
       # @return [Hash] field description
       def field_description(struct_name, typed_buffer)
         result = TYPES_DESCR[struct_name][:fields][typed_buffer[:btype] - ENUM_START]
-        Aspera.assert(!result.nil?){"Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}"}
+        Aspera.assert(!result.nil?) { "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" }
         return result
       end
 
@@ -183,8 +183,8 @@ module Aspera
       def parse(buffer, type_name, indent_level = nil)
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]
-        Aspera.assert(!type_descr.nil?){"Unexpected type #{type_name}"}
-        Log.log.trace1{"#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red}
+        Aspera.assert(!type_descr.nil?) { "Unexpected type #{type_name}" }
+        Log.log.trace1 { "#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red }
         result = nil
         case type_descr[:decode]
         when :base
@@ -194,7 +194,7 @@ module Aspera
           byte_array = [byte_array] unless byte_array.is_a?(Array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
           result.force_encoding('UTF-8') if type_name.eql?(:zstr)
-          Log.log.trace1{"#{'   .' * indent_level}-> base:#{byte_array} -> #{result}"}
+          Log.log.trace1 { "#{'   .' * indent_level}-> base:#{byte_array} -> #{result}" }
           result = Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list
           # return a list of type_buffer
@@ -205,7 +205,7 @@ module Aspera
             Aspera.assert(buffer.length >= length, 'not enough bytes')
             value = buffer.shift(length)
             result.push({btype: btype, buffer: value})
-            Log.log.trace1{"#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}"}
+            Log.log.trace1 { "#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}" }
           end
         when :field_list
           # by default the result is one struct
@@ -214,7 +214,7 @@ module Aspera
           parse(buffer, :blist, indent_level).each do |typed_buffer|
             # what type of field is it ?
             field_info = field_description(type_name, typed_buffer)
-            Log.log.trace1{"#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green}
+            Log.log.trace1 { "#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green }
             case field_info[:special]
             when nil # normal case
               result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)
@@ -224,7 +224,7 @@ module Aspera
               result[field_info[:name]] ||= []
               result[field_info[:name]].push(parse(typed_buffer[:buffer], field_info[:is_a], indent_level))
             when :list_tlv_list # field is an array of values in a list of buffers
-              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{ |r| parse(r[:buffer], field_info[:is_a], indent_level)}
+              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map { |r| parse(r[:buffer], field_info[:is_a], indent_level) }
             when :list_tlv_restart # field is an array of values, but a new value is started on index 1
               fl = result[field_info[:name]] = []
               parse(typed_buffer[:buffer], :blist, indent_level).map do |tb|

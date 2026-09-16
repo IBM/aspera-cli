@@ -57,21 +57,21 @@ module Aspera
           end
         end
         @processing_method = @processing_method.to_sym
-        Log.log.debug{"method: #{@processing_method}"}
-        Aspera.assert(respond_to?(@processing_method, true)){"no processing known for #{conversion_type} -> #{@preview_format_sym}"}
+        Log.log.debug { "method: #{@processing_method}" }
+        Aspera.assert(respond_to?(@processing_method, true)) { "no processing known for #{conversion_type} -> #{@preview_format_sym}" }
         command = [:magick] + %w[identify -list font]
         magick_fonts = Utils.parse_magick_fonts(Utils.execute(*command, mode: :capture).first)
-        Aspera.assert(magick_fonts[:fonts].any?{ |f| f[:name].eql?(@options.thumb_text_font)}){"Missing font #{@options.thumb_text_font} in #{command}"}
+        Aspera.assert(magick_fonts[:fonts].any? { |f| f[:name].eql?(@options.thumb_text_font) }) { "Missing font #{@options.thumb_text_font} in #{command}" }
       end
 
       # Creates preview as specified in constructor.
       def generate
-        Log.log.debug{"#{@source}->#{@destination} (#{@processing_method})"}
+        Log.log.debug { "#{@source}->#{@destination} (#{@processing_method})" }
         begin
           send(@processing_method)
           # Check that generated size does not exceed maximum.
           result_size = File.size(@destination)
-          Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
+          Log.log.warn { "preview size exceeds maximum allowed #{result_size} > #{@options.max_size}" } if result_size > @options.max_size
         ensure
           FileUtils.rm_rf(@temp_folder)
         end
@@ -99,7 +99,7 @@ module Aspera
       # @param index [Integer] Index of part (starts at 1).
       # @return [Float] Offset in seconds suitable for ffmpeg -ss option.
       def get_offset(duration, start_offset, total_count, index)
-        Aspera.assert_type(duration, Float){'duration'}
+        Aspera.assert_type(duration, Float) { 'duration' }
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
       end
 
@@ -178,10 +178,10 @@ module Aspera
       # Performs a simple re-encoding with configurable ffmpeg options.
       def convert_video_to_mp4_using_reencode
         options = @options.reencode_ffmpeg
-        Aspera.assert_type(options, Hash){'reencode_ffmpeg'}
+        Aspera.assert_type(options, Hash) { 'reencode_ffmpeg' }
         options.each do |k, v|
-          Aspera.assert_values(k, FFMPEG_OPTIONS_LIST){'key'}
-          Aspera.assert_type(v, Array){k}
+          Aspera.assert_values(k, FFMPEG_OPTIONS_LIST) { 'key' }
+          Aspera.assert_type(v, Array) { k }
         end
         codec = @options.video_codec || Utils.available_h264_encoder
         in_opts = options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9]
@@ -268,7 +268,7 @@ module Aspera
           # soffice creates the file with the source name, so we need to rename it if needed.
           generated_pdf = File.join(File.dirname(tmp_pdf_file), "#{File.basename(@source, File.extname(@source))}.pdf")
           FileUtils.mv(generated_pdf, tmp_pdf_file) if generated_pdf != tmp_pdf_file
-        else Aspera.error_unexpected_value(@options.office_conversion){'office_conversion'}
+        else Aspera.error_unexpected_value(@options.office_conversion) { 'office_conversion' }
         end
         convert_pdf_to_png(tmp_pdf_file)
       end

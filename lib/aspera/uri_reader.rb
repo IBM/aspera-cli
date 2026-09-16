@@ -50,7 +50,7 @@ module Aspera
       # @param url [String] a file: URL (canonical or short form)
       # @return [String] the literal path encoded in the URL
       def file_path(url)
-        Aspera.assert(file?(url)){"use format: #{file_url('<path>')}"}
+        Aspera.assert(file?(url)) { "use format: #{file_url('<path>')}" }
         # Strip canonical prefix "file:///" first (covers relative and absolute canonical forms).
         # If absent, strip only the short "file:" prefix.
         return url.start_with?(SCHEME_FILE_PFX2) ? url.delete_prefix(SCHEME_FILE_PFX2) : url.delete_prefix(SCHEME_FILE_PFX1)
@@ -80,10 +80,10 @@ module Aspera
           end
         when NilClass
           local_file_path = uri.path
-          Aspera.assert(!local_file_path.nil?, type: Error){'URL shall have a path, check syntax'}
+          Aspera.assert(!local_file_path.nil?, type: Error) { 'URL shall have a path, check syntax' }
           local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
-        else Aspera.error_unexpected_value(uri.scheme){"scheme for [#{uri_to_read}]"}
+        else Aspera.error_unexpected_value(uri.scheme) { "scheme for [#{uri_to_read}]" }
         end
       end
 

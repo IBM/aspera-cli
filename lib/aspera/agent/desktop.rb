@@ -65,7 +65,7 @@ module Aspera
         @application_id = SecureRandom.uuid
         @transfer_id = nil
         super
-        Aspera.assert(Environment.instance.graphical?, type: Error){'Using client requires a graphical environment'}
+        Aspera.assert(Environment.instance.graphical?, type: Error) { 'Using client requires a graphical environment' }
         method_index = 0
         begin
           # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'
@@ -77,8 +77,8 @@ module Aspera
         rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]
           method_index += 1
-          Aspera.assert(!start_url.nil?){"Unable to start #{Products::Desktop::APP_NAME} #{method_index} times"}
-          Log.log.warn{"#{Products::Desktop::APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..."}
+          Aspera.assert(!start_url.nil?) { "Unable to start #{Products::Desktop::APP_NAME} #{method_index} times" }
+          Log.log.warn { "#{Products::Desktop::APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..." }
           Environment.instance.open_uri_graphical(start_url)
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry

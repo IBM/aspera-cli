@@ -32,16 +32,16 @@ module Aspera
         # Change keys from string into symbol
         smtp = smtp.symbolize_keys
         unsupported = smtp.keys - SMTP_CONF_PARAMS
-        Aspera.assert(unsupported.empty?, type: Cli::Error){"Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}"}
+        Aspera.assert(unsupported.empty?, type: Cli::Error) { "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" }
         # Boolean fields must be actual booleans, not strings like "false"
         SMTP_BOOL_PARAMS.each do |k|
-          Aspera.assert_values(smtp[k], [true, false], type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+          Aspera.assert_values(smtp[k], [true, false], type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
         end
         SMTP_INT_PARAMS.each do |k|
-          Aspera.assert_type(smtp[k], Integer, type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+          Aspera.assert_type(smtp[k], Integer, type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
         end
         SMTP_STR_PARAMS.each do |k|
-          Aspera.assert_type(smtp[k], String, type: Cli::Error){"smtp.#{k}"} if smtp.key?(k)
+          Aspera.assert_type(smtp[k], String, type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
         end
         # smtp[:ssl] = nil (false)
         smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
@@ -56,9 +56,9 @@ module Aspera
         smtp[:from_name] ||= smtp[:from_email].sub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
         smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
         %i[server port domain].each do |n|
-          Aspera.assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
+          Aspera.assert(smtp.key?(n)) { "Missing mandatory smtp parameter: #{n}" }
         end
-        Log.dump(:smtp, smtp.reject{ |k, _| k == :password})
+        Log.dump(:smtp, smtp.reject { |k, _| k == :password })
         return smtp
       end
 
@@ -72,7 +72,7 @@ module Aspera
         values[:from_name] ||= mail_conf[:from_name]
         values[:from_email] ||= mail_conf[:from_email]
         %i[to from_email].each do |n|
-          Aspera.assert_type(values[n], String){"Missing email parameter: #{n} in config"}
+          Aspera.assert_type(values[n], String) { "Missing email parameter: #{n} in config" }
         end
         start_options = [mail_conf[:domain]]
         start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)

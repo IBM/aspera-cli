@@ -19,13 +19,13 @@ module Aspera
         sleep_factor:  2,
         sleep_max:     60
       )
-        Aspera.assert_type(iter_max, Integer){'iter_max'}
+        Aspera.assert_type(iter_max, Integer) { 'iter_max' }
         @iter_max = iter_max
-        Aspera.assert_type(sleep_initial, Integer){'sleep_initial'}
+        Aspera.assert_type(sleep_initial, Integer) { 'sleep_initial' }
         @sleep_initial = sleep_initial
-        Aspera.assert_type(sleep_factor, Integer){'sleep_factor'}
+        Aspera.assert_type(sleep_factor, Integer) { 'sleep_factor' }
         @sleep_factor = sleep_factor
-        Aspera.assert_type(sleep_max, Integer){'sleep_max'}
+        Aspera.assert_type(sleep_max, Integer) { 'sleep_max' }
         @sleep_max = sleep_max
       end
 
@@ -38,7 +38,7 @@ module Aspera
         # maximum of retry
         remaining_resumes = @iter_max
         sleep_seconds = @sleep_initial
-        Log.log.debug{"retries=#{remaining_resumes}"}
+        Log.log.debug { "retries=#{remaining_resumes}" }
         # try to send the file until ascp is successful
         loop do
           Log.log.debug('Starting task execution')
@@ -48,17 +48,17 @@ module Aspera
             # Exit retry loop if success
             break
           rescue Error => e
-            Log.log.warn{"An error occurred during task: #{e.message}"}
-            Log.log.debug{"Retryable ? #{e.retryable?}"}
+            Log.log.warn { "An error occurred during task: #{e.message}" }
+            Log.log.debug { "Retryable ? #{e.retryable?}" }
             # do not retry non-retryable
             raise unless e.retryable?
             # exit if we exceed the max number of retry
-            Aspera.assert(remaining_resumes > 0, type: Error){"Maximum number of retry reached: #{@iter_max}"}
+            Aspera.assert(remaining_resumes > 0, type: Error) { "Maximum number of retry reached: #{@iter_max}" }
           end
 
           # take this retry in account
           remaining_resumes -= 1
-          Log.log.warn{"Resuming in #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
+          Log.log.warn { "Resuming in #{sleep_seconds} seconds (retry left:#{remaining_resumes})" }
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

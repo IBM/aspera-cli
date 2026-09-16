@@ -69,10 +69,10 @@ class DocHelper
     # Generate template configuration file for tests
     # Hide sensitive information
     def config_to_template(configuration, template)
-      Aspera::Log.log.info{"Generating: #{template}"}
+      Aspera::Log.log.info { "Generating: #{template}" }
       configuration.each do |k, preset_hash|
         preset_hash.each do |param_name, param_value|
-          param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')} if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
+          param_value.map! { |fqdn| fqdn.gsub('aspera-emea', 'example') } if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
           next unless param_value.is_a?(String)
           next if param_value.start_with?('@preset:')
           if k.eql?('config') && param_name.eql?('version')
@@ -112,7 +112,7 @@ class DocHelper
               end
               if uri.query.is_a?(String)
                 SECRET_QUERIES.each do |key|
-                  uri.query = uri.query.gsub(/(&?)#{key}=[^&]*/){"#{::Regexp.last_match(1)}#{key}=some_#{key}"}
+                  uri.query = uri.query.gsub(/(&?)#{key}=[^&]*/) { "#{::Regexp.last_match(1)}#{key}=some_#{key}" }
                 end
               end
               preset_hash[param_name] = uri.to_s
@@ -169,7 +169,7 @@ class DocHelper
 
   # list of specific formatters supported
   def log_formatters
-    Aspera::Log::FORMATTERS.map{ |i| Aspera::Markdown.icode(i)}.join(br)
+    Aspera::Log::FORMATTERS.map { |i| Aspera::Markdown.icode(i) }.join(br)
   end
 
   def gemspec
@@ -189,7 +189,7 @@ class DocHelper
   def gem_opt_md_list
     columns = %i[name version comment].freeze
     data = gem_opt_list.map do |g|
-      columns.map{ |c| g[c]}
+      columns.map { |c| g[c] }
     end
     data.unshift(columns)
     Aspera::Markdown.table(data)
@@ -252,7 +252,7 @@ class DocHelper
   end
 
   def agent_table
-    Aspera::Markdown.table([%w[ID Name]] + Aspera::Agent::Factory::ALL.map{ |_, v| [v[:short].upcase, v[:long]]}.sort_by{ |a| a[0]})
+    Aspera::Markdown.table([%w[ID Name]] + Aspera::Agent::Factory::ALL.map { |_, v| [v[:short].upcase, v[:long]] }.sort_by { |a| a[0] })
   end
 
   # @return the minimum ruby version from gemspec
@@ -324,12 +324,12 @@ class DocHelper
     return @commands unless @commands.nil?
     @commands = {}
     all_tests = TestEnv.descriptions
-    all_tests.select{ |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin]}.each_value do |test|
+    all_tests.select { |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin] }.each_value do |test|
       # Cleanup command line
-      line = test[:args].reject{ |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N')}.map do |cmd|
+      line = test[:args].reject { |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N') }.map do |cmd|
         next cmd unless cmd.is_a?(String)
         next "''" if cmd.empty?
-        REPLACEMENTS_YAML.each{ |replace| cmd = cmd.gsub(replace.first, replace.last)}
+        REPLACEMENTS_YAML.each { |replace| cmd = cmd.gsub(replace.first, replace.last) }
         cmd
       end.join(' ')
       line = line.strip.squeeze(' ')
@@ -378,7 +378,7 @@ class DocHelper
       file.each_line do |line|
         if line.match?(HEADING_PATTERN)
           error = true
-          Aspera::Log.log.error{"Heading shall be capitalized: #{line}"}
+          Aspera::Log.log.error { "Heading shall be capitalized: #{line}" }
         end
       end
     end
@@ -436,7 +436,7 @@ class DocHelper
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
     plugin_manager.add_plugins_from_lookup_folders if plugin_manager.plugin_list.empty?
     @undocumented_plugins = plugin_manager.plugin_list
-    Aspera::Log.log.info{"Generating: #{@paths[:outfile]}"}
+    Aspera::Log.log.info { "Generating: #{@paths[:outfile]}" }
     tmp_file = [@paths[:outfile], 'tmp'].join('.')
     File.open(tmp_file, 'w') do |f|
       f.puts(ERB.new(File.read(@paths[:template]).sub("-->\n", "-->\n<!-- markdownlint-disable MD033 -->\n")).result(binding))
@@ -445,7 +445,7 @@ class DocHelper
     # check that all test commands are included in the doc
     all_test_commands_by_plugin.delete(:my_command)
     if !all_test_commands_by_plugin.empty?
-      Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.map{ |p| %Q{"#{p}"}}.join(', ')}".red)
+      Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.map { |p| %Q{"#{p}"} }.join(', ')}".red)
       raise 'Remediate: remove from doc using tag `nodoc` or add section in doc'
     end
     File.rename(tmp_file, @paths[:outfile])

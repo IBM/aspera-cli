@@ -20,13 +20,13 @@ class Logger
 
   # Add custom level to logger severity, below debug level
   module Severity
-    1.upto(TRACE_MAX).each{ |level| const_set(:"TRACE#{level}", - level)}
+    1.upto(TRACE_MAX).each { |level| const_set(:"TRACE#{level}", - level) }
   end
 
   # Hash
   # key   [Integer] Log level (e.g. 0 for DEBUG)
   # value [Symbol]  Uppercase log level label (e.g. :DEBUG)
-  SEVERITY_LABEL = Severity.constants.to_h{ |name| [Severity.const_get(name), name]}
+  SEVERITY_LABEL = Severity.constants.to_h { |name| [Severity.const_get(name), name] }
 
   # Override
   # @param severity [Integer] Log severity as int
@@ -42,14 +42,14 @@ class Logger
     def make_methods(str_level)
       int_level = ::Logger.const_get(str_level.upcase)
       method_base = str_level.downcase
-      define_method(method_base, ->(message = nil, &block){add(int_level, message, &block)})
-      define_method("#{method_base}?", ->{level <= int_level})
-      define_method("#{method_base}!", ->{self.level = int_level})
+      define_method(method_base, ->(message = nil, &block) { add(int_level, message, &block) })
+      define_method("#{method_base}?", -> { level <= int_level })
+      define_method("#{method_base}!", -> { self.level = int_level })
       nil
     end
   end
   # Declare methods for all levels
-  Logger::Severity.constants.each{ |severity| make_methods(severity)}
+  Logger::Severity.constants.each { |severity| make_methods(severity) }
 end
 
 # Restore warnings
@@ -68,7 +68,7 @@ module Aspera
     LOG_TYPES = %i[stderr stdout syslog].freeze
 
     # Levels are :trace2,:trace1,:debug,:info,:warn,:error,fatal,:unknown
-    LEVELS = Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}.freeze
+    LEVELS = Logger::Severity.constants.sort { |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b) }.map { |c| c.downcase.to_sym }.freeze
 
     # Class methods
     class << self
@@ -100,7 +100,7 @@ module Aspera
             JSON.pretty_generate(object) rescue PP.pp(object, +'')
           when :ruby
             PP.pp(object, +'')
-          else Aspera.error_unexpected_value(instance.dump_format){'dump format'}
+          else Aspera.error_unexpected_value(instance.dump_format) { 'dump format' }
           end
         "#{name.to_s.green}(#{instance.dump_format})#{object.class}=\n#{dump_text}"
       end
@@ -119,7 +119,7 @@ module Aspera
       # Returns the last 2 containers (module/class) and method caller
       def caller_method
         stack = caller
-        i = stack.rindex{ |line| line.include?('Logger')}
+        i = stack.rindex { |line| line.include?('Logger') }
         frame = stack[i + 1] if i && stack[i + 1]
         return '???' unless frame
         # Extract the "Class::Module::Method" or "Class#method" part
@@ -166,7 +166,7 @@ module Aspera
     # @return [nil]
     def formatter=(formatter)
       if formatter.is_a?(String)
-        Aspera.assert(FORMATTER_LAMBDAS.key?(formatter.to_sym), type: Error){"Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}"}
+        Aspera.assert(FORMATTER_LAMBDAS.key?(formatter.to_sym), type: Error) { "Unknown formatter #{formatter}, use one of: #{FORMATTERS.join(', ')}" }
         formatter = FORMATTER_LAMBDAS[formatter.to_sym]
       elsif !formatter.respond_to?(:call) && !formatter.is_a?(Logger::Formatter)
         raise Error, 'Formatter must be a String, a Logger::Formatter or a Proc'
@@ -210,7 +210,7 @@ module Aspera
         end
         # Use `local2` facility, like other Aspera components
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
-      else Aspera.error_unexpected_value(new_log_type){"log type (#{LOG_TYPES.join(', ')})"}
+      else Aspera.error_unexpected_value(new_log_type) { "log type (#{LOG_TYPES.join(', ')})" }
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
@@ -247,13 +247,13 @@ module Aspera
       [k, short_levl(k).apply(*v)]
     end.freeze
 
-    DEFAULT_FORMATTER = ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{m}\n"}
+    DEFAULT_FORMATTER = ->(s, _d, _p, m) { "#{LVL_COLOR[s]} #{m}\n" }
 
     # pre-defined formatters
     FORMATTER_LAMBDAS = {
       standard: Logger::Formatter.new,
       default:  DEFAULT_FORMATTER,
-      caller:   ->(s, _d, _p, m){"#{LVL_COLOR[s]} #{Log.caller_method}\n#{m}\n"}
+      caller:   ->(s, _d, _p, m) { "#{LVL_COLOR[s]} #{Log.caller_method}\n#{m}\n" }
     }.freeze
 
     FORMATTERS = FORMATTER_LAMBDAS.keys

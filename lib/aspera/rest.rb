@@ -87,7 +87,7 @@ module Aspera
       # @param query [Hash] A key can have Array value and result will use PHP format: a[]=1&a[]=2
       # @return [Hash] The query parameters.
       def php_style(query)
-        Aspera.assert_type(query, Hash){'query'}
+        Aspera.assert_type(query, Hash) { 'query' }
         query[:x_array_php_style] = true
         query
       end
@@ -100,7 +100,7 @@ module Aspera
       # @return [URI] The built URI.
       def build_uri(url, query)
         uri = URI.parse(url)
-        Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
+        Aspera.assert_values(uri.scheme, %w[http https]) { 'URI scheme' }
         return uri if query.nil? || query.respond_to?(:empty?) && query.empty?
         Log.dump(:query, query)
         uri.query =
@@ -110,9 +110,9 @@ module Aspera
           when Hash
             URI.encode_www_form(h_to_query_array(query))
           when Array
-            Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}, 'Query must be array of arrays of 2 elements')
+            Aspera.assert(query.all? { |i| i.is_a?(Array) && i.length.eql?(2) }, 'Query must be array of arrays of 2 elements')
             URI.encode_www_form(query) # remove nil values
-          else Aspera.error_unexpected_value(query.class){'query type'}
+          else Aspera.error_unexpected_value(query.class) { 'query type' }
           end.gsub('%5B%5D=', '[]=')
         # [] is allowed in url parameters
         uri
@@ -165,7 +165,7 @@ module Aspera
       # @return [Net::HTTP] A started HTTP session
       def start_http_session(base_url)
         uri = URI.parse(base_url)
-        Aspera.assert_values(uri.scheme, %w[http https]){'URI scheme'}
+        Aspera.assert_values(uri.scheme, %w[http https]) { 'URI scheme' }
         # This honors http_proxy env var
         http_session = Net::HTTP.new(uri.host, uri.port)
         http_session.use_ssl = uri.scheme.eql?('https')
@@ -185,7 +185,7 @@ module Aspera
         Aspera.assert_type(http_session, Net::HTTP)
         # Net::BufferedIO in net/protocol.rb
         result = http_session.instance_variable_get(:@socket)
-        Aspera.assert(!result.nil?){"no socket for #{http_session}"}
+        Aspera.assert(!result.nil?) { "no socket for #{http_session}" }
         return result
       end
 
@@ -290,7 +290,7 @@ module Aspera
       # remove trailing port if it is 443 and scheme is https
       @base_url = @base_url.gsub(/:443$/, '') if @base_url.start_with?('https://')
       @base_url = @base_url.gsub(/:80$/, '') if @base_url.start_with?('http://')
-      Log.log.debug{"Rest.new(#{@base_url})"}
+      Log.log.debug { "Rest.new(#{@base_url})" }
       # default is no auth
       @auth_params = auth
       Aspera.assert_type(@auth_params, Hash)
@@ -312,7 +312,7 @@ module Aspera
     def oauth
       if @oauth.nil?
         Aspera.assert(@auth_params[:type].eql?(:oauth2), 'no OAuth defined')
-        oauth_parameters = @auth_params.reject{ |k, _v| k.eql?(:type)}
+        oauth_parameters = @auth_params.reject { |k, _v| k.eql?(:type) }
         Log.dump(:oauth_parameters, oauth_parameters)
         @oauth = OAuth::Factory.instance.create(**oauth_parameters)
       end
@@ -346,7 +346,7 @@ module Aspera
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
-      Log.log.debug{"call #{operation} [#{subpath}]".red.bold.bg_green}
+      Log.log.debug { "call #{operation} [#{subpath}]".red.bold.bg_green }
       Log.dump(:body, body, level: :trace1)
       Log.dump(:query, query, level: :trace1)
       Log.dump(:headers, headers, level: :trace1)
@@ -370,11 +370,11 @@ module Aspera
         http_session.request(req) do |response|
           result_http = response
           result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
-          Log.log.debug{"response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}"}
+          Log.log.debug { "response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}" }
           # JSON data needs to be parsed, in case it contains an error code
           file_saved = save_response(response, result_http, result_mime, save_to)
         end
-        Log.log.debug{"result: code=#{result_http.code} mime=#{result_mime}"}
+        Log.log.debug { "result: code=#{result_http.code} mime=#{result_mime}" }
         # sometimes there is a UTF8 char (e.g. (c) )
         # TODO : related to mime type encoding ?
         # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
@@ -420,7 +420,7 @@ module Aspera
           # special case: relative redirect
           if URI.parse(new_url).host.nil?
             # we don't manage relative redirects with non-absolute path
-            Aspera.assert(new_url.start_with?('/')){"redirect location is relative: #{new_url}, but does not start with /."}
+            Aspera.assert(new_url.start_with?('/')) { "redirect location is relative: #{new_url}, but does not start with /." }
             new_url = "#{current_uri.scheme}://#{current_uri.host}#{new_url}"
           end
           # forwards the request to the new location
@@ -442,12 +442,12 @@ module Aspera
         # raise exception if could not retry and not return error in result
         raise e if exception
       end
-      Log.log.debug{"result=http:#{result_http}, data:#{result_data.class}"}
+      Log.log.debug { "result=http:#{result_http}, data:#{result_data.class}" }
       return case ret
              when :data then result_data
              when :resp then result_http
              when :both then [result_data, result_http]
-             else Aspera.error_unexpected_value(ret){'Type of result for REST'}
+             else Aspera.error_unexpected_value(ret) { 'Type of result for REST' }
              end
     end
 
@@ -485,7 +485,7 @@ module Aspera
       # URI.escape()
       separator = ['', '/'].include?(subpath) ? '' : '/'
       uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", query)
-      Log.log.debug{"URI=#{uri}"}
+      Log.log.debug { "URI=#{uri}" }
       begin
         # instantiate request object based on string name
         req = Net::HTTP.const_get(operation.capitalize).new(uri)
@@ -503,7 +503,7 @@ module Aspera
       when Mime::TEXT
         req.body = body
         req['Content-Type'] = Mime::TEXT
-      else Aspera.error_unexpected_value(content_type){'body type'}
+      else Aspera.error_unexpected_value(content_type) { 'body type' }
       end
       # set headers
       headers.each do |key, value|
@@ -530,7 +530,7 @@ module Aspera
           target_file = File.join(File.dirname(target_file), safe_filename) unless safe_filename.empty?
         end
       end
-      Log.log.debug{"saving to: #{target_file}"}
+      Log.log.debug { "saving to: #{target_file}" }
       written_size = 0
       session_id = SecureRandom.uuid.freeze
       RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)

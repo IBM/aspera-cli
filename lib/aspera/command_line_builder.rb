@@ -62,16 +62,16 @@ module Aspera
       # @param ascp [Boolean] `true` if `ascp`
       # @return [Schema::Reader] The JSON schema
       def validate_schema(schema, ascp: false)
-        Aspera.assert_type(schema, Schema::Reader){'schema'}
-        Aspera.assert(schema.current.key?('properties')){"Schema must have 'properties': #{schema}"}
+        Aspera.assert_type(schema, Schema::Reader) { 'schema' }
+        Aspera.assert(schema.current.key?('properties')) { "Schema must have 'properties': #{schema}" }
         schema.each_property do |property_schema, name, _full_name|
           node = property_schema.current
           unsupported_keys = node.keys - PROPERTY_KEYS
-          Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          Aspera.assert(node.key?('type') || node.key?('enum')){"Missing type for #{name} in #{schema.current.dig('description').current}"}
-          Aspera.assert(node['type'].eql?('boolean')){"switch must be bool: #{name}"} if node['x-cli-switch'] && !node['x-cli-special']
+          Aspera.assert(unsupported_keys.empty?) { "Unsupported definition keys: #{unsupported_keys}" }
+          Aspera.assert(node.key?('type') || node.key?('enum')) { "Missing type for #{name} in #{schema.current.dig('description').current}" }
+          Aspera.assert(node['type'].eql?('boolean')) { "switch must be bool: #{name}" } if node['x-cli-switch'] && !node['x-cli-special']
           node['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if node['x-cli-option'].eql?(true) || (node['x-cli-switch'].eql?(true) && !node.key?('x-cli-option'))
-          Aspera.assert(DIRECT_PROPERTIES.any?{ |i| node.key?(i)}, name, type: :warn) if ascp && supported_by_agent(:direct, node)
+          Aspera.assert(DIRECT_PROPERTIES.any? { |i| node.key?(i) }, name, type: :warn) if ascp && supported_by_agent(:direct, node)
           node.freeze
         end
         schema
@@ -104,7 +104,7 @@ module Aspera
       Log.dump(:exec_spec, @result)
       # warn about non translated arguments
       @object.each_pair do |name, value|
-        Log.log.warn{"Unknown transfer spec parameter: #{name} = \"#{value}\""} unless @processed_parameters.include?(name)
+        Log.log.warn { "Unknown transfer spec parameter: #{name} = \"#{value}\"" } unless @processed_parameters.include?(name)
       end
       # set result
       exec_spec.env.merge!(@result.env)
@@ -116,7 +116,7 @@ module Aspera
     def add_command_line_options(*options)
       options = options.first if options.first.is_a?(Array) && options.length.eql?(1)
       Aspera.assert_type(options, Array)
-      options.each{ |o| @result.args.push(o.to_s)}
+      options.each { |o| @result.args.push(o.to_s) }
     end
 
     def process_params
@@ -138,11 +138,11 @@ module Aspera
       properties = @schema['properties'][name]
       # should not happen
       if properties.nil?
-        Log.log.warn{"Unknown parameter #{name}"}
+        Log.log.warn { "Unknown parameter #{name}" }
         return
       end
       # check mandatory parameter (nil is valid value), TODO: change exception ?
-      Aspera.assert(!(@schema['required']&.include?(name) && !properties['x-cli-special'] && !@object.key?(name)), type: Transfer::Error){"Missing mandatory parameter: #{name}"}
+      Aspera.assert(!(@schema['required']&.include?(name) && !properties['x-cli-special'] && !@object.key?(name)), type: Transfer::Error) { "Missing mandatory parameter: #{name}" }
       parameter_value = @object[name]
       # no default setting
       # parameter_value=properties['default'] if parameter_value.nil? and properties.has_key?('default')
@@ -155,7 +155,7 @@ module Aspera
           when 'object' then [Hash]
           when 'integer' then [Integer]
           when 'boolean' then [TrueClass, FalseClass]
-          else Aspera.error_unexpected_value(properties['type']){"Property #{name}"}
+          else Aspera.error_unexpected_value(properties['type']) { "Property #{name}" }
           end
         end.flatten
       # check that value is of expected type
@@ -168,7 +168,7 @@ module Aspera
       return if parameter_value.nil?
 
       # check that value is of an accepted type (string, integer, boolean)
-      Aspera.assert(!(properties.key?('enum') && !properties['enum'].include?(parameter_value))){"Enum value #{parameter_value} is not allowed for #{name}"}
+      Aspera.assert(!(properties.key?('enum') && !properties['enum'].include?(parameter_value))) { "Enum value #{parameter_value} is not allowed for #{name}" }
 
       # convert some values if value on command line needs processing from value in structure
       if (convert = properties['x-cli-convert'])
@@ -176,9 +176,9 @@ module Aspera
           case convert
           when Hash then convert[parameter_value]
           when String then @convert.send(convert, parameter_value)
-          else Aspera.error_unexpected_value(convert){"Conversion type for #{name} is Hash or String only."}
+          else Aspera.error_unexpected_value(convert) { "Conversion type for #{name} is Hash or String only." }
           end
-        Aspera.assert(!converted_value.nil?){"No conversion for: #{name}=#{parameter_value}"}
+        Aspera.assert(!converted_value.nil?) { "No conversion for: #{name}=#{parameter_value}" }
         parameter_value = converted_value
       end
 
@@ -199,14 +199,14 @@ module Aspera
           add_command_line_options(properties['x-cli-option'])
         when false
           add_command_line_options(properties['x-cli-false']) if properties.key?('x-cli-false')
-        else Aspera.error_unexpected_value(parameter_value){name}
+        else Aspera.error_unexpected_value(parameter_value) { name }
         end
       else
         # transform into command line option with value
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{ |v| add_command_line_options(properties['x-cli-option'], v)}
+        parameter_value.each { |v| add_command_line_options(properties['x-cli-option'], v) }
       end
     end
   end

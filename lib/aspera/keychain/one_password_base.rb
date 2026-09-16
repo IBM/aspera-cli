@@ -21,7 +21,7 @@ module Aspera
       # Accepts both API Connect items (field keyed by 'id') and CLI items
       # (field keyed by 'id' falling back to 'label').
       def item_to_secret(item)
-        fields = Array(item['fields']).to_h{ |f| [f['id'] || f['label'], f['value']]}
+        fields = Array(item['fields']).to_h { |f| [f['id'] || f['label'], f['value']] }
         secret = {label: item['title']}
         secret[:username]    = fields[FIELD_USERNAME] unless fields[FIELD_USERNAME].nil?
         secret[:password]    = fields[FIELD_PASSWORD] unless fields[FIELD_PASSWORD].nil?

@@ -21,7 +21,7 @@ PANDOC_DEPS = [
   'gfm_admonition.lua',
   'pdf_after_body.tex',
   'pdf_in_header.tex'
-].map{ |f| (PATH_PANDOC_ROOT / f).to_s}.freeze
+].map { |f| (PATH_PANDOC_ROOT / f).to_s }.freeze
 
 # Extract pandoc defaults from markdown comment, else return nil
 # @param md [Pathname] Path to Markdown file
@@ -61,7 +61,7 @@ end
 def generate_gfx_paths_latex(paths)
   result = TMP / 'pandoc_add.tex'
   # https://latexref.xyz/_005cgraphicspath.html
-  result.write("\\usepackage{graphicx}\n\\graphicspath{#{paths.map{ |p| "{#{p}}"}.join('')}}\n")
+  result.write("\\usepackage{graphicx}\n\\graphicspath{#{paths.map { |p| "{#{p}}" }.join('')}}\n")
   result
 end
 
@@ -71,9 +71,9 @@ end
 # @param additional [Array<Pathname>] Array to append additional defaults file to
 def check_add_defaults_file(md, format, additional)
   add_defaults = md.dirname / ".#{md.basename}.#{format}.pandoc.yaml"
-  log.info{"checking defaults: #{add_defaults}"}
+  log.info { "checking defaults: #{add_defaults}" }
   return unless add_defaults.exist?
-  log.info{"Using default pandoc defaults: #{add_defaults}"}
+  log.info { "Using default pandoc defaults: #{add_defaults}" }
   additional << add_defaults
 end
 
@@ -95,7 +95,7 @@ end
 # @param md [Pathname] Path to Markdown file
 # @param pdf [Pathname] Path to output PDF file
 def markdown_to_pdf(md:, pdf:)
-  log.info{"Generating: #{pdf}"}
+  log.info { "Generating: #{pdf}" }
   pdf = pdf.expand_path
   # Ensure target folder exists for pandoc
   pdf.dirname.mkpath
@@ -116,7 +116,7 @@ def markdown_to_pdf(md:, pdf:)
       'pandoc',
       "--include-in-header=#{gfx_paths_latex}",
       "--variable=date:#{get_change_date(md)}",
-      *defaults.map{ |f| "--defaults=#{f}"},
+      *defaults.map { |f| "--defaults=#{f}" },
       "--output=#{pdf}",
       tmp_md
     )

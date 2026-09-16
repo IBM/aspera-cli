@@ -86,7 +86,7 @@ module Aspera
         end
 
         def all_but(list)
-          Array(list).map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
+          Array(list).map { |i| "#{FIELDS_LESS}#{i}" }.unshift(SpecialValues::ALL)
         end
       end
 
@@ -176,7 +176,7 @@ module Aspera
               when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
               when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
               when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
-              else Aspera.error_unexpected_value(k){'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)'}
+              else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)' }
               end
             end
             return
@@ -194,10 +194,10 @@ module Aspera
             end
           when :image
             # get list if key arguments of method
-            allowed_options = Preview::Terminal.method(:build).parameters.select{ |i| i[0].eql?(:key)}.map{ |i| i[1]}
+            allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
             # check that only supported options are given
             unknown_options = value.keys.map(&:to_sym) - allowed_options
-            Aspera.assert(unknown_options.empty?){"Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}"}
+            Aspera.assert(unknown_options.empty?) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
           end
         when :get
           return if option_symbol.eql?(:out)
@@ -247,9 +247,9 @@ module Aspera
       # @param result [Result] Result object to display
       def display_results(result)
         require 'aspera/cli/result'
-        Aspera.assert_type(result, Cli::Result){'result must be a Result object'}
+        Aspera.assert_type(result, Cli::Result) { 'result must be a Result object' }
 
-        Log.log.debug{"display_results: result class=#{result.class.name}"}
+        Log.log.debug { "display_results: result class=#{result.class.name}" }
         Log.dump(:data, result.data, level: :trace1)
         Log.dump(:fields, result.fields, level: :trace1)
 
@@ -293,14 +293,14 @@ module Aspera
 
       # @return [Array<String>] all fields of all objects in list of objects
       def all_fields(data)
-        data.each_with_object({}){ |v, m| v.each_key{ |c| m[c] = true}}.keys
+        data.each_with_object({}) { |v, m| v.each_key { |c| m[c] = true } }.keys
       end
 
       # @return [Array<String>] the list of fields to display
       # @param data    [Array<Hash>]         data to display
       # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)
-        Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
+        Log.log.debug { "compute_fields: data:#{data.class} default:#{default.class} #{default}" }
         Log.dump(:compute_fields_default, default, level: :trace1)
         # the requested list of fields, but if can contain special values
         request =
@@ -308,8 +308,8 @@ module Aspera
           # when NilClass then [SpecialValues::DEF]
           when String then @options[:fields].split(',')
           when Array then @options[:fields]
-          when Regexp then return all_fields(data).select{ |i| i.match(@options[:fields])}
-          when Proc then return all_fields(data).select{ |i| @options[:fields].call(i)}
+          when Regexp then return all_fields(data).select { |i| i.match(@options[:fields]) }
+          when Proc then return all_fields(data).select { |i| @options[:fields].call(i) }
           else Aspera.error_unexpected_value(@options[:fields])
           end
         Aspera.assert_array_all(request, String)
@@ -326,12 +326,12 @@ module Aspera
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
             request.unshift(*all_fields(data))
           when SpecialValues::DEF
-            default = all_fields(data).select{ |i| default.call(i)} if default.is_a?(Proc)
+            default = all_fields(data).select { |i| default.call(i) } if default.is_a?(Proc)
             default = all_fields(data) if default.nil?
             request.unshift(*default)
           else
             if removal
-              result = result.reject{ |i| i.eql?(item)}
+              result = result.reject { |i| i.eql?(item) }
             else
               result.push(item)
             end
@@ -347,12 +347,12 @@ module Aspera
         return data unless data.is_a?(Array)
         # by default, keep all data intact
         return data if @options[:fields].eql?(SpecialValues::DEF) && @options[:select].nil?
-        Aspera.assert_array_all(data, Hash){'filter or select'}
+        Aspera.assert_array_all(data, Hash) { 'filter or select' }
         filter_columns_on_select(data)
         return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])
-        return data.map{ |i| i[selected_fields.first]} if selected_fields.length == 1
-        return data.map{ |i| i.slice(*selected_fields)}
+        return data.map { |i| i[selected_fields.first] } if selected_fields.length == 1
+        return data.map { |i| i.slice(*selected_fields) }
       end
 
       # filter the list of items on the select option
@@ -361,12 +361,12 @@ module Aspera
         case @options[:select]
         when Proc
           begin
-            data.select!{ |i| @options[:select].call(i)}
+            data.select! { |i| @options[:select].call(i) }
           rescue StandardError => e
             raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
           end
         when Hash
-          @options[:select].each{ |k, v| data.select!{ |i| i[k].eql?(v)}}
+          @options[:select].each { |k, v| data.select! { |i| i[k].eql?(v) } }
         end
       end
 
@@ -386,7 +386,7 @@ module Aspera
         format_style = @options[:table_style].symbolize_keys
         string_list_separator = format_style.delete(:str_lst_sep) || STR_LST_SEP_VERT
         # convert data to string, and keep only display fields
-        object_array.each{ |i| self.class.replace_specific_for_terminal(i, string_list_separator)}
+        object_array.each { |i| self.class.replace_specific_for_terminal(i, string_list_separator) }
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
           Log.log.debug("single element, field: #{fields.first}")
@@ -402,9 +402,9 @@ module Aspera
         Log.dump(:object_array, object_array)
         Log.dump(:fields, fields)
         # convert data to string, and keep only display fields
-        final_table_rows = object_array.map{ |r| fields.map{ |c| r[c].to_s}}
+        final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
         # remove empty rows
-        final_table_rows.select!{ |i| !(i.is_a?(Hash) && i.empty?)}
+        final_table_rows.select! { |i| !(i.is_a?(Hash) && i.empty?) }
         # fields: list of column names to display
         case @options[:format]
         when :table

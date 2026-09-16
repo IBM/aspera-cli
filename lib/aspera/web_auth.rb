@@ -16,8 +16,8 @@ module Aspera
     end
 
     def service(request, response)
-      Log.log.debug{"received request from browser #{request.request_method} #{request.path}"}
-      Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed){'HTTP verb'}
+      Log.log.debug { "received request from browser #{request.request_method} #{request.path}" }
+      Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed) { 'HTTP verb' }
       additional_info = @web_auth.signal_request(request)
       response.status = 200
       response.content_type = 'text/html'
@@ -183,7 +183,7 @@ module Aspera
       # last argument (self) is provided to constructor of servlet
       mount(@expected_path, WebAuthServlet, self)
       # server runs in thread
-      Thread.new{start}
+      Thread.new { start }
     end
 
     # Called by web server thread on received request
@@ -202,7 +202,7 @@ module Aspera
     # @return [Hash] the query
     def received_request
       # wait for signal from thread
-      @mutex.synchronize{@cond.wait(@mutex)}
+      @mutex.synchronize { @cond.wait(@mutex) }
       # tell server thread to stop
       shutdown
       return @query

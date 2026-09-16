@@ -19,7 +19,7 @@ module Aspera
         case value
         when 'yes' then return true
         when 'no' then return false
-        else Aspera.error_unexpected_value(value){'only: yes or no: '}
+        else Aspera.error_unexpected_value(value) { 'only: yes or no: ' }
         end
       end
 

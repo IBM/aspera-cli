@@ -27,14 +27,14 @@ module Aspera
           @sdk_default_location = true
           Log.log.debug('SDK folder is not set, checking default')
           sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
-          Log.log.debug{"Checking: #{sdk_dir}"}
+          Log.log.debug { "Checking: #{sdk_dir}" }
           if !Dir.exist?(sdk_dir)
-            Log.log.debug{"No such folder: #{sdk_dir}"}
+            Log.log.debug { "No such folder: #{sdk_dir}" }
             former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
-            Log.log.debug{"Checking: #{former_sdk_folder}"}
+            Log.log.debug { "Checking: #{former_sdk_folder}" }
             sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
           end
-          Log.log.debug{"Using: #{sdk_dir}"}
+          Log.log.debug { "Using: #{sdk_dir}" }
           Products::Transferd.sdk_directory = sdk_dir
         end
       end
@@ -59,7 +59,7 @@ module Aspera
       def action_ascp_info(**)
         data = Ascp::Installation.instance.ascp_info
         data['ts'] = transfer.user_transfer_spec
-        DataRepository::ELEMENTS.each_with_object(data){ |i, h| h[i.to_s] = DataRepository.instance.item(i)}
+        DataRepository::ELEMENTS.each_with_object(data) { |i, h| h[i.to_s] = DataRepository.instance.item(i) }
         SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
         Result::SingleObject.new(data)
       end
@@ -75,7 +75,7 @@ module Aspera
 
       def action_ascp_schema(agent_name: nil, **)
         schema = Transfer::Spec::SCHEMA.current.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'})
-        schema['properties'] = schema['properties'].select{ |_k, v| CommandLineBuilder.supported_by_agent(agent_name, v)} unless agent_name.nil?
+        schema['properties'] = schema['properties'].select { |_k, v| CommandLineBuilder.supported_by_agent(agent_name, v) } unless agent_name.nil?
         schema['properties'] = schema['properties'].sort.to_h
         Result::SingleObject.new(schema)
       end
@@ -106,7 +106,7 @@ module Aspera
             'short'      => names[:short].to_s,
             'parameters' => param_names
           }
-        end.sort_by{ |r| r['name']}
+        end.sort_by { |r| r['name'] }
         Result::ObjectList.new(rows, fields: %w[name short parameters])
       end
 

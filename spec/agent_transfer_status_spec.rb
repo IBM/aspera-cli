@@ -28,7 +28,7 @@ RSpec.describe('Aspera::Agent::Node.transfer_status') do
     end
   end
 
-  let(:params){{'url' => 'https://node.example.com', 'username' => 'u', 'password' => 'p'}}
+  let(:params) { {'url' => 'https://node.example.com', 'username' => 'u', 'password' => 'p'} }
 
   it 'returns running status' do
     result = Aspera::Agent::Node.transfer_status('tid-running', params)
@@ -68,7 +68,7 @@ RSpec.describe('Aspera::Agent::Desktop.transfer_status') do
     end
   end
 
-  let(:params){{'application_id' => 'app-uuid-001'}}
+  let(:params) { {'application_id' => 'app-uuid-001'} }
 
   it 'returns running status' do
     result = Aspera::Agent::Desktop.transfer_status('tid-running', params)

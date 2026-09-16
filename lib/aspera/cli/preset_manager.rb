@@ -58,13 +58,13 @@ module Aspera
       # Read and validate the YAML config file.
       # Sets @config_presets and @checksum_on_disk.
       def read_config_file
-        Log.log.debug{"config file is: #{@config_file}".red}
+        Log.log.debug { "config file is: #{@config_file}".red }
         if File.exist?(@config_file)
-          Log.log.debug{"loading #{@config_file}"}
+          Log.log.debug { "loading #{@config_file}" }
           @config_presets   = Yaml.safe_load(File.read(@config_file))
           @checksum_on_disk = checksum
         else
-          Log.log.warn{"No config file found. New configuration file: #{@config_file}"}
+          Log.log.warn { "No config file found. New configuration file: #{@config_file}" }
           @config_presets = {Key::CONFIG => {Key::VERSION => 'new file'}}
           # @checksum_on_disk remains nil: will be saved on first write
         end
@@ -73,11 +73,11 @@ module Aspera
         Log.log.error('YAML error in config file')
         raise e
       rescue StandardError => e
-        Log.log.debug{"-> #{e.class.name} : #{e}"}
+        Log.log.debug { "-> #{e.class.name} : #{e}" }
         if File.exist?(@config_file)
           new_name = "#{@config_file}.pre#{Cli::VERSION}.manual_conversion_needed"
           File.rename(@config_file, new_name)
-          Log.log.warn{"Renamed config file to #{new_name}."}
+          Log.log.warn { "Renamed config file to #{new_name}." }
           Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
         end
         raise Cli::Error, e.to_s
@@ -86,13 +86,13 @@ module Aspera
       # Save to disk only if content changed since last load/save.
       # @return [Boolean] true if actually written
       def save_if_needed
-        Aspera.assert(!@config_presets.nil?, type: Cli::Error){'no configuration loaded'}
+        Aspera.assert(!@config_presets.nil?, type: Cli::Error) { 'no configuration loaded' }
         current = checksum
         return false if @checksum_on_disk.eql?(current)
         FileUtils.mkdir_p(File.dirname(@config_file))
         Environment.restrict_file_access(File.dirname(@config_file))
-        Log.log.info{"Saving config file: #{@config_file}"}
-        Environment.write_file_restricted(@config_file, force: true){@config_presets.to_yaml}
+        Log.log.info { "Saving config file: #{@config_file}" }
+        Environment.write_file_restricted(@config_file, force: true) { @config_presets.to_yaml }
         @checksum_on_disk = current
         true
       end
@@ -106,7 +106,7 @@ module Aspera
         Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
         return unless @use_plugin_defaults
         return unless @config_presets.key?(Key::DEFAULTS)
-        Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash){'default section'}
+        Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash) { 'default section' }
         return unless @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
         default_name = @config_presets[Key::DEFAULTS][plugin_name_sym.to_s]
         unless @config_presets.key?(default_name)
@@ -118,7 +118,7 @@ module Aspera
           end
           raise Cli::Error, "No such preset: #{default_name}"
         end
-        Aspera.assert_type(@config_presets[default_name], Hash, type: Cli::Error){'preset type'}
+        Aspera.assert_type(@config_presets[default_name], Hash, type: Cli::Error) { 'preset type' }
         default_name
       end
 
@@ -127,14 +127,14 @@ module Aspera
       # @param config_name [String]
       # @param include_path [Array] guard against include loops
       def by_name(config_name, include_path = [])
-        Aspera.assert(!include_path.include?(config_name), type: Cli::Error){'loop in include'}
+        Aspera.assert(!include_path.include?(config_name), type: Cli::Error) { 'loop in include' }
         include_path = include_path.clone
         current = @config_presets
         config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-          Aspera.assert_type(current, Hash, type: Cli::Error){"sub key: #{include_path}"}
+          Aspera.assert_type(current, Hash, type: Cli::Error) { "sub key: #{include_path}" }
           include_path.push(name)
           current = current[name]
-          Aspera.assert(!current.nil?, type: Cli::Error){"Unknown config preset: #{include_path}"}
+          Aspera.assert(!current.nil?, type: Cli::Error) { "Unknown config preset: #{include_path}" }
         end
         current = self.class.deep_clone(current) unless current.is_a?(String)
         current.delete_if { |k, _| k.to_s.start_with?(Key::META_PREFIX) } if current.is_a?(Hash)
@@ -145,14 +145,14 @@ module Aspera
       # If param_name contains dots, it is treated as a dot-path and deep-merged into the preset.
       # If param_value is nil, the key is deleted instead.
       def set_key(preset, param_name, param_value)
-        Aspera.assert_type(param_name, String, Symbol){'parameter'}
+        Aspera.assert_type(param_name, String, Symbol) { 'parameter' }
         param_name = param_name.to_s
         selected = @config_presets[preset]
         if selected.nil?
-          Log.log.debug{"Unknown preset name: #{preset}, initializing"}
+          Log.log.debug { "Unknown preset name: #{preset}, initializing" }
           selected = @config_presets[preset] = {}
         end
-        Aspera.assert_type(selected, Hash){"#{preset}.#{param_name}"}
+        Aspera.assert_type(selected, Hash) { "#{preset}.#{param_name}" }
         if param_name.include?(DotContainer::SEPARATOR)
           keys = param_name.split(DotContainer::SEPARATOR)
           # Navigate to the parent hash
@@ -175,10 +175,10 @@ module Aspera
         else
           if selected.key?(param_name)
             if selected[param_name].eql?(param_value)
-              Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
+              Log.log.warn { "keeping same value for #{preset}: #{param_name}: #{param_value}" }
               return
             end
-            Log.log.warn{"overwriting value for #{param_name}: #{selected[param_name]}"}
+            Log.log.warn { "overwriting value for #{param_name}: #{selected[param_name]}" }
           end
           selected[param_name] = param_value
           Log.log.info("Updated: #{preset}: #{param_name} <- #{param_value}")
@@ -219,7 +219,7 @@ module Aspera
       # @return [Hash, nil]
       def lookup_preset(url:, username:)
         url = canonical_url(url)
-        Log.log.debug{"Lookup preset for #{username}@#{url}"}
+        Log.log.debug { "Lookup preset for #{username}@#{url}" }
         @config_presets.each_value do |v|
           next unless v.is_a?(Hash)
           conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
@@ -263,11 +263,11 @@ module Aspera
       # Structural validation + compatibility fixes on @config_presets
       def validate_config_presets!
         Log.dump(:available_presets, @config_presets, level: :trace1)
-        Aspera.assert_type(@config_presets, Hash){'config file YAML'}
-        Aspera.assert(@config_presets.key?(Key::CONFIG)){"Cannot find key: #{Key::CONFIG}"}
+        Aspera.assert_type(@config_presets, Hash) { 'config file YAML' }
+        Aspera.assert(@config_presets.key?(Key::CONFIG)) { "Cannot find key: #{Key::CONFIG}" }
         version = @config_presets[Key::CONFIG][Key::VERSION]
-        Aspera.assert(!version.nil?, type: Cli::Error){'No version found in config section.'}
-        Log.log.debug{"conf version: #{version}"}
+        Aspera.assert(!version.nil?, type: Cli::Error) { 'No version found in config section.' }
+        Log.log.debug { "conf version: #{version}" }
         # Fix bug in 4.4 (creating key "true" in "default" preset)
         @config_presets[Key::DEFAULTS].delete(true) if @config_presets[Key::DEFAULTS].is_a?(Hash)
         # Stamp with current version

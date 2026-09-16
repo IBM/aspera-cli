@@ -28,7 +28,7 @@ module Aspera
         @agent_columns = agent_columns
         @code_highlight = code_highlight
         @columns = %w[name type description]
-        @columns.insert(-2, *Agent::Factory::ALL.values.map{ |i| i[:short].to_s}.sort) if @agent_columns
+        @columns.insert(-2, *Agent::Factory::ALL.values.map { |i| i[:short].to_s }.sort) if @agent_columns
         # Sections: each entry is {header: row_or_nil, rows: []}
         # A flat schema produces a single section with no header.
         @sections = [{header: nil, rows: []}]
@@ -36,7 +36,7 @@ module Aspera
 
       def rows
         @sections.flat_map do |section|
-          sorted = section[:rows].sort_by{ |i| i['name']}
+          sorted = section[:rows].sort_by { |i| i['name'] }
           section[:header] ? [section[:header]] + sorted : sorted
         end
       end
@@ -47,7 +47,7 @@ module Aspera
       # First row is the titles (for Markdown table generation)
       # @return [Array<Array<String>>]
       def table
-        [@columns] + rows.map{ |row| @columns.map{ |field| row[field]}}
+        [@columns] + rows.map { |row| @columns.map { |field| row[field] } }
       end
 
       # Generate a documentation table from a JSON schema for transfer specifications
@@ -58,9 +58,9 @@ module Aspera
       # @param schema [Reader] The JSON schema to process
       # @return [Documentation]
       def build(schema = nil)
-        code = @code_highlight ? ->(c){"`#{c}`"} : ->(c){c}
+        code = @code_highlight ? ->(c) { "`#{c}`" } : ->(c) { c }
         schema ||= @schema
-        render_title = ->(title){title.gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)}}
+        render_title = ->(title) { title.gsub(Markdown::FORMATS) { @formatter.markdown_text(Regexp.last_match) } }
         on_variant = ->(variant_reader, discriminant_property, discriminant_value) do
           title = variant_reader.current['title'] || variant_reader.current['description']
           header =
@@ -82,7 +82,7 @@ module Aspera
           # Manual table
           item_type =
             if node['type'].is_a?(Array)
-              node['type'].map{ |t| JSON_TYPE_TO_DOC.fetch(t, t)}.join(', ')
+              node['type'].map { |t| JSON_TYPE_TO_DOC.fetch(t, t) }.join(', ')
             elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
               "#{JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]"
             else
@@ -96,7 +96,7 @@ module Aspera
           # Render Markdown formatting and split lines
           item['description'] =
             node['description']
-              .gsub(Markdown::FORMATS){@formatter.markdown_text(Regexp.last_match)}
+              .gsub(Markdown::FORMATS) { @formatter.markdown_text(Regexp.last_match) }
               .split("\n") if node.key?('description')
           item['description'].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
           # Add flags for supported agents in doc
@@ -104,17 +104,17 @@ module Aspera
           Agent::Factory::ALL.each_key do |sym|
             agents.push(sym) if node['x-agents'].nil? || node['x-agents'].include?(sym.to_s)
           end
-          Aspera.assert(agents.include?(:direct)){"#{property_full_name}: x-cli-option requires agent direct (or nil)"} if node['x-cli-option']
+          Aspera.assert(agents.include?(:direct)) { "#{property_full_name}: x-cli-option requires agent direct (or nil)" } if node['x-cli-option']
           if @agent_columns
             Agent::Factory::ALL.each do |sym, names|
               item[names[:short].to_s] = @formatter.tick(agents.include?(sym))
             end
           else
-            item['description'].push("(#{agents.map{ |i| Agent::Factory::ALL[i][:short].to_s.upcase}.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
+            item['description'].push("(#{agents.map { |i| Agent::Factory::ALL[i][:short].to_s.upcase }.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
           end
           # Only keep lines that are usable in supported agents
           next if agents.empty?
-          item['description'].push("Allowed values: #{node['enum'].map{ |v| @formatter.markdown_text("`#{v}`")}.join(', ')}.") if node.key?('enum')
+          item['description'].push("Allowed values: #{node['enum'].map { |v| @formatter.markdown_text("`#{v}`") }.join(', ')}.") if node.key?('enum')
           item['description'].push("Default: #{@formatter.markdown_text("`#{node['default']}`")}.") if node.key?('default')
           item['description'].push("Example: #{@formatter.markdown_text("`#{node['example']}`")}.") if node.key?('example')
           if @include_option

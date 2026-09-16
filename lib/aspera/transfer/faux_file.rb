@@ -21,9 +21,9 @@ module Aspera
         def create(name)
           return unless name.start_with?(PREFIX)
           name_params = name.delete_prefix(PREFIX).split('?', 2)
-          Aspera.assert(name_params.length.eql?(2), type: Error){"Format: #{PREFIX}<file path>?<size>"}
+          Aspera.assert(name_params.length.eql?(2), type: Error) { "Format: #{PREFIX}<file path>?<size>" }
           m = name_params[1].downcase.match(/^(\d+)([#{SIZE_UNITS.join('')}]?)$/)
-          Aspera.assert(m, type: Error){"Format: <integer>[#{SIZE_UNITS.join(',')}]"}
+          Aspera.assert(m, type: Error) { "Format: <integer>[#{SIZE_UNITS.join(',')}]" }
           size = m[2].empty? ? m[1].to_i : m[1].to_i * (1024**(SIZE_UNITS.index(m[2]) + 1))
           return FauxFile.new(name_params[0], size)
         end

@@ -56,7 +56,7 @@ module Aspera
             formatter.display_message(:data, formatter.special_format('null (no image)'))
             return
           end
-          Aspera.assert_type(@data, String){'image: URL or blob'}
+          Aspera.assert_type(@data, String) { 'image: URL or blob' }
           # Check if URL
           data =
             begin
@@ -83,7 +83,7 @@ module Aspera
             formatter.display_message(:data, Preview::Terminal.build(data, **formatter.image_options))
           end
         else
-          Aspera.error_unexpected_value(formatter.format_type){'format'}
+          Aspera.error_unexpected_value(formatter.format_type) { 'format' }
         end
       end
     end
@@ -130,7 +130,7 @@ module Aspera
       # Status result (success, complete, etc.)
       class Status < Result
         def initialize(data)
-          Aspera.assert_type(data, String){'status result data'}
+          Aspera.assert_type(data, String) { 'status result data' }
           super(data: data)
         end
 
@@ -157,7 +157,7 @@ module Aspera
       # Text result
       class Text < Result
         def initialize(data)
-          Aspera.assert_type(data, String, Integer, Symbol, type: ArgumentError){'text result data'}
+          Aspera.assert_type(data, String, Integer, Symbol, type: ArgumentError) { 'text result data' }
           super(data: data)
         end
 
@@ -185,7 +185,7 @@ module Aspera
       # Image result (URL or blob)
       class Image < Result
         def initialize(data)
-          Aspera.assert_type(data, String, NilClass){'image result data'}
+          Aspera.assert_type(data, String, NilClass) { 'image result data' }
           super(data: data)
         end
 
@@ -199,7 +199,7 @@ module Aspera
       # Single object result (Hash)
       class SingleObject < Result
         def initialize(data, fields: nil)
-          Aspera.assert_type(data, Hash){'single object result data'}
+          Aspera.assert_type(data, Hash) { 'single object result data' }
           super(data: data, fields: fields)
         end
 
@@ -214,7 +214,7 @@ module Aspera
             # Create an Image result and format it
             Image.new(@data[fields.first]).format(formatter)
           when :table, :csv
-            Aspera.assert_type(@data, Hash){'result'}
+            Aspera.assert_type(@data, Hash) { 'result' }
             if @data.empty?
               formatter.display_message(:data, formatter.special_format('empty dict'))
             else
@@ -236,8 +236,8 @@ module Aspera
         # @param fields [Array<String>, Proc, nil] Fields to display in table/csv format
         # @param total [Integer, nil] Total number of items available (for pagination display)
         def initialize(data, fields: nil, total: nil)
-          Aspera.assert_array_all(data, Hash, type: ArgumentError){'object list result data'}
-          Aspera.assert_type(total, Integer, NilClass){'total'}
+          Aspera.assert_array_all(data, Hash, type: ArgumentError) { 'object list result data' }
+          Aspera.assert_type(total, Integer, NilClass) { 'total' }
           super(data: data, fields: fields)
           @total = total
         end
@@ -250,8 +250,8 @@ module Aspera
             Aspera.assert(@data.length == 1, 'image display requires a single result', type: Cli::BadArgument)
             SingleObject.new(@data.first).format(formatter)
           when :table, :csv
-            Aspera.assert_array_all(@data, Hash){'result'}
-            data = formatter.flat_hash? ? @data.map{ |obj| DotContainer.new(obj).to_dotted} : @data
+            Aspera.assert_array_all(@data, Hash) { 'result' }
+            data = formatter.flat_hash? ? @data.map { |obj| DotContainer.new(obj).to_dotted } : @data
             formatter.display_table(data, formatter.compute_fields(data, @fields), single: false)
           else
             super
@@ -264,8 +264,8 @@ module Aspera
         attr_reader :name
 
         def initialize(data, name: 'id')
-          Aspera.assert_type(data, Array){'value list result data'}
-          Aspera.assert_type(name, String){'value list name'}
+          Aspera.assert_type(data, Array) { 'value list result data' }
+          Aspera.assert_type(name, String) { 'value list name' }
           super(data: data)
           @name = name
         end
@@ -273,7 +273,7 @@ module Aspera
         def format(formatter)
           case formatter.format_type
           when :table, :csv
-            formatter.display_table(@data.map{ |i| {@name => i}}, [@name])
+            formatter.display_table(@data.map { |i| {@name => i} }, [@name])
           when :text
             formatter.display_message(:data, @data.join("\n"))
           when :ruby
@@ -349,11 +349,11 @@ module Aspera
             unsupported_types = all_types - scalar_types
             return ValueList.new(data, name: 'list') if unsupported_types.empty?
 
-            Aspera.error_unexpected_value(unsupported_types){'list item types'}
+            Aspera.error_unexpected_value(unsupported_types) { 'list item types' }
           when String, Integer, Symbol
             Text.new(data)
           else
-            Aspera.error_unexpected_value(data.class.name){'result type'}
+            Aspera.error_unexpected_value(data.class.name) { 'result type' }
           end
         end
       end

@@ -44,7 +44,7 @@ module Aspera
       package_data = {
         'title'      => faspex_pkg_delivery['title'],
         'note'       => faspex_pkg_delivery['note'],
-        'recipients' => faspex_pkg_delivery['recipients'].map{ |name| {'name'=>name}}
+        'recipients' => faspex_pkg_delivery['recipients'].map { |name| {'name'=>name} }
       }
       package = @app_api.create('packages', package_data)
       # TODO: option to send from remote source or httpgw
@@ -89,7 +89,7 @@ module Aspera
           response['Content-Type'] = Mime::JSON
           response.body = {error: e.message, stacktrace: e.backtrace}.to_json
           Log.log.error(e.message)
-          Log.log.debug{e.backtrace.join("\n")}
+          Log.log.debug { e.backtrace.join("\n") }
         end
       else
         response.status = 400
