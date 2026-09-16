@@ -6,6 +6,8 @@ require 'json'
 require 'aspera/log'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
+require 'aspera/schema/reader'
+require 'aspera/schema/registry'
 unless defined?(MCP::Tool)
   begin
     require 'mcp'
@@ -177,10 +179,49 @@ module Aspera
           else
             MCP::Tool::Response.new([{type: 'text', text: result.data.to_s}])
           end
+        rescue Cli::SchemaRequest => e
+          schema_path = e.path
+          if schema_path.nil?
+            MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message} (no schema available)"}], error: true)
+          else
+            rows = schema_to_rows(Schema::Registry.instance.reader(schema_path))
+            structured = {items: rows}
+            MCP::Tool::Response.new([{type: 'text', text: JSON.generate(rows)}], structured_content: structured)
+          end
         rescue SystemExit => e
           MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
         rescue => e
           MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{e.message}"}], error: true)
+        end
+
+        # Convert a Schema::Reader to a flat array of field descriptors for MCP.
+        # Returns raw semantic fields — no ANSI, no formatting — so an AI can directly
+        # use the result to construct a valid @json:{} payload.
+        # Each entry has: name, type, required (bool), description, and optionally default/enum.
+        def schema_to_rows(reader)
+          required_set = Set.new(Array(reader.current['required']))
+          rows = []
+          reader.each_property do |prop_reader, _name, full_name|
+            node = prop_reader.current
+            type_val =
+              if node['type'].is_a?(Array)
+                node['type'].join(', ')
+              elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
+                "Array[#{node.dig('items', 'type')}]"
+              else
+                node['type'].to_s
+              end
+            row = {
+              'name'        => full_name,
+              'type'        => type_val,
+              'required'    => required_set.include?(full_name.split('.').first),
+              'description' => node['description'].to_s
+            }
+            row['default'] = node['default'] if node.key?('default')
+            row['enum']    = node['enum']    if node.key?('enum')
+            rows << row
+          end
+          rows
         end
 
         # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
