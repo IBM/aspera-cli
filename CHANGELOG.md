@@ -6,6 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `aoc`: Added `admin node update_status` to tell AoC to scan the node and get a new status.
+
 ### Issues Fixed
 
 ### Breaking Changes

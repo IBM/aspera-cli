@@ -500,7 +500,7 @@ module Aspera
           group_membership:          {list_fields: %w[id group_id member_type member_id], create_schema: false},
           kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
           network_policy:            {list_fields: nil},
-          node:                      {list_fields: %w[id name host access_key], extra_ops: %i[do bearer_token], extra_op_args: {bearer_token: [{name: :scope, mandatory: false, default: nil}]}},
+          node:                      {list_fields: %w[id name host access_key], extra_ops: %i[do bearer_token update_status], extra_op_args: {bearer_token: [{name: :scope, mandatory: false, default: nil}]}},
           operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:              {singleton: true},
           package:                   {},
@@ -1482,6 +1482,11 @@ module Aspera
           scope ||= Api::Node::Scope::ADMIN
           node_api = aoc_api.node_api_from(node_id: node_id, scope: scope)
           Result::Text.new(node_api.oauth.authorization)
+        end
+
+        # admin > node > update_status
+        def action_admin_node_update_status(node_id:, **)
+          Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:node)}/#{node_id}/update_status"), fields: %w[status error_time error_message])
         end
 
         # admin > workspace > dropbox — res_id: already in ctx via arguments:(:identifier)
