@@ -66,7 +66,12 @@ end
 # separate staging folder is invisible to Gem::Specification lookups here.
 # @param staging_dir [Pathname] folder Ocran was installed into
 def ocran_exe_path(staging_dir)
-  staging_dir / 'gems' / "ocran-#{OCRAN_VERSION}" / 'exe' / 'ocran'
+  # The installed directory name may carry a platform suffix on pre-compiled
+  # native gems (e.g. "ocran-1.4.5-x86_64-linux"), so match by glob rather
+  # than building the exact name from OCRAN_VERSION alone.
+  dirs = Pathname.glob(staging_dir / 'gems' / "ocran-#{OCRAN_VERSION}*")
+  raise "Ocran gem directory not found under #{staging_dir / 'gems'}" if dirs.empty?
+  dirs.first / 'exe' / 'ocran'
 end
 
 # @return path to the built .tgz archive for a given version
