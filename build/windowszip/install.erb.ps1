@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "=== Aspera CLI Installer for Windows ===" -ForegroundColor Cyan
 
 # 1. Setup Paths
-$targetFolder = Join-Path $env:LOCALAPPDATA "Aspera", "cli"
+$targetFolder = Join-Path (Join-Path $env:LOCALAPPDATA "Aspera") "cli"
 $binFolder = Join-Path $targetFolder "bin"
 $null = New-Item -Path $targetFolder -ItemType Directory -Force
 
@@ -16,7 +16,7 @@ Start-Process -FilePath (Join-Path $PSScriptRoot "<%=ruby_installer_exe%>") `
 
 # 3. Update Environment (Persistent and Session)
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if (($userPath -split ';') -notin $binFolder) {
+if (($userPath -split ';') -notcontains $binFolder) {
     [Environment]::SetEnvironmentVariable("Path", "$userPath;$binFolder", "User")
 }
 $env:Path += ";$binFolder"
