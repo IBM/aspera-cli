@@ -2296,6 +2296,43 @@ paths:
           description: Internal Server Error
       tags:
         - Nodes
+  /nodes/{id}/update_status:
+    get:
+      operationId: get_node_update_status
+      summary: Get Node Update Status
+      description: Retrieve the update status of a specific transfer node, including any error information.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the node.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/node_update_status_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Nodes
   /organizations/{id}:
     get:
       operationId: get_organization
@@ -8232,6 +8269,8 @@ components:
           type: string
           examples:
             - '2'
+    node_update_status_response:
+      $ref: '#/components/schemas/nodes_response'
     organizations_response:
       type: object
       properties:
