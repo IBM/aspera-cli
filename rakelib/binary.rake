@@ -25,6 +25,7 @@ TBK_PREFIX_DIRNAME = 'env'
 TBK_ROOT_DIRNAME = 'root'
 
 OCRAN_VERSION = '1.4.5'
+# Path to the ocran binary
 PATH_WORKDIR_OCRAN = Paths::TMP / 'ocran'
 # Gems that are only `require`d lazily (inside methods, not at load time), so Ocran's
 # default dependency detection never sees them loaded and would otherwise omit them.
@@ -108,7 +109,7 @@ namespace :binary do
     tebako_cmd_options = []
     # Path used by tebako command
     tebako_work_path = PATH_WORKDIR
-    puts 'Building executable'
+    log.info('Building executable')
 
     # OS handling
     case Aspera::Environment.instance.os
@@ -156,7 +157,7 @@ namespace :binary do
       run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
     end
     exec_file.delete
-    puts "Build finished: #{path_tgz_target}"
+    log.info("Build finished: #{path_tgz_target}")
   end
 
   desc 'Build the single executable using Ocran (alternative to :build, same .tgz output). ' \
@@ -191,7 +192,7 @@ namespace :binary do
       ocran_extra_options += ['--cosmo-ruby', download_cosmo_ruby(PATH_WORKDIR_OCRAN).to_s]
     end
 
-    puts 'Building executable'
+    log.info('Building executable with OCRAN')
     exec_file = PATH_WORKDIR_OCRAN / Aspera::Cli::Info::CMD_NAME
     # Only expose the staging area as a gem path: unlike running the `ocran`
     # executable (a RubyGems bin stub), invoking exe/ocran directly does not need
@@ -210,14 +211,14 @@ namespace :binary do
     # rubyzip) are only `require`d lazily, so Ocran's dependency detection never sees
     # them: force them in entirely with --gem-full.
     gem_full_list = ([Aspera::Cli::Info::GEM_NAME] + OCRAN_LAZY_GEMS).join(',')
+    # Invoke Ocran's exe/ocran script directly with `ruby`, instead of running the
+    # `ocran` executable (a RubyGems bin stub): the bin stub uses
+    # Gem.activate_and_load_bin_path, which activates Ocran's own runtime
+    # dependency (fiddle) up front. That leaks fiddle into Gem.loaded_specs, where
+    # Ocran's dependency detection mistakes it for an application dependency --
+    # fatal under --cosmo-ruby, which rejects any native gem the cosmopolitan Ruby
+    # payload does not itself provide.
     run(
-      # Invoke Ocran's exe/ocran script directly with `ruby`, instead of running the
-      # `ocran` executable (a RubyGems bin stub): the bin stub uses
-      # Gem.activate_and_load_bin_path, which activates Ocran's own runtime
-      # dependency (fiddle) up front. That leaks fiddle into Gem.loaded_specs, where
-      # Ocran's dependency detection mistakes it for an application dependency --
-      # fatal under --cosmo-ruby, which rejects any native gem the cosmopolitan Ruby
-      # payload does not itself provide.
       'ruby', ocran_exe_path(PATH_WORKDIR_OCRAN).to_s,
       (PATH_WORKDIR_OCRAN / 'bin' / Aspera::Cli::Info::CMD_NAME).to_s,
       "--gem-full=#{gem_full_list}",
@@ -245,7 +246,7 @@ namespace :binary do
       run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
     end
     exec_file.delete
-    puts "Build finished: #{path_tgz_target}"
+    log.info("Build finished: #{path_tgz_target}")
   end
 
   # Release on GitHub
