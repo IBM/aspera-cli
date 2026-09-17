@@ -29,7 +29,7 @@ OCRAN_VERSION = '1.4.5'
 PATH_WORKDIR_OCRAN = Paths::TMP / 'ocran'
 # Gems that are only `require`d lazily (inside methods, not at load time), so Ocran's
 # default dependency detection never sees them loaded and would otherwise omit them.
-OCRAN_LAZY_GEMS = %w[websocket vault marcel jwt execjs rubyzip].freeze
+OCRAN_LAZY_GEMS = %w[websocket vault marcel jwt execjs rubyzip unicode-emoji unicode-display_width openssl].freeze
 # Latest CosmoRuby release: a self-contained cosmopolitan Ruby (APE) usable with
 # `ocran --cosmo-ruby`, needed for single-file executables that run unmodified
 # on Linux, macOS and Windows.
@@ -150,13 +150,13 @@ namespace :binary do
     ))
 
     # Package artifact into a .tgz archive in the release folder
-    exec_file = PATH_WORKDIR / Aspera::Cli::Info::CMD_NAME
-    exec_file.chmod(0o755)
+    cli_exec_path = PATH_WORKDIR / Aspera::Cli::Info::CMD_NAME
+    cli_exec_path.chmod(0o755)
     path_tgz_target = built_tgz_path(gem_version_build)
     Dir.chdir(PATH_WORKDIR) do
       run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
     end
-    exec_file.delete
+    cli_exec_path.delete
     log.info("Build finished: #{path_tgz_target}")
   end
 
@@ -165,6 +165,8 @@ namespace :binary do
   task :ocran, [:version, :cosmo] do |_t, args|
     use_cosmo_ruby = args[:cosmo].eql?('cosmo')
     gem_version_build = args[:version] || build_version
+    # Allow overriding the gem source with a local .gem file (e.g. for local testing before publishing)
+    gem_source = ENV.fetch('GEM_FILE', nil) || "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}"
 
     log.info('Creating Ocran staging area')
     # Final destination folder
@@ -175,7 +177,7 @@ namespace :binary do
     ENV['TMPDIR'] = PATH_WORKDIR_OCRAN.realpath.to_s
 
     log.info('Installing gems into staging area')
-    install_gem("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", PATH_WORKDIR_OCRAN)
+    install_gem(gem_source, PATH_WORKDIR_OCRAN)
 
     log.info('Installing Ocran')
     # Installed into the same staging folder as aspera-cli (rather than a global
@@ -193,7 +195,7 @@ namespace :binary do
     end
 
     log.info('Building executable with OCRAN')
-    exec_file = PATH_WORKDIR_OCRAN / Aspera::Cli::Info::CMD_NAME
+    cli_exec_path = PATH_WORKDIR_OCRAN / Aspera::Cli::Info::CMD_NAME
     # Only expose the staging area as a gem path: unlike running the `ocran`
     # executable (a RubyGems bin stub), invoking exe/ocran directly does not need
     # the host's default gem locations to find Ocran or its dependencies. Leaving
@@ -219,11 +221,15 @@ namespace :binary do
     # fatal under --cosmo-ruby, which rejects any native gem the cosmopolitan Ruby
     # payload does not itself provide.
     run(
-      'ruby', ocran_exe_path(PATH_WORKDIR_OCRAN).to_s,
-      (PATH_WORKDIR_OCRAN / 'bin' / Aspera::Cli::Info::CMD_NAME).to_s,
+      'ruby',
+      ocran_exe_path(PATH_WORKDIR_OCRAN),
       "--gem-full=#{gem_full_list}",
       *ocran_extra_options,
-      '--output', exec_file.to_s,
+      '--output', cli_exec_path,
+      PATH_WORKDIR_OCRAN / 'bin' / Aspera::Cli::Info::CMD_NAME,
+      '--',
+      'config',
+      'commands',
       env: {
         'GEM_PATH'        => ocran_gem_path,
         'GEM_HOME'        => ocran_gem_path,
@@ -240,12 +246,12 @@ namespace :binary do
     )
 
     # Package artifact into the same .tgz archive as binary:build
-    exec_file.chmod(0o755)
+    cli_exec_path.chmod(0o755)
     path_tgz_target = built_tgz_path(gem_version_build)
     Dir.chdir(PATH_WORKDIR_OCRAN) do
       run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
     end
-    exec_file.delete
+    cli_exec_path.delete
     log.info("Build finished: #{path_tgz_target}")
   end
 

@@ -237,7 +237,7 @@ module Aspera
           OS_WINDOWS
         when /darwin/, /mac os/
           OS_MACOS
-        when /linux/
+        when /linux/, /cosmo/
           OS_LINUX
         when /aix/
           OS_AIX

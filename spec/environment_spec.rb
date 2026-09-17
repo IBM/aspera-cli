@@ -22,6 +22,9 @@ RSpec.describe(Aspera::Environment) do
     RbConfig::CONFIG['host_os'] = 'aix'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_AIX))
+    RbConfig::CONFIG['host_os'] = 'cosmo'
+    Aspera::Environment.instance.initialize_fields
+    expect(Aspera::Environment.instance.os).to(eq(Aspera::Environment::OS_LINUX))
   end
 
   it 'works for CPUs' do
