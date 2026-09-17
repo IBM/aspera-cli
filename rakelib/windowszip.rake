@@ -69,16 +69,16 @@ namespace :windowszip do
     sdk_base = sdk_url.gsub(%r{/[^/]+$}, '')
     sdk_file = sdk_url.gsub(%r{^.+/}, '')
     Aspera::Rest.new(base_url: sdk_base, redirect_max: 5)
-      .read(sdk_file, save_to_file: path_resources_dir / sdk_file)
+      .read(sdk_file, save_to: path_resources_dir / sdk_file)
 
     log.info('Getting Ruby')
     ruby_installer_path = "download/RubyInstaller-#{install_ruby_version}/#{ruby_installer_exe}"
     Aspera::Rest.new(base_url: RUBY_RELEASES_BASE_URL, redirect_max: 5)
-      .read(ruby_installer_path, save_to_file: path_resources_dir / ruby_installer_exe)
+      .read(ruby_installer_path, save_to: path_resources_dir / ruby_installer_exe)
 
     log.info('Getting VC++ Redistributable')
     Aspera::Rest.new(base_url: MS_VC_BASE_URL, redirect_max: 5)
-      .read(VC_REDIST_FILENAME, save_to_file: path_resources_dir / VC_REDIST_FILENAME)
+      .read(VC_REDIST_FILENAME, save_to: path_resources_dir / VC_REDIST_FILENAME)
 
     log.info('Generating installer script and README')
     erb_src = (WIN_ZIP_SRC / 'install.erb.ps1').read
