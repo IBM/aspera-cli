@@ -11,7 +11,7 @@ EDITING GUIDELINES (developers and AI):
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 PANDOC_DEFAULTS_BEGIN
 metadata:
-  subtitle: "ascli 4.28.0.pre"
+  subtitle: "ascli 4.27.2"
   author: "Laurent Martin"
 PANDOC_DEFAULTS_END
 -->
@@ -145,8 +145,8 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar zxvf ascli.4.28.0.pre.linux-x86_64.tgz
-mv ascli.4.28.0.pre.linux-x86_64 $HOME/bin/ascli
+tar zxvf ascli.4.27.2.linux-x86_64.tgz
+mv ascli.4.27.2.linux-x86_64 $HOME/bin/ascli
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -160,7 +160,7 @@ ascli -v
 ```
 
 ```text
-4.28.0.pre
+4.27.2
 ```
 
 - Install the Aspera transfer runtime (tested version), as it is not included in the `ascli` package:
@@ -898,11 +898,11 @@ Alternatively, the necessary gems can be packaged into a `tar.gz` archive as fol
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.28.0.pre --no-document --install-dir temp_folder
+gem install aspera-cli:4.27.2 --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.28.0.pre-gems
+mv temp_folder/cache aspera-cli-4.27.2-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.28.0.pre-gems aspera-cli-4.28.0.pre-gems.tgz
+tar zcvf aspera-cli-4.27.2-gems aspera-cli-4.27.2-gems.tgz
 ```
 
 #### Unix-like: Alternative installation using `rvm`
@@ -1036,7 +1036,7 @@ ascli -v
 ```
 
 ```text
-4.28.0.pre
+4.27.2
 ```
 
 To keep persistency of configuration on the host, specify your user's configuration folder as a volume for the container.
@@ -5121,7 +5121,7 @@ Key query parameters:
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.28.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.27.2)
 
 SYNOPSIS
         ascli [GLOBAL_OPTIONS] <command> [OPTIONS] [ARGS]
